@@ -13,13 +13,13 @@ package com.akiba.cserver;
 public class TVSchema {
 
 
-	private FieldType[] fieldTypes;
+	private final FieldType[] fieldTypes;
 	
-	private long[][] fieldOffsets;
+	private final long[][] fieldOffsets;
 	
 	public TVSchema(final FieldType[] fieldTypes) {
 		this.fieldTypes = fieldTypes;
-		computeFieldOffsets();
+		this.fieldOffsets = computeFieldOffsets(fieldTypes);
 	}
 	
 	
@@ -29,7 +29,7 @@ public class TVSchema {
 			throw new IllegalArgumentException("Field index out of bounds: " + field);
 		}
 		long coordinates = 0;
-		for (int k = 0; k < fieldCount; k += 8) {
+		for (int k = 0; k < field; k += 8) {
 			int mapByte = rowData.getColumnMapByte(k);
 			int remainingBits = fieldCount - k;
 			if (remainingBits < 8) {
@@ -46,9 +46,9 @@ public class TVSchema {
 		return offset;
 	}
 	
-	private void computeFieldOffsets() {
+	private long[][] computeFieldOffsets(final FieldType[] fieldTypes) {
 		final int fieldCount = fieldTypes.length;
-		fieldOffsets = new long[(fieldCount + 7) / 8][];
+		long[][] fieldOffsets = new long[(fieldCount + 7) / 8][];
 		for (int field = 0; field < fieldTypes.length; field++) {
 			final FieldType fieldType = fieldTypes[field];
 			final long contribution;
@@ -66,5 +66,6 @@ public class TVSchema {
 					fieldOffsets[a][i + b] = fieldOffsets[a][i] + contribution;
 			}
 		}
+		return fieldOffsets;
 	}
 }
