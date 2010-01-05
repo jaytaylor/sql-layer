@@ -42,6 +42,24 @@ public class Util {
                    (bytes[index + 1] & 0xFF) << 8;
         }
     }
+    
+    
+    public static int getMediumInt(byte[] bytes, int index)
+    {
+        if (BIG_ENDIAN)
+        {
+            return (bytes[index + 2] & 0xFF)       | 
+                   (bytes[index + 1] & 0xFF) <<  8 | 
+                   (bytes[index + 0] & 0xFF) << 16;
+        }
+        else
+        {
+            return (bytes[index + 0] & 0xFF)       |
+                   (bytes[index + 1] & 0xFF) << 8  | 
+                   (bytes[index + 2] & 0xFF) << 16;
+        }
+    }
+
 
     public static int getInt(byte[] bytes, int index)
     {
@@ -132,6 +150,23 @@ public class Util {
         return index + 2;
     }
 
+    public static int putMediumInt(byte[] bytes, int index, int value)
+    {
+        if (BIG_ENDIAN)
+        {
+            bytes[index + 2] = (byte) (value);
+            bytes[index + 1] = (byte) (value >>> 8);
+            bytes[index + 0] = (byte) (value >>> 16);
+        }
+        else
+        {
+            bytes[index + 0] = (byte) (value);
+            bytes[index + 1] = (byte) (value >>> 8);
+            bytes[index + 2] = (byte) (value >>> 16);
+        }
+        return index + 4;
+    }
+
     public static int putInt(byte[] bytes, int index, int value)
     {
         if (BIG_ENDIAN)
@@ -200,35 +235,65 @@ public class Util {
     
     public static String dump(char[] c, int offset, int size)
     {
-        StringBuffer sb = new StringBuffer();
-        StringBuffer sb2 = new StringBuffer();
+        StringBuilder sb1 = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
         for (int m = 0; m < size - offset; m += 8)
         {
             sb2.setLength(0);
-            hex(sb, m, 4);
-            sb.append(":");
+            hex(sb1, m, 4);
+            sb1.append(":");
             for (int i = 0; i < 8; i++)
             {
-                sb.append("  ");
-                if (i % 4 == 0) sb.append(" ");
+                sb1.append("  ");
+                if (i % 4 == 0) sb1.append(" ");
                 int j = m + i;
                 if (j < size - offset)
                 {
-                    hex(sb, c[j + offset], 4);
+                    hex(sb1, c[j + offset], 4);
                     if (c[j + offset] >= 32 && c[j] < 127) sb2.append(c[j]);
                     else sb2.append(".");
                 }
-                else sb.append("    ");
+                else sb1.append("    ");
             }
-            sb.append("    ");
-            sb.append(sb2.toString());
-            sb.append("\r\n");
+            sb1.append("    ");
+            sb1.append(sb2.toString());
+            sb1.append("\n");
         }
-        return sb.toString();
+        return sb1.toString();
+    }
+    
+    public static String dump(byte[] b, int offset, int size)
+    {
+        StringBuilder sb1 = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
+        for (int m = 0; m < size - offset; m += 16)
+        {
+            sb2.setLength(0);
+            hex(sb1, m, 4);
+            sb1.append(":");
+            for (int i = 0; i < 16; i++)
+            {
+                sb1.append(" ");
+                if (i % 8 == 0) sb1.append(" ");
+                int j = m + i;
+                if (j < size - offset)
+                {
+                    hex(sb1, b[j + offset], 2);
+                    if (b[j + offset] >= 32 && b[j] < 127) sb2.append((char)b[j]);
+                    else sb2.append(".");
+                }
+                else sb1.append("  ");
+            }
+            sb1.append("  ");
+            sb1.append(sb2.toString());
+            sb1.append("\n");
+        }
+        return sb1.toString();
     }
     
 
-    public static StringBuffer hex(StringBuffer sb, long value, int length)
+
+    public static StringBuilder hex(StringBuilder sb, long value, int length)
     {
         for (int i = length-1; i >= 0; i--)
         {
