@@ -8,18 +8,17 @@ package com.akiba.cserver;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
-import com.akiba.message.MessageRegistrationBase;
+import com.akiba.message.MessageRegistryBase;
 import com.akiba.network.AkibaNetworkHandler;
 import com.akiba.network.CommEventNotifier;
 import com.akiba.network.NetworkHandlerFactory;
 /**
- * 
+ *
  * @author pbeaman
  */
 public class CServer {
 
-	private static final Logger LOGGER = Logger.getLogger(CServer.class
-			.getName());
+	private static final Logger LOGGER = Logger.getLogger(CServer.class.getName());
 
 	public static class ChannelNotifier implements CommEventNotifier {
 
@@ -42,9 +41,9 @@ public class CServer {
 
 	/**
 	 * A Runnable that reads Network messages, acts on them and returns results.
-	 * 
+	 *
 	 * @author peter
-	 * 
+	 *
 	 */
 	private static class CServerRunnable implements Runnable {
 
@@ -56,18 +55,20 @@ public class CServer {
 
 		public void run() {
 
-			final ByteBuffer bb = handler.getMsg();
-		}
+            try {
+                final ByteBuffer bb = handler.getMsg();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 	}
-	
-	private static class MessageRegistration extends MessageRegistrationBase {
-	    public static synchronized void initialize()
+
+	private static class MessageRegistry extends MessageRegistryBase
+    {
+	    public MessageRegistry()
 	    {
-	        if (!initialized()) {
-	            maxTypeCodes(1000);
-	            register(1, WriteRowMessage.class);
-	            markInitialized();
-	        }
+            maxTypeCode(1000);
+            register(1, WriteRowMessage.class.getName());
 	    }
 	}
 
@@ -79,7 +80,7 @@ public class CServer {
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
 				(CommEventNotifier) callback);
-		MessageRegistration.initialize();
+		new MessageRegistry();
 		try {
 			//
 			// For now this is "crash-only software" - there is no
