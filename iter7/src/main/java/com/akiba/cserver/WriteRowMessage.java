@@ -20,7 +20,8 @@ public class WriteRowMessage extends Message {
 		this.rowData = rowData;
 	}
 
-	public void read(ByteBuffer payload) {
+	public void read(ByteBuffer payload) throws Exception
+    {
 		super.read(payload);
 		if (!payload.hasArray()) {
 			throw new UnsupportedOperationException(
@@ -31,7 +32,8 @@ public class WriteRowMessage extends Message {
 				- payload.position());
 	}
 
-	public void write(ByteBuffer payload) {
+	public void write(ByteBuffer payload) throws Exception
+    {
 		if (payload.hasArray() && payload.array() == rowData.getBytes()) {
 			final byte[] bytes = rowData.getBytes();
 			if (rowData.getBufferStart() != payload.position() + 2) {

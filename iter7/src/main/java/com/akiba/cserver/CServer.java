@@ -8,6 +8,7 @@ package com.akiba.cserver;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
+import com.akiba.message.MessageRegistry;
 import com.akiba.message.MessageRegistryBase;
 import com.akiba.network.AkibaNetworkHandler;
 import com.akiba.network.CommEventNotifier;
@@ -63,15 +64,6 @@ public class CServer {
         }
 	}
 
-	private static class MessageRegistry extends MessageRegistryBase
-    {
-	    public MessageRegistry()
-	    {
-            maxTypeCode(1000);
-            register(1, WriteRowMessage.class.getName());
-	    }
-	}
-
 	/**
 	 * @param args
 	 *            the command line arguments
@@ -80,7 +72,7 @@ public class CServer {
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
 				(CommEventNotifier) callback);
-		new MessageRegistry();
+		MessageRegistry.initialize();
 		try {
 			//
 			// For now this is "crash-only software" - there is no
