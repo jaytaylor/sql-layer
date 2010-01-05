@@ -14,7 +14,6 @@
 			<groupId>com.akiba</groupId>
 			<artifactId>akiba-persistit</artifactId>
 			<version>2.0.1</version>
-			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
@@ -23,6 +22,19 @@
 			<version>3.8.1</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>com.akiba</groupId>
+			<artifactId>akiba-network</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.akiba</groupId>
+			<artifactId>akiba-message</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		
 	</dependencies>
 
 	<build>
