@@ -178,11 +178,10 @@ public class RowDef {
 	}
 
 	/**
-	 * Compute lookup table used to in the {@link #fieldLocation(RowData, int)}
+	 * Compute lookup tables used to in the {@link #fieldLocation(RowData, int)}
 	 * method. This method is invoked once when a RowDef is first constructed.
 	 * 
 	 * @param fieldDefs
-	 * @return
 	 */
 	void preComputeFieldCoordinates(final FieldDef[] fieldDefs) {
 		final int fieldCount = fieldDefs.length;

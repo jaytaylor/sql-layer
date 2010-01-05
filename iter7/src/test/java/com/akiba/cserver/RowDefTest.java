@@ -180,7 +180,7 @@ public class RowDefTest extends TestCase {
 		for (int i = 0; i < randomBytes.length; i++) {
 			randomBytes[i] = (byte) ((i % 26) + 97);
 		}
-		final FieldDef[] fieldDefs = new FieldDef[123];
+		final FieldDef[] fieldDefs = new FieldDef[12345];
 		final FieldType[] allTypes = FieldType.values();
 		int maxSize = 20;
 		for (int i = 0; i < fieldDefs.length; i++) {
@@ -193,7 +193,7 @@ public class RowDefTest extends TestCase {
 						- type.getMinWidth() + 1)
 						+ type.getMinWidth();
 				fieldDefs[i] = new FieldDef(type, maxWidth);
-				maxSize += /* maxWidth */1 + 3;
+				maxSize += maxWidth + 3;
 			}
 		}
 		final RowDef rowDef = new RowDef(12345, fieldDefs);
@@ -234,9 +234,9 @@ public class RowDefTest extends TestCase {
 				case BINCHAR:
 				case BINVARCHAR:
 				case CHAR:
-					int size = 3; // fieldDefs[i].getMaxWidth();
+					int size = random.nextInt(fieldDefs[i].getMaxWidth());
 					value = new byte[size];
-					System.arraycopy(randomBytes, i /*random.nextInt(20000) */, value,
+					System.arraycopy(randomBytes, random.nextInt(20000), value,
 							0, size);
 				default:
 				}
