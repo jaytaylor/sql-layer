@@ -6,6 +6,8 @@ import com.akiba.message.Message;
 
 public class WriteRowResponse extends Message {
 
+    public static short TYPE;
+
 	private int resultCode;
 	
 	public int getResultCode() {
@@ -16,8 +18,8 @@ public class WriteRowResponse extends Message {
 		this.resultCode = resultCode;
 	}
 
-	public WriteRowResponse(final short type) {
-		super(type);
+	public WriteRowResponse() {
+		super(TYPE);
 	}
 
 	public void read(ByteBuffer payload) throws Exception
