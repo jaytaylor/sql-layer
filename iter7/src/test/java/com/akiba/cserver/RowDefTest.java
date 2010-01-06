@@ -181,7 +181,7 @@ public class RowDefTest extends TestCase {
 		final FieldType[] allTypes = FieldType.values();
 		int maxSize = 20;
 		for (int i = 0; i < fieldDefs.length; i++) {
-			FieldType type = allTypes[i % /* allTypes.length */13];
+			FieldType type = allTypes[random.nextInt(allTypes.length)];
 			if (type.isFixedWidth()) {
 				fieldDefs[i] = new FieldDef(type);
 				maxSize += type.getMaxWidth();
@@ -249,6 +249,13 @@ public class RowDefTest extends TestCase {
 			final long location = rowDef.fieldLocation(data, i);
 			assertValuesAreEqual(values[i], fieldDefs[i], data, location);
 		}
+		
+		for (int i = 0; i < 100000; i++) {
+			final int field = random.nextInt(fieldDefs.length);
+			final long location = rowDef.fieldLocation(data, field);
+			assertValuesAreEqual(values[field], fieldDefs[field], data, location);
+		}
+
 
 		long xor = 0;
 		int count = 0;
