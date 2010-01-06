@@ -6,10 +6,12 @@ import com.akiba.message.Message;
 
 public class WriteRowMessage extends Message {
 
+    public static short TYPE;
+
 	private RowData rowData;
 
-	public WriteRowMessage(final short type) {
-		super(type);
+	public WriteRowMessage() {
+		super(TYPE);
 	}
 
 	public RowData getRowData() {
