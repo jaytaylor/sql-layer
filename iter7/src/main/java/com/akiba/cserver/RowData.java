@@ -10,11 +10,19 @@ package com.akiba.cserver;
  * index will point to the first field of the first row represented in the
  * buffer.
  * 
- * +0: record length (int) +4: signature bytes, e.g., 'AB' +6: field count
- * (short) +8: tvHandle (int) +12: column-map (1 bit per schema-defined column)
- * +M: fixed-length field +N: fixed-length field ... +Q: variable-length field
- * +R: variable-length field ... +Z-6: signature bytes: e.g., 'BA' +Z-4: record
- * length
+ * <pre>
+ *   +0: record length (Z) 
+ *   +4: signature bytes, e.g., 'AB' 
+ *   +6: field count (short) 
+ *   +8: rowDefId (int) 
+ *  +12: column-map (1 bit per schema-defined column)
+ *   +M: fixed-length field 
+ *   +N: fixed-length field ... 
+ *   +Q: variable-length field
+ *   +R: variable-length field ... 
+ *   +Z-6: signature bytes: e.g., 'BA' 
+ *   +Z-4: record length (Z)
+ * </pre>
  * 
  * @author peter
  */
@@ -155,7 +163,8 @@ public class RowData {
 	public long getIntegerValue(final int offset, final int width) {
 		final int index = offset + rowStart;
 		if (index < rowStart || index + width >= rowEnd) {
-			throw new IllegalArgumentException("Bad location: " + index + ":" + width);
+			throw new IllegalArgumentException("Bad location: " + index + ":"
+					+ width);
 		}
 		switch (width) {
 		case 0:
@@ -173,10 +182,11 @@ public class RowData {
 		}
 		throw new IllegalArgumentException("Bad width: " + width);
 	}
-	
+
 	/**
-	 * For debugging only, poke some Java values supplied in the values
-	 * array into a RowData instance.  The conversions are very approximate!
+	 * For debugging only, poke some Java values supplied in the values array
+	 * into a RowData instance. The conversions are very approximate!
+	 * 
 	 * @param rowDef
 	 * @param values
 	 */
@@ -190,14 +200,14 @@ public class RowData {
 		Util.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
 		Util.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
 		offset = offset + O_NULL_MAP;
-		for (int index = 0; index < fieldCount; index+= 8) {
+		for (int index = 0; index < fieldCount; index += 8) {
 			int b = 0;
 			for (int j = index; j < index + 8 && j < fieldCount; j++) {
 				if (j >= values.length || values[j] == null) {
 					b |= (1 << j - index);
 				}
 			}
-			bytes[offset++] = (byte)b;
+			bytes[offset++] = (byte) b;
 		}
 		int vlength = 0;
 		int vmax = 0;
@@ -208,20 +218,20 @@ public class RowData {
 				if (object == null) {
 					continue;
 				}
-				final int width = fieldDef.getMaxWidth(); 
-				long value = ((Number)object).longValue();
-				switch(width) {
+				final int width = fieldDef.getMaxWidth();
+				long value = ((Number) object).longValue();
+				switch (width) {
 				case 1:
-					Util.putByte(bytes, offset, (byte)value);
+					Util.putByte(bytes, offset, (byte) value);
 					break;
 				case 2:
-					Util.putShort(bytes, offset, (short)value);
+					Util.putShort(bytes, offset, (short) value);
 					break;
 				case 3:
-					Util.putMediumInt(bytes, offset, (int)value);
+					Util.putMediumInt(bytes, offset, (int) value);
 					break;
 				case 4:
-					Util.putInt(bytes, offset, (int)value);
+					Util.putInt(bytes, offset, (int) value);
 					break;
 				case 8:
 					Util.putLong(bytes, offset, value);
@@ -235,19 +245,20 @@ public class RowData {
 				if (object == null) {
 					continue;
 				}
-				int width = vmax == 0 ? 0 : vmax < 256 ? 1 : vmax < 65536 ? 2 : 3;
+				int width = vmax == 0 ? 0 : vmax < 256 ? 1 : vmax < 65536 ? 2
+						: 3;
 				vlength += getBytes(object).length;
-				switch(width) {
+				switch (width) {
 				case 0:
 					break;
 				case 1:
-					Util.putByte(bytes, offset, (byte)vlength);
+					Util.putByte(bytes, offset, (byte) vlength);
 					break;
 				case 2:
-					Util.putShort(bytes, offset, (short)vlength);
+					Util.putShort(bytes, offset, (short) vlength);
 					break;
 				case 3:
-					Util.putMediumInt(bytes, offset, (int)vlength);
+					Util.putMediumInt(bytes, offset, (int) vlength);
 					break;
 				}
 				offset += width;
@@ -268,17 +279,17 @@ public class RowData {
 		Util.putInt(bytes, offset + O_LENGTH_B, length);
 		rowEnd = offset;
 	}
-	
+
 	private byte[] getBytes(final Object object) {
 		if (object == null) {
 			return new byte[0];
 		} else if (object instanceof byte[]) {
-			return (byte[])object;
+			return (byte[]) object;
 		} else {
-			return ((String)object).getBytes();
+			return ((String) object).getBytes();
 		}
 	}
-	
+
 	/**
 	 * Debug-only: returns a hex-dump of the backing buffer.
 	 */
@@ -286,5 +297,5 @@ public class RowData {
 	public String toString() {
 		return Util.dump(bytes, 0, bytes.length);
 	}
-	
+
 }
