@@ -52,9 +52,7 @@ public class RowDefTest extends TestCase {
 					new FieldDef(FieldType.VARCHAR, 100),
 					new FieldDef(FieldType.VARCHAR, 100), },
 
-			{
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
+			{ new FieldDef(FieldType.TINYINT), new FieldDef(FieldType.TINYINT),
 					new FieldDef(FieldType.SMALLINT),
 					new FieldDef(FieldType.MEDIUMINT),
 					new FieldDef(FieldType.INT),
@@ -80,8 +78,7 @@ public class RowDefTest extends TestCase {
 					new FieldDef(FieldType.BIGINT),
 					new FieldDef(FieldType.VARCHAR, 200),
 					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-			},
+					new FieldDef(FieldType.TINYINT), },
 
 	};
 
@@ -113,11 +110,10 @@ public class RowDefTest extends TestCase {
 					new Object[] { null, "b", null, "d", null, "f", null, null,
 							null, "j", null, "l" },
 					new Object[] { null, null, null, null, null, null, null,
-							null, null, null, null, "end" },
-					new Object[] {}, },
+							null, null, null, null, "end" }, new Object[] {}, },
 
-			new Object[][] { new Object[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
-					"foo", 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,  
+			new Object[][] { new Object[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+					11, "foo", 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
 					"bar", 26, 27 }
 
 			}, };
@@ -175,12 +171,13 @@ public class RowDefTest extends TestCase {
 	}
 
 	public void testComputeFieldLocations2() throws Exception {
+		final int fieldCount = 95;
 		final Random random = new Random(1);
 		final byte[] randomBytes = new byte[100000];
 		for (int i = 0; i < randomBytes.length; i++) {
 			randomBytes[i] = (byte) ((i % 26) + 97);
 		}
-		final FieldDef[] fieldDefs = new FieldDef[12345];
+		final FieldDef[] fieldDefs = new FieldDef[fieldCount];
 		final FieldType[] allTypes = FieldType.values();
 		int maxSize = 20;
 		for (int i = 0; i < fieldDefs.length; i++) {
@@ -196,7 +193,7 @@ public class RowDefTest extends TestCase {
 				maxSize += maxWidth + 3;
 			}
 		}
-		final RowDef rowDef = new RowDef(12345, fieldDefs);
+		final RowDef rowDef = new RowDef(fieldCount, fieldDefs);
 		if (VERBOSE) {
 			System.out.println(rowDef);
 		}
@@ -244,14 +241,32 @@ public class RowDefTest extends TestCase {
 			}
 		}
 		data.createRow(rowDef, values);
-		
+
 		if (VERBOSE) {
 			System.out.println(data);
 		}
-		for (int i = fieldDefs.length; --i >= 0; ) {
+		for (int i = fieldDefs.length; --i >= 0;) {
 			final long location = rowDef.fieldLocation(data, i);
 			assertValuesAreEqual(values[i], fieldDefs[i], data, location);
 		}
+
+		long xor = 0;
+		int count = 0;
+		final long start = System.nanoTime();
+		while (System.nanoTime() - start < 3000000000L) {
+			for (int k = 0; k < 10000; k++) {
+				for (int i = 0; i < fieldCount; i++) {
+					final long location = rowDef.fieldLocation(data, i);
+					// use the result so that HotSpot doesn't optimize away the call
+					xor ^= location;
+				}
+				count += fieldDefs.length;
+			}
+		}
+		final long elapsed = System.nanoTime() - start;
+		System.out.println(String.format("Average fieldLocation time on table "
+				+ "%d columns wide: %dns (xor=%d)", fieldDefs.length, elapsed
+				/ count, xor));
 	}
 
 	private void assertValuesAreEqual(final Object value,

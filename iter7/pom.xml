@@ -56,6 +56,7 @@
 				<configuration>
 					<argLine>-Xmx512m -Xms128m</argLine>
 					<includes>
+						<include>**/*Test.java</include>
 						<include>**/*Test?.java</include>
 					</includes>
 				</configuration>

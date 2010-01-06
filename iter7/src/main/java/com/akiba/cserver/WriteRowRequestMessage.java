@@ -4,14 +4,12 @@ import java.nio.ByteBuffer;
 
 import com.akiba.message.Message;
 
-public class WriteRowMessage extends Message {
-
-    public static short TYPE;
+public class WriteRowRequestMessage extends Message {
 
 	private RowData rowData;
 
-	public WriteRowMessage() {
-		super(TYPE);
+	public WriteRowRequestMessage(final short type) {
+		super(type);
 	}
 
 	public RowData getRowData() {

@@ -9,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 import com.akiba.message.MessageRegistry;
-import com.akiba.message.MessageRegistryBase;
 import com.akiba.network.AkibaNetworkHandler;
 import com.akiba.network.CommEventNotifier;
 import com.akiba.network.NetworkHandlerFactory;
@@ -36,7 +35,7 @@ public class CServer {
 
 		@Override
 		public void onDisconnect(AkibaNetworkHandler handler) {
-
+			// TODO
 		}
 	}
 
