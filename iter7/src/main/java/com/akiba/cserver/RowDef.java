@@ -12,13 +12,51 @@ package com.akiba.cserver;
  */
 public class RowDef {
 
+	/**
+	 * Array of FieldDef, one per column
+	 */
 	private final FieldDef[] fieldDefs;
+	
+	/**
+	 * Unique, permanent handle for a version of a table definition
+	 */
+	private final int rowDefId;
 
+	/**
+	 * Field(s) that constitute the primary key for this table.  Must
+	 * not be empty; will usually have one element. Multiple elements
+	 * define a compound primary key.
+	 */
+	private int[] pkFields;
+	
+	/**
+	 * Parent table. This denotes the table hierarchy within a group.
+	 * Value is zero, meaning there is no parent RowDef, if this
+	 * table is a root table.
+	 */
+	private int parentRowDefId;
+	
+	/**
+	 * Field(s) that constitute the foreign key by which this row is joined
+	 * to its parent table.
+	 */
+	private int[] parentJoinFields;
+
+	/**
+	 * Schema's name for this table.
+	 */
+	private String tableName;
+	/**
+	 * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
+	 * method to assist in looking up a field's offset and length.
+	 */
 	private final int[][] fieldCoordinates;
 
+	/**
+	 * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
+	 * method to assist in looking up a field's offset and length.
+	 */
 	private final byte[][] varLenFieldMap;
-
-	private final int rowDefId;
 
 	public RowDef(final int rowDefId, final FieldDef[] fieldDefs) {
 		this.rowDefId = rowDefId;
@@ -38,6 +76,42 @@ public class RowDef {
 
 	public int getRowDefId() {
 		return rowDefId;
+	}
+	
+	public int[] getPkFields() {
+		return pkFields;
+	}
+
+	public void setPkFields(int[] pkFields) {
+		this.pkFields = pkFields;
+	}
+
+	public int getParentRowDefId() {
+		return parentRowDefId;
+	}
+
+	public void setParentRowDefId(int parentRowDefId) {
+		this.parentRowDefId = parentRowDefId;
+	}
+
+	public int[] getParentJoinFields() {
+		return parentJoinFields;
+	}
+
+	public void setParentJoinFields(int[] parentJoinFields) {
+		this.parentJoinFields = parentJoinFields;
+	}
+
+	public FieldDef[] getFieldDefs() {
+		return fieldDefs;
+	}
+
+	public String getTableName() {
+		return tableName;
+	}
+
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
 	}
 
 	/**
