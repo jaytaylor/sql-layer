@@ -5,22 +5,59 @@
 
 package com.akiba.cserver;
 
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
+import com.akiba.cserver.store.PersistitStore;
+import com.akiba.cserver.store.Store;
+import com.akiba.message.AkibaConnection;
+import com.akiba.message.Message;
 import com.akiba.message.MessageRegistry;
 import com.akiba.network.AkibaNetworkHandler;
 import com.akiba.network.CommEventNotifier;
 import com.akiba.network.NetworkHandlerFactory;
+
 /**
- *
+ * 
  * @author pbeaman
  */
 public class CServer {
 
-	private static final Logger LOGGER = Logger.getLogger(CServer.class.getName());
+	private static final Logger LOGGER = Logger.getLogger(CServer.class
+			.getName());
 
-	public static class ChannelNotifier implements CommEventNotifier {
+	private final Store store = new PersistitStore();
+
+	private volatile boolean stopped = false;
+
+	private List<Thread> threads = new ArrayList<Thread>();
+
+	public void start() throws Exception {
+		MessageRegistry.initialize();
+		ChannelNotifier callback = new ChannelNotifier();
+		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
+				(CommEventNotifier) callback);
+		// store.startUp();
+	}
+
+	public void stop() throws Exception {
+		stopped = true;
+		final List<Thread> copy;
+		synchronized (threads) {
+			copy = new ArrayList<Thread>(threads);
+		}
+		// fpor now I think this is the only way to make these threads
+		// bail from their reads.
+		for (final Thread thread : copy) {
+			thread.interrupt();
+		}
+		// store.shutDown();
+		NetworkHandlerFactory.closeNetwork();
+	}
+
+	public class ChannelNotifier implements CommEventNotifier {
 
 		private volatile int connectCounter = 0;
 
@@ -29,8 +66,14 @@ public class CServer {
 			int counter = ++connectCounter;
 			System.out.println("Connection #" + connectCounter + " created");
 			LOGGER.info("Connection #" + connectCounter + " created");
-			new Thread(new CServerRunnable(handler), "CServer_" + counter)
-					.start();
+			final Thread thread = new Thread(new CServerRunnable(
+					AkibaConnection.createConnection(handler)), "CServer_"
+					+ counter);
+			thread.setDaemon(true);
+			thread.start();
+			synchronized (threads) {
+				threads.add(thread);
+			}
 		}
 
 		@Override
@@ -41,41 +84,50 @@ public class CServer {
 
 	/**
 	 * A Runnable that reads Network messages, acts on them and returns results.
-	 *
+	 * 
 	 * @author peter
-	 *
+	 * 
 	 */
-	private static class CServerRunnable implements Runnable {
+	private class CServerRunnable implements Runnable {
 
-		private final AkibaNetworkHandler handler;
+		private final AkibaConnection connection;
 
-		public CServerRunnable(final AkibaNetworkHandler handler) {
-			this.handler = handler;
+		private int requestCounter;
+
+		public CServerRunnable(final AkibaConnection connection) {
+			this.connection = connection;
 		}
 
 		public void run() {
 
-            try {
-                final ByteBuffer bb = handler.getMsg();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+			while (!stopped) { // TODO - shutdown
+				try {
+					Message message = connection.receive();
+					message.execute(connection);
+					requestCounter++;
+				} catch (InterruptedException e) {
+					System.err.println("Thread " + Thread.currentThread()
+							+ (stopped ? " stopped" : " interrupted"));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	/**
 	 * @param args
 	 *            the command line arguments
 	 */
-	public static void main(String[] args) {
-		ChannelNotifier callback = new ChannelNotifier();
-		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
-				(CommEventNotifier) callback);
-		MessageRegistry.initialize();
+	public static void main(String[] args) throws Exception {
+		final CServer server = new CServer();
+		server.start();
 		try {
 			//
 			// For now this is "crash-only software" - there is no
 			// graceful shutdown. Just kill or ctrl-c the process.
+			// TODO - needs to change soon - we normally want to complete
+			// Persistit shutdown.
 			//
 			while (true) {
 				Thread.sleep(5000);
@@ -84,10 +136,7 @@ public class CServer {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-
-		// TODO code application logic here
-		System.out.println("test this");
-		NetworkHandlerFactory.closeNetwork();
+		server.stop();
 	}
 
 }

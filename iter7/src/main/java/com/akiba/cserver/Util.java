@@ -1,5 +1,6 @@
 package com.akiba.cserver;
 
+import java.io.File;
 import java.lang.management.RuntimeMXBean;
 
 public class Util {
@@ -325,5 +326,26 @@ public class Util {
     	System.out.println();
 
     }
+
+	public final static void cleanUpDirectory(final File file) {
+		if (!file.exists()) {
+			file.mkdirs();
+			return;
+		} else if (file.isFile()) {
+			throw new IllegalStateException(file + " must be a directory");
+		} else {
+			final File[] files = file.listFiles();
+			cleanUpFiles(files);
+		}
+	}
+
+	public final static void cleanUpFiles(final File[] files) {
+		for (final File file : files) {
+			if (file.isDirectory()) {
+				cleanUpDirectory(file);
+			}
+			file.delete();
+		}
+	}
     
 }

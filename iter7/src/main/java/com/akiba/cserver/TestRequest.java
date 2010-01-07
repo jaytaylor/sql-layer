@@ -5,13 +5,13 @@ import java.nio.ByteBuffer;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.Message;
 
-public class WriteRowRequest extends Message {
+public class TestRequest extends Message {
 
-    public static short TYPE;
+	public static short TYPE;
 
 	private RowData rowData;
 
-	public WriteRowRequest() {
+	public TestRequest() {
 		super(TYPE);
 	}
 
@@ -22,15 +22,18 @@ public class WriteRowRequest extends Message {
 	public void setRowData(RowData rowData) {
 		this.rowData = rowData;
 	}
-	
+
 	@Override
-	public void execute(final AkibaConnection connection) throws Exception{
-		rowData.prepareRow(rowData.getBufferStart());
+	public void execute(final AkibaConnection connection) throws Exception {
+		System.out.println("Servicing TestRequest on ");
+		System.out.println(rowData);
+		final TestResponse response = new TestResponse();
+		response.setResultCode(100);
+		connection.send(response);
 	}
 
 	@Override
-	public void read(ByteBuffer payload) throws Exception
-    {
+	public void read(ByteBuffer payload) throws Exception {
 		super.read(payload);
 		if (!payload.hasArray()) {
 			throw new UnsupportedOperationException(
@@ -42,8 +45,7 @@ public class WriteRowRequest extends Message {
 	}
 
 	@Override
-	public void write(ByteBuffer payload) throws Exception
-    {
+	public void write(ByteBuffer payload) throws Exception {
 		if (payload.hasArray() && payload.array() == rowData.getBytes()) {
 			final byte[] bytes = rowData.getBytes();
 			if (rowData.getBufferStart() != payload.position() + 2) {

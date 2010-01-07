@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import com.akiba.message.Message;
 
-public class WriteRowResponse extends Message {
+public class TestResponse extends Message {
 
     public static short TYPE;
 
@@ -18,13 +18,8 @@ public class WriteRowResponse extends Message {
 		this.resultCode = resultCode;
 	}
 
-	public WriteRowResponse() {
+	public TestResponse() {
 		super(TYPE);
-	}
-	
-	public WriteRowResponse(final int resultCode) {
-		super(TYPE);
-		setResultCode(resultCode);
 	}
 
 	@Override
@@ -37,6 +32,7 @@ public class WriteRowResponse extends Message {
 	@Override
 	public void write(ByteBuffer payload) throws Exception
     {
+		super.write(payload);
 		payload.putShort((short)resultCode);
 	}
 }

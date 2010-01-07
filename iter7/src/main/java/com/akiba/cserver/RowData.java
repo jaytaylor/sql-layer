@@ -143,6 +143,14 @@ public class RowData {
 	public int getRowEnd() {
 		return rowEnd;
 	}
+	
+	public int getInnerStart() {
+		return rowStart + O_FIELD_COUNT;
+	}
+	
+	public int getInnerSize() {
+		return rowEnd - rowStart + O_SIGNATURE_B - O_FIELD_COUNT;
+	}
 
 	public int getFieldCount() {
 		return Util.getChar(bytes, rowStart + O_FIELD_COUNT);

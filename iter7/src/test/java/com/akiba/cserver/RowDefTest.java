@@ -171,7 +171,7 @@ public class RowDefTest extends TestCase {
 	}
 
 	public void testComputeFieldLocations2() throws Exception {
-		final int fieldCount = 95;
+		final int fieldCount = 25;
 		final Random random = new Random(1);
 		final byte[] randomBytes = new byte[100000];
 		for (int i = 0; i < randomBytes.length; i++) {
@@ -260,7 +260,7 @@ public class RowDefTest extends TestCase {
 		long xor = 0;
 		int count = 0;
 		final long start = System.nanoTime();
-		while (System.nanoTime() - start < 3000000000L) {
+		while (System.nanoTime() - start < 1000000000L) {
 			for (int k = 0; k < 10000; k++) {
 				for (int i = 0; i < fieldCount; i++) {
 					final long location = rowDef.fieldLocation(data, i);
