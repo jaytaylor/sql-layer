@@ -5,7 +5,6 @@ import java.util.Properties;
 
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.Util;
 import com.akiba.cserver.WriteRowResponse;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.Message;

@@ -6,13 +6,13 @@
 package com.akiba.cserver;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
 import com.akiba.cserver.store.PersistitStore;
 import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
+import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 import com.akiba.message.MessageRegistry;
 import com.akiba.network.AkibaNetworkHandler;
@@ -35,11 +35,11 @@ public class CServer {
 	private List<Thread> threads = new ArrayList<Thread>();
 
 	public void start() throws Exception {
-		MessageRegistry.initialize();
+		MessageRegistry.initialize().registerModule("com.akiba.cserver");
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
 				(CommEventNotifier) callback);
-		// store.startUp();
+		store.startUp();
 	}
 
 	public void stop() throws Exception {
@@ -53,7 +53,7 @@ public class CServer {
 		for (final Thread thread : copy) {
 			thread.interrupt();
 		}
-		// store.shutDown();
+		store.shutDown();
 		NetworkHandlerFactory.closeNetwork();
 	}
 
@@ -82,6 +82,19 @@ public class CServer {
 		}
 	}
 
+	public static class CServerContext implements ExecutionContext {
+		private final Store store;
+		
+		public Store getStore() {
+			return store;
+		}
+
+		private CServerContext(final Store store) {
+			this.store = store;
+		}
+		
+		
+	}
 	/**
 	 * A Runnable that reads Network messages, acts on them and returns results.
 	 * 
@@ -91,6 +104,8 @@ public class CServer {
 	private class CServerRunnable implements Runnable {
 
 		private final AkibaConnection connection;
+		
+		private final ExecutionContext context = new CServerContext(store);
 
 		private int requestCounter;
 
@@ -103,7 +118,7 @@ public class CServer {
 			while (!stopped) { // TODO - shutdown
 				try {
 					Message message = connection.receive();
-					message.execute(connection);
+					message.execute(connection, context);
 					requestCounter++;
 				} catch (InterruptedException e) {
 					System.err.println("Thread " + Thread.currentThread()

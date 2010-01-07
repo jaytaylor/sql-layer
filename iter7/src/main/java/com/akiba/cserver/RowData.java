@@ -95,7 +95,7 @@ public class RowData {
 				throw new CorruptRowDataException("Invalid record length: "
 						+ recordLength + " at offset: " + offset);
 			}
-			if (Util.getChar(bytes, O_SIGNATURE_A) != SIGNATURE_A) {
+			if (Util.getChar(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
 				throw new CorruptRowDataException(
 						"Invalid signature at offset: " + offset);
 			}

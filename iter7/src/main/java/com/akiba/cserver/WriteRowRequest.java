@@ -2,12 +2,15 @@ package com.akiba.cserver;
 
 import java.nio.ByteBuffer;
 
+import com.akiba.cserver.CServer.CServerContext;
+import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
+import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 
 public class WriteRowRequest extends Message {
 
-    public static short TYPE;
+	public static short TYPE;
 
 	private RowData rowData;
 
@@ -22,15 +25,17 @@ public class WriteRowRequest extends Message {
 	public void setRowData(RowData rowData) {
 		this.rowData = rowData;
 	}
-	
+
 	@Override
-	public void execute(final AkibaConnection connection) throws Exception{
+	public void execute(final AkibaConnection connection,
+			final ExecutionContext context) throws Exception {
 		rowData.prepareRow(rowData.getBufferStart());
+		final Store store = ((CServerContext)context).getStore();
+		store.writeRow(connection, rowData);
 	}
 
 	@Override
-	public void read(ByteBuffer payload) throws Exception
-    {
+	public void read(ByteBuffer payload) throws Exception {
 		super.read(payload);
 		if (!payload.hasArray()) {
 			throw new UnsupportedOperationException(
@@ -42,8 +47,7 @@ public class WriteRowRequest extends Message {
 	}
 
 	@Override
-	public void write(ByteBuffer payload) throws Exception
-    {
+	public void write(ByteBuffer payload) throws Exception {
 		if (payload.hasArray() && payload.array() == rowData.getBytes()) {
 			final byte[] bytes = rowData.getBytes();
 			if (rowData.getBufferStart() != payload.position() + 2) {

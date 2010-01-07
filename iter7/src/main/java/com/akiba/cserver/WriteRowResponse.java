@@ -37,6 +37,7 @@ public class WriteRowResponse extends Message {
 	@Override
 	public void write(ByteBuffer payload) throws Exception
     {
+		super.write(payload);
 		payload.putShort((short)resultCode);
 	}
 }

@@ -27,10 +27,10 @@ public class CServerTest extends TestCase {
 	        final AkibaNetworkHandler networkHandler = NetworkHandlerFactory.getHandler("localhost", "8080", null);
 	        final AkibaConnection connection = AkibaConnection.createConnection(networkHandler);
 	        
-	        final TestRequest request = createTestRequest();
+	        final WriteRowRequest request = createWriteRowRequest();
 	        
-	        final TestResponse response = (TestResponse)connection.sendAndReceive(request);
-	        assertEquals(response.getResultCode(), 100);
+	        final WriteRowResponse response = (WriteRowResponse)connection.sendAndReceive(request);
+	        assertEquals(100, response.getResultCode());
 	        networkHandler.disconnectWorker();
 		} catch (Throwable t) {
 			t.printStackTrace();
@@ -39,11 +39,11 @@ public class CServerTest extends TestCase {
 		}
 	}
 	
-	private TestRequest createTestRequest() {
+	private WriteRowRequest createWriteRowRequest() {
         final RowDef rowDef = new RowDef(1234, new FieldDef[]{new FieldDef(FieldType.INT),new FieldDef(FieldType.INT),new FieldDef(FieldType.INT)});
         final RowData rowData = new RowData(new byte[64]);
         rowData.createRow(rowDef, new Object[]{1, 2, 3});
-        final TestRequest request = new TestRequest();
+        final WriteRowRequest request = new WriteRowRequest();
         request.setRowData(rowData);
         return request;
 	}

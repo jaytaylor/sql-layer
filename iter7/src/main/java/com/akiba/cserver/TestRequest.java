@@ -3,6 +3,7 @@ package com.akiba.cserver;
 import java.nio.ByteBuffer;
 
 import com.akiba.message.AkibaConnection;
+import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 
 public class TestRequest extends Message {
@@ -24,7 +25,8 @@ public class TestRequest extends Message {
 	}
 
 	@Override
-	public void execute(final AkibaConnection connection) throws Exception {
+	public void execute(final AkibaConnection connection,
+			final ExecutionContext context) throws Exception {
 		System.out.println("Servicing TestRequest on ");
 		System.out.println(rowData);
 		final TestResponse response = new TestResponse();
