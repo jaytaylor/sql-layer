@@ -16,29 +16,28 @@ public class RowDef {
 	 * Array of FieldDef, one per column
 	 */
 	private final FieldDef[] fieldDefs;
-	
+
 	/**
 	 * Unique, permanent handle for a version of a table definition
 	 */
 	private final int rowDefId;
 
 	/**
-	 * Field(s) that constitute the primary key for this table.  Must
-	 * not be empty; will usually have one element. Multiple elements
-	 * define a compound primary key.
+	 * Field(s) that constitute the primary key for this table. Must not be
+	 * empty; will usually have one element. Multiple elements define a compound
+	 * primary key.
 	 */
 	private int[] pkFields;
-	
+
 	/**
-	 * Parent table. This denotes the table hierarchy within a group.
-	 * Value is zero, meaning there is no parent RowDef, if this
-	 * table is a root table.
+	 * Parent table. This denotes the table hierarchy within a group. Value is
+	 * zero, meaning there is no parent RowDef, if this table is a root table.
 	 */
 	private int parentRowDefId;
-	
+
 	/**
-	 * Field(s) that constitute the foreign key by which this row is joined
-	 * to its parent table.
+	 * Field(s) that constitute the foreign key by which this row is joined to
+	 * its parent table.
 	 */
 	private int[] parentJoinFields;
 
@@ -57,6 +56,15 @@ public class RowDef {
 	 * method to assist in looking up a field's offset and length.
 	 */
 	private final byte[][] varLenFieldMap;
+
+	public static RowDef createRowDef(final int rowDefId,
+			final FieldDef[] fieldDefs, final String tableName,
+			final int pkField) {
+		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
+		rowDef.setTableName(tableName);
+		rowDef.setPkFields(new int[] { pkField });
+		return rowDef;
+	}
 
 	public RowDef(final int rowDefId, final FieldDef[] fieldDefs) {
 		this.rowDefId = rowDefId;
@@ -77,7 +85,7 @@ public class RowDef {
 	public int getRowDefId() {
 		return rowDefId;
 	}
-	
+
 	public int[] getPkFields() {
 		return pkFields;
 	}
@@ -211,7 +219,8 @@ public class RowDef {
 					}
 					int fc1 = fieldCoordinates[byteIndex][mbb1];
 					current = fc1 + (current & 0xFFFFFF);
-					int mbb2 = varLenFieldMap[byteIndex][bitCount1 < 8 ? mbb1 : mbb1 + 256] & 0xFF;
+					int mbb2 = varLenFieldMap[byteIndex][bitCount1 < 8 ? mbb1
+							: mbb1 + 256] & 0xFF;
 					if (mbb2 != 0) {
 						int fc2 = fieldCoordinates[byteIndex][mbb2];
 						previous = current + fc2 - fc1;

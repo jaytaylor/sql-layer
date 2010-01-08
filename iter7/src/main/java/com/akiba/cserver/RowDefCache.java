@@ -25,4 +25,13 @@ public class RowDefCache {
 		// TODO - supply an actual RowDef
 		return new RowDef(rowDefId, new FieldDef[0]);
 	}
+	
+	/**
+	 * Adds a RowDef preemptively to the cache.  This is intended
+	 * primarily to simply unit tests.
+	 * @param rowDef
+	 */
+	public synchronized void putRowDef(final RowDef rowDef) {
+		cache.put(Integer.valueOf(rowDef.getRowDefId()), rowDef);
+	}
 }

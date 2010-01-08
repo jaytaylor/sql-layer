@@ -2,7 +2,6 @@ package com.akiba.cserver.store;
 
 import java.io.StringReader;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 import com.akiba.cserver.FieldDef;
@@ -19,8 +18,6 @@ import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
 public class PersistitStore implements Store {
-
-	private final RowDefCache rowDefCache = new RowDefCache();
 
 	public final static int OK = 1;
 	public final static int END = 2;
@@ -56,8 +53,14 @@ public class PersistitStore implements Store {
 
 	private static ThreadLocal<HashMap<String, Exchange>> exchangeLocal = new ThreadLocal<HashMap<String, Exchange>>();
 
+	private final RowDefCache rowDefCache;
+
 	public static void setDataPath(final String path) {
 		datapath = path;
+	}
+
+	public PersistitStore(final RowDefCache cache) {
+		this.rowDefCache = cache;
 	}
 
 	public synchronized void startUp() throws Exception {

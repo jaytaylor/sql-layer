@@ -28,8 +28,10 @@ public class CServer {
 	private static final Logger LOGGER = Logger.getLogger(CServer.class
 			.getName());
 
-	private final Store store = new PersistitStore();
+	private final RowDefCache rowDefCache = new RowDefCache();
 
+	private final Store store = new PersistitStore(rowDefCache);
+	
 	private volatile boolean stopped = false;
 
 	private List<Thread> threads = new ArrayList<Thread>();
@@ -129,6 +131,12 @@ public class CServer {
 			}
 		}
 	}
+	
+	public RowDefCache getRowDefCache() {
+		return rowDefCache;
+	}
+
+
 
 	/**
 	 * @param args

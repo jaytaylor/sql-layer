@@ -128,6 +128,8 @@ public class RowDefTest extends TestCase {
 
 			for (int data = 0; data < DATA_CASES[def].length; data++) {
 				final RowData rowData = new RowData(new byte[1024]);
+				rowData.reset(2, 1000); // make sure we can handle non-zero
+										// offset
 				rowData.createRow(rowDef, DATA_CASES[def][data]);
 				if (VERBOSE) {
 					System.out.println("From data: "
@@ -151,20 +153,6 @@ public class RowDefTest extends TestCase {
 
 					assertValuesAreEqual(value, fieldDef, rowData, location);
 
-					if (value == null) {
-						assertEquals(0, location);
-					}
-					if (location == 0) {
-						assertNull(value);
-					} else if (fieldDef.isFixedWidth()) {
-						long decodedValue = rowData.getIntegerValue(
-								(int) location, (int) (location >>> 32));
-						assertEquals(((Number) value).longValue(), decodedValue);
-					} else {
-						String decodedValue = new String(rowData.getBytes(),
-								(int) location, (int) (location >>> 32));
-						assertEquals((String) value, decodedValue);
-					}
 				}
 			}
 		}
@@ -207,15 +195,15 @@ public class RowDefTest extends TestCase {
 				switch (fieldDefs[i].getType()) {
 				case U_TINYINT:
 				case TINYINT:
-					value = random.nextInt(256);
+					value = (byte)random.nextInt();
 					break;
 				case U_SMALLINT:
 				case SMALLINT:
-					value = random.nextInt(65536);
+					value = (short)random.nextInt();
 					break;
 				case U_MEDIUMINT:
 				case MEDIUMINT:
-					value = random.nextInt(65536 * 256);
+					value = random.nextInt() & 0xFFFFFF;
 					break;
 				case FLOAT:
 				case U_INT:
@@ -249,13 +237,13 @@ public class RowDefTest extends TestCase {
 			final long location = rowDef.fieldLocation(data, i);
 			assertValuesAreEqual(values[i], fieldDefs[i], data, location);
 		}
-		
+
 		for (int i = 0; i < 100000; i++) {
 			final int field = random.nextInt(fieldDefs.length);
 			final long location = rowDef.fieldLocation(data, field);
-			assertValuesAreEqual(values[field], fieldDefs[field], data, location);
+			assertValuesAreEqual(values[field], fieldDefs[field], data,
+					location);
 		}
-
 
 		long xor = 0;
 		int count = 0;
@@ -264,7 +252,8 @@ public class RowDefTest extends TestCase {
 			for (int k = 0; k < 10000; k++) {
 				for (int i = 0; i < fieldCount; i++) {
 					final long location = rowDef.fieldLocation(data, i);
-					// use the result so that HotSpot doesn't optimize away the call
+					// use the result so that HotSpot doesn't optimize away the
+					// call
 					xor ^= location;
 				}
 				count += fieldDefs.length;
@@ -284,8 +273,9 @@ public class RowDefTest extends TestCase {
 		if (location == 0) {
 			assertNull(value);
 		} else if (fieldDef.isFixedWidth()) {
-			long decodedValue = rowData.getIntegerValue((int) location,
-					(int) (location >>> 32));
+			long decodedValue = Util
+					.getSignedIntegerByWidth(rowData.getBytes(),
+							(int) location, (int) (location >>> 32));
 			assertEquals(((Number) value).longValue(), decodedValue);
 		} else {
 			byte[] decodedBytes = new byte[(int) (location >>> 32)];

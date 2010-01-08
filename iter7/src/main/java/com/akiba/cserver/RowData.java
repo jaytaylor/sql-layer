@@ -169,26 +169,11 @@ public class RowData {
 	}
 
 	public long getIntegerValue(final int offset, final int width) {
-		final int index = offset + rowStart;
-		if (index < rowStart || index + width >= rowEnd) {
-			throw new IllegalArgumentException("Bad location: " + index + ":"
+		if (offset < rowStart || offset + width >= rowEnd) {
+			throw new IllegalArgumentException("Bad location: " + offset + ":"
 					+ width);
 		}
-		switch (width) {
-		case 0:
-			return 0;
-		case 1:
-			return bytes[index] & 0xFF;
-		case 2:
-			return Util.getChar(bytes, index);
-		case 3:
-			return Util.getMediumInt(bytes, index);
-		case 4:
-			return Util.getInt(bytes, index);
-		case 8:
-			return Util.getLong(bytes, index);
-		}
-		throw new IllegalArgumentException("Bad width: " + width);
+		return Util.getSignedIntegerByWidth(bytes, offset, width);
 	}
 
 	/**
