@@ -45,6 +45,11 @@ public class RowDef {
 	 * Schema's name for this table.
 	 */
 	private String tableName;
+
+	/**
+	 * Cached name of the primary key index tree
+	 */
+	private String pkTreeName;
 	/**
 	 * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
 	 * method to assist in looking up a field's offset and length.
@@ -59,10 +64,24 @@ public class RowDef {
 
 	public static RowDef createRowDef(final int rowDefId,
 			final FieldDef[] fieldDefs, final String tableName,
-			final int pkField) {
+			final int[] pkFields) {
 		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
 		rowDef.setTableName(tableName);
-		rowDef.setPkFields(new int[] { pkField });
+		rowDef.setPkFields(pkFields);
+		rowDef.setParentRowDefId(0);
+		rowDef.setParentJoinFields(new int[0]);
+		return rowDef;
+	}
+
+	public static RowDef createRowDef(final int rowDefId,
+			final FieldDef[] fieldDefs, final String tableName,
+			final int[] pkFields, final int parentRowDefId,
+			final int[] parentJoinFields) {
+		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
+		rowDef.setTableName(tableName);
+		rowDef.setPkFields(pkFields);
+		rowDef.setParentRowDefId(parentRowDefId);
+		rowDef.setParentJoinFields(parentJoinFields);
 		return rowDef;
 	}
 
@@ -114,12 +133,17 @@ public class RowDef {
 		return fieldDefs;
 	}
 
+	public String getPkTreeName() {
+		return pkTreeName;
+	}
+
 	public String getTableName() {
 		return tableName;
 	}
 
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
+		this.pkTreeName = tableName + "_pk";
 	}
 
 	/**

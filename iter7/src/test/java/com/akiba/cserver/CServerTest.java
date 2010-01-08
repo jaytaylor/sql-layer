@@ -16,7 +16,7 @@ public class CServerTest extends TestCase {
 	private final static RowDef ROW_DEF = RowDef.createRowDef(1234,
 			new FieldDef[] { new FieldDef(FieldType.INT),
 					new FieldDef(FieldType.INT), new FieldDef(FieldType.INT) },
-			"test", 0);
+			"test", new int[]{0});
 
 	@Override
 	public void setUp() throws Exception {

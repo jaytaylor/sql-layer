@@ -16,7 +16,7 @@ public class Util {
 		case 0:
 			return 0;
 		case 1:
-			return getByte(bytes, index);
+			return bytes[index];
 		case 2:
 			return getShort(bytes, index);
 		case 3:

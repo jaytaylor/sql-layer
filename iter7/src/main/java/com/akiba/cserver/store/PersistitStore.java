@@ -4,6 +4,7 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Properties;
 
+import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.FieldDef;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
@@ -16,13 +17,9 @@ import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 
-public class PersistitStore implements Store {
-
-	public final static int OK = 1;
-	public final static int END = 2;
-	public final static int ERR = 100;
-	public final static int NON_UNIQUE = 101;
+public class PersistitStore implements Store, CServerConstants {
 
 	private final static String N = Persistit.NEW_LINE;
 
@@ -36,7 +33,7 @@ public class PersistitStore implements Store {
 			+ N
 			+ "verbose = true"
 			+ N
-			+ "buffer.count.8192 = 32K"
+			+ "buffer.count.8192 = 4K"
 			+ N
 			+ "volume.1 = ${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,extensionSize:1M,maximumSize:10G"
 			+ N
@@ -47,11 +44,11 @@ public class PersistitStore implements Store {
 
 	private static String datapath;
 
-	private static Persistit db;
+	private long startTime;
 
-	private static long startTime;
+	private Persistit db;
 
-	private static ThreadLocal<HashMap<String, Exchange>> exchangeLocal = new ThreadLocal<HashMap<String, Exchange>>();
+	private ThreadLocal<HashMap<String, Exchange>> exchangeLocal = new ThreadLocal<HashMap<String, Exchange>>();
 
 	private final RowDefCache rowDefCache;
 
@@ -96,6 +93,10 @@ public class PersistitStore implements Store {
 		}
 	}
 
+	public Persistit getDb() {
+		return db;
+	}
+
 	// --------------------- Store interface --------------------
 
 	public void writeRow(final AkibaConnection connection, final RowData rowData)
@@ -107,19 +108,22 @@ public class PersistitStore implements Store {
 
 	// ----------------------------------------------------------
 
-	private int writeRow(final RowData rowData) {
+	int writeRow(final RowData rowData) {
 		final int rowDefId = rowData.getRowDefId();
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-		final String treeName = rowDef.getTableName();
 		Transaction transaction = null;
+		boolean done = false;
 		try {
+			final RowDef rootRowDef = rootRowDef(rowDef);
+			final String treeName = rootRowDef.getTableName();
 			final Exchange exchange = getExchange(treeName);
 			transaction = db.getTransaction();
 			transaction.begin();
 			constructHKey(exchange.getKey(), rowDef, rowData);
 			exchange.fetch();
 			if (exchange.getValue().isDefined()) {
-				return NON_UNIQUE;
+				throw new StoreException(NON_UNIQUE, "Non-unique key "
+						+ exchange.getKey());
 			}
 			final int start = rowData.getInnerStart();
 			final int size = rowData.getInnerSize();
@@ -132,13 +136,17 @@ public class PersistitStore implements Store {
 				//
 				// For child rows we need to insert a pk index row
 				//
-				final Exchange pkExchange = getExchange(pkTreeName(rowDef));
-				invertKey(exchange.getKey(), pkExchange.getKey());
+				final Exchange pkExchange = getExchange(rowDef.getPkTreeName());
+				copyAndRotate(exchange.getKey(), pkExchange.getKey(), -1);
 				pkExchange.getValue().clear();
 				pkExchange.store();
 			}
 			transaction.commit();
+			done = true;
 			return OK;
+
+		} catch (StoreException e) {
+			return e.getResult();
 		} catch (Throwable t) {
 			t.printStackTrace();
 			return ERR;
@@ -146,9 +154,30 @@ public class PersistitStore implements Store {
 
 		finally {
 			if (transaction != null) {
+				if (!done) {
+					try {
+						transaction.rollback();
+					} catch (RollbackException e) {
+						// ignore so we can return the result code.
+					} catch (PersistitException e) {
+						e.printStackTrace();
+					}
+				}
 				transaction.end();
 			}
 		}
+	}
+
+	private RowDef rootRowDef(final RowDef rowDef) throws StoreException {
+		RowDef r = rowDef;
+		while (r.getParentRowDefId() != 0) {
+			r = rowDefCache.getRowDef(r.getParentRowDefId());
+			if (r == null || r == rowDef) {
+				throw new StoreException(MISSING_OR_CORRUPT_ROW_DEF,
+						"Parent chain broken for " + rowDef);
+			}
+		}
+		return r;
 	}
 
 	private Exchange getExchange(final String treeName)
@@ -167,7 +196,8 @@ public class PersistitStore implements Store {
 	}
 
 	private void constructHKey(final Key key, final RowDef rowDef,
-			final RowData rowData) throws PersistitException {
+			final RowData rowData) throws PersistitException, StoreException {
+		key.clear();
 		//
 		// Constructing an h-key for a child table. We look at the
 		// parent RowDef. If the parent is a root table, then the
@@ -182,19 +212,25 @@ public class PersistitStore implements Store {
 					.getParentRowDefId());
 			if (parentRowDef.getParentRowDefId() == 0) {
 				//
-				// No grandparent
+				// No grandparent.
 				//
 				appendKeyFields(key, rowDef, rowData, rowDef
 						.getParentJoinFields());
 			} else {
 				//
-				// Yes grandparent. We need to fetch the parent row and
-				// recursively
-				// look from there.
+				// Yes grandparent. Use pkIndex lookup.
 				//
-				final RowData parentRow = lookupRow(parentRowDef, rowDef,
-						rowData);
-				constructHKey(key, parentRowDef, parentRow);
+				final Exchange indexExchange = getExchange(parentRowDef
+						.getPkTreeName());
+				final Key indexKey = indexExchange.getKey();
+				indexKey.clear();
+				appendKeyFields(indexKey, rowDef, rowData, rowDef
+						.getParentJoinFields());
+				if (!indexExchange.next(true)) {
+					throw new StoreException(FOREIGN_KEY_MISSING, indexKey
+							.toString());
+				}
+				copyAndRotate(indexKey, key, 1);
 			}
 		} else {
 			key.clear();
@@ -205,30 +241,13 @@ public class PersistitStore implements Store {
 		appendKeyFields(key, rowDef, rowData, rowDef.getPkFields());
 	}
 
-	private RowData lookupRow(final RowDef rowDef, final RowDef childRowDef,
-			final RowData childRowData) throws PersistitException {
-		if (rowDef.getParentRowDefId() == 0) {
-			throw new IllegalArgumentException("RowDef must have a parent");
-		}
-		final String treeName = pkTreeName(rowDef);
-		final Exchange exchange = getExchange(treeName);
-		final Key key = exchange.getKey();
-		key.clear();
-		appendKeyFields(key, childRowDef, childRowData, childRowDef
-				.getParentJoinFields());
-		exchange.traverse(Key.GT, true);
-
-		// TODO - unfinished...
-
-		return null;
-	}
-
 	private void appendKeyFields(final Key key, final RowDef rowDef,
 			final RowData rowData, final int[] fields)
 			throws PersistitException {
 		for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
 			final FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
-			final long location = rowDef.fieldLocation(rowData, fieldIndex);
+			final long location = rowDef.fieldLocation(rowData,
+					fields[fieldIndex]);
 			appendKeyField(key, fieldDef, rowData, location);
 		}
 	}
@@ -251,10 +270,6 @@ public class PersistitStore implements Store {
 		}
 	}
 
-	private String pkTreeName(final RowDef rowDef) {
-		return rowDef.getTableName() + "_pk";
-	}
-
 	/**
 	 * Copies key segments from one key to another. Places the last segment
 	 * first and the shifts the remaining segments to the right.
@@ -262,14 +277,14 @@ public class PersistitStore implements Store {
 	 * @param fromKey
 	 * @param toKey
 	 */
-	private void invertKey(final Key fromKey, final Key toKey) {
+	void copyAndRotate(final Key fromKey, final Key toKey, final int at) {
 		final byte[] from = fromKey.getEncodedBytes();
 		final byte[] to = toKey.getEncodedBytes();
 		int size = fromKey.getEncodedSize();
-		int k = 0;
-		while (k < size && from[k++] != 0) {
-		}
+		fromKey.indexTo(at);
+		int k = fromKey.getIndex();
 		System.arraycopy(from, k, to, 0, size - k);
 		System.arraycopy(from, 0, to, size - k, k);
+		toKey.setEncodedSize(size);
 	}
 }

@@ -173,7 +173,7 @@ public class RowData {
 			throw new IllegalArgumentException("Bad location: " + offset + ":"
 					+ width);
 		}
-		return Util.getSignedIntegerByWidth(bytes, offset, width);
+		return Util.getUnsignedIntegerByWidth(bytes, offset, width);
 	}
 
 	/**
@@ -183,7 +183,7 @@ public class RowData {
 	 * @param rowDef
 	 * @param values
 	 */
-	void createRow(final RowDef rowDef, final Object[] values) {
+	public void createRow(final RowDef rowDef, final Object[] values) {
 		final int fieldCount = rowDef.getFieldCount();
 		if (values.length > rowDef.getFieldCount()) {
 			throw new IllegalArgumentException("Too many values.");

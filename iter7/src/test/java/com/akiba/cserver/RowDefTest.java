@@ -159,11 +159,11 @@ public class RowDefTest extends TestCase {
 	}
 
 	public void testComputeFieldLocations2() throws Exception {
-		final int fieldCount = 25;
-		final Random random = new Random(1);
-		final byte[] randomBytes = new byte[100000];
-		for (int i = 0; i < randomBytes.length; i++) {
-			randomBytes[i] = (byte) ((i % 26) + 97);
+		final int fieldCount = 37;
+		final Random random = new Random();
+		final byte[] stringBytes = new byte[100000];
+		for (int i = 0; i < stringBytes.length; i++) {
+			stringBytes[i] = (byte) ((i % 26) + 97);
 		}
 		final FieldDef[] fieldDefs = new FieldDef[fieldCount];
 		final FieldType[] allTypes = FieldType.values();
@@ -221,7 +221,7 @@ public class RowDefTest extends TestCase {
 				case CHAR:
 					int size = random.nextInt(fieldDefs[i].getMaxWidth());
 					value = new byte[size];
-					System.arraycopy(randomBytes, random.nextInt(20000), value,
+					System.arraycopy(stringBytes, random.nextInt(20000), value,
 							0, size);
 				default:
 				}
