@@ -24,7 +24,6 @@
     <orderEntry type="library" exported="" name="Maven: org.jboss.netty:netty:3.2.0.ALPHA1" level="project" />
     <orderEntry type="module" module-name="akiba-message" exported="" />
     <orderEntry type="library" exported="" name="Maven: mysql:mysql-connector-java:5.1.10" level="project" />
-    <orderEntry type="module" module-name="akiba-ais" exported="" scope="RUNTIME" />
   </component>
 </module>
 
