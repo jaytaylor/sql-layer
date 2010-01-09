@@ -34,7 +34,7 @@
 			<artifactId>akiba-message</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-		
+
 	</dependencies>
 
 	<build>
@@ -72,7 +72,19 @@
 					</includes>
 				</configuration>
 			</plugin>
-
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<archive>
+						<manifest>
+							<mainClass>com.akiba.cserver.CServer</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
 		</plugins>
 
 	</build>

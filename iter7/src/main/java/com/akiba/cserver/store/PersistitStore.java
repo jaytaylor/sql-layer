@@ -45,7 +45,7 @@ public class PersistitStore implements Store, CServerConstants {
 		PERSISTIT_PROPERTIES.put("pwdelete","true");
 		PERSISTIT_PROPERTIES.put("pwjcount","2");
 		PERSISTIT_PROPERTIES.put("jmx","false");
-		PERSISTIT_PROPERTIES.put("showgui", "true");
+		PERSISTIT_PROPERTIES.put("showgui", "false");
 	}
 
 	private static String datapath;
