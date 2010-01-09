@@ -1,7 +1,6 @@
 package com.akiba.cserver.store;
 
 import java.io.File;
-import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -28,8 +27,6 @@ import com.persistit.exception.RollbackException;
 
 public class PersistitStore implements Store, CServerConstants {
 
-	private final static String N = Persistit.NEW_LINE;
-	
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 	
 	static {
@@ -45,7 +42,7 @@ public class PersistitStore implements Store, CServerConstants {
 		PERSISTIT_PROPERTIES.put("pwdelete","true");
 		PERSISTIT_PROPERTIES.put("pwjcount","2");
 		PERSISTIT_PROPERTIES.put("jmx","false");
-		PERSISTIT_PROPERTIES.put("showgui", "false");
+		PERSISTIT_PROPERTIES.put("showgui", "true");
 	}
 
 	private static String datapath;
@@ -127,6 +124,7 @@ public class PersistitStore implements Store, CServerConstants {
 		exchange.clear();
 		final Source source = new PersistitSource(exchange);
 		ais = new Reader(source).load();
+		rowDefCache.setAIS(ais);
 	}
 
 	// --------------------- Store interface --------------------
