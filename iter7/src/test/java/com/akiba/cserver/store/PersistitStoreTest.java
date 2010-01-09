@@ -13,6 +13,7 @@ import com.akiba.cserver.RowDefCache;
 import com.akiba.cserver.Util;
 import com.persistit.Key;
 import com.persistit.Persistit;
+import com.persistit.StreamLoader;
 
 public class PersistitStoreTest extends TestCase implements CServerConstants {
 
@@ -54,6 +55,7 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 		Util.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		store.startUp();
+		store.loadAIS(new File("src/test/resources/ais.sav"));
 	}
 
 	@Override
