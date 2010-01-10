@@ -1,5 +1,6 @@
 package com.akiba.cserver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,9 @@ import com.akiba.ais.model.JoinColumn;
 import com.akiba.ais.model.UserTable;
 
 /**
- * Caches RowDef instances.
+ * Caches RowDef instances. In this incarnation, this class also constructs
+ * RowDef objects from the AkibaInformationSchema. The translation is done in
+ * the {@link #setAIS(AkibaInformationSchema)} method.
  * 
  * @author peter
  */
@@ -21,8 +24,12 @@ public class RowDefCache {
 
 	private final Map<Integer, RowDef> cache = new HashMap<Integer, RowDef>();
 
-	private AkibaInformationSchema ais;
-
+	/**
+	 * Look up and return a RowDef for a supplied rowDefId value.
+	 * 
+	 * @param rowDefId
+	 * @return the corresponding RowDef
+	 */
 	public synchronized RowDef getRowDef(final int rowDefId) {
 		RowDef rowDef = cache.get(Integer.valueOf(rowDefId));
 		if (rowDef == null) {
@@ -32,9 +39,14 @@ public class RowDefCache {
 		return rowDef;
 	}
 
-	public void setAIS(final AkibaInformationSchema ais) {
-		this.ais = ais;
-		
+	/**
+	 * Receive an instance of the AkibaInformationSchema, crack it and produce
+	 * the RowDef instances it defines.
+	 * 
+	 * @param ais
+	 */
+	public synchronized void setAIS(final AkibaInformationSchema ais) {
+		cache.clear();
 		for (final UserTable table : ais.getUserTables().values()) {
 
 			// rowDefId
@@ -49,23 +61,6 @@ public class RowDefCache {
 				final int fieldIndex = column.getPosition();
 				fieldDefs[fieldIndex] = type.isFixedWidth() ? new FieldDef(type)
 						: new FieldDef(type, ((Long) typeParam).intValue());
-			}
-			
-			// pkFields
-			int[] pkFields = null;
-			for (final Index index : table.getIndexes()) {
-				if (!index.isUnique()) {
-					continue;
-				}
-				if (pkFields != null) {
-					throw new IllegalStateException("Can't handle two PK indexes on " + table.getTableName());
-				}
-				final List<IndexColumn> indexColumns = index.getColumns();
-				pkFields = new int[indexColumns.size()];
-				int pkField = 0;
-				for (final IndexColumn indexColumn : indexColumns) {
-					pkFields[pkField++] = indexColumn.getPosition();
-				}
 			}
 
 			// parentRowDef
@@ -89,8 +84,41 @@ public class RowDefCache {
 				parentRowDef = 0;
 				parentJoinFields = new int[0];
 			}
-			
-			
+
+			// pkFields
+			int[] pkFields = null;
+			for (final Index index : table.getIndexes()) {
+				if (!index.isUnique()) {
+					continue;
+				}
+				if (pkFields != null) {
+					throw new IllegalStateException(
+							"Can't handle two PK indexes on "
+									+ table.getTableName());
+				}
+				final List<IndexColumn> indexColumns = index.getColumns();
+				final List<Integer> pkFieldList = new ArrayList<Integer>(1);
+				for (final IndexColumn indexColumn : indexColumns) {
+					final int position = indexColumn.getPosition();
+					boolean isParentJoin = false;
+					for (int i = 0; i < parentJoinFields.length; i++) {
+						if (position == parentJoinFields[i]) {
+							isParentJoin = true;
+							break;
+						}
+					}
+					if (!isParentJoin) {
+						pkFieldList.add(position);
+					}
+				}
+				
+				int pkField = 0;
+				pkFields = new int[pkFieldList.size()];
+				for (final Integer position : pkFieldList) {
+					pkFields[pkField++] = position;
+				}
+			}
+
 			final RowDef rowDef = RowDef.createRowDef(rowDefId, fieldDefs,
 					table.getTableName(), pkFields, parentRowDef,
 					parentJoinFields);
@@ -99,7 +127,9 @@ public class RowDefCache {
 	}
 
 	RowDef lookUpRowDef(final int rowDefId) {
-		return new RowDef(rowDefId, new FieldDef[0]);
+		throw new UnsupportedOperationException(
+				"Current version is unable to look up RowDef instances"
+						+ " that were not supplied by the AIS");
 	}
 
 	/**
