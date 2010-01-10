@@ -13,7 +13,6 @@ import com.akiba.cserver.RowDefCache;
 import com.akiba.cserver.Util;
 import com.persistit.Key;
 import com.persistit.Persistit;
-import com.persistit.StreamLoader;
 
 public class PersistitStoreTest extends TestCase implements CServerConstants {
 
@@ -55,7 +54,6 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 		Util.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		store.startUp();
-		store.loadAIS(new File("src/test/resources/ais.sav"));
 	}
 
 	@Override
@@ -83,14 +81,13 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 		for (int c = 0; ++c <= 10;) {
 			int cid = c;
 			rowC.reset(0, 64);
-			rowC.createRow(ROW_DEF_C, new Object[] {cid, "Customer_" + cid });
+			rowC.createRow(ROW_DEF_C, new Object[] { cid, "Customer_" + cid });
 			assertEquals(OK, store.writeRow(rowC));
 			for (int o = 0; ++o <= 10;) {
 				int oid = cid * 1000 + o;
 				rowO.reset(0, 64);
-				rowO
-						.createRow(ROW_DEF_O, new Object[] { oid, cid,
-								"Order_" + oid });
+				rowO.createRow(ROW_DEF_O, new Object[] { oid, cid,
+						"Order_" + oid });
 				assertEquals(OK, store.writeRow(rowO));
 				for (int i = 0; ++i <= 10;) {
 					int iid = oid * 1000 + i;

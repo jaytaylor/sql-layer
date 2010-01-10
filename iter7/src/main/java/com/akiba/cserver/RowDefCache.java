@@ -1,10 +1,13 @@
 package com.akiba.cserver;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.ais.model.Column;
+import com.akiba.ais.model.Index;
+import com.akiba.ais.model.IndexColumn;
 import com.akiba.ais.model.Join;
 import com.akiba.ais.model.JoinColumn;
 import com.akiba.ais.model.UserTable;
@@ -31,6 +34,7 @@ public class RowDefCache {
 
 	public void setAIS(final AkibaInformationSchema ais) {
 		this.ais = ais;
+		
 		for (final UserTable table : ais.getUserTables().values()) {
 
 			// rowDefId
@@ -38,18 +42,31 @@ public class RowDefCache {
 
 			// FieldDef[]
 			final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
-			int fieldIndex = 0;
 			for (final Column column : table.getColumns()) {
 				final String typeName = column.getTypeName().toUpperCase();
 				final Object typeParam = column.getTypeParameter1();
 				final FieldType type = FieldType.valueOf(typeName);
+				final int fieldIndex = column.getPosition();
 				fieldDefs[fieldIndex] = type.isFixedWidth() ? new FieldDef(type)
 						: new FieldDef(type, ((Long) typeParam).intValue());
-				fieldIndex++;
 			}
 			
-			// pkFields -- TODO  NEED HELP
-			int[] pkfields = new int[]{0};
+			// pkFields
+			int[] pkFields = null;
+			for (final Index index : table.getIndexes()) {
+				if (!index.isUnique()) {
+					continue;
+				}
+				if (pkFields != null) {
+					throw new IllegalStateException("Can't handle two PK indexes on " + table.getTableName());
+				}
+				final List<IndexColumn> indexColumns = index.getColumns();
+				pkFields = new int[indexColumns.size()];
+				int pkField = 0;
+				for (final IndexColumn indexColumn : indexColumns) {
+					pkFields[pkField++] = indexColumn.getPosition();
+				}
+			}
 
 			// parentRowDef
 			int parentRowDef;
@@ -75,7 +92,7 @@ public class RowDefCache {
 			
 			
 			final RowDef rowDef = RowDef.createRowDef(rowDefId, fieldDefs,
-					table.getTableName(), pkfields, parentRowDef,
+					table.getTableName(), pkFields, parentRowDef,
 					parentJoinFields);
 			putRowDef(rowDef);
 		}
