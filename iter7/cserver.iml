@@ -6,6 +6,7 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/resources" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -24,6 +25,7 @@
     <orderEntry type="library" exported="" name="Maven: org.jboss.netty:netty:3.2.0.ALPHA1" level="project" />
     <orderEntry type="module" module-name="akiba-message" exported="" />
     <orderEntry type="library" exported="" name="Maven: mysql:mysql-connector-java:5.1.10" level="project" />
+    <orderEntry type="module" module-name="akiba-ais" exported="" />
   </component>
 </module>
 
