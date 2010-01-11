@@ -99,14 +99,14 @@ public class CServer {
 	}
 
 	public static class CServerContext implements ExecutionContext {
-		private final Store store;
+		private final CServer cserver;
 
 		public Store getStore() {
-			return store;
+			return cserver.store;
 		}
 
-		private CServerContext(final Store store) {
-			this.store = store;
+		private CServerContext(final CServer cserver) {
+			this.cserver = cserver;
 		}
 
 	}
@@ -121,7 +121,7 @@ public class CServer {
 
 		private final AkibaConnection connection;
 
-		private final ExecutionContext context = new CServerContext(store);
+		private final ExecutionContext context = new CServerContext(CServer.this);
 
 		private int requestCounter;
 
