@@ -29,8 +29,7 @@ public class WriteRowRequest extends Message {
 	@Override
 	public void execute(final AkibaConnection connection,
 			final ExecutionContext context) throws Exception {
-		rowData.prepareRow(rowData.getBufferStart());
-		final Store store = ((CServerContext)context).getStore();
+		final Store store = ((CServerContext) context).getStore();
 		store.writeRow(connection, rowData);
 	}
 
@@ -44,6 +43,7 @@ public class WriteRowRequest extends Message {
 		byte[] bytes = payload.array();
 		rowData = new RowData(bytes, payload.position(), payload.limit()
 				- payload.position());
+		rowData.prepareRow(rowData.getBufferStart());
 	}
 
 	@Override
@@ -63,5 +63,13 @@ public class WriteRowRequest extends Message {
 			payload.put(rowData.getBytes(), rowData.getBufferStart(), rowData
 					.getBufferLength());
 		}
+	}
+
+	@Override
+	public String toString() {
+		return String.format("WriteRowMessage bytes %d-%d: \n%s", rowData
+				.getRowStart(), rowData.getRowEnd(), Util.dump(rowData
+				.getBytes(), rowData.getRowStart(), rowData.getRowEnd()
+				- rowData.getRowStart()));
 	}
 }
