@@ -33,12 +33,11 @@ public class CServer {
 			.getName());
 
 	private static final String[] USAGE = {
-			"java -jar cserver.jar DB_HOST DB_USERNAME DB_PASSWORD DB_NAME NET_HOST NET_PORT",
+			"java -jar cserver.jar DB_HOST DB_USERNAME DB_PASSWORD DB_NAME",
 			"    DB_HOST: Host running database containing AIS",
 			"    DB_USERNAME: Database username",
 			"    DB_PASSWORD: Database password",
-			"    NET_HOST: Host to receive AIS",
-			"    NET_POST: Port to receive AIS" };
+			"    DB_NAME: AIS dababase name", };
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 
@@ -99,14 +98,14 @@ public class CServer {
 	}
 
 	public static class CServerContext implements ExecutionContext {
-		private final CServer cserver;
+		private final Store store;
 
 		public Store getStore() {
-			return cserver.store;
+			return store;
 		}
 
-		private CServerContext(final CServer cserver) {
-			this.cserver = cserver;
+		private CServerContext(final Store store) {
+			this.store = store;
 		}
 
 	}
@@ -121,7 +120,7 @@ public class CServer {
 
 		private final AkibaConnection connection;
 
-		private final ExecutionContext context = new CServerContext(CServer.this);
+		private final ExecutionContext context = new CServerContext(store);
 
 		private int requestCounter;
 

@@ -1,5 +1,6 @@
 package com.akiba.cserver;
 
+
 /**
  * Represent one or more rows of table data. The backing store is a byte array
  * supplied in the constructor. The {@link #RowData(byte[], int, int)}
@@ -28,25 +29,27 @@ package com.akiba.cserver;
  */
 public class RowData {
 
-	private final static int O_LENGTH_A = 0;
+	public final static int O_LENGTH_A = 0;
 
-	private final static int O_SIGNATURE_A = 4;
+	public final static int O_SIGNATURE_A = 4;
 
-	private final static int O_FIELD_COUNT = 6;
+	public final static int O_FIELD_COUNT = 6;
 
-	private final static int O_ROW_DEF_ID = 8;
+	public final static int O_ROW_DEF_ID = 8;
 
-	private final static int O_NULL_MAP = 12;
+	public final static int O_NULL_MAP = 12;
 
-	private final static int O_SIGNATURE_B = -6;
+	public final static int O_SIGNATURE_B = -6;
 
-	private final static int O_LENGTH_B = -4;
+	public final static int O_LENGTH_B = -4;
 
-	private final static int MINIMUM_RECORD_LENGTH = 18;
+	public final static int MINIMUM_RECORD_LENGTH = 18;
 
-	private final static char SIGNATURE_A = (char) ('A' + ('B' << 8));
+	public final static char SIGNATURE_A = (char) ('A' + ('B' << 8));
 
-	private final static char SIGNATURE_B = (char) ('B' + ('A' << 8));
+	public final static char SIGNATURE_B = (char) ('B' + ('A' << 8));
+	
+	public final static int ENVELOPE_SIZE = 12;
 
 	private byte[] bytes;
 
@@ -290,5 +293,45 @@ public class RowData {
 	public String toString() {
 		return Util.dump(bytes, 0, bytes.length);
 	}
-
+	
+	public String toString(final RowDefCache cache) {
+		final StringBuilder sb = new StringBuilder();
+		final RowDef rowDef = cache != null ? cache.getRowDef(getRowDefId()) : null;
+		if (rowDef == null) {
+			sb.append("RowData?(rowDefId=");
+			sb.append(getRowDefId());
+			sb.append(": ");
+			Util.hex(sb, bytes, rowStart, rowEnd - rowStart);
+		} else {
+			sb.append(rowDef.getTableName());
+			for (int i = 0; i < getFieldCount(); i++) {
+				final long location = rowDef.fieldLocation(this, i);
+				sb.append(i == 0 ? "(" : ",");
+				switch (rowDef.getFieldDef(i).getType()) {
+				case TINYINT:
+				case SMALLINT:
+				case MEDIUMINT:
+				case INT:
+				case BIGINT:
+					sb.append(getIntegerValue((int) location,
+							(int) (location >>> 32)));
+					break;
+				case VARCHAR:
+					sb.append("\"");
+					int start = (int) location;
+					int size = (int) (location >>> 32);
+					for (int j = 0; j < size; j++) {
+						char c = (char) (bytes[j + start] & 0xFF);
+						if (c == '\"') {
+							sb.append('\\');
+						}
+						sb.append(c);
+					}
+					sb.append("\"");
+				}
+			}
+			sb.append(")");
+		}
+		return sb.toString();
+	}
 }

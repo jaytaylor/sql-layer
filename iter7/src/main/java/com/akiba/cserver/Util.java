@@ -284,6 +284,14 @@ public class Util {
 		}
 		return sb;
 	}
+	
+	public static StringBuilder hex(StringBuilder sb, byte[] bytes, int start, int length) {
+		for (int i = start; i < start + length; i++) {
+			sb.append(HEX_DIGITS[(bytes[i] & 0xF0) >>> 4]);
+			sb.append(HEX_DIGITS[(bytes[i] & 0xF0)]);
+		}
+		return sb;
+	}
 
 	public static void printRuntimeInfo() {
 		System.out.println();

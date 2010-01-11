@@ -13,6 +13,7 @@ import com.akiba.cserver.FieldDef;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
+import com.akiba.cserver.Util;
 import com.akiba.cserver.WriteRowResponse;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.Message;
@@ -22,25 +23,33 @@ import com.persistit.Persistit;
 import com.persistit.StreamLoader;
 import com.persistit.Transaction;
 import com.persistit.Value;
+import com.persistit.Management.DisplayFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 
 public class PersistitStore implements Store, CServerConstants {
 
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
-	
+
 	static {
 		PERSISTIT_PROPERTIES.put("datapath", ".");
 		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
-		PERSISTIT_PROPERTIES.put("logfile","${logpath}/persistit_${timestamp}.log");
-		PERSISTIT_PROPERTIES.put("verbose","true");
-		PERSISTIT_PROPERTIES.put("buffer.count.8192","4K");
-		PERSISTIT_PROPERTIES.put("volume.1","${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,extensionSize:1M,maximumSize:10G");
-		PERSISTIT_PROPERTIES.put("volume.2","${datapath}/aktest.v01,create,pageSize:8k,initialSize:5M,extensionSize:5M,maximumSize:100G");
-		PERSISTIT_PROPERTIES.put("pwjpath","${datapath}/persistit.pwj");
-		PERSISTIT_PROPERTIES.put("pwjsize","8M");
-		PERSISTIT_PROPERTIES.put("pwdelete","true");
-		PERSISTIT_PROPERTIES.put("pwjcount","2");
+		PERSISTIT_PROPERTIES.put("logfile",
+				"${logpath}/persistit_${timestamp}.log");
+		PERSISTIT_PROPERTIES.put("verbose", "true");
+		PERSISTIT_PROPERTIES.put("buffer.count.8192", "4K");
+		PERSISTIT_PROPERTIES
+				.put(
+						"volume.1",
+						"${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,extensionSize:1M,maximumSize:10G");
+		PERSISTIT_PROPERTIES
+				.put(
+						"volume.2",
+						"${datapath}/aktest.v01,create,pageSize:8k,initialSize:5M,extensionSize:5M,maximumSize:100G");
+		PERSISTIT_PROPERTIES.put("pwjpath", "${datapath}/persistit.pwj");
+		PERSISTIT_PROPERTIES.put("pwjsize", "8M");
+		PERSISTIT_PROPERTIES.put("pwdelete", "true");
+		PERSISTIT_PROPERTIES.put("pwjcount", "2");
 	}
 
 	private static String datapath;
@@ -52,7 +61,7 @@ public class PersistitStore implements Store, CServerConstants {
 	private ThreadLocal<HashMap<String, Exchange>> exchangeLocal = new ThreadLocal<HashMap<String, Exchange>>();
 
 	private final RowDefCache rowDefCache;
-	
+
 	private AkibaInformationSchema ais;
 
 	public static void setDataPath(final String path) {
@@ -77,6 +86,7 @@ public class PersistitStore implements Store, CServerConstants {
 					+ (System.currentTimeMillis() - t) + "ms)");
 			System.err.flush();
 			startTime = System.currentTimeMillis();
+			db.getManagement().setDisplayFilter(new RowDataDisplayFilter(db.getManagement().getDisplayFilter()));
 		}
 	}
 
@@ -314,5 +324,41 @@ public class PersistitStore implements Store, CServerConstants {
 		System.arraycopy(from, k, to, 0, size - k);
 		System.arraycopy(from, 0, to, size - k, k);
 		toKey.setEncodedSize(size);
+	}
+
+	private class RowDataDisplayFilter implements DisplayFilter {
+		private DisplayFilter defaultFilter;
+
+		public RowDataDisplayFilter(final DisplayFilter filter) {
+			this.defaultFilter = filter;
+		}
+		public String toKeyDisplayString(final Exchange exchange) {
+			return defaultFilter.toKeyDisplayString(exchange);
+		}
+		
+		public String toValueDisplayString(final Exchange exchange) {
+			if (exchange.getTree().getVolume().getPathName().contains("aktest")
+					&& !exchange.getTree().getName().contains("_")) {
+				final Value value = exchange.getValue();
+				
+				
+				
+				
+				final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
+				final byte[] bytes = new byte[size];
+				Util.putInt(bytes, RowData.O_LENGTH_A, size);
+				Util.putChar(bytes, RowData.O_SIGNATURE_A,
+						RowData.SIGNATURE_A);
+				System.arraycopy(value.getEncodedBytes(), 0, bytes, RowData.O_FIELD_COUNT, value.getEncodedSize());
+				Util.putChar(bytes, size + RowData.O_SIGNATURE_B,
+						RowData.SIGNATURE_B);
+				Util.putInt(bytes, size + RowData.O_LENGTH_B, size);
+				final RowData rowData = new RowData(bytes);
+				rowData.prepareRow(0);
+				return rowData.toString(rowDefCache);
+			} else {
+				return defaultFilter.toValueDisplayString(exchange);
+			}
+		}
 	}
 }
