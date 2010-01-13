@@ -32,7 +32,7 @@ public class PersistitStore implements Store, CServerConstants {
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
 	static {
-		PERSISTIT_PROPERTIES.put("datapath", ".");
+		PERSISTIT_PROPERTIES.put("datapath", "/tmp/data");
 		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
@@ -341,9 +341,6 @@ public class PersistitStore implements Store, CServerConstants {
 					&& !exchange.getTree().getName().contains("_")) {
 				final Value value = exchange.getValue();
 				
-				
-				
-				
 				final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
 				final byte[] bytes = new byte[size];
 				Util.putInt(bytes, RowData.O_LENGTH_A, size);
@@ -353,6 +350,7 @@ public class PersistitStore implements Store, CServerConstants {
 				Util.putChar(bytes, size + RowData.O_SIGNATURE_B,
 						RowData.SIGNATURE_B);
 				Util.putInt(bytes, size + RowData.O_LENGTH_B, size);
+
 				final RowData rowData = new RowData(bytes);
 				rowData.prepareRow(0);
 				return rowData.toString(rowDefCache);

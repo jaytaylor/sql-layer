@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.akiba.ais.io.MySQLSource;
+import com.akiba.ais.message.AISResponse;
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.ais.model.AkibaInformationSchemaImpl;
 import com.akiba.cserver.store.PersistitStore;
@@ -37,18 +38,29 @@ public class CServer {
 			"    DB_HOST: Host running database containing AIS",
 			"    DB_USERNAME: Database username",
 			"    DB_PASSWORD: Database password",
-			"    DB_NAME: AIS dababase name", };
+			"    DB_NAME: AIS dababase name",
+			"    NET_HOST: ASE host name (usually same as DB_HOST)",
+			"    NET_PORT: ASE port address," };
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 
 	private final Store store = new PersistitStore(rowDefCache);
 
+	private AkibaInformationSchema ais;
+
+	private String dbHost = "localhost";
+	private String dbUsername = "akiba";
+	private String dbPassword = "akibaDB";
+	private String dbName = "akiba_information_schema";
+	private String netHost = "localhost";
+	private String netPort = "33060";
 	private volatile boolean stopped = false;
 
 	private List<Thread> threads = new ArrayList<Thread>();
 
 	public void start() throws Exception {
-		MessageRegistry.initialize().registerModule("com.akiba.cserver");
+		MessageRegistry.only().registerModule("com.akiba.cserver");
+		MessageRegistry.only().registerModule("com.akiba.ais");
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
 				(CommEventNotifier) callback);
@@ -152,28 +164,21 @@ public class CServer {
 		return rowDefCache;
 	}
 
-	private void usage() {
-		for (String line : USAGE) {
-			System.err.println(line);
+	private void setUpAIS(final String[] args) throws Exception {
+		if (args.length > 0) {
+			readArgs(args);
+			readAISFromMySQL();
+			LOGGER.info("Acquired AIS from " + dbHost + ":" + dbName);
+			installAIS();
+			LOGGER.info("Install AIS in ChunkServer");
+			sendAISToNetwork();
+			LOGGER.info("Sent AIS to " + netHost + ":" + netPort);
 		}
-		System.exit(1);
 	}
 
-	private void readAISFromMySQL(final String[] args) throws Exception {
-		int a = 0;
-		final String dbHost;
-		final String dbUsername;
-		final String dbPassword;
-		final String dbName;
-		try {
-			dbHost = args[a++];
-			dbUsername = args[a++];
-			dbPassword = args[a++];
-			dbName = args[a++];
-		} catch (Exception e) {
-			usage();
-			throw e;
-		}
+
+	private void readAISFromMySQL() throws Exception {
+
 		for (;;) {
 			try {
 				if (LOGGER.isLoggable(Level.INFO)) {
@@ -181,10 +186,8 @@ public class CServer {
 							.format("Attempting to load AIS from %s:%s",
 									dbHost, dbName));
 				}
-				final AkibaInformationSchema ais = AkibaInformationSchemaImpl
-						.load(new MySQLSource(dbHost, dbUsername, dbPassword,
-								dbName));
-				rowDefCache.setAIS(ais);
+				ais = AkibaInformationSchemaImpl.load(new MySQLSource(dbHost,
+						dbUsername, dbPassword, dbName));
 				break;
 			} catch (com.mysql.jdbc.exceptions.jdbc4.CommunicationsException e) {
 				try {
@@ -196,16 +199,27 @@ public class CServer {
 		}
 	}
 
+	private void installAIS() {
+		rowDefCache.setAIS(ais);
+	}
+
+	private void sendAISToNetwork() throws Exception {
+		AkibaConnection connection = AkibaConnection
+				.createConnection(NetworkHandlerFactory.getHandler(netHost,
+						netPort, null));
+		AISResponse aisResponse = new AISResponse(ais);
+		connection.send(aisResponse);
+	}
+
 	/**
 	 * @param args
 	 *            the command line arguments
 	 */
 	public static void main(String[] args) throws Exception {
 		final CServer server = new CServer();
-		if (args.length > 0) {
-			server.readAISFromMySQL(args);
-		}
+		MessageRegistry.initialize();
 		server.start();
+		server.setUpAIS(args);
 		try {
 			//
 			// For now this is "crash-only software" - there is no
@@ -221,6 +235,38 @@ public class CServer {
 			ex.printStackTrace();
 		}
 		server.stop();
+	}
+
+	private void readArgs(final String[] args) {
+		int a = 0;
+		if (a < args.length) {
+			dbHost = args[a++];
+		}
+		if (a < args.length) {
+			dbUsername = args[a++];
+		}
+		if (a < args.length) {
+			dbPassword = args[a++];
+		}
+		if (a < args.length) {
+			dbName = args[a++];
+		}
+		if (a < args.length) {
+			netHost = args[a++];
+		}
+		if (a < args.length) {
+			netPort = args[a++];
+		}
+		if (dbHost.contains("-h") || dbHost.contains("?")) {
+			usage();
+		}
+	}
+
+	private void usage() {
+		for (String line : USAGE) {
+			System.err.println(line);
+		}
+		System.exit(1);
 	}
 
 }
