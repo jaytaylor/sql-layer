@@ -1,22 +1,31 @@
 #!/bin/bash
 
+export PREPAKIBA=/home/peter/bin/prepakiba
+export TRUNK=/home/peter/akiba_akiba/trunk
+
 # Reset database
-sudo /home/peter/bin/prepakiba
+sudo $PREPAKIBA
+
+# Stop any left over CServer instances
+
+pkill -f "cserver-1.0-SNAPSHOT-jar-with-dependencies.jar"
+
+sleep 3
+
 # Load data dictionary
-pushd /home/peter/akiba_akiba/trunk/common/ais/
+pushd $TRUNK/common/ais/
 mysql -u root < src/test/resources/data_dictionary_test_schema.sql
 popd
 
-# Start chunkserver
+mkdir /tmp/chunkserver_data
 
-mkdir /tmp/data
-
-pkill java
-java -Xmx512M -jar /home/peter/akiba_akiba/trunk/cserver/iter7/target/cserver-1.0-SNAPSHOT-jar-with-dependencies.jar localhost akiba akibaDB akiba_information_schema localhost 33060  &
+# Start or restart the  ChunkServer
+sleep 2
+java $1 -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y -Xmx512M -jar $TRUNK/cserver/iter7/target/cserver-1.0-SNAPSHOT-jar-with-dependencies.jar localhost akiba akibaDB akiba_information_schema localhost 33060  &
 
 sleep 10
-echo Hit enter to insert rows
-read $fred
+#echo Hit enter to insert rows
+#read $fred
 
 echo Insert some rows
 mysql -u root <<EOF
