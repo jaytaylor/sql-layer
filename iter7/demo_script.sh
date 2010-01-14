@@ -3,12 +3,12 @@
 export PREPAKIBA=/home/peter/bin/prepakiba
 export TRUNK=/home/peter/akiba_akiba/trunk
 
+# Stop any left over CServer instances
+pkill -f "cserver-1.0-SNAPSHOT-jar-with-dependencies.jar"
+
+
 # Reset database
 sudo $PREPAKIBA
-
-# Stop any left over CServer instances
-
-pkill -f "cserver-1.0-SNAPSHOT-jar-with-dependencies.jar"
 
 sleep 3
 
@@ -18,10 +18,11 @@ mysql -u root < src/test/resources/data_dictionary_test_schema.sql
 popd
 
 mkdir /tmp/chunkserver_data
+rm /tmp/chunkserver_data/*
 
 # Start or restart the  ChunkServer
 sleep 2
-java $1 -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y -Xmx512M -jar $TRUNK/cserver/iter7/target/cserver-1.0-SNAPSHOT-jar-with-dependencies.jar localhost akiba akibaDB akiba_information_schema localhost 33060  &
+java $1 -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y -Xmx512M -jar $TRUNK/cserver/iter7/target/cserver-1.0-SNAPSHOT-jar-with-dependencies.jar localhost akiba akibaDB akiba_information_schema localhost 33060 ais.sav &
 
 sleep 10
 #echo Hit enter to insert rows

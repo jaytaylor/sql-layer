@@ -32,7 +32,7 @@ public class PersistitStore implements Store, CServerConstants {
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
 	static {
-		PERSISTIT_PROPERTIES.put("datapath", "/tmp/data");
+		PERSISTIT_PROPERTIES.put("datapath", "/tmp/chunkserver_data");
 		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
@@ -175,7 +175,7 @@ public class PersistitStore implements Store, CServerConstants {
 				// For child rows we need to insert a pk index row
 				//
 				final Exchange pkExchange = getExchange(rowDef.getPkTreeName());
-				copyAndRotate(exchange.getKey(), pkExchange.getKey(), -1);
+				copyAndRotate(exchange.getKey(), pkExchange.getKey(), -(rowDef.getPkFields().length + 1));
 				pkExchange.getValue().clear();
 				pkExchange.store();
 			}
@@ -253,7 +253,7 @@ public class PersistitStore implements Store, CServerConstants {
 				// No grandparent.
 				//
 				appendKeyFields(key, rowDef, rowData, rowDef
-						.getParentJoinFields());
+						.getParentJoinFields(), parentRowDef.getRowDefId());
 			} else {
 				//
 				// Yes grandparent. Use pkIndex lookup.
@@ -263,12 +263,12 @@ public class PersistitStore implements Store, CServerConstants {
 				final Key indexKey = indexExchange.getKey();
 				indexKey.clear();
 				appendKeyFields(indexKey, rowDef, rowData, rowDef
-						.getParentJoinFields());
+						.getParentJoinFields(), parentRowDef.getRowDefId());
 				if (!indexExchange.next(true)) {
 					throw new StoreException(FOREIGN_KEY_MISSING, indexKey
 							.toString());
 				}
-				copyAndRotate(indexKey, key, 1);
+				copyAndRotate(indexKey, key, rowDef.getPkFields().length + 1);
 			}
 		} else {
 			key.clear();
@@ -276,16 +276,17 @@ public class PersistitStore implements Store, CServerConstants {
 		//
 		// Now append the primary key field(s) of the current row
 		//
-		appendKeyFields(key, rowDef, rowData, rowDef.getPkFields());
+		appendKeyFields(key, rowDef, rowData, rowDef.getPkFields(), rowDef.getRowDefId());
 	}
 
 	private void appendKeyFields(final Key key, final RowDef rowDef,
-			final RowData rowData, final int[] fields)
+			final RowData rowData, final int[] fields, final int rowDefId)
 			throws PersistitException {
 		for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
 			final FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
 			final long location = rowDef.fieldLocation(rowData,
 					fields[fieldIndex]);
+			key.append(rowDefId % MAX_VERSIONS_PER_TABLE);
 			appendKeyField(key, fieldDef, rowData, location);
 		}
 	}

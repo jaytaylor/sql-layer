@@ -5,6 +5,8 @@
 
 package com.akiba.cserver;
 
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -54,6 +56,8 @@ public class CServer {
 	private String dbName = "akiba_information_schema";
 	private String netHost = "localhost";
 	private String netPort = "33060";
+	private String toFile = null;
+	
 	private volatile boolean stopped = false;
 
 	private List<Thread> threads = new ArrayList<Thread>();
@@ -173,6 +177,12 @@ public class CServer {
 			LOGGER.info("Install AIS in ChunkServer");
 			sendAISToNetwork();
 			LOGGER.info("Sent AIS to " + netHost + ":" + netPort);
+			if (toFile != null) {
+				final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(toFile));
+				oos.writeObject(ais);
+				oos.close();
+				LOGGER.info("Wrote AIS to file " + toFile);
+			}
 		}
 	}
 
@@ -256,6 +266,9 @@ public class CServer {
 		}
 		if (a < args.length) {
 			netPort = args[a++];
+		}
+		if (a < args.length) {
+			toFile = args[a++];
 		}
 		if (dbHost.contains("-h") || dbHost.contains("?")) {
 			usage();

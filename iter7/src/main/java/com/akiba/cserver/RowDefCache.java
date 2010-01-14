@@ -20,7 +20,7 @@ import com.akiba.ais.model.UserTable;
  * 
  * @author peter
  */
-public class RowDefCache {
+public class RowDefCache implements CServerConstants {
 
 	private final Map<Integer, RowDef> cache = new HashMap<Integer, RowDef>();
 

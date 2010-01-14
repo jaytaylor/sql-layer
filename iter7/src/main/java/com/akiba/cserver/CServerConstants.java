@@ -9,4 +9,5 @@ public interface CServerConstants {
 	public final static int NON_UNIQUE = 101;
 	public final static int FOREIGN_KEY_MISSING= 102;
 
+	public final static int MAX_VERSIONS_PER_TABLE = 65536;
 }
