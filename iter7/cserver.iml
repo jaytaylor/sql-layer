@@ -22,7 +22,7 @@
     <orderEntry type="library" exported="" name="Maven: javax.help:search:2.0.02" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:3.8.1" level="project" />
     <orderEntry type="module" module-name="akiba-network" exported="" />
-    <orderEntry type="library" exported="" name="Maven: org.jboss.netty:netty:3.2.0.ALPHA1" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.jboss.netty:netty:3.2.0.ALPHA3" level="project" />
     <orderEntry type="module" module-name="akiba-message" exported="" />
     <orderEntry type="library" exported="" name="Maven: mysql:mysql-connector-java:5.1.10" level="project" />
     <orderEntry type="module" module-name="akiba-ais" exported="" />
