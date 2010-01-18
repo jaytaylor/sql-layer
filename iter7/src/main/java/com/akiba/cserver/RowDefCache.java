@@ -106,7 +106,7 @@ public class RowDefCache implements CServerConstants {
 				if (pkFields != null) {
 					throw new IllegalStateException(
 							"Can't handle two PK indexes on "
-									+ table.getTableName());
+									+ table.getName().getTableName());
 				}
 				final List<IndexColumn> indexColumns = index.getColumns();
 				final List<Integer> pkFieldList = new ArrayList<Integer>(1);
@@ -132,7 +132,7 @@ public class RowDefCache implements CServerConstants {
 			}
 
 			final RowDef rowDef = RowDef.createRowDef(rowDefId, fieldDefs,
-					table.getTableName(), pkFields, parentRowDef,
+					table.getName().getTableName(), pkFields, parentRowDef,
 					parentJoinFields);
 			putRowDef(rowDef);
 		}
