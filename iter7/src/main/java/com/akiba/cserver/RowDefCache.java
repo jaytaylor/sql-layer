@@ -22,7 +22,9 @@ import com.akiba.ais.model.UserTable;
  */
 public class RowDefCache implements CServerConstants {
 
-	private final Map<Integer, RowDef> cache = new HashMap<Integer, RowDef>();
+	private final Map<Integer, RowDef> cacheMap = new HashMap<Integer, RowDef>();
+	
+	private final Map<String, Integer> nameMap = new HashMap<String, Integer>();
 
 	/**
 	 * Look up and return a RowDef for a supplied rowDefId value.
@@ -31,13 +33,22 @@ public class RowDefCache implements CServerConstants {
 	 * @return the corresponding RowDef
 	 */
 	public synchronized RowDef getRowDef(final int rowDefId) {
-		RowDef rowDef = cache.get(Integer.valueOf(rowDefId));
+		RowDef rowDef = cacheMap.get(Integer.valueOf(rowDefId));
 		if (rowDef == null) {
 			rowDef = lookUpRowDef(rowDefId);
-			cache.put(Integer.valueOf(rowDefId), rowDef);
+			cacheMap.put(Integer.valueOf(rowDefId), rowDef);
 		}
 		return rowDef;
 	}
+
+	public RowDef getRowDef(final String tableName) {
+		final Integer key = nameMap.get(tableName);
+		if (key == null) {
+			return null;
+		}
+		return getRowDef(key.intValue());
+	}
+
 
 	/**
 	 * Receive an instance of the AkibaInformationSchema, crack it and produce
@@ -46,7 +57,8 @@ public class RowDefCache implements CServerConstants {
 	 * @param ais
 	 */
 	public synchronized void setAIS(final AkibaInformationSchema ais) {
-		cache.clear();
+		cacheMap.clear();
+		nameMap.clear();
 		for (final UserTable table : ais.getUserTables().values()) {
 
 			// rowDefId
@@ -131,7 +143,7 @@ public class RowDefCache implements CServerConstants {
 				"Current version is unable to look up RowDef instances"
 						+ " that were not supplied by the AIS");
 	}
-
+	
 	/**
 	 * Adds a RowDef preemptively to the cache. This is intended primarily to
 	 * simply unit tests.
@@ -139,6 +151,8 @@ public class RowDefCache implements CServerConstants {
 	 * @param rowDef
 	 */
 	public synchronized void putRowDef(final RowDef rowDef) {
-		cache.put(Integer.valueOf(rowDef.getRowDefId()), rowDef);
+		Integer key = Integer.valueOf(rowDef.getRowDefId());
+		cacheMap.put(key, rowDef);
+		nameMap.put(rowDef.getTableName(), key);
 	}
 }

@@ -115,7 +115,6 @@ public class PersistitStore implements Store, CServerConstants {
 			public void handleVolumeIdRecord(long volumeId, long initialPages,
 					long extensionPages, long maximumPages, int bufferSize,
 					String volumeName) throws PersistitException {
-
 			}
 
 			public void handleTreeIdRecord(int treeIndex, String treeName)

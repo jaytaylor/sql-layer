@@ -13,7 +13,8 @@ import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
 import com.akiba.cserver.Util;
 
-public class PersistitStoreWithAISTest extends TestCase implements CServerConstants {
+public class PersistitStoreWithAISTest extends TestCase implements
+		CServerConstants {
 
 	private final static File DATA_PATH = new File("/tmp/data");
 
@@ -27,10 +28,12 @@ public class PersistitStoreWithAISTest extends TestCase implements CServerConsta
 		store = new PersistitStore(rowDefCache);
 		Util.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
-		final ObjectInputStream ois = new ObjectInputStream(new FileInputStream("src/test/resources/ais.sav"));
-		final AkibaInformationSchema ais = (AkibaInformationSchema)ois.readObject();
+		final ObjectInputStream ois = new ObjectInputStream(
+				new FileInputStream("src/test/resources/ais.sav"));
+		final AkibaInformationSchema ais = (AkibaInformationSchema) ois
+				.readObject();
 		rowDefCache.setAIS(ais);
-		
+
 		store.startUp();
 	}
 
@@ -41,11 +44,10 @@ public class PersistitStoreWithAISTest extends TestCase implements CServerConsta
 		rowDefCache = null;
 	}
 
-
 	public void testWriteCOIrows() throws Exception {
-		final RowDef defC = rowDefCache.getRowDef(1);
-		final RowDef defO = rowDefCache.getRowDef(2);
-		final RowDef defI = rowDefCache.getRowDef(3);
+		final RowDef defC = rowDefCache.getRowDef("customer");
+		final RowDef defO = rowDefCache.getRowDef("order");
+		final RowDef defI = rowDefCache.getRowDef("item");
 		final RowData rowC = new RowData(new byte[64]);
 		final RowData rowO = new RowData(new byte[64]);
 		final RowData rowI = new RowData(new byte[64]);
@@ -61,22 +63,22 @@ public class PersistitStoreWithAISTest extends TestCase implements CServerConsta
 			for (int o = 0; ++o <= 10;) {
 				int oid = cid * 1000 + o;
 				rowO.reset(0, 64);
-				rowO.createRow(defO, new Object[] { oid, cid,
-						12345});
+				rowO.createRow(defO, new Object[] { oid, cid, 12345 });
 				assertEquals(OK, store.writeRow(rowO));
 				count++;
 				for (int i = 0; ++i <= 3;) {
 					int iid = oid * 1000 + i;
 					rowI.reset(0, 64);
-					rowI.createRow(defI, new Object[] { oid, iid,
-							123456, 654321});
+					rowI.createRow(defI, new Object[] { oid, iid, 123456,
+							654321 });
 					assertEquals(OK, store.writeRow(rowI));
 					count++;
 				}
 			}
 		}
 		final long elapsed = System.nanoTime() - start;
-		System.out.println("Inserting " + count + " rows in " + (elapsed / 1000000L) + "ms");
+		System.out.println("Inserting " + count + " rows in "
+				+ (elapsed / 1000000L) + "ms");
 
 	}
 
