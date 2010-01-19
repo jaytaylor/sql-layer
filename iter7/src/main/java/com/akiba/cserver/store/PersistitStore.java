@@ -37,7 +37,7 @@ public class PersistitStore implements Store, CServerConstants {
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
 		PERSISTIT_PROPERTIES.put("verbose", "true");
-		PERSISTIT_PROPERTIES.put("buffer.count.8192", "4K");
+		PERSISTIT_PROPERTIES.put("buffer.count.8192", "16K");
 		PERSISTIT_PROPERTIES
 				.put(
 						"volume.1",
@@ -47,7 +47,7 @@ public class PersistitStore implements Store, CServerConstants {
 						"volume.2",
 						"${datapath}/aktest.v01,create,pageSize:8k,initialSize:5M,extensionSize:5M,maximumSize:100G");
 		PERSISTIT_PROPERTIES.put("pwjpath", "${datapath}/persistit.pwj");
-		PERSISTIT_PROPERTIES.put("pwjsize", "8M");
+		PERSISTIT_PROPERTIES.put("pwjsize", "16M");
 		PERSISTIT_PROPERTIES.put("pwdelete", "true");
 		PERSISTIT_PROPERTIES.put("pwjcount", "2");
 	}
@@ -86,7 +86,9 @@ public class PersistitStore implements Store, CServerConstants {
 					+ (System.currentTimeMillis() - t) + "ms)");
 			System.err.flush();
 			startTime = System.currentTimeMillis();
-			db.getManagement().setDisplayFilter(new RowDataDisplayFilter(db.getManagement().getDisplayFilter()));
+			db.getManagement().setDisplayFilter(
+					new RowDataDisplayFilter(db.getManagement()
+							.getDisplayFilter()));
 		}
 	}
 
@@ -164,7 +166,7 @@ public class PersistitStore implements Store, CServerConstants {
 			}
 			final int start = rowData.getInnerStart();
 			final int size = rowData.getInnerSize();
-
+			exchange.getValue().ensureFit(size);
 			System.arraycopy(rowData.getBytes(), start, exchange.getValue()
 					.getEncodedBytes(), 0, size);
 			exchange.getValue().setEncodedSize(size);
@@ -174,7 +176,8 @@ public class PersistitStore implements Store, CServerConstants {
 				// For child rows we need to insert a pk index row
 				//
 				final Exchange pkExchange = getExchange(rowDef.getPkTreeName());
-				copyAndRotate(exchange.getKey(), pkExchange.getKey(), -(rowDef.getPkFields().length + 1));
+				copyAndRotate(exchange.getKey(), pkExchange.getKey(), -(rowDef
+						.getPkFields().length + 1));
 				pkExchange.getValue().clear();
 				pkExchange.store();
 			}
@@ -275,7 +278,8 @@ public class PersistitStore implements Store, CServerConstants {
 		//
 		// Now append the primary key field(s) of the current row
 		//
-		appendKeyFields(key, rowDef, rowData, rowDef.getPkFields(), rowDef.getRowDefId());
+		appendKeyFields(key, rowDef, rowData, rowDef.getPkFields(), rowDef
+				.getRowDefId());
 	}
 
 	private void appendKeyFields(final Key key, final RowDef rowDef,
@@ -301,6 +305,13 @@ public class PersistitStore implements Store, CServerConstants {
 					(int) (location >>> 32));
 			key.append(value);
 			break;
+		case CHAR:
+		case VARCHAR:
+			final int start = (int) location;
+			final int length = (int) (location >>> 32);
+			key.append(new String(rowData.getBytes(), start, length));
+			break;
+
 		default:
 			throw new UnsupportedOperationException(
 					"Extend the key encoding logic to "
@@ -332,21 +343,23 @@ public class PersistitStore implements Store, CServerConstants {
 		public RowDataDisplayFilter(final DisplayFilter filter) {
 			this.defaultFilter = filter;
 		}
+
 		public String toKeyDisplayString(final Exchange exchange) {
 			return defaultFilter.toKeyDisplayString(exchange);
 		}
-		
+
 		public String toValueDisplayString(final Exchange exchange) {
 			if (exchange.getTree().getVolume().getPathName().contains("aktest")
-					&& !exchange.getTree().getName().contains("_")) {
+					&& !exchange.getTree().getName().startsWith("_txn")
+					&& !exchange.getTree().getName().endsWith("_pk")) {
 				final Value value = exchange.getValue();
-				
+
 				final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
 				final byte[] bytes = new byte[size];
 				Util.putInt(bytes, RowData.O_LENGTH_A, size);
-				Util.putChar(bytes, RowData.O_SIGNATURE_A,
-						RowData.SIGNATURE_A);
-				System.arraycopy(value.getEncodedBytes(), 0, bytes, RowData.O_FIELD_COUNT, value.getEncodedSize());
+				Util.putChar(bytes, RowData.O_SIGNATURE_A, RowData.SIGNATURE_A);
+				System.arraycopy(value.getEncodedBytes(), 0, bytes,
+						RowData.O_FIELD_COUNT, value.getEncodedSize());
 				Util.putChar(bytes, size + RowData.O_SIGNATURE_B,
 						RowData.SIGNATURE_B);
 				Util.putInt(bytes, size + RowData.O_LENGTH_B, size);

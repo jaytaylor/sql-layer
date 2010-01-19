@@ -53,9 +53,9 @@ public class RowData {
 	public final static char SIGNATURE_B = (char) ('B' + ('A' << 8));
 
 	public final static int ENVELOPE_SIZE = 12;
-	
-	private final static SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
-	
+
+	private final static SimpleDateFormat SDF = new SimpleDateFormat(
+			"yyyy-MM-dd HH:mm:SS");
 
 	private byte[] bytes;
 
@@ -234,16 +234,18 @@ public class RowData {
 				case TIMESTAMP:
 					final Date date;
 					try {
-						date = SDF.parse((String)object);
+						date = SDF.parse((String) object);
 					} catch (ParseException e) {
 						throw new RuntimeException(e);
 					}
 					if (fieldDef.getType() == FieldType.TIMESTAMP) {
-						value = (int) (date.getTime() / 1000000);
+						value = (int) (date.getTime() / 1000);
 					} else {
-						int hi = ((date.getYear() + 1900) * 10000) + (date.getMonth() * 100) + date.getDate();
-						int low = (date.getHours() * 10000) + (date.getMinutes() * 100) + date.getSeconds();
-						value = ((long)hi) << 32 + (long)low;
+						int hi = ((date.getYear() + 1900) * 10000)
+								+ (date.getMonth() * 100) + date.getDate();
+						int low = (date.getHours() * 10000)
+								+ (date.getMinutes() * 100) + date.getSeconds();
+						value = ((long) hi) << 32 + (long) low;
 					}
 					break;
 				}
@@ -344,22 +346,80 @@ public class RowData {
 				case SMALLINT:
 				case MEDIUMINT:
 				case INT:
-				case BIGINT:
+				case BIGINT: {
 					sb.append(getIntegerValue((int) location,
 							(int) (location >>> 32)));
 					break;
+				}
 				case VARCHAR:
-					sb.append("\"");
+				case CHAR:
+				case TINYTEXT:
+				case TEXT:
+				case MEDIUMTEXT:
+				case LONGTEXT:
+				case TINYBLOB:
+				case BLOB:
+				case MEDIUMBLOB:
+				case LONGBLOB: {
+					sb.append("\'");
 					int start = (int) location;
 					int size = (int) (location >>> 32);
 					for (int j = 0; j < size; j++) {
 						char c = (char) (bytes[j + start] & 0xFF);
-						if (c == '\"') {
-							sb.append('\\');
+						switch (c) {
+						case '\\':
+							sb.append("\\\\");
+							break;
+						case '\"':
+							sb.append("\\\"");
+							break;
+						case '\'':
+							sb.append("\\\'");
+							break;
+						case '\n':
+							sb.append("\\n");
+							break;
+						case '\r':
+							sb.append("\\r");
+							break;
+						case '\t':
+							sb.append("\\t");
+							break;
+						default:
+							sb.append(c);
 						}
-						sb.append(c);
 					}
-					sb.append("\"");
+					sb.append("\'");
+					break;
+				}
+				case DATETIME: {
+					final long dt = getIntegerValue((int) location, 8);
+					final int hi = (int) (dt >>> 32);
+					final int low = (int) dt;
+					final int year = hi / 10000;
+					final int month = (hi / 100) % 100;
+					final int day = hi % 100;
+					final int hour = low / 10000;
+					final int minute = (low / 100) % 100;
+					final int second = low % 100;
+					final Date date = new Date(year - 1900, month, day, hour,
+							minute, second);
+					sb.append('\'');
+					sb.append(SDF.format(date));
+					sb.append('\'');
+					break;
+				}
+				case TIMESTAMP: {
+					final long time = ((long) getIntegerValue((int) location, 4)) * 1000;
+					final Date date = new Date(time);
+					sb.append('\'');
+					sb.append(SDF.format(date));
+					sb.append('\'');
+					break;
+				}
+				default: {
+					sb.append("?" + rowDef.getFieldDef(i).getType() + "?");
+				}
 				}
 			}
 			sb.append(")");

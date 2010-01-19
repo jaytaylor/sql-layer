@@ -45,8 +45,9 @@ public class Util {
 		case 4:
 			return getInt(bytes, index) & 0xFFFFFFFF;
 		case 8:
-			throw new UnsupportedOperationException(
-					"Currently can't handle unsigned 64-bit integers");
+			return getLong(bytes, index); // TODO
+//			throw new UnsupportedOperationException(
+//					"Currently can't handle unsigned 64-bit integers");
 		default:
 			throw new IllegalArgumentException(
 					"Width must be 0,1,2,3,4 or 8 but is: " + width);
