@@ -63,7 +63,7 @@ public class CServer {
 	private List<Thread> threads = new ArrayList<Thread>();
 
 	public void start() throws Exception {
-		MessageRegistry.only().registerModule("com.akiba.cserver");
+		MessageRegistry.initialize().registerModule("com.akiba.cserver");
 		MessageRegistry.only().registerModule("com.akiba.ais");
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork("localhost", "8080",

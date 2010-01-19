@@ -1,23 +1,22 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry including="**/*.java" kind="src" output="target/test-classes" path="src/test/java"/>
-	<classpathentry excluding="**/*.java" kind="src" output="target/test-classes" path="src/test/resources"/>
-	<classpathentry including="**/*.java" kind="src" path="src/main/java"/>
-	<classpathentry kind="var" path="M2_REPO/javax/activation/activation/1.1/activation-1.1.jar" sourcepath="M2_REPO/javax/activation/activation/1.1/activation-1.1-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/javax/mail/mail/1.4/mail-1.4.jar" sourcepath="M2_REPO/javax/mail/mail/1.4/mail-1.4-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/javax/help/search/2.0.02/search-2.0.02.jar"/>
-	<classpathentry kind="var" path="M2_REPO/javax/servlet/servlet-api/2.3/servlet-api-2.3.jar" sourcepath="M2_REPO/javax/servlet/servlet-api/2.3/servlet-api-2.3-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/akiba/akiba-ais/1.0.0/akiba-ais-1.0.0.jar" sourcepath="M2_REPO/com/akiba/akiba-ais/1.0.0/akiba-ais-1.0.0-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/akiba/akiba-message/1.0.0/akiba-message-1.0.0.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/akiba/akiba-network/1.0.0/akiba-network-1.0.0.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/akiba/akiba-persistit/2.0.1/akiba-persistit-2.0.1.jar" sourcepath="/M2_REPO/com/akiba/akiba-persistit/2.0.1/akiba-persistit-2.0.1-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/avalon-framework/avalon-framework/4.1.3/avalon-framework-4.1.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.1/commons-logging-1.1.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.1/commons-logging-1.1-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/junit/junit/3.8.1/junit-3.8.1.jar" sourcepath="M2_REPO/junit/junit/3.8.1/junit-3.8.1-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/log4j/log4j/1.2.12/log4j-1.2.12.jar"/>
-	<classpathentry kind="var" path="M2_REPO/logkit/logkit/1.0.1/logkit-1.0.1.jar" sourcepath="M2_REPO/logkit/logkit/1.0.1/logkit-1.0.1-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/mysql/mysql-connector-java/5.1.10/mysql-connector-java-5.1.10.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/jboss/netty/netty/3.2.0.ALPHA1/netty-3.2.0.ALPHA1.jar" sourcepath="M2_REPO/org/jboss/netty/netty/3.2.0.ALPHA1/netty-3.2.0.ALPHA1-sources.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="output" path="target/classes"/>
+  <classpathentry kind="src" path="src/test/java" output="target/test-classes" including="**/*.java"/>
+  <classpathentry kind="src" path="src/test/resources" output="target/test-classes" excluding="**/*.java"/>
+  <classpathentry kind="src" path="src/main/java" including="**/*.java"/>
+  <classpathentry kind="output" path="target/classes"/>
+  <classpathentry kind="var" path="M2_REPO/javax/activation/activation/1.1/activation-1.1.jar" sourcepath="M2_REPO/javax/activation/activation/1.1/activation-1.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/javax/mail/mail/1.4/mail-1.4.jar" sourcepath="M2_REPO/javax/mail/mail/1.4/mail-1.4-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/javax/help/search/2.0.02/search-2.0.02.jar"/>
+  <classpathentry kind="var" path="M2_REPO/javax/servlet/servlet-api/2.3/servlet-api-2.3.jar" sourcepath="M2_REPO/javax/servlet/servlet-api/2.3/servlet-api-2.3-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/akiba/akiba-ais/1.0.0/akiba-ais-1.0.0.jar" sourcepath="M2_REPO/com/akiba/akiba-ais/1.0.0/akiba-ais-1.0.0-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/akiba/akiba-message/1.0.0/akiba-message-1.0.0.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/akiba/akiba-network/1.0.0/akiba-network-1.0.0.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/akiba/akiba-persistit/2.0.1/akiba-persistit-2.0.1.jar"/>
+  <classpathentry kind="var" path="M2_REPO/avalon-framework/avalon-framework/4.1.3/avalon-framework-4.1.3.jar"/>
+  <classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.1/commons-logging-1.1.jar" sourcepath="M2_REPO/commons-logging/commons-logging/1.1/commons-logging-1.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/junit/junit/3.8.1/junit-3.8.1.jar" sourcepath="M2_REPO/junit/junit/3.8.1/junit-3.8.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/log4j/log4j/1.2.12/log4j-1.2.12.jar"/>
+  <classpathentry kind="var" path="M2_REPO/logkit/logkit/1.0.1/logkit-1.0.1.jar" sourcepath="M2_REPO/logkit/logkit/1.0.1/logkit-1.0.1-sources.jar"/>
+  <classpathentry kind="var" path="M2_REPO/mysql/mysql-connector-java/5.1.10/mysql-connector-java-5.1.10.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/jboss/netty/netty/3.2.0.ALPHA3/netty-3.2.0.ALPHA3.jar"/>
+  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 </classpath>

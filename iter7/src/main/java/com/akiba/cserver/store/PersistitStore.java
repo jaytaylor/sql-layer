@@ -37,7 +37,7 @@ public class PersistitStore implements Store, CServerConstants {
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
 		PERSISTIT_PROPERTIES.put("verbose", "true");
-		PERSISTIT_PROPERTIES.put("buffer.count.8192", "16K");
+		PERSISTIT_PROPERTIES.put("buffer.count.8192", "4K");
 		PERSISTIT_PROPERTIES
 				.put(
 						"volume.1",

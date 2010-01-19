@@ -86,7 +86,7 @@ public enum FieldType {
 		
 	},
 
-	LONGBLOB(true, 0, Integer.MAX_VALUE) {
+	LONGBLOB(true, 0, Integer.MAX_VALUE / 2) {
 		
 	},
 
@@ -102,7 +102,7 @@ public enum FieldType {
 		
 	},
 
-	LONGTEXT(true, 0, Integer.MAX_VALUE) {
+	LONGTEXT(true, 0, Integer.MAX_VALUE / 2) {
 		
 	},
 
