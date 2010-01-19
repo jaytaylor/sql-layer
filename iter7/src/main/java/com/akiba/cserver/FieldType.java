@@ -45,18 +45,18 @@ public enum FieldType {
 
 	U_BIGINT(false, 8, 8) {
 	},
-//
-//	DATE(true, 8, 8) {
-//	},
-//
-//	DATETIME(true, 8, 8) {
-//	},
-//
-//	TIMESTAMP(true, 8, 8) {
-//	},
-//
-//	YEAR(true, 2, 2) {
-//	},
+
+	DATE(true, 4, 4) {
+	},
+
+	DATETIME(true, 8, 8) {
+	},
+
+	TIMESTAMP(true, 4, 4) {
+	},
+
+	YEAR(true, 2, 2) {
+	},
 
 	CHAR(false, 1, 255) {
 	},
@@ -73,6 +73,39 @@ public enum FieldType {
 	// sorting
 	BINVARCHAR(true, 1, 65535) {
 	},
+	
+	TINYBLOB(true, 0, 255) {
+		
+	},
+
+	BLOB(true, 0, 65536) {
+		
+	},
+
+	MEDIUMBLOB(true, 0, 0xFFFFFF) {
+		
+	},
+
+	LONGBLOB(true, 0, Integer.MAX_VALUE) {
+		
+	},
+
+	TINYTEXT(true, 0, 255) {
+		
+	},
+
+	TEXT(true, 0, 65536) {
+		
+	},
+
+	MEDIUMTEXT(true, 0, 0xFFFFFF) {
+		
+	},
+
+	LONGTEXT(true, 0, Integer.MAX_VALUE) {
+		
+	},
+
 
 //	ENUM(true, 2, 2) {
 //	},

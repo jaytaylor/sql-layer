@@ -1,5 +1,8 @@
 package com.akiba.cserver;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -48,8 +51,11 @@ public class RowData {
 	public final static char SIGNATURE_A = (char) ('A' + ('B' << 8));
 
 	public final static char SIGNATURE_B = (char) ('B' + ('A' << 8));
-	
+
 	public final static int ENVELOPE_SIZE = 12;
+	
+	private final static SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
+	
 
 	private byte[] bytes;
 
@@ -146,11 +152,11 @@ public class RowData {
 	public int getRowEnd() {
 		return rowEnd;
 	}
-	
+
 	public int getInnerStart() {
 		return rowStart + O_FIELD_COUNT;
 	}
-	
+
 	public int getInnerSize() {
 		return rowEnd - rowStart + O_SIGNATURE_B - O_FIELD_COUNT;
 	}
@@ -211,11 +217,36 @@ public class RowData {
 			Object object = values[index];
 			FieldDef fieldDef = rowDef.getFieldDef(index);
 			if (fieldDef.isFixedWidth()) {
+				final int width = fieldDef.getMaxWidth();
+				long value = 0;
 				if (object == null) {
 					continue;
 				}
-				final int width = fieldDef.getMaxWidth();
-				long value = ((Number) object).longValue();
+				switch (fieldDef.getType()) {
+				case TINYINT:
+				case SMALLINT:
+				case MEDIUMINT:
+				case INT:
+				case BIGINT:
+					value = ((Number) object).longValue();
+					break;
+				case DATETIME:
+				case TIMESTAMP:
+					final Date date;
+					try {
+						date = SDF.parse((String)object);
+					} catch (ParseException e) {
+						throw new RuntimeException(e);
+					}
+					if (fieldDef.getType() == FieldType.TIMESTAMP) {
+						value = (int) (date.getTime() / 1000000);
+					} else {
+						int hi = ((date.getYear() + 1900) * 10000) + (date.getMonth() * 100) + date.getDate();
+						int low = (date.getHours() * 10000) + (date.getMinutes() * 100) + date.getSeconds();
+						value = ((long)hi) << 32 + (long)low;
+					}
+					break;
+				}
 				switch (width) {
 				case 1:
 					Util.putByte(bytes, offset, (byte) value);
@@ -293,10 +324,11 @@ public class RowData {
 	public String toString() {
 		return Util.dump(bytes, 0, bytes.length);
 	}
-	
+
 	public String toString(final RowDefCache cache) {
 		final StringBuilder sb = new StringBuilder();
-		final RowDef rowDef = cache != null ? cache.getRowDef(getRowDefId()) : null;
+		final RowDef rowDef = cache != null ? cache.getRowDef(getRowDefId())
+				: null;
 		if (rowDef == null) {
 			sb.append("RowData?(rowDefId=");
 			sb.append(getRowDefId());
