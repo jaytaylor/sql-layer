@@ -7,8 +7,9 @@ package com.akiba.cserver;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.akiba.ais.io.MySQLSource;
 import com.akiba.ais.message.AISExecutionContext;
@@ -32,7 +33,7 @@ import com.akiba.network.NetworkHandlerFactory;
  */
 public class CServer {
 
-	private static final Logger LOGGER = Logger.getLogger(CServer.class
+	private static final Log LOG = LogFactory.getLog(CServer.class
 			.getName());
 
 	private static final String[] USAGE = {
@@ -95,8 +96,8 @@ public class CServer {
 		public void onConnect(AkibaNetworkHandler handler) {
 			int counter = ++connectCounter;
 			System.out.println("Connection #" + connectCounter + " created");
-			if (LOGGER.isLoggable(Level.INFO)) {
-				LOGGER.info("Connection #" + connectCounter + " created");
+			if (LOG.isInfoEnabled()) {
+				LOG.info("Connection #" + connectCounter + " created");
 			}
 			final Thread thread = new Thread(new CServerRunnable(
 					AkibaConnection.createConnection(handler)), "CServer_"
@@ -161,8 +162,8 @@ public class CServer {
 			while (!stopped) { // TODO - shutdown
 				try {
 					Message message = connection.receive();
-					if (LOGGER.isLoggable(Level.INFO)) {
-						LOGGER.info("Serving message " + message);
+					if (LOG.isInfoEnabled()) {
+						LOG.info("Serving message " + message);
 					}
 					message.execute(connection, context);
 					requestCounter++;
@@ -182,7 +183,7 @@ public class CServer {
 
 	public synchronized AkibaInformationSchema getAIS() throws Exception {
 		if (ais == null) {
-			LOGGER.info("Reading AIS from " + dbHost + ":" + dbName);
+			LOG.info("Reading AIS from " + dbHost + ":" + dbName);
 			readAISFromMySQL();
 			installAIS();
 		}
@@ -193,8 +194,8 @@ public class CServer {
 
 		for (;;) {
 			try {
-				if (LOGGER.isLoggable(Level.INFO)) {
-					LOGGER.info(String
+				if (LOG.isInfoEnabled()) {
+					LOG.info(String
 							.format("Attempting to load AIS from %s:%s",
 									dbHost, dbName));
 				}
@@ -212,7 +213,7 @@ public class CServer {
 	}
 
 	private void installAIS() {
-		LOGGER.info("Installing AIS in ChunkServer");
+		LOG.info("Installing AIS in ChunkServer");
 		rowDefCache.setAIS(ais);
 	}
 

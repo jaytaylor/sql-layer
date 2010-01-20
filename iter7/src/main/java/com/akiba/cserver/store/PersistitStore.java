@@ -4,10 +4,14 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiba.ais.io.PersistitSource;
 import com.akiba.ais.io.Reader;
 import com.akiba.ais.io.Source;
 import com.akiba.ais.model.AkibaInformationSchema;
+import com.akiba.cserver.CServer;
 import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.FieldDef;
 import com.akiba.cserver.RowData;
@@ -26,8 +30,12 @@ import com.persistit.Value;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
+import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class PersistitStore implements Store, CServerConstants {
+
+	private static final Log LOG = LogFactory.getLog(CServer.class
+			.getName());
 
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
@@ -54,8 +62,6 @@ public class PersistitStore implements Store, CServerConstants {
 
 	private static String datapath;
 
-	private long startTime;
-
 	private Persistit db;
 
 	private ThreadLocal<HashMap<String, Exchange>> exchangeLocal = new ThreadLocal<HashMap<String, Exchange>>();
@@ -78,14 +84,9 @@ public class PersistitStore implements Store, CServerConstants {
 
 		if (db == null) {
 			db = new Persistit();
+			db.setPersistitLogger(new ApacheCommonsLogAdapter(LOG));
 			db.setProperty("datapath", datapath);
-			final long t = System.currentTimeMillis();
 			db.initialize(PERSISTIT_PROPERTIES);
-			System.err.println("Persistit startup complete at: "
-					+ db.elapsedTime() + "ms - took ("
-					+ (System.currentTimeMillis() - t) + "ms)");
-			System.err.flush();
-			startTime = System.currentTimeMillis();
 			db.getManagement().setDisplayFilter(
 					new RowDataDisplayFilter(db.getManagement()
 							.getDisplayFilter()));
@@ -94,14 +95,7 @@ public class PersistitStore implements Store, CServerConstants {
 
 	public synchronized void shutDown() throws Exception {
 		if (db != null) {
-			final long t = System.currentTimeMillis();
 			db.close();
-			System.err.println("Persistit shutDown complete at: "
-					+ db.elapsedTime() + "ms - took "
-					+ (System.currentTimeMillis() - t) + "ms");
-			System.err.println("Persitit was up for "
-					+ (System.currentTimeMillis() - startTime) + "ms)");
-			System.err.flush();
 			db = null;
 		}
 	}
