@@ -5,14 +5,14 @@
 
 package com.akiba.cserver;
 
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.akiba.ais.io.MySQLSource;
+import com.akiba.ais.message.AISExecutionContext;
+import com.akiba.ais.message.AISRequest;
 import com.akiba.ais.message.AISResponse;
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.ais.model.AkibaInformationSchemaImpl;
@@ -57,13 +57,14 @@ public class CServer {
 	private String netHost = "localhost";
 	private String netPort = "33060";
 	private String toFile = null;
-	
+
 	private volatile boolean stopped = false;
 
 	private List<Thread> threads = new ArrayList<Thread>();
 
 	public void start() throws Exception {
-		MessageRegistry.initialize().registerModule("com.akiba.cserver");
+		MessageRegistry.initialize();
+		MessageRegistry.only().registerModule("com.akiba.cserver");
 		MessageRegistry.only().registerModule("com.akiba.ais");
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
@@ -113,15 +114,26 @@ public class CServer {
 		}
 	}
 
-	public static class CServerContext implements ExecutionContext {
-		private final Store store;
+	public class CServerContext implements ExecutionContext,
+			AISExecutionContext {
 
 		public Store getStore() {
-			return store;
+			return CServer.this.store;
 		}
 
-		private CServerContext(final Store store) {
-			this.store = store;
+		@Override
+		public void executeRequest(AkibaConnection connection,
+				AISRequest request) throws Exception {
+			final AkibaInformationSchema ais = getAIS();
+			AISResponse aisResponse = new AISResponse(ais);
+			connection.send(aisResponse);
+		}
+
+		@Override
+		public void executeResponse(AkibaConnection connection,
+				AISResponse response) throws Exception {
+			ais = response.ais();
+			installAIS();
 		}
 
 	}
@@ -136,7 +148,7 @@ public class CServer {
 
 		private final AkibaConnection connection;
 
-		private final ExecutionContext context = new CServerContext(store);
+		private final ExecutionContext context = new CServerContext();
 
 		private int requestCounter;
 
@@ -168,24 +180,14 @@ public class CServer {
 		return rowDefCache;
 	}
 
-	private void setUpAIS(final String[] args) throws Exception {
-		if (args.length > 0) {
-			readArgs(args);
+	public synchronized AkibaInformationSchema getAIS() throws Exception {
+		if (ais == null) {
+			LOGGER.info("Reading AIS from " + dbHost + ":" + dbName);
 			readAISFromMySQL();
-			LOGGER.info("Acquired AIS from " + dbHost + ":" + dbName);
 			installAIS();
-			LOGGER.info("Install AIS in ChunkServer");
-			sendAISToNetwork();
-			LOGGER.info("Sent AIS to " + netHost + ":" + netPort);
-			if (toFile != null) {
-				final ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(toFile));
-				oos.writeObject(ais);
-				oos.close();
-				LOGGER.info("Wrote AIS to file " + toFile);
-			}
 		}
+		return ais;
 	}
-
 
 	private void readAISFromMySQL() throws Exception {
 
@@ -210,15 +212,8 @@ public class CServer {
 	}
 
 	private void installAIS() {
+		LOGGER.info("Installing AIS in ChunkServer");
 		rowDefCache.setAIS(ais);
-	}
-
-	private void sendAISToNetwork() throws Exception {
-		AkibaConnection connection = AkibaConnection
-				.createConnection(NetworkHandlerFactory.getHandler(netHost,
-						netPort, null));
-		AISResponse aisResponse = new AISResponse(ais);
-		connection.send(aisResponse);
 	}
 
 	/**
@@ -227,9 +222,8 @@ public class CServer {
 	 */
 	public static void main(String[] args) throws Exception {
 		final CServer server = new CServer();
-		MessageRegistry.initialize();
+		server.readArgs(args);
 		server.start();
-		server.setUpAIS(args);
 		try {
 			//
 			// For now this is "crash-only software" - there is no
