@@ -18,7 +18,7 @@ import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
 import com.akiba.cserver.Util;
-import com.akiba.cserver.WriteRowResponse;
+import com.akiba.cserver.message.WriteRowResponse;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.Message;
 import com.persistit.Exchange;
@@ -200,6 +200,10 @@ public class PersistitStore implements Store, CServerConstants {
 				transaction.end();
 			}
 		}
+	}
+	
+	public long getAutoIncrementValue(final int rowDefId) throws Exception {
+		return 42;
 	}
 
 	private RowDef rootRowDef(final RowDef rowDef) throws StoreException {

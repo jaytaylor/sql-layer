@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.ais.model.Column;
+import com.akiba.ais.model.GroupTable;
 import com.akiba.ais.model.Index;
 import com.akiba.ais.model.IndexColumn;
 import com.akiba.ais.model.Join;
@@ -76,12 +77,12 @@ public class RowDefCache implements CServerConstants {
 			}
 
 			// parentRowDef
-			int parentRowDef;
+			int parentRowDefId;
 			int[] parentJoinFields;
 			if (table.getParentJoin() != null) {
 				final Join join = table.getParentJoin();
 				final UserTable parentTable = join.getParent();
-				parentRowDef = parentTable.getTableId();
+				parentRowDefId = parentTable.getTableId();
 				//
 				// parentJoinFields - TODO - not sure this is right.
 				//
@@ -93,7 +94,7 @@ public class RowDefCache implements CServerConstants {
 							.getPosition();
 				}
 			} else {
-				parentRowDef = 0;
+				parentRowDefId = 0;
 				parentJoinFields = new int[0];
 			}
 
@@ -130,14 +131,25 @@ public class RowDefCache implements CServerConstants {
 					pkFields[pkField++] = position;
 				}
 			}
+			
+			UserTable root = table;
+			while (root.getParentJoin() != null) {
+				root = root.getParentJoin().getParent();
+			}
+			String groupTableName = null;
+			for (final GroupTable groupTable : ais.getGroupTables().values()) {
+				if (groupTable.getRoot().equals(root)) {
+					groupTableName = groupTable.getName().getTableName();
+				}
+			}
 
 			final RowDef rowDef = RowDef.createRowDef(rowDefId, fieldDefs,
-					table.getName().getTableName(), pkFields, parentRowDef,
+					table.getName().getTableName(), groupTableName, pkFields, parentRowDefId,
 					parentJoinFields);
 			putRowDef(rowDef);
 		}
 	}
-
+	
 	RowDef lookUpRowDef(final int rowDefId) {
 		throw new UnsupportedOperationException(
 				"Current version is unable to look up RowDef instances"

@@ -4,6 +4,8 @@ import java.io.File;
 
 import junit.framework.TestCase;
 
+import com.akiba.cserver.message.WriteRowRequest;
+import com.akiba.cserver.message.WriteRowResponse;
 import com.akiba.cserver.store.PersistitStore;
 import com.akiba.message.AkibaConnection;
 import com.akiba.network.AkibaNetworkHandler;
@@ -16,13 +18,12 @@ public class CServerTest extends TestCase {
 	private final static RowDef ROW_DEF = RowDef.createRowDef(1234,
 			new FieldDef[] { new FieldDef(FieldType.INT),
 					new FieldDef(FieldType.INT), new FieldDef(FieldType.INT) },
-			"test", new int[]{0});
+			"test", "group_table_test", new int[]{0});
 
 	@Override
 	public void setUp() throws Exception {
 		Util.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
-
 	}
 
 	public void testCServer() throws Exception {

@@ -1,5 +1,7 @@
 package com.akiba.cserver.store;
 
+import java.nio.ByteBuffer;
+
 import com.akiba.cserver.RowData;
 import com.akiba.message.AkibaConnection;
 
@@ -15,4 +17,6 @@ public interface Store {
 	public void shutDown() throws Exception;
 	
 	public void writeRow(final AkibaConnection connection, final RowData rowData) throws Exception;
+	
+	public long getAutoIncrementValue(final int rowDefId) throws Exception;
 }

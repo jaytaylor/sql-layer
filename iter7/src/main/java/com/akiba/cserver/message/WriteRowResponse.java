@@ -1,10 +1,10 @@
-package com.akiba.cserver;
+package com.akiba.cserver.message;
 
 import java.nio.ByteBuffer;
 
 import com.akiba.message.Message;
 
-public class TestResponse extends Message {
+public class WriteRowResponse extends Message {
 
     public static short TYPE;
 
@@ -18,8 +18,13 @@ public class TestResponse extends Message {
 		this.resultCode = resultCode;
 	}
 
-	public TestResponse() {
+	public WriteRowResponse() {
 		super(TYPE);
+	}
+	
+	public WriteRowResponse(final int resultCode) {
+		super(TYPE);
+		setResultCode(resultCode);
 	}
 
 	@Override

@@ -21,26 +21,26 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 	private final static RowDef ROW_DEF0 = RowDef.createRowDef(1234,
 			new FieldDef[] { new FieldDef(FieldType.INT),
 					new FieldDef(FieldType.INT), new FieldDef(FieldType.INT) },
-			"test", new int[] { 0 });
+			"test", "test_group_table", new int[] { 0 });
 
 	//
 	// Highly abbreviate "COI" structure.
 	//
 	private final static RowDef ROW_DEF_C = RowDef.createRowDef(100,
 			new FieldDef[] { new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.VARCHAR, 100) }, "customers",
+					new FieldDef(FieldType.VARCHAR, 100) }, "customers", "coi",
 			new int[] { 0 });
 
 	private final static RowDef ROW_DEF_O = RowDef.createRowDef(101,
 			new FieldDef[] { new FieldDef(FieldType.INT),
 					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.VARCHAR, 100) }, "orders",
+					new FieldDef(FieldType.VARCHAR, 100) }, "orders", "coi",
 			new int[] { 0 }, 100, new int[] { 1 });
 
 	private final static RowDef ROW_DEF_I = RowDef.createRowDef(102,
 			new FieldDef[] { new FieldDef(FieldType.INT),
 					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.VARCHAR, 100) }, "items",
+					new FieldDef(FieldType.VARCHAR, 100) }, "items", "coi",
 			new int[] { 0 }, 101, new int[] { 1 });
 
 	private PersistitStore store;

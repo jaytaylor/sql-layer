@@ -45,6 +45,11 @@ public class RowDef {
 	 * Schema's name for this table.
 	 */
 	private String tableName;
+	
+	/**
+	 * Name of the tree storing this table - same as the group table name
+	 */
+	private String treeName;
 
 	/**
 	 * Cached name of the primary key index tree
@@ -63,10 +68,11 @@ public class RowDef {
 	private final byte[][] varLenFieldMap;
 
 	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName,
+			final FieldDef[] fieldDefs, final String tableName, String treeName,
 			final int[] pkFields) {
 		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
 		rowDef.setTableName(tableName);
+		rowDef.setTreeName(treeName);
 		rowDef.setPkFields(pkFields);
 		rowDef.setParentRowDefId(0);
 		rowDef.setParentJoinFields(new int[0]);
@@ -74,11 +80,12 @@ public class RowDef {
 	}
 
 	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName,
+			final FieldDef[] fieldDefs, final String tableName, final String groupTableName,
 			final int[] pkFields, final int parentRowDefId,
 			final int[] parentJoinFields) {
 		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
 		rowDef.setTableName(tableName);
+		rowDef.setTreeName(groupTableName);
 		rowDef.setPkFields(pkFields);
 		rowDef.setParentRowDefId(parentRowDefId);
 		rowDef.setParentJoinFields(parentJoinFields);
@@ -140,12 +147,19 @@ public class RowDef {
 	public String getTableName() {
 		return tableName;
 	}
+	
+	public String getTreeName() {
+		return treeName;
+	}
 
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
 		this.pkTreeName = tableName + "_pk";
 	}
 
+	public void setTreeName(final String treeName) {
+		this.treeName = treeName;
+	}
 	/**
 	 * Returns the offset relative to the start of the byte array represented by
 	 * the supplied {@link RowData} of the field specified by the supplied

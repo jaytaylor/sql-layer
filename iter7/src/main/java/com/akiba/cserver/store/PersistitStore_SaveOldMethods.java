@@ -5,7 +5,7 @@ import java.util.Properties;
 
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.WriteRowResponse;
+import com.akiba.cserver.message.WriteRowResponse;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.Message;
 import com.persistit.Exchange;
@@ -14,7 +14,7 @@ import com.persistit.Transaction;
 import com.persistit.Volume;
 import com.persistit.exception.TreeNotFoundException;
 
-public class PersistitStore_SaveOldMethods implements Store {
+public class PersistitStore_SaveOldMethods {
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 

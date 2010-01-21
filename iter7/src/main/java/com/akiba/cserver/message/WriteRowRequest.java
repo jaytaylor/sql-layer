@@ -1,7 +1,9 @@
-package com.akiba.cserver;
+package com.akiba.cserver.message;
 
 import java.nio.ByteBuffer;
 
+import com.akiba.cserver.RowData;
+import com.akiba.cserver.Util;
 import com.akiba.cserver.CServer.CServerContext;
 import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
