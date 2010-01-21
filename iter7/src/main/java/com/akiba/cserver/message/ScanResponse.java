@@ -10,7 +10,7 @@ public class ScanResponse extends Message {
 
 	public static short TYPE;
 	
-	private long sessionId;
+	private int sessionId;
 	
 	private byte[] columnBitMap;
 
@@ -22,7 +22,7 @@ public class ScanResponse extends Message {
 		super(TYPE);
 	}
 	
-	public ScanResponse(final long sessionId, final RowCollector collector) {
+	public ScanResponse(final int sessionId, final RowCollector collector) {
 		super(TYPE);
 		this.sessionId = sessionId;
 		this.collector = collector;
@@ -31,7 +31,7 @@ public class ScanResponse extends Message {
 	@Override
 	public void read(ByteBuffer payload) throws Exception {
 		super.read(payload);
-		sessionId = payload.getLong();
+		sessionId = payload.getInt();
 		final int size = payload.getChar();
 		columnBitMap = new byte[size];
 		payload.get(columnBitMap);
@@ -42,7 +42,7 @@ public class ScanResponse extends Message {
 	@Override
 	public void write(ByteBuffer payload) throws Exception {
 		super.write(payload);
-		payload.putLong(sessionId);
+		payload.putInt(sessionId);
 		payload.putChar((char)columnBitMap.length);
 		payload.put(columnBitMap);
 		while (collector.collectNextRow(payload, columnBitMap));

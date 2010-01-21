@@ -92,10 +92,22 @@ public class RowData {
 	 * @param offset
 	 *            byte offset to record start within the buffer
 	 */
-	public boolean prepareRow(final int offset) {
+	public boolean prepareRow(final int offset) throws CorruptRowDataException {
 		if (offset == bufferEnd) {
 			return false;
 		}
+		if (offset < 0 || offset + MINIMUM_RECORD_LENGTH > bufferEnd) {
+			throw new CorruptRowDataException("Invalid offset: " + offset);
+		} else {
+			validateRow(offset);
+			rowStart = offset;
+			rowEnd = offset + Util.getInt(bytes, O_LENGTH_A + offset);
+			return true;
+		}
+	}
+	
+	public void validateRow(final int offset) throws CorruptRowDataException {
+
 		if (offset < 0 || offset + MINIMUM_RECORD_LENGTH > bufferEnd) {
 			throw new CorruptRowDataException("Invalid offset: " + offset);
 		} else {
@@ -119,9 +131,6 @@ public class RowData {
 				throw new CorruptRowDataException(
 						"Invalid signature at offset: " + offset);
 			}
-			rowStart = offset;
-			rowEnd = offset + recordLength;
-			return true;
 		}
 	}
 
@@ -151,6 +160,10 @@ public class RowData {
 
 	public int getRowEnd() {
 		return rowEnd;
+	}
+	
+	public int getRowSize() {
+		return rowEnd - rowStart;
 	}
 
 	public int getInnerStart() {

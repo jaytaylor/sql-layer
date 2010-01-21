@@ -370,4 +370,17 @@ public class PersistitStore implements Store, CServerConstants {
 			}
 		}
 	}
+
+	@Override
+	public RowCollector getRowCollector(long sessionId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public RowCollector newRowCollector(long sessionId, int indexId,
+			RowData start, RowData end, byte[] columnBitMap) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

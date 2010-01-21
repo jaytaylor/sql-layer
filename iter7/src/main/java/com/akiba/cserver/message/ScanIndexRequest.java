@@ -2,24 +2,48 @@ package com.akiba.cserver.message;
 
 import java.nio.ByteBuffer;
 
+import com.akiba.cserver.CorruptRowDataException;
 import com.akiba.cserver.RowData;
+import com.akiba.cserver.CServer.CServerContext;
+import com.akiba.cserver.store.RowCollector;
+import com.akiba.cserver.store.Store;
+import com.akiba.message.AkibaConnection;
+import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 import com.persistit.Util;
 
 public class ScanIndexRequest extends Message {
 
 	public static short TYPE;
-	
-	private long sessionId;
+
+	private int sessionId;
+
+	private int indexId;
 	
 	private byte[] columnBitMap;
+
+	private RowData start;
+
+	private RowData end;
+
+	public ScanIndexRequest() {
+		super(TYPE);
+	}
 	
-	public long getSessionId() {
+	public int getSessionId() {
 		return sessionId;
 	}
 
-	public void setSessionId(long sessionId) {
+	public void setSessionId(int sessionId) {
 		this.sessionId = sessionId;
+	}
+
+	public int getIndexId() {
+		return indexId;
+	}
+
+	public void setIndexId(int indexId) {
+		this.indexId = indexId;
 	}
 
 	public byte[] getColumnBitMap() {
@@ -46,43 +70,61 @@ public class ScanIndexRequest extends Message {
 		this.end = end;
 	}
 
-	private RowData start;
-	
-	private RowData end;
-
-	public ScanIndexRequest() {
-		super(TYPE);
-	}
-	
 	@Override
-	public void read(final ByteBuffer payload) throws Exception {
+	public void execute(final AkibaConnection connection,
+			ExecutionContext context) throws Exception {
+		final Store store = ((CServerContext) context).getStore();
+		final RowCollector collector = store.newRowCollector(sessionId, indexId, start, end,
+				columnBitMap);
+		final ScanResponse response = new ScanResponse(sessionId, collector);
+		//
+		// Note: the act of serializing the response message invokes
+		// the RowCollector to actually scan the rows. This lets
+		// the RowCollector copy bytes directly into the response ByteBuffer.
+		//
+		connection.send(response);
+	}
+
+	@Override
+	public void read(final ByteBuffer payload) throws Exception,
+			CorruptRowDataException {
 		super.read(payload);
-		sessionId = payload.getLong();
-		int size = payload.getChar();
-		columnBitMap = new byte[size];
+		sessionId = payload.getInt();
+		indexId = payload.getInt();
+		int columnBitMapLength = payload.getChar();
+		columnBitMap = new byte[columnBitMapLength];
 		payload.get(columnBitMap);
-		
+
 		int startSize = payload.getInt();
 		byte[] startBytes = new byte[startSize];
 		Util.putInt(startBytes, 0, startSize);
 		payload.get(startBytes, 4, startSize - 4);
 		start = new RowData(startBytes);
-		
+
 		int endSize = payload.getInt();
 		byte[] endBytes = new byte[endSize];
 		Util.putInt(endBytes, 0, endSize);
 		payload.get(endBytes, 4, endSize - 4);
 		end = new RowData(endBytes);
-		
+		//
+		// Note - prepareRow can throw CorruptRowDataException
+		//
 		start.prepareRow(0);
 		end.prepareRow(0);
 	}
-	
+
 	@Override
-	public void write(final ByteBuffer payload) throws Exception {
+	public void write(final ByteBuffer payload) throws Exception,
+			CorruptRowDataException {
 		super.write(payload);
-		payload.putLong(sessionId);
-		payload.putChar((char)columnBitMap.length);
+		start.validateRow(start.getRowStart());
+		end.validateRow(end.getRowStart());
+		payload.putInt(sessionId);
+		payload.putInt(indexId);
+		payload.putChar((char) columnBitMap.length);
+		payload.put(columnBitMap);
+		payload.put(start.getBytes(), start.getRowStart(), start.getRowSize());
+		payload.put(end.getBytes(), end.getRowStart(), end.getRowSize());
 	}
 
 }
