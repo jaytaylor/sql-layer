@@ -10,13 +10,13 @@ import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 
-public class ScanMoreRequest extends Message {
+public class ScanRowsMoreRequest extends Message {
 
 	public static short TYPE;
 
 	private int sessionId;
 
-	public ScanMoreRequest() {
+	public ScanRowsMoreRequest() {
 		super(TYPE);
 	}
 	
@@ -33,7 +33,7 @@ public class ScanMoreRequest extends Message {
 			ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
 		final RowCollector collector = store.getRowCollector(sessionId);
-		final ScanResponse response = new ScanResponse(sessionId, collector);
+		final ScanRowsResponse response = new ScanRowsResponse(sessionId, collector);
 		//
 		// Note: the act of serializing the response message invokes
 		// the RowCollector to actually scan the rows. This lets

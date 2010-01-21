@@ -383,4 +383,11 @@ public class PersistitStore implements Store, CServerConstants {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	@Override
+	public long getRowCount(int accuracy, RowData start, RowData end,
+			byte[] columnBitMap) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

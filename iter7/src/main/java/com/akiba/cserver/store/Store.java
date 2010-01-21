@@ -21,4 +21,6 @@ public interface Store {
 	public RowCollector newRowCollector(final long sessionId, final int indexId, final RowData start, final RowData end, final byte[] columnBitMap );
 	
 	public RowCollector getRowCollector(final long sessionId);
+	
+	public long getRowCount(final int accuracy, final RowData start, final RowData end, final byte[] columnBitMap);
 }

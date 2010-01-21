@@ -6,7 +6,7 @@ import com.akiba.cserver.store.RowCollector;
 import com.akiba.cserver.store.RowDistributor;
 import com.akiba.message.Message;
 
-public class ScanResponse extends Message {
+public class ScanRowsResponse extends Message {
 
 	public static short TYPE;
 	
@@ -18,11 +18,11 @@ public class ScanResponse extends Message {
 	
 	private RowDistributor distributor;
 
-	public ScanResponse() {
+	public ScanRowsResponse() {
 		super(TYPE);
 	}
 	
-	public ScanResponse(final int sessionId, final RowCollector collector) {
+	public ScanRowsResponse(final int sessionId, final RowCollector collector) {
 		super(TYPE);
 		this.sessionId = sessionId;
 		this.collector = collector;

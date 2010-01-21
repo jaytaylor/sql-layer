@@ -12,13 +12,15 @@ import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 import com.persistit.Util;
 
-public class ScanIndexRequest extends Message {
+public class CountRowsRequest extends Message {
 
 	public static short TYPE;
 
 	private int sessionId;
-
+	
 	private int indexId;
+	
+	private int accuracy;
 	
 	private byte[] columnBitMap;
 
@@ -26,18 +28,10 @@ public class ScanIndexRequest extends Message {
 
 	private RowData end;
 
-	public ScanIndexRequest() {
+	public CountRowsRequest() {
 		super(TYPE);
 	}
 	
-	public int getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(int sessionId) {
-		this.sessionId = sessionId;
-	}
-
 	public int getIndexId() {
 		return indexId;
 	}
@@ -70,13 +64,20 @@ public class ScanIndexRequest extends Message {
 		this.end = end;
 	}
 
+	public int getAccuracy() {
+		return accuracy;
+	}
+
+	public void setAccuracy(int accuracy) {
+		this.accuracy = accuracy;
+	}
+
 	@Override
 	public void execute(final AkibaConnection connection,
 			ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
-		final RowCollector collector = store.newRowCollector(sessionId, indexId, start, end,
-				columnBitMap);
-		final ScanResponse response = new ScanResponse(sessionId, collector);
+		final long count = store.getRowCount(accuracy, start, end, columnBitMap);
+		final CountRowsResponse response = new CountRowsResponse(sessionId, count);
 		//
 		// Note: the act of serializing the response message invokes
 		// the RowCollector to actually scan the rows. This lets
@@ -111,6 +112,7 @@ public class ScanIndexRequest extends Message {
 		//
 		start.prepareRow(0);
 		end.prepareRow(0);
+		accuracy = payload.getInt();
 	}
 
 	@Override
@@ -125,6 +127,7 @@ public class ScanIndexRequest extends Message {
 		payload.put(columnBitMap);
 		payload.put(start.getBytes(), start.getRowStart(), start.getRowSize());
 		payload.put(end.getBytes(), end.getRowStart(), end.getRowSize());
+		payload.putInt(accuracy);
 	}
 
 }
