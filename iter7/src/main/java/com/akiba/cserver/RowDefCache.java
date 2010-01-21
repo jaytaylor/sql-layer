@@ -68,12 +68,15 @@ public class RowDefCache implements CServerConstants {
 			// FieldDef[]
 			final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
 			for (final Column column : table.getColumns()) {
-				final String typeName = column.getTypeName().toUpperCase();
-				final Object typeParam = column.getTypeParameter1();
+				final String typeName = column.getType().name().toUpperCase();
 				final FieldType type = FieldType.valueOf(typeName);
 				final int fieldIndex = column.getPosition();
-				fieldDefs[fieldIndex] = type.isFixedWidth() ? new FieldDef(type)
-						: new FieldDef(type, ((Long) typeParam).intValue());
+                if (type.isFixedWidth()) {
+                    fieldDefs[fieldIndex] = new FieldDef(type);
+                } else {
+                    final Object typeParam = column.getTypeParameter1();
+                    fieldDefs[fieldIndex] = new FieldDef(type, ((Long) typeParam).intValue());
+                }
 			}
 
 			// parentRowDef
