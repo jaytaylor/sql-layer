@@ -34,8 +34,7 @@ import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class PersistitStore implements Store, CServerConstants {
 
-	private static final Log LOG = LogFactory.getLog(CServer.class
-			.getName());
+	private static final Log LOG = LogFactory.getLog(CServer.class.getName());
 
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
@@ -132,23 +131,14 @@ public class PersistitStore implements Store, CServerConstants {
 
 	// --------------------- Store interface --------------------
 
-	public void writeRow(final AkibaConnection connection, final RowData rowData)
-			throws Exception {
-		final int result = writeRow(rowData);
-		final Message message = new WriteRowResponse(result);
-		connection.send(message);
-	}
-
-	// ----------------------------------------------------------
-
-	int writeRow(final RowData rowData) {
+	public int writeRow(final RowData rowData) {
 		final int rowDefId = rowData.getRowDefId();
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		Transaction transaction = null;
 		boolean done = false;
 		try {
 			final RowDef rootRowDef = rootRowDef(rowDef);
-			final String treeName = rootRowDef.getTableName();
+			final String treeName = rootRowDef.getTreeName();
 			final Exchange exchange = getExchange(treeName);
 			transaction = db.getTransaction();
 			transaction.begin();
@@ -201,21 +191,38 @@ public class PersistitStore implements Store, CServerConstants {
 			}
 		}
 	}
-	
+
 	public long getAutoIncrementValue(final int rowDefId) throws Exception {
-		return 42;
+		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		final Exchange exchange;
+		if (rowDef.getParentRowDefId() != 0) {
+			exchange = getExchange(rowDef.getPkTreeName());
+		} else {
+			exchange = getExchange(rootRowDef(rowDef).getTreeName());
+		}
+		exchange.getKey().clear().append(rowDefId % MAX_VERSIONS_PER_TABLE)
+				.append(Key.AFTER);
+		boolean found = exchange.previous();
+		long value;
+		if (found) {
+			value = exchange.getKey().indexTo(-1).decodeLong();
+		} else {
+			value = -1;
+		}
+		return value;
 	}
 
 	private RowDef rootRowDef(final RowDef rowDef) throws StoreException {
-		RowDef r = rowDef;
-		while (r.getParentRowDefId() != 0) {
-			r = rowDefCache.getRowDef(r.getParentRowDefId());
-			if (r == null || r == rowDef) {
+		RowDef root = rowDef;
+		int depth = 0;
+		while (root.getParentRowDefId() != 0) {
+			root = rowDefCache.getRowDef(root.getParentRowDefId());
+			if (root == null || root == rowDef || depth++ > MAX_GROUP_DEPTH) {
 				throw new StoreException(MISSING_OR_CORRUPT_ROW_DEF,
 						"Parent chain broken for " + rowDef);
 			}
 		}
-		return r;
+		return root;
 	}
 
 	private Exchange getExchange(final String treeName)
@@ -385,8 +392,8 @@ public class PersistitStore implements Store, CServerConstants {
 	}
 
 	@Override
-	public long getRowCount(int accuracy, RowData start, RowData end,
-			byte[] columnBitMap) {
+	public long getRowCount(final boolean exact, final RowData start,
+			final RowData end, final byte[] columnBitMap) {
 		// TODO Auto-generated method stub
 		return 0;
 	}

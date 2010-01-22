@@ -10,12 +10,25 @@ public class GetAutoIncrementValueResponse extends Message {
 	
 	private int rowDefId;
 	
+	private int resultCode;
+
+	private long value;
+
 	public int getRowDefId() {
 		return rowDefId;
 	}
 
-	public void setRowDefId(int rowDefId) {
+	public void setRowDefId(final int rowDefId) {
 		this.rowDefId = rowDefId;
+
+	}
+	
+	public int getResultCode() {
+		return resultCode;
+	}
+
+	public void setResultCode(int resultCode) {
+		this.resultCode = resultCode;
 	}
 
 	public long getValue() {
@@ -26,15 +39,14 @@ public class GetAutoIncrementValueResponse extends Message {
 		this.value = value;
 	}
 
-	private long value;
-
 	public GetAutoIncrementValueResponse() {
 		super(TYPE);
 	}
 	
-	public GetAutoIncrementValueResponse(final int rowDefId, final long value) {
+	public GetAutoIncrementValueResponse(final int rowDefId, final int resultCode, final long value) {
 		super(TYPE);
 		this.rowDefId = rowDefId;
+		this.resultCode = resultCode;
 		this.value = value;
 	}
 
@@ -43,6 +55,7 @@ public class GetAutoIncrementValueResponse extends Message {
     {
 		super.read(payload);
 		rowDefId = payload.getInt();
+		resultCode = payload.getInt();
 		value = payload.getLong();
 	}
 
@@ -51,6 +64,7 @@ public class GetAutoIncrementValueResponse extends Message {
     {
 		super.write(payload);
 		payload.putInt(rowDefId);
+		payload.putInt(resultCode);
 		payload.putLong(value);
 	}
 

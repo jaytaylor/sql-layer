@@ -8,18 +8,10 @@ public class CountRowsResponse extends Message {
 
 	public static short TYPE;
 	
-	private int sessionId;
+	private int resultCode;
 	
 	private long count;
 	
-	public int getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(int sessionId) {
-		this.sessionId = sessionId;
-	}
-
 	public long getCount() {
 		return count;
 	}
@@ -28,27 +20,35 @@ public class CountRowsResponse extends Message {
 		this.count = count;
 	}
 
+	public int getResultCode() {
+		return resultCode;
+	}
+
+	public void setResultCode(int resultCode) {
+		this.resultCode = resultCode;
+	}
+
 	public CountRowsResponse() {
 		super(TYPE);
 	}
 	
-	public CountRowsResponse(final int sessionId, final long count) {
+	public CountRowsResponse(final int resultCode, final long count) {
 		super(TYPE);
-		this.sessionId = sessionId;
+		this.resultCode = resultCode;
 		this.count = count;
 	}
 	
 	@Override
 	public void read(ByteBuffer payload) throws Exception {
 		super.read(payload);
-		sessionId = payload.getInt();
+		resultCode = payload.getInt();
 		count = payload.getLong();
 	}
 
 	@Override
 	public void write(ByteBuffer payload) throws Exception {
 		super.write(payload);
-		payload.putInt(sessionId);
+		payload.putInt(resultCode);
 		payload.putLong(count);
 	}
 }

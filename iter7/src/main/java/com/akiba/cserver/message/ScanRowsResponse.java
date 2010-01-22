@@ -10,10 +10,10 @@ public class ScanRowsResponse extends Message {
 
 	public static short TYPE;
 	
-	private int sessionId;
-	
-	private byte[] columnBitMap;
+	private short resultCode;
 
+	private byte[] columnBitMap;
+	
 	private RowCollector collector;
 	
 	private RowDistributor distributor;
@@ -22,30 +22,29 @@ public class ScanRowsResponse extends Message {
 		super(TYPE);
 	}
 	
-	public ScanRowsResponse(final int sessionId, final RowCollector collector) {
+	public ScanRowsResponse(final int sessionId, final short resultCode, final RowCollector collector) {
 		super(TYPE);
-		this.sessionId = sessionId;
+		this.resultCode = resultCode;
 		this.collector = collector;
 	}
 	
 	@Override
 	public void read(ByteBuffer payload) throws Exception {
 		super.read(payload);
-		sessionId = payload.getInt();
+		resultCode = payload.getShort();
 		final int size = payload.getChar();
 		columnBitMap = new byte[size];
 		payload.get(columnBitMap);
 		while(distributor.distributeNextRow(payload, columnBitMap));
-		
 	}
 
 	@Override
 	public void write(ByteBuffer payload) throws Exception {
 		super.write(payload);
-		payload.putInt(sessionId);
+		payload.putShort(resultCode);
 		payload.putChar((char)columnBitMap.length);
 		payload.put(columnBitMap);
 		while (collector.collectNextRow(payload, columnBitMap));
-		payload.putInt(0);
+		payload.putInt(collector.hasMore() ? -1 : 0);
 	}
 }

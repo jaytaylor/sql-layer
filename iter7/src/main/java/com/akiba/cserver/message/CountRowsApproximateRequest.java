@@ -6,18 +6,15 @@ import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.CorruptRowDataException;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.CServer.CServerContext;
-import com.akiba.cserver.store.RowCollector;
 import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 import com.persistit.Util;
 
-public class ScanRowsRequest extends Message implements CServerConstants {
+public class CountRowsApproximateRequest extends Message implements CServerConstants {
 
 	public static short TYPE;
-
-	private int sessionId;
 
 	private int indexId;
 	
@@ -27,18 +24,10 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 
 	private RowData end;
 
-	public ScanRowsRequest() {
+	public CountRowsApproximateRequest() {
 		super(TYPE);
 	}
 	
-	public int getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(int sessionId) {
-		this.sessionId = sessionId;
-	}
-
 	public int getIndexId() {
 		return indexId;
 	}
@@ -75,9 +64,8 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 	public void execute(final AkibaConnection connection,
 			ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
-		final RowCollector collector = store.newRowCollector(sessionId, indexId, start, end,
-				columnBitMap);
-		final ScanRowsResponse response = new ScanRowsResponse(sessionId, OK, collector);
+		final long count = store.getRowCount(false, start, end, columnBitMap);
+		final CountRowsResponse response = new CountRowsResponse(OK, count);
 		//
 		// Note: the act of serializing the response message invokes
 		// the RowCollector to actually scan the rows. This lets
@@ -90,7 +78,6 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 	public void read(final ByteBuffer payload) throws Exception,
 			CorruptRowDataException {
 		super.read(payload);
-		sessionId = payload.getInt();
 		indexId = payload.getInt();
 		int columnBitMapLength = payload.getChar();
 		columnBitMap = new byte[columnBitMapLength];
@@ -120,7 +107,6 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 		super.write(payload);
 		start.validateRow(start.getRowStart());
 		end.validateRow(end.getRowStart());
-		payload.putInt(sessionId);
 		payload.putInt(indexId);
 		payload.putChar((char) columnBitMap.length);
 		payload.put(columnBitMap);

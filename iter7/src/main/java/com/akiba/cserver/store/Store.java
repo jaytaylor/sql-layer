@@ -14,7 +14,7 @@ public interface Store {
 	
 	public void shutDown() throws Exception;
 	
-	public void writeRow(final AkibaConnection connection, final RowData rowData) throws Exception;
+	public int writeRow(final RowData rowData) throws Exception;
 	
 	public long getAutoIncrementValue(final int rowDefId) throws Exception;
 	
@@ -22,5 +22,5 @@ public interface Store {
 	
 	public RowCollector getRowCollector(final long sessionId);
 	
-	public long getRowCount(final int accuracy, final RowData start, final RowData end, final byte[] columnBitMap);
+	public long getRowCount(final boolean exact, final RowData start, final RowData end, final byte[] columnBitMap);
 }

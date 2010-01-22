@@ -33,8 +33,7 @@ import com.akiba.network.NetworkHandlerFactory;
  */
 public class CServer {
 
-	private static final Log LOG = LogFactory.getLog(CServer.class
-			.getName());
+	private static final Log LOG = LogFactory.getLog(CServer.class.getName());
 
 	private static final String[] USAGE = {
 			"java -jar cserver.jar DB_HOST DB_USERNAME DB_PASSWORD DB_NAME",
@@ -79,7 +78,7 @@ public class CServer {
 		synchronized (threads) {
 			copy = new ArrayList<Thread>(threads);
 		}
-		// fpor now I think this is the only way to make these threads
+		// for now I think this is the only way to make these threads
 		// bail from their reads.
 		for (final Thread thread : copy) {
 			thread.interrupt();
@@ -119,13 +118,13 @@ public class CServer {
 			AISExecutionContext {
 
 		public Store getStore() {
-			return CServer.this.store;
+			return store;
 		}
 
 		@Override
 		public void executeRequest(AkibaConnection connection,
 				AISRequest request) throws Exception {
-			final AkibaInformationSchema ais = getAIS();
+			acquireAIS();
 			AISResponse aisResponse = new AISResponse(ais);
 			connection.send(aisResponse);
 		}
@@ -168,10 +167,14 @@ public class CServer {
 					message.execute(connection, context);
 					requestCounter++;
 				} catch (InterruptedException e) {
-					System.err.println("Thread " + Thread.currentThread()
-							+ (stopped ? " stopped" : " interrupted"));
+					if (LOG.isInfoEnabled()) {
+						LOG.info("Thread " + Thread.currentThread()
+								+ (stopped ? " stopped" : " interrupted"));
+					}
 				} catch (Exception e) {
-					e.printStackTrace();
+					if (LOG.isErrorEnabled()) {
+						LOG.error("Unexpected error", e);
+					}
 				}
 			}
 		}
@@ -181,13 +184,20 @@ public class CServer {
 		return rowDefCache;
 	}
 
-	public synchronized AkibaInformationSchema getAIS() throws Exception {
-		if (ais == null) {
-			LOG.info("Reading AIS from " + dbHost + ":" + dbName);
-			readAISFromMySQL();
-			installAIS();
-		}
-		return ais;
+	/**
+	 * Acquire an AkibaInformationSchema from MySQL and install it into the
+	 * local RowDefCache.
+	 * 
+	 * This method always refreshes the locally cached AkibaInformationSchema to
+	 * support schema modifications at the MySQL head.
+	 * 
+	 * @return an AkibaInformationSchema
+	 * @throws Exception
+	 */
+	public void acquireAIS() throws Exception {
+		LOG.info("Reading AIS from " + dbHost + ":" + dbName);
+		readAISFromMySQL();
+		installAIS();
 	}
 
 	private void readAISFromMySQL() throws Exception {
@@ -195,9 +205,8 @@ public class CServer {
 		for (;;) {
 			try {
 				if (LOG.isInfoEnabled()) {
-					LOG.info(String
-							.format("Attempting to load AIS from %s:%s",
-									dbHost, dbName));
+					LOG.info(String.format("Attempting to load AIS from %s:%s",
+							dbHost, dbName));
 				}
 				ais = AkibaInformationSchemaImpl.load(new MySQLSource(dbHost,
 						dbUsername, dbPassword, dbName));

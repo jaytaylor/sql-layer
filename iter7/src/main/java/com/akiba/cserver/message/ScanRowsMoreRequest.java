@@ -2,6 +2,7 @@ package com.akiba.cserver.message;
 
 import java.nio.ByteBuffer;
 
+import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.CorruptRowDataException;
 import com.akiba.cserver.CServer.CServerContext;
 import com.akiba.cserver.store.RowCollector;
@@ -10,7 +11,7 @@ import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 
-public class ScanRowsMoreRequest extends Message {
+public class ScanRowsMoreRequest extends Message implements CServerConstants {
 
 	public static short TYPE;
 
@@ -33,7 +34,7 @@ public class ScanRowsMoreRequest extends Message {
 			ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
 		final RowCollector collector = store.getRowCollector(sessionId);
-		final ScanRowsResponse response = new ScanRowsResponse(sessionId, collector);
+		final ScanRowsResponse response = new ScanRowsResponse(sessionId, OK, collector);
 		//
 		// Note: the act of serializing the response message invokes
 		// the RowCollector to actually scan the rows. This lets

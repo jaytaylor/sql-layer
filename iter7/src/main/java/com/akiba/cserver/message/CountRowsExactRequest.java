@@ -2,25 +2,21 @@ package com.akiba.cserver.message;
 
 import java.nio.ByteBuffer;
 
+import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.CorruptRowDataException;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.CServer.CServerContext;
-import com.akiba.cserver.store.RowCollector;
 import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 import com.persistit.Util;
 
-public class CountRowsRequest extends Message {
+public class CountRowsExactRequest extends Message implements CServerConstants {
 
 	public static short TYPE;
 
-	private int sessionId;
-	
 	private int indexId;
-	
-	private int accuracy;
 	
 	private byte[] columnBitMap;
 
@@ -28,7 +24,7 @@ public class CountRowsRequest extends Message {
 
 	private RowData end;
 
-	public CountRowsRequest() {
+	public CountRowsExactRequest() {
 		super(TYPE);
 	}
 	
@@ -64,20 +60,12 @@ public class CountRowsRequest extends Message {
 		this.end = end;
 	}
 
-	public int getAccuracy() {
-		return accuracy;
-	}
-
-	public void setAccuracy(int accuracy) {
-		this.accuracy = accuracy;
-	}
-
 	@Override
 	public void execute(final AkibaConnection connection,
 			ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
-		final long count = store.getRowCount(accuracy, start, end, columnBitMap);
-		final CountRowsResponse response = new CountRowsResponse(sessionId, count);
+		final long count = store.getRowCount(true, start, end, columnBitMap);
+		final CountRowsResponse response = new CountRowsResponse(OK, count);
 		//
 		// Note: the act of serializing the response message invokes
 		// the RowCollector to actually scan the rows. This lets
@@ -90,7 +78,6 @@ public class CountRowsRequest extends Message {
 	public void read(final ByteBuffer payload) throws Exception,
 			CorruptRowDataException {
 		super.read(payload);
-		sessionId = payload.getInt();
 		indexId = payload.getInt();
 		int columnBitMapLength = payload.getChar();
 		columnBitMap = new byte[columnBitMapLength];
@@ -112,7 +99,6 @@ public class CountRowsRequest extends Message {
 		//
 		start.prepareRow(0);
 		end.prepareRow(0);
-		accuracy = payload.getInt();
 	}
 
 	@Override
@@ -121,13 +107,11 @@ public class CountRowsRequest extends Message {
 		super.write(payload);
 		start.validateRow(start.getRowStart());
 		end.validateRow(end.getRowStart());
-		payload.putInt(sessionId);
 		payload.putInt(indexId);
 		payload.putChar((char) columnBitMap.length);
 		payload.put(columnBitMap);
 		payload.put(start.getBytes(), start.getRowStart(), start.getRowSize());
 		payload.put(end.getBytes(), end.getRowStart(), end.getRowSize());
-		payload.putInt(accuracy);
 	}
 
 }

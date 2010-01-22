@@ -32,7 +32,9 @@ public class WriteRowRequest extends Message {
 	public void execute(final AkibaConnection connection,
 			final ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
-		store.writeRow(connection, rowData);
+		final int result = store.writeRow(rowData);
+		final Message message = new WriteRowResponse(result);
+		connection.send(message);
 	}
 
 	@Override

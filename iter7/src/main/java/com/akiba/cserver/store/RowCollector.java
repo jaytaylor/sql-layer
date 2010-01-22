@@ -7,4 +7,5 @@ public interface RowCollector {
 
 	public boolean collectNextRow(final ByteBuffer payload, final byte[] columnBitMap);
 	
+	public boolean hasMore();
 }

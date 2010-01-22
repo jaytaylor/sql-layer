@@ -2,12 +2,13 @@ package com.akiba.cserver.message;
 
 import java.nio.ByteBuffer;
 
+import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.CServer.CServerContext;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 
-public class GetAutoIncrementValueRequest extends Message {
+public class GetAutoIncrementValueRequest extends Message implements CServerConstants {
 	
 	public static short TYPE;
 	
@@ -50,7 +51,7 @@ public class GetAutoIncrementValueRequest extends Message {
 	@Override
 	public void execute(final AkibaConnection connection, final ExecutionContext context) throws Exception {
 		final long value = ((CServerContext)context).getStore().getAutoIncrementValue(rowDefId);
-		connection.send(new GetAutoIncrementValueResponse(rowDefId, value));
+		connection.send(new GetAutoIncrementValueResponse(rowDefId, OK, value));
 	}
 
 }
