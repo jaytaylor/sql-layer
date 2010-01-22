@@ -19,29 +19,30 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 	private final static File DATA_PATH = new File("/tmp/data");
 
 	private final static RowDef ROW_DEF0 = RowDef.createRowDef(1234,
-			new FieldDef[] { new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.INT), new FieldDef(FieldType.INT) },
-			"test", "test_group_table", new int[] { 0 });
+			new FieldDef[] { new FieldDef("t1", FieldType.INT),
+					new FieldDef("t2", FieldType.INT),
+					new FieldDef("t3", FieldType.INT) }, "test",
+			"test_group_table", new int[] { 0 });
 
 	//
 	// Highly abbreviate "COI" structure.
 	//
 	private final static RowDef ROW_DEF_C = RowDef.createRowDef(100,
-			new FieldDef[] { new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.VARCHAR, 100) }, "customers", "coi",
-			new int[] { 0 });
+			new FieldDef[] { new FieldDef("customer_id", FieldType.INT),
+					new FieldDef("customer_x", FieldType.VARCHAR, 100) },
+			"customers", "coi", new int[] { 0 });
 
 	private final static RowDef ROW_DEF_O = RowDef.createRowDef(101,
-			new FieldDef[] { new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.VARCHAR, 100) }, "orders", "coi",
-			new int[] { 0 }, 100, new int[] { 1 });
+			new FieldDef[] { new FieldDef("order_id", FieldType.INT),
+					new FieldDef("date", FieldType.INT),
+					new FieldDef("description", FieldType.VARCHAR, 100) },
+			"orders", "coi", new int[] { 0 }, 100, new int[] { 1 });
 
 	private final static RowDef ROW_DEF_I = RowDef.createRowDef(102,
-			new FieldDef[] { new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.VARCHAR, 100) }, "items", "coi",
-			new int[] { 0 }, 101, new int[] { 1 });
+			new FieldDef[] { new FieldDef("item_id", FieldType.INT),
+					new FieldDef("qty", FieldType.INT),
+					new FieldDef("description", FieldType.VARCHAR, 100) },
+			"items", "coi", new int[] { 0 }, 101, new int[] { 1 });
 
 	private PersistitStore store;
 

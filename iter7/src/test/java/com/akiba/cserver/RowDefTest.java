@@ -10,75 +10,75 @@ public class RowDefTest extends TestCase {
 	private final static boolean VERBOSE = false;
 
 	private final static FieldDef[][] FIELD_DEF_CASES = new FieldDef[][] {
-			{ new FieldDef(FieldType.TINYINT), new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.SMALLINT), },
+			{ new FieldDef(n(), FieldType.TINYINT), new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.SMALLINT), },
 
-			{ new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.TINYINT), },
+			{ new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.TINYINT), },
 
-			{ new FieldDef(FieldType.TINYINT), new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT), },
+			{ new FieldDef(n(), FieldType.TINYINT), new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT), },
 
-			{ new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100),
-					new FieldDef(FieldType.VARCHAR, 100), },
+			{ new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100),
+					new FieldDef(n(), FieldType.VARCHAR, 100), },
 
-			{ new FieldDef(FieldType.TINYINT), new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.SMALLINT),
-					new FieldDef(FieldType.MEDIUMINT),
-					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.BIGINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.SMALLINT),
-					new FieldDef(FieldType.MEDIUMINT),
-					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.BIGINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.VARCHAR, 200),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.SMALLINT),
-					new FieldDef(FieldType.MEDIUMINT),
-					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.BIGINT),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.SMALLINT),
-					new FieldDef(FieldType.MEDIUMINT),
-					new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.BIGINT),
-					new FieldDef(FieldType.VARCHAR, 200),
-					new FieldDef(FieldType.TINYINT),
-					new FieldDef(FieldType.TINYINT), },
+			{ new FieldDef(n(), FieldType.TINYINT), new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.SMALLINT),
+					new FieldDef(n(), FieldType.MEDIUMINT),
+					new FieldDef(n(), FieldType.INT),
+					new FieldDef(n(), FieldType.BIGINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.SMALLINT),
+					new FieldDef(n(), FieldType.MEDIUMINT),
+					new FieldDef(n(), FieldType.INT),
+					new FieldDef(n(), FieldType.BIGINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.VARCHAR, 200),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.SMALLINT),
+					new FieldDef(n(), FieldType.MEDIUMINT),
+					new FieldDef(n(), FieldType.INT),
+					new FieldDef(n(), FieldType.BIGINT),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.SMALLINT),
+					new FieldDef(n(), FieldType.MEDIUMINT),
+					new FieldDef(n(), FieldType.INT),
+					new FieldDef(n(), FieldType.BIGINT),
+					new FieldDef(n(), FieldType.VARCHAR, 200),
+					new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT), },
 
 	};
 
@@ -116,7 +116,14 @@ public class RowDefTest extends TestCase {
 					11, "foo", 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
 					"bar", 26, 27 }
 
-			}, };
+			},
+		};
+	
+	private static int fieldNameCounter = 0;
+	
+	private static String n() {
+		return "C" + (++fieldNameCounter);
+	}
 
 	public void testComputeFieldLocations1() {
 		for (int def = 0; def < FIELD_DEF_CASES.length; def++) {
@@ -172,14 +179,14 @@ public class RowDefTest extends TestCase {
 		for (int i = 0; i < fieldDefs.length; i++) {
 			FieldType type = allTypes[random.nextInt(allTypes.length)];
 			if (type.isFixedWidth()) {
-				fieldDefs[i] = new FieldDef(type);
+				fieldDefs[i] = new FieldDef(n(), type);
 				maxSize += type.getMaxWidth();
 			} else {
 				int max = Math.min(1000, type.getMaxWidth()
 						- type.getMinWidth() + 1);
 				int maxWidth = random.nextInt(max)
 						+ type.getMinWidth();
-				fieldDefs[i] = new FieldDef(type, maxWidth);
+				fieldDefs[i] = new FieldDef(n(), type, maxWidth);
 				maxSize += maxWidth + 3;
 			}
 		}

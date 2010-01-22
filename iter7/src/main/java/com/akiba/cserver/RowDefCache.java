@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.ais.model.Column;
@@ -24,8 +25,8 @@ import com.akiba.ais.model.UserTable;
 public class RowDefCache implements CServerConstants {
 
 	private final Map<Integer, RowDef> cacheMap = new HashMap<Integer, RowDef>();
-	
-	private final Map<String, Integer> nameMap = new HashMap<String, Integer>();
+
+	private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
 
 	/**
 	 * Look up and return a RowDef for a supplied rowDefId value.
@@ -50,7 +51,6 @@ public class RowDefCache implements CServerConstants {
 		return getRowDef(key.intValue());
 	}
 
-
 	/**
 	 * Receive an instance of the AkibaInformationSchema, crack it and produce
 	 * the RowDef instances it defines.
@@ -68,15 +68,16 @@ public class RowDefCache implements CServerConstants {
 			// FieldDef[]
 			final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
 			for (final Column column : table.getColumns()) {
-				final String typeName = column.getTypeName().toUpperCase();
+				final String typeName = column.getType().name().toUpperCase();
 				final FieldType type = FieldType.valueOf(typeName);
 				final int fieldIndex = column.getPosition();
-                if (type.isFixedWidth()) {
-                    fieldDefs[fieldIndex] = new FieldDef(type);
-                } else {
-                    final Object typeParam = column.getTypeParameter1();
-                    fieldDefs[fieldIndex] = new FieldDef(type, ((Long) typeParam).intValue());
-                }
+				if (type.isFixedWidth()) {
+					fieldDefs[fieldIndex] = new FieldDef(column.getName(), type);
+				} else {
+					final Object typeParam = column.getTypeParameter1();
+					fieldDefs[fieldIndex] = new FieldDef(column.getName(),
+							type, ((Long) typeParam).intValue());
+				}
 			}
 
 			// parentRowDef
@@ -127,14 +128,14 @@ public class RowDefCache implements CServerConstants {
 						pkFieldList.add(position);
 					}
 				}
-				
+
 				int pkField = 0;
 				pkFields = new int[pkFieldList.size()];
 				for (final Integer position : pkFieldList) {
 					pkFields[pkField++] = position;
 				}
 			}
-			
+
 			UserTable root = table;
 			while (root.getParentJoin() != null) {
 				root = root.getParentJoin().getParent();
@@ -147,18 +148,44 @@ public class RowDefCache implements CServerConstants {
 			}
 
 			final RowDef rowDef = RowDef.createRowDef(rowDefId, fieldDefs,
-					table.getName().getTableName(), groupTableName, pkFields, parentRowDefId,
-					parentJoinFields);
+					table.getName().getTableName(), groupTableName, pkFields,
+					parentRowDefId, parentJoinFields);
 			putRowDef(rowDef);
 		}
+
+		for (final GroupTable table : ais.getGroupTables().values()) {
+			// rowDefId
+			final int rowDefId = table.getTableId();
+
+			// FieldDef[]
+			final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
+			for (final Column column : table.getColumns()) {
+				final String typeName = column.getType().name().toUpperCase();
+				final FieldType type = FieldType.valueOf(typeName);
+				final int fieldIndex = column.getPosition();
+				if (type.isFixedWidth()) {
+					fieldDefs[fieldIndex] = new FieldDef(column.getName(), type);
+				} else {
+					final Object typeParam = column.getTypeParameter1();
+					fieldDefs[fieldIndex] = new FieldDef(column.getName(),
+							type, ((Long) typeParam).intValue());
+				}
+			}
+
+			final RowDef rowDef = RowDef.createRowDef(rowDefId, fieldDefs,
+					table.getName().getTableName(), table.getName()
+							.getTableName(), new int[0]);
+			putRowDef(rowDef);
+
+		}
 	}
-	
+
 	RowDef lookUpRowDef(final int rowDefId) {
 		throw new UnsupportedOperationException(
 				"Current version is unable to look up RowDef instances"
 						+ " that were not supplied by the AIS");
 	}
-	
+
 	/**
 	 * Adds a RowDef preemptively to the cache. This is intended primarily to
 	 * simply unit tests.
@@ -167,7 +194,23 @@ public class RowDefCache implements CServerConstants {
 	 */
 	public synchronized void putRowDef(final RowDef rowDef) {
 		Integer key = Integer.valueOf(rowDef.getRowDefId());
+		if (cacheMap.containsKey(key)
+				|| nameMap.containsKey(rowDef.getTableName())) {
+			throw new IllegalStateException("RowDef " + rowDef
+					+ " already exists");
+		}
 		cacheMap.put(key, rowDef);
 		nameMap.put(rowDef.getTableName(), key);
+	}
+	
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+		for (Map.Entry<String, Integer> entry : nameMap.entrySet()) {
+			final RowDef rowDef = cacheMap.get(entry.getValue());
+			sb.append(rowDef);
+			sb.append("\n");
+		}
+		return sb.toString();
 	}
 }

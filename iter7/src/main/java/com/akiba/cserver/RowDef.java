@@ -353,7 +353,14 @@ public class RowDef {
 	 */
 	@Override
 	public String toString() {
-		return debugToString();
+		StringBuilder sb = new StringBuilder("RowDef ");
+		sb.append(tableName);
+		for (int i = 0; i < fieldDefs.length; i++) {
+			sb.append(i == 0 ? "[" : ",");
+			sb.append(fieldDefs[i]);
+		}
+		sb.append("]");
+		return sb.toString();
 	}
 
 	/**

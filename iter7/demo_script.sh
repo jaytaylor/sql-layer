@@ -3,31 +3,33 @@
 export PREPAKIBA=/home/peter/bin/prepakiba
 export TRUNK=/home/peter/akiba_akiba/trunk
 
-# Stop any left over CServer instances
+echo Stop any left over CServer instances
 pkill -f "cserver-1.0-SNAPSHOT-jar-with-dependencies.jar"
-
+sleep 1
+echo Start or restart the  ChunkServer
 mkdir /tmp/chunkserver_data
 rm /tmp/chunkserver_data/*
-
-# Start or restart the  ChunkServer
-sleep 1
-java $1 -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y -Xmx512M -jar $TRUNK/cserver/iter7/target/cserver-1.0-SNAPSHOT-jar-with-dependencies.jar localhost akiba akibaDB akiba_information_schema localhost 33060 ais.sav &
+java $1 -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y -Xmx512M -jar $TRUNK/cserver/iter7/target/cserver-1.0-SNAPSHOT-jar-with-dependencies.jar localhost akiba akibaDB akiba_information_schema localhost 33060 &
 
 sleep 3
 
-# Reset database
+echo Prepare MySQL with AkibaDB engine
 sudo $PREPAKIBA
 
 sleep 3
 
-# Load data dictionary
+echo Load data dictionary
 pushd $TRUNK/common/ais/
 mysql -u root < src/test/resources/data_dictionary_test_schema.sql
 popd
 
+echo Bounce MySQL so to cause AIS to load
+sudo service mysql restart
+
 sleep 5
-#echo Hit enter to insert rows
-#read $fred
+
+echo Hit enter to insert rows
+read $fred
 
 echo Insert some rows
 mysql -u root <<EOF

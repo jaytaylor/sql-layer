@@ -20,9 +20,10 @@ public class CServerTest extends TestCase {
 	private final static File DATA_PATH = new File("/tmp/data");
 
 	private final static RowDef ROW_DEF = RowDef.createRowDef(1234,
-			new FieldDef[] { new FieldDef(FieldType.INT),
-					new FieldDef(FieldType.INT), new FieldDef(FieldType.INT) },
-			"test", "group_table_test", new int[]{0});
+			new FieldDef[] { new FieldDef("a", FieldType.INT),
+					new FieldDef("b", FieldType.INT),
+					new FieldDef("c", FieldType.INT) }, "test",
+			"group_table_test", new int[] { 0 });
 
 	@Override
 	public void setUp() throws Exception {
@@ -49,10 +50,10 @@ public class CServerTest extends TestCase {
 			final WriteRowResponse response = (WriteRowResponse) connection
 					.sendAndReceive(request);
 			assertEquals(1, response.getResultCode());
-			
+
 			networkHandler.disconnectWorker();
 			NetworkHandlerFactory.closeNetwork();
-			
+
 		} catch (Throwable t) {
 			t.printStackTrace();
 		} finally {
@@ -71,19 +72,21 @@ public class CServerTest extends TestCase {
 					.createConnection(networkHandler);
 			Message request;
 			Message response;
-			
+
 			request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
 			response = connection.sendAndReceive(request);
-			assertEquals(-1, ((GetAutoIncrementValueResponse)response).getValue());
-			
+			assertEquals(-1, ((GetAutoIncrementValueResponse) response)
+					.getValue());
+
 			request = createWriteRowRequest();
 			response = connection.sendAndReceive(request);
-			assertEquals(1, ((WriteRowResponse)response).getResultCode());
-			
+			assertEquals(1, ((WriteRowResponse) response).getResultCode());
+
 			request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
 			response = connection.sendAndReceive(request);
-			assertEquals(1, ((GetAutoIncrementValueResponse)response).getValue());
-			
+			assertEquals(1, ((GetAutoIncrementValueResponse) response)
+					.getValue());
+
 			networkHandler.disconnectWorker();
 			NetworkHandlerFactory.closeNetwork();
 
