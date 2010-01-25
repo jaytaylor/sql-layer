@@ -182,8 +182,7 @@ public class RowDefCache implements CServerConstants {
 
 	RowDef lookUpRowDef(final int rowDefId) {
 		throw new UnsupportedOperationException(
-				"Current version is unable to look up RowDef instances"
-						+ " that were not supplied by the AIS");
+				"No RowDef for rowDefId=" + rowDefId);
 	}
 
 	/**
