@@ -44,7 +44,7 @@ public class ScanRowsResponse extends Message {
 		payload.putShort(resultCode);
 		payload.putChar((char)columnBitMap.length);
 		payload.put(columnBitMap);
-		while (collector.collectNextRow(payload, columnBitMap));
+		while (collector.collectNextRow(payload));
 		payload.putInt(collector.hasMore() ? -1 : 0);
 	}
 }

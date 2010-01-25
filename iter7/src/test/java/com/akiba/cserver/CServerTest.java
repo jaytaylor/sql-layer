@@ -6,6 +6,7 @@ import junit.framework.TestCase;
 
 import com.akiba.cserver.message.GetAutoIncrementValueRequest;
 import com.akiba.cserver.message.GetAutoIncrementValueResponse;
+import com.akiba.cserver.message.ScanRowsRequest;
 import com.akiba.cserver.message.WriteRowRequest;
 import com.akiba.cserver.message.WriteRowResponse;
 import com.akiba.cserver.store.PersistitStore;
@@ -15,7 +16,7 @@ import com.akiba.message.MessageRegistryBase;
 import com.akiba.network.AkibaNetworkHandler;
 import com.akiba.network.NetworkHandlerFactory;
 
-public class CServerTest extends TestCase {
+public class CServerTest extends TestCase implements CServerConstants {
 
 	private final static File DATA_PATH = new File("/tmp/data");
 
@@ -80,7 +81,7 @@ public class CServerTest extends TestCase {
 
 			request = createWriteRowRequest();
 			response = connection.sendAndReceive(request);
-			assertEquals(1, ((WriteRowResponse) response).getResultCode());
+			assertEquals(OK, ((WriteRowResponse) response).getResultCode());
 
 			request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
 			response = connection.sendAndReceive(request);

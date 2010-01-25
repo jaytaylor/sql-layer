@@ -386,12 +386,19 @@ public class PersistitStore implements Store, CServerConstants {
 			RowData end, byte[] columnBitMap) throws Exception {
 		final int rowDefId = start.getRowDefId();
 		if (end != null && end.getRowDefId() != rowDefId) {
-			throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
+			throw new IllegalArgumentException(
+					"Start and end RowData must specify the same rowDefId");
 		}
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+
 		final Exchange exchange = getExchange(rowDef.getTreeName());
-		final KeyFilter keyFilter = new KeyFilter(); // TODO - compute KeyFilter given start/end RowData values
-		final RowCollector rc = new PersistitRowCollector(exchange, keyFilter, columnBitMap);
+		exchange.clear();
+
+		final KeyFilter keyFilter = new KeyFilter(); // TODO - compute KeyFilter
+		// given start/end
+		// RowData values
+		final RowCollector rc = new PersistitRowCollector(exchange, keyFilter,
+				columnBitMap);
 		getSession().setCurrentRowCollector(rc);
 		return rc;
 	}
@@ -406,15 +413,17 @@ public class PersistitStore implements Store, CServerConstants {
 	private static class PersistitRowCollector implements RowCollector {
 
 		private final static int INITIAL_BUFFER_SIZE = 1024;
-		
+
 		private final Exchange exchange;
 
 		private final KeyFilter keyFilter;
 
 		private final byte[] columnBitMap;
 
-		private boolean putBack;
-		
+		private boolean traversed = false;
+
+		private boolean more = true;
+
 		private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
 
 		private Key.Direction direction = Key.GTEQ;
@@ -427,9 +436,7 @@ public class PersistitStore implements Store, CServerConstants {
 		}
 
 		@Override
-		public boolean collectNextRow(ByteBuffer payload, byte[] columnBitMap)
-				throws Exception {
-			boolean more = false;
+		public boolean collectNextRow(ByteBuffer payload) throws Exception {
 			int available = payload.limit() - payload.position();
 			if (available < 4) {
 				throw new IllegalStateException(
@@ -437,51 +444,44 @@ public class PersistitStore implements Store, CServerConstants {
 								+ "bytes available, but actually has only "
 								+ available);
 			}
-			if (putBack) {
-				putBack = false;
-				more = true;
-			} else {
-				more = exchange.traverse(direction, keyFilter,
-						Integer.MAX_VALUE);
-			}
-			if (!more) {
-				payload.putInt(0);
-				return false;
-			} else {
+			if (hasMore()) {
 				int rowDataSize = exchange.getValue().getEncodedSize()
 						+ RowData.ENVELOPE_SIZE;
 				if (rowDataSize + 4 <= available) {
-					if (rowDataSize > buffer.length){
+					if (rowDataSize > buffer.length) {
 						buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
 					}
 					Util.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
-					Util.putChar(buffer, RowData.O_SIGNATURE_A, RowData.SIGNATURE_A);
-					System.arraycopy(exchange.getValue().getEncodedBytes(), 0, buffer, RowData.O_FIELD_COUNT, exchange.getValue().getEncodedSize());
-					Util.putInt(buffer, RowData.O_SIGNATURE_B + rowDataSize, RowData.SIGNATURE_B);
-					Util.putInt(buffer, RowData.O_LENGTH_B + rowDataSize, rowDataSize);
+					Util.putChar(buffer, RowData.O_SIGNATURE_A,
+							RowData.SIGNATURE_A);
+					System.arraycopy(exchange.getValue().getEncodedBytes(), 0,
+							buffer, RowData.O_FIELD_COUNT, exchange.getValue()
+									.getEncodedSize());
+					Util.putInt(buffer, RowData.O_SIGNATURE_B + rowDataSize,
+							RowData.SIGNATURE_B);
+					Util.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
+							rowDataSize);
 					payload.put(buffer, 0, rowDataSize);
+					traversed = false;
 					return true;
 				} else {
-					putBack = true;
-					payload.putInt(-1);
+					traversed = true;
 					return false;
 				}
+			} else {
+				return false;
 			}
 		}
 
 		@Override
 		public boolean hasMore() throws Exception {
-			if (putBack) {
-				putBack = false;
-				return true;
-			} else {
-				boolean more = exchange.traverse(direction, keyFilter,
+			if (!traversed && more) {
+				more = exchange.traverse(direction, keyFilter,
 						Integer.MAX_VALUE);
-				if (more) {
-					putBack = true;
-				}
-				return more;
+				traversed = true;
+				direction = Key.GT;
 			}
+			return more;
 		}
 	}
 

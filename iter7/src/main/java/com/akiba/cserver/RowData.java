@@ -150,6 +150,10 @@ public class RowData {
 		return bufferEnd - bufferStart;
 	}
 
+	public int getBufferEnd() {
+		return bufferEnd;
+	}
+	
 	public int getRowStart() {
 		return rowStart;
 	}
