@@ -15,26 +15,16 @@ public class ScanRowsMoreRequest extends Message implements CServerConstants {
 
 	public static short TYPE;
 
-	private int sessionId;
-
 	public ScanRowsMoreRequest() {
 		super(TYPE);
 	}
 	
-	public int getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(int sessionId) {
-		this.sessionId = sessionId;
-	}
-
 	@Override
 	public void execute(final AkibaConnection connection,
 			ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
-		final RowCollector collector = store.getRowCollector(sessionId);
-		final ScanRowsResponse response = new ScanRowsResponse(sessionId, OK, collector);
+		final RowCollector collector = store.getCurrentRowCollector();
+		final ScanRowsResponse response = new ScanRowsResponse(OK, collector);
 		//
 		// Note: the act of serializing the response message invokes
 		// the RowCollector to actually scan the rows. This lets
@@ -47,14 +37,12 @@ public class ScanRowsMoreRequest extends Message implements CServerConstants {
 	public void read(final ByteBuffer payload) throws Exception,
 			CorruptRowDataException {
 		super.read(payload);
-		sessionId = payload.getInt();
 	}
 
 	@Override
 	public void write(final ByteBuffer payload) throws Exception,
 			CorruptRowDataException {
 		super.write(payload);
-		payload.putInt(sessionId);
 	}
 
 

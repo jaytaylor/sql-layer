@@ -40,9 +40,7 @@ public class CServer {
 			"    DB_HOST: Host running database containing AIS",
 			"    DB_USERNAME: Database username",
 			"    DB_PASSWORD: Database password",
-			"    DB_NAME: AIS dababase name",
-			"    NET_HOST: ASE host name (usually same as DB_HOST)",
-			"    NET_PORT: ASE port address," };
+			"    DB_NAME: AIS dababase name" };
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 
@@ -54,9 +52,6 @@ public class CServer {
 	private String dbUsername = "akiba";
 	private String dbPassword = "akibaDB";
 	private String dbName = "akiba_information_schema";
-	private String netHost = "localhost";
-	private String netPort = "33060";
-	private String toFile = null;
 
 	private volatile boolean stopped = false;
 
@@ -264,15 +259,6 @@ public class CServer {
 		}
 		if (a < args.length) {
 			dbName = args[a++];
-		}
-		if (a < args.length) {
-			netHost = args[a++];
-		}
-		if (a < args.length) {
-			netPort = args[a++];
-		}
-		if (a < args.length) {
-			toFile = args[a++];
 		}
 		if (dbHost.contains("-h") || dbHost.contains("?")) {
 			usage();

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 public interface RowCollector {
 
-	public boolean collectNextRow(final ByteBuffer payload, final byte[] columnBitMap);
+	public boolean collectNextRow(final ByteBuffer payload, final byte[] columnBitMap) throws Exception;
 	
-	public boolean hasMore();
+	public boolean hasMore() throws Exception;
 }

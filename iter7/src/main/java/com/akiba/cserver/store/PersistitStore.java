@@ -1,7 +1,7 @@
 package com.akiba.cserver.store;
 
 import java.io.File;
-import java.util.HashMap;
+import java.nio.ByteBuffer;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
@@ -18,11 +18,9 @@ import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
 import com.akiba.cserver.Util;
-import com.akiba.cserver.message.WriteRowResponse;
-import com.akiba.message.AkibaConnection;
-import com.akiba.message.Message;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.KeyFilter;
 import com.persistit.Persistit;
 import com.persistit.StreamLoader;
 import com.persistit.Transaction;
@@ -36,6 +34,9 @@ public class PersistitStore implements Store, CServerConstants {
 
 	private static final Log LOG = LogFactory.getLog(CServer.class.getName());
 
+	private final static String VOLUME_NAME = "aktest"; // TODO - select
+	// database
+
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
 	static {
@@ -45,14 +46,12 @@ public class PersistitStore implements Store, CServerConstants {
 				"${logpath}/persistit_${timestamp}.log");
 		PERSISTIT_PROPERTIES.put("verbose", "true");
 		PERSISTIT_PROPERTIES.put("buffer.count.8192", "4K");
-		PERSISTIT_PROPERTIES
-				.put(
-						"volume.1",
-						"${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,extensionSize:1M,maximumSize:10G");
-		PERSISTIT_PROPERTIES
-				.put(
-						"volume.2",
-						"${datapath}/aktest.v01,create,pageSize:8k,initialSize:5M,extensionSize:5M,maximumSize:100G");
+		PERSISTIT_PROPERTIES.put("volume.1",
+				"${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,e"
+						+ "xtensionSize:1M,maximumSize:10G");
+		PERSISTIT_PROPERTIES.put("volume.2", "${datapath}/" + VOLUME_NAME
+				+ ".v01,create,pageSize:8k,"
+				+ "initialSize:5M,extensionSize:5M,maximumSize:100G");
 		PERSISTIT_PROPERTIES.put("pwjpath", "${datapath}/persistit.pwj");
 		PERSISTIT_PROPERTIES.put("pwjsize", "16M");
 		PERSISTIT_PROPERTIES.put("pwdelete", "true");
@@ -63,7 +62,7 @@ public class PersistitStore implements Store, CServerConstants {
 
 	private Persistit db;
 
-	private ThreadLocal<HashMap<String, Exchange>> exchangeLocal = new ThreadLocal<HashMap<String, Exchange>>();
+	private ThreadLocal<PersistitStoreSession> sessionLocal = new ThreadLocal<PersistitStoreSession>();
 
 	private final RowDefCache rowDefCache;
 
@@ -225,19 +224,18 @@ public class PersistitStore implements Store, CServerConstants {
 		return root;
 	}
 
+	private PersistitStoreSession getSession() {
+		PersistitStoreSession session = sessionLocal.get();
+		if (session == null) {
+			session = new PersistitStoreSession(db);
+			sessionLocal.set(session);
+		}
+		return session;
+	}
+
 	private Exchange getExchange(final String treeName)
 			throws PersistitException {
-		HashMap<String, Exchange> exchangeMap = exchangeLocal.get();
-		if (exchangeMap == null) {
-			exchangeMap = new HashMap<String, Exchange>();
-			exchangeLocal.set(exchangeMap);
-		}
-		Exchange exchange = exchangeMap.get(treeName);
-		if (exchange == null) {
-			exchange = db.getExchange("aktest", treeName, true);
-			exchangeMap.put(treeName, exchange);
-		}
-		return exchange;
+		return getSession().getExchange(VOLUME_NAME, treeName);
 	}
 
 	private void constructHKey(final Key key, final RowDef rowDef,
@@ -379,16 +377,23 @@ public class PersistitStore implements Store, CServerConstants {
 	}
 
 	@Override
-	public RowCollector getRowCollector(long sessionId) {
-		// TODO Auto-generated method stub
-		return null;
+	public RowCollector getCurrentRowCollector() {
+		return getSession().getCurrentRowCollector();
 	}
 
 	@Override
-	public RowCollector newRowCollector(long sessionId, int indexId,
-			RowData start, RowData end, byte[] columnBitMap) {
-		// TODO Auto-generated method stub
-		return null;
+	public RowCollector newRowCollector(int indexId, RowData start,
+			RowData end, byte[] columnBitMap) throws Exception {
+		final int rowDefId = start.getRowDefId();
+		if (end != null && end.getRowDefId() != rowDefId) {
+			throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
+		}
+		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		final Exchange exchange = getExchange(rowDef.getTreeName());
+		final KeyFilter keyFilter = new KeyFilter(); // TODO - compute KeyFilter given start/end RowData values
+		final RowCollector rc = new PersistitRowCollector(exchange, keyFilter, columnBitMap);
+		getSession().setCurrentRowCollector(rc);
+		return rc;
 	}
 
 	@Override
@@ -397,4 +402,87 @@ public class PersistitStore implements Store, CServerConstants {
 		// TODO Auto-generated method stub
 		return 0;
 	}
+
+	private static class PersistitRowCollector implements RowCollector {
+
+		private final static int INITIAL_BUFFER_SIZE = 1024;
+		
+		private final Exchange exchange;
+
+		private final KeyFilter keyFilter;
+
+		private final byte[] columnBitMap;
+
+		private boolean putBack;
+		
+		private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
+
+		private Key.Direction direction = Key.GTEQ;
+
+		private PersistitRowCollector(final Exchange exchange,
+				final KeyFilter keyFilter, final byte[] columnBitMap) {
+			this.exchange = exchange;
+			this.keyFilter = keyFilter;
+			this.columnBitMap = columnBitMap;
+		}
+
+		@Override
+		public boolean collectNextRow(ByteBuffer payload, byte[] columnBitMap)
+				throws Exception {
+			boolean more = false;
+			int available = payload.limit() - payload.position();
+			if (available < 4) {
+				throw new IllegalStateException(
+						"Payload byte buffer must have at least 4 "
+								+ "bytes available, but actually has only "
+								+ available);
+			}
+			if (putBack) {
+				putBack = false;
+				more = true;
+			} else {
+				more = exchange.traverse(direction, keyFilter,
+						Integer.MAX_VALUE);
+			}
+			if (!more) {
+				payload.putInt(0);
+				return false;
+			} else {
+				int rowDataSize = exchange.getValue().getEncodedSize()
+						+ RowData.ENVELOPE_SIZE;
+				if (rowDataSize + 4 <= available) {
+					if (rowDataSize > buffer.length){
+						buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
+					}
+					Util.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
+					Util.putChar(buffer, RowData.O_SIGNATURE_A, RowData.SIGNATURE_A);
+					System.arraycopy(exchange.getValue().getEncodedBytes(), 0, buffer, RowData.O_FIELD_COUNT, exchange.getValue().getEncodedSize());
+					Util.putInt(buffer, RowData.O_SIGNATURE_B + rowDataSize, RowData.SIGNATURE_B);
+					Util.putInt(buffer, RowData.O_LENGTH_B + rowDataSize, rowDataSize);
+					payload.put(buffer, 0, rowDataSize);
+					return true;
+				} else {
+					putBack = true;
+					payload.putInt(-1);
+					return false;
+				}
+			}
+		}
+
+		@Override
+		public boolean hasMore() throws Exception {
+			if (putBack) {
+				putBack = false;
+				return true;
+			} else {
+				boolean more = exchange.traverse(direction, keyFilter,
+						Integer.MAX_VALUE);
+				if (more) {
+					putBack = true;
+				}
+				return more;
+			}
+		}
+	}
+
 }

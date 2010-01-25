@@ -22,7 +22,7 @@ public class ScanRowsResponse extends Message {
 		super(TYPE);
 	}
 	
-	public ScanRowsResponse(final int sessionId, final short resultCode, final RowCollector collector) {
+	public ScanRowsResponse(final short resultCode, final RowCollector collector) {
 		super(TYPE);
 		this.resultCode = resultCode;
 		this.collector = collector;

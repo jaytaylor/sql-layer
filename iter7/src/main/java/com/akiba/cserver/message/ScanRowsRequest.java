@@ -17,8 +17,6 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 
 	public static short TYPE;
 
-	private int sessionId;
-
 	private int indexId;
 	
 	private byte[] columnBitMap;
@@ -31,14 +29,6 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 		super(TYPE);
 	}
 	
-	public int getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(int sessionId) {
-		this.sessionId = sessionId;
-	}
-
 	public int getIndexId() {
 		return indexId;
 	}
@@ -75,9 +65,9 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 	public void execute(final AkibaConnection connection,
 			ExecutionContext context) throws Exception {
 		final Store store = ((CServerContext) context).getStore();
-		final RowCollector collector = store.newRowCollector(sessionId, indexId, start, end,
+		final RowCollector collector = store.newRowCollector(indexId, start, end,
 				columnBitMap);
-		final ScanRowsResponse response = new ScanRowsResponse(sessionId, OK, collector);
+		final ScanRowsResponse response = new ScanRowsResponse(OK, collector);
 		//
 		// Note: the act of serializing the response message invokes
 		// the RowCollector to actually scan the rows. This lets
@@ -90,7 +80,6 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 	public void read(final ByteBuffer payload) throws Exception,
 			CorruptRowDataException {
 		super.read(payload);
-		sessionId = payload.getInt();
 		indexId = payload.getInt();
 		int columnBitMapLength = payload.getChar();
 		columnBitMap = new byte[columnBitMapLength];
@@ -120,7 +109,6 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 		super.write(payload);
 		start.validateRow(start.getRowStart());
 		end.validateRow(end.getRowStart());
-		payload.putInt(sessionId);
 		payload.putInt(indexId);
 		payload.putChar((char) columnBitMap.length);
 		payload.put(columnBitMap);
