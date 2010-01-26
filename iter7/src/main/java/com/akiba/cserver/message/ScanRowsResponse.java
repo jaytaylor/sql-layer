@@ -12,8 +12,6 @@ public class ScanRowsResponse extends Message {
 	
 	private short resultCode;
 
-	private byte[] columnBitMap;
-	
 	private RowCollector collector;
 	
 	private RowDistributor distributor;
@@ -32,18 +30,13 @@ public class ScanRowsResponse extends Message {
 	public void read(ByteBuffer payload) throws Exception {
 		super.read(payload);
 		resultCode = payload.getShort();
-		final int size = payload.getChar();
-		columnBitMap = new byte[size];
-		payload.get(columnBitMap);
-		while(distributor.distributeNextRow(payload, columnBitMap));
+		while(distributor.distributeNextRow(payload));
 	}
 
 	@Override
 	public void write(ByteBuffer payload) throws Exception {
 		super.write(payload);
 		payload.putShort(resultCode);
-		payload.putChar((char)columnBitMap.length);
-		payload.put(columnBitMap);
 		while (collector.collectNextRow(payload));
 		payload.putInt(collector.hasMore() ? -1 : 0);
 	}
