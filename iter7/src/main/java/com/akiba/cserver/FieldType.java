@@ -54,6 +54,9 @@ public enum FieldType {
 
 	TIMESTAMP(true, 4, 4) {
 	},
+	
+	TIME(true, 3, 3) {
+	},
 
 	YEAR(true, 2, 2) {
 	},

@@ -54,8 +54,11 @@ public class RowData {
 
 	public final static int ENVELOPE_SIZE = 12;
 
-	private final static SimpleDateFormat SDF = new SimpleDateFormat(
+	private final static SimpleDateFormat SDF_DATETIME = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm:SS");
+	
+	private final static SimpleDateFormat SDF_TIME = new SimpleDateFormat(
+			"HH:mm:SS");
 
 	private byte[] bytes;
 
@@ -105,7 +108,7 @@ public class RowData {
 			return true;
 		}
 	}
-	
+
 	public void validateRow(final int offset) throws CorruptRowDataException {
 
 		if (offset < 0 || offset + MINIMUM_RECORD_LENGTH > bufferEnd) {
@@ -153,7 +156,7 @@ public class RowData {
 	public int getBufferEnd() {
 		return bufferEnd;
 	}
-	
+
 	public int getRowStart() {
 		return rowStart;
 	}
@@ -165,7 +168,7 @@ public class RowData {
 	public int getRowEnd() {
 		return rowEnd;
 	}
-	
+
 	public int getRowSize() {
 		return rowEnd - rowStart;
 	}
@@ -251,7 +254,7 @@ public class RowData {
 				case TIMESTAMP:
 					final Date date;
 					try {
-						date = SDF.parse((String) object);
+						date = SDF_DATETIME.parse((String) object);
 					} catch (ParseException e) {
 						throw new RuntimeException(e);
 					}
@@ -265,6 +268,19 @@ public class RowData {
 						value = ((long) hi) << 32 + (long) low;
 					}
 					break;
+				case TIME:
+					final Date time;
+					try {
+						date = SDF_TIME.parse((String) object);
+					} catch (ParseException e) {
+						throw new RuntimeException(e);
+					}
+					value = date.getHours() * 3600 + date.getMinutes() * 60 +date.getSeconds();
+					break;
+					
+				default:
+					throw new UnsupportedOperationException(
+							"Unable to encode type " + fieldDef);
 				}
 				switch (width) {
 				case 1:
@@ -422,7 +438,7 @@ public class RowData {
 					final Date date = new Date(year - 1900, month, day, hour,
 							minute, second);
 					sb.append('\'');
-					sb.append(SDF.format(date));
+					sb.append(SDF_DATETIME.format(date));
 					sb.append('\'');
 					break;
 				}
@@ -430,7 +446,7 @@ public class RowData {
 					final long time = ((long) getIntegerValue((int) location, 4)) * 1000;
 					final Date date = new Date(time);
 					sb.append('\'');
-					sb.append(SDF.format(date));
+					sb.append(SDF_DATETIME.format(date));
 					sb.append('\'');
 					break;
 				}
