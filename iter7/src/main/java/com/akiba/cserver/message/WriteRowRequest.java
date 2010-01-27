@@ -3,7 +3,7 @@ package com.akiba.cserver.message;
 import java.nio.ByteBuffer;
 
 import com.akiba.cserver.RowData;
-import com.akiba.cserver.Util;
+import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.CServer.CServerContext;
 import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
@@ -72,7 +72,7 @@ public class WriteRowRequest extends Message {
 	@Override
 	public String toString() {
 		return String.format("WriteRowMessage bytes %d-%d: \n%s", rowData
-				.getRowStart(), rowData.getRowEnd(), Util.dump(rowData
+				.getRowStart(), rowData.getRowEnd(), CServerUtil.dump(rowData
 				.getBytes(), rowData.getRowStart(), rowData.getRowEnd()
 				- rowData.getRowStart()));
 	}

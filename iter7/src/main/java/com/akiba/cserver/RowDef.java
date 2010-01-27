@@ -385,7 +385,7 @@ public class RowDef {
 			for (int j = 0; j < count; j += 16) {
 				for (int k = 0; k < 16; k++) {
 					sb.append((k % 8) == 0 ? "   " : " ");
-					Util.hex(sb, fieldCoordinates[i][j + k], 8);
+					CServerUtil.hex(sb, fieldCoordinates[i][j + k], 8);
 				}
 				sb.append("\n");
 			}

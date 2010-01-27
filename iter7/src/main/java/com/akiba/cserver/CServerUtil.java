@@ -3,7 +3,7 @@ package com.akiba.cserver;
 import java.io.File;
 import java.lang.management.RuntimeMXBean;
 
-public class Util {
+public class CServerUtil {
 
 	private final static boolean BIG_ENDIAN = false;
 

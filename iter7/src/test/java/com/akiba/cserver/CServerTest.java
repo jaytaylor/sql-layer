@@ -28,7 +28,7 @@ public class CServerTest extends TestCase implements CServerConstants {
 
 	@Override
 	public void setUp() throws Exception {
-		Util.cleanUpDirectory(DATA_PATH);
+		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		MessageRegistryBase.reset();
 	}

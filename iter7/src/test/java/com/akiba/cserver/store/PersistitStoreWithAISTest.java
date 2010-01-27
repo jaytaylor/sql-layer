@@ -14,7 +14,7 @@ import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.Util;
+import com.akiba.cserver.CServerUtil;
 
 public class PersistitStoreWithAISTest extends TestCase implements
 		CServerConstants {
@@ -29,7 +29,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	public void setUp() throws Exception {
 		rowDefCache = new RowDefCache();
 		store = new PersistitStore(rowDefCache);
-		Util.cleanUpDirectory(DATA_PATH);
+		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		final TextSource textSource = new TextSource(new FileReader(new File(
 				"src/test/resources/data_dictionary_textsource.sql")));

@@ -12,7 +12,7 @@ import com.akiba.cserver.FieldType;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.Util;
+import com.akiba.cserver.CServerUtil;
 import com.persistit.Key;
 import com.persistit.Persistit;
 
@@ -54,7 +54,7 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 	public void setUp() throws Exception {
 		rowDefCache = new RowDefCache();
 		store = new PersistitStore(rowDefCache);
-		Util.cleanUpDirectory(DATA_PATH);
+		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		store.startUp();
 	}

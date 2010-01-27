@@ -11,7 +11,7 @@ import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
-import com.akiba.cserver.Util;
+import com.akiba.cserver.CServerUtil;
 
 public class ScanRowsRequest extends Message implements CServerConstants {
 
@@ -99,14 +99,14 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 	private RowData decodeRowData(final ByteBuffer payload) {
 		byte[] sizeBuffer = new byte[4];
 		payload.get(sizeBuffer);
-		int rowDataSize = Util.getInt(sizeBuffer, 0);
+		int rowDataSize = CServerUtil.getInt(sizeBuffer, 0);
 		if (rowDataSize < RowData.ENVELOPE_SIZE || rowDataSize > MAX_LIMIT_ROWDATA_SIZE) {
 			throw new IllegalStateException("Invalid RowData size: " + rowDataSize);
 		}
 		byte[] rowDataBytes = new byte[rowDataSize];
 		System.arraycopy(sizeBuffer, 0, rowDataBytes, 0, sizeBuffer.length);
 		
-		Util.putInt(rowDataBytes, 0, rowDataSize);
+		CServerUtil.putInt(rowDataBytes, 0, rowDataSize);
 		payload.get(rowDataBytes, 4, rowDataSize - 4);
 		final RowData rowData = new RowData(rowDataBytes);
 		rowData.prepareRow(0);

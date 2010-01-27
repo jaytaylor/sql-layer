@@ -104,7 +104,7 @@ public class RowData {
 		} else {
 			validateRow(offset);
 			rowStart = offset;
-			rowEnd = offset + Util.getInt(bytes, O_LENGTH_A + offset);
+			rowEnd = offset + CServerUtil.getInt(bytes, O_LENGTH_A + offset);
 			return true;
 		}
 	}
@@ -114,23 +114,23 @@ public class RowData {
 		if (offset < 0 || offset + MINIMUM_RECORD_LENGTH > bufferEnd) {
 			throw new CorruptRowDataException("Invalid offset: " + offset);
 		} else {
-			final int recordLength = Util.getInt(bytes, O_LENGTH_A + offset);
+			final int recordLength = CServerUtil.getInt(bytes, O_LENGTH_A + offset);
 			if (recordLength < 0 || recordLength + offset > bufferEnd) {
 				throw new CorruptRowDataException("Invalid record length: "
 						+ recordLength + " at offset: " + offset);
 			}
-			if (Util.getChar(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
+			if (CServerUtil.getChar(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
 				throw new CorruptRowDataException(
 						"Invalid signature at offset: " + offset);
 			}
-			final int trailingLength = Util.getInt(bytes, offset + recordLength
+			final int trailingLength = CServerUtil.getInt(bytes, offset + recordLength
 					+ O_LENGTH_B);
 			if (trailingLength != recordLength) {
 				throw new CorruptRowDataException(
 						"Invalid trailing record length " + trailingLength
 								+ " in record at offset: " + offset);
 			}
-			if (Util.getChar(bytes, offset + recordLength + O_SIGNATURE_B) != SIGNATURE_B) {
+			if (CServerUtil.getChar(bytes, offset + recordLength + O_SIGNATURE_B) != SIGNATURE_B) {
 				throw new CorruptRowDataException(
 						"Invalid signature at offset: " + offset);
 			}
@@ -182,11 +182,11 @@ public class RowData {
 	}
 
 	public int getFieldCount() {
-		return Util.getChar(bytes, rowStart + O_FIELD_COUNT);
+		return CServerUtil.getChar(bytes, rowStart + O_FIELD_COUNT);
 	}
 
 	public int getRowDefId() {
-		return Util.getInt(bytes, rowStart + O_ROW_DEF_ID);
+		return CServerUtil.getInt(bytes, rowStart + O_ROW_DEF_ID);
 	}
 
 	public byte[] getBytes() {
@@ -202,7 +202,7 @@ public class RowData {
 			throw new IllegalArgumentException("Bad location: " + offset + ":"
 					+ width);
 		}
-		return Util.getUnsignedIntegerByWidth(bytes, offset, width);
+		return CServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
 	}
 
 	/**
@@ -218,9 +218,9 @@ public class RowData {
 			throw new IllegalArgumentException("Too many values.");
 		}
 		int offset = rowStart;
-		Util.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-		Util.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-		Util.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+		CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+		CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+		CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
 		offset = offset + O_NULL_MAP;
 		for (int index = 0; index < fieldCount; index += 8) {
 			int b = 0;
@@ -284,19 +284,19 @@ public class RowData {
 				}
 				switch (width) {
 				case 1:
-					Util.putByte(bytes, offset, (byte) value);
+					CServerUtil.putByte(bytes, offset, (byte) value);
 					break;
 				case 2:
-					Util.putShort(bytes, offset, (short) value);
+					CServerUtil.putShort(bytes, offset, (short) value);
 					break;
 				case 3:
-					Util.putMediumInt(bytes, offset, (int) value);
+					CServerUtil.putMediumInt(bytes, offset, (int) value);
 					break;
 				case 4:
-					Util.putInt(bytes, offset, (int) value);
+					CServerUtil.putInt(bytes, offset, (int) value);
 					break;
 				case 8:
-					Util.putLong(bytes, offset, value);
+					CServerUtil.putLong(bytes, offset, value);
 					break;
 				default:
 					throw new IllegalStateException("Width not supported");
@@ -314,13 +314,13 @@ public class RowData {
 				case 0:
 					break;
 				case 1:
-					Util.putByte(bytes, offset, (byte) vlength);
+					CServerUtil.putByte(bytes, offset, (byte) vlength);
 					break;
 				case 2:
-					Util.putShort(bytes, offset, (short) vlength);
+					CServerUtil.putShort(bytes, offset, (short) vlength);
 					break;
 				case 3:
-					Util.putMediumInt(bytes, offset, (int) vlength);
+					CServerUtil.putMediumInt(bytes, offset, (int) vlength);
 					break;
 				}
 				offset += width;
@@ -330,15 +330,15 @@ public class RowData {
 			final FieldDef fieldDef = rowDef.getFieldDef(index);
 			if (!fieldDef.isFixedWidth()) {
 				final byte[] b = getBytes(values[index]);
-				Util.putBytes(bytes, offset, b);
+				CServerUtil.putBytes(bytes, offset, b);
 				offset += b.length;
 			}
 		}
-		Util.putChar(bytes, offset, SIGNATURE_B);
+		CServerUtil.putChar(bytes, offset, SIGNATURE_B);
 		offset += 6;
 		final int length = offset - rowStart;
-		Util.putInt(bytes, rowStart + O_LENGTH_A, length);
-		Util.putInt(bytes, offset + O_LENGTH_B, length);
+		CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
+		CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
 		rowEnd = offset;
 	}
 
@@ -357,7 +357,7 @@ public class RowData {
 	 */
 	@Override
 	public String toString() {
-		return Util.dump(bytes, 0, bytes.length);
+		return CServerUtil.dump(bytes, 0, bytes.length);
 	}
 
 	public String toString(final RowDefCache cache) {
@@ -368,7 +368,7 @@ public class RowData {
 			sb.append("RowData?(rowDefId=");
 			sb.append(getRowDefId());
 			sb.append(": ");
-			Util.hex(sb, bytes, rowStart, rowEnd - rowStart);
+			CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
 		} else {
 			sb.append(rowDef.getTableName());
 			for (int i = 0; i < getFieldCount(); i++) {

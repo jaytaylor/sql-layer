@@ -17,7 +17,7 @@ import com.akiba.cserver.FieldDef;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.Util;
+import com.akiba.cserver.CServerUtil;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -359,13 +359,13 @@ public class PersistitStore implements Store, CServerConstants {
 
 				final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
 				final byte[] bytes = new byte[size];
-				Util.putInt(bytes, RowData.O_LENGTH_A, size);
-				Util.putChar(bytes, RowData.O_SIGNATURE_A, RowData.SIGNATURE_A);
+				CServerUtil.putInt(bytes, RowData.O_LENGTH_A, size);
+				CServerUtil.putChar(bytes, RowData.O_SIGNATURE_A, RowData.SIGNATURE_A);
 				System.arraycopy(value.getEncodedBytes(), 0, bytes,
 						RowData.O_FIELD_COUNT, value.getEncodedSize());
-				Util.putChar(bytes, size + RowData.O_SIGNATURE_B,
+				CServerUtil.putChar(bytes, size + RowData.O_SIGNATURE_B,
 						RowData.SIGNATURE_B);
-				Util.putInt(bytes, size + RowData.O_LENGTH_B, size);
+				CServerUtil.putInt(bytes, size + RowData.O_LENGTH_B, size);
 
 				final RowData rowData = new RowData(bytes);
 				rowData.prepareRow(0);
@@ -451,15 +451,15 @@ public class PersistitStore implements Store, CServerConstants {
 					if (rowDataSize > buffer.length) {
 						buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
 					}
-					Util.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
-					Util.putChar(buffer, RowData.O_SIGNATURE_A,
+					CServerUtil.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
+					CServerUtil.putChar(buffer, RowData.O_SIGNATURE_A,
 							RowData.SIGNATURE_A);
 					System.arraycopy(exchange.getValue().getEncodedBytes(), 0,
 							buffer, RowData.O_FIELD_COUNT, exchange.getValue()
 									.getEncodedSize());
-					Util.putInt(buffer, RowData.O_SIGNATURE_B + rowDataSize,
+					CServerUtil.putInt(buffer, RowData.O_SIGNATURE_B + rowDataSize,
 							RowData.SIGNATURE_B);
-					Util.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
+					CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
 							rowDataSize);
 					payload.put(buffer, 0, rowDataSize);
 					traversed = false;

@@ -143,7 +143,7 @@ public class RowDefTest extends TestCase {
 							+ Arrays.asList(DATA_CASES[def][data]));
 					System.out.println("Def " + def + " Data " + data);
 					System.out.println("RowData:\n");
-					System.out.println(Util.dump(rowData.getBytes(), rowData
+					System.out.println(CServerUtil.dump(rowData.getBytes(), rowData
 							.getRowStart(), rowData.getRowEnd()
 							- rowData.getRowStart()));
 				}
@@ -282,7 +282,7 @@ public class RowDefTest extends TestCase {
 		if (location == 0) {
 			assertNull(value);
 		} else if (fieldDef.isFixedWidth()) {
-			long decodedValue = Util
+			long decodedValue = CServerUtil
 					.getSignedIntegerByWidth(rowData.getBytes(),
 							(int) location, (int) (location >>> 32));
 			assertEquals(((Number) value).longValue(), decodedValue);

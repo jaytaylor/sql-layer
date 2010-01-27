@@ -10,7 +10,7 @@ import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
-import com.persistit.Util;
+import com.akiba.cserver.CServerUtil;
 
 public class CountRowsExactRequest extends Message implements CServerConstants {
 
@@ -85,13 +85,13 @@ public class CountRowsExactRequest extends Message implements CServerConstants {
 
 		int startSize = payload.getInt();
 		byte[] startBytes = new byte[startSize];
-		Util.putInt(startBytes, 0, startSize);
+		CServerUtil.putInt(startBytes, 0, startSize);
 		payload.get(startBytes, 4, startSize - 4);
 		start = new RowData(startBytes);
 
 		int endSize = payload.getInt();
 		byte[] endBytes = new byte[endSize];
-		Util.putInt(endBytes, 0, endSize);
+		CServerUtil.putInt(endBytes, 0, endSize);
 		payload.get(endBytes, 4, endSize - 4);
 		end = new RowData(endBytes);
 		//
