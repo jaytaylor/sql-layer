@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import com.akiba.util.ByteBufferFactory;
 import junit.framework.TestCase;
 
 import com.akiba.cserver.CServerConstants;
@@ -140,7 +141,7 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 		rowI.createRow(ROW_DEF_I, new Object[] {null, null, null});
 		final byte[] columnBitMap = new byte[]{(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF};
 		final RowCollector rc = store.newRowCollector(1111, rowI, rowI, columnBitMap);
-		final ByteBuffer payload = ByteBuffer.allocate(256);
+		final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
 		while (rc.hasMore()) {
 			payload.clear();
