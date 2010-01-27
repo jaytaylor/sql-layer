@@ -11,7 +11,7 @@ import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
-import com.persistit.Util;
+import com.akiba.cserver.Util;
 
 public class ScanRowsRequest extends Message implements CServerConstants {
 
