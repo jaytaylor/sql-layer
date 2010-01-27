@@ -15,8 +15,14 @@ import com.persistit.Util;
 
 public class ScanRowsRequest extends Message implements CServerConstants {
 
-	public static short TYPE;
+	/*
+	 * Sanity size for the RowData objects delimiting the start and end
+	 * of the scan.
+	 */
+	private final static int MAX_LIMIT_ROWDATA_SIZE = 65536;
 
+	public static short TYPE;
+	
 	private int indexId;
 	
 	private byte[] columnBitMap;
@@ -85,22 +91,26 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 		columnBitMap = new byte[columnBitMapLength];
 		payload.get(columnBitMap);
 
-		int startSize = payload.getInt();
-		byte[] startBytes = new byte[startSize];
-		Util.putInt(startBytes, 0, startSize);
-		payload.get(startBytes, 4, startSize - 4);
-		start = new RowData(startBytes);
 
-		int endSize = payload.getInt();
-		byte[] endBytes = new byte[endSize];
-		Util.putInt(endBytes, 0, endSize);
-		payload.get(endBytes, 4, endSize - 4);
-		end = new RowData(endBytes);
-		//
-		// Note - prepareRow can throw CorruptRowDataException
-		//
-		start.prepareRow(0);
-		end.prepareRow(0);
+		start = decodeRowData(payload);
+		end = decodeRowData(payload);
+	}
+	
+	private RowData decodeRowData(final ByteBuffer payload) {
+		byte[] sizeBuffer = new byte[4];
+		payload.get(sizeBuffer);
+		int rowDataSize = Util.getInt(sizeBuffer, 0);
+		if (rowDataSize < RowData.ENVELOPE_SIZE || rowDataSize > MAX_LIMIT_ROWDATA_SIZE) {
+			throw new IllegalStateException("Invalid RowData size: " + rowDataSize);
+		}
+		byte[] rowDataBytes = new byte[rowDataSize];
+		System.arraycopy(sizeBuffer, 0, rowDataBytes, 0, sizeBuffer.length);
+		
+		Util.putInt(rowDataBytes, 0, rowDataSize);
+		payload.get(rowDataBytes, 4, rowDataSize - 4);
+		final RowData rowData = new RowData(rowDataBytes);
+		rowData.prepareRow(0);
+		return rowData;
 	}
 
 	@Override
