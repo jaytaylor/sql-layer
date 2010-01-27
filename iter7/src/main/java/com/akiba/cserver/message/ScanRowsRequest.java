@@ -91,7 +91,6 @@ public class ScanRowsRequest extends Message implements CServerConstants {
 		columnBitMap = new byte[columnBitMapLength];
 		payload.get(columnBitMap);
 
-
 		start = decodeRowData(payload);
 		end = decodeRowData(payload);
 	}

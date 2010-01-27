@@ -19,7 +19,7 @@ import java.util.Date;
  *   +4: signature bytes, e.g., 'AB' 
  *   +6: field count (short) 
  *   +8: rowDefId (int) 
- *  +12: column-map (1 bit per schema-defined column)
+ *  +12: null-map (1 bit per schema-defined column)
  *   +M: fixed-length field 
  *   +N: fixed-length field ... 
  *   +Q: variable-length field
