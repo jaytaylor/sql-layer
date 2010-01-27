@@ -141,7 +141,6 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 		final byte[] columnBitMap = new byte[]{(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF};
 		final RowCollector rc = store.newRowCollector(1111, rowI, rowI, columnBitMap);
 		final ByteBuffer payload = ByteBuffer.allocate(256);
-		payload.order(ByteOrder.LITTLE_ENDIAN);
 
 		while (rc.hasMore()) {
 			payload.clear();

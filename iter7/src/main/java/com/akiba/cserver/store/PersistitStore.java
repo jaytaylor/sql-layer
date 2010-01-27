@@ -457,7 +457,7 @@ public class PersistitStore implements Store, CServerConstants {
 					System.arraycopy(exchange.getValue().getEncodedBytes(), 0,
 							buffer, RowData.O_FIELD_COUNT, exchange.getValue()
 									.getEncodedSize());
-					CServerUtil.putInt(buffer, RowData.O_SIGNATURE_B + rowDataSize,
+					CServerUtil.putChar(buffer, RowData.O_SIGNATURE_B + rowDataSize,
 							RowData.SIGNATURE_B);
 					CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
 							rowDataSize);
