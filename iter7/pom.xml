@@ -96,6 +96,15 @@
 						</manifest>
 					</archive>
 				</configuration>
+                <executions>
+                  <execution>
+                    <id>make-assembly</id> <!-- This is used for inheritance merges ?? -->
+                    <phase>install</phase> <!-- Append to the install phase -->
+                    <goals>
+                      <goal>single</goal>
+                    </goals>
+                  </execution>
+                </executions>
 			</plugin>
 		</plugins>
 
