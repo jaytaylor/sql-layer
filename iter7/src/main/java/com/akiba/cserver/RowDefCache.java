@@ -159,30 +159,59 @@ public class RowDefCache implements CServerConstants {
 
 			// FieldDef[]
 			final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
+			final Column[] columns = new Column[table.getColumns().size()];
+			int[] tempRowDefIds = new int[columns.length];
+			int[] tempRowColumnOffset = new int[columns.length];
+			int userTableIndex = 0;
+			int columnCount = 0;
 			for (final Column column : table.getColumns()) {
+				final int p = column.getPosition();
+				if (columns[p] != null) {
+					throw new IllegalStateException("Group table column "
+							+ column.getName() + " has overlapping position "
+							+ p);
+				}
+				columns[p] = column;
+			}
+			for (int position = 0; position < columns.length; position++) {
+				final Column column = columns[position];
 				final String typeName = column.getType().name().toUpperCase();
 				final FieldType type = FieldType.valueOf(typeName);
-				final int fieldIndex = column.getPosition();
 				if (type.isFixedWidth()) {
-					fieldDefs[fieldIndex] = new FieldDef(column.getName(), type);
+					fieldDefs[position] = new FieldDef(column.getName(), type);
 				} else {
 					final Object typeParam = column.getTypeParameter1();
-					fieldDefs[fieldIndex] = new FieldDef(column.getName(),
-							type, ((Long) typeParam).intValue());
+					fieldDefs[position] = new FieldDef(column.getName(), type,
+							((Long) typeParam).intValue());
+				}
+				final Column userColumn = column.getUserColumn();
+				if (userColumn.getPosition() == 0) {
+					int userRowDefId = userColumn.getTable().getTableId();
+					tempRowDefIds[userTableIndex] = userRowDefId;
+					tempRowColumnOffset[userTableIndex] = columnCount;
+					userTableIndex++;
+					columnCount += userColumn.getTable().getColumns().size();
 				}
 			}
+			final int[] userRowDefIds = new int[userTableIndex];
+			final int[] userRowColumnOffsets = new int[userTableIndex];
+			
+			System.arraycopy(tempRowDefIds, 0, userRowDefIds, 0, userTableIndex);
+			System.arraycopy(tempRowColumnOffset, 0, userRowColumnOffsets, 0, userTableIndex);
 
 			final RowDef rowDef = RowDef.createRowDef(rowDefId, fieldDefs,
 					table.getName().getTableName(), table.getName()
 							.getTableName(), new int[0]);
+			rowDef.setUserRowDefIds(userRowDefIds);
+			rowDef.setUserRowColumnOffsets(userRowColumnOffsets);
 			putRowDef(rowDef);
 
 		}
 	}
 
 	RowDef lookUpRowDef(final int rowDefId) {
-		throw new UnsupportedOperationException(
-				"No RowDef for rowDefId=" + rowDefId);
+		throw new UnsupportedOperationException("No RowDef for rowDefId="
+				+ rowDefId);
 	}
 
 	/**
@@ -201,7 +230,7 @@ public class RowDefCache implements CServerConstants {
 		cacheMap.put(key, rowDef);
 		nameMap.put(rowDef.getTableName(), key);
 	}
-	
+
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();

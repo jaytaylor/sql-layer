@@ -360,7 +360,8 @@ public class PersistitStore implements Store, CServerConstants {
 				final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
 				final byte[] bytes = new byte[size];
 				CServerUtil.putInt(bytes, RowData.O_LENGTH_A, size);
-				CServerUtil.putChar(bytes, RowData.O_SIGNATURE_A, RowData.SIGNATURE_A);
+				CServerUtil.putChar(bytes, RowData.O_SIGNATURE_A,
+						RowData.SIGNATURE_A);
 				System.arraycopy(value.getEncodedBytes(), 0, bytes,
 						RowData.O_FIELD_COUNT, value.getEncodedSize());
 				CServerUtil.putChar(bytes, size + RowData.O_SIGNATURE_B,
@@ -398,7 +399,7 @@ public class PersistitStore implements Store, CServerConstants {
 		// given start/end
 		// RowData values
 		final RowCollector rc = new PersistitRowCollector(exchange, keyFilter,
-				columnBitMap);
+				columnBitMap, rowDef);
 		getSession().setCurrentRowCollector(rc);
 		return rc;
 	}
@@ -420,19 +421,47 @@ public class PersistitStore implements Store, CServerConstants {
 
 		private final byte[] columnBitMap;
 
+		private final RowDef rowDef;
+
+		private final int leafRowDefId;
+
 		private boolean traversed = false;
 
 		private boolean more = true;
 
 		private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
 
+		private final RowData rowData = new RowData(buffer);
+
 		private Key.Direction direction = Key.GTEQ;
 
 		private PersistitRowCollector(final Exchange exchange,
-				final KeyFilter keyFilter, final byte[] columnBitMap) {
+				final KeyFilter keyFilter, final byte[] columnBitMap,
+				RowDef rowDef) {
 			this.exchange = exchange;
 			this.keyFilter = keyFilter;
 			this.columnBitMap = columnBitMap;
+			this.rowDef = rowDef;
+
+			if (rowDef.getUserRowDefIds() == null) {
+				leafRowDefId = rowDef.getRowDefId();
+			} else {
+				int deepestRowDefId = -1;
+				for (int index = 0; index < columnBitMap.length; index++) {
+					for (int bit = 0; bit < 8; bit++) {
+						if ((columnBitMap[index] & (1 << bit)) != 0) {
+							deepestRowDefId = index * 8 + bit;
+						}
+					}
+				}
+				for (int index = 0; index < rowDef.getUserRowColumnOffsets().length; index++) {
+					if (rowDef.getUserRowDefIds()[index] > deepestRowDefId) {
+						break;
+					}
+					deepestRowDefId = rowDef.getUserRowDefIds()[index];
+				}
+				leafRowDefId = deepestRowDefId;
+			}
 		}
 
 		@Override
@@ -441,27 +470,63 @@ public class PersistitStore implements Store, CServerConstants {
 			if (available < 4) {
 				throw new IllegalStateException(
 						"Payload byte buffer must have at least 4 "
-								+ "bytes available, but actually has only "
-								+ available);
+								+ "bytes available, but has only " + available);
 			}
 			if (hasMore()) {
-				int rowDataSize = exchange.getValue().getEncodedSize()
-						+ RowData.ENVELOPE_SIZE;
+				final byte[] bytes = exchange.getValue().getEncodedBytes();
+				final int size = exchange.getValue().getEncodedSize();
+				int rowDataSize = size + RowData.ENVELOPE_SIZE;
 				if (rowDataSize + 4 <= available) {
-					if (rowDataSize > buffer.length) {
-						buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
+					if (rowDataSize < RowData.MINIMUM_RECORD_LENGTH) {
+						if (LOG.isErrorEnabled()) {
+							LOG.error("Value at " + exchange.getKey()
+									+ " is not a valid row - skipping");
+						}
+						traversed = false;
+						return true;
 					}
-					CServerUtil.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
-					CServerUtil.putChar(buffer, RowData.O_SIGNATURE_A,
-							RowData.SIGNATURE_A);
-					System.arraycopy(exchange.getValue().getEncodedBytes(), 0,
-							buffer, RowData.O_FIELD_COUNT, exchange.getValue()
-									.getEncodedSize());
-					CServerUtil.putChar(buffer, RowData.O_SIGNATURE_B + rowDataSize,
-							RowData.SIGNATURE_B);
-					CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
-							rowDataSize);
-					payload.put(buffer, 0, rowDataSize);
+					final int rowDefId = CServerUtil.getInt(bytes,
+							RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+
+					boolean selected = false;
+
+					if (rowDef.getUserRowDefIds() == null) {
+						selected = (rowDef.getRowDefId() == rowDefId);
+					} else {
+						selected = true;
+					}
+
+					if (selected) {
+
+						if (rowDataSize > buffer.length) {
+							buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
+							rowData.reset(buffer);
+						}
+						//
+						// Assemble the Row in a byte array so to allow column
+						// elision
+						//
+						CServerUtil.putInt(buffer, RowData.O_LENGTH_A,
+								rowDataSize);
+						CServerUtil.putChar(buffer, RowData.O_SIGNATURE_A,
+								RowData.SIGNATURE_A);
+						System.arraycopy(exchange.getValue().getEncodedBytes(),
+								0, buffer, RowData.O_FIELD_COUNT, exchange
+										.getValue().getEncodedSize());
+						CServerUtil.putChar(buffer, RowData.O_SIGNATURE_B
+								+ rowDataSize, RowData.SIGNATURE_B);
+						CServerUtil.putInt(buffer, RowData.O_LENGTH_B
+								+ rowDataSize, rowDataSize);
+						payload.put(buffer, 0, rowDataSize);
+					}
+
+					if (rowDefId == leafRowDefId) {
+						//
+						// Optimization to traverse past unwanted child rows
+						// 
+						exchange.getKey().append(Key.AFTER);
+					}
+
 					traversed = false;
 					return true;
 				} else {

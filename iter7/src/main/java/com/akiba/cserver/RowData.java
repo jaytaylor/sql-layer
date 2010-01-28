@@ -53,6 +53,10 @@ public class RowData {
 	public final static char SIGNATURE_B = (char) ('B' + ('A' << 8));
 
 	public final static int ENVELOPE_SIZE = 12;
+	
+	public final static int LEFT_ENVELOPE_SIZE = 6;
+	
+	public final static int RIGHT_ENVELOPE_SIZE = 6;
 
 	private final static SimpleDateFormat SDF_DATETIME = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm:SS");
@@ -84,6 +88,11 @@ public class RowData {
 		this.bufferStart = offset;
 		this.bufferEnd = offset + length;
 		rowStart = rowEnd = bufferStart;
+	}
+	
+	public void reset(final byte[] bytes) {
+		this.bytes = bytes;
+		reset(0, bytes.length);
 	}
 
 	/**

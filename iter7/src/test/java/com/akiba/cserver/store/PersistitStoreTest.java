@@ -112,20 +112,20 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 		final RowData rowI = new RowData(new byte[64]);
 		int insertCount = 0;
 		int scanCount = 0;
-		
+
+		// Note: we are going to scan for I rows, so we'll only
+		// count inserts of I rows.
 		for (int c = 0; ++c <= 10;) {
 			int cid = c;
 			rowC.reset(0, 64);
 			rowC.createRow(ROW_DEF_C, new Object[] { cid, "Customer_" + cid });
 			assertEquals(OK, store.writeRow(rowC));
-			insertCount++;
 			for (int o = 0; ++o <= 10;) {
 				int oid = cid * 1000 + o;
 				rowO.reset(0, 64);
 				rowO.createRow(ROW_DEF_O, new Object[] { oid, cid,
 						"Order_" + oid });
 				assertEquals(OK, store.writeRow(rowO));
-				insertCount++;
 				for (int i = 0; ++i <= 10;) {
 					int iid = oid * 1000 + i;
 					rowI.reset(0, 64);

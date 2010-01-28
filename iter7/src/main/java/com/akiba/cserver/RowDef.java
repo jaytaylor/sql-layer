@@ -56,6 +56,19 @@ public class RowDef {
 	 */
 	private String pkTreeName;
 	/**
+	 * RowDefIDs of constituent user tables. Populated only if this
+	 * is the RowDef for a group table. Null if this is the RowDef for a
+	 * user table.
+	 */
+	private int[] userRowDefIds;
+
+	/**
+	 * Maps the 0th column of each user table in the userRowDefIds
+	 * array to the Nth column of the corresponding group table.
+	 */
+	private int[] userRowColumnOffsets;
+
+	/**
 	 * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
 	 * method to assist in looking up a field's offset and length.
 	 */
@@ -138,6 +151,22 @@ public class RowDef {
 
 	public FieldDef[] getFieldDefs() {
 		return fieldDefs;
+	}
+	
+	public int[] getUserRowDefIds() {
+		return userRowDefIds;
+	}
+	
+	public void setUserRowDefIds(final int[] userRowDefIds) {
+		this.userRowDefIds = userRowDefIds;
+	}
+	
+	public int[] getUserRowColumnOffsets() {
+		return userRowColumnOffsets;
+	}
+
+	public void setUserRowColumnOffsets(int[] userRowColumnOffsets) {
+		this.userRowColumnOffsets = userRowColumnOffsets;
 	}
 
 	public String getPkTreeName() {

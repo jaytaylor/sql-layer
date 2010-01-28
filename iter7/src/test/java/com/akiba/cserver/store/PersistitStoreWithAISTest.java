@@ -1,25 +1,23 @@
 package com.akiba.cserver.store;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.ObjectInputStream;
 
 import junit.framework.TestCase;
 
-import com.akiba.ais.io.TextSource;
+import com.akiba.ais.ddl.DDLSource;
 import com.akiba.ais.model.AkibaInformationSchema;
-import com.akiba.ais.model.AkibaInformationSchemaImpl;
 import com.akiba.cserver.CServerConstants;
+import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.CServerUtil;
 
 public class PersistitStoreWithAISTest extends TestCase implements
 		CServerConstants {
 
 	private final static File DATA_PATH = new File("/tmp/data");
+	
+	private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
 
 	private PersistitStore store;
 
@@ -31,13 +29,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		store = new PersistitStore(rowDefCache);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
-		final TextSource textSource = new TextSource(new FileReader(new File(
-				"src/test/resources/data_dictionary_textsource.sql")));
-		textSource.parse();
-		final AkibaInformationSchema ais = AkibaInformationSchemaImpl
-				.load(textSource);
+		final AkibaInformationSchema ais = new DDLSource()
+				.buildAIS(DDL_FILE_NAME);
 		rowDefCache.setAIS(ais);
-
 		store.startUp();
 	}
 
