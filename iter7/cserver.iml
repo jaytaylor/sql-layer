@@ -27,6 +27,10 @@
     <orderEntry type="module" module-name="akiba-message" exported="" />
     <orderEntry type="library" exported="" name="Maven: mysql:mysql-connector-java:5.1.10" level="project" />
     <orderEntry type="module" module-name="akiba-ais" exported="" />
+    <orderEntry type="library" exported="" name="Maven: org.antlr:antlr:3.1.3" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.antlr:antlr-runtime:3.1.3" level="project" />
+    <orderEntry type="library" exported="" name="Maven: org.antlr:stringtemplate:3.2" level="project" />
+    <orderEntry type="library" exported="" name="Maven: antlr:antlr:2.7.7" level="project" />
   </component>
 </module>
 

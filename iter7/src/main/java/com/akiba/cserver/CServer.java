@@ -51,7 +51,6 @@ public class CServer {
 	private String dbHost = "localhost";
 	private String dbUsername = "akiba";
 	private String dbPassword = "akibaDB";
-	private String dbName = "akiba_information_schema";
 
 	private volatile boolean stopped = false;
 
@@ -190,7 +189,7 @@ public class CServer {
 	 * @throws Exception
 	 */
 	public void acquireAIS() throws Exception {
-		LOG.info("Reading AIS from " + dbHost + ":" + dbName);
+		LOG.info("Reading AIS from " + dbHost);
 		readAISFromMySQL();
 		installAIS();
 	}
@@ -200,11 +199,9 @@ public class CServer {
 		for (;;) {
 			try {
 				if (LOG.isInfoEnabled()) {
-					LOG.info(String.format("Attempting to load AIS from %s:%s",
-							dbHost, dbName));
+					LOG.info(String.format("Attempting to load AIS from %s", dbHost));
 				}
-				ais = AkibaInformationSchemaImpl.load(new MySQLSource(dbHost,
-						dbUsername, dbPassword, dbName));
+				ais = AkibaInformationSchemaImpl.load(new MySQLSource(dbHost, dbUsername, dbPassword));
 				break;
 			} catch (com.mysql.jdbc.exceptions.jdbc4.CommunicationsException e) {
 				try {
@@ -256,9 +253,6 @@ public class CServer {
 		}
 		if (a < args.length) {
 			dbPassword = args[a++];
-		}
-		if (a < args.length) {
-			dbName = args[a++];
 		}
 		if (dbHost.contains("-h") || dbHost.contains("?")) {
 			usage();
