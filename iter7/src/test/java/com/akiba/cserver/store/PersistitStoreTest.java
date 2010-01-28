@@ -2,18 +2,17 @@ package com.akiba.cserver.store;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import com.akiba.util.ByteBufferFactory;
 import junit.framework.TestCase;
 
 import com.akiba.cserver.CServerConstants;
+import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.FieldDef;
 import com.akiba.cserver.FieldType;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.CServerUtil;
+import com.akiba.util.ByteBufferFactory;
 import com.persistit.Key;
 import com.persistit.Persistit;
 
