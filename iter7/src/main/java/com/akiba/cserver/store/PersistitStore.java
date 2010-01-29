@@ -447,15 +447,16 @@ public class PersistitStore implements Store, CServerConstants {
 				leafRowDefId = rowDef.getRowDefId();
 			} else {
 				int deepestRowDefId = -1;
+				int rightmostColumn = -1;
 				for (int index = 0; index < columnBitMap.length; index++) {
 					for (int bit = 0; bit < 8; bit++) {
 						if ((columnBitMap[index] & (1 << bit)) != 0) {
-							deepestRowDefId = index * 8 + bit;
+							rightmostColumn = index * 8 + bit;
 						}
 					}
 				}
 				for (int index = 0; index < rowDef.getUserRowColumnOffsets().length; index++) {
-					if (rowDef.getUserRowDefIds()[index] > deepestRowDefId) {
+					if (rowDef.getUserRowDefIds()[index] > rightmostColumn) {
 						break;
 					}
 					deepestRowDefId = rowDef.getUserRowDefIds()[index];
