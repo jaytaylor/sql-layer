@@ -13,11 +13,11 @@ import com.akiba.ais.io.Source;
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.cserver.CServer;
 import com.akiba.cserver.CServerConstants;
+import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.FieldDef;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
-import com.akiba.cserver.CServerUtil;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -425,8 +425,6 @@ public class PersistitStore implements Store, CServerConstants {
 
 		private final int leafRowDefId;
 
-		private boolean traversed = false;
-
 		private boolean more = true;
 
 		private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
@@ -435,9 +433,9 @@ public class PersistitStore implements Store, CServerConstants {
 
 		private Key.Direction direction = Key.GTEQ;
 
-		private PersistitRowCollector(final Exchange exchange,
+		PersistitRowCollector(final Exchange exchange,
 				final KeyFilter keyFilter, final byte[] columnBitMap,
-				RowDef rowDef) {
+				RowDef rowDef) throws Exception {
 			this.exchange = exchange;
 			this.keyFilter = keyFilter;
 			this.columnBitMap = columnBitMap;
@@ -463,17 +461,26 @@ public class PersistitStore implements Store, CServerConstants {
 				}
 				leafRowDefId = deepestRowDefId;
 			}
+			traverseToNextRow();
 		}
 
+		/**
+		 * Selects the next row in tree-traversal order and puts it into the
+		 * payload ByteBuffer if there is room. Returns <tt>true</tt> if and
+		 * only if a row was added to the payload ByteBuffer. As a side-effect,
+		 * this method affects the value of more to indicate whether there are
+		 * additional rows in the tree; {@link #hasMore()} returns this value.
+		 * 
+		 */
 		@Override
 		public boolean collectNextRow(ByteBuffer payload) throws Exception {
 			int available = payload.limit() - payload.position();
 			if (available < 4) {
 				throw new IllegalStateException(
 						"Payload byte buffer must have at least 4 "
-								+ "bytes available, but has only " + available);
+								+ "available bytes, but has only " + available);
 			}
-			if (hasMore()) {
+			while (more) {
 				final byte[] bytes = exchange.getValue().getEncodedBytes();
 				final int size = exchange.getValue().getEncodedSize();
 				int rowDataSize = size + RowData.ENVELOPE_SIZE;
@@ -483,70 +490,91 @@ public class PersistitStore implements Store, CServerConstants {
 							LOG.error("Value at " + exchange.getKey()
 									+ " is not a valid row - skipping");
 						}
-						traversed = false;
-						return true;
+						traverseToNextRow();
+						continue;
 					}
 					final int rowDefId = CServerUtil.getInt(bytes,
 							RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
 
-					boolean selected = false;
-
+					//
+					// Handle SELECT on a user table
+					//
 					if (rowDef.getUserRowDefIds() == null) {
-						selected = (rowDef.getRowDefId() == rowDefId);
-					} else {
-						selected = true;
-					}
-
-					if (selected) {
-
-						if (rowDataSize > buffer.length) {
-							buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
-							rowData.reset(buffer);
+						if (rowDef.getRowDefId() == rowDefId) {
+							prepareNextRowBuffer(payload, rowDataSize);
+							payload.put(buffer, 0, rowDataSize);
+							traverseToNextRow();
+							break;
+						} else {
+							traverseToNextRow();
+							continue;
 						}
-						//
-						// Assemble the Row in a byte array so to allow column
-						// elision
-						//
-						CServerUtil.putInt(buffer, RowData.O_LENGTH_A,
-								rowDataSize);
-						CServerUtil.putChar(buffer, RowData.O_SIGNATURE_A,
-								RowData.SIGNATURE_A);
-						System.arraycopy(exchange.getValue().getEncodedBytes(),
-								0, buffer, RowData.O_FIELD_COUNT, exchange
-										.getValue().getEncodedSize());
-						CServerUtil.putChar(buffer, RowData.O_SIGNATURE_B
-								+ rowDataSize, RowData.SIGNATURE_B);
-						CServerUtil.putInt(buffer, RowData.O_LENGTH_B
-								+ rowDataSize, rowDataSize);
-						payload.put(buffer, 0, rowDataSize);
 					}
-
+					
+					// Handle SELECT on a group table
+					//
+					// Copy the row into the buffer in case we
+					// decide to return it.
+					//
+					prepareNextRowBuffer(payload, rowDataSize);
+					//
 					if (rowDefId == leafRowDefId) {
+						payload.put(buffer, 0, rowDataSize);
 						//
 						// Optimization to traverse past unwanted child rows
 						// 
 						exchange.getKey().append(Key.AFTER);
+						traverseToNextRow();
+						break;
+					} else {
+						//
+						// Find out of there's a child row. If so
+						// then we can return this row.
+						//
+						final int myDepth = exchange.getKey().getDepth();
+						traverseToNextRow();
+						if (more && exchange.getKey().getDepth() > myDepth) {
+							payload.put(buffer, 0, rowDataSize);
+							break;
+						}
+						continue;
 					}
-
-					traversed = false;
-					return true;
 				} else {
-					traversed = true;
 					return false;
 				}
-			} else {
-				return false;
 			}
+			return more;
+		}
+
+		private void prepareNextRowBuffer(ByteBuffer payload, int rowDataSize) {
+			if (rowDataSize > buffer.length) {
+				buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
+				rowData.reset(buffer);
+			}
+			//
+			// Assemble the Row in a byte array to allow column
+			// elision
+			//
+			CServerUtil.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
+			CServerUtil.putChar(buffer, RowData.O_SIGNATURE_A,
+					RowData.SIGNATURE_A);
+			System
+					.arraycopy(exchange.getValue().getEncodedBytes(), 0,
+							buffer, RowData.O_FIELD_COUNT, exchange.getValue()
+									.getEncodedSize());
+			CServerUtil.putChar(buffer, RowData.O_SIGNATURE_B + rowDataSize,
+					RowData.SIGNATURE_B);
+			CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
+					rowDataSize);
+		}
+
+		private void traverseToNextRow() throws Exception {
+			more = exchange.traverse(direction, keyFilter, Integer.MAX_VALUE);
+			direction = Key.GT;
 		}
 
 		@Override
-		public boolean hasMore() throws Exception {
-			if (!traversed && more) {
-				more = exchange.traverse(direction, keyFilter,
-						Integer.MAX_VALUE);
-				traversed = true;
-				direction = Key.GT;
-			}
+		public boolean hasMore() {
 			return more;
 		}
 	}

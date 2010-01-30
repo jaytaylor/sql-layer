@@ -1,6 +1,7 @@
 package com.akiba.cserver.store;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
@@ -11,6 +12,7 @@ import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
+import com.akiba.util.ByteBufferFactory;
 
 public class PersistitStoreWithAISTest extends TestCase implements
 		CServerConstants {
@@ -79,5 +81,58 @@ public class PersistitStoreWithAISTest extends TestCase implements
 				+ (elapsed / 1000000L) + "ms");
 
 	}
+	
+	public void testScanCOIrows() throws Exception {
+		final RowDef defC = rowDefCache.getRowDef("customer");
+		final RowDef defO = rowDefCache.getRowDef("order");
+		final RowDef defI = rowDefCache.getRowDef("item");
+		final RowData rowC = new RowData(new byte[64]);
+		final RowData rowO = new RowData(new byte[64]);
+		final RowData rowI = new RowData(new byte[64]);
+		int insertCount = 0;
+		int scanCount = 0;
+
+		// Note: we are going to scan for I rows, so we'll only
+		// count inserts of I rows.
+		for (int c = 0; ++c <= 10;) {
+			int cid = c;
+			rowC.reset(0, 64);
+			rowC.createRow(defC, new Object[] { cid, "Customer_" + cid });
+			assertEquals(OK, store.writeRow(rowC));
+			for (int o = 0; ++o <= 10;) {
+				int oid = cid * 1000 + o;
+				rowO.reset(0, 64);
+				rowO.createRow(defO, new Object[] { oid, cid, 12345 });
+				assertEquals(OK, store.writeRow(rowO));
+				for (int i = 0; ++i <= 10;) {
+					int iid = oid * 1000 + i;
+					rowI.reset(0, 64);
+					rowI.createRow(defI, new Object[] { oid, iid, 123456,
+							654321 });
+					assertEquals(OK, store.writeRow(rowI));
+					insertCount++;
+				}
+			}
+		}
+		
+		rowI.createRow(defI, new Object[] {null, null, null});
+		final byte[] columnBitMap = new byte[]{(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF};
+		final RowCollector rc = store.newRowCollector(1111, rowI, rowI, columnBitMap);
+		final ByteBuffer payload = ByteBufferFactory.allocate(256);
+
+		while (rc.hasMore()) {
+			payload.clear();
+			while(rc.collectNextRow(payload));
+			payload.flip();
+			RowData rowData = new RowData(payload.array(), payload.position(), payload.limit());
+			for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
+				rowData.prepareRow(p);
+				p = rowData.getRowEnd();
+				scanCount++;
+			}
+		}
+		assertEquals(insertCount, scanCount);
+	}
+
 
 }

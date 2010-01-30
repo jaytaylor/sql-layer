@@ -265,10 +265,8 @@ public class CServerUtil {
 				int j = m + i;
 				if (j < size - offset) {
 					hex(sb1, b[j + offset], 2);
-					if (b[j + offset] >= 32 && b[j] < 127)
-						sb2.append((char) b[j]);
-					else
-						sb2.append(".");
+					final char c = (char)( b[j + offset] & 0xFF);
+					sb2.append(c > 32 && c < 120 ? c : '.');
 				} else
 					sb1.append("  ");
 			}

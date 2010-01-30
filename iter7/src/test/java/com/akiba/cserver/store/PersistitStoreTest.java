@@ -103,6 +103,7 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 		}
 
 	}
+	
 	public void testSimpleScanCOIrows() throws Exception {
 		rowDefCache.putRowDef(ROW_DEF_C);
 		rowDefCache.putRowDef(ROW_DEF_O);
