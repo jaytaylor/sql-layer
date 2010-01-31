@@ -288,11 +288,11 @@ public class PersistitStore implements Store, CServerConstants {
 	private void appendKeyFields(final Key key, final RowDef rowDef,
 			final RowData rowData, final int[] fields, final int rowDefId)
 			throws PersistitException {
+		key.append(rowDefId % MAX_VERSIONS_PER_TABLE);
 		for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
 			final FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
 			final long location = rowDef.fieldLocation(rowData,
 					fields[fieldIndex]);
-			key.append(rowDefId % MAX_VERSIONS_PER_TABLE);
 			appendKeyField(key, fieldDef, rowData, location);
 		}
 	}
@@ -395,11 +395,9 @@ public class PersistitStore implements Store, CServerConstants {
 		final Exchange exchange = getExchange(rowDef.getTreeName());
 		exchange.clear();
 
-		final KeyFilter keyFilter = new KeyFilter(); // TODO - compute KeyFilter
-		// given start/end
-		// RowData values
-		final RowCollector rc = new PersistitRowCollector(exchange, keyFilter,
+		final RowCollector rc = new PersistitRowCollector(exchange, start, end,
 				columnBitMap, rowDef);
+		
 		getSession().setCurrentRowCollector(rc);
 		return rc;
 	}
@@ -433,11 +431,10 @@ public class PersistitStore implements Store, CServerConstants {
 
 		private Key.Direction direction = Key.GTEQ;
 
-		PersistitRowCollector(final Exchange exchange,
-				final KeyFilter keyFilter, final byte[] columnBitMap,
+		PersistitRowCollector(final Exchange exchange, final RowData start,
+				final RowData end, final byte[] columnBitMap,
 				RowDef rowDef) throws Exception {
 			this.exchange = exchange;
-			this.keyFilter = keyFilter;
 			this.columnBitMap = columnBitMap;
 			this.rowDef = rowDef;
 
@@ -454,13 +451,14 @@ public class PersistitStore implements Store, CServerConstants {
 					}
 				}
 				for (int index = 0; index < rowDef.getUserRowColumnOffsets().length; index++) {
-					if (rowDef.getUserRowDefIds()[index] > rightmostColumn) {
+					if (rowDef.getUserRowColumnOffsets()[index] > rightmostColumn) {
 						break;
 					}
 					deepestRowDefId = rowDef.getUserRowDefIds()[index];
 				}
 				leafRowDefId = deepestRowDefId;
 			}
+			this.keyFilter = constructKeyFilter(start, end, rowDef);
 			traverseToNextRow();
 		}
 
@@ -546,6 +544,11 @@ public class PersistitStore implements Store, CServerConstants {
 			return more;
 		}
 
+		@Override
+		public boolean hasMore() {
+			return more;
+		}
+
 		private void prepareNextRowBuffer(ByteBuffer payload, int rowDataSize) {
 			if (rowDataSize > buffer.length) {
 				buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
@@ -572,10 +575,10 @@ public class PersistitStore implements Store, CServerConstants {
 			more = exchange.traverse(direction, keyFilter, Integer.MAX_VALUE);
 			direction = Key.GT;
 		}
-
-		@Override
-		public boolean hasMore() {
-			return more;
+		
+		private KeyFilter constructKeyFilter(final RowData start, final RowData end, final RowDef rowDef) {
+			final KeyFilter keyFilter = new KeyFilter();
+			return keyFilter;
 		}
 	}
 
