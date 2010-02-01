@@ -1,7 +1,6 @@
 package com.akiba.cserver.store;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
@@ -11,7 +10,6 @@ import com.akiba.ais.io.PersistitSource;
 import com.akiba.ais.io.Reader;
 import com.akiba.ais.io.Source;
 import com.akiba.ais.model.AkibaInformationSchema;
-import com.akiba.cserver.CServer;
 import com.akiba.cserver.CServerConstants;
 import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.FieldDef;
@@ -20,7 +18,6 @@ import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.Persistit;
 import com.persistit.StreamLoader;
 import com.persistit.Transaction;
@@ -32,7 +29,7 @@ import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class PersistitStore implements Store, CServerConstants {
 
-	private static final Log LOG = LogFactory.getLog(CServer.class.getName());
+	static final Log LOG = LogFactory.getLog(PersistitStore.class.getName());
 
 	private final static String VOLUME_NAME = "aktest"; // TODO - select
 	// database
@@ -202,11 +199,12 @@ public class PersistitStore implements Store, CServerConstants {
 		exchange.getKey().clear().append(rowDefId % MAX_VERSIONS_PER_TABLE)
 				.append(Key.AFTER);
 		boolean found = exchange.previous();
-		long value;
+		long value = -1;
 		if (found) {
-			value = exchange.getKey().indexTo(-1).decodeLong();
-		} else {
-			value = -1;
+			final Class<?> clazz = exchange.getKey().indexTo(-1).decodeType();
+			if (clazz == Long.class) {
+				value = exchange.getKey().decodeLong();
+			}
 		}
 		return value;
 	}
@@ -224,7 +222,7 @@ public class PersistitStore implements Store, CServerConstants {
 		return root;
 	}
 
-	private PersistitStoreSession getSession() {
+	PersistitStoreSession getSession() {
 		PersistitStoreSession session = sessionLocal.get();
 		if (session == null) {
 			session = new PersistitStoreSession(db);
@@ -233,12 +231,12 @@ public class PersistitStore implements Store, CServerConstants {
 		return session;
 	}
 
-	private Exchange getExchange(final String treeName)
+	Exchange getExchange(final String treeName)
 			throws PersistitException {
 		return getSession().getExchange(VOLUME_NAME, treeName);
 	}
 
-	private void constructHKey(final Key key, final RowDef rowDef,
+	void constructHKey(final Key key, final RowDef rowDef,
 			final RowData rowData) throws PersistitException, StoreException {
 		key.clear();
 		//
@@ -285,7 +283,7 @@ public class PersistitStore implements Store, CServerConstants {
 				.getRowDefId());
 	}
 
-	private void appendKeyFields(final Key key, final RowDef rowDef,
+	void appendKeyFields(final Key key, final RowDef rowDef,
 			final RowData rowData, final int[] fields, final int rowDefId)
 			throws PersistitException {
 		key.append(rowDefId % MAX_VERSIONS_PER_TABLE);
@@ -297,7 +295,7 @@ public class PersistitStore implements Store, CServerConstants {
 		}
 	}
 
-	private void appendKeyField(final Key key, final FieldDef fieldDef,
+	void appendKeyField(final Key key, final FieldDef fieldDef,
 			final RowData rowData, final long location) {
 		switch (fieldDef.getType()) {
 		case TINYINT:
@@ -392,12 +390,9 @@ public class PersistitStore implements Store, CServerConstants {
 		}
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 
-		final Exchange exchange = getExchange(rowDef.getTreeName());
-		exchange.clear();
+		final RowCollector rc = new PersistitStoreRowCollector(this, start,
+				end, columnBitMap, rowDef);
 
-		final RowCollector rc = new PersistitRowCollector(exchange, start, end,
-				columnBitMap, rowDef);
-		
 		getSession().setCurrentRowCollector(rc);
 		return rc;
 	}
@@ -407,179 +402,6 @@ public class PersistitStore implements Store, CServerConstants {
 			final RowData end, final byte[] columnBitMap) {
 		// TODO Auto-generated method stub
 		return 0;
-	}
-
-	private static class PersistitRowCollector implements RowCollector {
-
-		private final static int INITIAL_BUFFER_SIZE = 1024;
-
-		private final Exchange exchange;
-
-		private final KeyFilter keyFilter;
-
-		private final byte[] columnBitMap;
-
-		private final RowDef rowDef;
-
-		private final int leafRowDefId;
-
-		private boolean more = true;
-
-		private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
-
-		private final RowData rowData = new RowData(buffer);
-
-		private Key.Direction direction = Key.GTEQ;
-
-		PersistitRowCollector(final Exchange exchange, final RowData start,
-				final RowData end, final byte[] columnBitMap,
-				RowDef rowDef) throws Exception {
-			this.exchange = exchange;
-			this.columnBitMap = columnBitMap;
-			this.rowDef = rowDef;
-
-			if (rowDef.getUserRowDefIds() == null) {
-				leafRowDefId = rowDef.getRowDefId();
-			} else {
-				int deepestRowDefId = -1;
-				int rightmostColumn = -1;
-				for (int index = 0; index < columnBitMap.length; index++) {
-					for (int bit = 0; bit < 8; bit++) {
-						if ((columnBitMap[index] & (1 << bit)) != 0) {
-							rightmostColumn = index * 8 + bit;
-						}
-					}
-				}
-				for (int index = 0; index < rowDef.getUserRowColumnOffsets().length; index++) {
-					if (rowDef.getUserRowColumnOffsets()[index] > rightmostColumn) {
-						break;
-					}
-					deepestRowDefId = rowDef.getUserRowDefIds()[index];
-				}
-				leafRowDefId = deepestRowDefId;
-			}
-			this.keyFilter = constructKeyFilter(start, end, rowDef);
-			traverseToNextRow();
-		}
-
-		/**
-		 * Selects the next row in tree-traversal order and puts it into the
-		 * payload ByteBuffer if there is room. Returns <tt>true</tt> if and
-		 * only if a row was added to the payload ByteBuffer. As a side-effect,
-		 * this method affects the value of more to indicate whether there are
-		 * additional rows in the tree; {@link #hasMore()} returns this value.
-		 * 
-		 */
-		@Override
-		public boolean collectNextRow(ByteBuffer payload) throws Exception {
-			int available = payload.limit() - payload.position();
-			if (available < 4) {
-				throw new IllegalStateException(
-						"Payload byte buffer must have at least 4 "
-								+ "available bytes, but has only " + available);
-			}
-			while (more) {
-				final byte[] bytes = exchange.getValue().getEncodedBytes();
-				final int size = exchange.getValue().getEncodedSize();
-				int rowDataSize = size + RowData.ENVELOPE_SIZE;
-				if (rowDataSize + 4 <= available) {
-					if (rowDataSize < RowData.MINIMUM_RECORD_LENGTH) {
-						if (LOG.isErrorEnabled()) {
-							LOG.error("Value at " + exchange.getKey()
-									+ " is not a valid row - skipping");
-						}
-						traverseToNextRow();
-						continue;
-					}
-					final int rowDefId = CServerUtil.getInt(bytes,
-							RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
-
-					//
-					// Handle SELECT on a user table
-					//
-					if (rowDef.getUserRowDefIds() == null) {
-						if (rowDef.getRowDefId() == rowDefId) {
-							prepareNextRowBuffer(payload, rowDataSize);
-							payload.put(buffer, 0, rowDataSize);
-							traverseToNextRow();
-							break;
-						} else {
-							traverseToNextRow();
-							continue;
-						}
-					}
-					
-					// Handle SELECT on a group table
-					//
-					// Copy the row into the buffer in case we
-					// decide to return it.
-					//
-					prepareNextRowBuffer(payload, rowDataSize);
-					//
-					if (rowDefId == leafRowDefId) {
-						payload.put(buffer, 0, rowDataSize);
-						//
-						// Optimization to traverse past unwanted child rows
-						// 
-						exchange.getKey().append(Key.AFTER);
-						traverseToNextRow();
-						break;
-					} else {
-						//
-						// Find out of there's a child row. If so
-						// then we can return this row.
-						//
-						final int myDepth = exchange.getKey().getDepth();
-						traverseToNextRow();
-						if (more && exchange.getKey().getDepth() > myDepth) {
-							payload.put(buffer, 0, rowDataSize);
-							break;
-						}
-						continue;
-					}
-				} else {
-					return false;
-				}
-			}
-			return more;
-		}
-
-		@Override
-		public boolean hasMore() {
-			return more;
-		}
-
-		private void prepareNextRowBuffer(ByteBuffer payload, int rowDataSize) {
-			if (rowDataSize > buffer.length) {
-				buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
-				rowData.reset(buffer);
-			}
-			//
-			// Assemble the Row in a byte array to allow column
-			// elision
-			//
-			CServerUtil.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
-			CServerUtil.putChar(buffer, RowData.O_SIGNATURE_A,
-					RowData.SIGNATURE_A);
-			System
-					.arraycopy(exchange.getValue().getEncodedBytes(), 0,
-							buffer, RowData.O_FIELD_COUNT, exchange.getValue()
-									.getEncodedSize());
-			CServerUtil.putChar(buffer, RowData.O_SIGNATURE_B + rowDataSize,
-					RowData.SIGNATURE_B);
-			CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
-					rowDataSize);
-		}
-
-		private void traverseToNextRow() throws Exception {
-			more = exchange.traverse(direction, keyFilter, Integer.MAX_VALUE);
-			direction = Key.GT;
-		}
-		
-		private KeyFilter constructKeyFilter(final RowData start, final RowData end, final RowDef rowDef) {
-			final KeyFilter keyFilter = new KeyFilter();
-			return keyFilter;
-		}
 	}
 
 }

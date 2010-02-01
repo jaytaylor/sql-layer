@@ -7,6 +7,8 @@ package com.akiba.cserver;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,8 +41,7 @@ public class CServer {
 			"java -jar cserver.jar DB_HOST DB_USERNAME DB_PASSWORD",
 			"    DB_HOST: Host running database containing AIS",
 			"    DB_USERNAME: Database username",
-			"    DB_PASSWORD: Database password",
-			};
+			"    DB_PASSWORD: Database password", };
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 
@@ -54,7 +55,7 @@ public class CServer {
 
 	private volatile boolean stopped = false;
 
-	private List<Thread> threads = new ArrayList<Thread>();
+	private Map<Integer, Thread> threadMap = new TreeMap<Integer, Thread>();
 
 	public void start() throws Exception {
 		MessageRegistry.initialize();
@@ -69,8 +70,8 @@ public class CServer {
 	public void stop() throws Exception {
 		stopped = true;
 		final List<Thread> copy;
-		synchronized (threads) {
-			copy = new ArrayList<Thread>(threads);
+		synchronized (threadMap) {
+			copy = new ArrayList<Thread>(threadMap.values());
 		}
 		// for now I think this is the only way to make these threads
 		// bail from their reads.
@@ -83,28 +84,33 @@ public class CServer {
 
 	public class ChannelNotifier implements CommEventNotifier {
 
-		private volatile int connectCounter = 0;
-
 		@Override
 		public void onConnect(AkibaNetworkHandler handler) {
-			int counter = ++connectCounter;
-			System.out.println("Connection #" + connectCounter + " created");
 			if (LOG.isInfoEnabled()) {
-				LOG.info("Connection #" + connectCounter + " created");
+				LOG.info("Connection #" + handler.getId() + " created");
 			}
+			final String threadName = "CServer_" + handler.getId();
 			final Thread thread = new Thread(new CServerRunnable(
-					AkibaConnection.createConnection(handler)), "CServer_"
-					+ counter);
+					AkibaConnection.createConnection(handler)), threadName);
 			thread.setDaemon(true);
 			thread.start();
-			synchronized (threads) {
-				threads.add(thread);
+			synchronized (threadMap) {
+				threadMap.put(handler.getId(), thread);
 			}
 		}
 
 		@Override
 		public void onDisconnect(AkibaNetworkHandler handler) {
-			// TODO
+			final Thread thread = threadMap.remove(handler.getId());
+			if (thread != null && thread.isAlive()) {
+				thread.interrupt();
+				if (LOG.isInfoEnabled()) {
+					LOG.info("Connection #" + handler.getId() + " ended");
+				}
+			} else {
+				LOG.error("CServer thread for connection #" + handler.getId()
+						+ " was missing or dead");
+			}
 		}
 	}
 
@@ -155,14 +161,14 @@ public class CServer {
 			while (!stopped) { // TODO - shutdown
 				try {
 					Message message = connection.receive();
-					if (LOG.isInfoEnabled()) {
-						LOG.info("Serving message " + message);
+					if (LOG.isTraceEnabled()) {
+						LOG.trace("Serving message " + message);
 					}
 					message.execute(connection, context);
 					requestCounter++;
 				} catch (InterruptedException e) {
 					if (LOG.isInfoEnabled()) {
-						LOG.info("Thread " + Thread.currentThread()
+						LOG.info("Thread " + Thread.currentThread().getName()
 								+ (stopped ? " stopped" : " interrupted"));
 					}
 				} catch (Exception e) {
@@ -199,9 +205,11 @@ public class CServer {
 		for (;;) {
 			try {
 				if (LOG.isInfoEnabled()) {
-					LOG.info(String.format("Attempting to load AIS from %s", dbHost));
+					LOG.info(String.format("Attempting to load AIS from %s",
+							dbHost));
 				}
-				ais = AkibaInformationSchemaImpl.load(new MySQLSource(dbHost, dbUsername, dbPassword));
+				ais = AkibaInformationSchemaImpl.load(new MySQLSource(dbHost,
+						dbUsername, dbPassword));
 				break;
 			} catch (com.mysql.jdbc.exceptions.jdbc4.CommunicationsException e) {
 				try {
