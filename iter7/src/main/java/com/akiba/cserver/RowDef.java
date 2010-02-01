@@ -45,7 +45,7 @@ public class RowDef {
 	 * Schema's name for this table.
 	 */
 	private String tableName;
-	
+
 	/**
 	 * Name of the tree storing this table - same as the group table name
 	 */
@@ -56,15 +56,14 @@ public class RowDef {
 	 */
 	private String pkTreeName;
 	/**
-	 * RowDefIDs of constituent user tables. Populated only if this
-	 * is the RowDef for a group table. Null if this is the RowDef for a
-	 * user table.
+	 * RowDefIDs of constituent user tables. Populated only if this is the
+	 * RowDef for a group table. Null if this is the RowDef for a user table.
 	 */
 	private int[] userRowDefIds;
 
 	/**
-	 * Maps the 0th column of each user table in the userRowDefIds
-	 * array to the Nth column of the corresponding group table.
+	 * Maps the 0th column of each user table in the userRowDefIds array to the
+	 * Nth column of the corresponding group table.
 	 */
 	private int[] userRowColumnOffsets;
 
@@ -81,8 +80,8 @@ public class RowDef {
 	private final byte[][] varLenFieldMap;
 
 	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName, String treeName,
-			final int[] pkFields) {
+			final FieldDef[] fieldDefs, final String tableName,
+			String treeName, final int[] pkFields) {
 		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
 		rowDef.setTableName(tableName);
 		rowDef.setTreeName(treeName);
@@ -93,9 +92,9 @@ public class RowDef {
 	}
 
 	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName, final String groupTableName,
-			final int[] pkFields, final int parentRowDefId,
-			final int[] parentJoinFields) {
+			final FieldDef[] fieldDefs, final String tableName,
+			final String groupTableName, final int[] pkFields,
+			final int parentRowDefId, final int[] parentJoinFields) {
 		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
 		rowDef.setTableName(tableName);
 		rowDef.setTreeName(groupTableName);
@@ -152,15 +151,15 @@ public class RowDef {
 	public FieldDef[] getFieldDefs() {
 		return fieldDefs;
 	}
-	
+
 	public int[] getUserRowDefIds() {
 		return userRowDefIds;
 	}
-	
+
 	public void setUserRowDefIds(final int[] userRowDefIds) {
 		this.userRowDefIds = userRowDefIds;
 	}
-	
+
 	public int[] getUserRowColumnOffsets() {
 		return userRowColumnOffsets;
 	}
@@ -176,7 +175,7 @@ public class RowDef {
 	public String getTableName() {
 		return tableName;
 	}
-	
+
 	public String getTreeName() {
 		return treeName;
 	}
@@ -189,6 +188,7 @@ public class RowDef {
 	public void setTreeName(final String treeName) {
 		this.treeName = treeName;
 	}
+
 	/**
 	 * Returns the offset relative to the start of the byte array represented by
 	 * the supplied {@link RowData} of the field specified by the supplied
@@ -382,11 +382,36 @@ public class RowDef {
 	 */
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("RowDef ");
-		sb.append(tableName);
+		StringBuilder sb = new StringBuilder(String.format(
+				"RowDef #%d %s (%s.%s) ", rowDefId, tableName, treeName,
+				pkTreeName));
+		if (userRowDefIds != null) {
+			for (int i = 0; i < userRowDefIds.length; i++) {
+				sb.append(i == 0 ? "{" : ",");
+				sb.append(userRowDefIds[i]);
+				sb.append("->");
+				sb.append(userRowColumnOffsets[i]);
+			}
+			sb.append("}");
+		}
 		for (int i = 0; i < fieldDefs.length; i++) {
 			sb.append(i == 0 ? "[" : ",");
 			sb.append(fieldDefs[i]);
+			for (int j = 0; j < pkFields.length; j++) {
+				if (pkFields[j] == i) {
+					sb.append("*");
+					break;
+				}
+			}
+			if (parentJoinFields != null) {
+			for (int j = 0; j < parentJoinFields.length; j++) {
+				if (parentJoinFields[j] == i) {
+					sb.append("^");
+					sb.append(j);
+					break;
+				}
+			}
+			}
 		}
 		sb.append("]");
 		return sb.toString();

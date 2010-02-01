@@ -36,11 +36,11 @@ public class CServer {
 	private static final Log LOG = LogFactory.getLog(CServer.class.getName());
 
 	private static final String[] USAGE = {
-			"java -jar cserver.jar DB_HOST DB_USERNAME DB_PASSWORD DB_NAME",
+			"java -jar cserver.jar DB_HOST DB_USERNAME DB_PASSWORD",
 			"    DB_HOST: Host running database containing AIS",
 			"    DB_USERNAME: Database username",
 			"    DB_PASSWORD: Database password",
-			"    DB_NAME: AIS dababase name" };
+			};
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 

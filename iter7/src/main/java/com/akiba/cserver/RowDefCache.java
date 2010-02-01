@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.ais.model.Column;
 import com.akiba.ais.model.GroupTable;
@@ -23,6 +26,8 @@ import com.akiba.ais.model.UserTable;
  * @author peter
  */
 public class RowDefCache implements CServerConstants {
+
+	private static final Log LOG = LogFactory.getLog(RowDefCache.class.getName());
 
 	private final Map<Integer, RowDef> cacheMap = new HashMap<Integer, RowDef>();
 
@@ -207,6 +212,10 @@ public class RowDefCache implements CServerConstants {
 			putRowDef(rowDef);
 
 		}
+		
+		if (LOG.isInfoEnabled()) {
+			LOG.info(toString());
+		}
 	}
 
 	RowDef lookUpRowDef(final int rowDefId) {
@@ -216,7 +225,7 @@ public class RowDefCache implements CServerConstants {
 
 	/**
 	 * Adds a RowDef preemptively to the cache. This is intended primarily to
-	 * simply unit tests.
+	 * simplify unit tests.
 	 * 
 	 * @param rowDef
 	 */
@@ -233,9 +242,10 @@ public class RowDefCache implements CServerConstants {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder("\n");
 		for (Map.Entry<String, Integer> entry : nameMap.entrySet()) {
 			final RowDef rowDef = cacheMap.get(entry.getValue());
+			sb.append("   ");
 			sb.append(rowDef);
 			sb.append("\n");
 		}
