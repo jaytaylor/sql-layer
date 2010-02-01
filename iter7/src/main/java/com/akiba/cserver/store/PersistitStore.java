@@ -204,7 +204,7 @@ public class PersistitStore implements Store, CServerConstants {
 		boolean found = exchange.previous();
 		long value;
 		if (found) {
-			value = -1; //value = exchange.getKey().indexTo(-1).decodeLong();
+			value = exchange.getKey().indexTo(-1).decodeLong();
 		} else {
 			value = -1;
 		}
