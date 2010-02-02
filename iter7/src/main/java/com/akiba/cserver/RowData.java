@@ -428,7 +428,9 @@ public class RowData {
 							sb.append("\\t");
 							break;
 						default:
+							if (c >= ' ') {	// TODO - temporarily filters out control characters and nulls
 							sb.append(c);
+							}
 						}
 					}
 					sb.append("\'");

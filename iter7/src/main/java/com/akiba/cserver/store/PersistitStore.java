@@ -403,5 +403,11 @@ public class PersistitStore implements Store, CServerConstants {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
+	
+	void logRowData(final String prefix,  final RowData rowData) {
+		if (LOG.isInfoEnabled()) {	// TODO - change to trace
+			rowData.prepareRow(rowData.getRowStart());
+			LOG.info(prefix + rowData.toString(rowDefCache));
+		}
+	}
 }

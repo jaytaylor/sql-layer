@@ -5,6 +5,9 @@ package com.akiba.cserver.store;
 
 import java.nio.ByteBuffer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
@@ -13,6 +16,9 @@ import com.persistit.Key;
 import com.persistit.KeyFilter;
 
 public class PersistitStoreRowCollector implements RowCollector {
+
+	static final Log LOG = LogFactory.getLog(PersistitStoreRowCollector.class
+			.getName());
 
 	private final static int INITIAL_BUFFER_SIZE = 1024;
 
@@ -69,6 +75,10 @@ public class PersistitStoreRowCollector implements RowCollector {
 		}
 		exchange.clear();
 		this.keyFilter = constructKeyFilter(start, end, rowDef);
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Starting Scan on rowDef=" + rowDef.toString()
+					+ ": leafRowDefId=" + leafRowDefId);
+		}
 		traverseToNextRow();
 	}
 
@@ -112,6 +122,7 @@ public class PersistitStoreRowCollector implements RowCollector {
 					if (rowDef.getRowDefId() == rowDefId) {
 						prepareNextRowBuffer(payload, rowDataSize);
 						payload.put(buffer, 0, rowDataSize);
+						store.logRowData("ScanRowsResponse adding ", rowData);
 						traverseToNextRow();
 						break;
 					} else {
@@ -132,7 +143,7 @@ public class PersistitStoreRowCollector implements RowCollector {
 					//
 					// Optimization to traverse past unwanted child rows
 					// 
-					//bumpPastChildren();
+					// bumpPastChildren();
 					exchange.getKey().append(Key.AFTER);
 					traverseToNextRow();
 					break;
