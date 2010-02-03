@@ -141,7 +141,7 @@ public class PersistitStore implements Store, CServerConstants {
 			constructHKey(exchange.getKey(), rowDef, rowData);
 			exchange.fetch();
 			if (exchange.getValue().isDefined()) {
-				throw new StoreException(NON_UNIQUE, "Non-unique key "
+				throw new StoreException(HA_ERR_FOUND_DUPP_KEY, "Non-unique key "
 						+ exchange.getKey());
 			}
 			final int start = rowData.getInnerStart();
@@ -233,7 +233,11 @@ public class PersistitStore implements Store, CServerConstants {
 
 	Exchange getExchange(final String treeName)
 			throws PersistitException {
-		return getSession().getExchange(VOLUME_NAME, treeName);
+		return getSession().getExchange(VOLUME_NAME, treeName).clear();
+	}
+	
+	RowDefCache getRowDefCache() {
+		return rowDefCache;
 	}
 
 	void constructHKey(final Key key, final RowDef rowDef,
@@ -268,7 +272,7 @@ public class PersistitStore implements Store, CServerConstants {
 				appendKeyFields(indexKey, rowDef, rowData, rowDef
 						.getParentJoinFields(), parentRowDef.getRowDefId());
 				if (!indexExchange.next(true)) {
-					throw new StoreException(FOREIGN_KEY_MISSING, indexKey
+					throw new StoreException(HA_ERR_NO_REFERENCED_ROW, indexKey
 							.toString());
 				}
 				copyAndRotate(indexKey, key, rowDef.getPkFields().length + 1);
@@ -302,6 +306,10 @@ public class PersistitStore implements Store, CServerConstants {
 		case SMALLINT:
 		case INT:
 		case BIGINT:
+		case DATE:
+		case DATETIME:
+		case TIMESTAMP:
+		case YEAR:
 			final long value = rowData.getIntegerValue((int) location,
 					(int) (location >>> 32));
 			key.append(value);
@@ -310,6 +318,7 @@ public class PersistitStore implements Store, CServerConstants {
 		case VARCHAR:
 			final int start = (int) location;
 			final int length = (int) (location >>> 32);
+			// TODO: character encoding, collation
 			key.append(new String(rowData.getBytes(), start, length));
 			break;
 
@@ -318,6 +327,46 @@ public class PersistitStore implements Store, CServerConstants {
 					"Extend the key encoding logic to "
 							+ "handle a key of type " + fieldDef);
 		}
+	}
+	/**
+	 * Return a value extracted from a RowDef as an object suitable for
+	 * inclusion in a KeyFilter.RangeTerm.  This method parallels 
+	 * {@link #appendKeyField(Key, FieldDef, RowData, long)} and at some
+	 * point should be merged so that there is only one translation code
+	 * path.
+	 * @param fieldDef
+	 * @param rowData
+	 * @param location
+	 * @return Field value as Object
+	 */
+	Object keyField(final FieldDef fieldDef,
+			final RowData rowData, final long location) {
+		switch (fieldDef.getType()) {
+		case TINYINT:
+		case SMALLINT:
+		case INT:
+		case BIGINT:
+		case DATE:
+		case DATETIME:
+		case TIMESTAMP:
+		case YEAR:
+			final long value = rowData.getIntegerValue((int) location,
+					(int) (location >>> 32));
+			return Long.valueOf(value);
+
+		case CHAR:
+		case VARCHAR:
+			final int start = (int) location;
+			final int length = (int) (location >>> 32);
+			// TODO: character encoding, collation
+			return new String(rowData.getBytes(), start, length);
+
+		default:
+			throw new UnsupportedOperationException(
+					"Extend the key encoding logic to "
+							+ "handle a key of type " + fieldDef);
+		}
+		
 	}
 
 	/**

@@ -155,6 +155,10 @@ public class RowDef {
 	public int[] getUserRowDefIds() {
 		return userRowDefIds;
 	}
+	
+	public boolean isGroupTable() {
+		return userRowDefIds != null;
+	}
 
 	public void setUserRowDefIds(final int[] userRowDefIds) {
 		this.userRowDefIds = userRowDefIds;
