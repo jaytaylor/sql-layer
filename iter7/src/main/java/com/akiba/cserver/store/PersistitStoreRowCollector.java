@@ -198,11 +198,15 @@ public class PersistitStoreRowCollector implements RowCollector,
 			}
 			if (columnOffset == -1) {
 				throw new IllegalStateException(
-						"Broken AIS: No column offset found for " + userRowDef
+						"Broken AIS: No column offset for " + userRowDef
 								+ " in group " + rowDef);
 			}
 		} else {
-			columnOffset = userRowDef == rowDef ? 0 : -1;
+			if (userRowDef == rowDef) {
+				columnOffset = 0;
+			} else {
+				return -1;
+			}
 		}
 		boolean projected = false;
 		for (int column = columnOffset; !projected
@@ -308,6 +312,23 @@ public class PersistitStoreRowCollector implements RowCollector,
 	}
 
 	private boolean isBit(final byte[] columnBitMap, final int column) {
+		if (columnBitMap == null) {
+			if (LOG.isErrorEnabled()) {
+				LOG.error("ColumnBitMap is null in ScanRowsRequest on table "
+						+ rowDef);
+			}
+			return false;
+		}
+		if ((column / 8) >= columnBitMap.length || column < 0) {
+			if (LOG.isErrorEnabled()) {
+				LOG.error("ColumnBitMap is too short in "
+						+ "ScanRowsRequest on table " + rowDef
+						+ " columnBitMap has " + columnBitMap.length
+						+ " bytes, but isBit is " + "trying to test bit "
+						+ column);
+			}
+			return false;
+		}
 		return (columnBitMap[column / 8] & (1 << (column % 8))) != 0;
 	}
 
