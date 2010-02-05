@@ -22,6 +22,7 @@ import com.persistit.Persistit;
 import com.persistit.StreamLoader;
 import com.persistit.Transaction;
 import com.persistit.Value;
+import com.persistit.Volume;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -187,6 +188,44 @@ public class PersistitStore implements Store, CServerConstants {
 				}
 				transaction.end();
 			}
+		}
+	}
+
+	public int dropTable(final int rowDefId) throws Exception {
+		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		if (!rowDef.isGroupTable()) {
+			throw new StoreException(HA_ERR_INTERNAL_ERROR,
+					"Can't drop user tables yet");
+		}
+		final Transaction transaction = db.getTransaction();
+		transaction.begin();
+		boolean committed = false;
+		try {
+			final Volume volume = db.getVolume(VOLUME_NAME);
+			// Remove the index trees
+			for (int index = 0; index < rowDef.getUserRowDefIds().length; index++) {
+				final RowDef userRowDef = rowDefCache.getRowDef(rowDef
+						.getUserRowDefIds()[index]);
+				if (userRowDef.getParentRowDefId() != 0) {
+					volume.removeTree(userRowDef.getPkTreeName());
+				}
+			}
+			// remove the htable tree
+			volume.removeTree(rowDef.getTreeName());
+			transaction.commit();
+			committed = true;
+			return OK;
+		} finally {
+			if (!committed) {
+				try {
+					transaction.rollback();
+				} catch (RollbackException e) {
+					// ignore so we can return the result code.
+				} catch (PersistitException e) {
+					e.printStackTrace();
+				}
+			}
+			transaction.end();
 		}
 	}
 

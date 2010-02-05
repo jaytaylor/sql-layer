@@ -1,12 +1,7 @@
 <projectDescription>
   <name>cserver</name>
   <comment/>
-  <projects>
-    <project>akiba-ais</project>
-    <project>akiba-message</project>
-    <project>akiba-network</project>
-    <project>akiba-persistit</project>
-  </projects>
+  <projects/>
   <buildSpec>
     <buildCommand>
       <name>org.eclipse.jdt.core.javabuilder</name>

@@ -38,7 +38,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 	private final KeyFilter indexKeyFilter;
 
 	final int[] userRowDefIds;
-	
+
 	final int[] keySegments;
 
 	final int[] keyDepth;
@@ -362,14 +362,15 @@ public class PersistitStoreRowCollector implements RowCollector,
 				int levelRowDefId = -1;
 				for (int level = 0; level < columnOffset.length; level++) {
 					deliveryKey.indexTo(keyDepth[level]);
-					if (columnOffset[level] >= 0 && deliveryKey.getIndex() > unique) {
+					if (columnOffset[level] >= 0
+							&& deliveryKey.getIndex() > unique) {
 						deliveryKey.setEncodedSize(deliveryKey.getIndex());
 						levelRowDefId = userRowDefIds[level];
 						break;
 					}
 				}
 				if (levelRowDefId == -1) {
-					//direction = Key.GTEQ;
+					// direction = Key.GTEQ;
 					next = Next.NEXT_DECENDANT;
 				} else {
 					deliveryEx.fetch();
@@ -390,7 +391,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 					next = Next.NEXT_INDEXED_KEY;
 					continue;
 				}
-				
+
 				if (!found) {
 					more = false;
 					return false;
@@ -401,9 +402,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 					expectedRowDefId = -1;
 					for (int index = 0; index < keyDepth[index]; index++) {
 						if (depth == keyDepth[index]) {
-							if (columnOffset[index] >= 0){
-							expectedRowDefId = userRowDefIds[index];
-						}
+							if (columnOffset[index] >= 0) {
+								expectedRowDefId = userRowDefIds[index];
+							}
 							break;
 						}
 					}
@@ -414,7 +415,6 @@ public class PersistitStoreRowCollector implements RowCollector,
 				}
 				continue;
 
-					
 			case PENDING_ROW:
 				if (deliverRow(payload)) {
 					next = pending;
@@ -485,7 +485,10 @@ public class PersistitStoreRowCollector implements RowCollector,
 		if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
 			payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
 					.getRowSize());
-			LOG.info("collectNextRow returned: " + rowData.toString(store.getRowDefCache()));
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("collectNextRow returned: "
+						+ rowData.toString(store.getRowDefCache()));
+			}
 			return true;
 		} else {
 			return false;
