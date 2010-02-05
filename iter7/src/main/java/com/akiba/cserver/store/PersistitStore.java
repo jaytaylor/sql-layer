@@ -31,7 +31,7 @@ public class PersistitStore implements Store, CServerConstants {
 
 	static final Log LOG = LogFactory.getLog(PersistitStore.class.getName());
 
-	private final static String VOLUME_NAME = "aktest"; // TODO - select
+	final static String VOLUME_NAME = "aktest"; // TODO - select
 	// database
 
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
@@ -135,14 +135,15 @@ public class PersistitStore implements Store, CServerConstants {
 		try {
 			final RowDef rootRowDef = rootRowDef(rowDef);
 			final String treeName = rootRowDef.getTreeName();
-			final Exchange exchange = getExchange(treeName);
+			final Exchange exchange = getSession().getExchange1(VOLUME_NAME,
+					treeName);
 			transaction = db.getTransaction();
 			transaction.begin();
 			constructHKey(exchange.getKey(), rowDef, rowData);
 			exchange.fetch();
 			if (exchange.getValue().isDefined()) {
-				throw new StoreException(HA_ERR_FOUND_DUPP_KEY, "Non-unique key "
-						+ exchange.getKey());
+				throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
+						"Non-unique key " + exchange.getKey());
 			}
 			final int start = rowData.getInnerStart();
 			final int size = rowData.getInnerSize();
@@ -155,7 +156,8 @@ public class PersistitStore implements Store, CServerConstants {
 				//
 				// For child rows we need to insert a pk index row
 				//
-				final Exchange pkExchange = getExchange(rowDef.getPkTreeName());
+				final Exchange pkExchange = getSession().getExchange3(
+						VOLUME_NAME, rowDef.getPkTreeName());
 				copyAndRotate(exchange.getKey(), pkExchange.getKey(), -(rowDef
 						.getPkFields().length + 1));
 				pkExchange.getValue().clear();
@@ -192,9 +194,11 @@ public class PersistitStore implements Store, CServerConstants {
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		final Exchange exchange;
 		if (rowDef.getParentRowDefId() != 0) {
-			exchange = getExchange(rowDef.getPkTreeName());
+			exchange = getSession().getExchange3(VOLUME_NAME,
+					rowDef.getPkTreeName());
 		} else {
-			exchange = getExchange(rootRowDef(rowDef).getTreeName());
+			exchange = getSession().getExchange1(VOLUME_NAME,
+					rootRowDef(rowDef).getTreeName());
 		}
 		exchange.getKey().clear().append(rowDefId % MAX_VERSIONS_PER_TABLE)
 				.append(Key.AFTER);
@@ -231,17 +235,12 @@ public class PersistitStore implements Store, CServerConstants {
 		return session;
 	}
 
-	Exchange getExchange(final String treeName)
-			throws PersistitException {
-		return getSession().getExchange(VOLUME_NAME, treeName).clear();
-	}
-	
 	RowDefCache getRowDefCache() {
 		return rowDefCache;
 	}
 
-	void constructHKey(final Key key, final RowDef rowDef,
-			final RowData rowData) throws PersistitException, StoreException {
+	void constructHKey(final Key key, final RowDef rowDef, final RowData rowData)
+			throws PersistitException, StoreException {
 		key.clear();
 		//
 		// Constructing an h-key for a child table. We look at the
@@ -265,8 +264,8 @@ public class PersistitStore implements Store, CServerConstants {
 				//
 				// Yes grandparent. Use pkIndex lookup.
 				//
-				final Exchange indexExchange = getExchange(parentRowDef
-						.getPkTreeName());
+				final Exchange indexExchange = getSession().getExchange3(
+						VOLUME_NAME, parentRowDef.getPkTreeName());
 				final Key indexKey = indexExchange.getKey();
 				indexKey.clear();
 				appendKeyFields(indexKey, rowDef, rowData, rowDef
@@ -328,19 +327,20 @@ public class PersistitStore implements Store, CServerConstants {
 							+ "handle a key of type " + fieldDef);
 		}
 	}
+
 	/**
 	 * Return a value extracted from a RowDef as an object suitable for
-	 * inclusion in a KeyFilter.RangeTerm.  This method parallels 
-	 * {@link #appendKeyField(Key, FieldDef, RowData, long)} and at some
-	 * point should be merged so that there is only one translation code
-	 * path.
+	 * inclusion in a KeyFilter.RangeTerm. This method parallels
+	 * {@link #appendKeyField(Key, FieldDef, RowData, long)} and at some point
+	 * should be merged so that there is only one translation code path.
+	 * 
 	 * @param fieldDef
 	 * @param rowData
 	 * @param location
 	 * @return Field value as Object
 	 */
-	Object keyField(final FieldDef fieldDef,
-			final RowData rowData, final long location) {
+	Object keyField(final FieldDef fieldDef, final RowData rowData,
+			final long location) {
 		switch (fieldDef.getType()) {
 		case TINYINT:
 		case SMALLINT:
@@ -366,7 +366,7 @@ public class PersistitStore implements Store, CServerConstants {
 					"Extend the key encoding logic to "
 							+ "handle a key of type " + fieldDef);
 		}
-		
+
 	}
 
 	/**
@@ -452,9 +452,9 @@ public class PersistitStore implements Store, CServerConstants {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-	
-	void logRowData(final String prefix,  final RowData rowData) {
-		if (LOG.isInfoEnabled()) {	// TODO - change to trace
+
+	void logRowData(final String prefix, final RowData rowData) {
+		if (LOG.isInfoEnabled()) { // TODO - change to trace
 			rowData.prepareRow(rowData.getRowStart());
 			LOG.info(prefix + rowData.toString(rowDefCache));
 		}

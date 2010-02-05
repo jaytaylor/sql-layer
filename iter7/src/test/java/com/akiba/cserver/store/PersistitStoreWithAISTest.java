@@ -168,41 +168,41 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			assertEquals(1, scanCount);
 		}
 
-//		{
-//			// select items in COI table by index values on Order
-//			int scanCount = 0;
-//			final RowDef defCOI = rowDefCache.getRowDef("_akiba_coi");
-//			final RowData start = new RowData(new byte[256]);
-//			final RowData end = new RowData(new byte[256]);
-//			// C has 2 columns, O has 3 columns, I has 4 columns
-//			start.createRow(defCOI, new Object[] { null, null, 1004, null,
-//					null, null, null, null, null });
-//			end.createRow(defCOI, new Object[] { null, null, 1007, null, null,
-//					null, null, null, null });
-//			final byte[] columnBitMap = new byte[] { (byte) 0xFF, (byte) 1 };
-//			final RowCollector rc = store.newRowCollector(1111, start, end,
-//					columnBitMap);
-//			final ByteBuffer payload = ByteBufferFactory.allocate(256);
-//			//
-//			// Expect all the I rows for orders 1004 through 1007, inclusive
-//			// Total of 40
-//			//
-//			while (rc.hasMore()) {
-//				payload.clear();
-//				while (rc.collectNextRow(payload))
-//					;
-//				payload.flip();
-//				RowData rowData = new RowData(payload.array(), payload
-//						.position(), payload.limit());
-//				for (int p = rowData.getBufferStart(); p < rowData
-//						.getBufferEnd();) {
-//					rowData.prepareRow(p);
-//					p = rowData.getRowEnd();
-//					scanCount++;
-//				}
-//			}
-//			assertEquals(40, scanCount);
-//		}
+		{
+			// select items in COI table by index values on Order
+			int scanCount = 0;
+			final RowDef defCOI = rowDefCache.getRowDef("_akiba_coi");
+			final RowData start = new RowData(new byte[256]);
+			final RowData end = new RowData(new byte[256]);
+			// C has 2 columns, O has 3 columns, I has 4 columns
+			start.createRow(defCOI, new Object[] { null, null, 1004, null,
+					null, null, null, null, null });
+			end.createRow(defCOI, new Object[] { null, null, 1007, null, null,
+					null, null, null, null });
+			final byte[] columnBitMap = new byte[] { (byte) 0xFF, (byte) 1 };
+			final RowCollector rc = store.newRowCollector(1111, start, end,
+					columnBitMap);
+			final ByteBuffer payload = ByteBufferFactory.allocate(256);
+			//
+			// Expect all the C, O and I rows for orders 1004 through 1007, inclusive
+			// Total of 40
+			//
+			while (rc.hasMore()) {
+				payload.clear();
+				while (rc.collectNextRow(payload))
+					;
+				payload.flip();
+				RowData rowData = new RowData(payload.array(), payload
+						.position(), payload.limit());
+				for (int p = rowData.getBufferStart(); p < rowData
+						.getBufferEnd();) {
+					rowData.prepareRow(p);
+					p = rowData.getRowEnd();
+					scanCount++;
+				}
+			}
+			assertEquals(45, scanCount);
+		}
 
 	}
 

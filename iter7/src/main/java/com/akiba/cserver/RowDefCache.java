@@ -196,6 +196,8 @@ public class RowDefCache implements CServerConstants {
 					tempRowColumnOffset[userTableIndex] = columnCount;
 					userTableIndex++;
 					columnCount += userColumn.getTable().getColumns().size();
+					RowDef userRowDef = cacheMap.get(Integer.valueOf(userRowDefId));
+					userRowDef.setGroupRowDefId(rowDefId);
 				}
 			}
 			final int[] userRowDefIds = new int[userTableIndex];
