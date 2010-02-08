@@ -5,6 +5,8 @@ package com.akiba.cserver.store;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -55,11 +57,24 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private boolean more = true;
 
-	private byte[] buffer = new byte[INITIAL_BUFFER_SIZE];
-
-	private final RowData rowData = new RowData(buffer);
+	private final List<RowData> rowDataList = new ArrayList<RowData>();
+	
+	private int preparedCount = 0;
+	
+	private int deliveredCount = 0;
+	
+	private int preparedRowDefId = -1;
 
 	private Key.Direction direction = Key.GTEQ;
+
+	private enum Next {
+		NEXT_INDEXED_KEY, NEXT_ANCESTOR, NEXT_DECENDANT,
+	}
+
+	Next next = Next.NEXT_INDEXED_KEY;
+
+	Next pending;
+
 
 	PersistitStoreRowCollector(PersistitStore store, final RowData start,
 			final RowData end, final byte[] columnBitMap, RowDef rowDef)
@@ -69,11 +84,11 @@ public class PersistitStoreRowCollector implements RowCollector,
 		this.columnBitMap = columnBitMap;
 		this.rowDef = rowDef;
 		this.leafRowDefId = computeLeafRowDefId(rowDef, columnBitMap);
-		final int depth = depth(leafRowDefId);
-		this.userRowDefIds = new int[depth];
-		this.keySegments = new int[depth];
-		this.keyDepth = new int[depth];
-		this.columnOffset = new int[depth];
+		int levels = level(leafRowDefId);
+		this.userRowDefIds = new int[levels];
+		this.keySegments = new int[levels];
+		this.keyDepth = new int[levels];
+		this.columnOffset = new int[levels];
 		this.analyzeLevels(leafRowDefId, rowDef, columnBitMap);
 		this.keyFilter = computeKeyFilter(start, end);
 		this.indexKeyFilter = computeIndexKeyFilter();
@@ -125,23 +140,23 @@ public class PersistitStoreRowCollector implements RowCollector,
 	}
 
 	/**
-	 * Compute and return the depth of a table in the group table tree. For
-	 * example, in the C, A, O, I example, C has depth 1, A and O have depth 2
-	 * and I has depth 2.
+	 * Compute and return the level of a table in the group table tree. For
+	 * example, in the C, A, 1, I example, C has level 1, A and O have level 2
+	 * and I has level 3.
 	 * 
 	 * @param leafRowDefId
-	 * @return depth
+	 * @return level
 	 */
-	int depth(final int leafRowDefId) {
-		int depth = 0;
+	int level(final int leafRowDefId) {
+		int level = 0;
 		int rowDefId = leafRowDefId;
 		for (; rowDefId != 0;) {
 			final RowDef rowDef = store.getRowDefCache().getRowDef(rowDefId);
 			assert !rowDef.isGroupTable();
 			rowDefId = rowDef.getParentRowDefId();
-			depth++;
+			level++;
 		}
-		return depth;
+		return level;
 	}
 
 	/**
@@ -332,14 +347,6 @@ public class PersistitStoreRowCollector implements RowCollector,
 		return (columnBitMap[column / 8] & (1 << (column % 8))) != 0;
 	}
 
-	private enum Next {
-		NEXT_INDEXED_KEY, NEXT_ANCESTOR, NEXT_DECENDANT, PENDING_ROW,
-	}
-
-	Next next = Next.NEXT_INDEXED_KEY;
-
-	Next pending;
-
 	/**
 	 * Selects the next row in tree-traversal order and puts it into the payload
 	 * ByteBuffer if there is room. Returns <tt>true</tt> if and only if a row
@@ -358,6 +365,22 @@ public class PersistitStoreRowCollector implements RowCollector,
 		}
 
 		while (true) {
+			
+			if (preparedRowDefId == leafRowDefId) {
+				if (deliveredCount < preparedCount) {
+					if (deliverRow(rowDataList.get(deliveredCount), payload)) {
+						deliveredCount++;
+						return true;
+					} else {
+						return false;
+					}
+				} else {
+					deliveredCount = 0;
+					preparedCount = 0;
+					preparedRowDefId = -1;
+				}
+			}
+				
 			switch (next) {
 
 			case NEXT_INDEXED_KEY:
@@ -396,7 +419,6 @@ public class PersistitStoreRowCollector implements RowCollector,
 				} else {
 					deliveryEx.fetch();
 					prepareRow(deliveryEx, payload, levelRowDefId);
-					arm();
 				}
 				continue;
 
@@ -432,27 +454,13 @@ public class PersistitStoreRowCollector implements RowCollector,
 				}
 				if (expectedRowDefId != -1) {
 					prepareRow(deliveryEx, payload, expectedRowDefId);
-					arm();
 				}
 				continue;
-
-			case PENDING_ROW:
-				if (deliverRow(payload)) {
-					next = pending;
-					return true;
-				} else {
-					return false;
-				}
 
 			default:
 				assert false : "Missing case";
 			}
 		}
-	}
-
-	private void arm() {
-		pending = next;
-		next = Next.PENDING_ROW;
 	}
 
 	void prepareRow(final Exchange exchange, final ByteBuffer payload,
@@ -479,6 +487,13 @@ public class PersistitStoreRowCollector implements RowCollector,
 						"Unable to convert rowDefId " + rowDefId
 								+ " to expected rowDefId " + expectedRowDefId);
 			}
+
+			if (rowDataList.size() <= preparedCount) {
+				rowDataList.add(new RowData(new byte[INITIAL_BUFFER_SIZE]));
+			}
+
+			final RowData rowData = rowDataList.get(preparedCount);
+			byte[] buffer = rowData.getBytes();
 			if (rowDataSize > buffer.length) {
 				buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
 				rowData.reset(buffer);
@@ -499,10 +514,13 @@ public class PersistitStoreRowCollector implements RowCollector,
 			CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
 					rowDataSize);
 			rowData.prepareRow(0);
+			
+			preparedCount++;
+			preparedRowDefId = expectedRowDefId;
 		}
 	}
 
-	boolean deliverRow(final ByteBuffer payload) throws IOException {
+	boolean deliverRow(final RowData rowData, final ByteBuffer payload) throws IOException {
 		if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
 			payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
 					.getRowSize());
