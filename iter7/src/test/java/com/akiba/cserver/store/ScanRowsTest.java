@@ -16,7 +16,6 @@ import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
 import com.akiba.cserver.RowDefCache;
 import com.akiba.util.ByteBufferFactory;
-import com.persistit.Volume;
 
 public class ScanRowsTest extends TestCase implements CServerConstants {
 
@@ -26,6 +25,8 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 
 	private final static int[] TENS = new int[] { 1, 10, 100, 1000, 10000,
 			100000, 1000000, 10000000 };
+
+	private final static boolean VERBOSE = false;
 
 	private PersistitStore store;
 
@@ -57,25 +58,29 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 
 	private void populateTables() throws Exception {
 		final RowData rowData = new RowData(new byte[256]);
+		// Create the tables in alphabetical order. Bacause of the
+		// way the tables are defined, this also creates all parents before
+		// their children.
 		for (String name : tableMap.keySet()) {
 			final RowDef rowDef = rowDefCache.getRowDef(name);
 			final int level = name.length();
 			int k = (int) Math.pow(10, level);
 			for (int i = 0; i < k; i++) {
-				rowData.createRow(rowDef, new Object[] {
-						(i / 10) * TENS[level - 1], i * TENS[level], 7, 8 });
+				rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8 });
 				assertEquals(OK, store.writeRow(rowData));
 			}
 		}
 	}
 
-	private int scanAllRows(final RowData start, final RowData end,
-			final byte[] columnBitMap) throws Exception {
+	private int scanAllRows(final String test, final RowData start,
+			final RowData end, final byte[] columnBitMap) throws Exception {
 		int scanCount = 0;
 		final RowCollector rc = store.newRowCollector(1111, start, end,
 				columnBitMap);
 		final ByteBuffer payload = ByteBufferFactory.allocate(256);
-
+		if (VERBOSE) {
+			System.out.println("Test " + test);
+		}
 		while (rc.hasMore()) {
 			payload.clear();
 			while (rc.collectNextRow(payload))
@@ -85,9 +90,16 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 					payload.limit());
 			for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
 				rowData.prepareRow(p);
-				p = rowData.getRowEnd();
 				scanCount++;
+				if (VERBOSE) {
+					System.out.println(String.format("%5d ", scanCount)
+							+ rowData.toString(rowDefCache));
+				}
+				p = rowData.getRowEnd();
 			}
+		}
+		if (VERBOSE) {
+			System.out.println();
 		}
 		return scanCount;
 	}
@@ -96,6 +108,7 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		populateTables();
 
 		final RowDef rowDef = rowDefCache.getRowDef("_akiba_srt");
+		final int fc = rowDef.getFieldCount();
 		final RowData start = new RowData(new byte[256]);
 		final RowData end = new RowData(new byte[256]);
 		byte[] bitMap;
@@ -103,19 +116,78 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		{
 			// Just the root table rows
 			final RowDef userRowDef = rowDefCache.getRowDef("a");
-			start.createRow(rowDef, new Object[] {});
-			end.createRow(rowDef, new Object[] {});
+			start.createRow(rowDef, new Object[fc]);
+			end.createRow(rowDef, new Object[fc]);
 			bitMap = bitsToRoot(userRowDef, rowDef);
-			assertEquals(10, scanAllRows(start, end, bitMap));
+			assertEquals(10, scanAllRows("all a", start, end, bitMap));
 		}
 
 		{
 			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
-			start.createRow(rowDef, new Object[] {});
-			end.createRow(rowDef, new Object[] {});
+			start.createRow(rowDef, new Object[fc]);
+			end.createRow(rowDef, new Object[fc]);
 			bitMap = bitsToRoot(userRowDef, rowDef);
-			assertEquals(11110, scanAllRows(start, end, bitMap));
+			assertEquals(11110, scanAllRows("all aaaa", start, end, bitMap));
 		}
+
+		{
+			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			int pkcol = columnOffset(userRowDef, rowDef);
+			assertTrue(pkcol >= 0);
+			pkcol += userRowDef.getPkFields()[0];
+			Object[] startValue = new Object[fc];
+			Object[] endValue = new Object[fc];
+			startValue[pkcol] = 1;
+			endValue[pkcol] = 2;
+			start.createRow(rowDef, startValue);
+			end.createRow(rowDef, endValue);
+			bitMap = bitsToRoot(userRowDef, rowDef);
+			assertEquals(5, scanAllRows("aaaa with aaaa.aaaa1 in [1,2]", start,
+					end, bitMap));
+		}
+
+		{
+			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			int pkcol = columnOffset(userRowDef, rowDef);
+			assertTrue(pkcol >= 0);
+			pkcol += userRowDef.getPkFields()[0];
+			Object[] startValue = new Object[fc];
+			Object[] endValue = new Object[fc];
+			startValue[pkcol] = 100;
+			endValue[pkcol] = 200;
+			start.createRow(rowDef, startValue);
+			end.createRow(rowDef, endValue);
+			bitMap = bitsToRoot(userRowDef, rowDef);
+			assertEquals(115, scanAllRows("aaaa with aaaa.aaaa1 in [100,200]",
+					start, end, bitMap));
+		}
+
+		{
+			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			final RowDef aaRowDef = rowDefCache.getRowDef("aa");
+			int pkcol = columnOffset(aaRowDef, rowDef);
+			assertTrue(pkcol >= 0);
+			pkcol += aaRowDef.getPkFields()[0];
+			Object[] startValue = new Object[fc];
+			Object[] endValue = new Object[fc];
+			startValue[pkcol] = 1;
+			endValue[pkcol] = 5;
+			start.createRow(rowDef, startValue);
+			end.createRow(rowDef, endValue);
+			bitMap = bitsToRoot(userRowDef, rowDef);
+			assertEquals(556, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
+					end, bitMap));
+		}
+
+	}
+
+	private int columnOffset(final RowDef userRowDef, final RowDef groupRowDef) {
+		for (int i = groupRowDef.getUserRowDefIds().length; --i >= 0;) {
+			if (groupRowDef.getUserRowDefIds()[i] == userRowDef.getRowDefId()) {
+				return groupRowDef.getUserRowColumnOffsets()[i];
+			}
+		}
+		return -1;
 	}
 
 	private byte[] bitsToRoot(final RowDef rowDef, final RowDef groupRowDef) {
