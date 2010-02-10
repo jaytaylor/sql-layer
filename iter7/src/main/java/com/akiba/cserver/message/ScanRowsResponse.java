@@ -5,8 +5,10 @@ import java.nio.ByteBuffer;
 import com.akiba.cserver.store.RowCollector;
 import com.akiba.cserver.store.RowDistributor;
 import com.akiba.message.Message;
+import com.akiba.message.Response;
 
-public class ScanRowsResponse extends Message {
+public class ScanRowsResponse extends Response
+{
 
 	public static short TYPE;
 	

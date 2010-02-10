@@ -12,8 +12,9 @@ import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 import com.akiba.cserver.CServerUtil;
+import com.akiba.message.Request;
 
-public class ScanRowsRequest extends Message implements CServerConstants {
+public class ScanRowsRequest extends Request implements CServerConstants {
 
 	/*
 	 * Sanity size for the RowData objects delimiting the start and end

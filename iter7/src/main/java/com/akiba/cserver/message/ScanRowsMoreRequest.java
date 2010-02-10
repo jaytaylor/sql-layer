@@ -10,8 +10,9 @@ import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
+import com.akiba.message.Request;
 
-public class ScanRowsMoreRequest extends Message implements CServerConstants {
+public class ScanRowsMoreRequest extends Request implements CServerConstants {
 
 	public static short TYPE;
 

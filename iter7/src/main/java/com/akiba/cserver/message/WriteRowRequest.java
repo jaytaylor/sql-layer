@@ -9,8 +9,10 @@ import com.akiba.cserver.store.Store;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
+import com.akiba.message.Request;
 
-public class WriteRowRequest extends Message {
+public class WriteRowRequest extends Request
+{
 
 	public static short TYPE;
 

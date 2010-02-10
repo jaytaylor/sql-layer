@@ -3,8 +3,10 @@ package com.akiba.cserver.message;
 import java.nio.ByteBuffer;
 
 import com.akiba.message.Message;
+import com.akiba.message.Response;
 
-public class GetAutoIncrementValueResponse extends Message {
+public class GetAutoIncrementValueResponse extends Response
+{
 	
 	public static short TYPE;
 	

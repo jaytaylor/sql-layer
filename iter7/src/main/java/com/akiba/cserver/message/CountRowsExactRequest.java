@@ -11,8 +11,9 @@ import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
 import com.akiba.cserver.CServerUtil;
+import com.akiba.message.Request;
 
-public class CountRowsExactRequest extends Message implements CServerConstants {
+public class CountRowsExactRequest extends Request implements CServerConstants {
 
 	public static short TYPE;
 

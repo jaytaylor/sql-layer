@@ -7,8 +7,9 @@ import com.akiba.cserver.CServer.CServerContext;
 import com.akiba.message.AkibaConnection;
 import com.akiba.message.ExecutionContext;
 import com.akiba.message.Message;
+import com.akiba.message.Request;
 
-public class DropTableRequest extends Message implements CServerConstants {
+public class DropTableRequest extends Request implements CServerConstants {
 	
 	public static short TYPE;
 	
