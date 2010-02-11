@@ -404,12 +404,14 @@ public class PersistitStoreRowCollector implements RowCollector,
 				int unique = deliveryKey.firstUniqueByteIndex(leafEx.getKey());
 				leafEx.getKey().copyTo(deliveryKey);
 				int levelRowDefId = -1;
+				int levelRowColumnOffset = -1;
 				for (int level = 0; level < columnOffset.length; level++) {
 					deliveryKey.indexTo(keyDepth[level]);
 					if (columnOffset[level] >= 0
 							&& deliveryKey.getIndex() > unique) {
 						deliveryKey.setEncodedSize(deliveryKey.getIndex());
 						levelRowDefId = userRowDefIds[level];
+						levelRowColumnOffset = columnOffset[level];
 						break;
 					}
 				}
@@ -418,7 +420,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 					next = Next.NEXT_DECENDANT;
 				} else {
 					deliveryEx.fetch();
-					prepareRow(deliveryEx, payload, levelRowDefId);
+					prepareRow(deliveryEx, payload, levelRowDefId, levelRowColumnOffset);
 				}
 				continue;
 
@@ -441,6 +443,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 				}
 				int depth = deliveryEx.getKey().getDepth();
 				int expectedRowDefId = leafRowDefId;
+				int expectedRowColumnOffset = columnOffset[columnOffset.length - 1];
 				if (depth < keyFilter.getMaximumDepth()) {
 					expectedRowDefId = -1;
 					for (int index = 0; index < keyDepth[index]; index++) {
@@ -453,7 +456,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 					}
 				}
 				if (expectedRowDefId != -1) {
-					prepareRow(deliveryEx, payload, expectedRowDefId);
+					prepareRow(deliveryEx, payload, expectedRowDefId, expectedRowColumnOffset);
 				}
 				continue;
 
@@ -464,7 +467,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 	}
 
 	void prepareRow(final Exchange exchange, final ByteBuffer payload,
-			final int expectedRowDefId) throws Exception {
+			final int expectedRowDefId, final int columnOffset) throws Exception {
 		final byte[] bytes = exchange.getValue().getEncodedBytes();
 		final int size = exchange.getValue().getEncodedSize();
 		int rowDataSize = size + RowData.ENVELOPE_SIZE;
@@ -514,6 +517,10 @@ public class PersistitStoreRowCollector implements RowCollector,
 			CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
 					rowDataSize);
 			rowData.prepareRow(0);
+			
+			// Remove unwanted columns
+			//
+			rowData.elide(columnBitMap, columnOffset);
 			
 			preparedCount++;
 			preparedRowDefId = expectedRowDefId;

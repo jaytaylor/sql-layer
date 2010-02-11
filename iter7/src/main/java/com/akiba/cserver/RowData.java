@@ -145,6 +145,11 @@ public class RowData {
 			}
 		}
 	}
+	
+	public boolean elide(final byte[] bits, final int field) {
+		// TODO - ignore for now
+		return false;
+	}
 
 	public boolean nextRow() {
 		if (rowEnd < bufferEnd) {

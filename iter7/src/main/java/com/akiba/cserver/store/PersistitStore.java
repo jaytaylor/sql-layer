@@ -11,7 +11,6 @@ import com.akiba.ais.io.Reader;
 import com.akiba.ais.io.Source;
 import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.cserver.CServerConstants;
-import com.akiba.cserver.CServerUtil;
 import com.akiba.cserver.FieldDef;
 import com.akiba.cserver.RowData;
 import com.akiba.cserver.RowDef;
@@ -23,14 +22,16 @@ import com.persistit.StreamLoader;
 import com.persistit.Transaction;
 import com.persistit.Value;
 import com.persistit.Volume;
-import com.persistit.Management.DisplayFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
+import com.persistit.exception.TransactionFailedException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class PersistitStore implements Store, CServerConstants {
 
 	static final Log LOG = LogFactory.getLog(PersistitStore.class.getName());
+
+	static final int MAX_RETRY_COUNT = 10;
 
 	final static String VOLUME_NAME = "aktest"; // TODO - select
 	// database
@@ -43,7 +44,7 @@ public class PersistitStore implements Store, CServerConstants {
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
 		PERSISTIT_PROPERTIES.put("verbose", "true");
-		PERSISTIT_PROPERTIES.put("buffer.count.8192", "6K");
+		PERSISTIT_PROPERTIES.put("buffer.count.8192", "4K");
 		PERSISTIT_PROPERTIES.put("volume.1",
 				"${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,e"
 						+ "xtensionSize:1M,maximumSize:10G");
@@ -84,7 +85,7 @@ public class PersistitStore implements Store, CServerConstants {
 			db.setProperty("datapath", datapath);
 			db.initialize(PERSISTIT_PROPERTIES);
 			db.getManagement().setDisplayFilter(
-					new RowDataDisplayFilter(db.getManagement()
+					new RowDataDisplayFilter(this, db.getManagement()
 							.getDisplayFilter()));
 		}
 	}
@@ -104,15 +105,18 @@ public class PersistitStore implements Store, CServerConstants {
 		final StreamLoader loader = new StreamLoader(db, fromFile);
 		final Exchange exchange = db.getExchange("aktest", "ais", true);
 		loader.load(new StreamLoader.ImportHandler(db) {
+			@Override
 			public void handleVolumeIdRecord(long volumeId, long initialPages,
 					long extensionPages, long maximumPages, int bufferSize,
 					String volumeName) throws PersistitException {
 			}
 
+			@Override
 			public void handleTreeIdRecord(int treeIndex, String treeName)
 					throws PersistitException {
 			}
 
+			@Override
 			public void handleDataRecord(Key key, Value value)
 					throws PersistitException {
 				key.copyTo(exchange.getKey());
@@ -128,69 +132,64 @@ public class PersistitStore implements Store, CServerConstants {
 
 	// --------------------- Store interface --------------------
 
+	@Override
 	public int writeRow(final RowData rowData) {
 		final int rowDefId = rowData.getRowDefId();
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		Transaction transaction = null;
-		boolean done = false;
 		try {
 			final RowDef rootRowDef = rootRowDef(rowDef);
 			final String treeName = rootRowDef.getTreeName();
 			final Exchange exchange = getSession().getExchange1(VOLUME_NAME,
 					treeName);
 			transaction = db.getTransaction();
-			transaction.begin();
-			constructHKey(exchange.getKey(), rowDef, rowData);
-			exchange.fetch();
-			if (exchange.getValue().isDefined()) {
-				throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
-						"Non-unique key " + exchange.getKey());
+			int retries = MAX_RETRY_COUNT;
+			for (;;) {
+				transaction.begin();
+				try {
+					constructHKey(exchange.getKey(), rowDef, rowData);
+					exchange.fetch();
+					if (exchange.getValue().isDefined()) {
+						throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
+								"Non-unique key " + exchange.getKey());
+					}
+					final int start = rowData.getInnerStart();
+					final int size = rowData.getInnerSize();
+					exchange.getValue().ensureFit(size);
+					System.arraycopy(rowData.getBytes(), start, exchange
+							.getValue().getEncodedBytes(), 0, size);
+					exchange.getValue().setEncodedSize(size);
+					exchange.store();
+					if (rowDef.getParentRowDefId() != 0) {
+						//
+						// For child rows we need to insert a pk index row
+						//
+						final Exchange pkExchange = getSession().getExchange3(
+								VOLUME_NAME, rowDef.getPkTreeName());
+						copyAndRotate(exchange.getKey(), pkExchange.getKey(),
+								-(rowDef.getPkFields().length + 1));
+						pkExchange.getValue().clear();
+						pkExchange.store();
+					}
+					transaction.commit();
+					return OK;
+				} catch (RollbackException re) {
+					if (--retries < 0) {
+						throw new TransactionFailedException();
+					}
+				} finally {
+					transaction.end();
+				}
 			}
-			final int start = rowData.getInnerStart();
-			final int size = rowData.getInnerSize();
-			exchange.getValue().ensureFit(size);
-			System.arraycopy(rowData.getBytes(), start, exchange.getValue()
-					.getEncodedBytes(), 0, size);
-			exchange.getValue().setEncodedSize(size);
-			exchange.store();
-			if (rowDef.getParentRowDefId() != 0) {
-				//
-				// For child rows we need to insert a pk index row
-				//
-				final Exchange pkExchange = getSession().getExchange3(
-						VOLUME_NAME, rowDef.getPkTreeName());
-				copyAndRotate(exchange.getKey(), pkExchange.getKey(), -(rowDef
-						.getPkFields().length + 1));
-				pkExchange.getValue().clear();
-				pkExchange.store();
-			}
-			transaction.commit();
-			done = true;
-			return OK;
-
 		} catch (StoreException e) {
 			return e.getResult();
 		} catch (Throwable t) {
 			t.printStackTrace();
 			return ERR;
 		}
-
-		finally {
-			if (transaction != null) {
-				if (!done) {
-					try {
-						transaction.rollback();
-					} catch (RollbackException e) {
-						// ignore so we can return the result code.
-					} catch (PersistitException e) {
-						e.printStackTrace();
-					}
-				}
-				transaction.end();
-			}
-		}
 	}
 
+	@Override
 	public int dropTable(final int rowDefId) throws Exception {
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		if (!rowDef.isGroupTable()) {
@@ -198,34 +197,30 @@ public class PersistitStore implements Store, CServerConstants {
 					"Can't drop user tables yet");
 		}
 		final Transaction transaction = db.getTransaction();
-		transaction.begin();
-		boolean committed = false;
-		try {
-			final Volume volume = db.getVolume(VOLUME_NAME);
-			// Remove the index trees
-			for (int index = 0; index < rowDef.getUserRowDefIds().length; index++) {
-				final RowDef userRowDef = rowDefCache.getRowDef(rowDef
-						.getUserRowDefIds()[index]);
-				if (userRowDef.getParentRowDefId() != 0) {
-					volume.removeTree(userRowDef.getPkTreeName());
+		int retries = MAX_RETRY_COUNT;
+		for (;;) {
+			transaction.begin();
+			try {
+				final Volume volume = db.getVolume(VOLUME_NAME);
+				// Remove the index trees
+				for (int index = 0; index < rowDef.getUserRowDefIds().length; index++) {
+					final RowDef userRowDef = rowDefCache.getRowDef(rowDef
+							.getUserRowDefIds()[index]);
+					if (userRowDef.getParentRowDefId() != 0) {
+						volume.removeTree(userRowDef.getPkTreeName());
+					}
 				}
-			}
-			// remove the htable tree
-			volume.removeTree(rowDef.getTreeName());
-			transaction.commit();
-			committed = true;
-			return OK;
-		} finally {
-			if (!committed) {
-				try {
-					transaction.rollback();
-				} catch (RollbackException e) {
-					// ignore so we can return the result code.
-				} catch (PersistitException e) {
-					e.printStackTrace();
+				// remove the htable tree
+				volume.removeTree(rowDef.getTreeName());
+				transaction.commit();
+				return OK;
+			} catch (RollbackException re) {
+				if (--retries < 0) {
+					throw new TransactionFailedException();
 				}
+			} finally {
+				transaction.end();
 			}
-			transaction.end();
 		}
 	}
 
@@ -252,6 +247,36 @@ public class PersistitStore implements Store, CServerConstants {
 		return value;
 	}
 
+	@Override
+	public RowCollector getCurrentRowCollector() {
+		return getSession().getCurrentRowCollector();
+	}
+
+	@Override
+	public RowCollector newRowCollector(int indexId, RowData start,
+			RowData end, byte[] columnBitMap) throws Exception {
+		final int rowDefId = start.getRowDefId();
+		if (end != null && end.getRowDefId() != rowDefId) {
+			throw new IllegalArgumentException(
+					"Start and end RowData must specify the same rowDefId");
+		}
+		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+
+		final RowCollector rc = new PersistitStoreRowCollector(this, start,
+				end, columnBitMap, rowDef);
+
+		getSession().setCurrentRowCollector(rc);
+		return rc;
+	}
+
+	@Override
+	public long getRowCount(final boolean exact, final RowData start,
+			final RowData end, final byte[] columnBitMap) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	// ---------------------
 	private RowDef rootRowDef(final RowDef rowDef) throws StoreException {
 		RowDef root = rowDef;
 		int depth = 0;
@@ -424,72 +449,6 @@ public class PersistitStore implements Store, CServerConstants {
 		System.arraycopy(from, k, to, 0, size - k);
 		System.arraycopy(from, 0, to, size - k, k);
 		toKey.setEncodedSize(size);
-	}
-
-	private class RowDataDisplayFilter implements DisplayFilter {
-		private DisplayFilter defaultFilter;
-
-		public RowDataDisplayFilter(final DisplayFilter filter) {
-			this.defaultFilter = filter;
-		}
-
-		public String toKeyDisplayString(final Exchange exchange) {
-			return defaultFilter.toKeyDisplayString(exchange);
-		}
-
-		public String toValueDisplayString(final Exchange exchange) {
-			if (exchange.getTree().getVolume().getPathName().contains("aktest")
-					&& !exchange.getTree().getName().startsWith("_txn")
-					&& !exchange.getTree().getName().endsWith("_pk")) {
-				final Value value = exchange.getValue();
-
-				final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
-				final byte[] bytes = new byte[size];
-				CServerUtil.putInt(bytes, RowData.O_LENGTH_A, size);
-				CServerUtil.putChar(bytes, RowData.O_SIGNATURE_A,
-						RowData.SIGNATURE_A);
-				System.arraycopy(value.getEncodedBytes(), 0, bytes,
-						RowData.O_FIELD_COUNT, value.getEncodedSize());
-				CServerUtil.putChar(bytes, size + RowData.O_SIGNATURE_B,
-						RowData.SIGNATURE_B);
-				CServerUtil.putInt(bytes, size + RowData.O_LENGTH_B, size);
-
-				final RowData rowData = new RowData(bytes);
-				rowData.prepareRow(0);
-				return rowData.toString(rowDefCache);
-			} else {
-				return defaultFilter.toValueDisplayString(exchange);
-			}
-		}
-	}
-
-	@Override
-	public RowCollector getCurrentRowCollector() {
-		return getSession().getCurrentRowCollector();
-	}
-
-	@Override
-	public RowCollector newRowCollector(int indexId, RowData start,
-			RowData end, byte[] columnBitMap) throws Exception {
-		final int rowDefId = start.getRowDefId();
-		if (end != null && end.getRowDefId() != rowDefId) {
-			throw new IllegalArgumentException(
-					"Start and end RowData must specify the same rowDefId");
-		}
-		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-
-		final RowCollector rc = new PersistitStoreRowCollector(this, start,
-				end, columnBitMap, rowDef);
-
-		getSession().setCurrentRowCollector(rc);
-		return rc;
-	}
-
-	@Override
-	public long getRowCount(final boolean exact, final RowData start,
-			final RowData end, final byte[] columnBitMap) {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 	void logRowData(final String prefix, final RowData rowData) {
