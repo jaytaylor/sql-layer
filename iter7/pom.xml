@@ -1,18 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.akiba</groupId>
-	<artifactId>cserver</artifactId>
+	<groupId>com.akiban</groupId>
+	<artifactId>akiban-cserver</artifactId>
 	<packaging>jar</packaging>
 	<version>1.0-SNAPSHOT</version>
-	<name>cserver</name>
+	<name>akiban-cserver</name>
 	<url>http://maven.apache.org</url>
 
 	<dependencies>
 
 		<dependency>
-			<groupId>com.akiba</groupId>
-			<artifactId>akiba-persistit</artifactId>
+			<groupId>com.akiban</groupId>
+			<artifactId>akiban-persistit</artifactId>
 			<version>2.0.1</version>
 		</dependency>
 
@@ -24,20 +24,20 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.akiba</groupId>
-			<artifactId>akiba-network</artifactId>
+			<groupId>com.akiban</groupId>
+			<artifactId>akiban-network</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.akiba</groupId>
-			<artifactId>akiba-message</artifactId>
+			<groupId>com.akiban</groupId>
+			<artifactId>akiban-message</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.akiba</groupId>
-			<artifactId>akiba-ais</artifactId>
+			<groupId>com.akiban</groupId>
+			<artifactId>akiban-ais</artifactId>
 			<version>1.0.0</version>
 		</dependency>
 
