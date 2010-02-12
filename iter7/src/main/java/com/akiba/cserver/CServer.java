@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.akiba.message.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -21,10 +22,6 @@ import com.akiba.ais.model.AkibaInformationSchema;
 import com.akiba.ais.model.AkibaInformationSchemaImpl;
 import com.akiba.cserver.store.PersistitStore;
 import com.akiba.cserver.store.Store;
-import com.akiba.message.AkibaConnection;
-import com.akiba.message.ExecutionContext;
-import com.akiba.message.Message;
-import com.akiba.message.MessageRegistry;
 import com.akiba.network.AkibaNetworkHandler;
 import com.akiba.network.CommEventNotifier;
 import com.akiba.network.NetworkHandlerFactory;
@@ -61,6 +58,7 @@ public class CServer {
 		MessageRegistry.initialize();
 		MessageRegistry.only().registerModule("com.akiba.cserver");
 		MessageRegistry.only().registerModule("com.akiba.ais");
+		MessageRegistry.only().registerModule("com.akiba.message");
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
 				(CommEventNotifier) callback);
@@ -158,9 +156,10 @@ public class CServer {
 
 		public void run() {
 
+            Message message = null;
 			while (!stopped) { // TODO - shutdown
 				try {
-					Message message = connection.receive();
+					message = connection.receive();
 					if (LOG.isTraceEnabled()) {
 						LOG.trace("Serving message " + message);
 					}
@@ -173,8 +172,21 @@ public class CServer {
 					}
 				} catch (Exception e) {
 					if (LOG.isErrorEnabled()) {
-						LOG.error("Unexpected error", e);
+						LOG.error("Unexpected error on " + message, e);
 					}
+                    if (message != null) {
+                        try {
+                            connection.send(new ErrorResponse(e));
+                        } catch (Exception f) {
+                            LOG.error("Caught "
+                                      + f.getClass()
+                                      + " while sending error response to "
+                                      + message
+                                      + ": "
+                                      + f.getMessage(),
+                                      f);
+                        }
+                    }
 				}
 			}
 		}
