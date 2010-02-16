@@ -93,7 +93,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>com.akiba.cserver.CServer</mainClass>
+							<mainClass>com.akiban.cserver.CServer</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
