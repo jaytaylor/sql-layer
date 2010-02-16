@@ -110,7 +110,7 @@ public class RowDefCache implements CServerConstants {
 			// pkFields
 			int[] pkFields = null;
 			for (final Index index : table.getIndexes()) {
-				if (!index.isUnique()) {
+				if (!index.getConstraint().equals("PRIMARY KEY")) {
 					continue;
 				}
 				if (pkFields != null) {
