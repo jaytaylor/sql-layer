@@ -13,6 +13,51 @@ package com.akiban.cserver;
 public class RowDef {
 
 	/**
+	 * Factory method used for convenience in tests
+	 * @param rowDefId
+	 * @param fieldDefs
+	 * @param tableName
+	 * @param treeName
+	 * @param pkFields
+	 * @return
+	 */
+	public static RowDef createRowDef(final int rowDefId,
+			final FieldDef[] fieldDefs, final String tableName,
+			String treeName, final int[] pkFields) {
+		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
+		rowDef.setTableName(tableName);
+		rowDef.setTreeName(treeName);
+		rowDef.setPkFields(pkFields);
+		rowDef.setParentRowDefId(0);
+		rowDef.setParentJoinFields(new int[0]);
+		return rowDef;
+	}
+
+	/**
+	 * Factory method used for convenience in tests
+	 * @param rowDefId
+	 * @param fieldDefs
+	 * @param tableName
+	 * @param groupTableName
+	 * @param pkFields
+	 * @param parentRowDefId
+	 * @param parentJoinFields
+	 * @return
+	 */
+	public static RowDef createRowDef(final int rowDefId,
+			final FieldDef[] fieldDefs, final String tableName,
+			final String groupTableName, final int[] pkFields,
+			final int parentRowDefId, final int[] parentJoinFields) {
+		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
+		rowDef.setTableName(tableName);
+		rowDef.setTreeName(groupTableName);
+		rowDef.setPkFields(pkFields);
+		rowDef.setParentRowDefId(parentRowDefId);
+		rowDef.setParentJoinFields(parentJoinFields);
+		return rowDef;
+	}
+
+	/**
 	 * Array of FieldDef, one per column
 	 */
 	private final FieldDef[] fieldDefs;
@@ -45,7 +90,6 @@ public class RowDef {
 	 * Schema's name for this table.
 	 */
 	private String tableName;
-
 	/**
 	 * Name of the tree storing this table - same as the group table name
 	 */
@@ -55,6 +99,7 @@ public class RowDef {
 	 * Cached name of the primary key index tree
 	 */
 	private String pkTreeName;
+
 	/**
 	 * RowDefIDs of constituent user tables. Populated only if this is the
 	 * RowDef for a group table. Null if this is the RowDef for a user table.
@@ -68,10 +113,16 @@ public class RowDef {
 	private int[] userRowColumnOffsets;
 
 	/**
-	 * If this is a user table, the rowDefId of the group table it
-	 * belongs too, else 0.
+	 * If this is a user table, the rowDefId of the group table it belongs too,
+	 * else 0.
 	 */
 	private int groupRowDefId;
+
+	/**
+	 * Array of index definitions for this row
+	 */
+	private IndexDef[] indexDefs;
+
 	/**
 	 * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
 	 * method to assist in looking up a field's offset and length.
@@ -84,31 +135,6 @@ public class RowDef {
 	 */
 	private final byte[][] varLenFieldMap;
 
-	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName,
-			String treeName, final int[] pkFields) {
-		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-		rowDef.setTableName(tableName);
-		rowDef.setTreeName(treeName);
-		rowDef.setPkFields(pkFields);
-		rowDef.setParentRowDefId(0);
-		rowDef.setParentJoinFields(new int[0]);
-		return rowDef;
-	}
-
-	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName,
-			final String groupTableName, final int[] pkFields,
-			final int parentRowDefId, final int[] parentJoinFields) {
-		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-		rowDef.setTableName(tableName);
-		rowDef.setTreeName(groupTableName);
-		rowDef.setPkFields(pkFields);
-		rowDef.setParentRowDefId(parentRowDefId);
-		rowDef.setParentJoinFields(parentJoinFields);
-		return rowDef;
-	}
-
 	public RowDef(final int rowDefId, final FieldDef[] fieldDefs) {
 		this.rowDefId = rowDefId;
 		this.fieldDefs = fieldDefs;
@@ -117,95 +143,78 @@ public class RowDef {
 		preComputeFieldCoordinates(fieldDefs);
 	}
 
-	public int getFieldCount() {
-		return fieldDefs.length;
+	/**
+	 * Display the fieldCoordinates array
+	 */
+	public String debugToString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("[");
+		for (int i = 0; i < fieldDefs.length; i++) {
+			if (i != 0)
+				sb.append(",");
+			sb.append(fieldDefs[i]);
+		}
+		sb.append("]\n");
+		for (int i = 0; i < fieldCoordinates.length; i++) {
+			sb.append("--- " + i + " ---\n");
+			int count = 256;
+			int remainingBits = fieldDefs.length - (i * 8);
+			if (remainingBits >= 0 && remainingBits < 8) {
+				count = 1 << remainingBits;
+			}
+			for (int j = 0; j < count; j += 16) {
+				for (int k = 0; k < 16; k++) {
+					sb.append((k % 8) == 0 ? "   " : " ");
+					CServerUtil.hex(sb, fieldCoordinates[i][j + k], 8);
+				}
+				sb.append("\n");
+			}
+		}
+		sb.append("\n");
+		return sb.toString();
 	}
 
-	public FieldDef getFieldDef(final int index) {
-		return fieldDefs[index];
-	}
-
-	public int getRowDefId() {
-		return rowDefId;
+	/**
+	 * An implementation useful while debugging. TODO - replace with something
+	 * less verbose.
+	 */
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder(String.format(
+				"RowDef #%d %s (%s.%s) ", rowDefId, tableName, treeName,
+				pkTreeName));
+		if (userRowDefIds != null) {
+			for (int i = 0; i < userRowDefIds.length; i++) {
+				sb.append(i == 0 ? "{" : ",");
+				sb.append(userRowDefIds[i]);
+				sb.append("->");
+				sb.append(userRowColumnOffsets[i]);
+			}
+			sb.append("}");
+		}
+		for (int i = 0; i < fieldDefs.length; i++) {
+			sb.append(i == 0 ? "[" : ",");
+			sb.append(fieldDefs[i]);
+			for (int j = 0; j < pkFields.length; j++) {
+				if (pkFields[j] == i) {
+					sb.append("*");
+					break;
+				}
+			}
+			if (parentJoinFields != null) {
+				for (int j = 0; j < parentJoinFields.length; j++) {
+					if (parentJoinFields[j] == i) {
+						sb.append("^");
+						sb.append(j);
+						break;
+					}
+				}
+			}
+		}
+		sb.append("]");
+		return sb.toString();
 	}
 	
-	public int getGroupRowDefId() {
-		return groupRowDefId;
-	}
-
-	public int[] getPkFields() {
-		return pkFields;
-	}
-
-	public void setPkFields(int[] pkFields) {
-		this.pkFields = pkFields;
-	}
-
-	public int getParentRowDefId() {
-		return parentRowDefId;
-	}
-
-	public void setParentRowDefId(int parentRowDefId) {
-		this.parentRowDefId = parentRowDefId;
-	}
-
-	public int[] getParentJoinFields() {
-		return parentJoinFields;
-	}
-
-	public void setParentJoinFields(int[] parentJoinFields) {
-		this.parentJoinFields = parentJoinFields;
-	}
-
-	public FieldDef[] getFieldDefs() {
-		return fieldDefs;
-	}
-
-	public int[] getUserRowDefIds() {
-		return userRowDefIds;
-	}
-	
-	public boolean isGroupTable() {
-		return userRowDefIds != null;
-	}
-
-	public void setUserRowDefIds(final int[] userRowDefIds) {
-		this.userRowDefIds = userRowDefIds;
-	}
-
-	public int[] getUserRowColumnOffsets() {
-		return userRowColumnOffsets;
-	}
-
-	public void setUserRowColumnOffsets(int[] userRowColumnOffsets) {
-		this.userRowColumnOffsets = userRowColumnOffsets;
-	}
-	
-	public void setGroupRowDefId(final int groupRowDefId) {
-		this.groupRowDefId = groupRowDefId;
-	}
-
-	public String getPkTreeName() {
-		return pkTreeName;
-	}
-
-	public String getTableName() {
-		return tableName;
-	}
-
-	public String getTreeName() {
-		return treeName;
-	}
-
-	public void setTableName(String tableName) {
-		this.tableName = tableName;
-		this.pkTreeName = tableName + "_pk";
-	}
-
-	public void setTreeName(final String treeName) {
-		this.treeName = treeName;
-	}
-
 	/**
 	 * Returns the offset relative to the start of the byte array represented by
 	 * the supplied {@link RowData} of the field specified by the supplied
@@ -263,14 +272,13 @@ public class RowDef {
 				//
 				// Decode the offset and width fields
 				//
-				width = ((int) fc) >>> 24;
-				offset += (int) (fc & 0xFFFFFF) + width;
+				width = (fc) >>> 24;
+				offset += (fc & 0xFFFFFF) + width;
 			}
 			//
 			// Encode the width and offset fields
 			//
-			return (long) ((offset & 0xFFFFFF) - width)
-					| (((long) width) << 32);
+			return ((offset & 0xFFFFFF) - width) | (((long) width) << 32);
 		} else {
 			//
 			// Look up the offset and width of a variable-width field.
@@ -325,8 +333,8 @@ public class RowDef {
 				//
 				// Decode the offset and width of the last field
 				//
-				width = ((int) fc) >>> 24;
-				offset += (int) (fc & 0xFFFFFF) + width;
+				width = (fc) >>> 24;
+				offset += (fc & 0xFFFFFF) + width;
 			}
 			//
 			// Compute the starting and ending offsets (from the beginning of
@@ -340,8 +348,111 @@ public class RowDef {
 			//
 			// Encode and return the offset and length
 			//
-			return (long) (start + offset) | ((long) (end - start) << 32);
+			return (start + offset) | ((long) (end - start) << 32);
 		}
+	}
+
+	public int getFieldCount() {
+		return fieldDefs.length;
+	}
+
+	public FieldDef getFieldDef(final int index) {
+		return fieldDefs[index];
+	}
+
+	public FieldDef[] getFieldDefs() {
+		return fieldDefs;
+	}
+
+	public int getGroupRowDefId() {
+		return groupRowDefId;
+	}
+
+	public IndexDef[] getIndexDefs() {
+		return indexDefs;
+	}
+
+	public int[] getParentJoinFields() {
+		return parentJoinFields;
+	}
+
+	public int getParentRowDefId() {
+		return parentRowDefId;
+	}
+
+	public int[] getPkFields() {
+		return pkFields;
+	}
+
+	public String getPkTreeName() {
+		return pkTreeName;
+	}
+
+	public int getRowDefId() {
+		return rowDefId;
+	}
+
+	public String getTableName() {
+		return tableName;
+	}
+
+	public String getTreeName() {
+		return treeName;
+	}
+
+	public int[] getUserRowColumnOffsets() {
+		return userRowColumnOffsets;
+	}
+
+	public int[] getUserRowDefIds() {
+		return userRowDefIds;
+	}
+
+	public boolean isGroupTable() {
+		return userRowDefIds != null;
+	}
+
+
+	public void setGroupRowDefId(final int groupRowDefId) {
+		this.groupRowDefId = groupRowDefId;
+	}
+
+	public void setIndexDefs(IndexDef[] indexDefs) {
+		this.indexDefs = indexDefs;
+	}
+
+	public void setParentJoinFields(int[] parentJoinFields) {
+		this.parentJoinFields = parentJoinFields;
+	}
+
+	public void setParentRowDefId(int parentRowDefId) {
+		this.parentRowDefId = parentRowDefId;
+	}
+
+	public void setPkFields(int[] pkFields) {
+		this.pkFields = pkFields;
+	}
+
+	public void setPkTreeName(String pkTreeName) {
+		this.pkTreeName = pkTreeName;
+	}
+
+
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
+		this.pkTreeName = tableName + "$$pk";
+	}
+
+	public void setTreeName(final String treeName) {
+		this.treeName = treeName;
+	}
+
+	public void setUserRowColumnOffsets(int[] userRowColumnOffsets) {
+		this.userRowColumnOffsets = userRowColumnOffsets;
+	}
+
+	public void setUserRowDefIds(final int[] userRowDefIds) {
+		this.userRowDefIds = userRowDefIds;
 	}
 
 	/**
@@ -391,77 +502,5 @@ public class RowDef {
 				}
 			}
 		}
-	}
-
-	/**
-	 * An implementation useful while debugging. TODO - replace with something
-	 * less verbose.
-	 */
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder(String.format(
-				"RowDef #%d %s (%s.%s) ", rowDefId, tableName, treeName,
-				pkTreeName));
-		if (userRowDefIds != null) {
-			for (int i = 0; i < userRowDefIds.length; i++) {
-				sb.append(i == 0 ? "{" : ",");
-				sb.append(userRowDefIds[i]);
-				sb.append("->");
-				sb.append(userRowColumnOffsets[i]);
-			}
-			sb.append("}");
-		}
-		for (int i = 0; i < fieldDefs.length; i++) {
-			sb.append(i == 0 ? "[" : ",");
-			sb.append(fieldDefs[i]);
-			for (int j = 0; j < pkFields.length; j++) {
-				if (pkFields[j] == i) {
-					sb.append("*");
-					break;
-				}
-			}
-			if (parentJoinFields != null) {
-			for (int j = 0; j < parentJoinFields.length; j++) {
-				if (parentJoinFields[j] == i) {
-					sb.append("^");
-					sb.append(j);
-					break;
-				}
-			}
-			}
-		}
-		sb.append("]");
-		return sb.toString();
-	}
-
-	/**
-	 * Display the fieldCoordinates array
-	 */
-	public String debugToString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("[");
-		for (int i = 0; i < fieldDefs.length; i++) {
-			if (i != 0)
-				sb.append(",");
-			sb.append(fieldDefs[i]);
-		}
-		sb.append("]\n");
-		for (int i = 0; i < fieldCoordinates.length; i++) {
-			sb.append("--- " + i + " ---\n");
-			int count = 256;
-			int remainingBits = fieldDefs.length - (i * 8);
-			if (remainingBits >= 0 && remainingBits < 8) {
-				count = 1 << remainingBits;
-			}
-			for (int j = 0; j < count; j += 16) {
-				for (int k = 0; k < 16; k++) {
-					sb.append((k % 8) == 0 ? "   " : " ");
-					CServerUtil.hex(sb, fieldCoordinates[i][j + k], 8);
-				}
-				sb.append("\n");
-			}
-		}
-		sb.append("\n");
-		return sb.toString();
 	}
 }

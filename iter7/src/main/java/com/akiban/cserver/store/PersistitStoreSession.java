@@ -20,6 +20,15 @@ public class PersistitStoreSession {
 		this.db = db;
 	}
 
+	public Exchange getExchange(final String volumeName, final String treeName)
+			throws PersistitException {
+		return db.getExchange(volumeName, treeName, true).clear();
+	}
+
+	public void releaseExchange(final Exchange exchange) {
+		db.releaseExchange(exchange);
+	}
+
 	public Exchange getExchange1(final String volumeName, final String treeName)
 			throws PersistitException {
 		if (exchange1 == null

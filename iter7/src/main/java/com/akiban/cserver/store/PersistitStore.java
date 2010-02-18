@@ -12,6 +12,7 @@ import com.akiban.ais.model.Source;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.FieldDef;
+import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
@@ -171,6 +172,10 @@ public class PersistitStore implements Store, CServerConstants {
 						pkExchange.getValue().clear();
 						pkExchange.store();
 					}
+					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+						insertIntoIndex(indexDef, rowDef, rowData, exchange
+								.getKey());
+					}
 					transaction.commit();
 					return OK;
 				} catch (RollbackException re) {
@@ -187,6 +192,24 @@ public class PersistitStore implements Store, CServerConstants {
 			t.printStackTrace();
 			return ERR;
 		}
+	}
+
+	void insertIntoIndex(final IndexDef indexDef, final RowDef rowDef,
+			final RowData rowData, final Key hkey) throws PersistitException {
+		final Exchange exchange = getSession().getExchange(VOLUME_NAME,
+				indexDef.getTreeName());
+		final Key key = exchange.getKey();
+		exchange.getValue().clear();
+		for (int index = 0; index < indexDef.getFields().length; index++) {
+			final int fieldIndex = indexDef.getFields()[index];
+			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+			final long location = rowDef.fieldLocation(rowData, fieldIndex);
+			appendKeyField(key, fieldDef, rowData, location);
+		}
+		System.arraycopy(hkey.getEncodedBytes(), 0, key.getEncodedBytes(), key
+				.getEncodedSize(), hkey.getEncodedSize());
+		key.setEncodedSize(key.getEncodedSize() + hkey.getEncodedSize());
+		exchange.store();
 	}
 
 	@Override
