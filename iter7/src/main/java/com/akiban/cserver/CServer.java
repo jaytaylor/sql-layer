@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.akiban.ais.io.Reader;
+import com.akiban.ais.model.Source;
 import com.akiban.message.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,7 +21,6 @@ import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.AkibaInformationSchemaImpl;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 import com.akiban.network.AkibaNetworkHandler;
@@ -220,9 +221,8 @@ public class CServer {
 					LOG.info(String.format("Attempting to load AIS from %s",
 							dbHost));
 				}
-				ais = AkibaInformationSchemaImpl.load(new MySQLSource(dbHost,
-						dbUsername, dbPassword));
-				break;
+                ais = new Reader(new MySQLSource(dbHost, dbUsername, dbPassword)).load();
+                break;
 			} catch (com.mysql.jdbc.exceptions.jdbc4.CommunicationsException e) {
 				try {
 					Thread.sleep(30000L);

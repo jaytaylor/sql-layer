@@ -8,7 +8,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.akiban.ais.io.PersistitSource;
 import com.akiban.ais.io.Reader;
-import com.akiban.ais.io.Source;
+import com.akiban.ais.model.Source;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.FieldDef;
