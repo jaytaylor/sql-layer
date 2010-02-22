@@ -79,15 +79,15 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			return customers + customers * ordersPerCustomer + customers
 					* ordersPerCustomer * itemsPerOrder;
 		}
-		
+
 		int totalCustomerRows() {
 			return customers;
 		}
-		
+
 		int totalOrderRows() {
 			return customers * ordersPerCustomer;
 		}
-		
+
 		int totalItemRows() {
 			return customers * ordersPerCustomer * itemsPerOrder;
 		}
@@ -130,8 +130,8 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			td.rowI.createRow(td.defI, new Object[] { null, null, null });
 			final byte[] columnBitMap = new byte[] { (byte) 0xFF, (byte) 0xFF,
 					(byte) 0xFF, (byte) 0xFF };
-			final RowCollector rc = store.newRowCollector(1111, td.rowI, td.rowI,
-					columnBitMap);
+			final RowCollector rc = store.newRowCollector(1111, td.rowI,
+					td.rowI, columnBitMap);
 			final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
 			while (rc.hasMore()) {
@@ -154,11 +154,11 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		{
 			// select item by IID in user table `item`
 			int scanCount = 0;
-			td.rowI.createRow(td.defI, new Object[] { null, Integer.valueOf(1001001),
-					null, null });
+			td.rowI.createRow(td.defI, new Object[] { null,
+					Integer.valueOf(1001001), null, null });
 			final byte[] columnBitMap = new byte[] { (byte) 0x3 };
-			final RowCollector rc = store.newRowCollector(1111, td.rowI, td.rowI,
-					columnBitMap);
+			final RowCollector rc = store.newRowCollector(1111, td.rowI,
+					td.rowI, columnBitMap);
 			final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
 			while (rc.hasMore()) {
@@ -183,12 +183,16 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			int scanCount = 0;
 			final RowData start = new RowData(new byte[256]);
 			final RowData end = new RowData(new byte[256]);
-			// C has 2 columns, O has 3 columns, I has 4 columns
-			start.createRow(td.defCOI, new Object[] { null, null, 1004, null,
+			// C has 2 columns, A has 5 columns, O has 3 columns, I has 4
+			// columns, CC has 5 columns
+			start.createRow(td.defCOI, new Object[] { null, null, null, null,
+					null, null, null, 1004, null, null, null, null, null, null,
 					null, null, null, null, null });
-			end.createRow(td.defCOI, new Object[] { null, null, 1007, null, null,
-					null, null, null, null });
-			final byte[] columnBitMap = new byte[] { (byte) 0xFF, (byte) 1 };
+			end.createRow(td.defCOI, new Object[] { null, null, null, null,
+					null, null, null, 1007, null, null, null, null, null, null,
+					null, null, null, null, null });
+			final byte[] columnBitMap = new byte[] { (byte) 0x83, (byte) 0x3F,
+					(byte) 0 };
 			final RowCollector rc = store.newRowCollector(1111, start, end,
 					columnBitMap);
 			final ByteBuffer payload = ByteBufferFactory.allocate(256);

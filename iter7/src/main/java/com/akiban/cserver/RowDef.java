@@ -30,6 +30,7 @@ public class RowDef {
 		rowDef.setPkFields(pkFields);
 		rowDef.setParentRowDefId(0);
 		rowDef.setParentJoinFields(new int[0]);
+		rowDef.setIndexDefs(new IndexDef[0]);
 		return rowDef;
 	}
 
@@ -54,6 +55,7 @@ public class RowDef {
 		rowDef.setPkFields(pkFields);
 		rowDef.setParentRowDefId(parentRowDefId);
 		rowDef.setParentJoinFields(parentJoinFields);
+		rowDef.setIndexDefs(new IndexDef[0]);
 		return rowDef;
 	}
 

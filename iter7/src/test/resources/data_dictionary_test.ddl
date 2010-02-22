@@ -4,8 +4,11 @@ schema data_dictionary_test;
 
 group coi {
   table customer {
+    table address(customer_id),
     table order (customer_id) {
-      table item (order_id)
+      table item (order_id) {
+        table component(part_id)
+      }
     }
   }
 };
@@ -26,6 +29,15 @@ create table `order`(
     foreign key(customer_id) references customer
 ) engine = akibadb;
 
+create table `address`(
+    customer_id int not null,
+    instance_id int not null,
+    address_line1 varchar(60) not null,
+    address_line2 varchar(60) not null,
+    address_line3 varchar(60) not null,
+    primary key (`instance_id`)
+) engine = akibadb;
+
 create table item(
     order_id int not null,
     part_id int not null,
@@ -33,4 +45,16 @@ create table item(
     unit_price int not null,
     primary key(order_id, part_id),
     foreign key(order_id) references `order`
+) engine = akibadb;
+
+create table component(
+    part_id int not null,
+    component_id int not null,
+    supplier_id int not null,
+    unique_id int not null,
+    description varchar(50),
+    primary key (`component_id`),
+    foreign key `fk` (`part_id`),
+    unique key `uk` (`part_id`, `component_id`, `unique_id`),
+    key `xk` (supplier_id)
 ) engine = akibadb;

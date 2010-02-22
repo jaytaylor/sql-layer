@@ -160,7 +160,10 @@ public class PersistitStore implements Store, CServerConstants {
 					System.arraycopy(rowData.getBytes(), start, exchange
 							.getValue().getEncodedBytes(), 0, size);
 					exchange.getValue().setEncodedSize(size);
+
+					// Store the h-row
 					exchange.store();
+
 					if (rowDef.getParentRowDefId() != 0) {
 						//
 						// For child rows we need to insert a pk index row
@@ -169,7 +172,7 @@ public class PersistitStore implements Store, CServerConstants {
 								VOLUME_NAME, rowDef.getPkTreeName());
 						copyAndRotate(exchange.getKey(), pkExchange.getKey(),
 								-(rowDef.getPkFields().length + 1));
-						pkExchange.getValue().clear();
+						pkExchange.getValue().putNull();
 						pkExchange.store();
 					}
 					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
@@ -195,11 +198,11 @@ public class PersistitStore implements Store, CServerConstants {
 	}
 
 	void insertIntoIndex(final IndexDef indexDef, final RowDef rowDef,
-			final RowData rowData, final Key hkey) throws PersistitException {
+			final RowData rowData, final Key hkey) throws Exception {
 		final Exchange exchange = getSession().getExchange(VOLUME_NAME,
 				indexDef.getTreeName());
 		final Key key = exchange.getKey();
-		exchange.getValue().clear();
+		exchange.getValue().putNull();
 		for (int index = 0; index < indexDef.getFields().length; index++) {
 			final int fieldIndex = indexDef.getFields()[index];
 			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
@@ -209,6 +212,13 @@ public class PersistitStore implements Store, CServerConstants {
 		System.arraycopy(hkey.getEncodedBytes(), 0, key.getEncodedBytes(), key
 				.getEncodedSize(), hkey.getEncodedSize());
 		key.setEncodedSize(key.getEncodedSize() + hkey.getEncodedSize());
+		if (indexDef.isUnique()) {
+			exchange.fetch();
+			if (exchange.getValue().isDefined()) {
+				throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
+						"Non-unique index key: " + exchange.getKey().toString());
+			}
+		}
 		exchange.store();
 	}
 

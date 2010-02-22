@@ -190,7 +190,7 @@ public class RowDefCache implements CServerConstants {
 			// TODO - need to resolve where this is coming from
 			int indexId = -1;
 			final String treeName = groupTableName + "$$" + indexId;
-			final IndexDef indexDef = new IndexDef(treeName, indexId, indexFields);
+			final IndexDef indexDef = new IndexDef(treeName, indexId, indexFields, index.isUnique());
 			indexDefList.add(indexDef);
 		}
 
