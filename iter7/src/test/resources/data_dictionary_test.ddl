@@ -55,6 +55,6 @@ create table component(
     description varchar(50),
     primary key (`component_id`),
     foreign key `fk` (`part_id`),
-    unique key `uk` (`part_id`, `component_id`, `unique_id`),
+    unique key `uk` (`unique_id`),
     key `xk` (supplier_id)
 ) engine = akibadb;

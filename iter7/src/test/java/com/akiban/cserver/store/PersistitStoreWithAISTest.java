@@ -32,27 +32,33 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		final RowDef defC = rowDefCache.getRowDef("customer");
 		final RowDef defO = rowDefCache.getRowDef("order");
 		final RowDef defI = rowDefCache.getRowDef("item");
+		final RowDef defA = rowDefCache.getRowDef("address");
+		final RowDef defX = rowDefCache.getRowDef("component");
 		final RowDef defCOI = rowDefCache.getRowDef("_akiba_coi");
 		final RowData rowC = new RowData(new byte[64]);
 		final RowData rowO = new RowData(new byte[64]);
 		final RowData rowI = new RowData(new byte[64]);
+		final RowData rowA = new RowData(new byte[64]);
+		final RowData rowX = new RowData(new byte[64]);
 		final RowData rowCOI = new RowData(new byte[1024]);
 		final int customers;
 		final int ordersPerCustomer;
 		final int itemsPerOrder;
+		final int componentsPerItem;
 
 		long elapsed;
 
 		TestData(final int customers, final int ordersPerCustomer,
-				final int itemsPerOrder) {
+				final int itemsPerOrder, final int componentsPerItem) {
 			this.customers = customers;
 			this.ordersPerCustomer = ordersPerCustomer;
 			this.itemsPerOrder = itemsPerOrder;
+			this.componentsPerItem = componentsPerItem;
 		}
 
 		void insertTestRows() throws Exception {
 			elapsed = System.nanoTime();
-			int count = 0;
+			int unique = 0;
 			for (int c = 0; ++c <= customers;) {
 				int cid = c;
 				rowC.reset(0, 64);
@@ -69,7 +75,20 @@ public class PersistitStoreWithAISTest extends TestCase implements
 						rowI.createRow(defI, new Object[] { oid, iid, 123456,
 								654321 });
 						assertEquals(OK, store.writeRow(rowI));
+						for (int x = 0; ++x <= 5;) {
+							int xid = iid * 1000 + x;
+							rowX.reset(0, 64);
+							rowX.createRow(defX, new Object[] { iid, xid, c,
+									++unique });
+							assertEquals(OK, store.writeRow(rowX));
+						}
 					}
+				}
+				for (int a = 0; a < (c % 3); a++) {
+					rowA.reset(0, 64);
+					rowA.createRow(defA, new Object[] { c, a, "addr1_" + c,
+							"addr2_" + c, "addr3_" + c });
+					assertEquals(OK, store.writeRow(rowA));
 				}
 			}
 			elapsed = System.nanoTime() - elapsed;
@@ -90,6 +109,14 @@ public class PersistitStoreWithAISTest extends TestCase implements
 
 		int totalItemRows() {
 			return customers * ordersPerCustomer * itemsPerOrder;
+		}
+		
+		void start() {
+			elapsed = System.nanoTime();
+		}
+		
+		void end() {
+			elapsed = System.nanoTime() - elapsed;
 		}
 	}
 
@@ -113,19 +140,22 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	}
 
 	public void testWriteCOIrows() throws Exception {
-		final TestData td = new TestData(1000, 10, 3);
+		final TestData td = new TestData(10, 10, 10, 10);
 		td.insertTestRows();
-		System.out.println("Inserting " + td.totalRows() + " rows in "
-				+ (td.elapsed / 1000000L) + "ms");
+		System.out.println("testWriteCOIrows: inserted " + td.totalRows() + " rows in "
+				+ (td.elapsed / 1000L) + "us");
 
 	}
 
 	public void testScanCOIrows() throws Exception {
-		TestData td = new TestData(1000, 10, 3);
+		TestData td = new TestData(1000, 10, 3, 2);
 		td.insertTestRows();
-
+		long t2 = System.nanoTime();
+		System.out.println("testScanCOIrows: inserted " + td.totalRows() + " rows in "
+				+ (td.elapsed / 1000L) + "us");
 		{
 			// simple test - get all I rows
+			td.start();
 			int scanCount = 0;
 			td.rowI.createRow(td.defI, new Object[] { null, null, null });
 			final byte[] columnBitMap = new byte[] { (byte) 0xFF, (byte) 0xFF,
@@ -149,10 +179,15 @@ public class PersistitStoreWithAISTest extends TestCase implements
 				}
 			}
 			assertEquals(td.totalItemRows(), scanCount);
+			td.end();
+			System.out.println("testScanCOIrows: scanned " + scanCount + " rows in "
+					+ (td.elapsed / 1000L) + "us");
+			
 		}
 
 		{
 			// select item by IID in user table `item`
+			td.start();
 			int scanCount = 0;
 			td.rowI.createRow(td.defI, new Object[] { null,
 					Integer.valueOf(1001001), null, null });
@@ -176,10 +211,15 @@ public class PersistitStoreWithAISTest extends TestCase implements
 				}
 			}
 			assertEquals(1, scanCount);
+			td.end();
+			System.out.println("testScanCOIrows: scanned " + scanCount + " rows in "
+					+ (td.elapsed / 1000L) + "us");
+
 		}
 
 		{
 			// select items in COI table by index values on Order
+			td.start();
 			int scanCount = 0;
 			final RowData start = new RowData(new byte[256]);
 			final RowData end = new RowData(new byte[256]);
@@ -216,11 +256,14 @@ public class PersistitStoreWithAISTest extends TestCase implements
 				}
 			}
 			assertEquals(17, scanCount);
+			td.end();
+			System.out.println("testScanCOIrows: scanned " + scanCount + " rows in "
+					+ (td.elapsed / 1000L) + "us");
 		}
 	}
 
 	public void testDropTable() throws Exception {
-		TestData td = new TestData(1000, 10, 3);
+		TestData td = new TestData(10, 10, 10, 10);
 		td.insertTestRows();
 		Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
 		assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
@@ -237,6 +280,19 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		assertNull(volume.getTree(td.defCOI.getTreeName(), false));
 		assertNull(volume.getTree(td.defO.getPkTreeName(), false));
 		assertNull(volume.getTree(td.defI.getPkTreeName(), false));
+	}
+
+	public void testUniqueIndexes() throws Exception {
+		TestData td = new TestData(10, 10, 10, 10);
+		td.insertTestRows();
+		td.rowX.createRow(td.defX, new Object[]{37906, 23890345, 123, 44, "test1" });
+		int result;
+		result = store.writeRow(td.rowX);
+		assertEquals(HA_ERR_FOUND_DUPP_KEY, result);
+		td.rowX.createRow(td.defX, new Object[]{37906, 23890345, 123, 44444, "test2" });
+		result = store.writeRow(td.rowX);
+		assertEquals(OK, result);
+		
 	}
 
 }

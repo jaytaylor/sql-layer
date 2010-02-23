@@ -14,6 +14,7 @@ public class RowDef {
 
 	/**
 	 * Factory method used for convenience in tests
+	 * 
 	 * @param rowDefId
 	 * @param fieldDefs
 	 * @param tableName
@@ -36,6 +37,7 @@ public class RowDef {
 
 	/**
 	 * Factory method used for convenience in tests
+	 * 
 	 * @param rowDefId
 	 * @param fieldDefs
 	 * @param tableName
@@ -216,14 +218,14 @@ public class RowDef {
 		sb.append("]");
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Returns the offset relative to the start of the byte array represented by
 	 * the supplied {@link RowData} of the field specified by the supplied
-	 * fieldIndex. The location is a long which encodes an offset to the data
-	 * and its length in bytes. If <code>offset</code> and <code>length</code>
-	 * are the offset and length of the data, respectively, then the location is
-	 * returned as
+	 * fieldIndex, or zero if the field is null. The location is a long which
+	 * encodes an offset to the data and its length in bytes. If
+	 * <code>offset</code> and <code>length</code> are the offset and length of
+	 * the data, respectively, then the location is returned as
 	 * 
 	 * <code>(long)offset+((long)length << 32)</code>
 	 * 
@@ -274,7 +276,7 @@ public class RowDef {
 				//
 				// Decode the offset and width fields
 				//
-				width = (fc) >>> 24;
+				width = fc >>> 24;
 				offset += (fc & 0xFFFFFF) + width;
 			}
 			//
@@ -414,7 +416,6 @@ public class RowDef {
 		return userRowDefIds != null;
 	}
 
-
 	public void setGroupRowDefId(final int groupRowDefId) {
 		this.groupRowDefId = groupRowDefId;
 	}
@@ -438,7 +439,6 @@ public class RowDef {
 	public void setPkTreeName(String pkTreeName) {
 		this.pkTreeName = pkTreeName;
 	}
-
 
 	public void setTableName(String tableName) {
 		this.tableName = tableName;

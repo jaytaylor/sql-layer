@@ -172,7 +172,7 @@ public class PersistitStore implements Store, CServerConstants {
 								VOLUME_NAME, rowDef.getPkTreeName());
 						copyAndRotate(exchange.getKey(), pkExchange.getKey(),
 								-(rowDef.getPkFields().length + 1));
-						pkExchange.getValue().putNull();
+						pkExchange.getValue().clear();
 						pkExchange.store();
 					}
 					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
@@ -202,23 +202,25 @@ public class PersistitStore implements Store, CServerConstants {
 		final Exchange exchange = getSession().getExchange(VOLUME_NAME,
 				indexDef.getTreeName());
 		final Key key = exchange.getKey();
-		exchange.getValue().putNull();
+		exchange.getValue().clear();
 		for (int index = 0; index < indexDef.getFields().length; index++) {
 			final int fieldIndex = indexDef.getFields()[index];
 			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
 			final long location = rowDef.fieldLocation(rowData, fieldIndex);
 			appendKeyField(key, fieldDef, rowData, location);
 		}
-		System.arraycopy(hkey.getEncodedBytes(), 0, key.getEncodedBytes(), key
-				.getEncodedSize(), hkey.getEncodedSize());
-		key.setEncodedSize(key.getEncodedSize() + hkey.getEncodedSize());
 		if (indexDef.isUnique()) {
-			exchange.fetch();
-			if (exchange.getValue().isDefined()) {
+			int saveSize = key.getEncodedSize();
+			key.append(Key.BEFORE);
+			if (exchange.next()) {
 				throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
 						"Non-unique index key: " + exchange.getKey().toString());
 			}
+			key.setEncodedSize(saveSize);
 		}
+		System.arraycopy(hkey.getEncodedBytes(), 0, key.getEncodedBytes(), key
+				.getEncodedSize(), hkey.getEncodedSize());
+		key.setEncodedSize(key.getEncodedSize() + hkey.getEncodedSize());
 		exchange.store();
 	}
 

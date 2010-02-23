@@ -187,10 +187,9 @@ public class RowDefCache implements CServerConstants {
 				indexFields[columnIndex++] = position;
 			}
 			
-			// TODO - need to resolve where this is coming from
-			int indexId = -1;
-			final String treeName = groupTableName + "$$" + indexId;
-			final IndexDef indexDef = new IndexDef(treeName, indexId, indexFields, index.isUnique());
+
+			final String treeName = groupTableName + "$$" + index.getIndexId();
+			final IndexDef indexDef = new IndexDef(treeName, index.getIndexId(), indexFields, index.isUnique());
 			indexDefList.add(indexDef);
 		}
 
