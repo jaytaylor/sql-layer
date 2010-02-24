@@ -2,13 +2,12 @@ package com.akiban.cserver.store;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
 
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.RowData;
@@ -123,7 +122,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	@Override
 	public void setUp() throws Exception {
 		rowDefCache = new RowDefCache();
-		store = new PersistitStore(rowDefCache);
+		store = new PersistitStore(new CServerConfig(), rowDefCache);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		final AkibaInformationSchema ais = new DDLSource()

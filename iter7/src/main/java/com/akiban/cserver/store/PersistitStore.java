@@ -1,15 +1,19 @@
 package com.akiban.cserver.store;
 
 import java.io.File;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import antlr.ParserSharedInputState;
+
 import com.akiban.ais.io.PersistitSource;
 import com.akiban.ais.io.Reader;
-import com.akiban.ais.model.Source;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Source;
+import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.IndexDef;
@@ -30,7 +34,12 @@ import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class PersistitStore implements Store, CServerConstants {
 
-	static final Log LOG = LogFactory.getLog(PersistitStore.class.getName());
+	private static final Log LOG = LogFactory.getLog(PersistitStore.class
+			.getName());
+
+	private static final String P_DATAPATH = "cserver.datapath";
+
+	private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
 
 	static final int MAX_RETRY_COUNT = 10;
 
@@ -40,11 +49,9 @@ public class PersistitStore implements Store, CServerConstants {
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
 	static {
-		PERSISTIT_PROPERTIES.put("datapath", "/tmp/chunkserver_data");
 		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
-		PERSISTIT_PROPERTIES.put("verbose", "true");
 		PERSISTIT_PROPERTIES.put("buffer.count.8192", "4K");
 		PERSISTIT_PROPERTIES.put("volume.1",
 				"${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,e"
@@ -58,7 +65,9 @@ public class PersistitStore implements Store, CServerConstants {
 		PERSISTIT_PROPERTIES.put("pwjcount", "2");
 	}
 
-	private static String datapath;
+	static String datapath = "/tmp/chunkserver_data";
+
+	private CServerConfig config;
 
 	private Persistit db;
 
@@ -72,8 +81,9 @@ public class PersistitStore implements Store, CServerConstants {
 		datapath = path;
 	}
 
-	public PersistitStore(final RowDefCache cache) {
+	public PersistitStore(final CServerConfig config, final RowDefCache cache) {
 		this.rowDefCache = cache;
+		this.config = config;
 	}
 
 	public synchronized void startUp() throws Exception {
@@ -83,7 +93,22 @@ public class PersistitStore implements Store, CServerConstants {
 		if (db == null) {
 			db = new Persistit();
 			db.setPersistitLogger(new ApacheCommonsLogAdapter(LOG));
-			db.setProperty("datapath", datapath);
+			//
+			// This injects the "datapath" properties into the Persistit
+			// properties; it is then referenced by substitution in other
+			// Persistit properties.
+			//
+			db.setProperty("datapath", config.property(P_DATAPATH, datapath));
+			for (final Map.Entry<Object, Object> entry : config.getProperties()
+					.entrySet()) {
+				final String key = (String) entry.getKey();
+				final String value = (String) entry.getValue();
+				if (key.startsWith(PERSISTIT_PROPERTY_PREFIX)) {
+					db.setProperty(key.substring(PERSISTIT_PROPERTY_PREFIX
+							.length()), value);
+				}
+			}
+
 			db.initialize(PERSISTIT_PROPERTIES);
 			db.getManagement().setDisplayFilter(
 					new RowDataDisplayFilter(this, db.getManagement()

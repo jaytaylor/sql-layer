@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
+import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
@@ -53,7 +54,7 @@ public class PersistitStoreTest extends TestCase implements CServerConstants {
 	@Override
 	public void setUp() throws Exception {
 		rowDefCache = new RowDefCache();
-		store = new PersistitStore(rowDefCache);
+		store = new PersistitStore(new CServerConfig(), rowDefCache);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		store.startUp();

@@ -473,8 +473,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 		int rowDataSize = size + RowData.ENVELOPE_SIZE;
 
 		if (rowDataSize < RowData.MINIMUM_RECORD_LENGTH) {
-			if (PersistitStore.LOG.isErrorEnabled()) {
-				PersistitStore.LOG.error("Value at " + exchange.getKey()
+			if (LOG.isErrorEnabled()) {
+				LOG.error("Value at " + exchange.getKey()
 						+ " is not a valid row - skipping");
 			}
 			throw new StoreException(HA_ERR_INTERNAL_ERROR,

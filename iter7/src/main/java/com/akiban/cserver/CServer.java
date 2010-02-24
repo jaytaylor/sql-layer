@@ -10,59 +10,87 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.akiban.ais.io.Reader;
-import com.akiban.ais.model.Source;
-import com.akiban.message.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.ais.io.MySQLSource;
+import com.akiban.ais.io.Reader;
 import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.cserver.message.CServerShutdownRequest;
+import com.akiban.cserver.message.CServerShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
+import com.akiban.message.AkibaConnection;
+import com.akiban.message.ErrorResponse;
+import com.akiban.message.ExecutionContext;
+import com.akiban.message.Message;
+import com.akiban.message.MessageRegistry;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 
 /**
  * 
- * @author pbeaman
+ * @author peter
  */
 public class CServer {
 
 	private static final Log LOG = LogFactory.getLog(CServer.class.getName());
 
-	private static final String[] USAGE = {
-			"java -jar cserver.jar DB_HOST DB_USERNAME DB_PASSWORD",
-			"    DB_HOST: Host running database containing AIS",
-			"    DB_USERNAME: Database username",
-			"    DB_PASSWORD: Database password", };
+	/**
+	 * Config property name and default for the port on which the CServer will
+	 * listen for requests.
+	 */
+	private static final String P_CSERVER_HOST = "cserver.host|localhost";
+
+	/**
+	 * Config property name and default for the port on which the CServer will
+	 * listen for requests.
+	 */
+	private static final String P_CSERVER_PORT = "cserver.port|8080";
+
+	/**
+	 * Config property name and default for the MySQL server host from which
+	 * CServer will obtain the AIS.
+	 */
+	private static final String P_AISHOST = "mysql.host|localhost";
+
+	/**
+	 * Config property name and default for the MySQL server host from which
+	 * CServer will obtain the AIS.
+	 */
+	private static final String P_AISUSER = "mysql.username|akiba";
+
+	/**
+	 * Config property name and default for the MySQL server host from which
+	 * CServer will obtain the AIS.
+	 */
+	private static final String P_AISPASSWORD = "mysql.password|akibaDB";
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 
-	private final Store store = new PersistitStore(rowDefCache);
+	private final CServerConfig config = new CServerConfig();
+
+	private final Store store = new PersistitStore(config, rowDefCache);
 
 	private AkibaInformationSchema ais;
-
-	private String dbHost = "localhost";
-	private String dbUsername = "akiba";
-	private String dbPassword = "akibaDB";
 
 	private volatile boolean stopped = false;
 
 	private Map<Integer, Thread> threadMap = new TreeMap<Integer, Thread>();
 
 	public void start() throws Exception {
+
 		MessageRegistry.initialize();
 		MessageRegistry.only().registerModule("com.akiban.cserver");
 		MessageRegistry.only().registerModule("com.akiban.ais");
 		MessageRegistry.only().registerModule("com.akiban.message");
 		ChannelNotifier callback = new ChannelNotifier();
-		NetworkHandlerFactory.initializeNetwork("localhost", "8080",
-				(CommEventNotifier) callback);
+		NetworkHandlerFactory.initializeNetwork(property(P_CSERVER_HOST),
+				property(P_CSERVER_PORT), (CommEventNotifier) callback);
 		store.startUp();
 	}
 
@@ -114,7 +142,7 @@ public class CServer {
 	}
 
 	public class CServerContext implements ExecutionContext,
-			AISExecutionContext {
+			AISExecutionContext, CServerShutdownExecutionContext {
 
 		public Store getStore() {
 			return store;
@@ -135,6 +163,16 @@ public class CServer {
 			installAIS();
 		}
 
+		@Override
+		public void executeRequest(AkibaConnection connection,
+				CServerShutdownRequest request) throws Exception {
+			if (LOG.isInfoEnabled()) {
+				LOG.info("CServer stopping due to ShutdownRequest");
+			}
+			stop();
+			CServerShutdownResponse response = new CServerShutdownResponse();
+			connection.send(response);
+		}
 	}
 
 	/**
@@ -157,8 +195,8 @@ public class CServer {
 
 		public void run() {
 
-            Message message = null;
-			while (!stopped) { // TODO - shutdown
+			Message message = null;
+			while (!stopped) {
 				try {
 					message = connection.receive();
 					if (LOG.isTraceEnabled()) {
@@ -175,19 +213,15 @@ public class CServer {
 					if (LOG.isErrorEnabled()) {
 						LOG.error("Unexpected error on " + message, e);
 					}
-                    if (message != null) {
-                        try {
-                            connection.send(new ErrorResponse(e));
-                        } catch (Exception f) {
-                            LOG.error("Caught "
-                                      + f.getClass()
-                                      + " while sending error response to "
-                                      + message
-                                      + ": "
-                                      + f.getMessage(),
-                                      f);
-                        }
-                    }
+					if (message != null) {
+						try {
+							connection.send(new ErrorResponse(e));
+						} catch (Exception f) {
+							LOG.error("Caught " + f.getClass()
+									+ " while sending error response to "
+									+ message + ": " + f.getMessage(), f);
+						}
+					}
 				}
 			}
 		}
@@ -208,7 +242,6 @@ public class CServer {
 	 * @throws Exception
 	 */
 	public void acquireAIS() throws Exception {
-		LOG.info("Reading AIS from " + dbHost);
 		readAISFromMySQL();
 		installAIS();
 	}
@@ -219,10 +252,11 @@ public class CServer {
 			try {
 				if (LOG.isInfoEnabled()) {
 					LOG.info(String.format("Attempting to load AIS from %s",
-							dbHost));
+							property(P_AISHOST)));
 				}
-                ais = new Reader(new MySQLSource(dbHost, dbUsername, dbPassword)).load();
-                break;
+				ais = new Reader(new MySQLSource(property(P_AISHOST),
+						property(P_AISUSER), property(P_AISPASSWORD))).load();
+				break;
 			} catch (com.mysql.jdbc.exceptions.jdbc4.CommunicationsException e) {
 				try {
 					Thread.sleep(30000L);
@@ -244,46 +278,19 @@ public class CServer {
 	 */
 	public static void main(String[] args) throws Exception {
 		final CServer server = new CServer();
-		server.readArgs(args);
+		server.config.load();
+		if (server.config.getException() != null) {
+			LOG.fatal("CServer configuration failed");
+			return;
+		}
 		server.start();
-		try {
-			//
-			// For now this is "crash-only software" - there is no
-			// graceful shutdown. Just kill or ctrl-c the process.
-			// TODO - needs to change soon - we normally want to complete
-			// Persistit shutdown.
-			//
-			while (true) {
-				Thread.sleep(5000);
-			}
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		server.stop();
 	}
 
-	private void readArgs(final String[] args) {
-		int a = 0;
-		if (a < args.length) {
-			dbHost = args[a++];
-		}
-		if (a < args.length) {
-			dbUsername = args[a++];
-		}
-		if (a < args.length) {
-			dbPassword = args[a++];
-		}
-		if (dbHost.contains("-h") || dbHost.contains("?")) {
-			usage();
-		}
+	public String property(final String key) {
+		return config.property(key);
 	}
 
-	private void usage() {
-		for (String line : USAGE) {
-			System.err.println(line);
-		}
-		System.exit(1);
+	public String property(final String key, final String dflt) {
+		return config.property(key, dflt);
 	}
-
 }
