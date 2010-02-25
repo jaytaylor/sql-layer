@@ -27,3 +27,6 @@ JVM_OPTS=" \
 
 # the JAR file we use to launch the chunk server
 JAR_FILE="../target/akiban-cserver-1.0-SNAPSHOT-jar-with-dependencies.jar"
+
+# the config file to use for the chunk server
+CONFIG_FILE="../conf/cserver.properties"

@@ -72,7 +72,7 @@ launch_service()
     foreground=$1
     props=$2
     usegui=$3
-    chunkserver_parms=""
+    chunkserver_parms="-Dcom.akiban.config=$CONFIG_FILE"
 
     if [ "x$usegui" != "x" ]; then
         chunkserver_parms="$chunkserver_parms -Dcom.persistit.showgui=true"
