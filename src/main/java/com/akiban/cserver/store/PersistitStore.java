@@ -7,9 +7,6 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import antlr.ParserSharedInputState;
-
-import com.akiban.ais.io.PersistitSource;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Source;
@@ -125,35 +122,6 @@ public class PersistitStore implements Store, CServerConstants {
 
 	public Persistit getDb() {
 		return db;
-	}
-
-	public void loadAIS(final File fromFile) throws Exception {
-		final StreamLoader loader = new StreamLoader(db, fromFile);
-		final Exchange exchange = db.getExchange("aktest", "ais", true);
-		loader.load(new StreamLoader.ImportHandler(db) {
-			@Override
-			public void handleVolumeIdRecord(long volumeId, long initialPages,
-					long extensionPages, long maximumPages, int bufferSize,
-					String volumeName) throws PersistitException {
-			}
-
-			@Override
-			public void handleTreeIdRecord(int treeIndex, String treeName)
-					throws PersistitException {
-			}
-
-			@Override
-			public void handleDataRecord(Key key, Value value)
-					throws PersistitException {
-				key.copyTo(exchange.getKey());
-				value.copyTo(exchange.getValue());
-				exchange.store();
-			}
-		});
-		exchange.clear();
-		final Source source = new PersistitSource(exchange);
-		ais = new Reader(source).load();
-		rowDefCache.setAIS(ais);
 	}
 
 	// --------------------- Store interface --------------------
