@@ -6,6 +6,7 @@ public interface CServerConstants extends MySQLErrorConstants {
 	public final static short END = 2;
 	public final static short ERR = 100;
 	public final static short MISSING_OR_CORRUPT_ROW_DEF = 99;
+	public final static short UNSUPPORTED_MODIFICATION = 98;
 	
 	// From include/my_base.h:
 	

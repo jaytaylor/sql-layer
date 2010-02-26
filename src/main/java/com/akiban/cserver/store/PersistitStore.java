@@ -188,31 +188,181 @@ public class PersistitStore implements Store, CServerConstants {
 		}
 	}
 
-	void insertIntoIndex(final IndexDef indexDef, final RowDef rowDef,
-			final RowData rowData, final Key hkey) throws Exception {
-		final Exchange exchange = getSession().getExchange(VOLUME_NAME,
-				indexDef.getTreeName());
-		final Key key = exchange.getKey();
-		exchange.getValue().clear();
-		for (int index = 0; index < indexDef.getFields().length; index++) {
-			final int fieldIndex = indexDef.getFields()[index];
-			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
-			final long location = rowDef.fieldLocation(rowData, fieldIndex);
-			appendKeyField(key, fieldDef, rowData, location);
-		}
-		if (indexDef.isUnique()) {
-			int saveSize = key.getEncodedSize();
-			key.append(Key.BEFORE);
-			if (exchange.next()) {
-				throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
-						"Non-unique index key: " + exchange.getKey().toString());
+	@Override
+	public int deleteRow(final RowData rowData) throws Exception {
+		final int rowDefId = rowData.getRowDefId();
+		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		Transaction transaction = null;
+		try {
+			final RowDef rootRowDef = rootRowDef(rowDef);
+			final String treeName = rootRowDef.getTreeName();
+			final Exchange exchange = getSession().getExchange1(VOLUME_NAME,
+					treeName);
+			transaction = db.getTransaction();
+			int retries = MAX_RETRY_COUNT;
+			for (;;) {
+				transaction.begin();
+				try {
+					constructHKey(exchange.getKey(), rowDef, rowData);
+					exchange.fetch();
+					//
+					// Verify that the row exists
+					//
+					if (!exchange.getValue().isDefined()) {
+						throw new StoreException(HA_ERR_RECORD_DELETED,
+								"Missing record at key " + exchange.getKey());
+					}
+					
+					//
+					// Verify that it hasn't changed. Note: at some point we
+					// may want to optimize the protocol to send only PK and FK
+					// fields in oldRowData, in which case this test will need
+					// to change.
+					//
+					final int oldStart = rowData.getInnerStart();
+					final int oldSize = rowData.getInnerSize();
+					if (!bytesEqual(rowData.getBytes(), oldStart, oldSize,
+							exchange.getValue().getEncodedBytes(), 0, exchange
+									.getValue().getEncodedSize())) {
+						throw new StoreException(HA_ERR_RECORD_CHANGED,
+								"Record changed at key " + exchange.getKey());
+					}
+
+					//
+					// For Iteration 9 we disallow deleting rows that would
+					// cascade to child rows.
+					//
+					if (exchange.hasChildren()) {
+						throw new StoreException(UNSUPPORTED_MODIFICATION,
+								"Can't cascase DELETE: " + exchange.getKey());
+
+					}
+
+					// Remove the h-row
+					exchange.remove();
+
+					if (rowDef.getParentRowDefId() != 0) {
+						//
+						// For child rows we need to delete the pk index entries
+						//
+						final Exchange pkExchange = getSession().getExchange3(
+								VOLUME_NAME, rowDef.getPkTreeName());
+						copyAndRotate(exchange.getKey(), pkExchange.getKey(),
+								-(rowDef.getPkFields().length + 1));
+						pkExchange.remove();
+					}
+					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+						deleteIndex(indexDef, rowDef, rowData, exchange
+								.getKey());
+					}
+					transaction.commit();
+					return OK;
+				} catch (RollbackException re) {
+					if (--retries < 0) {
+						throw new TransactionFailedException();
+					}
+				} finally {
+					transaction.end();
+				}
 			}
-			key.setEncodedSize(saveSize);
+		} catch (StoreException e) {
+			return e.getResult();
+		} catch (Throwable t) {
+			t.printStackTrace();
+			return ERR;
 		}
-		System.arraycopy(hkey.getEncodedBytes(), 0, key.getEncodedBytes(), key
-				.getEncodedSize(), hkey.getEncodedSize());
-		key.setEncodedSize(key.getEncodedSize() + hkey.getEncodedSize());
-		exchange.store();
+
+	}
+
+	@Override
+	public int updateRow(final RowData oldRowData, final RowData newRowData) {
+		final int rowDefId = oldRowData.getRowDefId();
+		if (newRowData.getRowDefId() != rowDefId) {
+			throw new IllegalArgumentException(
+					"RowData values have different rowDefId values: ("
+							+ rowDefId + "," + newRowData.getRowDefId() + ")");
+		}
+		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		Transaction transaction = null;
+		try {
+			final RowDef rootRowDef = rootRowDef(rowDef);
+			final String treeName = rootRowDef.getTreeName();
+			final Exchange exchange = getSession().getExchange1(VOLUME_NAME,
+					treeName);
+			transaction = db.getTransaction();
+			int retries = MAX_RETRY_COUNT;
+			for (;;) {
+				transaction.begin();
+				try {
+					constructHKey(exchange.getKey(), rowDef, oldRowData);
+					exchange.fetch();
+					//
+					// Verify that the row exists
+					//
+					if (!exchange.getValue().isDefined()) {
+						throw new StoreException(HA_ERR_RECORD_DELETED,
+								"Missing record at key " + exchange.getKey());
+					}
+					//
+					// Verify that it hasn't changed. Note: at some point we
+					// may want to optimize the protocol to send only PK and FK
+					// fields in oldRowData, in which case this test will need
+					// to
+					// change.
+					//
+					final int oldStart = oldRowData.getInnerStart();
+					final int oldSize = oldRowData.getInnerSize();
+					if (!bytesEqual(oldRowData.getBytes(), oldStart, oldSize,
+							exchange.getValue().getEncodedBytes(), 0, exchange
+									.getValue().getEncodedSize())) {
+						throw new StoreException(HA_ERR_RECORD_CHANGED,
+								"Record changed at key " + exchange.getKey());
+					}
+					//
+					// For Iteration 9, verify that only non-PK/FK fields are
+					// changing - i.e., that the hkey will be the same.
+					//
+					final Key oldKey = exchange.getKey();
+					final Key newKey = new Key(exchange.getKey());
+					constructHKey(newKey, rowDef, newRowData);
+					if (!bytesEqual(oldKey.getEncodedBytes(), 0, oldKey
+							.getEncodedSize(), newKey.getEncodedBytes(), 0,
+							newKey.getEncodedSize())) {
+						throw new StoreException(UNSUPPORTED_MODIFICATION,
+								"HKey change not supported: " + oldKey + "->"
+										+ newKey);
+					}
+
+					final int start = newRowData.getInnerStart();
+					final int size = newRowData.getInnerSize();
+					exchange.getValue().ensureFit(size);
+					System.arraycopy(newRowData.getBytes(), start, exchange
+							.getValue().getEncodedBytes(), 0, size);
+					exchange.getValue().setEncodedSize(size);
+
+					// Store the h-row
+					exchange.store();
+
+					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+						updateIndex(indexDef, rowDef, oldRowData, newRowData,
+								exchange.getKey());
+					}
+					transaction.commit();
+					return OK;
+				} catch (RollbackException re) {
+					if (--retries < 0) {
+						throw new TransactionFailedException();
+					}
+				} finally {
+					transaction.end();
+				}
+			}
+		} catch (StoreException e) {
+			return e.getResult();
+		} catch (Throwable t) {
+			t.printStackTrace();
+			return ERR;
+		}
 	}
 
 	@Override
@@ -299,18 +449,12 @@ public class PersistitStore implements Store, CServerConstants {
 	@Override
 	public long getRowCount(final boolean exact, final RowData start,
 			final RowData end, final byte[] columnBitMap) {
-		return 10000; // TODO: temporary hack
-	}
-
-	@Override
-	public int deleteRow(final RowData rowData) throws Exception {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public int updateRow(final RowData oldRowData, final RowData newRowData)
-			throws Exception {
-		return OK;
+		//
+		// TODO: compute a reasonable value.  The value "2" is a hack -
+		// special because it's not 0 or 1, but small enough to induce
+		// MySQL to use an index rather than full table scan.
+		//
+		return 2;
 	}
 
 	// ---------------------
@@ -470,6 +614,94 @@ public class PersistitStore implements Store, CServerConstants {
 
 	}
 
+	void insertIntoIndex(final IndexDef indexDef, final RowDef rowDef,
+			final RowData rowData, final Key hkey) throws Exception {
+		final Exchange exchange = getSession().getExchange(VOLUME_NAME,
+				indexDef.getTreeName());
+		final Key key = exchange.getKey().clear();
+		exchange.getValue().clear();
+		for (int index = 0; index < indexDef.getFields().length; index++) {
+			final int fieldIndex = indexDef.getFields()[index];
+			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+			final long location = rowDef.fieldLocation(rowData, fieldIndex);
+			appendKeyField(key, fieldDef, rowData, location);
+		}
+		if (indexDef.isUnique()) {
+			int saveSize = key.getEncodedSize();
+			key.append(Key.BEFORE);
+			if (exchange.next()) {
+				throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
+						"Non-unique index key: " + exchange.getKey().toString());
+			}
+			key.setEncodedSize(saveSize);
+		}
+		System.arraycopy(hkey.getEncodedBytes(), 0, key.getEncodedBytes(), key
+				.getEncodedSize(), hkey.getEncodedSize());
+		key.setEncodedSize(key.getEncodedSize() + hkey.getEncodedSize());
+		exchange.store();
+	}
+
+	void updateIndex(final IndexDef indexDef, final RowDef rowDef,
+			final RowData oldRowData, final RowData newRowData, final Key hkey)
+			throws Exception {
+		final Exchange oldExchange = getSession().getExchange(VOLUME_NAME,
+				indexDef.getTreeName());
+		final Exchange newExchange = getSession().getExchange(VOLUME_NAME,
+				indexDef.getTreeName());
+		final Key oldKey = oldExchange.getKey().clear();
+		final Key newKey = newExchange.getKey().clear();
+		oldExchange.getValue().clear();
+		newExchange.getValue().clear();
+
+		for (int index = 0; index < indexDef.getFields().length; index++) {
+			final int fieldIndex = indexDef.getFields()[index];
+			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+			final long location = rowDef.fieldLocation(oldRowData, fieldIndex);
+			appendKeyField(oldKey, fieldDef, oldRowData, location);
+		}
+
+		for (int index = 0; index < indexDef.getFields().length; index++) {
+			final int fieldIndex = indexDef.getFields()[index];
+			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+			final long location = rowDef.fieldLocation(newRowData, fieldIndex);
+			appendKeyField(newKey, fieldDef, newRowData, location);
+		}
+		if (!oldKey.equals(newKey)) {
+
+			System.arraycopy(hkey.getEncodedBytes(), 0, oldKey
+					.getEncodedBytes(), oldKey.getEncodedSize(), hkey
+					.getEncodedSize());
+			oldKey.setEncodedSize(oldKey.getEncodedSize()
+					+ hkey.getEncodedSize());
+			oldExchange.remove();
+
+			System.arraycopy(hkey.getEncodedBytes(), 0, newKey
+					.getEncodedBytes(), newKey.getEncodedSize(), hkey
+					.getEncodedSize());
+			newKey.setEncodedSize(newKey.getEncodedSize()
+					+ hkey.getEncodedSize());
+			newExchange.store();
+		}
+	}
+	
+	void deleteIndex(final IndexDef indexDef, final RowDef rowDef, final RowData rowData, final Key hkey) throws Exception {
+		final Exchange exchange = getSession().getExchange(VOLUME_NAME,
+				indexDef.getTreeName());
+		final Key key = exchange.getKey().clear();
+		exchange.getValue().clear();
+		for (int index = 0; index < indexDef.getFields().length; index++) {
+			final int fieldIndex = indexDef.getFields()[index];
+			final FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+			final long location = rowDef.fieldLocation(rowData, fieldIndex);
+			appendKeyField(key, fieldDef, rowData, location);
+		}
+		System.arraycopy(hkey.getEncodedBytes(), 0, key.getEncodedBytes(), key
+				.getEncodedSize(), hkey.getEncodedSize());
+		key.setEncodedSize(key.getEncodedSize() + hkey.getEncodedSize());
+		exchange.remove();
+
+	}
+
 	/**
 	 * Copies key segments from one key to another. Places the last segment
 	 * first and the shifts the remaining segments to the right.
@@ -486,6 +718,19 @@ public class PersistitStore implements Store, CServerConstants {
 		System.arraycopy(from, k, to, 0, size - k);
 		System.arraycopy(from, 0, to, size - k, k);
 		toKey.setEncodedSize(size);
+	}
+
+	boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
+			final byte[] b, final int boffset, final int bsize) {
+		if (asize != bsize) {
+			return false;
+		}
+		for (int i = 0; i < asize; i++) {
+			if (a[i + aoffset] != b[i + boffset]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	void logRowData(final String prefix, final RowData rowData) {

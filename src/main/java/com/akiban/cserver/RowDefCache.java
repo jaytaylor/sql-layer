@@ -74,8 +74,8 @@ public class RowDefCache implements CServerConstants {
 			putRowDef(createGroupTableRowDef(ais, table));
 		}
 
-		if (LOG.isInfoEnabled()) {
-			LOG.info(toString());
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(toString());
 		}
 	}
 

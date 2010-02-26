@@ -27,6 +27,10 @@ public class PersistitStoreWithAISTest extends TestCase implements
 
 	private RowDefCache rowDefCache;
 
+	private interface RowVisitor {
+		void visit(final int depth) throws Exception;
+	}
+
 	private class TestData {
 		final RowDef defC = rowDefCache.getRowDef("customer");
 		final RowDef defO = rowDefCache.getRowDef("order");
@@ -45,7 +49,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		final int itemsPerOrder;
 		final int componentsPerItem;
 
+		long cid;
+		long oid;
+		long iid;
+		long xid;
+
 		long elapsed;
+		long count = 0;
 
 		TestData(final int customers, final int ordersPerCustomer,
 				final int itemsPerOrder, final int componentsPerItem) {
@@ -59,26 +69,26 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			elapsed = System.nanoTime();
 			int unique = 0;
 			for (int c = 0; ++c <= customers;) {
-				int cid = c;
+				cid = c;
 				rowC.reset(0, 64);
 				rowC.createRow(defC, new Object[] { cid, "Customer_" + cid });
 				assertEquals(OK, store.writeRow(rowC));
 				for (int o = 0; ++o <= ordersPerCustomer;) {
-					int oid = cid * 1000 + o;
+					oid = cid * 1000 + o;
 					rowO.reset(0, 64);
 					rowO.createRow(defO, new Object[] { oid, cid, 12345 });
 					assertEquals(OK, store.writeRow(rowO));
 					for (int i = 0; ++i <= itemsPerOrder;) {
-						int iid = oid * 1000 + i;
+						iid = oid * 1000 + i;
 						rowI.reset(0, 64);
 						rowI.createRow(defI, new Object[] { oid, iid, 123456,
 								654321 });
 						assertEquals(OK, store.writeRow(rowI));
-						for (int x = 0; ++x <= 5;) {
-							int xid = iid * 1000 + x;
+						for (int x = 0; ++x <= componentsPerItem;) {
+							xid = iid * 1000 + x;
 							rowX.reset(0, 64);
 							rowX.createRow(defX, new Object[] { iid, xid, c,
-									++unique });
+									++unique, "Description_" + unique });
 							assertEquals(OK, store.writeRow(rowX));
 						}
 					}
@@ -93,9 +103,42 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			elapsed = System.nanoTime() - elapsed;
 		}
 
+		void visitTestRows(final RowVisitor visitor) throws Exception {
+			elapsed = System.nanoTime();
+			int unique = 0;
+			for (int c = 0; ++c <= customers;) {
+				cid = c;
+				rowC.reset(0, 64);
+				rowC.createRow(defC, new Object[] { cid, "Customer_" + cid });
+				visitor.visit(0);
+				for (int o = 0; ++o <= ordersPerCustomer;) {
+					oid = cid * 1000 + o;
+					rowO.reset(0, 64);
+					rowO.createRow(defO, new Object[] { oid, cid, 12345 });
+					visitor.visit(1);
+					for (int i = 0; ++i <= itemsPerOrder;) {
+						iid = oid * 1000 + i;
+						rowI.reset(0, 64);
+						rowI.createRow(defI, new Object[] { oid, iid, 123456,
+								654321 });
+						visitor.visit(2);
+						for (int x = 0; ++x <= componentsPerItem;) {
+							xid = iid * 1000 + x;
+							rowX.reset(0, 64);
+							rowX.createRow(defX, new Object[] { iid, xid, c,
+									++unique, "Description_" + unique });
+							visitor.visit(3);
+						}
+					}
+				}
+			}
+			elapsed = System.nanoTime() - elapsed;
+
+		}
+
 		int totalRows() {
-			return customers + customers * ordersPerCustomer + customers
-					* ordersPerCustomer * itemsPerOrder;
+			return totalCustomerRows() + totalOrderRows() + totalItemRows()
+					+ totalComponentRows();
 		}
 
 		int totalCustomerRows() {
@@ -109,11 +152,16 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		int totalItemRows() {
 			return customers * ordersPerCustomer * itemsPerOrder;
 		}
-		
+
+		int totalComponentRows() {
+			return customers * ordersPerCustomer * itemsPerOrder
+					* componentsPerItem;
+		}
+
 		void start() {
 			elapsed = System.nanoTime();
 		}
-		
+
 		void end() {
 			elapsed = System.nanoTime() - elapsed;
 		}
@@ -141,17 +189,16 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	public void testWriteCOIrows() throws Exception {
 		final TestData td = new TestData(10, 10, 10, 10);
 		td.insertTestRows();
-		System.out.println("testWriteCOIrows: inserted " + td.totalRows() + " rows in "
-				+ (td.elapsed / 1000L) + "us");
+		System.out.println("testWriteCOIrows: inserted " + td.totalRows()
+				+ " rows in " + (td.elapsed / 1000L) + "us");
 
 	}
 
 	public void testScanCOIrows() throws Exception {
-		TestData td = new TestData(1000, 10, 3, 2);
+		final TestData td = new TestData(1000, 10, 3, 2);
 		td.insertTestRows();
-		long t2 = System.nanoTime();
-		System.out.println("testScanCOIrows: inserted " + td.totalRows() + " rows in "
-				+ (td.elapsed / 1000L) + "us");
+		System.out.println("testScanCOIrows: inserted " + td.totalRows()
+				+ " rows in " + (td.elapsed / 1000L) + "us");
 		{
 			// simple test - get all I rows
 			td.start();
@@ -179,9 +226,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			}
 			assertEquals(td.totalItemRows(), scanCount);
 			td.end();
-			System.out.println("testScanCOIrows: scanned " + scanCount + " rows in "
-					+ (td.elapsed / 1000L) + "us");
-			
+			System.out.println("testScanCOIrows: scanned " + scanCount
+					+ " rows in " + (td.elapsed / 1000L) + "us");
+
 		}
 
 		{
@@ -211,8 +258,8 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			}
 			assertEquals(1, scanCount);
 			td.end();
-			System.out.println("testScanCOIrows: scanned " + scanCount + " rows in "
-					+ (td.elapsed / 1000L) + "us");
+			System.out.println("testScanCOIrows: scanned " + scanCount
+					+ " rows in " + (td.elapsed / 1000L) + "us");
 
 		}
 
@@ -256,13 +303,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			}
 			assertEquals(17, scanCount);
 			td.end();
-			System.out.println("testScanCOIrows: scanned " + scanCount + " rows in "
-					+ (td.elapsed / 1000L) + "us");
+			System.out.println("testScanCOIrows: scanned " + scanCount
+					+ " rows in " + (td.elapsed / 1000L) + "us");
 		}
 	}
 
 	public void testDropTable() throws Exception {
-		TestData td = new TestData(10, 10, 10, 10);
+		final TestData td = new TestData(5, 5, 5, 5);
 		td.insertTestRows();
 		Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
 		assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
@@ -282,16 +329,114 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	}
 
 	public void testUniqueIndexes() throws Exception {
-		TestData td = new TestData(10, 10, 10, 10);
+		final TestData td = new TestData(5, 5, 5, 5);
 		td.insertTestRows();
-		td.rowX.createRow(td.defX, new Object[]{37906, 23890345, 123, 44, "test1" });
+		td.rowX.createRow(td.defX, new Object[] { 37906, 23890345, 123, 44,
+				"test1" });
 		int result;
 		result = store.writeRow(td.rowX);
 		assertEquals(HA_ERR_FOUND_DUPP_KEY, result);
-		td.rowX.createRow(td.defX, new Object[]{37906, 23890345, 123, 44444, "test2" });
+		td.rowX.createRow(td.defX, new Object[] { 37906, 23890345, 123, 44444,
+				"test2" });
 		result = store.writeRow(td.rowX);
 		assertEquals(OK, result);
-		
+	}
+
+	public void testUpdateRows() throws Exception {
+		final TestData td = new TestData(5, 5, 5, 5);
+		td.insertTestRows();
+		long cid = 3;
+		long oid = cid * 1000 + 2;
+		long iid = oid * 1000 + 4;
+		long xid = iid * 1000 + 3;
+		td.rowX.createRow(td.defX, new Object[] { iid, xid, null, null });
+		final byte[] columnBitMap = new byte[] { (byte) 0x1F };
+		final ByteBuffer payload = ByteBufferFactory.allocate(1024);
+
+		RowCollector rc;
+		rc = store.newRowCollector(1111, td.rowX, td.rowX, columnBitMap);
+		payload.clear();
+		assertTrue(rc.collectNextRow(payload));
+		payload.flip();
+		RowData oldRowData = new RowData(payload.array(), payload.position(),
+				payload.limit());
+		oldRowData.prepareRow(oldRowData.getBufferStart());
+
+		RowData newRowData = new RowData(new byte[256]);
+		newRowData.createRow(td.defX, new Object[] { iid, xid, 4, 424242,
+				"Description_424242" });
+		store.updateRow(oldRowData, newRowData);
+
+		rc = store.newRowCollector(1111, td.rowX, td.rowX, columnBitMap);
+		payload.clear();
+		assertTrue(rc.collectNextRow(payload));
+		payload.flip();
+
+		RowData updateRowData = new RowData(payload.array(),
+				payload.position(), payload.limit());
+		updateRowData.prepareRow(updateRowData.getBufferStart());
+		System.out.println(updateRowData.toString(store.getRowDefCache()));
+		// TODO:
+		// Hand-checked the index tables. Need SELECT on secondary indexes to
+		// verify them automatically.
+	}
+
+	public void testDeleteRows() throws Exception {
+		final TestData td = new TestData(5, 5, 5, 5);
+		td.insertTestRows();
+		td.count = 0;
+		final RowVisitor visitor = new RowVisitor() {
+			public void visit(final int depth) throws Exception {
+				switch (depth) {
+				case 0:
+					// TODO - for now we can't do cascading DELETE so we
+					// expect an error
+					assertNotSame(OK, store.deleteRow(td.rowC));
+					break;
+				case 1:
+					// TODO - for now we can't do cascading DELETE so we
+					// expect an error
+					assertNotSame(OK, store.deleteRow(td.rowO));
+					break;
+				case 2:
+					// TODO - for now we can't do cascading DELETE so we
+					// expect an error
+					assertNotSame(OK, store.deleteRow(td.rowI));
+					break;
+				case 3:
+					if (td.xid % 2 == 0) {
+						assertEquals(OK, store.deleteRow(td.rowX));
+						td.count++;
+					}
+				}
+			}
+		};
+		td.visitTestRows(visitor);
+
+		int scanCount = 0;
+		td.rowX.createRow(td.defX, new Object[0]);
+		final byte[] columnBitMap = new byte[] { (byte) 0x1F };
+		final RowCollector rc = store.newRowCollector(1111, td.rowX, td.rowX,
+				columnBitMap);
+		final ByteBuffer payload = ByteBufferFactory.allocate(256);
+
+		while (rc.hasMore()) {
+			payload.clear();
+			while (rc.collectNextRow(payload))
+				;
+			payload.flip();
+			RowData rowData = new RowData(payload.array(), payload.position(),
+					payload.limit());
+			for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
+				rowData.prepareRow(p);
+				p = rowData.getRowEnd();
+				scanCount++;
+			}
+		}
+		assertEquals(td.totalComponentRows() - td.count, scanCount);
+		// TODO:
+		// Hand-checked the index tables. Need SELECT on secondary indexes to
+		// verify them automatically.
 	}
 
 }

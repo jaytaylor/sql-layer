@@ -12,7 +12,8 @@ public interface MySQLErrorConstants {
 	public final static short HA_ERR_KEY_NOT_FOUND = 120;
 	public final static short HA_ERR_FOUND_DUPP_KEY = 121;
 	public final static short HA_ERR_INTERNAL_ERROR = 122;
-	public final static short HA_ERR_NO_REFERENCED_ROW= 151;
-
+	public final static short HA_ERR_RECORD_CHANGED = 123;
+	public final static short HA_ERR_RECORD_DELETED = 134;
+	public final static short HA_ERR_NO_REFERENCED_ROW = 151;
 
 }
