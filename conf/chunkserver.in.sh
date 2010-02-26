@@ -21,7 +21,7 @@ done
 JVM_OPTS=" \
         -ea \
         -Xnoagent \
-        -Xmx512m \
+        -Xmx1G \
         -Djava.compiler=NONE \
         -Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y"
 
