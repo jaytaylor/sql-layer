@@ -44,7 +44,7 @@ public class PersistitStore implements Store, CServerConstants {
 		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
-		PERSISTIT_PROPERTIES.put("buffer.count.8192", "4K");
+		PERSISTIT_PROPERTIES.put("buffer.count.8192", "2K");
 		PERSISTIT_PROPERTIES.put("volume.1",
 				"${datapath}/sys_txn.v0,create,pageSize:8K,initialSize:1M,e"
 						+ "xtensionSize:1M,maximumSize:10G");
