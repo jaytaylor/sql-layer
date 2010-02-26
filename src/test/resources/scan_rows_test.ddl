@@ -36,7 +36,7 @@ create table aa(
     aa2 int not null,
     aa3 int not null,
     primary key(aa1),
-    key (`aa2`, `aaa3`),
+    key (`aa2`, `aa3`),
     key (`aa2`, `aa1`)
 ) engine = akibadb;
  
