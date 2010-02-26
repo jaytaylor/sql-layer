@@ -35,7 +35,9 @@ create table aa(
     aa1 int not null,
     aa2 int not null,
     aa3 int not null,
-    primary key(aa1)
+    primary key(aa1),
+    key (`aa2`, `aaa3`),
+    key (`aa2`, `aa1`)
 ) engine = akibadb;
  
 create table aaa(
@@ -43,7 +45,10 @@ create table aaa(
     aaa1 int not null,
     aaa2 int not null,
     aaa3 int not null,
-    primary key(aaa1)
+    primary key(aaa1),
+    key (`aaa1`),
+    key (`aaa2`),
+    key (`aaa3`)
 ) engine = akibadb;
  
 create table aaaa(
@@ -51,7 +56,10 @@ create table aaaa(
     aaaa1 int not null,
     aaaa2 int not null,
     aaaa3 int not null,
-    primary key(aaaa1)
+    primary key(aaaa1),
+    key (`aaaa1`),
+    key (`aaaa2`),
+    key (`aaaa3`)    
 ) engine = akibadb;
  
 create table aaaaa(
@@ -75,7 +83,12 @@ create table aaab(
     aaab1 int not null,
     aaab2 int not null,
     aaab3 int not null,
-    primary key(aaab1)
+    primary key(aaab1),
+    key (`aaab1`, `aaab2`),
+    key (`aaab2`, `aaab3`),
+    key (`aaab3`, `aaab1`),
+    key (`aaab1`, `aaab3`),
+    key (`aaab2`, `aaab1`)
 ) engine = akibadb;
  
 create table aab(

@@ -27,7 +27,8 @@ import com.akiban.ais.model.UserTable;
  */
 public class RowDefCache implements CServerConstants {
 
-	private static final Log LOG = LogFactory.getLog(RowDefCache.class.getName());
+	private static final Log LOG = LogFactory.getLog(RowDefCache.class
+			.getName());
 
 	private final Map<Integer, RowDef> cacheMap = new HashMap<Integer, RowDef>();
 
@@ -72,13 +73,14 @@ public class RowDefCache implements CServerConstants {
 		for (final GroupTable table : ais.getGroupTables().values()) {
 			putRowDef(createGroupTableRowDef(ais, table));
 		}
-		
+
 		if (LOG.isInfoEnabled()) {
 			LOG.info(toString());
 		}
 	}
-	
-	private RowDef createUserTableRowDef(final AkibaInformationSchema ais, final UserTable table) {
+
+	private RowDef createUserTableRowDef(final AkibaInformationSchema ais,
+			final UserTable table) {
 
 		// rowDefId
 		final int rowDefId = table.getTableId();
@@ -93,8 +95,8 @@ public class RowDefCache implements CServerConstants {
 				fieldDefs[fieldIndex] = new FieldDef(column.getName(), type);
 			} else {
 				final Object typeParam = column.getTypeParameter1();
-				fieldDefs[fieldIndex] = new FieldDef(column.getName(),
-						type, ((Long) typeParam).intValue());
+				fieldDefs[fieldIndex] = new FieldDef(column.getName(), type,
+						((Long) typeParam).intValue());
 			}
 		}
 
@@ -110,10 +112,8 @@ public class RowDefCache implements CServerConstants {
 			//
 			parentJoinFields = new int[join.getJoinColumns().size()];
 			for (int index = 0; index < join.getJoinColumns().size(); index++) {
-				final JoinColumn joinColumn = join.getJoinColumns().get(
-						index);
-				parentJoinFields[index] = joinColumn.getChild()
-						.getPosition();
+				final JoinColumn joinColumn = join.getJoinColumns().get(index);
+				parentJoinFields[index] = joinColumn.getChild().getPosition();
 			}
 		} else {
 			parentRowDefId = 0;
@@ -153,13 +153,13 @@ public class RowDefCache implements CServerConstants {
 				pkFields[pkField++] = position;
 			}
 		}
-		
+
 		// root table
 		UserTable root = table;
 		while (root.getParentJoin() != null) {
 			root = root.getParentJoin().getParent();
 		}
-		
+
 		// group table name
 		String groupTableName = null;
 		for (final GroupTable groupTable : ais.getGroupTables().values()) {
@@ -186,10 +186,10 @@ public class RowDefCache implements CServerConstants {
 			for (final Integer position : indexColumnList) {
 				indexFields[columnIndex++] = position;
 			}
-			
 
 			final String treeName = groupTableName + "$$" + index.getIndexId();
-			final IndexDef indexDef = new IndexDef(treeName, index.getIndexId(), indexFields, index.isUnique());
+			final IndexDef indexDef = new IndexDef(treeName,
+					index.getIndexId(), indexFields, index.isUnique());
 			indexDefList.add(indexDef);
 		}
 
@@ -199,13 +199,15 @@ public class RowDefCache implements CServerConstants {
 		rowDef.setPkFields(pkFields);
 		rowDef.setParentRowDefId(parentRowDefId);
 		rowDef.setParentJoinFields(parentJoinFields);
-		rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
-		
+		rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
+				.size()]));
+
 		return rowDef;
 
 	}
-	
-	private RowDef createGroupTableRowDef(final AkibaInformationSchema ais, final GroupTable table) {
+
+	private RowDef createGroupTableRowDef(final AkibaInformationSchema ais,
+			final GroupTable table) {
 		// rowDefId
 		final int rowDefId = table.getTableId();
 
@@ -220,8 +222,7 @@ public class RowDefCache implements CServerConstants {
 			final int p = column.getPosition();
 			if (columns[p] != null) {
 				throw new IllegalStateException("Group table column "
-						+ column.getName() + " has overlapping position "
-						+ p);
+						+ column.getName() + " has overlapping position " + p);
 			}
 			columns[p] = column;
 		}
@@ -249,17 +250,18 @@ public class RowDefCache implements CServerConstants {
 		}
 		final int[] userRowDefIds = new int[userTableIndex];
 		final int[] userRowColumnOffsets = new int[userTableIndex];
-		
+
 		System.arraycopy(tempRowDefIds, 0, userRowDefIds, 0, userTableIndex);
-		System.arraycopy(tempRowColumnOffset, 0, userRowColumnOffsets, 0, userTableIndex);
+		System.arraycopy(tempRowColumnOffset, 0, userRowColumnOffsets, 0,
+				userTableIndex);
 
 		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
 		rowDef.setTableName(table.getName().getTableName());
-		rowDef.setTreeName( table.getName().getTableName());
+		rowDef.setTreeName(table.getName().getTableName());
 		rowDef.setPkFields(new int[0]);
 		rowDef.setUserRowDefIds(userRowDefIds);
 		rowDef.setUserRowColumnOffsets(userRowColumnOffsets);
-		
+
 		return rowDef;
 	}
 

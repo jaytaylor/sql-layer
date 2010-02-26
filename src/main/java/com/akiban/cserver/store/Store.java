@@ -17,9 +17,12 @@ public interface Store {
 
 	public RowCollector getCurrentRowCollector();
 
-
-	
 	public int writeRow(final RowData rowData) throws Exception;
+
+	public int deleteRow(final RowData rowData) throws Exception;
+
+	public int updateRow(final RowData oldRowData, final RowData newRowData)
+			throws Exception;
 
 	public long getAutoIncrementValue(final int rowDefId) throws Exception;
 
@@ -28,6 +31,6 @@ public interface Store {
 
 	public long getRowCount(final boolean exact, final RowData start,
 			final RowData end, final byte[] columnBitMap) throws Exception;
-	
+
 	public int dropTable(final int rowDefId) throws Exception;
 }

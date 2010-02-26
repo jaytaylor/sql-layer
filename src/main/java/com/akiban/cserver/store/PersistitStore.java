@@ -1,15 +1,12 @@
 package com.akiban.cserver.store;
 
-import java.io.File;
 import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.io.Reader;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Source;
 import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.FieldDef;
@@ -20,9 +17,7 @@ import com.akiban.cserver.RowDefCache;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
-import com.persistit.StreamLoader;
 import com.persistit.Transaction;
-import com.persistit.Value;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -72,8 +67,6 @@ public class PersistitStore implements Store, CServerConstants {
 
 	private final RowDefCache rowDefCache;
 
-	private AkibaInformationSchema ais;
-
 	public static void setDataPath(final String path) {
 		datapath = path;
 	}
@@ -95,7 +88,12 @@ public class PersistitStore implements Store, CServerConstants {
 			// properties; it is then referenced by substitution in other
 			// Persistit properties.
 			//
-			db.setProperty("datapath", config.property(P_DATAPATH, datapath));
+			final String path = config.property(P_DATAPATH, datapath);
+			db.setProperty("datapath", path);
+
+			if (LOG.isInfoEnabled()) {
+				LOG.info("PersistitStore datapath=" + path);
+			}
 			for (final Map.Entry<Object, Object> entry : config.getProperties()
 					.entrySet()) {
 				final String key = (String) entry.getKey();
@@ -252,6 +250,7 @@ public class PersistitStore implements Store, CServerConstants {
 		}
 	}
 
+	@Override
 	public long getAutoIncrementValue(final int rowDefId) throws Exception {
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		final Exchange exchange;
@@ -291,7 +290,7 @@ public class PersistitStore implements Store, CServerConstants {
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 
 		final RowCollector rc = new PersistitStoreRowCollector(this, start,
-				end, columnBitMap, rowDef);
+				end, columnBitMap, rowDef, indexId);
 
 		getSession().setCurrentRowCollector(rc);
 		return rc;
@@ -301,6 +300,17 @@ public class PersistitStore implements Store, CServerConstants {
 	public long getRowCount(final boolean exact, final RowData start,
 			final RowData end, final byte[] columnBitMap) {
 		return 10000; // TODO: temporary hack
+	}
+
+	@Override
+	public int deleteRow(final RowData rowData) throws Exception {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public int updateRow(final RowData oldRowData, final RowData newRowData)
+			throws Exception {
+		return OK;
 	}
 
 	// ---------------------

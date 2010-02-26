@@ -19,8 +19,8 @@ import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.message.CServerShutdownRequest;
-import com.akiban.cserver.message.CServerShutdownResponse;
+import com.akiban.cserver.message.ShutdownRequest;
+import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.AkibaConnection;
@@ -165,12 +165,12 @@ public class CServer {
 
 		@Override
 		public void executeRequest(AkibaConnection connection,
-				CServerShutdownRequest request) throws Exception {
+				ShutdownRequest request) throws Exception {
 			if (LOG.isInfoEnabled()) {
 				LOG.info("CServer stopping due to ShutdownRequest");
 			}
 			stop();
-			CServerShutdownResponse response = new CServerShutdownResponse();
+			ShutdownResponse response = new ShutdownResponse();
 			connection.send(response);
 		}
 	}

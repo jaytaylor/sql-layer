@@ -68,16 +68,16 @@ public class PersistitStoreRowCollector implements RowCollector,
 	private Key.Direction direction = Key.GTEQ;
 
 	private enum Next {
-		NEXT_INDEXED_KEY, NEXT_ANCESTOR, NEXT_DECENDANT,
+		NEXT_INDEX_KEY, NEXT_ANCESTOR, NEXT_DECENDANT,
 	}
 
-	Next next = Next.NEXT_INDEXED_KEY;
+	Next next = Next.NEXT_INDEX_KEY;
 
 	Next pending;
 
 
 	PersistitStoreRowCollector(PersistitStore store, final RowData start,
-			final RowData end, final byte[] columnBitMap, RowDef rowDef)
+			final RowData end, final byte[] columnBitMap, RowDef rowDef, final int indexId)
 			throws Exception {
 		final String volumeName = PersistitStore.VOLUME_NAME; // TODO -
 		this.store = store;
@@ -98,11 +98,11 @@ public class PersistitStoreRowCollector implements RowCollector,
 				rowDef.getTreeName());
 		this.indexEx = indexLevel == 0 ? null : store.getSession()
 				.getExchange3(volumeName, indexTreeName());
-		if (LOG.isInfoEnabled()) {
-			LOG.info("Starting Scan on rowDef=" + rowDef.toString()
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("Starting Scan on rowDef=" + rowDef.toString()
 					+ ": leafRowDefId=" + leafRowDefId);
 		}
-		next = Next.NEXT_INDEXED_KEY;
+		next = Next.NEXT_INDEX_KEY;
 	}
 
 	/**
@@ -383,7 +383,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 				
 			switch (next) {
 
-			case NEXT_INDEXED_KEY:
+			case NEXT_INDEX_KEY:
 				if (indexLevel == 0) {
 					next = Next.NEXT_DECENDANT;
 				} else {
@@ -433,7 +433,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 						&& (!found || deliveryEx.getKey().firstUniqueByteIndex(
 								leafEx.getKey()) < leafEx.getKey()
 								.getEncodedSize())) {
-					next = Next.NEXT_INDEXED_KEY;
+					next = Next.NEXT_INDEX_KEY;
 					continue;
 				}
 

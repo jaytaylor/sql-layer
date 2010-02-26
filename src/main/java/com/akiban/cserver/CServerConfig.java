@@ -49,8 +49,8 @@ public class CServerConfig {
 			searchPath.addAll(Arrays.asList(paths));
 		}
 		searchPath.addAll(Arrays.asList(DEFAULT_SEARCH_PATH));
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("Configuration file search path: " + searchPath);
+		if (LOG.isInfoEnabled()) {
+			LOG.info("CServerConfigur search path: " + searchPath);
 		}
 		// Load in reverse order so that first-specified path overrides later
 		// ones

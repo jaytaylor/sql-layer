@@ -375,6 +375,17 @@ public class RowDef {
 	public IndexDef[] getIndexDefs() {
 		return indexDefs;
 	}
+	
+	public IndexDef getIndexDef(final int indexId) {
+		// TODO: Could use a HashMap instead if this proves to be a CPU
+		// problem..
+		for (int index = 0; index < indexDefs.length; index++) {
+			if (indexDefs[index].getId() == indexId) {
+				return indexDefs[index];
+			}
+		}
+		return null;
+	}
 
 	public int[] getParentJoinFields() {
 		return parentJoinFields;
