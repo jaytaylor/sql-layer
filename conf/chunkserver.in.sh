@@ -10,13 +10,6 @@ chunkserver_bin=$chunkserver_home/target/classes
 # JAVA_HOME can optionally be set here
 #JAVA_HOME=/usr/local/jdk6
 
-# The java classpath (required)
-CLASSPATH=$CHUNKSERVER_CONF:$chunkserver_bin
-
-for jar in $chunkserver_home/target/*.jar; do
-    CLASSPATH=$CLASSPATH:$jar
-done
-
 # Arguments to pass to the JVM
 JVM_OPTS=" \
         -ea \

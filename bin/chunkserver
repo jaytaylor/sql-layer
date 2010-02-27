@@ -9,7 +9,6 @@
 # This script relies on few environment variables to determine startup
 # behavior, those variables are:
 #
-#   CLASSPATH -- A Java classpath containing everything necessary to run.
 #   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
 #   CHUNKSERVER_CONF -- Directory containing chunkserver configuration files.
 #
@@ -62,8 +61,8 @@ else
     JAVA=`which java`
 fi
 
-if [ -z $CHUNKSERVER_CONF -o -z $CLASSPATH ]; then
-    echo "You must set the CHUNKSERVER_CONF and CLASSPATH vars" >&2
+if [ -z $CHUNKSERVER_CONF ]; then
+    echo "You must set the CHUNKSERVER_CONF var" >&2
     exit 1
 fi
 
@@ -79,10 +78,10 @@ launch_service()
     fi
     
     if [ "x$foreground" != "x" ]; then
-        $JAVA $JVM_OPTS $chunkserver_parms -jar $JAR_FILE $props $class
+        $JAVA $JVM_OPTS $chunkserver_parms -jar $JAR_FILE $props 
     # Startup the chunkserver and background it.
     else
-        exec $JAVA $JVM_OPTS $cassandra_parms -jar $JAR_FILE $props $class <&- &
+        exec $JAVA $JVM_OPTS $cassandra_parms -jar $JAR_FILE $props <&- &
         [ ! -z $pidpath ] && printf "%d" $! > $pidpath
     fi
 
