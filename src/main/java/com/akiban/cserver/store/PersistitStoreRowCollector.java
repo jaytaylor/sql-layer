@@ -235,8 +235,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 	KeyFilter computeIFilter(final IndexDef indexDef, final RowDef rowDef,
 			final RowData start, final RowData end) {
 		final Key key = iEx.getKey();
-		final int[] fields = indexDef.isPkIndex() ? rowDef.getPkFields()
-				: indexDef.getFields();
+		final int[] fields = indexDef.getFields();
 		final KeyFilter.Term[] terms = new KeyFilter.Term[fields.length];
 		for (int index = 0; index < fields.length; index++) {
 			terms[index] = computeKeyFilterTerm(key, rowDef, start, end,

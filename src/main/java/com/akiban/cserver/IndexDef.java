@@ -266,10 +266,7 @@ public class IndexDef {
 		final List<I2H> i2hList = new ArrayList<I2H>();
 		final List<H2I> h2iList = new ArrayList<H2I>();
 
-		final int[] indexFieldIndexes = isPkIndex() ? rowDef.getPkFields()
-				: getFields();
-
-		for (int fieldIndex : indexFieldIndexes) {
+		for (int fieldIndex : fields) {
 			final H2I h2i = new H2I();
 			h2i.setFieldIndex(fieldIndex);
 			h2iList.add(h2i);
