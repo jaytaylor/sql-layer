@@ -1,6 +1,7 @@
 package com.akiban.cserver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -11,6 +12,8 @@ import java.util.List;
  * 
  */
 public class IndexDef {
+
+	private final String name;
 
 	private final String treeName;
 
@@ -23,6 +26,8 @@ public class IndexDef {
 	private final boolean unique;
 
 	private final RowDef rowDef;
+
+	private boolean hkeyEquivalent;
 
 	private H2I[] indexKeyFields;
 
@@ -126,14 +131,20 @@ public class IndexDef {
 		}
 	}
 
-	public IndexDef(final RowDef rowDef, final String treeName, final int id,
-			final int[] fields, final boolean primary, final boolean unique) {
+	public IndexDef(final String name, final RowDef rowDef,
+			final String treeName, final int id, final int[] fields,
+			final boolean primary, final boolean unique) {
+		this.name = name;
 		this.rowDef = rowDef;
 		this.treeName = treeName;
 		this.id = id;
 		this.fields = fields;
 		this.primary = primary;
 		this.unique = unique;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public String getTreeName() {
@@ -150,6 +161,16 @@ public class IndexDef {
 
 	public boolean isPkIndex() {
 		return primary;
+	}
+
+	/**
+	 * True of this index represents fields matching the pkFields of the root
+	 * table. If so, then there is no separately stored index tree.
+	 * 
+	 * @return
+	 */
+	public boolean isHKeyEquivalent() {
+		return hkeyEquivalent;
 	}
 
 	public boolean isUnique() {
@@ -172,11 +193,79 @@ public class IndexDef {
 		return hkeyFields;
 	}
 
+	public String toString() {
+		StringBuilder sb = new StringBuilder(name);
+		sb.append("[");
+		for (int i = 0; i < fields.length; i++) {
+			sb.append(i == 0 ? "" : ",");
+			sb.append(fields[i]);
+		}
+		sb.append("]->");
+		sb.append(treeName);
+		sb.append(":");
+		sb.append(rowDef.getTableName());
+		if (hkeyEquivalent) {
+			sb.append("=hkey");
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * This complex method populates two arrays: hkeyFields and indexKeyFields.
+	 * The elements of these arrays serve similar purposes: hkeyFields contains
+	 * I2H elements which help the
+	 * {@link com.akiban.cserver.store.PersistitStoreRowCollector} construct an
+	 * hkey given an index Key value; indexKeyFields contains H2I elements which
+	 * help the PersistitStoreRowCollector construct index Key values given HKey
+	 * and RowData objects.
+	 * 
+	 * @param rowDefCache
+	 * @param rowDef
+	 * @param path
+	 */
 	void computeFieldAssociations(final RowDefCache rowDefCache,
-			final RowDef rowDef, final List<RowDef> path,
-			final int hkeySegmentCount) {
+			final RowDef rowDef, final List<RowDef> path) {
+
+		//
+		// Determine whether the fields in the index correspond exactly to the
+		// fields in the h-table key for some table in the group. If so then
+		// there is no need for a separate index. We mark it "hkeyEquivalent"
+		// which prevents elements being field in an index tree and prevents
+		// SELECT from selecting on this index. Note that SELECT can filter on
+		// fields in the hkey, so there's no loss of filtering ability.
+		//
+		// TODO: Once we start implementing collation, character sets and other
+		// elements that affect ordering, this test needs to verify that the
+		// defined index matches the hkey's native ordering - otherwise this we
+		// will need to store the index even though it contains the same fields
+		// as the hkey.
+		// 
+		boolean matches = true;
+		int at = 0;
+		for (RowDef def : path) {
+			if (at >= fields.length || !matches) {
+				break;
+			}
+			final int[] pkFields = def.getPkFields();
+			for (int j = 0; at < fields.length && j < pkFields.length; j++, at++) {
+				int indexField = fields[at] + rowDef.getColumnOffset();
+				int pkField = pkFields[j] + def.getColumnOffset();
+				if (indexField != pkField) {
+					matches = false;
+					break;
+				}
+			}
+		}
+
+		if (matches) {
+			hkeyEquivalent = true;
+			// no need to do more - this IndexDef will not be used.
+			return;
+		}
+
 		final List<I2H> i2hList = new ArrayList<I2H>();
 		final List<H2I> h2iList = new ArrayList<H2I>();
+
 		final int[] indexFieldIndexes = isPkIndex() ? rowDef.getPkFields()
 				: getFields();
 

@@ -129,6 +129,11 @@ public class RowDef {
 	private int columnOffset;
 
 	/**
+	 * For a user table, the number of Persistit Key segments uses to encode
+	 * the hkey for rows of this table.
+	 */
+	private int hkeyDepth;
+	/**
 	 * Array of index definitions for this row
 	 */
 	private IndexDef[] indexDefs;
@@ -478,7 +483,7 @@ public class RowDef {
 	}
 
 	public int getHKeyDepth() {
-		return getPKIndexDef().getHkeyFields().length;
+		return hkeyDepth;
 	}
 
 	public int getColumnOffset() {
@@ -572,16 +577,18 @@ public class RowDef {
 	void computeFieldAssociations(final RowDefCache rowDefCache) {
 		for (final IndexDef indexDef : indexDefs) {
 			final List<RowDef> path = new ArrayList<RowDef>();
-			int hkeySegmentCount = 0;
 			RowDef def = leafUserRowDef(indexDef.getFields());
+			int hkeyDepth = 0;
 			while (def != null) {
 				path.add(0, def);
-				hkeySegmentCount += 1 + def.getPkFields().length;
+				hkeyDepth += 1 + def.getPkFields().length;
 				def = def.getParentRowDefId() == 0 ? null : rowDefCache
 						.getRowDef(def.getParentRowDefId());
 			}
-			indexDef.computeFieldAssociations(rowDefCache, this, path,
-					hkeySegmentCount);
+			if (!isGroupTable()) {
+				this.hkeyDepth = hkeyDepth;
+			}
+			indexDef.computeFieldAssociations(rowDefCache, this, path);
 		}
 	}
 

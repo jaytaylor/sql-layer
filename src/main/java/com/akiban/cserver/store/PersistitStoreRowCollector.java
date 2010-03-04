@@ -84,7 +84,6 @@ public class PersistitStoreRowCollector implements RowCollector,
 		} else {
 			this.groupRowDef = store.getRowDefCache().getRowDef(
 					rowDef.getGroupRowDefId());
-
 		}
 
 		this.projectedRowDefs = computeProjectedRowDefs(rowDef,
@@ -99,13 +98,13 @@ public class PersistitStoreRowCollector implements RowCollector,
 			this.lastKey = new Key(hEx.getKey());
 
 			if (indexId != 0) {
-				this.indexDef = rowDef.getIndexDef(indexId);
-				// Don't use the primary key index for ROOT tables - the index
-				// tree is not populated because it is redundant with the 
-				// h-tree itself.
-				if (indexDef.isPkIndex() && rowDef.getRowType() == RowType.ROOT) {
-					this.indexDef = null;
-				} else {
+				final IndexDef def = rowDef.getIndexDef(indexId);
+				if (!def.isHKeyEquivalent()) {
+					this.indexDef = def;
+					// Don't use the primary key index for ROOT tables - the
+					// index
+					// tree is not populated because it is redundant with the
+					// h-tree itself.
 					this.iEx = store.getExchange(rowDef, indexDef);
 					this.iFilter = computeIFilter(indexDef, rowDef, start, end);
 				}
@@ -157,6 +156,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 			}
 			if (width > columnCount) {
 				width = columnCount;
+			}
+			if (from + width > columnBitMap.length * 8) {
+				width = columnBitMap.length * 8 - from;
 			}
 
 			boolean projected = false;

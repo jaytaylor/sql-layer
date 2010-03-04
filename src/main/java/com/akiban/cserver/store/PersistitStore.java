@@ -393,8 +393,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 						// Insert the index keys (except for the case of a
 						// root table's PK index.)
 						//
-						if (!indexDef.isPkIndex()
-								|| rowDef.getRowType() != RowType.ROOT)
+						if (!indexDef.isHKeyEquivalent())
 							insertIntoIndex(indexDef, rowDef, rowData, hEx
 									.getKey());
 					}
@@ -474,7 +473,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 					// Remove the indexes, including the PK index
 					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-						deleteIndex(indexDef, rowDef, rowData, hEx.getKey());
+						if (!indexDef.isHKeyEquivalent()) {
+							deleteIndex(indexDef, rowDef, rowData, hEx.getKey());
+						}
 					}
 					transaction.commit();
 					return OK;
@@ -567,8 +568,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					// Update the indexes
 					//
 					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-						updateIndex(indexDef, rowDef, oldRowData, newRowData,
-								hEx.getKey());
+						if (!indexDef.isHKeyEquivalent()) {
+							updateIndex(indexDef, rowDef, oldRowData,
+									newRowData, hEx.getKey());
+						}
 					}
 
 					transaction.commit();
@@ -607,9 +610,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 				// Remove the index trees
 				//
 				for (IndexDef indexDef : rowDef.getIndexDefs()) {
-					final Exchange iEx = getExchange(rowDef, indexDef);
-					iEx.getVolume().removeTree(iEx.getTree().getName());
-					releaseExchange(iEx);
+					if (!indexDef.isHKeyEquivalent()) {
+						final Exchange iEx = getExchange(rowDef, indexDef);
+						iEx.getVolume().removeTree(iEx.getTree().getName());
+						releaseExchange(iEx);
+					}
 				}
 				//
 				// remove the htable tree
@@ -634,9 +639,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	public long getAutoIncrementValue(final int rowDefId) throws Exception {
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		final Exchange exchange;
-		final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache.getRowDef(rowDef
-				.getGroupRowDefId());
-		
+		final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
+				.getRowDef(rowDef.getGroupRowDefId());
+
 		final String treeName = groupRowDef.getTreeName();
 
 		switch (rowDef.getRowType()) {
