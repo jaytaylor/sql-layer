@@ -43,7 +43,7 @@ create table item(
     part_id bigint not null,
     quantity int not null,
     unit_price int not null,
-    primary key(order_id, part_id),
+    primary key(part_id),
     foreign key(order_id) references `order`
 ) engine = akibadb;
 
