@@ -35,7 +35,7 @@ create table `address`(
     address_line1 varchar(60) not null,
     address_line2 varchar(60) not null,
     address_line3 varchar(60) not null,
-    primary key (`instance_id`)
+    primary key (`customer_id`, `instance_id`)
 ) engine = akibadb;
 
 create table item(

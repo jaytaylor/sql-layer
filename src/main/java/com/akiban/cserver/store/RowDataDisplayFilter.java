@@ -11,11 +11,11 @@ import com.persistit.Management.DisplayFilter;
 
 class RowDataDisplayFilter implements DisplayFilter {
 
-	private final PersistitStore store;
+	private final Store store;
 
 	private DisplayFilter defaultFilter;
 
-	public RowDataDisplayFilter(PersistitStore store, final DisplayFilter filter) {
+	public RowDataDisplayFilter(Store store, final DisplayFilter filter) {
 		this.store = store;
 		this.defaultFilter = filter;
 	}

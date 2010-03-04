@@ -1,5 +1,10 @@
 package com.akiban.cserver;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.akiban.cserver.IndexDef.H2I;
+
 /**
  * Contain the relevant schema information for one version of a table
  * definition. Instances of this class acquire table definition data from the
@@ -72,6 +77,12 @@ public class RowDef {
 	private final int rowDefId;
 
 	/**
+	 * Denotes position within a group; this value is used to identify a table
+	 * within the group structure in the hkey.
+	 */
+	private int ordinal;
+
+	/**
 	 * Field(s) that constitute the primary key for this table. Must not be
 	 * empty; will usually have one element. Multiple elements define a compound
 	 * primary key.
@@ -100,27 +111,22 @@ public class RowDef {
 	private String treeName;
 
 	/**
-	 * Cached name of the primary key index tree
+	 * RowDefs of constituent user tables. Populated only if this is the RowDef
+	 * for a group table. Null if this is the RowDef for a user table.
 	 */
-	private String pkTreeName;
-
-	/**
-	 * RowDefIDs of constituent user tables. Populated only if this is the
-	 * RowDef for a group table. Null if this is the RowDef for a user table.
-	 */
-	private int[] userRowDefIds;
-
-	/**
-	 * Maps the 0th column of each user table in the userRowDefIds array to the
-	 * Nth column of the corresponding group table.
-	 */
-	private int[] userRowColumnOffsets;
+	private RowDef[] userTableRowDefs;
 
 	/**
 	 * If this is a user table, the rowDefId of the group table it belongs too,
 	 * else 0.
 	 */
 	private int groupRowDefId;
+
+	/**
+	 * For a user table, the column position of the first column of the user
+	 * table relative to the group table.
+	 */
+	private int columnOffset;
 
 	/**
 	 * Array of index definitions for this row
@@ -132,6 +138,11 @@ public class RowDef {
 	 * method to assist in looking up a field's offset and length.
 	 */
 	private final int[][] fieldCoordinates;
+
+	/**
+	 * Row type
+	 */
+	private RowType rowType;
 
 	/**
 	 * Array computed by the {@link #preComputeFieldCoordinates(FieldDef[])}
@@ -185,20 +196,20 @@ public class RowDef {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(String.format(
-				"RowDef #%d %s (%s.%s) ", rowDefId, tableName, treeName,
-				pkTreeName));
-		if (userRowDefIds != null) {
-			for (int i = 0; i < userRowDefIds.length; i++) {
+				"RowDef #%d %s (%s.%s) %s ", rowDefId, tableName, treeName,
+				getPkTreeName(), rowType));
+		if (userTableRowDefs != null) {
+			for (int i = 0; i < userTableRowDefs.length; i++) {
 				sb.append(i == 0 ? "{" : ",");
-				sb.append(userRowDefIds[i]);
+				sb.append(userTableRowDefs[i].getRowDefId());
 				sb.append("->");
-				sb.append(userRowColumnOffsets[i]);
+				sb.append(userTableRowDefs[i].getColumnOffset());
 			}
 			sb.append("}");
 		}
 		for (int i = 0; i < fieldDefs.length; i++) {
 			sb.append(i == 0 ? "[" : ",");
-			sb.append(fieldDefs[i]);
+			sb.append(fieldDefs[i].getType());
 			for (int j = 0; j < pkFields.length; j++) {
 				if (pkFields[j] == i) {
 					sb.append("*");
@@ -356,6 +367,10 @@ public class RowDef {
 		}
 	}
 
+	public RowType getRowType() {
+		return rowType;
+	}
+
 	public int getFieldCount() {
 		return fieldDefs.length;
 	}
@@ -375,10 +390,10 @@ public class RowDef {
 	public IndexDef[] getIndexDefs() {
 		return indexDefs;
 	}
-	
+
 	public IndexDef getIndexDef(final int indexId) {
-		// TODO: Could use a HashMap instead if this proves to be a CPU
-		// problem..
+		// TODO: Could use a HashMap instead if this linear search proves to be
+		// a CPU problem..
 		for (int index = 0; index < indexDefs.length; index++) {
 			if (indexDefs[index].getId() == indexId) {
 				return indexDefs[index];
@@ -400,11 +415,18 @@ public class RowDef {
 	}
 
 	public String getPkTreeName() {
-		return pkTreeName;
+		if (isGroupTable()) {
+			return null;
+		}
+		return getPKIndexDef().getTreeName();
 	}
 
 	public int getRowDefId() {
 		return rowDefId;
+	}
+
+	public int getOrdinal() {
+		return ordinal;
 	}
 
 	public String getTableName() {
@@ -415,16 +437,16 @@ public class RowDef {
 		return treeName;
 	}
 
-	public int[] getUserRowColumnOffsets() {
-		return userRowColumnOffsets;
-	}
-
-	public int[] getUserRowDefIds() {
-		return userRowDefIds;
-	}
-
 	public boolean isGroupTable() {
-		return userRowDefIds != null;
+		return userTableRowDefs != null;
+	}
+
+	public void setRowType(final RowType rowType) {
+		this.rowType = rowType;
+	}
+
+	public void setOrdinal(int ordinal) {
+		this.ordinal = ordinal;
 	}
 
 	public void setGroupRowDefId(final int groupRowDefId) {
@@ -447,25 +469,39 @@ public class RowDef {
 		this.pkFields = pkFields;
 	}
 
-	public void setPkTreeName(String pkTreeName) {
-		this.pkTreeName = pkTreeName;
-	}
-
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
-		this.pkTreeName = tableName + "$$pk";
 	}
 
 	public void setTreeName(final String treeName) {
 		this.treeName = treeName;
 	}
 
-	public void setUserRowColumnOffsets(int[] userRowColumnOffsets) {
-		this.userRowColumnOffsets = userRowColumnOffsets;
+	public int getHKeyDepth() {
+		return getPKIndexDef().getHkeyFields().length;
 	}
 
-	public void setUserRowDefIds(final int[] userRowDefIds) {
-		this.userRowDefIds = userRowDefIds;
+	public int getColumnOffset() {
+		return columnOffset;
+	}
+
+	public void setColumnOffset(final int columnOffset) {
+		this.columnOffset = columnOffset;
+	}
+
+	public IndexDef getPKIndexDef() {
+		if (isGroupTable()) {
+			return null;
+		}
+		return indexDefs[0];
+	}
+
+	public RowDef[] getUserTableRowDefs() {
+		return userTableRowDefs;
+	}
+
+	public void setUserTableRowDefs(final RowDef[] userTableRowDefs) {
+		this.userTableRowDefs = userTableRowDefs;
 	}
 
 	/**
@@ -516,4 +552,60 @@ public class RowDef {
 			}
 		}
 	}
+
+	void computeRowDefType(final RowDefCache rowDefCache) {
+		if (userTableRowDefs != null) {
+			rowType = RowType.GROUP;
+		} else if (parentRowDefId == 0) {
+			rowType = RowType.ROOT;
+		} else {
+			RowDef parentRowDef = rowDefCache.getRowDef(parentRowDefId);
+			assert parentRowDef != null;
+			if (parentRowDef.getParentRowDefId() == 0) {
+				rowType = RowType.CHILD;
+			} else {
+				rowType = RowType.GRANDCHILD;
+			}
+		}
+	}
+
+	void computeFieldAssociations(final RowDefCache rowDefCache) {
+		for (final IndexDef indexDef : indexDefs) {
+			final List<RowDef> path = new ArrayList<RowDef>();
+			int hkeySegmentCount = 0;
+			RowDef def = leafUserRowDef(indexDef.getFields());
+			while (def != null) {
+				path.add(0, def);
+				hkeySegmentCount += 1 + def.getPkFields().length;
+				def = def.getParentRowDefId() == 0 ? null : rowDefCache
+						.getRowDef(def.getParentRowDefId());
+			}
+			indexDef.computeFieldAssociations(rowDefCache, this, path,
+					hkeySegmentCount);
+		}
+	}
+
+	// TODO -
+	// Total hack. This is because all the mechanism that sets up the
+	// IndexDef objects for group tables does nothing to record the
+	// IndexDef's association to its user RowDef, but we need that to
+	// make the index->hkey transformation in SELECT.
+	//
+	private RowDef leafUserRowDef(final int[] fields) {
+		int field = fields[0]; // 
+		if (isGroupTable()) {
+			for (final RowDef userRowDef : userTableRowDefs) {
+				if (userRowDef.getColumnOffset() <= field
+						&& userRowDef.getColumnOffset()
+								+ userRowDef.getFieldCount() > field) {
+					return userRowDef;
+				}
+			}
+			throw new IllegalStateException(
+					"Didn't find the IndexDef's originating user RowDef");
+		} else {
+			return this;
+		}
+	}
+
 }

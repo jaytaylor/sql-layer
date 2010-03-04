@@ -67,20 +67,26 @@ public class RowDefCache implements CServerConstants {
 		cacheMap.clear();
 		nameMap.clear();
 		for (final UserTable table : ais.getUserTables().values()) {
-			putRowDef(createUserTableRowDef(ais, table));
+			//
+			// TODO : Using tableId for ordinal is a temporary hack
+			//
+			putRowDef(createUserTableRowDef(ais, table, table.getTableId()));
 		}
 
 		for (final GroupTable table : ais.getGroupTables().values()) {
 			putRowDef(createGroupTableRowDef(ais, table));
 		}
 
+		analyzeAll();
+
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(toString());
 		}
+
 	}
 
 	private RowDef createUserTableRowDef(final AkibaInformationSchema ais,
-			final UserTable table) {
+			final UserTable table, final int ordinal) {
 
 		// rowDefId
 		final int rowDefId = table.getTableId();
@@ -168,12 +174,12 @@ public class RowDefCache implements CServerConstants {
 			}
 		}
 
+		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
+
 		// Secondary indexes
 		final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
 		for (final Index index : table.getIndexes()) {
-			if (index.getConstraint().equals("PRIMARY KEY")) {
-				continue;
-			}
+			final boolean isPk = index.getConstraint().equals("PRIMARY KEY");
 			final List<IndexColumn> indexColumns = index.getColumns();
 			final List<Integer> indexColumnList = new ArrayList<Integer>(1);
 			for (final IndexColumn indexColumn : indexColumns) {
@@ -188,12 +194,14 @@ public class RowDefCache implements CServerConstants {
 			}
 
 			final String treeName = groupTableName + "$$" + index.getIndexId();
-			final IndexDef indexDef = new IndexDef(treeName,
-					index.getIndexId(), indexFields, index.isUnique());
-			indexDefList.add(indexDef);
+			final IndexDef indexDef = new IndexDef(rowDef, treeName, index
+					.getIndexId(), indexFields, isPk, index.isUnique());
+			if (isPk) {
+				indexDefList.add(0, indexDef);
+			} else {
+				indexDefList.add(indexDef);
+			}
 		}
-
-		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
 		rowDef.setTableName(table.getName().getTableName());
 		rowDef.setTreeName(groupTableName);
 		rowDef.setPkFields(pkFields);
@@ -201,6 +209,7 @@ public class RowDefCache implements CServerConstants {
 		rowDef.setParentJoinFields(parentJoinFields);
 		rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
 				.size()]));
+		rowDef.setOrdinal(ordinal);
 
 		return rowDef;
 
@@ -215,7 +224,6 @@ public class RowDefCache implements CServerConstants {
 		final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
 		final Column[] columns = new Column[table.getColumns().size()];
 		int[] tempRowDefIds = new int[columns.length];
-		int[] tempRowColumnOffset = new int[columns.length];
 		int userTableIndex = 0;
 		int columnCount = 0;
 		for (final Column column : table.getColumns()) {
@@ -241,26 +249,51 @@ public class RowDefCache implements CServerConstants {
 			if (userColumn.getPosition() == 0) {
 				int userRowDefId = userColumn.getTable().getTableId();
 				tempRowDefIds[userTableIndex] = userRowDefId;
-				tempRowColumnOffset[userTableIndex] = columnCount;
 				userTableIndex++;
 				columnCount += userColumn.getTable().getColumns().size();
 				RowDef userRowDef = cacheMap.get(Integer.valueOf(userRowDefId));
 				userRowDef.setGroupRowDefId(rowDefId);
+				userRowDef.setColumnOffset(position);
 			}
 		}
-		final int[] userRowDefIds = new int[userTableIndex];
-		final int[] userRowColumnOffsets = new int[userTableIndex];
-
-		System.arraycopy(tempRowDefIds, 0, userRowDefIds, 0, userTableIndex);
-		System.arraycopy(tempRowColumnOffset, 0, userRowColumnOffsets, 0,
-				userTableIndex);
+		final RowDef[] userTableRowDefs = new RowDef[userTableIndex];
+		for (int index = 0; index < userTableIndex; index++) {
+			userTableRowDefs[index] = cacheMap.get(Integer
+					.valueOf(tempRowDefIds[index]));
+		}
 
 		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-		rowDef.setTableName(table.getName().getTableName());
-		rowDef.setTreeName(table.getName().getTableName());
+		final String groupTableName = table.getName().getTableName();
+
+		// Secondary indexes
+		final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
+		for (final Index index : table.getIndexes()) {
+			final List<IndexColumn> indexColumns = index.getColumns();
+			final List<Integer> indexColumnList = new ArrayList<Integer>(1);
+			for (final IndexColumn indexColumn : indexColumns) {
+				final int position = indexColumn.getPosition();
+				indexColumnList.add(position);
+			}
+
+			int columnIndex = 0;
+			int[] indexFields = new int[indexColumnList.size()];
+			for (final Integer position : indexColumnList) {
+				indexFields[columnIndex++] = position;
+			}
+
+			final String treeName = groupTableName + "$$"
+					+ index.getIndexId();
+			final IndexDef indexDef = new IndexDef(rowDef, treeName, index
+					.getIndexId(), indexFields, false, index.isUnique());
+			indexDefList.add(indexDef);
+		}
+		rowDef.setTableName(groupTableName);
+		rowDef.setTreeName(groupTableName);
 		rowDef.setPkFields(new int[0]);
-		rowDef.setUserRowDefIds(userRowDefIds);
-		rowDef.setUserRowColumnOffsets(userRowColumnOffsets);
+		rowDef.setUserTableRowDefs(userTableRowDefs);
+		rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
+				.size()]));
+		rowDef.setOrdinal(0);
 
 		return rowDef;
 	}
@@ -297,5 +330,16 @@ public class RowDefCache implements CServerConstants {
 			sb.append("\n");
 		}
 		return sb.toString();
+	}
+
+	public void analyzeAll() {
+		for (final RowDef rowDef : cacheMap.values()) {
+			analyze(rowDef);
+		}
+	}
+
+	void analyze(final RowDef rowDef) {
+		rowDef.computeRowDefType(this);
+		rowDef.computeFieldAssociations(this);
 	}
 }

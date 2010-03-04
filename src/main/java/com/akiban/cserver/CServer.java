@@ -58,11 +58,11 @@ public class CServer {
 	 */
 	private static final String P_AISHOST = "mysql.host|localhost";
 
-        /**
-         * Config property port and default for the MySQL server host from which 
-         * Cserver will obtain the AIS.
-         */
-        private static final String P_AISPORT = "mysql.port|3306";
+	/**
+	 * Config property port and default for the MySQL server host from which
+	 * Cserver will obtain the AIS.
+	 */
+	private static final String P_AISPORT = "mysql.port|3306";
 
 	/**
 	 * Config property name and default for the MySQL server host from which
@@ -261,9 +261,8 @@ public class CServer {
 							property(P_AISHOST)));
 				}
 				ais = new Reader(new MySQLSource(property(P_AISHOST),
-                                                property(P_AISPORT),
-						property(P_AISUSER), 
-                                                property(P_AISPASSWORD))).load();
+						property(P_AISPORT), property(P_AISUSER),
+						property(P_AISPASSWORD))).load();
 				break;
 			} catch (com.mysql.jdbc.exceptions.jdbc4.CommunicationsException e) {
 				try {

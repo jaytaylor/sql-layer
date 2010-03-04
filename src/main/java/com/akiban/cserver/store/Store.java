@@ -1,7 +1,7 @@
 package com.akiban.cserver.store;
 
 import com.akiban.cserver.RowData;
-import com.akiban.message.AkibaConnection;
+import com.akiban.cserver.RowDefCache;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -14,6 +14,8 @@ public interface Store {
 	public void startUp() throws Exception;
 
 	public void shutDown() throws Exception;
+	
+	public RowDefCache getRowDefCache();
 
 	public RowCollector getCurrentRowCollector();
 

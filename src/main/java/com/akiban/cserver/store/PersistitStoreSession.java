@@ -1,5 +1,8 @@
 package com.akiban.cserver.store;
 
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.exception.PersistitException;
@@ -7,6 +10,8 @@ import com.persistit.exception.PersistitException;
 public class PersistitStoreSession {
 
 	private final Persistit db;
+	
+	private HashMap<Duple, WeakReference<Exchange>> cache = new HashMap<Duple, WeakReference<Exchange>>();
 
 	private Exchange exchange1;
 
@@ -16,13 +21,43 @@ public class PersistitStoreSession {
 
 	private RowCollector currentRowCollector;
 
+	private class Duple {
+		final String volumeName;
+		final String treeName;
+		private Duple(final String volumeName, final String treeName) {
+			this.volumeName= volumeName;
+			this.treeName = treeName;
+		}
+		
+		public boolean equals(final Object obj) {
+			if (obj instanceof Duple) {
+				final Duple d = (Duple)obj;
+				return volumeName.equals(d.volumeName) && treeName.equals(d.treeName);
+			}
+			else {
+				return false;
+			}
+		}
+		
+		public int hashCode() {
+			return volumeName.hashCode() ^ treeName.hashCode();
+		}
+	}
+	
 	public PersistitStoreSession(final Persistit db) {
 		this.db = db;
 	}
 
 	public Exchange getExchange(final String volumeName, final String treeName)
 			throws PersistitException {
-		return db.getExchange(volumeName, treeName, true).clear();
+		final Duple d = new Duple(volumeName, treeName);
+		WeakReference<Exchange> ref = cache.get(d);
+		if (ref != null && ref.get() != null) {
+			return ref.get();
+		}
+		final Exchange ex = db.getExchange(volumeName, treeName, true).clear();
+		cache.put(d, new WeakReference<Exchange>(ex));
+		return ex;
 	}
 
 	public void releaseExchange(final Exchange exchange) {

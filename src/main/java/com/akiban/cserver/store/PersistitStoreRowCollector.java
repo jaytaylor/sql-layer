@@ -12,9 +12,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowType;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -31,279 +33,233 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private final byte[] columnBitMap;
 
-	private final RowDef rowDef;
+	private int columnBitMapOffset;
 
-	private final int leafRowDefId;
+	private int columnBitMapWidth;
 
-	private final KeyFilter keyFilter;
+	private boolean ascending = true;
 
-	private final KeyFilter indexKeyFilter;
+	private RowDef groupRowDef;
 
-	final int[] userRowDefIds;
+	private IndexDef indexDef;
 
-	final int[] keySegments;
+	private int leafRowDefId;
 
-	final int[] keyDepth;
+	private KeyFilter iFilter;
 
-	final int[] columnOffset;
-
-	int indexLevel = 0;
-
-	private Exchange indexEx;
-
-	private Exchange deliveryEx;
-
-	private Exchange leafEx;
+	private KeyFilter hFilter;
 
 	private boolean more = true;
 
-	private final List<RowData> rowDataList = new ArrayList<RowData>();
-	
-	private int preparedCount = 0;
-	
-	private int deliveredCount = 0;
-	
-	private int preparedRowDefId = -1;
+	private RowDef[] projectedRowDefs;
 
-	private Key.Direction direction = Key.GTEQ;
+	private RowData[] pendingRowData;
 
-	private enum Next {
-		NEXT_INDEX_KEY, NEXT_ANCESTOR, NEXT_DECENDANT,
-	}
+	private int pendingFromLevel = Integer.MAX_VALUE;
 
-	Next next = Next.NEXT_INDEX_KEY;
+	private int pendingToLevel;
 
-	Next pending;
+	private int indexPinnedKeySize;
 
+	private boolean traverseMode;
+
+	private Exchange iEx;
+
+	private Exchange hEx;
+
+	private Key lastKey;
+
+	private Key.Direction direction;
 
 	PersistitStoreRowCollector(PersistitStore store, final RowData start,
-			final RowData end, final byte[] columnBitMap, RowDef rowDef, final int indexId)
-			throws Exception {
-		final String volumeName = PersistitStore.VOLUME_NAME; // TODO -
+			final RowData end, final byte[] columnBitMap, RowDef rowDef,
+			final int indexId) throws Exception {
 		this.store = store;
 		this.columnBitMap = columnBitMap;
-		this.rowDef = rowDef;
-		this.leafRowDefId = computeLeafRowDefId(rowDef, columnBitMap);
-		int levels = level(leafRowDefId);
-		this.userRowDefIds = new int[levels];
-		this.keySegments = new int[levels];
-		this.keyDepth = new int[levels];
-		this.columnOffset = new int[levels];
-		this.analyzeLevels(leafRowDefId, rowDef, columnBitMap);
-		this.keyFilter = computeKeyFilter(start, end);
-		this.indexKeyFilter = computeIndexKeyFilter();
-		this.deliveryEx = store.getSession().getExchange1(volumeName,
-				rowDef.getTreeName());
-		this.leafEx = store.getSession().getExchange2(volumeName,
-				rowDef.getTreeName());
-		this.indexEx = indexLevel == 0 ? null : store.getSession()
-				.getExchange3(volumeName, indexTreeName());
+		this.columnBitMapOffset = rowDef.getColumnOffset();
+		this.columnBitMapWidth = rowDef.getFieldCount();
+
+		if (rowDef.isGroupTable()) {
+			this.groupRowDef = rowDef;
+		} else {
+			this.groupRowDef = store.getRowDefCache().getRowDef(
+					rowDef.getGroupRowDefId());
+
+		}
+
+		this.projectedRowDefs = computeProjectedRowDefs(rowDef,
+				this.groupRowDef, columnBitMap);
+		if (this.projectedRowDefs.length == 0) {
+			this.more = false;
+		} else {
+			this.pendingRowData = new RowData[this.projectedRowDefs.length];
+
+			this.hEx = store.getExchange(rowDef, null);
+			this.hFilter = computeHFilter(rowDef, start, end);
+			this.lastKey = new Key(hEx.getKey());
+
+			if (indexId != 0) {
+				this.indexDef = rowDef.getIndexDef(indexId);
+				// Don't use the primary key index for ROOT tables - the index
+				// tree is not populated because it is redundant with the 
+				// h-tree itself.
+				if (indexDef.isPkIndex() && rowDef.getRowType() == RowType.ROOT) {
+					this.indexDef = null;
+				} else {
+					this.iEx = store.getExchange(rowDef, indexDef);
+					this.iFilter = computeIFilter(indexDef, rowDef, start, end);
+				}
+			}
+
+			for (int level = 0; level < pendingRowData.length; level++) {
+				pendingRowData[level] = new RowData(
+						new byte[INITIAL_BUFFER_SIZE]);
+			}
+
+			this.pendingFromLevel = Integer.MAX_VALUE;
+			this.pendingToLevel = 0;
+			this.direction = ascending ? Key.GTEQ : Key.LTEQ;
+		}
+
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("Starting Scan on rowDef=" + rowDef.toString()
 					+ ": leafRowDefId=" + leafRowDefId);
 		}
-		next = Next.NEXT_INDEX_KEY;
+	}
+
+	RowDef[] computeProjectedRowDefs(final RowDef rowDef,
+			final RowDef groupRowDef, final byte[] columnBitMap) {
+		final int columnOffset = rowDef.getColumnOffset();
+		final int columnCount = rowDef.getFieldCount();
+
+		boolean isEmpty = true;
+		for (int index = 0; index < columnBitMap.length; index++) {
+			if (columnBitMap[index] != 0) {
+				isEmpty = false;
+				break;
+			}
+		}
+		// Handles special case of SELECT COUNT(*)
+		if (isEmpty) {
+			return new RowDef[] { rowDef };
+		}
+
+		List<RowDef> projectedRowDefList = new ArrayList<RowDef>();
+		for (int index = 0; index < groupRowDef.getUserTableRowDefs().length; index++) {
+			final RowDef def = groupRowDef.getUserTableRowDefs()[index];
+
+			int from = def.getColumnOffset();
+			int width = def.getFieldCount();
+			from -= columnOffset;
+			if (from < 0) {
+				width += from;
+				from = 0;
+			}
+			if (width > columnCount) {
+				width = columnCount;
+			}
+
+			boolean projected = false;
+			for (int bit = from; !projected && bit < from + width; bit++) {
+				if (isBit(columnBitMap, bit)) {
+					projected = true;
+				}
+			}
+			if (projected) {
+				projectedRowDefList.add(def);
+			}
+		}
+		return projectedRowDefList.toArray(new RowDef[projectedRowDefList
+				.size()]);
 	}
 
 	/**
-	 * Computes the rowDefId of the rightmost table whose columns are referenced
-	 * in the columnBitMap. For example in the COI example, if the columnBitMap
-	 * specifies only C and O columns, then this method returns the rowDefId of
-	 * the O table. A similar computation in the MySQL head lets the CSClient
-	 * know that upon receiving an O row, a completed result COI row can be
-	 * generated.
+	 * Construct a KeyFilter on the h-key. This minimally contains a template
+	 * for the ordinal tree identifiers. If any of the supplied index range
+	 * values pertain to primary key fields, these will also be constrained.
 	 * 
 	 * @param rowDef
-	 * @param columnBitMap
-	 * @return rowDefId selected as described above
+	 * @param start
+	 * @param end
+	 * @return
+	 * @throws Exception
 	 */
-	int computeLeafRowDefId(final RowDef rowDef, final byte[] columnBitMap) {
-		if (!rowDef.isGroupTable()) {
-			return rowDef.getRowDefId();
-		} else {
-			int deepestRowDefId = -1;
-			int rightmostColumn = -1;
-			for (int column = rowDef.getFieldCount(); --column >= 0;) {
-				if (isBit(columnBitMap, column)) {
-					rightmostColumn = column;
-					break;
-				}
-			}
-			for (int index = 0; index < rowDef.getUserRowColumnOffsets().length; index++) {
-				if (rowDef.getUserRowColumnOffsets()[index] > rightmostColumn) {
-					break;
-				}
-				deepestRowDefId = rowDef.getUserRowDefIds()[index];
-			}
-			return deepestRowDefId;
-		}
-	}
+	KeyFilter computeHFilter(final RowDef rowDef, final RowData start,
+			final RowData end) throws Exception {
+		final RowDef leafRowDef = projectedRowDefs[projectedRowDefs.length - 1];
+		final KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef
+				.getHKeyDepth()];
+		final Key key = hEx.getKey();
+		int index = terms.length;
+		RowDef def = leafRowDef;
 
-	/**
-	 * Compute and return the level of a table in the group table tree. For
-	 * example, in the C, A, 1, I example, C has level 1, A and O have level 2
-	 * and I has level 3.
-	 * 
-	 * @param leafRowDefId
-	 * @return level
-	 */
-	int level(final int leafRowDefId) {
-		int level = 0;
-		int rowDefId = leafRowDefId;
-		for (; rowDefId != 0;) {
-			final RowDef rowDef = store.getRowDefCache().getRowDef(rowDefId);
-			assert !rowDef.isGroupTable();
-			rowDefId = rowDef.getParentRowDefId();
-			level++;
-		}
-		return level;
-	}
-
-	/**
-	 * Fill in three arrays containing information about each of the levels.
-	 * <dl>
-	 * <dt>userRowDefIds</dt>
-	 * <dd>RowDefId values for the tree path, e.g., RowDefIds for C, O and I.</dd>
-	 * <dt>keyDepth</dt>
-	 * <dd>Number of h-key segments needed to express the h-key for rows at each
-	 * level. For C, O, I, these values would be {2, 4, 6}. Each table
-	 * contributes one plus the number of elements in its pkFields array. The
-	 * values in the array represent the cumulative key depth.</dd>
-	 * <dt>columnIndex</dt>
-	 * <dd>the column number in the group table of the first column of the
-	 * constituent group</dd>.
-	 * </dl>
-	 * 
-	 * @param leafRowDefId
-	 * @param rowDef
-	 *            The RowDef of the start/end RowData instances
-	 */
-	void analyzeLevels(final int leafRowDefId, final RowDef rowDef,
-			final byte[] columnBitMap) {
-		int rowDefId = leafRowDefId;
-		rowDefId = leafRowDefId;
-		for (int index = userRowDefIds.length; --index >= 0;) {
-			final RowDef userRowDef = store.getRowDefCache()
-					.getRowDef(rowDefId);
-			assert !userRowDef.isGroupTable();
-			userRowDefIds[index] = rowDefId;
-			keySegments[index] = userRowDef.getPkFields().length + 1;
-			columnOffset[index] = computeColumnOffset(userRowDef, rowDef,
-					columnBitMap);
-
-			rowDefId = userRowDef.getParentRowDefId();
-		}
-		int depth = 0;
-		for (int index = 0; index < keyDepth.length; index++) {
-			depth = depth + keySegments[index];
-			keyDepth[index] = depth;
-		}
-	}
-
-	int computeColumnOffset(final RowDef userRowDef, final RowDef rowDef,
-			final byte[] columnBitMap) {
-		int columnOffset = -1;
-		if (rowDef.isGroupTable()) {
-			for (int index = 0; index < rowDef.getUserRowDefIds().length; index++) {
-				if (rowDef.getUserRowDefIds()[index] == userRowDef
-						.getRowDefId()) {
-					columnOffset = rowDef.getUserRowColumnOffsets()[index];
-					break;
-				}
-			}
-			if (columnOffset == -1) {
+		while (def != null) {
+			final int[] fields = def.getPkFields();
+			if (index < (fields.length + 1)) {
 				throw new IllegalStateException(
-						"Broken AIS: No column offset for " + userRowDef
-								+ " in group " + rowDef);
+						"Length mismatch in computeHFilter: def=" + def
+								+ " leafRowDef=" + leafRowDef + " index="
+								+ index);
 			}
-		} else {
-			if (userRowDef == rowDef) {
-				columnOffset = 0;
-			} else {
-				return -1;
+			terms[index - fields.length - 1] = KeyFilter.simpleTerm(def
+					.getOrdinal());
+			for (int k = 0; k < fields.length; k++) {
+				terms[index - fields.length + k] = computeKeyFilterTerm(key,
+						rowDef, start, end, fields[k]);
 			}
+			index -= (fields.length + 1);
+			final int parentId = def.getParentRowDefId();
+			def = parentId == 0 ? null : store.getRowDefCache().getRowDef(
+					parentId);
 		}
-		boolean projected = false;
-		for (int column = columnOffset; !projected
-				&& column < columnOffset + userRowDef.getFieldCount(); column++) {
-			if (isBit(columnBitMap, column)) {
-				projected = true;
-			}
+		if (index != 0) {
+			throw new IllegalStateException(
+					"Length mismatch in computeHFilter: leafRowDef="
+							+ leafRowDef + " index=" + index);
 		}
-		return projected ? columnOffset : -1;
-	}
-
-	KeyFilter computeKeyFilter(final RowData start, final RowData end)
-			throws Exception {
-		final KeyFilter.Term[] terms = new KeyFilter.Term[keyDepth[keyDepth.length - 1]];
-		int index = 0;
-		for (int level = 0; level < userRowDefIds.length; level++) {
-			final RowDef userRowDef = store.getRowDefCache().getRowDef(
-					userRowDefIds[level]);
-			terms[index++] = KeyFilter.simpleTerm(Integer
-					.valueOf(userRowDefIds[level]));
-			boolean all = false;
-			for (int pkFieldIndex = 0; pkFieldIndex < userRowDef.getPkFields().length; pkFieldIndex++) {
-				if (columnOffset[level] < 0) {
-					all = true;
-				}
-				KeyFilter.Term term;
-				if (!all) {
-					term = computeKeyFilterTerm(rowDef, start, end, userRowDef
-							.getPkFields()[pkFieldIndex]
-							+ columnOffset[level]);
-					if (term == KeyFilter.ALL) {
-						all = true;
-					} else {
-						indexLevel = level;
-					}
-				} else {
-					term = KeyFilter.ALL;
-				}
-				terms[index++] = term;
-			}
-		}
+		key.clear();
 		return new KeyFilter(terms, 0, terms.length);
 	}
 
-	KeyFilter computeIndexKeyFilter() {
-		if (indexLevel == 0) {
-			return null;
+	/**
+	 * Construct a key filter on the index key
+	 * 
+	 * @param indexDef
+	 * @param rowDef
+	 * @param start
+	 * @param end
+	 * @return
+	 */
+	KeyFilter computeIFilter(final IndexDef indexDef, final RowDef rowDef,
+			final RowData start, final RowData end) {
+		final Key key = iEx.getKey();
+		final int[] fields = indexDef.isPkIndex() ? rowDef.getPkFields()
+				: indexDef.getFields();
+		final KeyFilter.Term[] terms = new KeyFilter.Term[fields.length];
+		for (int index = 0; index < fields.length; index++) {
+			terms[index] = computeKeyFilterTerm(key, rowDef, start, end,
+					fields[index]);
 		}
-		final int at = keyDepth[indexLevel - 1];
-		final int size = keyDepth[indexLevel];
-		KeyFilter.Term[] terms = new KeyFilter.Term[size];
-		for (int index = 0; index < at; index++) {
-			terms[index + size - at] = keyFilter.getTerm(index);
-		}
-		for (int index = at; index < size; index++) {
-			terms[index - at] = keyFilter.getTerm(index);
-		}
-		return new KeyFilter(terms, size, size);
-	}
-
-	String indexTreeName() {
-		RowDef indexRowDef = store.getRowDefCache().getRowDef(
-				userRowDefIds[indexLevel]);
-		return indexRowDef.getPkTreeName();
+		key.clear();
+		return new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
 	}
 
 	/**
 	 * Returns a KeyFilter term if the specified field of either the start or
 	 * end RowData is non-null, else null.
 	 * 
+	 * @param key
 	 * @param rowDef
 	 * @param start
 	 * @param end
 	 * @param fieldIndex
 	 * @return
 	 */
-	KeyFilter.Term computeKeyFilterTerm(final RowDef rowDef,
+	KeyFilter.Term computeKeyFilterTerm(final Key key, final RowDef rowDef,
 			final RowData start, final RowData end, final int fieldIndex) {
 		final long lowLoc = rowDef.fieldLocation(start, fieldIndex);
 		final long highLoc = rowDef.fieldLocation(end, fieldIndex);
 		if (lowLoc != 0 || highLoc != 0) {
-			final Key key = new Key(store.getDb());
 			key.clear();
 			key.reset();
 			if (lowLoc != 0) {
@@ -318,26 +274,36 @@ public class PersistitStoreRowCollector implements RowCollector,
 			} else {
 				key.append(Key.AFTER);
 			}
+			//
 			// Tricky: termFromKeySegments reads successive key segments when
 			// called this way.
+			//
 			return KeyFilter.termFromKeySegments(key, key, true, true);
 		} else {
 			return KeyFilter.ALL;
 		}
 	}
 
-	private boolean isBit(final byte[] columnBitMap, final int column) {
+	/**
+	 * Test for bit set in a column bit map
+	 * 
+	 * @param columnBitMap
+	 * @param column
+	 * @return <tt>true</tt> if the bit for the specified column in the bit map
+	 *         is 1
+	 */
+	boolean isBit(final byte[] columnBitMap, final int column) {
 		if (columnBitMap == null) {
 			if (LOG.isErrorEnabled()) {
 				LOG.error("ColumnBitMap is null in ScanRowsRequest on table "
-						+ rowDef);
+						+ groupRowDef);
 			}
 			return false;
 		}
 		if ((column / 8) >= columnBitMap.length || column < 0) {
 			if (LOG.isErrorEnabled()) {
 				LOG.error("ColumnBitMap is too short in "
-						+ "ScanRowsRequest on table " + rowDef
+						+ "ScanRowsRequest on table " + groupRowDef
 						+ " columnBitMap has " + columnBitMap.length
 						+ " bytes, but isBit is " + "trying to test bit "
 						+ column);
@@ -351,8 +317,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 	 * Selects the next row in tree-traversal order and puts it into the payload
 	 * ByteBuffer if there is room. Returns <tt>true</tt> if and only if a row
 	 * was added to the payload ByteBuffer. As a side-effect, this method
-	 * affects the value of more to indicate whether there are additional rows
-	 * in the tree; {@link #hasMore()} returns this value.
+	 * affects the value of <tt>more</tt> to indicate whether there are
+	 * additional rows in the tree; {@link #hasMore()} returns this value.
 	 * 
 	 */
 	@Override
@@ -363,111 +329,136 @@ public class PersistitStoreRowCollector implements RowCollector,
 					"Payload byte buffer must have at least 4 "
 							+ "available bytes: " + available);
 		}
+		if (!more) {
+			return false;
+		}
+
+		final Key hKey = hEx.getKey();
+
+		if (indexDef == null) {
+			traverseMode = true;
+		}
 
 		while (true) {
-			
-			if (preparedRowDefId == leafRowDefId) {
-				if (deliveredCount < preparedCount) {
-					if (deliverRow(rowDataList.get(deliveredCount), payload)) {
-						deliveredCount++;
-						return true;
-					} else {
-						return false;
-					}
+
+			//
+			// Flush any available pending rows. A row on in the pendingRowData
+			// array is available only if the leaf level of the array has been
+			// populated.
+			//
+			if (pendingFromLevel < pendingToLevel
+					&& pendingToLevel == pendingRowData.length) {
+				if (deliverRow(pendingRowData[pendingFromLevel], payload)) {
+					pendingFromLevel++;
+					return true;
 				} else {
-					deliveredCount = 0;
-					preparedCount = 0;
-					preparedRowDefId = -1;
-				}
-			}
-				
-			switch (next) {
-
-			case NEXT_INDEX_KEY:
-				if (indexLevel == 0) {
-					next = Next.NEXT_DECENDANT;
-				} else {
-					leafEx.getKey().copyTo(deliveryEx.getKey());
-					more = indexEx.traverse(direction, indexKeyFilter, 0);
-					direction = Key.GT;
-					if (!more) {
-						return false;
-					}
-					store.copyAndRotate(indexEx.getKey(), leafEx.getKey(),
-							keySegments[indexLevel - 1]);
-					next = Next.NEXT_ANCESTOR;
-				}
-				continue;
-
-			case NEXT_ANCESTOR:
-				final Key deliveryKey = deliveryEx.getKey();
-				int unique = deliveryKey.firstUniqueByteIndex(leafEx.getKey());
-				leafEx.getKey().copyTo(deliveryKey);
-				int levelRowDefId = -1;
-				int levelRowColumnOffset = -1;
-				for (int level = 0; level < columnOffset.length; level++) {
-					deliveryKey.indexTo(keyDepth[level]);
-					if (columnOffset[level] >= 0
-							&& deliveryKey.getIndex() > unique) {
-						deliveryKey.setEncodedSize(deliveryKey.getIndex());
-						levelRowDefId = userRowDefIds[level];
-						levelRowColumnOffset = columnOffset[level];
-						break;
-					}
-				}
-				if (levelRowDefId == -1) {
-					// direction = Key.GTEQ;
-					next = Next.NEXT_DECENDANT;
-				} else {
-					deliveryEx.fetch();
-					prepareRow(deliveryEx, payload, levelRowDefId, levelRowColumnOffset);
-				}
-				continue;
-
-			case NEXT_DECENDANT:
-				boolean found = deliveryEx.traverse(direction, keyFilter,
-						Integer.MAX_VALUE);
-				direction = Key.GT;
-
-				if (indexLevel > 0
-						&& (!found || deliveryEx.getKey().firstUniqueByteIndex(
-								leafEx.getKey()) < leafEx.getKey()
-								.getEncodedSize())) {
-					next = Next.NEXT_INDEX_KEY;
-					continue;
-				}
-
-				if (!found) {
-					more = false;
 					return false;
 				}
-				int depth = deliveryEx.getKey().getDepth();
-				int expectedRowDefId = leafRowDefId;
-				int expectedRowColumnOffset = columnOffset[columnOffset.length - 1];
-				if (depth < keyFilter.getMaximumDepth()) {
-					expectedRowDefId = -1;
-					for (int index = 0; index < keyDepth[index]; index++) {
-						if (depth == keyDepth[index]) {
-							if (columnOffset[index] >= 0) {
-								expectedRowDefId = userRowDefIds[index];
-							}
-							break;
+			}
+
+			if (!traverseMode) {
+				pendingToLevel = 0;
+				//
+				// Traverse to next key in Index
+				//
+				more = iEx.traverse(direction, iFilter, 0);
+				if (!more) {
+					//
+					// All done
+					//
+					return false;
+				}
+				direction = ascending ? Key.GT : Key.LT;
+				store.constructHKeyFromIndexKey(hKey, iEx.getKey(), indexDef);
+
+				final int differsAt = hKey.firstUniqueByteIndex(lastKey);
+				final int depth = hKey.getDepth();
+				indexPinnedKeySize = hKey.getEncodedSize();
+
+				//
+				// Back-fill all needed ancestor rows. An ancestor row is needed
+				// if it is in the projection, and if the hKey of the current
+				// tree traversal location differs from that of the previously
+				// prepared row at a key segment left of the ancestor row's key
+				// depth.
+				//			
+				for (int level = 0; level < projectedRowDefs.length; level++) {
+					final RowDef rowDef = projectedRowDefs[level];
+					if (rowDef.getHKeyDepth() > depth) {
+						break;
+					}
+					hKey.indexTo(rowDef.getHKeyDepth());
+					if (differsAt < hKey.getIndex()) {
+						//
+						// This is an ancestor row different from what was
+						// previously delivered so we need to prepare it.
+						//
+						final int keySize = hKey.getEncodedSize();
+						hKey.setEncodedSize(hKey.getIndex());
+						hEx.fetch();
+						prepareRow(hEx, level, rowDef.getRowDefId(), rowDef
+								.getColumnOffset());
+						hKey.setEncodedSize(keySize);
+
+						if (level < pendingFromLevel) {
+							pendingFromLevel = level;
+						}
+						if (level >= pendingToLevel) {
+							pendingToLevel = level + 1;
 						}
 					}
 				}
-				if (expectedRowDefId != -1) {
-					prepareRow(deliveryEx, payload, expectedRowDefId, expectedRowColumnOffset);
-				}
+				hKey.copyTo(lastKey);
+				traverseMode = true;
+				//
+				// Repeat main while-loop to flush any available pending rows
+				//
 				continue;
+			}
 
-			default:
-				assert false : "Missing case";
+			if (traverseMode) {
+				//
+				// Traverse
+				//
+				final boolean found = hEx.traverse(direction, hFilter,
+						Integer.MAX_VALUE);
+				direction = ascending ? Key.GT : Key.LT;
+				if (!found
+						|| hKey.firstUniqueByteIndex(lastKey) < indexPinnedKeySize) {
+					if (indexDef == null) {
+						more = false;
+						return false;
+					}
+					traverseMode = false;
+					//
+					// To outer while-loop
+					//
+					continue;
+				}
+				final int depth = hKey.getDepth();
+				for (int level = projectedRowDefs.length; --level >= 0;) {
+					if (depth == projectedRowDefs[level].getHKeyDepth()) {
+						prepareRow(hEx, level, projectedRowDefs[level]
+								.getRowDefId(), projectedRowDefs[level]
+								.getColumnOffset());
+						hKey.copyTo(lastKey);
+						if (level < pendingFromLevel) {
+							pendingFromLevel = level;
+						}
+						pendingToLevel = level + 1;
+						break;
+					}
+				}
 			}
 		}
 	}
 
-	void prepareRow(final Exchange exchange, final ByteBuffer payload,
-			final int expectedRowDefId, final int columnOffset) throws Exception {
+	void prepareRow(final Exchange exchange, final int level,
+			final int expectedRowDefId, final int columnOffset)
+			throws Exception {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Preparing row at " + exchange);
+		}
 		final byte[] bytes = exchange.getValue().getEncodedBytes();
 		final int size = exchange.getValue().getEncodedSize();
 		int rowDataSize = size + RowData.ENVELOPE_SIZE;
@@ -491,11 +482,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 								+ " to expected rowDefId " + expectedRowDefId);
 			}
 
-			if (rowDataList.size() <= preparedCount) {
-				rowDataList.add(new RowData(new byte[INITIAL_BUFFER_SIZE]));
-			}
-
-			final RowData rowData = rowDataList.get(preparedCount);
+			final RowData rowData = pendingRowData[level];
 			byte[] buffer = rowData.getBytes();
 			if (rowDataSize > buffer.length) {
 				buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
@@ -517,17 +504,17 @@ public class PersistitStoreRowCollector implements RowCollector,
 			CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
 					rowDataSize);
 			rowData.prepareRow(0);
-			
+
 			// Remove unwanted columns
 			//
-			rowData.elide(columnBitMap, columnOffset);
-			
-			preparedCount++;
-			preparedRowDefId = expectedRowDefId;
+			rowData.elide(columnBitMap, columnOffset - columnBitMapOffset,
+					columnBitMapWidth);
+
 		}
 	}
 
-	boolean deliverRow(final RowData rowData, final ByteBuffer payload) throws IOException {
+	boolean deliverRow(final RowData rowData, final ByteBuffer payload)
+			throws IOException {
 		if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
 			payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
 					.getRowSize());
@@ -544,5 +531,17 @@ public class PersistitStoreRowCollector implements RowCollector,
 	@Override
 	public boolean hasMore() {
 		return more;
+	}
+
+	@Override
+	public void close() {
+		if (hEx != null) {
+			store.releaseExchange(hEx);
+			hEx = null;
+		}
+		if (iEx != null) {
+			store.releaseExchange(iEx);
+			iEx = null;
+		}
 	}
 }

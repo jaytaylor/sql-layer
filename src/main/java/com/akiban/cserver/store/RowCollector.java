@@ -8,4 +8,6 @@ public interface RowCollector {
 	public boolean collectNextRow(final ByteBuffer payload) throws Exception;
 	
 	public boolean hasMore() throws Exception;
+	
+	public void close();
 }

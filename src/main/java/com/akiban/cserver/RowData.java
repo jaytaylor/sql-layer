@@ -146,7 +146,7 @@ public class RowData {
 		}
 	}
 	
-	public boolean elide(final byte[] bits, final int field) {
+	public boolean elide(final byte[] bits, final int field, final int width) {
 		// TODO - ignore for now
 		return false;
 	}

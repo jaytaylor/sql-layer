@@ -65,6 +65,8 @@ public class CServerTest extends TestCase implements CServerConstants {
 	public void testGetAutoIncrementRequestResponse() throws Exception {
 		final CServer cserver = new CServer();
 		cserver.getRowDefCache().putRowDef(ROW_DEF);
+		ROW_DEF.setRowType(RowType.ROOT);
+		ROW_DEF.setGroupRowDefId(ROW_DEF.getRowDefId());
 		cserver.start();
 		try {
 			final AkibaNetworkHandler networkHandler = NetworkHandlerFactory

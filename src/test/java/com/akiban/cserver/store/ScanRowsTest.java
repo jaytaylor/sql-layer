@@ -13,6 +13,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
@@ -74,9 +75,10 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 	}
 
 	private int scanAllRows(final String test, final RowData start,
-			final RowData end, final byte[] columnBitMap) throws Exception {
+			final RowData end, final byte[] columnBitMap, final int indexId)
+			throws Exception {
 		int scanCount = 0;
-		final RowCollector rc = store.newRowCollector(1111, start, end,
+		final RowCollector rc = store.newRowCollector(indexId, start, end,
 				columnBitMap);
 		final ByteBuffer payload = ByteBufferFactory.allocate(256);
 		if (VERBOSE) {
@@ -105,6 +107,18 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		return scanCount;
 	}
 
+	int findIndexId(final RowDef groupRowDef, final RowDef userRowDef,
+			final int fieldIndex) {
+		final int findField = fieldIndex + userRowDef.getColumnOffset();
+		for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
+			if (indexDef.getFields().length == 1
+					&& indexDef.getFields()[0] == findField) {
+				return indexDef.getId();
+			}
+		}
+		return -1;
+	}
+
 	public void testScanRows() throws Exception {
 		populateTables();
 
@@ -120,7 +134,8 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			start.createRow(rowDef, new Object[fc]);
 			end.createRow(rowDef, new Object[fc]);
 			bitMap = bitsToRoot(userRowDef, rowDef);
-			assertEquals(10, scanAllRows("all a", start, end, bitMap));
+			assertEquals(10, scanAllRows("all a", start, end, bitMap,
+					0));
 		}
 
 		{
@@ -128,7 +143,8 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			start.createRow(rowDef, new Object[fc]);
 			end.createRow(rowDef, new Object[fc]);
 			bitMap = bitsToRoot(userRowDef, rowDef);
-			assertEquals(11110, scanAllRows("all aaaa", start, end, bitMap));
+			assertEquals(11110, scanAllRows("all aaaa", start, end, bitMap,
+					findIndexId(rowDef, userRowDef, 1)));
 		}
 
 		{
@@ -144,7 +160,7 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			end.createRow(rowDef, endValue);
 			bitMap = bitsToRoot(userRowDef, rowDef);
 			assertEquals(5, scanAllRows("aaaa with aaaa.aaaa1 in [1,2]", start,
-					end, bitMap));
+					end, bitMap, findIndexId(rowDef, userRowDef, 1)));
 		}
 
 		{
@@ -160,7 +176,7 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			end.createRow(rowDef, endValue);
 			bitMap = bitsToRoot(userRowDef, rowDef);
 			assertEquals(115, scanAllRows("aaaa with aaaa.aaaa1 in [100,200]",
-					start, end, bitMap));
+					start, end, bitMap, findIndexId(rowDef, userRowDef, 1)));
 		}
 
 		{
@@ -177,15 +193,15 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			end.createRow(rowDef, endValue);
 			bitMap = bitsToRoot(userRowDef, rowDef);
 			assertEquals(556, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
-					end, bitMap));
+					end, bitMap, findIndexId(rowDef, aaRowDef, 1)));
 		}
 
 	}
 
 	private int columnOffset(final RowDef userRowDef, final RowDef groupRowDef) {
-		for (int i = groupRowDef.getUserRowDefIds().length; --i >= 0;) {
-			if (groupRowDef.getUserRowDefIds()[i] == userRowDef.getRowDefId()) {
-				return groupRowDef.getUserRowColumnOffsets()[i];
+		for (int i = groupRowDef.getUserTableRowDefs().length; --i >= 0;) {
+			if (groupRowDef.getUserTableRowDefs()[i] == userRowDef) {
+				return groupRowDef.getUserTableRowDefs()[i].getColumnOffset();
 			}
 		}
 		return -1;
@@ -195,13 +211,14 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		final byte[] bits = new byte[(groupRowDef.getFieldCount() + 7) / 8];
 		for (RowDef rd = rowDef; rd != null;) {
 			int level = -1;
-			for (int i = 0; i < groupRowDef.getUserRowDefIds().length; i++) {
-				if (groupRowDef.getUserRowDefIds()[i] == rd.getRowDefId()) {
+			for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
+				if (groupRowDef.getUserTableRowDefs()[i] == rd) {
 					level = i;
 					break;
 				}
 			}
-			int column = groupRowDef.getUserRowColumnOffsets()[level];
+			int column = groupRowDef.getUserTableRowDefs()[level]
+					.getColumnOffset();
 			bits[column / 8] |= 1 << (column % 8);
 			if (rd.getParentRowDefId() == 0) {
 				break;

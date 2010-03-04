@@ -6,4 +6,5 @@ public interface RowDistributor {
 
 	public boolean distributeNextRow(final ByteBuffer payload) throws Exception;
 	
+	public void close();
 }
