@@ -24,6 +24,10 @@ public class FieldDef {
 					+ " out of bounds for type " + type);
 		}
 	}
+	
+	public String getName() {
+		return columnName;
+	}
 
 	public FieldType getType() {
 		return type;
