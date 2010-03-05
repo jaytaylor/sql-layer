@@ -53,14 +53,14 @@ public class RowData {
 	public final static char SIGNATURE_B = (char) ('B' + ('A' << 8));
 
 	public final static int ENVELOPE_SIZE = 12;
-	
+
 	public final static int LEFT_ENVELOPE_SIZE = 6;
-	
+
 	public final static int RIGHT_ENVELOPE_SIZE = 6;
 
 	private final static SimpleDateFormat SDF_DATETIME = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm:SS");
-	
+
 	private final static SimpleDateFormat SDF_TIME = new SimpleDateFormat(
 			"HH:mm:SS");
 
@@ -89,7 +89,7 @@ public class RowData {
 		this.bufferEnd = offset + length;
 		rowStart = rowEnd = bufferStart;
 	}
-	
+
 	public void reset(final byte[] bytes) {
 		this.bytes = bytes;
 		reset(0, bytes.length);
@@ -123,7 +123,8 @@ public class RowData {
 		if (offset < 0 || offset + MINIMUM_RECORD_LENGTH > bufferEnd) {
 			throw new CorruptRowDataException("Invalid offset: " + offset);
 		} else {
-			final int recordLength = CServerUtil.getInt(bytes, O_LENGTH_A + offset);
+			final int recordLength = CServerUtil.getInt(bytes, O_LENGTH_A
+					+ offset);
 			if (recordLength < 0 || recordLength + offset > bufferEnd) {
 				throw new CorruptRowDataException("Invalid record length: "
 						+ recordLength + " at offset: " + offset);
@@ -132,20 +133,21 @@ public class RowData {
 				throw new CorruptRowDataException(
 						"Invalid signature at offset: " + offset);
 			}
-			final int trailingLength = CServerUtil.getInt(bytes, offset + recordLength
-					+ O_LENGTH_B);
+			final int trailingLength = CServerUtil.getInt(bytes, offset
+					+ recordLength + O_LENGTH_B);
 			if (trailingLength != recordLength) {
 				throw new CorruptRowDataException(
 						"Invalid trailing record length " + trailingLength
 								+ " in record at offset: " + offset);
 			}
-			if (CServerUtil.getChar(bytes, offset + recordLength + O_SIGNATURE_B) != SIGNATURE_B) {
+			if (CServerUtil.getChar(bytes, offset + recordLength
+					+ O_SIGNATURE_B) != SIGNATURE_B) {
 				throw new CorruptRowDataException(
 						"Invalid signature at offset: " + offset);
 			}
 		}
 	}
-	
+
 	public boolean elide(final byte[] bits, final int field, final int width) {
 		// TODO - ignore for now
 		return false;
@@ -289,9 +291,10 @@ public class RowData {
 					} catch (ParseException e) {
 						throw new RuntimeException(e);
 					}
-					value = date.getHours() * 3600 + date.getMinutes() * 60 +date.getSeconds();
+					value = date.getHours() * 3600 + date.getMinutes() * 60
+							+ date.getSeconds();
 					break;
-					
+
 				default:
 					throw new UnsupportedOperationException(
 							"Unable to encode type " + fieldDef);
@@ -378,100 +381,111 @@ public class RowData {
 		final StringBuilder sb = new StringBuilder();
 		final RowDef rowDef = cache != null ? cache.getRowDef(getRowDefId())
 				: null;
-		if (rowDef == null) {
-			sb.append("RowData?(rowDefId=");
-			sb.append(getRowDefId());
-			sb.append(": ");
-			CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
-		} else {
-			sb.append(rowDef.getTableName());
-			for (int i = 0; i < getFieldCount(); i++) {
-				final long location = rowDef.fieldLocation(this, i);
-				sb.append(i == 0 ? "(" : ",");
-				switch (rowDef.getFieldDef(i).getType()) {
-				case TINYINT:
-				case SMALLINT:
-				case MEDIUMINT:
-				case INT:
-				case BIGINT: {
-					sb.append(getIntegerValue((int) location,
-							(int) (location >>> 32)));
-					break;
-				}
-				case VARCHAR:
-				case CHAR:
-				case TINYTEXT:
-				case TEXT:
-				case MEDIUMTEXT:
-				case LONGTEXT:
-				case TINYBLOB:
-				case BLOB:
-				case MEDIUMBLOB:
-				case LONGBLOB: {
-					sb.append("\'");
-					int start = (int) location;
-					int size = (int) (location >>> 32);
-					for (int j = 0; j < size; j++) {
-						char c = (char) (bytes[j + start] & 0xFF);
-						switch (c) {
-						case '\\':
-							sb.append("\\\\");
-							break;
-						case '\"':
-							sb.append("\\\"");
-							break;
-						case '\'':
-							sb.append("\\\'");
-							break;
-						case '\n':
-							sb.append("\\n");
-							break;
-						case '\r':
-							sb.append("\\r");
-							break;
-						case '\t':
-							sb.append("\\t");
-							break;
-						default:
-							if (c >= ' ') {	// TODO - temporarily filters out control characters and nulls
-							sb.append(c);
+		try {
+			if (rowDef == null) {
+				sb.append("RowData?(rowDefId=");
+				sb.append(getRowDefId());
+				sb.append(": ");
+				CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
+			} else {
+				sb.append(rowDef.getTableName());
+				for (int i = 0; i < getFieldCount(); i++) {
+					final long location = rowDef.fieldLocation(this, i);
+					sb.append(i == 0 ? "(" : ",");
+					switch (rowDef.getFieldDef(i).getType()) {
+					case TINYINT:
+					case SMALLINT:
+					case MEDIUMINT:
+					case INT:
+					case BIGINT: {
+						sb.append(getIntegerValue((int) location,
+								(int) (location >>> 32)));
+						break;
+					}
+					case VARCHAR:
+					case CHAR:
+					case TINYTEXT:
+					case TEXT:
+					case MEDIUMTEXT:
+					case LONGTEXT:
+					case TINYBLOB:
+					case BLOB:
+					case MEDIUMBLOB:
+					case LONGBLOB: {
+						sb.append("\'");
+						int start = (int) location;
+						int size = (int) (location >>> 32);
+						for (int j = 0; j < size; j++) {
+							char c = (char) (bytes[j + start] & 0xFF);
+							switch (c) {
+							case '\\':
+								sb.append("\\\\");
+								break;
+							case '\"':
+								sb.append("\\\"");
+								break;
+							case '\'':
+								sb.append("\\\'");
+								break;
+							case '\n':
+								sb.append("\\n");
+								break;
+							case '\r':
+								sb.append("\\r");
+								break;
+							case '\t':
+								sb.append("\\t");
+								break;
+							default:
+								if (c >= ' ') { // TODO - temporarily filters
+									// out control characters and
+									// nulls
+									sb.append(c);
+								}
 							}
 						}
+						sb.append("\'");
+						break;
 					}
-					sb.append("\'");
-					break;
+					case DATETIME: {
+						final long dt = getIntegerValue((int) location, 8);
+						final int hi = (int) (dt >>> 32);
+						final int low = (int) dt;
+						final int year = hi / 10000;
+						final int month = (hi / 100) % 100;
+						final int day = hi % 100;
+						final int hour = low / 10000;
+						final int minute = (low / 100) % 100;
+						final int second = low % 100;
+						final Date date = new Date(year - 1900, month, day,
+								hour, minute, second);
+						sb.append('\'');
+						sb.append(SDF_DATETIME.format(date));
+						sb.append('\'');
+						break;
+					}
+					case TIMESTAMP: {
+						final long time = ((long) getIntegerValue(
+								(int) location, 4)) * 1000;
+						final Date date = new Date(time);
+						sb.append('\'');
+						sb.append(SDF_DATETIME.format(date));
+						sb.append('\'');
+						break;
+					}
+					default: {
+						sb.append("?" + rowDef.getFieldDef(i).getType() + "?");
+					}
+					}
 				}
-				case DATETIME: {
-					final long dt = getIntegerValue((int) location, 8);
-					final int hi = (int) (dt >>> 32);
-					final int low = (int) dt;
-					final int year = hi / 10000;
-					final int month = (hi / 100) % 100;
-					final int day = hi % 100;
-					final int hour = low / 10000;
-					final int minute = (low / 100) % 100;
-					final int second = low % 100;
-					final Date date = new Date(year - 1900, month, day, hour,
-							minute, second);
-					sb.append('\'');
-					sb.append(SDF_DATETIME.format(date));
-					sb.append('\'');
-					break;
-				}
-				case TIMESTAMP: {
-					final long time = ((long) getIntegerValue((int) location, 4)) * 1000;
-					final Date date = new Date(time);
-					sb.append('\'');
-					sb.append(SDF_DATETIME.format(date));
-					sb.append('\'');
-					break;
-				}
-				default: {
-					sb.append("?" + rowDef.getFieldDef(i).getType() + "?");
-				}
-				}
+				sb.append(")");
 			}
-			sb.append(")");
+		} catch (Exception e) {
+			int size = Math.min(getRowSize(), 64);
+			if (size > 0 && rowStart >= 0) {
+				sb.append(CServerUtil.dump(bytes, rowStart, size));
+			}
+			return sb.toString();
 		}
 		return sb.toString();
 	}

@@ -31,10 +31,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			.getName());
 
 	private static final String P_DATAPATH = "cserver.datapath";
+	
+	private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
 
 	private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
-
-	static final int MAX_RETRY_COUNT = 10;
+	
+	static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
 	final static String VOLUME_NAME = "aktest"; // TODO - select
 	// database
@@ -59,6 +61,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	}
 
 	static String datapath = "/tmp/chunkserver_data";
+	
+	private boolean verbose = false;
 
 	private CServerConfig config;
 
@@ -109,6 +113,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			db.getManagement().setDisplayFilter(
 					new RowDataDisplayFilter(this, db.getManagement()
 							.getDisplayFilter()));
+			
+			final String verboseString = config.property(VERBOSE_PROPERTY_NAME + "|false");
+			if ("true".equalsIgnoreCase(verboseString)) {
+				verbose = true;
+			}
+			
 		}
 	}
 
@@ -352,9 +362,18 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	public RowDefCache getRowDefCache() {
 		return rowDefCache;
 	}
+	
+	@Override
+	public boolean isVerbose() {
+		return verbose;
+	}
 
 	@Override
 	public int writeRow(final RowData rowData) {
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Insert row: " + rowData.toString(rowDefCache));
+		}
+
 		final int rowDefId = rowData.getRowDefId();
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		Transaction transaction = null;
@@ -363,7 +382,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			hEx = getExchange(rowDef, null);
 
 			transaction = db.getTransaction();
-			int retries = MAX_RETRY_COUNT;
+			int retries = MAX_TRANSACTION_RETRY_COUNT;
 			for (;;) {
 				transaction.begin();
 				try {
@@ -419,6 +438,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	@Override
 	public int deleteRow(final RowData rowData) throws Exception {
+		if (verbose && LOG.isInfoEnabled()) {
+			LOG.info("Delete row: " + rowData.toString(rowDefCache));
+		}
 		final int rowDefId = rowData.getRowDefId();
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		Transaction transaction = null;
@@ -428,7 +450,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			hEx = getExchange(rowDef, null);
 
 			transaction = db.getTransaction();
-			int retries = MAX_RETRY_COUNT;
+			int retries = MAX_TRANSACTION_RETRY_COUNT;
 			for (;;) {
 				transaction.begin();
 				try {
@@ -499,6 +521,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	@Override
 	public int updateRow(final RowData oldRowData, final RowData newRowData) {
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Update old: " + oldRowData.toString(rowDefCache));
+			LOG.info("       new: " + oldRowData.toString(rowDefCache));
+		}
 		final int rowDefId = oldRowData.getRowDefId();
 		if (newRowData.getRowDefId() != rowDefId) {
 			throw new IllegalArgumentException(
@@ -512,7 +538,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			hEx = getExchange(rowDef, null);
 
 			transaction = db.getTransaction();
-			int retries = MAX_RETRY_COUNT;
+			int retries = MAX_TRANSACTION_RETRY_COUNT;
 			for (;;) {
 				transaction.begin();
 				try {
@@ -597,12 +623,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	@Override
 	public int dropTable(final int rowDefId) throws Exception {
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		if (verbose && LOG.isInfoEnabled()) {
+			LOG.info("Drop table: " + rowDef.toString());
+		}
 		if (!rowDef.isGroupTable()) {
 			throw new StoreException(HA_ERR_INTERNAL_ERROR,
 					"Can't drop user tables yet");
 		}
 		final Transaction transaction = db.getTransaction();
-		int retries = MAX_RETRY_COUNT;
+		int retries = MAX_TRANSACTION_RETRY_COUNT;
 		for (;;) {
 			transaction.begin();
 			try {
@@ -638,6 +667,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	@Override
 	public long getAutoIncrementValue(final int rowDefId) throws Exception {
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		if (verbose && LOG.isInfoEnabled()) {
+			LOG.info("Get auto-inc value for table: " + rowDef.toString());
+		}
 		final Exchange exchange;
 		final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
 				.getRowDef(rowDef.getGroupRowDefId());
@@ -684,8 +716,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		if (end != null && end.getRowDefId() != rowDefId) {
 			throw new IllegalArgumentException(
 					"Start and end RowData must specify the same rowDefId");
-		}
+		} 
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+		
+		if (verbose && LOG.isInfoEnabled()) {
+			LOG.info("Select from table: " + rowDef.toString());
+			LOG.info("  from: " + start.toString(rowDefCache));
+			LOG.info("    to: " + end.toString(rowDefCache));
+		}
 
 		final RowCollector rc = new PersistitStoreRowCollector(this, start,
 				end, columnBitMap, rowDef, indexId);

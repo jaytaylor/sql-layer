@@ -107,6 +107,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 					// h-tree itself.
 					this.iEx = store.getExchange(rowDef, indexDef);
 					this.iFilter = computeIFilter(indexDef, rowDef, start, end);
+					if (store.isVerbose() && LOG.isInfoEnabled()) {
+						LOG.info("Select using index " + indexDef + " filter=" + iFilter);
+					}
 				}
 			}
 
@@ -519,8 +522,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 		if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
 			payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
 					.getRowSize());
-			if (LOG.isDebugEnabled()) {
-				LOG.debug("collectNextRow returned: "
+			if (store.isVerbose() && LOG.isInfoEnabled()) {
+				LOG.debug("Select row: "
 						+ rowData.toString(store.getRowDefCache()));
 			}
 			return true;

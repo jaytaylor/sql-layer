@@ -287,7 +287,7 @@ public class CServerUtil {
 	public static StringBuilder hex(StringBuilder sb, byte[] bytes, int start, int length) {
 		for (int i = start; i < start + length; i++) {
 			sb.append(HEX_DIGITS[(bytes[i] & 0xF0) >>> 4]);
-			sb.append(HEX_DIGITS[(bytes[i] & 0xF0)]);
+			sb.append(HEX_DIGITS[(bytes[i] & 0x0F)]);
 		}
 		return sb;
 	}

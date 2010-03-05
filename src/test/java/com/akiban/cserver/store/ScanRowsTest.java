@@ -119,6 +119,15 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		return -1;
 	}
 
+	int findIndex(final RowDef rowDef, final String name) {
+		for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+			if (indexDef.getName().equals(name)) {
+				return indexDef.getId();
+			}
+		}
+		return -1;
+	}
+
 	public void testScanRows() throws Exception {
 		populateTables();
 
@@ -134,8 +143,7 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			start.createRow(rowDef, new Object[fc]);
 			end.createRow(rowDef, new Object[fc]);
 			bitMap = bitsToRoot(userRowDef, rowDef);
-			assertEquals(10, scanAllRows("all a", start, end, bitMap,
-					0));
+			assertEquals(10, scanAllRows("all a", start, end, bitMap, 0));
 		}
 
 		{
@@ -181,21 +189,27 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 
 		{
 			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
-			final RowDef aaRowDef = rowDefCache.getRowDef("aa");
-			int pkcol = columnOffset(aaRowDef, rowDef);
-			assertTrue(pkcol >= 0);
-			pkcol += aaRowDef.getPkFields()[0];
+			int col = fieldIndex(rowDef, "aa$aa1");
+			int indexId = findIndex(rowDef, rowDef.getTableName() + "$aa_PK");
 			Object[] startValue = new Object[fc];
 			Object[] endValue = new Object[fc];
-			startValue[pkcol] = 1;
-			endValue[pkcol] = 5;
+			startValue[col] = 1;
+			endValue[col] = 5;
 			start.createRow(rowDef, startValue);
 			end.createRow(rowDef, endValue);
 			bitMap = bitsToRoot(userRowDef, rowDef);
 			assertEquals(556, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
-					end, bitMap, findIndexId(rowDef, aaRowDef, 1)));
+					end, bitMap, indexId));
 		}
+	}
 
+	private int fieldIndex(final RowDef rowDef, final String name) {
+		for (int index = 0; index < rowDef.getFieldCount(); index++) {
+			if (rowDef.getFieldDef(index).getName().equals(name)) {
+				return index;
+			}
+		}
+		return -1;
 	}
 
 	private int columnOffset(final RowDef userRowDef, final RowDef groupRowDef) {

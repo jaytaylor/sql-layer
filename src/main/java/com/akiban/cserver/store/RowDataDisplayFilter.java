@@ -29,7 +29,6 @@ class RowDataDisplayFilter implements DisplayFilter {
 				&& !exchange.getTree().getName().startsWith("_txn")
 				&& !exchange.getTree().getName().contains("$$")) {
 			final Value value = exchange.getValue();
-
 			final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
 			final byte[] bytes = new byte[size];
 			CServerUtil.putInt(bytes, RowData.O_LENGTH_A, size);
@@ -44,6 +43,7 @@ class RowDataDisplayFilter implements DisplayFilter {
 			final RowData rowData = new RowData(bytes);
 			rowData.prepareRow(0);
 			return rowData.toString(store.getRowDefCache());
+
 		} else {
 			return defaultFilter.toValueDisplayString(exchange);
 		}
