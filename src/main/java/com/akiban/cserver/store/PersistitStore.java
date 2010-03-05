@@ -370,7 +370,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	@Override
 	public int writeRow(final RowData rowData) {
-		if (LOG.isInfoEnabled()) {
+		if (verbose && LOG.isInfoEnabled()) {
 			LOG.info("Insert row: " + rowData.toString(rowDefCache));
 		}
 

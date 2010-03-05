@@ -523,7 +523,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 			payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
 					.getRowSize());
 			if (store.isVerbose() && LOG.isInfoEnabled()) {
-				LOG.debug("Select row: "
+				LOG.info("Select row: "
 						+ rowData.toString(store.getRowDefCache()));
 			}
 			return true;
