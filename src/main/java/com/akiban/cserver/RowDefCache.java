@@ -126,7 +126,8 @@ public class RowDefCache implements CServerConstants {
 			parentJoinFields = new int[0];
 		}
 
-		// pkFields
+		// pkFields - The columns from this table, contributing to the hkey, that don't have matching
+        // columns in the parent.
 		int[] pkFields = null;
 		for (final Index index : table.getIndexes()) {
 			if (!index.getConstraint().equals("PRIMARY KEY")) {
@@ -140,6 +141,8 @@ public class RowDefCache implements CServerConstants {
 			final List<IndexColumn> indexColumns = index.getColumns();
 			final List<Integer> pkFieldList = new ArrayList<Integer>(1);
 			for (final IndexColumn indexColumn : indexColumns) {
+                // TODO: indexColumn.getPosition is the position of the IndexColumn within the index, not
+                // TODO: the position of the column within the table
 				final int position = indexColumn.getPosition();
 				boolean isParentJoin = false;
 				for (int i = 0; i < parentJoinFields.length; i++) {
