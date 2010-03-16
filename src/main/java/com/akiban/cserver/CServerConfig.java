@@ -50,7 +50,7 @@ public class CServerConfig {
 		}
 		searchPath.addAll(Arrays.asList(DEFAULT_SEARCH_PATH));
 		if (LOG.isInfoEnabled()) {
-			LOG.info("CServerConfigur search path: " + searchPath);
+			LOG.info("CServerConfig search path: " + searchPath);
 		}
 		// Load in reverse order so that first-specified path overrides later
 		// ones
