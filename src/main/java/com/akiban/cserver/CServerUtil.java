@@ -2,6 +2,7 @@ package com.akiban.cserver;
 
 import java.io.File;
 import java.lang.management.RuntimeMXBean;
+import java.nio.charset.Charset;
 
 public class CServerUtil {
 
@@ -16,13 +17,13 @@ public class CServerUtil {
 		case 0:
 			return 0;
 		case 1:
-			return bytes[index];
+			return (byte)bytes[index];
 		case 2:
-			return getShort(bytes, index);
+			return (short)getShort(bytes, index);
 		case 3:
 			return getMediumInt(bytes, index);
 		case 4:
-			return getInt(bytes, index);
+			return (int)getInt(bytes, index);
 		case 8:
 			return getLong(bytes, index);
 		default:
@@ -39,15 +40,15 @@ public class CServerUtil {
 		case 1:
 			return getByte(bytes, index) & 0xFF;
 		case 2:
-			return getShort(bytes, index) & 0xFFFF;
+			return getChar(bytes, index) & 0xFFFF;
 		case 3:
 			return getMediumInt(bytes, index) & 0xFFFFFF;
 		case 4:
 			return getInt(bytes, index) & 0xFFFFFFFF;
 		case 8:
 			return getLong(bytes, index); // TODO
-//			throw new UnsupportedOperationException(
-//					"Currently can't handle unsigned 64-bit integers");
+			// throw new UnsupportedOperationException(
+			// "Currently can't handle unsigned 64-bit integers");
 		default:
 			throw new IllegalArgumentException(
 					"Width must be 0,1,2,3,4 or 8 but is: " + width);
@@ -60,9 +61,9 @@ public class CServerUtil {
 
 	public static int getShort(byte[] bytes, int index) {
 		if (BIG_ENDIAN) {
-			return (bytes[index + 1] & 0xFF) | (bytes[index + 0]) << 8;
+			return (short)((bytes[index + 1] & 0xFF) | (bytes[index + 0]) << 8);
 		} else {
-			return (bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8;
+			return (short)((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
 		}
 	}
 
@@ -163,7 +164,7 @@ public class CServerUtil {
 			bytes[index + 1] = (byte) (value >>> 8);
 			bytes[index + 2] = (byte) (value >>> 16);
 		}
-		return index + 4;
+		return index + 3;
 	}
 
 	public static int putInt(byte[] bytes, int index, int value) {
@@ -265,7 +266,7 @@ public class CServerUtil {
 				int j = m + i;
 				if (j < size - offset) {
 					hex(sb1, b[j + offset], 2);
-					final char c = (char)( b[j + offset] & 0xFF);
+					final char c = (char) (b[j + offset] & 0xFF);
 					sb2.append(c > 32 && c < 120 ? c : '.');
 				} else
 					sb1.append("  ");
@@ -283,8 +284,9 @@ public class CServerUtil {
 		}
 		return sb;
 	}
-	
-	public static StringBuilder hex(StringBuilder sb, byte[] bytes, int start, int length) {
+
+	public static StringBuilder hex(StringBuilder sb, byte[] bytes, int start,
+			int length) {
 		for (int i = start; i < start + length; i++) {
 			sb.append(HEX_DIGITS[(bytes[i] & 0xF0) >>> 4]);
 			sb.append(HEX_DIGITS[(bytes[i] & 0x0F)]);
@@ -338,6 +340,61 @@ public class CServerUtil {
 			}
 			file.delete();
 		}
+	}
+	/**
+	 * @param v
+	 *            byte count
+	 * @return Number of additional bytes required to store variable-length
+	 *         prefix
+	 */
+	public static int varwidth(final int v) {
+		return v == 0 ? 0 : v < 0x100 ? 1 : v < 0x10000 ? 2 : v < 0x1000000 ? 3
+				: 4;
+	}
+
+	/**
+	 * Cracks the MySQL variable-length format.  Interprets 0, 1, 2 or 3 prefix bytes as a little-endian
+	 * string size and constructs a string from the remaining bytes.
+	 * 
+	 * TODO: does not handle non US-ASCII character sets.
+	 * 
+	 * @param bytes
+	 * @param offset
+	 * @param width
+	 * @param declaredWidth
+	 * @return
+	 */
+	public static String decodeMySQLString(byte[] bytes, final int offset,
+			final int width, final int declaredWidth) {
+		final int prefix = declaredWidth == 0 ? 0 : declaredWidth < 256 ? 1
+				: declaredWidth < 65536 ? 2 : 3;
+		int length;
+		switch (prefix) {
+		case 0:
+			length = 0;
+			break;
+		case 1:
+			length = getByte(bytes, offset);
+			break;
+		case 2:
+			length = getChar(bytes, offset);
+			break;
+		case 3:
+			length = getMediumInt(bytes, offset);
+		default:
+			throw new Error("No such case");
+		}
+		if (length + prefix > width) {
+			throw new IllegalArgumentException(
+					"String is wider than available bytes: " + length);
+		}
+		final String s = new String(bytes, offset + prefix, width - prefix);
+//		if (s.length() != length) {
+//			throw new IllegalArgumentException(
+//					"String size mismatch length: length="
+//							+ length + " string=" + s);
+//		}
+		return s;
 	}
 
 }

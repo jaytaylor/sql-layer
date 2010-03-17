@@ -39,11 +39,11 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		final RowDef defA = rowDefCache.getRowDef("address");
 		final RowDef defX = rowDefCache.getRowDef("component");
 		final RowDef defCOI = rowDefCache.getRowDef("_akiba_coi");
-		final RowData rowC = new RowData(new byte[64]);
-		final RowData rowO = new RowData(new byte[64]);
-		final RowData rowI = new RowData(new byte[64]);
-		final RowData rowA = new RowData(new byte[64]);
-		final RowData rowX = new RowData(new byte[64]);
+		final RowData rowC = new RowData(new byte[256]);
+		final RowData rowO = new RowData(new byte[256]);
+		final RowData rowI = new RowData(new byte[256]);
+		final RowData rowA = new RowData(new byte[256]);
+		final RowData rowX = new RowData(new byte[256]);
 		final RowData rowCOI = new RowData(new byte[1024]);
 		final int customers;
 		final int ordersPerCustomer;
@@ -71,23 +71,23 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			int unique = 0;
 			for (int c = 0; ++c <= customers;) {
 				cid = c;
-				rowC.reset(0, 64);
+				rowC.reset(0, 256);
 				rowC.createRow(defC, new Object[] { cid, "Customer_" + cid });
 				assertEquals(OK, store.writeRow(rowC));
 				for (int o = 0; ++o <= ordersPerCustomer;) {
 					oid = cid * 1000 + o;
-					rowO.reset(0, 64);
+					rowO.reset(0, 256);
 					rowO.createRow(defO, new Object[] { oid, cid, 12345 });
 					assertEquals(OK, store.writeRow(rowO));
 					for (int i = 0; ++i <= itemsPerOrder;) {
 						iid = oid * 1000 + i;
-						rowI.reset(0, 64);
+						rowI.reset(0, 256);
 						rowI.createRow(defI, new Object[] { oid, iid, 123456,
 								654321 });
 						assertEquals(OK, store.writeRow(rowI));
 						for (int x = 0; ++x <= componentsPerItem;) {
 							xid = iid * 1000 + x;
-							rowX.reset(0, 64);
+							rowX.reset(0, 256);
 							rowX.createRow(defX, new Object[] { iid, xid, c,
 									++unique, "Description_" + unique });
 							assertEquals(OK, store.writeRow(rowX));
@@ -95,7 +95,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 					}
 				}
 				for (int a = 0; a < (c % 3); a++) {
-					rowA.reset(0, 64);
+					rowA.reset(0, 256);
 					rowA.createRow(defA, new Object[] { c, a, "addr1_" + c,
 							"addr2_" + c, "addr3_" + c });
 					assertEquals(OK, store.writeRow(rowA));
@@ -109,23 +109,23 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			int unique = 0;
 			for (int c = 0; ++c <= customers;) {
 				cid = c;
-				rowC.reset(0, 64);
+				rowC.reset(0, 256);
 				rowC.createRow(defC, new Object[] { cid, "Customer_" + cid });
 				visitor.visit(0);
 				for (int o = 0; ++o <= ordersPerCustomer;) {
 					oid = cid * 1000 + o;
-					rowO.reset(0, 64);
+					rowO.reset(0, 256);
 					rowO.createRow(defO, new Object[] { oid, cid, 12345 });
 					visitor.visit(1);
 					for (int i = 0; ++i <= itemsPerOrder;) {
 						iid = oid * 1000 + i;
-						rowI.reset(0, 64);
+						rowI.reset(0, 256);
 						rowI.createRow(defI, new Object[] { oid, iid, 123456,
 								654321 });
 						visitor.visit(2);
 						for (int x = 0; ++x <= componentsPerItem;) {
 							xid = iid * 1000 + x;
-							rowX.reset(0, 64);
+							rowX.reset(0, 256);
 							rowX.createRow(defX, new Object[] { iid, xid, c,
 									++unique, "Description_" + unique });
 							visitor.visit(3);

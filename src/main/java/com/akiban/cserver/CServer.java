@@ -5,6 +5,7 @@
 
 package com.akiban.cserver;
 
+import java.io.DataInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.TreeMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.io.MySQLSource;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.message.AISExecutionContext;
@@ -39,6 +41,8 @@ import com.akiban.network.NetworkHandlerFactory;
 public class CServer {
 
 	private static final Log LOG = LogFactory.getLog(CServer.class.getName());
+
+	private static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
 
 	/**
 	 * Config property name and default for the port on which the CServer will
@@ -82,6 +86,8 @@ public class CServer {
 
 	private final Store store = new PersistitStore(config, rowDefCache);
 
+	private AkibaInformationSchema ais0;
+
 	private AkibaInformationSchema ais;
 
 	private volatile boolean stopped = false;
@@ -97,6 +103,7 @@ public class CServer {
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork(property(P_CSERVER_HOST),
 				property(P_CSERVER_PORT), (CommEventNotifier) callback);
+		loadAis0();
 		store.startUp();
 	}
 
@@ -276,7 +283,31 @@ public class CServer {
 
 	private void installAIS() {
 		LOG.info("Installing AIS in ChunkServer");
+		rowDefCache.clear();
+		rowDefCache.setAIS(ais0);
 		rowDefCache.setAIS(ais);
+	}
+
+	/**
+	 * Loads the built-in primordial table definitions for the akiba_information_schema
+	 * tables.
+	 * @throws Exception
+	 */
+	private void loadAis0() throws Exception {
+		final DataInputStream stream = new DataInputStream(getClass()
+				.getClassLoader().getResourceAsStream(AIS_DDL_NAME));
+		// TODO: ugly, but gets the job done
+		final StringBuilder sb = new StringBuilder();
+		for (;;) {
+			final String line = stream.readLine();
+			if (line == null) {
+				break;
+			}
+			sb.append(line);
+			sb.append("\n");
+		}
+		this.ais0 = (new DDLSource()).buildAISFromString(sb.toString());
+		rowDefCache.setAIS(ais0);
 	}
 
 	/**

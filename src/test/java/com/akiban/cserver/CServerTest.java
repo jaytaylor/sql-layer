@@ -4,6 +4,8 @@ import java.io.File;
 
 import junit.framework.TestCase;
 
+import com.akiban.ais.ddl.DDLSource;
+import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.message.GetAutoIncrementValueRequest;
 import com.akiban.cserver.message.GetAutoIncrementValueResponse;
 import com.akiban.cserver.message.ScanRowsRequest;
@@ -19,6 +21,8 @@ import com.akiban.network.NetworkHandlerFactory;
 public class CServerTest extends TestCase implements CServerConstants {
 
 	private final static File DATA_PATH = new File("/tmp/data");
+
+	private final static String DDL_FILE_NAME = "src/test/resources/drupal_ddl_test.ddl";
 
 	private final static RowDef ROW_DEF = RowDef.createRowDef(1234,
 			new FieldDef[] { new FieldDef("a", FieldType.INT),
@@ -98,6 +102,19 @@ public class CServerTest extends TestCase implements CServerConstants {
 		} finally {
 			cserver.stop();
 		}
+	}
+
+	/**
+	 * Make sure we can load the Drupal schema via DDLSource.  Padraig encountered
+	 * a problem with an incorrectly written schema file.  Leaving this test here
+	 * for now in case we need to test newer versions.
+	 */
+	public void testDrupalSchema() throws Exception {
+		final AkibaInformationSchema ais = new DDLSource()
+				.buildAIS(DDL_FILE_NAME);
+		final CServer cserver = new CServer();
+		cserver.getRowDefCache().setAIS(ais);
+
 	}
 
 	private WriteRowRequest createWriteRowRequest() {

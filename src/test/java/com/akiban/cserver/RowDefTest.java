@@ -10,7 +10,8 @@ public class RowDefTest extends TestCase {
 	private final static boolean VERBOSE = false;
 
 	private final static FieldDef[][] FIELD_DEF_CASES = new FieldDef[][] {
-			{ new FieldDef(n(), FieldType.TINYINT), new FieldDef(n(), FieldType.TINYINT),
+			{ new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
 					new FieldDef(n(), FieldType.SMALLINT), },
 
 			{ new FieldDef(n(), FieldType.VARCHAR, 100),
@@ -22,7 +23,8 @@ public class RowDefTest extends TestCase {
 					new FieldDef(n(), FieldType.VARCHAR, 100),
 					new FieldDef(n(), FieldType.TINYINT), },
 
-			{ new FieldDef(n(), FieldType.TINYINT), new FieldDef(n(), FieldType.TINYINT),
+			{ new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
 					new FieldDef(n(), FieldType.TINYINT),
 					new FieldDef(n(), FieldType.TINYINT),
 					new FieldDef(n(), FieldType.TINYINT),
@@ -52,7 +54,8 @@ public class RowDefTest extends TestCase {
 					new FieldDef(n(), FieldType.VARCHAR, 100),
 					new FieldDef(n(), FieldType.VARCHAR, 100), },
 
-			{ new FieldDef(n(), FieldType.TINYINT), new FieldDef(n(), FieldType.TINYINT),
+			{ new FieldDef(n(), FieldType.TINYINT),
+					new FieldDef(n(), FieldType.TINYINT),
 					new FieldDef(n(), FieldType.SMALLINT),
 					new FieldDef(n(), FieldType.MEDIUMINT),
 					new FieldDef(n(), FieldType.INT),
@@ -116,11 +119,10 @@ public class RowDefTest extends TestCase {
 					11, "foo", 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
 					"bar", 26, 27 }
 
-			},
-		};
-	
+			}, };
+
 	private static int fieldNameCounter = 0;
-	
+
 	private static String n() {
 		return "C" + (++fieldNameCounter);
 	}
@@ -143,9 +145,9 @@ public class RowDefTest extends TestCase {
 							+ Arrays.asList(DATA_CASES[def][data]));
 					System.out.println("Def " + def + " Data " + data);
 					System.out.println("RowData:\n");
-					System.out.println(CServerUtil.dump(rowData.getBytes(), rowData
-							.getRowStart(), rowData.getRowEnd()
-							- rowData.getRowStart()));
+					System.out.println(CServerUtil.dump(rowData.getBytes(),
+							rowData.getRowStart(), rowData.getRowEnd()
+									- rowData.getRowStart()));
 				}
 				for (int i = 0; i < fieldDefs.length; i++) {
 					final long location = rowDef.fieldLocation(rowData, i);
@@ -165,7 +167,6 @@ public class RowDefTest extends TestCase {
 		}
 	}
 
-
 	public void dontTestComputeFieldLocations2() throws Exception {
 		final int fieldCount = 37;
 		final Random random = new Random();
@@ -184,8 +185,7 @@ public class RowDefTest extends TestCase {
 			} else {
 				int max = Math.min(1000, type.getMaxWidth()
 						- type.getMinWidth() + 1);
-				int maxWidth = random.nextInt(max)
-						+ type.getMinWidth();
+				int maxWidth = random.nextInt(max) + type.getMinWidth();
 				fieldDefs[i] = new FieldDef(n(), type, maxWidth);
 				maxSize += maxWidth + 3;
 			}
@@ -282,12 +282,16 @@ public class RowDefTest extends TestCase {
 		if (location == 0) {
 			assertNull(value);
 		} else if (fieldDef.isFixedWidth()) {
-			long decodedValue = CServerUtil
-					.getSignedIntegerByWidth(rowData.getBytes(),
-							(int) location, (int) (location >>> 32));
+			long decodedValue = CServerUtil.getSignedIntegerByWidth(rowData
+					.getBytes(), (int) location, (int) (location >>> 32));
 			assertEquals(((Number) value).longValue(), decodedValue);
+		} else if (value instanceof String) {
+			final String decodedString = rowData.getStringValue((int) location,
+					(int) (location >>> 32), fieldDef.getMaxWidth());
+			assertEquals(value, decodedString);
 		} else {
-			byte[] decodedBytes = new byte[(int) (location >>> 32)];
+			int prefix = fieldDef.getWidthOverhead();
+			byte[] decodedBytes = new byte[((int) (location >>> 32)) - prefix];
 			System.arraycopy(rowData.getBytes(), (int) location, decodedBytes,
 					0, decodedBytes.length);
 			byte[] bytes;

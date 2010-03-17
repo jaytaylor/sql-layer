@@ -3,7 +3,7 @@ package com.akiban.cserver;
 public class FieldDef {
 
 	private final FieldType type;
-	
+
 	private final String columnName;
 
 	private final int maxWidth;
@@ -24,7 +24,7 @@ public class FieldDef {
 					+ " out of bounds for type " + type);
 		}
 	}
-	
+
 	public String getName() {
 		return columnName;
 	}
@@ -41,11 +41,20 @@ public class FieldDef {
 		return type.getMinWidth();
 	}
 
+	public int getWidthOverhead() {
+		if (isFixedWidth()) {
+			return 0;
+		} else {
+			return CServerUtil.varwidth(maxWidth);
+		}
+	}
+
 	public boolean isFixedWidth() {
 		return type.isFixedWidth();
 	}
 
 	public String toString() {
-		return columnName + "(" + type + "(" + getMinWidth() + "," + getMaxWidth() + "))";
+		return columnName + "(" + type + "(" + getMinWidth() + ","
+				+ getMaxWidth() + "))";
 	}
 }

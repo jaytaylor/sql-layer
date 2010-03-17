@@ -3,8 +3,6 @@ package com.akiban.cserver;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.cserver.IndexDef.H2I;
-
 /**
  * Contain the relevant schema information for one version of a table
  * definition. Instances of this class acquire table definition data from the
@@ -16,56 +14,6 @@ import com.akiban.cserver.IndexDef.H2I;
  * 
  */
 public class RowDef {
-
-	/**
-	 * Factory method used for convenience in tests
-	 * 
-	 * @param rowDefId
-	 * @param fieldDefs
-	 * @param tableName
-	 * @param treeName
-	 * @param pkFields
-	 * @return
-	 */
-	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName,
-			String treeName, final int[] pkFields) {
-		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-		rowDef.setTableName(tableName);
-		rowDef.setTreeName(treeName);
-		rowDef.setPkFields(pkFields);
-		rowDef.setParentRowDefId(0);
-		rowDef.setParentJoinFields(new int[0]);
-		rowDef.setIndexDefs(new IndexDef[0]);
-		return rowDef;
-	}
-
-	/**
-	 * Factory method used for convenience in tests
-	 * 
-	 * @param rowDefId
-	 * @param fieldDefs
-	 * @param tableName
-	 * @param groupTableName
-	 * @param pkFields
-	 * @param parentRowDefId
-	 * @param parentJoinFields
-	 * @return
-	 */
-	public static RowDef createRowDef(final int rowDefId,
-			final FieldDef[] fieldDefs, final String tableName,
-			final String groupTableName, final int[] pkFields,
-			final int parentRowDefId, final int[] parentJoinFields) {
-		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-		rowDef.setTableName(tableName);
-		rowDef.setTreeName(groupTableName);
-		rowDef.setPkFields(pkFields);
-		rowDef.setParentRowDefId(parentRowDefId);
-		rowDef.setParentJoinFields(parentJoinFields);
-		rowDef.setIndexDefs(new IndexDef[0]);
-		return rowDef;
-	}
-
 	/**
 	 * Array of FieldDef, one per column
 	 */
@@ -129,8 +77,8 @@ public class RowDef {
 	private int columnOffset;
 
 	/**
-	 * For a user table, the number of Persistit Key segments uses to encode
-	 * the hkey for rows of this table.
+	 * For a user table, the number of Persistit Key segments uses to encode the
+	 * hkey for rows of this table.
 	 */
 	private int hkeyDepth;
 	/**
@@ -154,6 +102,55 @@ public class RowDef {
 	 * method to assist in looking up a field's offset and length.
 	 */
 	private final byte[][] varLenFieldMap;
+
+	/**
+	 * Factory method used for convenience in tests
+	 * 
+	 * @param rowDefId
+	 * @param fieldDefs
+	 * @param tableName
+	 * @param treeName
+	 * @param pkFields
+	 * @return
+	 */
+	public static RowDef createRowDef(final int rowDefId,
+			final FieldDef[] fieldDefs, final String tableName,
+			String treeName, final int[] pkFields) {
+		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
+		rowDef.setTableName(tableName);
+		rowDef.setTreeName(treeName);
+		rowDef.setPkFields(pkFields);
+		rowDef.setParentRowDefId(0);
+		rowDef.setParentJoinFields(new int[0]);
+		rowDef.setIndexDefs(new IndexDef[0]);
+		return rowDef;
+	}
+
+	/**
+	 * Factory method used for convenience in tests
+	 * 
+	 * @param rowDefId
+	 * @param fieldDefs
+	 * @param tableName
+	 * @param groupTableName
+	 * @param pkFields
+	 * @param parentRowDefId
+	 * @param parentJoinFields
+	 * @return
+	 */
+	public static RowDef createRowDef(final int rowDefId,
+			final FieldDef[] fieldDefs, final String tableName,
+			final String groupTableName, final int[] pkFields,
+			final int parentRowDefId, final int[] parentJoinFields) {
+		final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
+		rowDef.setTableName(tableName);
+		rowDef.setTreeName(groupTableName);
+		rowDef.setPkFields(pkFields);
+		rowDef.setParentRowDefId(parentRowDefId);
+		rowDef.setParentJoinFields(parentJoinFields);
+		rowDef.setIndexDefs(new IndexDef[0]);
+		return rowDef;
+	}
 
 	public RowDef(final int rowDefId, final FieldDef[] fieldDefs) {
 		this.rowDefId = rowDefId;
@@ -215,10 +212,12 @@ public class RowDef {
 		for (int i = 0; i < fieldDefs.length; i++) {
 			sb.append(i == 0 ? "[" : ",");
 			sb.append(fieldDefs[i].getType());
-			for (int j = 0; j < pkFields.length; j++) {
-				if (pkFields[j] == i) {
-					sb.append("*");
-					break;
+			if (pkFields != null) {
+				for (int j = 0; j < pkFields.length; j++) {
+					if (pkFields[j] == i) {
+						sb.append("*");
+						break;
+					}
 				}
 			}
 			if (parentJoinFields != null) {
@@ -420,10 +419,8 @@ public class RowDef {
 	}
 
 	public String getPkTreeName() {
-		if (isGroupTable()) {
-			return null;
-		}
-		return getPKIndexDef().getTreeName();
+		final IndexDef pkIndexDef = getPKIndexDef();
+		return pkIndexDef != null ? pkIndexDef.getTreeName() : null;
 	}
 
 	public int getRowDefId() {
@@ -495,10 +492,11 @@ public class RowDef {
 	}
 
 	public IndexDef getPKIndexDef() {
-		if (isGroupTable()) {
+		if (!isGroupTable() && indexDefs != null && indexDefs.length > 0) {
+			return indexDefs[0];
+		} else {
 			return null;
 		}
-		return indexDefs[0];
 	}
 
 	public RowDef[] getUserTableRowDefs() {
@@ -529,11 +527,10 @@ public class RowDef {
 			}
 			final int width;
 			if (fieldDef.isFixedWidth()) {
-				width = fieldDef.getMinWidth();
+				width = fieldDef.getMaxWidth();
 			} else {
-				voffset += fieldDef.getMaxWidth();
-				width = voffset == 0 ? 0 : voffset < 0x100 ? 1
-						: voffset < 0x10000 ? 2 : voffset < 0x1000000 ? 3 : 4;
+				voffset += fieldDef.getMaxWidth() + fieldDef.getWidthOverhead();
+				width = CServerUtil.varwidth(voffset);
 			}
 			for (int i = 0; i < bit; i++) {
 				int from = fieldCoordinates[byteIndex][i];

@@ -56,6 +56,11 @@ public class RowDefCache implements CServerConstants {
 		}
 		return getRowDef(key.intValue());
 	}
+	
+	public synchronized void clear() {
+		cacheMap.clear();
+		nameMap.clear();
+	}
 
 	/**
 	 * Receive an instance of the AkibaInformationSchema, crack it and produce
@@ -64,8 +69,6 @@ public class RowDefCache implements CServerConstants {
 	 * @param ais
 	 */
 	public synchronized void setAIS(final AkibaInformationSchema ais) {
-		cacheMap.clear();
-		nameMap.clear();
 		for (final UserTable table : ais.getUserTables().values()) {
 			//
 			// TODO : Using tableId for ordinal is a temporary hack

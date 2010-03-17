@@ -221,6 +221,16 @@ public class RowData {
 		return CServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
 	}
 
+	public String getStringValue(final int offset, final int width,
+			final int declaredWidth) {
+		if (offset < rowStart || offset + width >= rowEnd) {
+			throw new IllegalArgumentException("Bad location: " + offset + ":"
+					+ width);
+		}
+		return CServerUtil.decodeMySQLString(bytes, offset, width,
+				declaredWidth);
+	}
+
 	/**
 	 * For debugging only, poke some Java values supplied in the values array
 	 * into a RowData instance. The conversions are very approximate!
@@ -320,13 +330,13 @@ public class RowData {
 				}
 				offset += width;
 			} else {
-				vmax += fieldDef.getMaxWidth();
+				final int overhead = fieldDef.getWidthOverhead();
+				vmax += fieldDef.getMaxWidth() + overhead;
 				if (object == null) {
 					continue;
 				}
-				int width = vmax == 0 ? 0 : vmax < 256 ? 1 : vmax < 65536 ? 2
-						: 3;
-				vlength += getBytes(object).length;
+				vlength += getBytes(object).length + overhead;
+				final int width = CServerUtil.varwidth(vmax);
 				switch (width) {
 				case 0:
 					break;
@@ -334,7 +344,7 @@ public class RowData {
 					CServerUtil.putByte(bytes, offset, (byte) vlength);
 					break;
 				case 2:
-					CServerUtil.putShort(bytes, offset, (short) vlength);
+					CServerUtil.putChar(bytes, offset, (char) vlength);
 					break;
 				case 3:
 					CServerUtil.putMediumInt(bytes, offset, (int) vlength);
@@ -345,8 +355,24 @@ public class RowData {
 		}
 		for (int index = 0; index < values.length; index++) {
 			final FieldDef fieldDef = rowDef.getFieldDef(index);
-			if (!fieldDef.isFixedWidth()) {
+			if (!fieldDef.isFixedWidth() && values[index] != null) {
 				final byte[] b = getBytes(values[index]);
+				switch (fieldDef.getWidthOverhead()) {
+				case 0:
+					break;
+				case 1:
+					CServerUtil.putByte(bytes, offset, (byte) b.length);
+					offset += 1;
+					break;
+				case 2:
+					CServerUtil.putChar(bytes, offset, (short) b.length);
+					offset += 2;
+					break;
+				case 3:
+					CServerUtil.putMediumInt(bytes, offset, (int) b.length);
+					offset += 3;
+					break;
+				}
 				CServerUtil.putBytes(bytes, offset, b);
 				offset += b.length;
 			}
@@ -390,9 +416,10 @@ public class RowData {
 			} else {
 				sb.append(rowDef.getTableName());
 				for (int i = 0; i < getFieldCount(); i++) {
+					final FieldDef fieldDef = rowDef.getFieldDef(i);
 					final long location = rowDef.fieldLocation(this, i);
 					sb.append(i == 0 ? "(" : ",");
-					switch (rowDef.getFieldDef(i).getType()) {
+					switch (fieldDef.getType()) {
 					case TINYINT:
 					case SMALLINT:
 					case MEDIUMINT:
@@ -415,6 +442,30 @@ public class RowData {
 						sb.append("\'");
 						int start = (int) location;
 						int size = (int) (location >>> 32);
+						final int prefix = fieldDef.getWidthOverhead();
+						final int length;
+						switch (prefix) {
+						case 0:
+							length = 0;
+							break;
+						case 1:
+							length = CServerUtil.getByte(bytes, start);
+							break;
+						case 2:
+							length = CServerUtil.getChar(bytes, start);
+							break;
+						case 3:
+							length = CServerUtil.getMediumInt(bytes, start);
+						default:
+							throw new Error("No such case");
+						}
+						start += prefix;
+						size -= prefix;
+						if (length != size) {
+							sb.append("<length " + length
+									+ " unequal to storage size " + size + ">");
+							size = Math.min(length, size);
+						}
 						for (int j = 0; j < size; j++) {
 							char c = (char) (bytes[j + start] & 0xFF);
 							switch (c) {
@@ -437,11 +488,7 @@ public class RowData {
 								sb.append("\\t");
 								break;
 							default:
-								if (c >= ' ') { // TODO - temporarily filters
-									// out control characters and
-									// nulls
-									sb.append(c);
-								}
+								sb.append(c);
 							}
 						}
 						sb.append("\'");
