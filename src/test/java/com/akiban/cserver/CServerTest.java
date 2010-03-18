@@ -6,9 +6,9 @@ import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Type;
 import com.akiban.cserver.message.GetAutoIncrementValueRequest;
 import com.akiban.cserver.message.GetAutoIncrementValueResponse;
-import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.message.WriteRowRequest;
 import com.akiban.cserver.message.WriteRowResponse;
 import com.akiban.cserver.store.PersistitStore;
@@ -114,7 +114,15 @@ public class CServerTest extends TestCase implements CServerConstants {
 				.buildAIS(DDL_FILE_NAME);
 		final CServer cserver = new CServer();
 		cserver.getRowDefCache().setAIS(ais);
-
+	}
+	
+	public void testEmitTypes() throws Exception {
+		final AkibaInformationSchema ais = new DDLSource()
+			.buildAIS(DDL_FILE_NAME);
+		for (final Type t : ais.getTypes()) {
+			System.out.println(String.format("<type name=\"%s\" nparams=\"%s\" fixed=\"%s\" maxsize=\"%s\" />",
+					t.name(), t.nTypeParameters(), t.fixedSize(), t.maxSizeBytes()));
+		}
 	}
 
 	private WriteRowRequest createWriteRowRequest() {

@@ -167,7 +167,7 @@ public class RowDefTest extends TestCase {
 		}
 	}
 
-	public void dontTestComputeFieldLocations2() throws Exception {
+	public void dontComputeFieldLocations2() throws Exception {
 		final int fieldCount = 37;
 		final Random random = new Random();
 		final byte[] stringBytes = new byte[100000];
@@ -222,7 +222,8 @@ public class RowDefTest extends TestCase {
 				case DOUBLE:
 				case U_BIGINT:
 				case BIGINT:
-					value = random.nextLong();
+					// TODO - currently we don't handle unsigned longs.
+					value = random.nextLong() & Long.MAX_VALUE;
 					break;
 				case VARCHAR:
 				case BINCHAR:
@@ -292,15 +293,9 @@ public class RowDefTest extends TestCase {
 		} else {
 			int prefix = fieldDef.getWidthOverhead();
 			byte[] decodedBytes = new byte[((int) (location >>> 32)) - prefix];
-			System.arraycopy(rowData.getBytes(), (int) location, decodedBytes,
-					0, decodedBytes.length);
-			byte[] bytes;
-			if (value instanceof String) {
-				bytes = ((String) value).getBytes();
-			} else {
-				bytes = (byte[]) value;
-			}
-			assertTrue(Arrays.equals(bytes, decodedBytes));
+			System.arraycopy(rowData.getBytes(), (int) location + prefix,
+					decodedBytes, 0, decodedBytes.length);
+			assertTrue(Arrays.equals((byte[]) value, decodedBytes));
 		}
 	}
 }

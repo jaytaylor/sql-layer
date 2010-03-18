@@ -269,12 +269,25 @@ public class RowData {
 					continue;
 				}
 				switch (fieldDef.getType()) {
+				
+				case U_TINYINT:
+				case U_SMALLINT:
+				case U_MEDIUMINT:
+				case U_INT:
+				case U_BIGINT:
+
 				case TINYINT:
 				case SMALLINT:
 				case MEDIUMINT:
 				case INT:
 				case BIGINT:
 					value = ((Number) object).longValue();
+					break;
+				case FLOAT:
+					value = Float.floatToRawIntBits(((Number)object).floatValue());
+					break;
+				case DOUBLE:
+					value = Double.doubleToRawLongBits(((Number)object).doubleValue());
 					break;
 				case DATETIME:
 				case TIMESTAMP:

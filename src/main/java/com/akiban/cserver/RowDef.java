@@ -155,6 +155,9 @@ public class RowDef {
 	public RowDef(final int rowDefId, final FieldDef[] fieldDefs) {
 		this.rowDefId = rowDefId;
 		this.fieldDefs = fieldDefs;
+		for (final FieldDef fieldDef : fieldDefs) {
+			fieldDef.setParent(this);
+		}
 		fieldCoordinates = new int[(fieldDefs.length + 7) / 8][];
 		varLenFieldMap = new byte[(fieldDefs.length + 7) / 8][];
 		preComputeFieldCoordinates(fieldDefs);

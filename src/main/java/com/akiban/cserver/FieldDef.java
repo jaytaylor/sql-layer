@@ -7,6 +7,8 @@ public class FieldDef {
 	private final String columnName;
 
 	private final int maxWidth;
+	
+	private RowDef parent;
 
 	public FieldDef(final String name, final FieldType type) {
 		this.columnName = name;
@@ -53,6 +55,16 @@ public class FieldDef {
 		return type.isFixedWidth();
 	}
 
+
+	public void setParent(RowDef parent) {
+		this.parent = parent;
+	}
+
+	public RowDef getParent() {
+		return parent;
+	}
+
+	@Override
 	public String toString() {
 		return columnName + "(" + type + "(" + getMinWidth() + ","
 				+ getMaxWidth() + "))";
