@@ -16,6 +16,12 @@
 
 		<dependency>
 			<groupId>com.thimbleware.jmemcached</groupId>
+			<artifactId>jmemcached-cli</artifactId>
+			<version>0.9.3-AKIBAN</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.thimbleware.jmemcached</groupId>
 			<artifactId>jmemcached-core</artifactId>
 			<version>0.9.3-AKIBAN</version>
 		</dependency>

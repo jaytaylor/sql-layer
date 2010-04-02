@@ -322,6 +322,20 @@ public class CServer {
 			return;
 		}
 		server.start();
+
+                // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk Server
+                /*
+                com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.registerCallback(
+                    new com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.Callback()
+                    {
+                        public byte[] get(byte[] key)
+                        {
+                            // PETER-TODO: "byte[] key" is of format: schema_name:table_name:col_key_name:col_key_value
+                            return null;
+                        }
+                    });
+                com.thimbleware.jmemcached.Main.main(new String[0]);
+                */
 	}
 
 	public String property(final String key) {
