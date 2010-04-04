@@ -330,8 +330,40 @@ public class CServer {
                     {
                         public byte[] get(byte[] key)
                         {
-                            // PETER-TODO: "byte[] key" is of format: schema_name:table_name:col_key_name:col_key_value
-                            return null;
+                            byte[] result = null;
+
+                            String request = new String(key);
+                            String[] tokens = request.split(":");
+                            if (tokens.length == 4)
+                            {
+                                String schema = tokens[0];
+                                String table = tokens[1];
+                                String colkey = tokens[2];
+                                String colval = tokens[3];
+
+                                try
+                                {
+                                    List<RowData> list = null;
+                                    // list = store.fetchRows(schema, table, colkey, colval, colval);
+
+                                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                                    java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(bos);
+                                    out.writeObject(list);
+                                    out.close();
+
+                                    result = bos.toByteArray(); 
+                                }
+                                catch (Exception e)
+                                {
+                                    result = new String("read error: " + e.getMessage()).getBytes();
+                                }
+                            }
+                            else
+                            {
+                                result = new String("invalid key: " + request).getBytes();
+                            }
+
+                            return result;
                         }
                     });
                 com.thimbleware.jmemcached.Main.main(new String[0]);
