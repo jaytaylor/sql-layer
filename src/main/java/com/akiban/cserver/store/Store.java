@@ -39,7 +39,7 @@ public interface Store {
 
 	long getRowCount(final boolean exact, final RowData start,
 			final RowData end, final byte[] columnBitMap) throws Exception;
-	
+
 	TableStatistics getTableStatistics(final int tableId) throws Exception;
 
 	int dropTable(final int rowDefId) throws Exception;
@@ -50,8 +50,79 @@ public interface Store {
 
 	void setOrdinals() throws Exception;
 
+	/**
+	 * <p>
+	 * Fetch and return a List of RowData objects. This is a somewhat
+	 * generalized interface to the core row-scanning logic suitable for
+	 * object-level access by MemcacheD, for example. This method may returns
+	 * rows of multiple types, depending on the parameters. For example, this
+	 * method may be used to request a Customer by customer_id, along with all
+	 * that customer's orders and order items.
+	 * </p>
+	 * 
+	 * <p>
+	 * The method supports selection from an index based on a range of values
+	 * for one designated column. There must be an index on the specified
+	 * column. Typically one would specify a primary key column and the PK index
+	 * would be used, but any column with an index is permitted. The least and
+	 * greatest values represent bounds on the column values in rows returned by
+	 * this method; if least and greatest are the same then this method selects
+	 * the all rows having that value; if the column specifies a unique index
+	 * then just one matches.  For example, in the COI schema, if columnName="customer"
+	 * and least and greatest are both equal to 123, then just the customer row
+	 * for customer_id=123 is returned.
+	 * </p>
+	 * 
+	 * <p>
+	 * This method also supports selecting descendant rows from the specified
+	 * table according the the natural join relationships inherent in the user
+	 * table's group. The leafTableName controls this behavior. Specify:
+	 * <dl>
+	 * <dt>leafTableName = tableName</dt>
+	 * <dd>to restrict the results to a single table</dd>
+	 * <dt>leafTableName = childTableName</dt>
+	 * <dd>to return rows from all tables in the group found on a path from
+	 * tableName to childTableName. For example, in our COI schema specify
+	 * tableName="customer" and leafTableName="order" to return customer row(s)
+	 * plus all their contained orders.</dd>
+	 * <dt>leafTableName = null</dt>
+	 * <dd>for convenience, this method attempts to find a leaf table and
+	 * follows the above logic with it. For example, with the COI schema,
+	 * specifying leafTableName=null is equivalent to specifying
+	 * leafTableName="item". In a "bushy" schema, like CAOI, the results are
+	 * indeterminate.</dd>
+	 * </p>
+	 * 
+	 * <p>
+	 * The Object types for the least and greatest values should be chosen to
+	 * match the data type of the column.  For numeric columns, use a numeric type
+	 * (width does not matter: for example, you can specify Integer-valued least
+	 * and greatest values for a BIGINT column), for date/timestamp/year columns specify
+	 * java.util.Date, for char/varchar (and in some cases the blob-type columns),
+	 * specify a String. For most common data types fetchRows can make the natural
+	 * translation from a Java Object to the MySQL column value.
+	 * </p>
+	 * 
+	 * @param schemaName
+	 *            schema name
+	 * @param tableName
+	 *            table name - should be a user table, such as "Customer"
+	 * @param columnName
+	 *            column name on which index values are specified
+	 * @param least
+	 *            the low end of the retrieval range, inclusive for the column
+	 *            specified by columnName.
+	 * @param greatest
+	 *            the high end of the retrieval range, inclusive, for the column
+	 *            specified by columnName.
+	 * @param leafTableName
+	 *            optional user table name specifying the leafmost table to
+	 *            retrieve from, e.g., "item" in the COI schema.
+	 * @return
+	 * @throws Exception
+	 */
 	List<RowData> fetchRows(final String schemaName, final String tableName,
-			final String columnName, final Object least, final Object greatest)
-			throws Exception;
+			final String columnName, final Object least, final Object greatest,
+			final String leafTableName) throws Exception;
 
 }

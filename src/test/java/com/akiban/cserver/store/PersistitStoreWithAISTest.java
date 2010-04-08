@@ -488,12 +488,28 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	public void testFetchRows() throws Exception {
 		final TestData td = new TestData(5, 5, 5, 5);
 		td.insertTestRows();
-		final List<RowData> list = store.fetchRows("data_dictionary_test",
-				"item", "part_id", 1001001, 1001005);
-		assertEquals(5, list.size());
-		for (final RowData rowData : list) {
-			System.out.println(rowData.toString(store.getRowDefCache()));
-			System.out.println(rowData.toString());
+		{
+			final List<RowData> list = store.fetchRows("data_dictionary_test",
+					"item", "part_id", 1001001, 1001005, "item");
+			assertEquals(5, list.size());
+		}
+		
+		{
+			final List<RowData> list = store.fetchRows("data_dictionary_test",
+					"customer", "customer_id", 1, 1, "item");
+			assertEquals(31, list.size());
+		}
+		
+		{
+			final List<RowData> list = store.fetchRows("data_dictionary_test",
+					"customer", "customer_id", 1, 2, "address");
+			assertEquals(5, list.size());
+		}
+
+		{
+			final List<RowData> list = store.fetchRows("data_dictionary_test",
+					"customer", "customer_id", 1, 1, null);
+			assertEquals(156, list.size());
 		}
 	}
 

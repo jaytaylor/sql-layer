@@ -210,7 +210,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 					.getOrdinal());
 			for (int k = 0; k < fields.length; k++) {
 				terms[index - fields.length + k] = computeKeyFilterTerm(key,
-						rowDef, start, end, fields[k]);
+						rowDef, start, end, fields[k] + def.getColumnOffset() - rowDef.getColumnOffset());
 			}
 			index -= (fields.length + 1);
 			final int parentId = def.getParentRowDefId();
@@ -261,6 +261,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 	 */
 	KeyFilter.Term computeKeyFilterTerm(final Key key, final RowDef rowDef,
 			final RowData start, final RowData end, final int fieldIndex) {
+		if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
+			return KeyFilter.ALL;
+		}
 		final long lowLoc = rowDef.fieldLocation(start, fieldIndex);
 		final long highLoc = rowDef.fieldLocation(end, fieldIndex);
 		if (lowLoc != 0 || highLoc != 0) {
