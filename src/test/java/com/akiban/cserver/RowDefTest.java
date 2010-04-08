@@ -1,87 +1,88 @@
 package com.akiban.cserver;
 
 import java.util.Arrays;
-import java.util.Random;
 
 import junit.framework.TestCase;
 
+import com.akiban.ais.model.Types;
+
 public class RowDefTest extends TestCase {
 
-	private final static boolean VERBOSE = false;
+	private final static boolean VERBOSE = true;
 
 	private final static FieldDef[][] FIELD_DEF_CASES = new FieldDef[][] {
-			{ new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.SMALLINT), },
+			{ new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.SMALLINT), },
 
-			{ new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.TINYINT), },
+			{ new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.TINYINT), },
 
-			{ new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT), },
+			{ new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT), },
 
-			{ new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100),
-					new FieldDef(n(), FieldType.VARCHAR, 100), },
+			{ new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100), },
 
-			{ new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.SMALLINT),
-					new FieldDef(n(), FieldType.MEDIUMINT),
-					new FieldDef(n(), FieldType.INT),
-					new FieldDef(n(), FieldType.BIGINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.SMALLINT),
-					new FieldDef(n(), FieldType.MEDIUMINT),
-					new FieldDef(n(), FieldType.INT),
-					new FieldDef(n(), FieldType.BIGINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.VARCHAR, 200),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.SMALLINT),
-					new FieldDef(n(), FieldType.MEDIUMINT),
-					new FieldDef(n(), FieldType.INT),
-					new FieldDef(n(), FieldType.BIGINT),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.SMALLINT),
-					new FieldDef(n(), FieldType.MEDIUMINT),
-					new FieldDef(n(), FieldType.INT),
-					new FieldDef(n(), FieldType.BIGINT),
-					new FieldDef(n(), FieldType.VARCHAR, 200),
-					new FieldDef(n(), FieldType.TINYINT),
-					new FieldDef(n(), FieldType.TINYINT), },
+			{ new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.SMALLINT),
+					new FieldDef(n(), Types.MEDIUMINT),
+					new FieldDef(n(), Types.INT),
+					new FieldDef(n(), Types.BIGINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.SMALLINT),
+					new FieldDef(n(), Types.MEDIUMINT),
+					new FieldDef(n(), Types.INT),
+					new FieldDef(n(), Types.BIGINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.VARCHAR, 200),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.SMALLINT),
+					new FieldDef(n(), Types.MEDIUMINT),
+					new FieldDef(n(), Types.INT),
+					new FieldDef(n(), Types.BIGINT),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.SMALLINT),
+					new FieldDef(n(), Types.MEDIUMINT),
+					new FieldDef(n(), Types.INT),
+					new FieldDef(n(), Types.BIGINT),
+					new FieldDef(n(), Types.VARCHAR, 200),
+					new FieldDef(n(), Types.TINYINT),
+					new FieldDef(n(), Types.TINYINT), },
 
 	};
 
@@ -167,113 +168,113 @@ public class RowDefTest extends TestCase {
 		}
 	}
 
-	public void dontComputeFieldLocations2() throws Exception {
-		final int fieldCount = 37;
-		final Random random = new Random();
-		final byte[] stringBytes = new byte[100000];
-		for (int i = 0; i < stringBytes.length; i++) {
-			stringBytes[i] = (byte) ((i % 26) + 97);
-		}
-		final FieldDef[] fieldDefs = new FieldDef[fieldCount];
-		final FieldType[] allTypes = FieldType.values();
-		int maxSize = 20;
-		for (int i = 0; i < fieldDefs.length; i++) {
-			FieldType type = allTypes[random.nextInt(allTypes.length)];
-			if (type.isFixedWidth()) {
-				fieldDefs[i] = new FieldDef(n(), type);
-				maxSize += type.getMaxWidth();
-			} else {
-				int max = Math.min(1000, type.getMaxWidth()
-						- type.getMinWidth() + 1);
-				int maxWidth = random.nextInt(max) + type.getMinWidth();
-				fieldDefs[i] = new FieldDef(n(), type, maxWidth);
-				maxSize += maxWidth + 3;
-			}
-		}
-		final RowDef rowDef = new RowDef(fieldCount, fieldDefs);
-		if (VERBOSE) {
-			System.out.println(rowDef);
-		}
-
-		final Object[] values = new Object[fieldDefs.length];
-		final RowData data = new RowData(new byte[maxSize]);
-
-		for (int i = 0; i < fieldDefs.length; i++) {
-			Object value = null;
-			if (random.nextInt(10) != 0) {
-				switch (fieldDefs[i].getType()) {
-				case U_TINYINT:
-				case TINYINT:
-					value = (byte) random.nextInt();
-					break;
-				case U_SMALLINT:
-				case SMALLINT:
-					value = (short) random.nextInt();
-					break;
-				case U_MEDIUMINT:
-				case MEDIUMINT:
-					value = random.nextInt() & 0xFFFFFF;
-					break;
-				case FLOAT:
-				case U_INT:
-				case INT:
-					value = random.nextInt();
-					break;
-				case DOUBLE:
-				case U_BIGINT:
-				case BIGINT:
-					// TODO - currently we don't handle unsigned longs.
-					value = random.nextLong() & Long.MAX_VALUE;
-					break;
-				case VARCHAR:
-				case BINCHAR:
-				case BINVARCHAR:
-				case CHAR:
-					int size = random.nextInt(fieldDefs[i].getMaxWidth());
-					value = new byte[size];
-					System.arraycopy(stringBytes, random.nextInt(20000), value,
-							0, size);
-				default:
-				}
-				values[i] = value;
-			}
-		}
-		data.createRow(rowDef, values);
-
-		if (VERBOSE) {
-			System.out.println(data);
-		}
-		for (int i = fieldDefs.length; --i >= 0;) {
-			final long location = rowDef.fieldLocation(data, i);
-			assertValuesAreEqual(values[i], fieldDefs[i], data, location);
-		}
-
-		for (int i = 0; i < 100000; i++) {
-			final int field = random.nextInt(fieldDefs.length);
-			final long location = rowDef.fieldLocation(data, field);
-			assertValuesAreEqual(values[field], fieldDefs[field], data,
-					location);
-		}
-
-		long xor = 0;
-		int count = 0;
-		final long start = System.nanoTime();
-		while (System.nanoTime() - start < 1000000000L) {
-			for (int k = 0; k < 10000; k++) {
-				for (int i = 0; i < fieldCount; i++) {
-					final long location = rowDef.fieldLocation(data, i);
-					// use the result so that HotSpot doesn't optimize away the
-					// call
-					xor ^= location;
-				}
-				count += fieldDefs.length;
-			}
-		}
-		final long elapsed = System.nanoTime() - start;
-		System.out.println(String.format("Average fieldLocation time on table "
-				+ "%d columns wide: %dns (xor=%d)", fieldDefs.length, elapsed
-				/ count, xor));
-	}
+	// public void dontComputeFieldLocations2() throws Exception {
+	// final int fieldCount = 37;
+	// final Random random = new Random();
+	// final byte[] stringBytes = new byte[100000];
+	// for (int i = 0; i < stringBytes.length; i++) {
+	// stringBytes[i] = (byte) ((i % 26) + 97);
+	// }
+	// final FieldDef[] fieldDefs = new FieldDef[fieldCount];
+	// final Types[] allTypes = Types.values();
+	// int maxSize = 20;
+	// for (int i = 0; i < fieldDefs.length; i++) {
+	// Types type = allTypes[random.nextInt(allTypes.length)];
+	// if (type.isFixedWidth()) {
+	// fieldDefs[i] = new FieldDef(n(), type);
+	// maxSize += type.getMaxWidth();
+	// } else {
+	// int max = Math.min(1000, type.getMaxWidth()
+	// - type.getMinWidth() + 1);
+	// int maxWidth = random.nextInt(max) + type.getMinWidth();
+	// fieldDefs[i] = new FieldDef(n(), type, maxWidth);
+	// maxSize += maxWidth + 3;
+	// }
+	// }
+	// final RowDef rowDef = new RowDef(fieldCount, fieldDefs);
+	// if (VERBOSE) {
+	// System.out.println(rowDef);
+	// }
+	//
+	// final Object[] values = new Object[fieldDefs.length];
+	// final RowData data = new RowData(new byte[maxSize]);
+	//
+	// for (int i = 0; i < fieldDefs.length; i++) {
+	// Object value = null;
+	// if (random.nextInt(10) != 0) {
+	// switch (fieldDefs[i].getType()) {
+	// case U_TINYINT:
+	// case TINYINT:
+	// value = (byte) random.nextInt();
+	// break;
+	// case U_SMALLINT:
+	// case SMALLINT:
+	// value = (short) random.nextInt();
+	// break;
+	// case U_MEDIUMINT:
+	// case MEDIUMINT:
+	// value = random.nextInt() & 0xFFFFFF;
+	// break;
+	// case FLOAT:
+	// case U_INT:
+	// case INT:
+	// value = random.nextInt();
+	// break;
+	// case DOUBLE:
+	// case U_BIGINT:
+	// case BIGINT:
+	// // TODO - currently we don't handle unsigned longs.
+	// value = random.nextLong() & Long.MAX_VALUE;
+	// break;
+	// case VARCHAR:
+	// case BINCHAR:
+	// case BINVARCHAR:
+	// case CHAR:
+	// int size = random.nextInt(fieldDefs[i].getMaxWidth());
+	// value = new byte[size];
+	// System.arraycopy(stringBytes, random.nextInt(20000), value,
+	// 0, size);
+	// default:
+	// }
+	// values[i] = value;
+	// }
+	// }
+	// data.createRow(rowDef, values);
+	//
+	// if (VERBOSE) {
+	// System.out.println(data);
+	// }
+	// for (int i = fieldDefs.length; --i >= 0;) {
+	// final long location = rowDef.fieldLocation(data, i);
+	// assertValuesAreEqual(values[i], fieldDefs[i], data, location);
+	// }
+	//
+	// for (int i = 0; i < 100000; i++) {
+	// final int field = random.nextInt(fieldDefs.length);
+	// final long location = rowDef.fieldLocation(data, field);
+	// assertValuesAreEqual(values[field], fieldDefs[field], data,
+	// location);
+	// }
+	//
+	// long xor = 0;
+	// int count = 0;
+	// final long start = System.nanoTime();
+	// while (System.nanoTime() - start < 1000000000L) {
+	// for (int k = 0; k < 10000; k++) {
+	// for (int i = 0; i < fieldCount; i++) {
+	// final long location = rowDef.fieldLocation(data, i);
+	// // use the result so that HotSpot doesn't optimize away the
+	// // call
+	// xor ^= location;
+	// }
+	// count += fieldDefs.length;
+	// }
+	// }
+	// final long elapsed = System.nanoTime() - start;
+	// System.out.println(String.format("Average fieldLocation time on table "
+	// + "%d columns wide: %dns (xor=%d)", fieldDefs.length, elapsed
+	// / count, xor));
+	// }
 
 	private void assertValuesAreEqual(final Object value,
 			final FieldDef fieldDef, final RowData rowData, final long location) {

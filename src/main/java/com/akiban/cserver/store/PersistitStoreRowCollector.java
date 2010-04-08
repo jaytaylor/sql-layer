@@ -268,13 +268,12 @@ public class PersistitStoreRowCollector implements RowCollector,
 			key.reset();
 			if (lowLoc != 0) {
 				store.appendKeyField(key, rowDef.getFieldDef(fieldIndex),
-						start, lowLoc);
+						start);
 			} else {
 				key.append(Key.BEFORE);
 			}
 			if (highLoc != 0) {
-				store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), end,
-						highLoc);
+				store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), end);
 			} else {
 				key.append(Key.AFTER);
 			}

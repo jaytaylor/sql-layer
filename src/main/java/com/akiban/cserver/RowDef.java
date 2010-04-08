@@ -59,6 +59,10 @@ public class RowDef {
 	private String treeName;
 
 	/**
+	 * Schema this RowDef belongs to.
+	 */
+	private String schemaName;
+	/**
 	 * RowDefs of constituent user tables. Populated only if this is the RowDef
 	 * for a group table. Null if this is the RowDef for a user table.
 	 */
@@ -155,8 +159,10 @@ public class RowDef {
 	public RowDef(final int rowDefId, final FieldDef[] fieldDefs) {
 		this.rowDefId = rowDefId;
 		this.fieldDefs = fieldDefs;
-		for (final FieldDef fieldDef : fieldDefs) {
-			fieldDef.setParent(this);
+		for (int index = 0; index < fieldDefs.length; index++) {
+			final FieldDef fieldDef = fieldDefs[index];
+			fieldDef.setRowDef(this);
+			fieldDef.setFieldIndex(index);
 		}
 		fieldCoordinates = new int[(fieldDefs.length + 7) / 8][];
 		varLenFieldMap = new byte[(fieldDefs.length + 7) / 8][];
@@ -441,6 +447,10 @@ public class RowDef {
 	public String getTreeName() {
 		return treeName;
 	}
+	
+	public String getSchemaName() {
+		return schemaName;
+	}
 
 	public boolean isGroupTable() {
 		return userTableRowDefs != null;
@@ -480,6 +490,10 @@ public class RowDef {
 
 	public void setTreeName(final String treeName) {
 		this.treeName = treeName;
+	}
+	
+	public void setSchemaName(final String schemaName) {
+		this.schemaName = schemaName;
 	}
 
 	public int getHKeyDepth() {

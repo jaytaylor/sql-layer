@@ -223,6 +223,9 @@ public class RowData {
 
 	public String getStringValue(final int offset, final int width,
 			final int declaredWidth) {
+		if (offset == 0 && width == 0) {
+			return null;
+		}
 		if (offset < rowStart || offset + width >= rowEnd) {
 			throw new IllegalArgumentException("Bad location: " + offset + ":"
 					+ width);
@@ -263,131 +266,39 @@ public class RowData {
 			Object object = values[index];
 			FieldDef fieldDef = rowDef.getFieldDef(index);
 			if (fieldDef.isFixedWidth()) {
-				final int width = fieldDef.getMaxWidth();
-				long value = 0;
-				if (object == null) {
-					continue;
+				if (object != null) {
+					offset += fieldDef.getEncoding().fromObject(fieldDef,
+							object, bytes, offset);
 				}
-				switch (fieldDef.getType()) {
-				
-				case U_TINYINT:
-				case U_SMALLINT:
-				case U_MEDIUMINT:
-				case U_INT:
-				case U_BIGINT:
-
-				case TINYINT:
-				case SMALLINT:
-				case MEDIUMINT:
-				case INT:
-				case BIGINT:
-					value = ((Number) object).longValue();
-					break;
-				case FLOAT:
-					value = Float.floatToRawIntBits(((Number)object).floatValue());
-					break;
-				case DOUBLE:
-					value = Double.doubleToRawLongBits(((Number)object).doubleValue());
-					break;
-				case DATETIME:
-				case TIMESTAMP:
-					final Date date;
-					try {
-						date = SDF_DATETIME.parse((String) object);
-					} catch (ParseException e) {
-						throw new RuntimeException(e);
-					}
-					if (fieldDef.getType() == FieldType.TIMESTAMP) {
-						value = (int) (date.getTime() / 1000);
-					} else {
-						int hi = ((date.getYear() + 1900) * 10000)
-								+ (date.getMonth() * 100) + date.getDate();
-						int low = (date.getHours() * 10000)
-								+ (date.getMinutes() * 100) + date.getSeconds();
-						value = ((long) hi) << 32 + (long) low;
-					}
-					break;
-				case TIME:
-					final Date time;
-					try {
-						date = SDF_TIME.parse((String) object);
-					} catch (ParseException e) {
-						throw new RuntimeException(e);
-					}
-					value = date.getHours() * 3600 + date.getMinutes() * 60
-							+ date.getSeconds();
-					break;
-
-				default:
-					throw new UnsupportedOperationException(
-							"Unable to encode type " + fieldDef);
-				}
-				switch (width) {
-				case 1:
-					CServerUtil.putByte(bytes, offset, (byte) value);
-					break;
-				case 2:
-					CServerUtil.putShort(bytes, offset, (short) value);
-					break;
-				case 3:
-					CServerUtil.putMediumInt(bytes, offset, (int) value);
-					break;
-				case 4:
-					CServerUtil.putInt(bytes, offset, (int) value);
-					break;
-				case 8:
-					CServerUtil.putLong(bytes, offset, value);
-					break;
-				default:
-					throw new IllegalStateException("Width not supported");
-				}
-				offset += width;
 			} else {
-				final int overhead = fieldDef.getWidthOverhead();
-				vmax += fieldDef.getMaxWidth() + overhead;
-				if (object == null) {
-					continue;
+				vmax += fieldDef.getMaxRowDataWidth();
+				if (object != null) {
+					vlength += fieldDef.getEncoding().widthFromObject(fieldDef,
+							object);
+					final int width = CServerUtil.varwidth(vmax);
+					switch (width) {
+					case 0:
+						break;
+					case 1:
+						CServerUtil.putByte(bytes, offset, (byte) vlength);
+						break;
+					case 2:
+						CServerUtil.putChar(bytes, offset, (char) vlength);
+						break;
+					case 3:
+						CServerUtil.putMediumInt(bytes, offset, (int) vlength);
+						break;
+					}
+					offset += width;
 				}
-				vlength += getBytes(object).length + overhead;
-				final int width = CServerUtil.varwidth(vmax);
-				switch (width) {
-				case 0:
-					break;
-				case 1:
-					CServerUtil.putByte(bytes, offset, (byte) vlength);
-					break;
-				case 2:
-					CServerUtil.putChar(bytes, offset, (char) vlength);
-					break;
-				case 3:
-					CServerUtil.putMediumInt(bytes, offset, (int) vlength);
-					break;
-				}
-				offset += width;
 			}
 		}
 		for (int index = 0; index < values.length; index++) {
+			Object object = values[index];
 			final FieldDef fieldDef = rowDef.getFieldDef(index);
-			if (!fieldDef.isFixedWidth() && values[index] != null) {
-				final byte[] b = getBytes(values[index]);
-				switch (fieldDef.getWidthOverhead()) {
-				case 0:
-					break;
-				case 1:
-					CServerUtil.putByte(bytes, offset, (byte) b.length);
-					offset += 1;
-					break;
-				case 2:
-					CServerUtil.putChar(bytes, offset, (short) b.length);
-					offset += 2;
-					break;
-				case 3:
-					CServerUtil.putMediumInt(bytes, offset, (int) b.length);
-					offset += 3;
-					break;
-				}
-				CServerUtil.putBytes(bytes, offset, b);
-				offset += b.length;
+			if (object != null && !fieldDef.isFixedWidth()) {
+				offset += fieldDef.getEncoding().fromObject(fieldDef, values[index],
+						bytes, offset);
 			}
 		}
 		CServerUtil.putChar(bytes, offset, SIGNATURE_B);
@@ -413,7 +324,7 @@ public class RowData {
 	 */
 	@Override
 	public String toString() {
-		return CServerUtil.dump(bytes, 0, bytes.length);
+		return CServerUtil.dump(bytes, rowStart, rowEnd - rowStart);
 	}
 
 	public String toString(final RowDefCache cache) {
@@ -430,112 +341,14 @@ public class RowData {
 				sb.append(rowDef.getTableName());
 				for (int i = 0; i < getFieldCount(); i++) {
 					final FieldDef fieldDef = rowDef.getFieldDef(i);
-					final long location = rowDef.fieldLocation(this, i);
 					sb.append(i == 0 ? "(" : ",");
-					switch (fieldDef.getType()) {
-					case TINYINT:
-					case SMALLINT:
-					case MEDIUMINT:
-					case INT:
-					case BIGINT: {
-						sb.append(getIntegerValue((int) location,
-								(int) (location >>> 32)));
-						break;
-					}
-					case VARCHAR:
-					case CHAR:
-					case TINYTEXT:
-					case TEXT:
-					case MEDIUMTEXT:
-					case LONGTEXT:
-					case TINYBLOB:
-					case BLOB:
-					case MEDIUMBLOB:
-					case LONGBLOB: {
-						sb.append("\'");
-						int start = (int) location;
-						int size = (int) (location >>> 32);
-						final int prefix = fieldDef.getWidthOverhead();
-						final int length;
-						switch (prefix) {
-						case 0:
-							length = 0;
-							break;
-						case 1:
-							length = CServerUtil.getByte(bytes, start);
-							break;
-						case 2:
-							length = CServerUtil.getChar(bytes, start);
-							break;
-						case 3:
-							length = CServerUtil.getMediumInt(bytes, start);
-						default:
-							throw new Error("No such case");
-						}
-						start += prefix;
-						size -= prefix;
-						if (length != size) {
-							sb.append("<length " + length
-									+ " unequal to storage size " + size + ">");
-							size = Math.min(length, size);
-						}
-						for (int j = 0; j < size; j++) {
-							char c = (char) (bytes[j + start] & 0xFF);
-							switch (c) {
-							case '\\':
-								sb.append("\\\\");
-								break;
-							case '\"':
-								sb.append("\\\"");
-								break;
-							case '\'':
-								sb.append("\\\'");
-								break;
-							case '\n':
-								sb.append("\\n");
-								break;
-							case '\r':
-								sb.append("\\r");
-								break;
-							case '\t':
-								sb.append("\\t");
-								break;
-							default:
-								sb.append(c);
-							}
-						}
-						sb.append("\'");
-						break;
-					}
-					case DATETIME: {
-						final long dt = getIntegerValue((int) location, 8);
-						final int hi = (int) (dt >>> 32);
-						final int low = (int) dt;
-						final int year = hi / 10000;
-						final int month = (hi / 100) % 100;
-						final int day = hi % 100;
-						final int hour = low / 10000;
-						final int minute = (low / 100) % 100;
-						final int second = low % 100;
-						final Date date = new Date(year - 1900, month, day,
-								hour, minute, second);
-						sb.append('\'');
-						sb.append(SDF_DATETIME.format(date));
-						sb.append('\'');
-						break;
-					}
-					case TIMESTAMP: {
-						final long time = ((long) getIntegerValue(
-								(int) location, 4)) * 1000;
-						final Date date = new Date(time);
-						sb.append('\'');
-						sb.append(SDF_DATETIME.format(date));
-						sb.append('\'');
-						break;
-					}
-					default: {
-						sb.append("?" + rowDef.getFieldDef(i).getType() + "?");
-					}
+					final long location = fieldDef.getRowDef().fieldLocation(this,
+							fieldDef.getFieldIndex());
+					if (location == 0) {
+						sb.append("null");
+					} else {
+					fieldDef.getEncoding().toString(fieldDef, this, sb,
+							Quote.SINGLE_QUOTE);
 					}
 				}
 				sb.append(")");
@@ -547,6 +360,13 @@ public class RowData {
 			}
 			return sb.toString();
 		}
+		return sb.toString();
+	}
+	
+	
+	public String explain() {
+		
+		final StringBuilder sb = new StringBuilder();
 		return sb.toString();
 	}
 }

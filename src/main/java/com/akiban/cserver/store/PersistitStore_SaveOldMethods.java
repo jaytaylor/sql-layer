@@ -189,13 +189,14 @@ public class PersistitStore_SaveOldMethods {
 
 	public int dropTable(final String dbName, final String tableName)
 			throws Exception {
-		final Volume volume = db.getVolume("aktest");
-		if (volume == null) {
-			return OK;
-		} else {
-			volume.removeTree(tableName);
-			return OK;
-		}
+//		final Volume volume = db.getVolume("aktest");
+//		if (volume == null) {
+//			return OK;
+//		} else {
+//			volume.removeTree(tableName);
+//			return OK;
+//		}
+		return OK;
 	}
 
 	private int writeRow(final RowData rowData) {

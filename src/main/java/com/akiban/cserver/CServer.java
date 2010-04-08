@@ -15,12 +15,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.io.MySQLSource;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibaInformationSchemaImpl;
+import com.akiban.ais.model.Source;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
@@ -57,28 +58,11 @@ public class CServer {
 	private static final String P_CSERVER_PORT = "cserver.port|8080";
 
 	/**
-	 * Config property name and default for the MySQL server host from which
-	 * CServer will obtain the AIS.
+	 * Config property name and default for setting of the verbose flag. When
+	 * true, many CServer methods log verbosely at INFO level.
 	 */
-	private static final String P_AISHOST = "mysql.host|localhost";
 
-	/**
-	 * Config property port and default for the MySQL server host from which
-	 * Cserver will obtain the AIS.
-	 */
-	private static final String P_AISPORT = "mysql.port|3306";
-
-	/**
-	 * Config property name and default for the MySQL server host from which
-	 * CServer will obtain the AIS.
-	 */
-	private static final String P_AISUSER = "mysql.username|akiba";
-
-	/**
-	 * Config property name and default for the MySQL server host from which
-	 * CServer will obtain the AIS.
-	 */
-	private static final String P_AISPASSWORD = "mysql.password|akibaDB";
+	private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
 
 	private final RowDefCache rowDefCache = new RowDefCache();
 
@@ -92,6 +76,8 @@ public class CServer {
 
 	private volatile boolean stopped = false;
 
+	private boolean verbose;
+
 	private Map<Integer, Thread> threadMap = new TreeMap<Integer, Thread>();
 
 	public void start() throws Exception {
@@ -103,8 +89,16 @@ public class CServer {
 		ChannelNotifier callback = new ChannelNotifier();
 		NetworkHandlerFactory.initializeNetwork(property(P_CSERVER_HOST),
 				property(P_CSERVER_PORT), (CommEventNotifier) callback);
-		loadAis0();
+		final String verboseString = config.property(VERBOSE_PROPERTY_NAME
+				+ "|false");
+		if ("true".equalsIgnoreCase(verboseString)) {
+			verbose = true;
+		}
 		store.startUp();
+		store.setVerbose(verbose);
+		ais0 = primordialAIS();
+		rowDefCache.setAIS(ais0);
+		acquireAIS();
 	}
 
 	public void stop() throws Exception {
@@ -141,7 +135,10 @@ public class CServer {
 
 		@Override
 		public void onDisconnect(AkibaNetworkHandler handler) {
-			final Thread thread = threadMap.remove(handler.getId());
+			final Thread thread;
+			synchronized (threadMap) {
+				thread = threadMap.remove(handler.getId());
+			}
 			if (thread != null && thread.isAlive()) {
 				thread.interrupt();
 				if (LOG.isInfoEnabled()) {
@@ -152,6 +149,10 @@ public class CServer {
 						+ " was missing or dead");
 			}
 		}
+	}
+
+	public Store getStore() {
+		return store;
 	}
 
 	public class CServerContext implements ExecutionContext,
@@ -222,6 +223,7 @@ public class CServer {
 						LOG.info("Thread " + Thread.currentThread().getName()
 								+ (stopped ? " stopped" : " interrupted"));
 					}
+					break;
 				} catch (Exception e) {
 					if (LOG.isErrorEnabled()) {
 						LOG.error("Unexpected error on " + message, e);
@@ -254,46 +256,32 @@ public class CServer {
 	 * @return an AkibaInformationSchema
 	 * @throws Exception
 	 */
-	public void acquireAIS() throws Exception {
-		readAISFromMySQL();
+	public synchronized void acquireAIS() throws Exception {
+		final Source source = new CServerAisSource(store);
+		this.ais = new Reader(source)
+				.load(new AkibaInformationSchemaImpl(ais0));
 		installAIS();
 	}
 
-	private void readAISFromMySQL() throws Exception {
-
-		for (;;) {
-			try {
-				if (LOG.isInfoEnabled()) {
-					LOG.info(String.format("Attempting to load AIS from %s",
-							property(P_AISHOST)));
-				}
-				ais = new Reader(new MySQLSource(property(P_AISHOST),
-						property(P_AISPORT), property(P_AISUSER),
-						property(P_AISPASSWORD))).load();
-				break;
-			} catch (com.mysql.jdbc.exceptions.jdbc4.CommunicationsException e) {
-				try {
-					Thread.sleep(30000L);
-				} catch (InterruptedException ie) {
-					break;
-				}
-			}
+	private synchronized void installAIS() throws Exception {
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Installing " + ais.getDescription() + " in ChunkServer");
 		}
-	}
-
-	private void installAIS() {
-		LOG.info("Installing AIS in ChunkServer");
 		rowDefCache.clear();
-		rowDefCache.setAIS(ais0);
 		rowDefCache.setAIS(ais);
+		store.setOrdinals();
 	}
 
 	/**
-	 * Loads the built-in primordial table definitions for the akiba_information_schema
-	 * tables.
+	 * Loads the built-in primordial table definitions for the
+	 * akiba_information_schema tables.
+	 * 
 	 * @throws Exception
 	 */
-	private void loadAis0() throws Exception {
+	AkibaInformationSchema primordialAIS() throws Exception {
+		if (ais0 != null) {
+			return ais0;
+		}
 		final DataInputStream stream = new DataInputStream(getClass()
 				.getClassLoader().getResourceAsStream(AIS_DDL_NAME));
 		// TODO: ugly, but gets the job done
@@ -306,8 +294,8 @@ public class CServer {
 			sb.append(line);
 			sb.append("\n");
 		}
-		this.ais0 = (new DDLSource()).buildAISFromString(sb.toString());
-		rowDefCache.setAIS(ais0);
+		ais0 = (new DDLSource()).buildAISFromString(sb.toString());
+		return ais0;
 	}
 
 	/**
@@ -322,6 +310,55 @@ public class CServer {
 			return;
 		}
 		server.start();
+<<<<<<< .mine
+
+                // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk Server
+                /*
+                com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.registerCallback(
+                    new com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.Callback()
+                    {
+                        public byte[] get(byte[] key)
+                        {
+                            byte[] result = null;
+
+                            String request = new String(key);
+                            String[] tokens = request.split(":");
+                            if (tokens.length == 4)
+                            {
+                                String schema = tokens[0];
+                                String table = tokens[1];
+                                String colkey = tokens[2];
+                                String colval = tokens[3];
+
+                                try
+                                {
+                                    List<RowData> list = null;
+                                    list = server.store.fetchRows(schema, table, colkey, colval, colval);
+
+                                    StringBuilder builder = new StringBuilder();
+                                    for (RowData data: list)
+                                    {
+                                        builder.append(data.toString());
+                                    }
+
+                                    result = builder.toString().getBytes();
+                                }
+                                catch (Exception e)
+                                {
+                                    result = new String("read error: " + e.getMessage()).getBytes();
+                                }
+                            }
+                            else
+                            {
+                                result = new String("invalid key: " + request).getBytes();
+                            }
+
+                            return result;
+                        }
+                    });
+                com.thimbleware.jmemcached.Main.main(new String[0]);
+                */
+=======
 
                 // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk Server
                 /*
@@ -368,6 +405,7 @@ public class CServer {
                     });
                 com.thimbleware.jmemcached.Main.main(new String[0]);
                 */
+>>>>>>> .r1678
 	}
 
 	public String property(final String key) {

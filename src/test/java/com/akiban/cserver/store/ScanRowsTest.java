@@ -49,6 +49,7 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			tableMap.put(table.getName().getTableName(), table);
 		}
 		store.startUp();
+		store.setOrdinals();
 	}
 
 	@Override
@@ -101,6 +102,7 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 				p = rowData.getRowEnd();
 			}
 		}
+		rc.close();
 		if (VERBOSE) {
 			System.out.println();
 		}
@@ -109,7 +111,8 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 
 	int findIndexId(final RowDef groupRowDef, final RowDef userRowDef,
 			final int fieldIndex) {
-		final int findField = fieldIndex + userRowDef.getColumnOffset();
+		final int findField = fieldIndex + userRowDef.getColumnOffset()
+				- groupRowDef.getColumnOffset();
 		for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
 			if (indexDef.getFields().length == 1
 					&& indexDef.getFields()[0] == findField) {
@@ -241,5 +244,40 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			}
 		}
 		return bits;
+	}
+
+	private void scanLongTime() throws Exception {
+		setUp();
+		populateTables();
+
+		final RowData start = new RowData(new byte[256]);
+		final RowData end = new RowData(new byte[256]);
+		final RowDef rowDef = rowDefCache.getRowDef("aaaa");
+		start.createRow(rowDef, new Object[] { null, 123 });
+		end.createRow(rowDef, new Object[] { null, 132 });
+		final int indexId = findIndexId(rowDef, rowDef, 1);
+		byte[] bitMap = new byte[] { 0xF };
+		System.out.println("Starting SELECT loop");
+		long time = System.nanoTime();
+		long iterations = 0;
+		for (;;) {
+			assertEquals(10,
+					scanAllRows("one aaaa", start, end, bitMap, indexId));
+			iterations ++;
+			if (iterations % 100 == 0) {
+				long newtime = System.nanoTime();
+				if (newtime - time > 5000000000L) {
+					System.out.println(String.format("%10dns per iteration", (newtime - time) / iterations));
+					iterations = 1;
+					time = newtime;
+				}
+			}
+		}
+
+	}
+
+	public static void main(final String[] args) throws Exception {
+		final ScanRowsTest srt = new ScanRowsTest();
+		srt.scanLongTime();
 	}
 }

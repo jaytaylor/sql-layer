@@ -28,7 +28,7 @@ public class CServerAisSource extends Source {
 			throws Exception {
 		ModelObject modelObject = MetaModel.only().definition(typename);
 		final RowDef rowDef = store.getRowDefCache().getRowDef(
-				modelObject.name());
+				modelObject.tableName());
 		if (rowDef == null) {
 			throw new IllegalStateException(
 					"Missing table definition for AIS table "
@@ -59,38 +59,43 @@ public class CServerAisSource extends Source {
 		}
 	}
 
-	private void readRow(final RowDef rowDef, final RowData rowData, final ModelObject modelObject,
-			final Receiver receiver) throws Exception {
+	private void readRow(final RowDef rowDef, final RowData rowData,
+			final ModelObject modelObject, final Receiver receiver)
+			throws Exception {
 		final Map<String, Object> values = new HashMap<String, Object>();
 		for (int index = 0; index < rowDef.getFieldCount(); index++) {
 			final FieldDef fieldDef = rowDef.getFieldDef(index);
 			final long location = rowDef.fieldLocation(rowData, index);
 			final String attrName = modelObject.attributes().get(index).name();
 			switch (modelObject.attributes().get(index).type()) {
-			case BOOLEAN:
-			{
+			case BOOLEAN: {
 				assert fieldDef.isFixedWidth();
-				final int v = (int)rowData.getIntegerValue((int)location, (int)(location >>> 32));
+				final int v = (int) rowData.getIntegerValue((int) location,
+						(int) (location >>> 32));
 				values.put(attrName, Boolean.valueOf(v != 0));
 				break;
 			}
-			case INTEGER:
-			{
+			case INTEGER: {
 				assert fieldDef.isFixedWidth();
-				final int v = (int)rowData.getIntegerValue((int)location, (int)(location >>> 32));
+				final int v = (int) rowData.getIntegerValue((int) location,
+						(int) (location >>> 32));
 				values.put(attrName, Integer.valueOf(v));
 				break;
 			}
-			case LONG:
-			{
+			case LONG: {
 				assert fieldDef.isFixedWidth();
-				final long v = (int)rowData.getIntegerValue((int)location, (int)(location >>> 32));
-				values.put(attrName, Long.valueOf(v));
+				if (location == 0) {
+					values.put(attrName, null);
+				} else {
+					final long v = (int) rowData.getIntegerValue(
+							(int) location, (int) (location >>> 32));
+					values.put(attrName, Long.valueOf(v));
+				}
 				break;
 			}
-			case STRING:
-			{
-				final String v  = rowData.getStringValue((int)location, (int)(location >>> 32), fieldDef.getMaxWidth());
+			case STRING: {
+				final String v = rowData.getStringValue((int) location,
+						(int) (location >>> 32), fieldDef.getMaxWidth());
 				values.put(attrName, v);
 				break;
 			}

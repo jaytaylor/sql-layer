@@ -1,7 +1,6 @@
 package com.akiban.cserver;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -30,7 +29,7 @@ public class RowDefCache implements CServerConstants {
 	private static final Log LOG = LogFactory.getLog(RowDefCache.class
 			.getName());
 
-	private final Map<Integer, RowDef> cacheMap = new HashMap<Integer, RowDef>();
+	private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
 
 	private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
 
@@ -49,14 +48,18 @@ public class RowDefCache implements CServerConstants {
 		return rowDef;
 	}
 
-	public RowDef getRowDef(final String tableName) {
+	public synchronized List<RowDef> getRowDefs() {
+		return new ArrayList<RowDef>(cacheMap.values());
+	}
+
+	public synchronized RowDef getRowDef(final String tableName) {
 		final Integer key = nameMap.get(tableName);
 		if (key == null) {
 			return null;
 		}
 		return getRowDef(key.intValue());
 	}
-	
+
 	public synchronized void clear() {
 		cacheMap.clear();
 		nameMap.clear();
@@ -70,10 +73,7 @@ public class RowDefCache implements CServerConstants {
 	 */
 	public synchronized void setAIS(final AkibaInformationSchema ais) {
 		for (final UserTable table : ais.getUserTables().values()) {
-			//
-			// TODO : Using tableId for ordinal is a temporary hack
-			//
-			putRowDef(createUserTableRowDef(ais, table, table.getTableId()));
+			putRowDef(createUserTableRowDef(ais, table));
 		}
 
 		for (final GroupTable table : ais.getGroupTables().values()) {
@@ -88,8 +88,18 @@ public class RowDefCache implements CServerConstants {
 
 	}
 
+	private FieldDef fieldDef(final Column column) {
+		if (column.getType().nTypeParameters() == 0) {
+			return new FieldDef(column.getName(), column.getType());
+		} else {
+			final Object typeParam = column.getTypeParameter1();
+			return new FieldDef(column.getName(), column.getType(),
+					((Long) typeParam).intValue());
+		}
+	}
+
 	private RowDef createUserTableRowDef(final AkibaInformationSchema ais,
-			final UserTable table, final int ordinal) {
+			final UserTable table) {
 
 		// rowDefId
 		final int rowDefId = table.getTableId();
@@ -97,16 +107,8 @@ public class RowDefCache implements CServerConstants {
 		// FieldDef[]
 		final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
 		for (final Column column : table.getColumns()) {
-			final String typeName = column.getType().name().toUpperCase();
-			final FieldType type = FieldType.valueOf(typeName);
 			final int fieldIndex = column.getPosition();
-			if (type.isFixedWidth()) {
-				fieldDefs[fieldIndex] = new FieldDef(column.getName(), type);
-			} else {
-				final Object typeParam = column.getTypeParameter1();
-				fieldDefs[fieldIndex] = new FieldDef(column.getName(), type,
-						((Long) typeParam).intValue());
-			}
+			fieldDefs[fieldIndex] = fieldDef(column);
 		}
 
 		// parentRowDef
@@ -129,8 +131,9 @@ public class RowDefCache implements CServerConstants {
 			parentJoinFields = new int[0];
 		}
 
-		// pkFields - The columns from this table, contributing to the hkey, that don't have matching
-        // columns in the parent.
+		// pkFields - The columns from this table, contributing to the hkey,
+		// that don't have matching
+		// columns in the parent.
 		int[] pkFields = null;
 		for (final Index index : table.getIndexes()) {
 			if (!index.getConstraint().equals("PRIMARY KEY")) {
@@ -144,8 +147,9 @@ public class RowDefCache implements CServerConstants {
 			final List<IndexColumn> indexColumns = index.getColumns();
 			final List<Integer> pkFieldList = new ArrayList<Integer>(1);
 			for (final IndexColumn indexColumn : indexColumns) {
-                // TODO: indexColumn.getPosition is the position of the IndexColumn within the index, not
-                // TODO: the position of the column within the table
+				// TODO: indexColumn.getPosition is the position of the
+				// IndexColumn within the index, not
+				// TODO: the position of the column within the table
 				final int position = indexColumn.getPosition();
 				boolean isParentJoin = false;
 				for (int i = 0; i < parentJoinFields.length; i++) {
@@ -211,12 +215,13 @@ public class RowDefCache implements CServerConstants {
 		}
 		rowDef.setTableName(table.getName().getTableName());
 		rowDef.setTreeName(groupTableName);
+		rowDef.setSchemaName(table.getName().getSchemaName());
 		rowDef.setPkFields(pkFields);
 		rowDef.setParentRowDefId(parentRowDefId);
 		rowDef.setParentJoinFields(parentJoinFields);
 		rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
 				.size()]));
-		rowDef.setOrdinal(ordinal);
+		rowDef.setOrdinal(0);
 
 		return rowDef;
 
@@ -243,15 +248,8 @@ public class RowDefCache implements CServerConstants {
 		}
 		for (int position = 0; position < columns.length; position++) {
 			final Column column = columns[position];
-			final String typeName = column.getType().name().toUpperCase();
-			final FieldType type = FieldType.valueOf(typeName);
-			if (type.isFixedWidth()) {
-				fieldDefs[position] = new FieldDef(column.getName(), type);
-			} else {
-				final Object typeParam = column.getTypeParameter1();
-				fieldDefs[position] = new FieldDef(column.getName(), type,
-						((Long) typeParam).intValue());
-			}
+			final int fieldIndex = column.getPosition();
+			fieldDefs[fieldIndex] = fieldDef(column);
 			final Column userColumn = column.getUserColumn();
 			if (userColumn.getPosition() == 0) {
 				int userRowDefId = userColumn.getTable().getTableId();
@@ -296,6 +294,7 @@ public class RowDefCache implements CServerConstants {
 		}
 		rowDef.setTableName(groupTableName);
 		rowDef.setTreeName(groupTableName);
+		rowDef.setSchemaName(table.getName().getSchemaName());
 		rowDef.setPkFields(new int[0]);
 		rowDef.setUserTableRowDefs(userTableRowDefs);
 		rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
@@ -325,6 +324,10 @@ public class RowDefCache implements CServerConstants {
 		}
 		cacheMap.put(key, rowDef);
 		nameMap.put(rowDef.getTableName(), key);
+		if (rowDef.getSchemaName() != null) {
+			nameMap.put(rowDef.getSchemaName() + "." + rowDef.getTableName(),
+					key);
+		}
 	}
 
 	@Override

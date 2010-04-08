@@ -2,7 +2,6 @@ package com.akiban.cserver;
 
 import java.io.File;
 import java.lang.management.RuntimeMXBean;
-import java.nio.charset.Charset;
 
 public class CServerUtil {
 
@@ -10,7 +9,10 @@ public class CServerUtil {
 
 	private final static char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5',
 			'6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-
+	
+	public final static String NEW_LINE = 
+	System.getProperty("line.separator");
+	
 	public static long getSignedIntegerByWidth(final byte[] bytes,
 			final int index, final int width) {
 		switch (width) {
@@ -247,7 +249,7 @@ public class CServerUtil {
 			}
 			sb1.append("    ");
 			sb1.append(sb2.toString());
-			sb1.append("\n");
+			sb1.append(NEW_LINE);
 		}
 		return sb1.toString();
 	}
@@ -255,7 +257,7 @@ public class CServerUtil {
 	public static String dump(byte[] b, int offset, int size) {
 		StringBuilder sb1 = new StringBuilder();
 		StringBuilder sb2 = new StringBuilder();
-		for (int m = 0; m < size - offset; m += 16) {
+		for (int m = 0; m < size; m += 16) {
 			sb2.setLength(0);
 			hex(sb1, m, 4);
 			sb1.append(":");
@@ -264,7 +266,7 @@ public class CServerUtil {
 				if (i % 8 == 0)
 					sb1.append(" ");
 				int j = m + i;
-				if (j < size - offset) {
+				if (j < size) {
 					hex(sb1, b[j + offset], 2);
 					final char c = (char) (b[j + offset] & 0xFF);
 					sb2.append(c > 32 && c < 120 ? c : '.');
@@ -273,7 +275,7 @@ public class CServerUtil {
 			}
 			sb1.append("  ");
 			sb1.append(sb2.toString());
-			sb1.append("\n");
+			sb1.append(NEW_LINE);
 		}
 		return sb1.toString();
 	}
@@ -318,7 +320,6 @@ public class CServerUtil {
 		System.out.println("SystemProperties = " + m.getSystemProperties());
 		System.out.println("---");
 		System.out.println();
-
 	}
 
 	public final static void cleanUpDirectory(final File file) {
@@ -366,8 +367,11 @@ public class CServerUtil {
 	 */
 	public static String decodeMySQLString(byte[] bytes, final int offset,
 			final int width, final int declaredWidth) {
-		final int prefix = declaredWidth == 0 ? 0 : declaredWidth < 256 ? 1
-				: declaredWidth < 65536 ? 2 : 3;
+		// TODO - this is a temporary hack to handle storage engine bug.
+		if (width == 0) {
+			return null;
+		}
+		final int prefix = varwidth(declaredWidth);
 		int length;
 		switch (prefix) {
 		case 0:
@@ -381,6 +385,7 @@ public class CServerUtil {
 			break;
 		case 3:
 			length = getMediumInt(bytes, offset);
+			break;
 		default:
 			throw new Error("No such case");
 		}

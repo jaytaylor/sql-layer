@@ -2,6 +2,7 @@ package com.akiban.cserver.store;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -178,6 +179,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 				.buildAIS(DDL_FILE_NAME);
 		rowDefCache.setAIS(ais);
 		store.startUp();
+		store.setOrdinals();
 	}
 
 	@Override
@@ -315,8 +317,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
 					+ " rows in " + (td.elapsed / 1000L) + "us");
 		}
 	}
-	
-	int findIndexId(final RowDef groupRowDef, final RowDef userRowDef, final int fieldIndex) {
+
+	int findIndexId(final RowDef groupRowDef, final RowDef userRowDef,
+			final int fieldIndex) {
 		int indexId = -1;
 		final int findField = fieldIndex + userRowDef.getColumnOffset();
 		for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
@@ -347,14 +350,23 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
 		assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
 		assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
-		try {
-			store.dropTable(td.defC.getRowDefId());
-			fail("Should have thrown an Exception");
-		} catch (Exception e) {
-			// ok
-		}
-		int result = store.dropTable(td.defCOI.getRowDefId());
+		int result;
+
+		result = store.dropTable(td.defO.getRowDefId());
 		assertEquals(OK, result);
+		assertTrue(store.getTableManager()
+				.getTableStatus(td.defO.getRowDefId()).isDeleted());
+		assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
+
+		result = store.dropTable(td.defI.getRowDefId());
+		assertEquals(OK, result);
+		assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
+		assertTrue(store.getTableManager()
+				.getTableStatus(td.defI.getRowDefId()).isDeleted());
+
+		result = store.dropTable(td.defCOI.getRowDefId());
+		assertEquals(OK, result);
+
 		assertNull(volume.getTree(td.defCOI.getTreeName(), false));
 		assertNull(volume.getTree(td.defO.getPkTreeName(), false));
 		assertNull(volume.getTree(td.defI.getPkTreeName(), false));
@@ -471,6 +483,18 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		// TODO:
 		// Hand-checked the index tables. Need SELECT on secondary indexes to
 		// verify them automatically.
+	}
+
+	public void testFetchRows() throws Exception {
+		final TestData td = new TestData(5, 5, 5, 5);
+		td.insertTestRows();
+		final List<RowData> list = store.fetchRows("data_dictionary_test",
+				"item", "part_id", 1001001, 1001005);
+		assertEquals(5, list.size());
+		for (final RowData rowData : list) {
+			System.out.println(rowData.toString(store.getRowDefCache()));
+			System.out.println(rowData.toString());
+		}
 	}
 
 }

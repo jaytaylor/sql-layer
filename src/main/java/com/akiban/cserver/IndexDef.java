@@ -85,13 +85,17 @@ public class IndexDef {
 	 */
 	public static class I2H {
 
+		final RowDef rowDef;
 		int fieldIndex = -1;
 		int indexKeyLoc = -1;
-		int ordinal = -1;
+		
+		private I2H(final RowDef rowDef) {
+			this.rowDef = rowDef;
+		}
 
 		public String toString() {
 			if (isOrdinalType()) {
-				return "I2H<ordinal=" + ordinal + ">";
+				return "I2H<ordinal=" + rowDef.getOrdinal() + ">";
 			} else if (indexKeyLoc == -1) {
 				return "I2H<field=" + fieldIndex + ">";
 			} else if (fieldIndex == -1) {
@@ -111,7 +115,7 @@ public class IndexDef {
 		}
 
 		public int getOrdinal() {
-			return ordinal;
+			return rowDef.getOrdinal();
 		}
 
 		public boolean isOrdinalType() {
@@ -126,9 +130,6 @@ public class IndexDef {
 			this.indexKeyLoc = indexKeyLoc;
 		}
 
-		public void setOrdinal(int ordinal) {
-			this.ordinal = ordinal;
-		}
 	}
 
 	public IndexDef(final String name, final RowDef rowDef,
@@ -273,8 +274,7 @@ public class IndexDef {
 		}
 
 		for (final RowDef def : path) {
-			final I2H ordinalI2h = new I2H();
-			ordinalI2h.setOrdinal(def.getOrdinal());
+			final I2H ordinalI2h = new I2H(def);
 			i2hList.add(ordinalI2h);
 			for (int i = 0; i < def.getPkFields().length; i++) {
 				final int pkField = def.getPkFields()[i]
@@ -302,7 +302,7 @@ public class IndexDef {
 				//
 				// Build the FA that maps index field location to hkey
 				//
-				final I2H i2h = new I2H();
+				final I2H i2h = new I2H(null);
 
 				if (def == rowDef) {
 					i2h.setFieldIndex(pkField);
