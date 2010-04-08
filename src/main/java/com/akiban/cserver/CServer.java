@@ -310,56 +310,6 @@ public class CServer {
 			return;
 		}
 		server.start();
-<<<<<<< .mine
-
-                // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk Server
-                /*
-                com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.registerCallback(
-                    new com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.Callback()
-                    {
-                        public byte[] get(byte[] key)
-                        {
-                            byte[] result = null;
-
-                            String request = new String(key);
-                            String[] tokens = request.split(":");
-                            if (tokens.length == 4)
-                            {
-                                String schema = tokens[0];
-                                String table = tokens[1];
-                                String colkey = tokens[2];
-                                String colval = tokens[3];
-
-                                try
-                                {
-                                    List<RowData> list = null;
-                                    list = server.store.fetchRows(schema, table, colkey, colval, colval);
-
-                                    StringBuilder builder = new StringBuilder();
-                                    for (RowData data: list)
-                                    {
-                                        builder.append(data.toString());
-                                    }
-
-                                    result = builder.toString().getBytes();
-                                }
-                                catch (Exception e)
-                                {
-                                    result = new String("read error: " + e.getMessage()).getBytes();
-                                }
-                            }
-                            else
-                            {
-                                result = new String("invalid key: " + request).getBytes();
-                            }
-
-                            return result;
-                        }
-                    });
-                com.thimbleware.jmemcached.Main.main(new String[0]);
-                */
-=======
-
                 // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk Server
                 /*
                 com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.registerCallback(
@@ -405,7 +355,6 @@ public class CServer {
                     });
                 com.thimbleware.jmemcached.Main.main(new String[0]);
                 */
->>>>>>> .r1678
 	}
 
 	public String property(final String key) {
