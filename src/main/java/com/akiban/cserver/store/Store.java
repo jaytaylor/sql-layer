@@ -54,10 +54,10 @@ public interface Store {
 	 * <p>
 	 * Fetch and return a List of RowData objects. This is a somewhat
 	 * generalized interface to the core row-scanning logic suitable for
-	 * object-level access by MemcacheD, for example. This method may returns
+	 * object-level access by MemcacheD, for example. This method may return
 	 * rows of multiple types, depending on the parameters. For example, this
 	 * method may be used to request a Customer by customer_id, along with all
-	 * that customer's orders and order items.
+	 * that customer's orders and their items.
 	 * </p>
 	 * 
 	 * <p>
@@ -67,16 +67,16 @@ public interface Store {
 	 * would be used, but any column with an index is permitted. The least and
 	 * greatest values represent bounds on the column values in rows returned by
 	 * this method; if least and greatest are the same then this method selects
-	 * the all rows having that value; if the column specifies a unique index
-	 * then just one matches.  For example, in the COI schema, if columnName="customer"
-	 * and least and greatest are both equal to 123, then just the customer row
-	 * for customer_id=123 is returned.
+	 * all rows having that value; in the normal case that the index is unique,
+	 * this will be at most one row. For example, in the COI schema, if
+	 * columnName="customer" and least and greatest are both equal to 123, then
+	 * just the customer row for customer_id=123 is returned.
 	 * </p>
 	 * 
 	 * <p>
 	 * This method also supports selecting descendant rows from the specified
-	 * table according the the natural join relationships inherent in the user
-	 * table's group. The leafTableName controls this behavior. Specify:
+	 * table according the the natural join relationships inherent in the group.
+	 * The leafTableName controls this behavior. Specify:
 	 * <dl>
 	 * <dt>leafTableName = tableName</dt>
 	 * <dd>to restrict the results to a single table</dd>
@@ -91,16 +91,18 @@ public interface Store {
 	 * specifying leafTableName=null is equivalent to specifying
 	 * leafTableName="item". In a "bushy" schema, like CAOI, the results are
 	 * indeterminate.</dd>
+	 * </dl>
 	 * </p>
 	 * 
 	 * <p>
 	 * The Object types for the least and greatest values should be chosen to
-	 * match the data type of the column.  For numeric columns, use a numeric type
-	 * (width does not matter: for example, you can specify Integer-valued least
-	 * and greatest values for a BIGINT column), for date/timestamp/year columns specify
-	 * java.util.Date, for char/varchar (and in some cases the blob-type columns),
-	 * specify a String. For most common data types fetchRows can make the natural
-	 * translation from a Java Object to the MySQL column value.
+	 * match the data type of the column. For numeric columns, use a numeric
+	 * type (width does not matter: for example, you can specify Integer-valued
+	 * least and greatest values for a BIGINT column), for date/timestamp/year
+	 * columns specify java.util.Date, for char/varchar (and in some cases the
+	 * blob-type columns), specify a String. For most common data types
+	 * fetchRows can make the natural translation from a Java Object to the
+	 * MySQL column value.
 	 * </p>
 	 * 
 	 * @param schemaName
