@@ -34,8 +34,9 @@ public interface Store {
 
 	long getAutoIncrementValue(final int rowDefId) throws Exception;
 
-	RowCollector newRowCollector(final int indexId, final RowData start,
-			final RowData end, final byte[] columnBitMap) throws Exception;
+	RowCollector newRowCollector(final int rowDefId, final int indexId,
+			final int scanFlags, final RowData start, final RowData end,
+			final byte[] columnBitMap) throws Exception;
 
 	long getRowCount(final boolean exact, final RowData start,
 			final RowData end, final byte[] columnBitMap) throws Exception;

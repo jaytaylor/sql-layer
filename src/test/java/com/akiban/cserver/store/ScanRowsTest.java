@@ -1,11 +1,25 @@
 package com.akiban.cserver.store;
 
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_END_AT_EDGE;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_END_EXCLUSIVE;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DESCENDING;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_PREFIX;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_SINGLE_ROW;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_AT_EDGE;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_EXCLUSIVE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import junit.framework.TestCase;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
@@ -19,25 +33,25 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.util.ByteBufferFactory;
 
-public class ScanRowsTest extends TestCase implements CServerConstants {
+public class ScanRowsTest implements CServerConstants {
 
 	private final static File DATA_PATH = new File("/tmp/data");
 
 	private final static String DDL_FILE_NAME = "src/test/resources/scan_rows_test.ddl";
 
-	private final static int[] TENS = new int[] { 1, 10, 100, 1000, 10000,
-			100000, 1000000, 10000000 };
-
 	private final static boolean VERBOSE = false;
 
-	private PersistitStore store;
+	private static PersistitStore store;
 
-	private RowDefCache rowDefCache;
+	private static RowDefCache rowDefCache;
 
-	private SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
+	private static SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
+	
+	private List<RowData> result = new ArrayList<RowData>();
 
-	@Override
-	public void setUp() throws Exception {
+	@BeforeClass
+	public static void setUpSuite() throws Exception {
+
 		rowDefCache = new RowDefCache();
 		store = new PersistitStore(new CServerConfig(), rowDefCache);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
@@ -50,13 +64,15 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		}
 		store.startUp();
 		store.setOrdinals();
+		new ScanRowsTest().populateTables();
 	}
 
-	@Override
-	public void tearDown() throws Exception {
+	@AfterClass
+	public static void tearDownSuite() throws Exception {
 		store.shutDown();
 		store = null;
 		rowDefCache = null;
+		tableMap.clear();
 	}
 
 	private void populateTables() throws Exception {
@@ -69,7 +85,8 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 			final int level = name.length();
 			int k = (int) Math.pow(10, level);
 			for (int i = 0; i < k; i++) {
-				rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8 });
+				rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8,
+						i + "X" });
 				assertEquals(OK, store.writeRow(rowData));
 			}
 		}
@@ -78,23 +95,31 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 	private int scanAllRows(final String test, final RowData start,
 			final RowData end, final byte[] columnBitMap, final int indexId)
 			throws Exception {
+		return scanAllRows(test, start.getRowDefId(), 0, start, end,
+				columnBitMap, indexId);
+	}
+
+	private int scanAllRows(final String test, final int rowDefId,
+			final int scanFlags, final RowData start, final RowData end,
+			final byte[] columnBitMap, final int indexId) throws Exception {
 		int scanCount = 0;
-		final RowCollector rc = store.newRowCollector(indexId, start, end,
-				columnBitMap);
-		final ByteBuffer payload = ByteBufferFactory.allocate(256);
+		result.clear();
+		final RowCollector rc = store.newRowCollector(rowDefId, indexId,
+				scanFlags, start, end, columnBitMap);
 		if (VERBOSE) {
 			System.out.println("Test " + test);
 		}
 		while (rc.hasMore()) {
-			payload.clear();
+			final ByteBuffer payload = ByteBufferFactory.allocate(65536);
 			while (rc.collectNextRow(payload))
 				;
 			payload.flip();
-			RowData rowData = new RowData(payload.array(), payload.position(),
-					payload.limit());
-			for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
+			for (int p = payload.position(); p < payload.limit();) {
+				RowData rowData = new RowData(payload.array(), payload.position(),
+						payload.limit());
 				rowData.prepareRow(p);
 				scanCount++;
+				result.add(rowData);
 				if (VERBOSE) {
 					System.out.println(String.format("%5d ", scanCount)
 							+ rowData.toString(rowDefCache));
@@ -131,9 +156,8 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		return -1;
 	}
 
+	@Test
 	public void testScanRows() throws Exception {
-		populateTables();
-
 		final RowDef rowDef = rowDefCache.getRowDef("_akiba_srt");
 		final int fc = rowDef.getFieldCount();
 		final RowData start = new RowData(new byte[256]);
@@ -206,6 +230,80 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		}
 	}
 
+	@Test
+	public void testScanFlags() throws Exception {
+		final RowDef rowDef = rowDefCache.getRowDef("_akiba_srt");
+		final int fc = rowDef.getFieldCount();
+		final RowData start = new RowData(new byte[256]);
+		final RowData end = new RowData(new byte[256]);
+		byte[] bitMap;
+
+		{
+			final RowDef userRowDef = rowDefCache.getRowDef("a");
+			bitMap = bitsToRoot(userRowDef, rowDef);
+			assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
+					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE, null,
+					null, bitMap, 0));
+			assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
+					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+							| SCAN_FLAGS_START_EXCLUSIVE
+							| SCAN_FLAGS_END_EXCLUSIVE, null, null, bitMap, 0));
+			assertEquals(1, scanAllRows("all a", userRowDef.getRowDefId(),
+					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+							| SCAN_FLAGS_START_EXCLUSIVE
+							| SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_SINGLE_ROW,
+					null, null, bitMap, 0));
+			assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
+					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+							| SCAN_FLAGS_START_EXCLUSIVE
+							| SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_DESCENDING,
+					null, null, bitMap, 0));
+		}
+
+		{
+			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			bitMap = bitsToRoot(userRowDef, rowDef);
+			assertEquals(11110, scanAllRows("all aaaa", rowDef.getRowDefId(),
+					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE, null,
+					null, bitMap, findIndexId(rowDef, userRowDef, 1)));
+			assertEquals(4, scanAllRows("all aaaa", rowDef.getRowDefId(),
+					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+							| SCAN_FLAGS_SINGLE_ROW, null, null, bitMap,
+					findIndexId(rowDef, userRowDef, 1)));
+		}
+		{
+			final RowDef userRowDef = rowDefCache.getRowDef("aa");
+			int col = fieldIndex(rowDef, "aa$aa4");
+			int indexId = findIndex(rowDef, "aa$str");
+			Object[] startValue = new Object[fc];
+			Object[] endValue = new Object[fc];
+			startValue[col] = "1";
+			endValue[col] = "2";
+			start.createRow(rowDef, startValue);
+			end.createRow(rowDef, endValue);
+			bitMap = bitsToRoot(userRowDef, rowDef);
+			assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+					rowDef.getRowDefId(), 0, start, end, bitMap, indexId));
+			assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+					rowDef.getRowDefId(), SCAN_FLAGS_START_EXCLUSIVE, start, end, bitMap, indexId));
+			assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+					rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE, start, end, bitMap, indexId));
+			assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+					rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_SINGLE_ROW, start, end, bitMap, indexId));
+			assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+					rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW | SCAN_FLAGS_DESCENDING, start, end, bitMap, indexId));
+			assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+					rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW | SCAN_FLAGS_DESCENDING | SCAN_FLAGS_PREFIX, start, end, bitMap, indexId));
+			assertEquals(26, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+					rowDef.getRowDefId(), SCAN_FLAGS_PREFIX, start, end, bitMap, indexId));
+		}
+
+	}
+	
+	private void assertOk(final int a, final int b) {
+		System.out.println("AssertOk expected and got " + a + "," + b);
+	}
+
 	private int fieldIndex(final RowDef rowDef, final String name) {
 		for (int index = 0; index < rowDef.getFieldCount(); index++) {
 			if (rowDef.getFieldDef(index).getName().equals(name)) {
@@ -247,7 +345,7 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 	}
 
 	private void scanLongTime() throws Exception {
-		setUp();
+		setUpSuite();
 		populateTables();
 
 		final RowData start = new RowData(new byte[256]);
@@ -261,19 +359,29 @@ public class ScanRowsTest extends TestCase implements CServerConstants {
 		long time = System.nanoTime();
 		long iterations = 0;
 		for (;;) {
-			assertEquals(10,
-					scanAllRows("one aaaa", start, end, bitMap, indexId));
-			iterations ++;
+			assertEquals(10, scanAllRows("one aaaa", start, end, bitMap,
+					indexId));
+			iterations++;
 			if (iterations % 100 == 0) {
 				long newtime = System.nanoTime();
 				if (newtime - time > 5000000000L) {
-					System.out.println(String.format("%10dns per iteration", (newtime - time) / iterations));
+					System.out.println(String.format("%10dns per iteration",
+							(newtime - time) / iterations));
 					iterations = 1;
 					time = newtime;
 				}
 			}
 		}
-
+	}
+	
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+		for (final RowData rowData : result) {
+			sb.append(rowData.toString(rowDefCache));
+			sb.append(CServerUtil.NEW_LINE);
+		}
+		return sb.toString();
 	}
 
 	public static void main(final String[] args) throws Exception {

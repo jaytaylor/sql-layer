@@ -211,8 +211,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			final byte[] columnBitMap = new byte[] { 0xF };
 			final int indexId = 0;
 
-			final RowCollector rc = store.newRowCollector(indexId, td.rowI,
-					td.rowI, columnBitMap);
+			final RowCollector rc = store.newRowCollector(
+					td.defI.getRowDefId(), indexId, 0, td.rowI, td.rowI,
+					columnBitMap);
 			final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
 			while (rc.hasMore()) {
@@ -246,8 +247,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			final byte[] columnBitMap = new byte[] { (byte) 0x3 };
 			final int indexId = td.defI.getPKIndexDef().getId();
 
-			final RowCollector rc = store.newRowCollector(indexId, td.rowI,
-					td.rowI, columnBitMap);
+			final RowCollector rc = store.newRowCollector(
+					td.defI.getRowDefId(), indexId, 0, td.rowI, td.rowI,
+					columnBitMap);
 			final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
 			while (rc.hasMore()) {
@@ -289,8 +291,8 @@ public class PersistitStoreWithAISTest extends TestCase implements
 					td.defO, td.defI }, td.defCOI.getFieldCount());
 
 			int indexId = findIndexId(td.defCOI, td.defO, 0);
-			final RowCollector rc = store.newRowCollector(indexId, start, end,
-					columnBitMap);
+			final RowCollector rc = store.newRowCollector(td.defCOI
+					.getRowDefId(), indexId, 0, start, end, columnBitMap);
 			final ByteBuffer payload = ByteBufferFactory.allocate(256);
 			//
 			// Expect all the C, O and I rows for orders 1004 through 1007,
@@ -398,8 +400,8 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		final ByteBuffer payload = ByteBufferFactory.allocate(1024);
 
 		RowCollector rc;
-		rc = store.newRowCollector(td.defX.getPKIndexDef().getId(), td.rowX,
-				td.rowX, columnBitMap);
+		rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+				.getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
 		payload.clear();
 		assertTrue(rc.collectNextRow(payload));
 		payload.flip();
@@ -412,8 +414,8 @@ public class PersistitStoreWithAISTest extends TestCase implements
 				"Description_424242" });
 		store.updateRow(oldRowData, newRowData);
 
-		rc = store.newRowCollector(td.defX.getPKIndexDef().getId(), td.rowX,
-				td.rowX, columnBitMap);
+		rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+				.getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
 		payload.clear();
 		assertTrue(rc.collectNextRow(payload));
 		payload.flip();
@@ -462,8 +464,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		int scanCount = 0;
 		td.rowX.createRow(td.defX, new Object[0]);
 		final byte[] columnBitMap = new byte[] { (byte) 0x1F };
-		final RowCollector rc = store.newRowCollector(td.defX.getPKIndexDef()
-				.getId(), td.rowX, td.rowX, columnBitMap);
+		final RowCollector rc = store.newRowCollector(td.defX.getRowDefId(),
+				td.defX.getPKIndexDef().getId(), 0, td.rowX, td.rowX,
+				columnBitMap);
 		final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
 		while (rc.hasMore()) {
@@ -493,13 +496,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
 					"item", "part_id", 1001001, 1001005, "item");
 			assertEquals(5, list.size());
 		}
-		
+
 		{
 			final List<RowData> list = store.fetchRows("data_dictionary_test",
 					"customer", "customer_id", 1, 1, "item");
 			assertEquals(31, list.size());
 		}
-		
+
 		{
 			final List<RowData> list = store.fetchRows("data_dictionary_test",
 					"customer", "customer_id", 1, 2, "address");
@@ -509,7 +512,10 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		{
 			final List<RowData> list = store.fetchRows("data_dictionary_test",
 					"customer", "customer_id", 1, 1, null);
-			assertEquals(156, list.size());
+			for (final RowData rowData : list) {
+				System.out.println(rowData.toString(rowDefCache));
+			}
+			assertEquals(157, list.size());
 		}
 	}
 

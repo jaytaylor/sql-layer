@@ -40,7 +40,7 @@ public class CServerAisSource extends Source {
 		}
 		final RowData nullBounds = new RowData(new byte[64]);
 		nullBounds.createRow(rowDef, new Object[0]);
-		final RowCollector rowCollector = store.newRowCollector(0, nullBounds,
+		final RowCollector rowCollector = store.newRowCollector(rowDef.getRowDefId(), 0, 0, nullBounds,
 				nullBounds, new byte[] { (byte) 0xFF, (byte) 0xFF });
 		final ByteBuffer buffer = ByteBuffer.allocate(65536);
 		final RowData row = new RowData(buffer.array());

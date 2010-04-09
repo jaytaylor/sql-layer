@@ -1,5 +1,7 @@
 package com.akiban.cserver.store;
 
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -727,17 +729,19 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
 						final int childId = groupRowDef.getUserTableRowDefs()[i]
 								.getRowDefId();
-						final TableStatus ts1 = tableManager.getTableStatus(childId);
+						final TableStatus ts1 = tableManager
+								.getTableStatus(childId);
 						ts1.setRowCount(Long.MIN_VALUE);
 						ts1.deleted();
 					}
-					final TableStatus ts0 = tableManager.getTableStatus(groupRowDef.getRowDefId());
+					final TableStatus ts0 = tableManager
+							.getTableStatus(groupRowDef.getRowDefId());
 					ts0.setRowCount(0);
 					ts0.deleted();
-					
+
 					transaction.commit();
 					return OK;
-					
+
 				} catch (RollbackException re) {
 					if (--retries < 0) {
 						throw new TransactionFailedException();
@@ -906,16 +910,21 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	}
 
 	@Override
-	public RowCollector newRowCollector(int indexId, RowData start,
-			RowData end, byte[] columnBitMap) throws Exception {
+	public RowCollector newRowCollector(final int rowDefId, int indexId,
+			final int scanFlags, RowData start, RowData end, byte[] columnBitMap)
+			throws Exception {
 		try {
-			final int rowDefId = start.getRowDefId();
 			final TableStatus ts = tableManager.getTableStatus(rowDefId);
 
 			if (ts.isDeleted()) {
 				throw new StoreException(HA_ERR_NO_SUCH_TABLE, "Table "
 						+ getRowDefCache().getRowDef(rowDefId).getTableName()
 						+ " has been deleted");
+			}
+
+			if (start != null && start.getRowDefId() != rowDefId) {
+				throw new IllegalArgumentException(
+						"Start and end RowData must specify the same rowDefId");
 			}
 
 			if (end != null && end.getRowDefId() != rowDefId) {
@@ -925,13 +934,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 
 			if (verbose && LOG.isInfoEnabled()) {
-				LOG.info("Select from table: " + rowDef.toString());
+				LOG.info("Select from table: " + rowDef.toString()
+						+ " scanFlags=" + scanFlags);
 				LOG.info("  from: " + start.toString(rowDefCache));
 				LOG.info("    to: " + end.toString(rowDefCache));
 			}
 
-			final RowCollector rc = new PersistitStoreRowCollector(this, start,
-					end, columnBitMap, rowDef, indexId);
+			final RowCollector rc = new PersistitStoreRowCollector(this,
+					scanFlags, start, end, columnBitMap, rowDef, indexId);
 
 			getSession().setCurrentRowCollector(rc);
 			return rc;
@@ -972,7 +982,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	@Override
 	public List<RowData> fetchRows(final String schemaName,
 			final String tableName, final String columnName,
-			final Object least, final Object greatest, final String leafTableName) throws Exception {
+			final Object least, final Object greatest,
+			final String leafTableName) throws Exception {
 		final List<RowData> list = new ArrayList<RowData>();
 		final String compoundName = schemaName + "." + tableName;
 		final RowDef rowDef = rowDefCache.getRowDef(compoundName);
@@ -980,10 +991,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			throw new StoreException(HA_ERR_NO_REFERENCED_ROW, "Unknown table "
 					+ compoundName);
 		}
-		
-		final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
+
+		final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
+				.getRowDef(rowDef.getGroupRowDefId());
 		final RowDef[] userRowDefs = groupRowDef.getUserTableRowDefs();
-		
+
 		FieldDef fieldDef = null;
 		for (final FieldDef fd : rowDef.getFieldDefs()) {
 			if (fd.getName().equals(columnName)) {
@@ -995,7 +1007,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			throw new StoreException(HA_ERR_NO_REFERENCED_ROW,
 					"Unknown column " + columnName + " in " + compoundName);
 		}
-		
+
 		IndexDef indexDef = null;
 		for (final IndexDef id : rowDef.getIndexDefs()) {
 			if (id.getFields()[0] == fieldDef.getFieldIndex()) {
@@ -1011,19 +1023,22 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					"No available index on column " + columnName + " in "
 							+ compoundName);
 		}
-		
+
+		boolean deepMode = false;
 		RowDef leafRowDef = null;
 		if (tableName.equals(leafTableName)) {
 			leafRowDef = rowDef;
 		} else if (leafTableName == null) {
-			leafRowDef = userRowDefs[userRowDefs.length - 1];
-		} else for (int index = 0; index < userRowDefs.length; index++) {
-			if (userRowDefs[index].getTableName().equals(leafTableName)) {
-				leafRowDef = userRowDefs[index];
-				break;
+			leafRowDef = rowDef;
+			deepMode = true;
+		} else
+			for (int index = 0; index < userRowDefs.length; index++) {
+				if (userRowDefs[index].getTableName().equals(leafTableName)) {
+					leafRowDef = userRowDefs[index];
+					break;
+				}
 			}
-		}
-		
+
 		if (leafRowDef == null) {
 			throw new StoreException(HA_ERR_NO_REFERENCED_ROW,
 					"No table named " + leafTableName + " in group");
@@ -1037,7 +1052,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		final RowData end = new RowData(new byte[1024]);
 		start.createRow(groupRowDef, startValues);
 		end.createRow(groupRowDef, endValues);
-		
+
 		final byte[] bitMap = new byte[(7 + groupRowDef.getFieldCount()) / 8];
 		for (RowDef def = leafRowDef; def != null;) {
 			final int bit = def.getColumnOffset();
@@ -1052,7 +1067,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			}
 		}
 
-		final RowCollector rc = newRowCollector(indexDef.getId(), start, end,
+		final RowCollector rc = newRowCollector(groupRowDef.getRowDefId(),
+				indexDef.getId(), deepMode ? SCAN_FLAGS_DEEP : 0, start, end,
 				bitMap);
 		while (rc.hasMore()) {
 			final ByteBuffer payload = ByteBuffer.allocate(65536);

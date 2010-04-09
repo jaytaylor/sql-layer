@@ -165,7 +165,7 @@ public class IndexDef {
 	}
 
 	/**
-	 * True of this index represents fields matching the pkFields of the root
+	 * True if this index represents fields matching the pkFields of the root
 	 * table. If so, then there is no separately stored index tree.
 	 * 
 	 * @return

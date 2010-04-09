@@ -16,7 +16,6 @@ import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowType;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -33,11 +32,11 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private final byte[] columnBitMap;
 
+	private final int scanFlags;
+
 	private int columnBitMapOffset;
 
 	private int columnBitMapWidth;
-
-	private boolean ascending = true;
 
 	private RowDef groupRowDef;
 
@@ -63,6 +62,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private boolean traverseMode;
 
+	private int prefixModeIndexField = -1;
+
 	private Exchange iEx;
 
 	private Exchange hEx;
@@ -71,11 +72,12 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private Key.Direction direction;
 
-	PersistitStoreRowCollector(PersistitStore store, final RowData start,
-			final RowData end, final byte[] columnBitMap, RowDef rowDef,
-			final int indexId) throws Exception {
+	PersistitStoreRowCollector(PersistitStore store, final int scanFlags,
+			final RowData start, final RowData end, final byte[] columnBitMap,
+			RowDef rowDef, final int indexId) throws Exception {
 		this.store = store;
 		this.columnBitMap = columnBitMap;
+		this.scanFlags = scanFlags;
 		this.columnBitMapOffset = rowDef.getColumnOffset();
 		this.columnBitMapWidth = rowDef.getFieldCount();
 
@@ -88,27 +90,31 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 		this.projectedRowDefs = computeProjectedRowDefs(rowDef,
 				this.groupRowDef, columnBitMap);
+
 		if (this.projectedRowDefs.length == 0) {
 			this.more = false;
 		} else {
 			this.pendingRowData = new RowData[this.projectedRowDefs.length];
-
 			this.hEx = store.getExchange(rowDef, null);
 			this.hFilter = computeHFilter(rowDef, start, end);
 			this.lastKey = new Key(hEx.getKey());
 
 			if (indexId != 0) {
 				final IndexDef def = rowDef.getIndexDef(indexId);
+				// Don't use the primary key index for ROOT tables - the
+				// index tree is not populated because it is redundant
+				// with the h-tree itself.
 				if (!def.isHKeyEquivalent()) {
 					this.indexDef = def;
-					// Don't use the primary key index for ROOT tables - the
-					// index
-					// tree is not populated because it is redundant with the
-					// h-tree itself.
+					if (isPrefixMode()) {
+						prefixModeIndexField = rowDef.getColumnOffset()
+								+ def.getFields()[def.getFields().length - 1];
+					}
 					this.iEx = store.getExchange(rowDef, indexDef);
 					this.iFilter = computeIFilter(indexDef, rowDef, start, end);
 					if (store.isVerbose() && LOG.isInfoEnabled()) {
-						LOG.info("Select using index " + indexDef + " filter=" + iFilter);
+						LOG.info("Select using index " + indexDef + " filter="
+								+ iFilter);
 					}
 				}
 			}
@@ -120,7 +126,10 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 			this.pendingFromLevel = Integer.MAX_VALUE;
 			this.pendingToLevel = 0;
-			this.direction = ascending ? Key.GTEQ : Key.LTEQ;
+			this.direction = isAscending() ? (isLeftInclusive() ? Key.GTEQ
+					: Key.GT)
+					: (isRightInclusive() && !isPrefixMode() ? Key.LTEQ
+							: Key.LT);
 		}
 
 		if (LOG.isTraceEnabled()) {
@@ -210,7 +219,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 					.getOrdinal());
 			for (int k = 0; k < fields.length; k++) {
 				terms[index - fields.length + k] = computeKeyFilterTerm(key,
-						rowDef, start, end, fields[k] + def.getColumnOffset() - rowDef.getColumnOffset());
+						rowDef, start, end, fields[k] + def.getColumnOffset()
+								- rowDef.getColumnOffset());
 			}
 			index -= (fields.length + 1);
 			final int parentId = def.getParentRowDefId();
@@ -223,7 +233,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 							+ leafRowDef + " index=" + index);
 		}
 		key.clear();
-		return new KeyFilter(terms, 0, terms.length);
+		return new KeyFilter(terms, 0, isDeepMode() ? Integer.MAX_VALUE
+				: terms.length);
 	}
 
 	/**
@@ -264,19 +275,25 @@ public class PersistitStoreRowCollector implements RowCollector,
 		if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
 			return KeyFilter.ALL;
 		}
-		final long lowLoc = rowDef.fieldLocation(start, fieldIndex);
-		final long highLoc = rowDef.fieldLocation(end, fieldIndex);
+		final long lowLoc = start == null ? 0 : rowDef.fieldLocation(start,
+				fieldIndex);
+		final long highLoc = end == null ? 0 : rowDef.fieldLocation(end,
+				fieldIndex);
 		if (lowLoc != 0 || highLoc != 0) {
 			key.clear();
 			key.reset();
 			if (lowLoc != 0) {
-				store.appendKeyField(key, rowDef.getFieldDef(fieldIndex),
-						start);
+				store
+						.appendKeyField(key, rowDef.getFieldDef(fieldIndex),
+								start);
 			} else {
 				key.append(Key.BEFORE);
 			}
 			if (highLoc != 0) {
 				store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), end);
+				if (fieldIndex + rowDef.getColumnOffset() == prefixModeIndexField) {
+					advanceKeyForPrefixMode(key);
+				}
 			} else {
 				key.append(Key.AFTER);
 			}
@@ -287,6 +304,23 @@ public class PersistitStoreRowCollector implements RowCollector,
 			return KeyFilter.termFromKeySegments(key, key, true, true);
 		} else {
 			return KeyFilter.ALL;
+		}
+	}
+
+	void advanceKeyForPrefixMode(final Key key) {
+		int size = key.getEncodedSize();
+		final byte[] bytes = key.getEncodedBytes();
+		for (int index = size - 1; --index >= 0;) {
+			if (bytes[index] == 0) {
+				throw new IllegalStateException(
+						"Can't find advancement byte in " + key);
+			}
+			if (bytes[index] != (byte) 0xFF) {
+				bytes[index] = (byte) ((bytes[index] & 0xFF) + 1);
+				bytes[index + 1] = 0;
+				key.setEncodedSize(index + 1);
+				break;
+			}
 		}
 	}
 
@@ -356,6 +390,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 					&& pendingToLevel == pendingRowData.length) {
 				if (deliverRow(pendingRowData[pendingFromLevel], payload)) {
 					pendingFromLevel++;
+					if (isSingleRowMode() && pendingFromLevel == pendingToLevel) {
+						more = false;
+					}
 					return true;
 				} else {
 					return false;
@@ -374,7 +411,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 					//
 					return false;
 				}
-				direction = ascending ? Key.GT : Key.LT;
+				direction = isAscending() ? Key.GT : Key.LT;
 				store.constructHKeyFromIndexKey(hKey, iEx.getKey(), indexDef);
 
 				final int differsAt = hKey.firstUniqueByteIndex(lastKey);
@@ -428,7 +465,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 				//
 				final boolean found = hEx.traverse(direction, hFilter,
 						Integer.MAX_VALUE);
-				direction = ascending ? Key.GT : Key.LT;
+				direction = isAscending() ? Key.GT : Key.LT;
 				if (!found
 						|| hKey.firstUniqueByteIndex(lastKey) < indexPinnedKeySize) {
 					if (indexDef == null) {
@@ -442,17 +479,29 @@ public class PersistitStoreRowCollector implements RowCollector,
 					continue;
 				}
 				final int depth = hKey.getDepth();
-				for (int level = projectedRowDefs.length; --level >= 0;) {
-					if (depth == projectedRowDefs[level].getHKeyDepth()) {
-						prepareRow(hEx, level, projectedRowDefs[level]
-								.getRowDefId(), projectedRowDefs[level]
-								.getColumnOffset());
-						hKey.copyTo(lastKey);
-						if (level < pendingFromLevel) {
-							pendingFromLevel = level;
+				if (isDeepMode()
+						&& depth > projectedRowDefs[projectedRowDefs.length - 1]
+								.getHKeyDepth()) {
+					int level = pendingRowData.length - 1;
+					prepareRow(hEx, level, 0, 0);
+					if (level < pendingFromLevel) {
+						pendingFromLevel = level;
+					}
+					pendingToLevel = level + 1;
+				} else {
+
+					for (int level = projectedRowDefs.length; --level >= 0;) {
+						if (depth == projectedRowDefs[level].getHKeyDepth()) {
+							prepareRow(hEx, level, projectedRowDefs[level]
+									.getRowDefId(), projectedRowDefs[level]
+									.getColumnOffset());
+							hKey.copyTo(lastKey);
+							if (level < pendingFromLevel) {
+								pendingFromLevel = level;
+							}
+							pendingToLevel = level + 1;
+							break;
 						}
-						pendingToLevel = level + 1;
-						break;
 					}
 				}
 			}
@@ -479,7 +528,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 		} else {
 			final int rowDefId = CServerUtil.getInt(bytes, RowData.O_ROW_DEF_ID
 					- RowData.LEFT_ENVELOPE_SIZE);
-			if (rowDefId != expectedRowDefId) {
+			if (rowDefId != expectedRowDefId && expectedRowDefId != 0) {
 				//
 				// Add code to here to evolve data to required expectedRowDefId
 				//
@@ -513,8 +562,10 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 			// Remove unwanted columns
 			//
-			rowData.elide(columnBitMap, columnOffset - columnBitMapOffset,
-					columnBitMapWidth);
+			if (!isDeepMode()) {
+				rowData.elide(columnBitMap, columnOffset - columnBitMapOffset,
+						columnBitMapWidth);
+			}
 
 		}
 	}
@@ -532,6 +583,30 @@ public class PersistitStoreRowCollector implements RowCollector,
 		} else {
 			return false;
 		}
+	}
+
+	boolean isAscending() {
+		return (scanFlags & SCAN_FLAGS_DESCENDING) == 0;
+	}
+
+	boolean isLeftInclusive() {
+		return (scanFlags & SCAN_FLAGS_START_EXCLUSIVE) == 0;
+	}
+
+	boolean isRightInclusive() {
+		return (scanFlags & SCAN_FLAGS_START_EXCLUSIVE) == 0;
+	}
+
+	boolean isPrefixMode() {
+		return (scanFlags & SCAN_FLAGS_PREFIX) != 0;
+	}
+
+	boolean isSingleRowMode() {
+		return (scanFlags & SCAN_FLAGS_SINGLE_ROW) != 0;
+	}
+
+	boolean isDeepMode() {
+		return (scanFlags & SCAN_FLAGS_DEEP) != 0;
 	}
 
 	@Override
