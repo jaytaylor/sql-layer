@@ -310,6 +310,7 @@ public class CServer {
 			return;
 		}
 		server.start();
+
                 // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk Server
                 /*
                 com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.registerCallback(
@@ -331,14 +332,17 @@ public class CServer {
                                 try
                                 {
                                     List<RowData> list = null;
-                                    // list = store.fetchRows(schema, table, colkey, colval, colval);
+                                    //list = server.store.fetchRows(schema, table, colkey, colval, colval, "order");
+                                    list = server.store.fetchRows(schema, table, colkey, colval, colval, null);
 
-                                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
-                                    java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(bos);
-                                    out.writeObject(list);
-                                    out.close();
+                                    StringBuilder builder = new StringBuilder();
+                                    for (RowData data: list)
+                                    {
+                                        builder.append(data.toString(server.getRowDefCache()) + "\n");
+                                        //builder.append(data.toString());
+                                    }
 
-                                    result = bos.toByteArray(); 
+                                    result = builder.toString().getBytes();
                                 }
                                 catch (Exception e)
                                 {
