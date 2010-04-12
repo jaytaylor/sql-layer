@@ -148,7 +148,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		return session;
 	}
 
-	Exchange getExchange(final RowDef rowDef, final IndexDef indexDef)
+	public Exchange getExchange(final RowDef rowDef, final IndexDef indexDef)
 			throws PersistitException {
 		final String treeName;
 		if (indexDef == null) {
@@ -161,7 +161,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		return db.getExchange(VOLUME_NAME, treeName, true).clear();
 	}
 
-	void releaseExchange(final Exchange exchange) {
+	public void releaseExchange(final Exchange exchange) {
 		if (exchange != null) {
 			db.releaseExchange(exchange);
 		}
@@ -174,7 +174,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	 * row may result in a StoreException due to a missing parent row; this is
 	 * expressed as a HA_ERR_NO_REFERENCED_ROW error.
 	 * 
-	 * @param key
+	 * @param hEx
 	 * @param rowData
 	 */
 	void constructHKey(final Exchange hEx, final RowDef rowDef,
@@ -226,6 +226,21 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		}
 	}
 
+    void constructHKey(final Exchange hEx, final RowDef rowDef, final int[] ordinals,
+                       final FieldDef[][] fieldDefs, final Object[][] hKeyValues)
+        throws Exception {
+        final Key hkey = hEx.getKey();
+        hkey.clear();
+        for (int i = 0; i < hKeyValues.length; i++) {
+            hkey.append(ordinals[i]);
+            Object[] tableHKeyValues = hKeyValues[i];
+            FieldDef[] tableFieldDefs = fieldDefs[i];
+            for (int j = 0; j < tableHKeyValues.length; j++) {
+                appendKeyField(hkey, tableFieldDefs[j], tableHKeyValues[j]);
+            }
+        }
+    }
+
 	/**
 	 * Given a RowData, the hkey where it will be stored, and an IndexDef for a
 	 * table, construct the index key.
@@ -255,7 +270,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	 * Given an index key and an indexDef, construct the corresponding hkey for
 	 * the row identified by the index key.
 	 * 
-	 * @param hkey
+	 * @param hKey
 	 * @param indexKey
 	 * @param indexDef
 	 */
@@ -317,6 +332,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		}
 
 	}
+
+    private void appendKeyField(final Key key, final FieldDef fieldDef, Object value) {
+        fieldDef.getEncoding().toKey(fieldDef, value, key);
+    }
 
 	// --------------------- Implement Store interface --------------------
 
@@ -478,7 +497,41 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		}
 	}
 
-	@Override
+    @Override
+    public int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef, final RowData rowData, final int[] ordinals,
+                                   final FieldDef[][] fieldDefs, final Object[][] hKeyValues) throws Exception
+    {
+		if (verbose && LOG.isInfoEnabled()) {
+			LOG.info("Insert row: " + rowData.toString(rowDefCache));
+		}
+		try {
+            constructHKey(hEx, rowDef, ordinals, fieldDefs, hKeyValues);
+            final int start = rowData.getInnerStart();
+            final int size = rowData.getInnerSize();
+            hEx.getValue().ensureFit(size);
+            System.arraycopy(rowData.getBytes(), start, hEx.getValue()
+                    .getEncodedBytes(), 0, size);
+            hEx.getValue().setEncodedSize(size);
+            // Store the h-row
+            hEx.store();
+            for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+                //
+                // Insert the index keys (except for the case of a
+                // root table's PK index.)
+                //
+                if (!indexDef.isHKeyEquivalent())
+                    insertIntoIndex(indexDef, rowDef, rowData, hEx.getKey());
+            }
+            return OK;
+		} catch (StoreException e) {
+			return e.getResult();
+		} catch (Throwable t) {
+			t.printStackTrace();
+			return ERR;
+		}
+    }
+
+    @Override
 	public int deleteRow(final RowData rowData) throws Exception {
 		if (verbose && LOG.isInfoEnabled()) {
 			LOG.info("Delete row: " + rowData.toString(rowDefCache));

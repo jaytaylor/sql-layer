@@ -32,7 +32,16 @@ public enum Encoding {
 			key.append(v);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key)
+        {
+            long v = ((Number)value).longValue();
+            v <<= 64 - (fieldDef.getMaxWidth() * 8);
+            v >>= 64 - (fieldDef.getMaxWidth() * 8);
+            key.append(v);
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -78,6 +87,16 @@ public enum Encoding {
 			key.append(v);
 		}
 
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key)
+        {
+            long v = ((Number)value).longValue();
+            v <<= 64 - (fieldDef.getMaxWidth() * 8);
+            v >>= 64 - (fieldDef.getMaxWidth() * 8);
+            // TODO: unsigned long
+            key.append(v);
+        }
+
 		@Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
@@ -120,7 +139,12 @@ public enum Encoding {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -171,7 +195,12 @@ public enum Encoding {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -215,7 +244,12 @@ public enum Encoding {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			throw new UnsupportedOperationException();
@@ -244,7 +278,12 @@ public enum Encoding {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			throw new UnsupportedOperationException();
@@ -273,7 +312,13 @@ public enum Encoding {
 			toKeyStringEncoding(fieldDef, rowData, key);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key)
+        {
+            key.append(value);
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -309,7 +354,12 @@ public enum Encoding {
 			toKeyStringEncoding(fieldDef, rowData, key);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            key.append(value);
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -343,6 +393,11 @@ public enum Encoding {
 		public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
 			toKeyStringEncoding(fieldDef, rowData, key);
 		}
+
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            key.append(value);
+        }
 
 		@Override
 		public void toString(FieldDef fieldDef, RowData rowData,
@@ -384,8 +439,7 @@ public enum Encoding {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			int v = ((date.getYear() + 1900) * 32 * 16)
-					+ (date.getMonth() * 32) + date.getDate();
+			int v = dateAsInt(date);
 			return putUInt(dest, offset, v, 3);
 		}
 
@@ -398,7 +452,12 @@ public enum Encoding {
 			key.append(v);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            key.append(dateAsInt((Date) value));
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -421,6 +480,12 @@ public enum Encoding {
 			long w = type.maxSizeBytes();
 			return type.fixedSize() && w == 3 || w == 4 || w == 8;
 		}
+
+        private int dateAsInt(Date date)
+        {
+            // This formula is specified here: http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html
+            return ((date.getYear() + 1900) * 32 * 16) + (date.getMonth() * 32) + date.getDate();
+        }
 	},
 	TIME {
 
@@ -440,8 +505,7 @@ public enum Encoding {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			int v = (date.getHours() * 24 * 3600) + (date.getMinutes() * 3600)
-					+ date.getSeconds();
+			int v = timeAsInt(date);
 			return putUInt(dest, offset, v, 3);
 		}
 
@@ -454,7 +518,13 @@ public enum Encoding {
 			key.append(v);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key)
+        {
+            key.append(timeAsInt((Date) value));
+        }
+        
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -477,6 +547,12 @@ public enum Encoding {
 			long w = type.maxSizeBytes();
 			return type.fixedSize() && w == 3 || w == 4 || w == 8;
 		}
+
+        private int timeAsInt(Date date)
+        {
+            // This formula is specified here: http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html
+            return date.getDate() * 24 * 3600 + date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+        }
 	},
 	DATETIME {
 
@@ -496,11 +572,7 @@ public enum Encoding {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			long v = (((date.getYear() + 1900) * 10000000000L)
-					+ (date.getMonth() * 100000000L) + date.getDate())
-					* 1000000L
-					+ (date.getHours() * 10000)
-					+ (date.getMinutes() * 100) + (date.getSeconds());
+			long v = dateTimeAsLong(date);
 			return putUInt(dest, offset, v, 8);
 		}
 
@@ -513,17 +585,22 @@ public enum Encoding {
 			key.append(v);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            key.append(dateTimeAsLong((Date) value));
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			final long v = rowData.getIntegerValue((int) location, 8);
-			final int year = (int) (v / 10000000000L);
-			final int month = (int) (v / 100000000L) % 100;
-			final int day = (int) (v / 1000000L) % 100;
-			final int hour = (int) (v / 10000L) % 100;
-			final int minute = (int) (v / 100L) % 100;
+			final int year = (int) (v / LONG_1_E10);
+			final int month = (int) (v / LONG_1_E8) % 100;
+			final int day = (int) (v / LONG_1_E6) % 100;
+			final int hour = (int) (v / LONG_1_E4) % 100;
+			final int minute = (int) (v / LONG_100) % 100;
 			final int second = (int) (v) % 100;
 			final Date date = new Date(year - 1900, month - 1, day, hour, minute,
 					second);
@@ -540,6 +617,24 @@ public enum Encoding {
 			long w = type.maxSizeBytes();
 			return type.fixedSize() && w == 8;
 		}
+
+        private long dateTimeAsLong(Date date)
+        {
+            // This is NOT what the documentation says: http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html.
+            // This formula is based on Peter's reverse engineering of mysql packed data.
+            return (date.getYear() + 1900) * LONG_1_E10 +
+                   date.getMonth() * LONG_1_E8 +
+                   date.getDate() * LONG_1_E6 +
+                   date.getHours() * LONG_1_E4 +
+                   date.getMinutes() * LONG_100 +
+                   date.getSeconds();
+        }
+
+        private static final long LONG_100   = 100;
+        private static final long LONG_1_E4  = LONG_100 * 100;
+        private static final long LONG_1_E6  = LONG_1_E4 * 100;
+        private static final long LONG_1_E8  = LONG_1_E6 * 100;
+        private static final long LONG_1_E10 = LONG_1_E8 * 100;
 	},
 	TIMESTAMP {
 
@@ -574,7 +669,12 @@ public enum Encoding {
 			key.append(v);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            key.append(((Date)value).getTime() / 1000);
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -627,7 +727,12 @@ public enum Encoding {
 			key.append(v);
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            key.append(((Date)value).getYear() - 1900);
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
@@ -660,7 +765,12 @@ public enum Encoding {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			throw new UnsupportedOperationException();
@@ -689,7 +799,12 @@ public enum Encoding {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			throw new UnsupportedOperationException();
@@ -718,7 +833,12 @@ public enum Encoding {
 			throw new UnsupportedOperationException();
 		}
 
-		@Override
+        @Override
+        public void toKey(FieldDef fieldDef, Object value, Key key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
 		public void toString(FieldDef fieldDef, RowData rowData,
 				StringBuilder sb, final Quote quote) {
 			throw new UnsupportedOperationException();
@@ -775,6 +895,9 @@ public enum Encoding {
 
 	public abstract void toKey(final FieldDef fieldDef, final RowData rowData,
 			final Key key);
+
+    public abstract void toKey(final FieldDef fieldDef, final Object value,
+            final Key key);
 
 	public int objectToInt(final byte[] bytes, final int offset,
 			final Object obj, final int width, final boolean unsigned) {
