@@ -136,7 +136,7 @@ public class RowDefCache implements CServerConstants {
 		// columns in the parent.
 		int[] pkFields = null;
 		for (final Index index : table.getIndexes()) {
-			if (!index.getConstraint().equals("PRIMARY KEY")) {
+			if (!index.isPrimaryKey()) {
 				continue;
 			}
 			if (pkFields != null) {
@@ -189,7 +189,6 @@ public class RowDefCache implements CServerConstants {
 		// Secondary indexes
 		final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
 		for (final Index index : table.getIndexes()) {
-			final boolean isPk = index.getConstraint().equals("PRIMARY KEY");
 			final List<IndexColumn> indexColumns = index.getColumns();
 			final List<Integer> indexColumnList = new ArrayList<Integer>(1);
 			for (final IndexColumn indexColumn : indexColumns) {
@@ -206,8 +205,8 @@ public class RowDefCache implements CServerConstants {
 			final String treeName = groupTableName + "$$" + index.getIndexId();
 			final IndexDef indexDef = new IndexDef(index.getIndexNameObject()
 					.getName(), rowDef, treeName, index.getIndexId(),
-					indexFields, isPk, index.isUnique());
-			if (isPk) {
+					indexFields, index.isPrimaryKey(), index.isUnique());
+			if (index.isPrimaryKey()) {
 				indexDefList.add(0, indexDef);
 			} else {
 				indexDefList.add(indexDef);
