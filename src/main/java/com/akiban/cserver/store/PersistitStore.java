@@ -585,7 +585,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					// cascade to child rows.
 					//
 					if (hEx.hasChildren()) {
-						throw new StoreException(UNSUPPORTED_MODIFICATION,
+						throw new StoreException(HA_ERR_ROW_IS_REFERENCED,
 								"Can't cascade DELETE: " + hEx.getKey());
 
 					}
