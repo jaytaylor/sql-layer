@@ -17,7 +17,7 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			return objectToInt(dest, offset, value, fieldDef.getMaxWidth(),
+			return objectToInt(dest, offset, value, fieldDef.getMaxStorageSize(),
 					false);
 		}
 
@@ -27,8 +27,8 @@ public enum Encoding {
 					fieldDef.getFieldIndex());
 			long v = rowData.getIntegerValue((int) location,
 					(int) (location >>> 32));
-			v <<= 64 - (fieldDef.getMaxWidth() * 8);
-			v >>= 64 - (fieldDef.getMaxWidth() * 8);
+			v <<= 64 - (fieldDef.getMaxStorageSize() * 8);
+			v >>= 64 - (fieldDef.getMaxStorageSize() * 8);
 			key.append(v);
 		}
 
@@ -36,8 +36,8 @@ public enum Encoding {
         public void toKey(FieldDef fieldDef, Object value, Key key)
         {
             long v = ((Number)value).longValue();
-            v <<= 64 - (fieldDef.getMaxWidth() * 8);
-            v >>= 64 - (fieldDef.getMaxWidth() * 8);
+            v <<= 64 - (fieldDef.getMaxStorageSize() * 8);
+            v >>= 64 - (fieldDef.getMaxStorageSize() * 8);
             key.append(v);
         }
 
@@ -52,14 +52,14 @@ public enum Encoding {
 			// getIntegerValue returns the unsigned interpretation of the value.
 			// This pair of shift operations sign-extends the upper bit.
 			//
-			v <<= 64 - (fieldDef.getMaxWidth() * 8);
-			v >>= 64 - (fieldDef.getMaxWidth() * 8);
+			v <<= 64 - (fieldDef.getMaxStorageSize() * 8);
+			v >>= 64 - (fieldDef.getMaxStorageSize() * 8);
 			sb.append(v);
 		}
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -74,7 +74,7 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			return objectToInt(dest, offset, value, fieldDef.getMaxWidth(),
+			return objectToInt(dest, offset, value, fieldDef.getMaxStorageSize(),
 					true);
 		}
 
@@ -91,8 +91,8 @@ public enum Encoding {
         public void toKey(FieldDef fieldDef, Object value, Key key)
         {
             long v = ((Number)value).longValue();
-            v <<= 64 - (fieldDef.getMaxWidth() * 8);
-            v >>= 64 - (fieldDef.getMaxWidth() * 8);
+            v <<= 64 - (fieldDef.getMaxStorageSize() * 8);
+            v >>= 64 - (fieldDef.getMaxStorageSize() * 8);
             // TODO: unsigned long
             key.append(v);
         }
@@ -108,7 +108,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -124,7 +124,7 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			switch (fieldDef.getMaxWidth()) {
+			switch (fieldDef.getMaxStorageSize()) {
 			case 4:
 				return objectToFloat(dest, offset, value, false);
 			case 8:
@@ -151,7 +151,7 @@ public enum Encoding {
 					fieldDef.getFieldIndex());
 			long v = rowData.getIntegerValue((int) location,
 					(int) (location >>> 32));
-			switch (fieldDef.getMaxWidth()) {
+			switch (fieldDef.getMaxStorageSize()) {
 			case 4:
 				sb.append(Float.intBitsToFloat((int) v));
 				break;
@@ -165,7 +165,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -180,7 +180,7 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			switch (fieldDef.getMaxWidth()) {
+			switch (fieldDef.getMaxStorageSize()) {
 			case 4:
 				return objectToFloat(dest, offset, value, true);
 			case 8:
@@ -207,7 +207,7 @@ public enum Encoding {
 					fieldDef.getFieldIndex());
 			long v = rowData.getIntegerValue((int) location,
 					(int) (location >>> 32));
-			switch (fieldDef.getMaxWidth()) {
+			switch (fieldDef.getMaxStorageSize()) {
 			case 4:
 				sb.append(Float.intBitsToFloat((int) v));
 				break;
@@ -221,7 +221,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -304,7 +304,7 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			return objectToString(value, dest, offset, fieldDef, false);
+			return objectToString(value, dest, offset, fieldDef);
 		}
 
 		@Override
@@ -324,12 +324,12 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			quote.append(sb, rowData.getStringValue((int) location,
-					(int) (location >>> 32), fieldDef.getMaxWidth()));
+					(int) (location >>> 32), fieldDef));
 		}
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			int prefixWidth = CServerUtil.varwidth(fieldDef.getMaxWidth());
+			int prefixWidth = fieldDef.getPrefixSize();
 			final String s = value == null ? "" : value.toString();
 			return stringByteLength(s) + prefixWidth;
 		}
@@ -346,7 +346,7 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			return objectToString(value, dest, offset, fieldDef, false);
+			return objectToString(value, dest, offset, fieldDef);
 		}
 
 		@Override
@@ -365,14 +365,13 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			quote.append(sb, rowData.getStringValue((int) location,
-					(int) (location >>> 32), fieldDef.getMaxWidth()));
+					(int) (location >>> 32), fieldDef));
 		}
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			int prefixWidth = CServerUtil.varwidth(fieldDef.getMaxWidth());
 			final String s = value == null ? "" : value.toString();
-			return s.length() + prefixWidth;
+			return s.length() + fieldDef.getPrefixSize();
 		}
 
 		@Override
@@ -386,7 +385,7 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			return objectToString(value, dest, offset, fieldDef, false);
+			return objectToString(value, dest, offset, fieldDef);
 		}
 
 		@Override
@@ -405,14 +404,13 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			quote.append(sb, rowData.getStringValue((int) location,
-					(int) (location >>> 32), fieldDef.getMaxWidth()));
+					(int) (location >>> 32), fieldDef));
 		}
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			int prefixWidth = CServerUtil.varwidth(fieldDef.getMaxWidth());
 			final String s = value == null ? "" : value.toString();
-			return s.length() + prefixWidth;
+			return s.length() + fieldDef.getPrefixSize();
 		}
 
 		@Override
@@ -463,16 +461,16 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			final int v = (int) rowData.getIntegerValue((int) location, 3);
-			final int year = v / 32 * 16;
+			final int year = v / (32 * 16);
 			final int month = (v / 32) % 16;
 			final int day = v % 32;
-			final Date date = new Date(year - 1900, month -1, day);
+			final Date date = new Date(year - 1900, month - 1, day);
 			quote.append(sb, getDateFormat(SDF_DATE).format(date));
 		}
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -530,16 +528,19 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			final int v = (int) rowData.getIntegerValue((int) location, 3);
-			final int hour = v / 24 * 3600;
-			final int minute = (v / 3600) % 24;
-			final int second = v % 3600;
-			final Date date = new Date(0, 0, 0, hour, minute, second);
+			// Note: reverse engineered; this does not match documentation
+			// at http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+			final int day = v / 1000000;
+			final int hour = (v / 10000) % 100;
+			final int minute = (v / 100) % 100;
+			final int second = v % 100;
+			final Date date = new Date(0, 0, day, hour, minute, second);
 			quote.append(sb, getDateFormat(SDF_TIME).format(date));
 		}
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -596,20 +597,22 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			final long v = rowData.getIntegerValue((int) location, 8);
+			// Note: reverse engineered; this does not match documentation
+			// at http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
 			final int year = (int) (v / LONG_1_E10);
-			final int month = (int) (v / LONG_1_E8) % 100;
-			final int day = (int) (v / LONG_1_E6) % 100;
-			final int hour = (int) (v / LONG_1_E4) % 100;
-			final int minute = (int) (v / LONG_100) % 100;
-			final int second = (int) (v) % 100;
-			final Date date = new Date(year - 1900, month - 1, day, hour, minute,
-					second);
+			final int month = (int) ((v / LONG_1_E8) % 100);
+			final int day = (int) ((v / LONG_1_E6) % 100);
+			final int hour = (int) ((v / LONG_1_E4) % 100);
+			final int minute = (int) ((v / LONG_100) % 100);
+			final int second = (int) (v % LONG_100);
+			final Date date = new Date(year - 1900, month - 1, day, hour,
+					minute, second);
 			quote.append(sb, getDateFormat(SDF_DATETIME).format(date));
 		}
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -622,12 +625,12 @@ public enum Encoding {
         {
             // This is NOT what the documentation says: http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html.
             // This formula is based on Peter's reverse engineering of mysql packed data.
-            return (date.getYear() + 1900) * LONG_1_E10 +
-                   date.getMonth() * LONG_1_E8 +
-                   date.getDate() * LONG_1_E6 +
-                   date.getHours() * LONG_1_E4 +
-                   date.getMinutes() * LONG_100 +
-                   date.getSeconds();
+            return ((date.getYear() + 1900) * LONG_1_E10) +
+                   (date.getMonth() * LONG_1_E8) +
+                   (date.getDate() * LONG_1_E6) +
+                   (date.getHours() * LONG_1_E4) +
+                   (date.getMinutes() * LONG_100) +
+                   (date.getSeconds());
         }
 
         private static final long LONG_100   = 100;
@@ -687,7 +690,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -743,7 +746,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -778,7 +781,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -812,7 +815,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -846,7 +849,7 @@ public enum Encoding {
 
 		@Override
 		public int widthFromObject(final FieldDef fieldDef, final Object value) {
-			return fieldDef.getMaxRowDataWidth();
+			return fieldDef.getMaxStorageSize();
 		}
 
 		@Override
@@ -855,18 +858,17 @@ public enum Encoding {
 		}
 	};
 
+	public final static String SDF_DATE = "yyyy-MM-dd";
 
-	private final static String SDF_DATE = "yyyy-MM-dd";
+	public final static String SDF_YEAR = "yyyy";
 
-	private final static String SDF_YEAR = "yyyy";
+	public final static String SDF_DATETIME = "yyyy-MM-dd HH:mm:ss";
 
-	private final static String SDF_DATETIME = "yyyy-MM-dd HH:mm:SS";
-
-	private final static String SDF_TIME = "HH:mm:SS";
+	public final static String SDF_TIME = "HH:mm:ss";
 
 	private static ThreadLocal<Map<String, SimpleDateFormat>> SDF_MAP_THREAD_LOCAL = new ThreadLocal<Map<String, SimpleDateFormat>>();
 
-	static SimpleDateFormat getDateFormat(final String pattern) {
+	public static SimpleDateFormat getDateFormat(final String pattern) {
 		Map<String, SimpleDateFormat> formatMap = SDF_MAP_THREAD_LOCAL.get();
 		if (formatMap == null) {
 			formatMap = new HashMap<String, SimpleDateFormat>();
@@ -968,42 +970,32 @@ public enum Encoding {
 	 * @return
 	 */
 	public int objectToString(final Object obj, final byte[] bytes,
-			final int offset, final FieldDef fieldDef, final boolean padded) {
+			final int offset, final FieldDef fieldDef) {
 		final String s = obj == null ? "" : obj.toString();
-		int w = CServerUtil.varwidth(fieldDef.getMaxWidth());
+		int prefixSize = fieldDef.getPrefixSize();
 		final byte[] b = stringBytes(s);
-		int index = offset;
-		final int len = Math.min(b.length, fieldDef.getMaxWidth());
-		final int pad = padded ? fieldDef.getMaxWidth() - len : 0;
-		switch (w) {
+		final int size = b.length;
+		switch (prefixSize) {
 		case 0:
 			break;
 		case 1:
-			CServerUtil.putByte(bytes, index, len + pad);
-			index += 1;
+			CServerUtil.putByte(bytes, offset, size);
 			break;
 		case 2:
-			CServerUtil.putChar(bytes, index, len + pad);
-			index += 2;
+			CServerUtil.putChar(bytes, offset, size);
 			break;
 		case 3:
-			CServerUtil.putMediumInt(bytes, index, len + pad);
-			index += 3;
+			CServerUtil.putMediumInt(bytes, offset, size);
 			break;
 		case 4:
-			CServerUtil.putInt(bytes, index, len + pad);
-			index += 4;
+			CServerUtil.putInt(bytes, offset, size);
 			break;
 		default:
 			throw new Error("Missing case");
 		}
-		System.arraycopy(b, 0, bytes, index, len);
-		index += len;
-		if (pad > 0) {
-			Arrays.fill(bytes, index, index + pad, (byte) ' ');
-			index += pad;
-		}
-		return index - offset;
+		System.arraycopy(b, 0, bytes, offset + prefixSize, size);
+
+		return prefixSize + size;
 	}
 
 	int putInt(final byte[] bytes, final int offset, final long value,
@@ -1061,7 +1053,7 @@ public enum Encoding {
 				fieldDef.getFieldIndex());
 		key.append(CServerUtil
 				.decodeMySQLString(rowData.getBytes(), (int) location,
-						(int) (location >>> 32), fieldDef.getMaxWidth()));
+						(int) (location >>> 32), fieldDef));
 	}
 
 	// TODO -

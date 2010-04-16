@@ -8,8 +8,10 @@ public class FieldDef {
 
 	private final String columnName;
 
-	private final int maxWidth;
+	private final int maxStorageSize;
 
+	private final int prefixSize;
+	
 	private final Encoding encoding;
 
 	private int fieldIndex;
@@ -17,17 +19,14 @@ public class FieldDef {
 	private RowDef rowDef;
 
 	public FieldDef(final String name, final Type type) {
-		this.columnName = name;
-		this.type = type;
-		this.encoding = Encoding.valueOf(type.encoding());
-		if (!encoding.validate(type)) {
-			throw new IllegalArgumentException("Encoding " + encoding
-					+ " not valid for type " + type);
-		}
-		this.maxWidth = type.maxSizeBytes().intValue();
+		this(name, type, (int)(type.maxSizeBytes().longValue()));
+	}
+	
+	public FieldDef(final String name, final Type type, final int maxStorageSize) {
+		this(name, type, maxStorageSize, 0);
 	}
 
-	public FieldDef(final String name, final Type type, final int maxWidth) {
+	public FieldDef(final String name, final Type type, final int maxStorageSize, final int prefixSize) {
 		this.columnName = name;
 		this.type = type;
 		this.encoding = Encoding.valueOf(type.encoding());
@@ -35,12 +34,8 @@ public class FieldDef {
 			throw new IllegalArgumentException("Encoding " + encoding
 					+ " not valid for type " + type);
 		}
-		if (maxWidth <= type.maxSizeBytes()) {
-			this.maxWidth = maxWidth;
-		} else {
-			throw new IllegalArgumentException("MaxWidth value " + maxWidth
-					+ " out of bounds for type " + type);
-		}
+		this.maxStorageSize = maxStorageSize;
+		this.prefixSize = prefixSize;
 	}
 
 	public String getName() {
@@ -55,44 +50,15 @@ public class FieldDef {
 		return encoding;
 	}
 
-	/**
-	 * Maximum width of the encoded field in RowData. For VARCHAR and friends,
-	 * this is the MySQL max width plus the size of the MySQL prefix.
-	 * 
-	 * @return
-	 */
-	public int getMaxRowDataWidth() {
-		final int w = getMaxWidth();
-		if (isFixedWidth()) {
-			return w;
-		} else {
-			return CServerUtil.varwidth(w) + w;
-		}
+	public int getMaxStorageSize() {
+		return maxStorageSize;
 	}
 
-	/**
-	 * Our computation of MySQL's maximum storage width for a column. For
-	 * VARCHAR fields, this could be 1x, 2x or 3x the
-	 * 
-	 * @return
-	 */
-	public int getMaxWidth() {
-		return maxWidth;
+	public int getPrefixSize() {
+		return prefixSize;
 	}
 
-	public int getMinWidth() {
-		return type.fixedSize() ? maxWidth : 0;
-	}
-
-	public int getWidthOverhead() {
-		if (isFixedWidth()) {
-			return 0;
-		} else {
-			return CServerUtil.varwidth(maxWidth);
-		}
-	}
-
-	public boolean isFixedWidth() {
+	public boolean isFixedSize() {
 		return type.fixedSize();
 	}
 
@@ -114,7 +80,6 @@ public class FieldDef {
 
 	@Override
 	public String toString() {
-		return columnName + "(" + type + "(" + getMinWidth() + ","
-				+ getMaxWidth() + "))";
+		return columnName + "(" + type + "(" + getMaxStorageSize() + "))";
 	}
 }

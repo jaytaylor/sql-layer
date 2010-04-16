@@ -17,11 +17,11 @@ public class RowDefTest extends TestCase {
 
 			{ new FieldDef(n(), Types.VARCHAR, 100),
 					new FieldDef(n(), Types.TINYINT),
-					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
 					new FieldDef(n(), Types.TINYINT),
-					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
 					new FieldDef(n(), Types.TINYINT),
-					new FieldDef(n(), Types.VARCHAR, 100),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
 					new FieldDef(n(), Types.TINYINT), },
 
 			{ new FieldDef(n(), Types.TINYINT),
@@ -43,17 +43,17 @@ public class RowDefTest extends TestCase {
 					new FieldDef(n(), Types.TINYINT), },
 
 			{ new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100),
-					new FieldDef(n(), Types.VARCHAR, 100), },
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1),
+					new FieldDef(n(), Types.VARCHAR, 100, 1), },
 
 			{ new FieldDef(n(), Types.TINYINT),
 					new FieldDef(n(), Types.TINYINT),
@@ -67,7 +67,7 @@ public class RowDefTest extends TestCase {
 					new FieldDef(n(), Types.INT),
 					new FieldDef(n(), Types.BIGINT),
 					new FieldDef(n(), Types.TINYINT),
-					new FieldDef(n(), Types.VARCHAR, 200),
+					new FieldDef(n(), Types.VARCHAR, 200, 1),
 					new FieldDef(n(), Types.TINYINT),
 					new FieldDef(n(), Types.TINYINT),
 					new FieldDef(n(), Types.TINYINT),
@@ -80,7 +80,7 @@ public class RowDefTest extends TestCase {
 					new FieldDef(n(), Types.MEDIUMINT),
 					new FieldDef(n(), Types.INT),
 					new FieldDef(n(), Types.BIGINT),
-					new FieldDef(n(), Types.VARCHAR, 200),
+					new FieldDef(n(), Types.VARCHAR, 200, 1),
 					new FieldDef(n(), Types.TINYINT),
 					new FieldDef(n(), Types.TINYINT), },
 
@@ -283,16 +283,16 @@ public class RowDefTest extends TestCase {
 		}
 		if (location == 0) {
 			assertNull(value);
-		} else if (fieldDef.isFixedWidth()) {
+		} else if (fieldDef.isFixedSize()) {
 			long decodedValue = CServerUtil.getSignedIntegerByWidth(rowData
 					.getBytes(), (int) location, (int) (location >>> 32));
 			assertEquals(((Number) value).longValue(), decodedValue);
 		} else if (value instanceof String) {
 			final String decodedString = rowData.getStringValue((int) location,
-					(int) (location >>> 32), fieldDef.getMaxWidth());
+					(int) (location >>> 32), fieldDef);
 			assertEquals(value, decodedString);
 		} else {
-			int prefix = fieldDef.getWidthOverhead();
+			int prefix = fieldDef.getPrefixSize();
 			byte[] decodedBytes = new byte[((int) (location >>> 32)) - prefix];
 			System.arraycopy(rowData.getBytes(), (int) location + prefix,
 					decodedBytes, 0, decodedBytes.length);

@@ -269,7 +269,7 @@ public class CServerUtil {
 				if (j < size) {
 					hex(sb1, b[j + offset], 2);
 					final char c = (char) (b[j + offset] & 0xFF);
-					sb2.append(c > 32 && c < 120 ? c : '.');
+					sb2.append(c > 32 && c < 127 ? c : '.');
 				} else
 					sb1.append("  ");
 			}
@@ -342,16 +342,6 @@ public class CServerUtil {
 			file.delete();
 		}
 	}
-	/**
-	 * @param v
-	 *            byte count
-	 * @return Number of additional bytes required to store variable-length
-	 *         prefix
-	 */
-	public static int varwidth(final int v) {
-		return v == 0 ? 0 : v < 0x100 ? 1 : v < 0x10000 ? 2 : v < 0x1000000 ? 3
-				: 4;
-	}
 
 	/**
 	 * Cracks the MySQL variable-length format.  Interprets 0, 1, 2 or 3 prefix bytes as a little-endian
@@ -366,14 +356,15 @@ public class CServerUtil {
 	 * @return
 	 */
 	public static String decodeMySQLString(byte[] bytes, final int offset,
-			final int width, final int declaredWidth) {
+			final int width, final FieldDef fieldDef) {
 		// TODO - this is a temporary hack to handle storage engine bug.
 		if (width == 0) {
 			return null;
 		}
-		final int prefix = varwidth(declaredWidth);
+
+		final int prefixSize = fieldDef.getPrefixSize();
 		int length;
-		switch (prefix) {
+		switch (prefixSize) {
 		case 0:
 			length = 0;
 			break;
@@ -386,20 +377,27 @@ public class CServerUtil {
 		case 3:
 			length = getMediumInt(bytes, offset);
 			break;
+		case 4:
+			length = getInt(bytes, offset);
+			break;
 		default:
 			throw new Error("No such case");
 		}
-		if (length + prefix > width) {
+		if (length > width) {
 			throw new IllegalArgumentException(
 					"String is wider than available bytes: " + length);
 		}
-		final String s = new String(bytes, offset + prefix, width - prefix);
-//		if (s.length() != length) {
-//			throw new IllegalArgumentException(
-//					"String size mismatch length: length="
-//							+ length + " string=" + s);
-//		}
+		
+		// TODO - handle char set, e.g., utf8
+		
+		final String s = new String(bytes, offset + prefixSize, width - prefixSize);
+
 		return s;
+	}
+	
+	public static int varWidth(final int length) {
+		return length == 0 ? 0 : length < 0x100 ? 1
+				: length < 0x10000 ? 2 : length < 0x1000000 ? 3 : 4;
 	}
 
 }

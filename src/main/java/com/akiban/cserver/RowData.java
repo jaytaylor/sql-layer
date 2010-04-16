@@ -48,6 +48,9 @@ public class RowData {
 
 	public final static int MINIMUM_RECORD_LENGTH = 18;
 
+	// Arbitrary sanity bound on maximum size
+	public final static int MAXIMUM_RECORD_LENGTH = 64 * 1024 * 1024;
+
 	public final static char SIGNATURE_A = (char) ('A' + ('B' << 8));
 
 	public final static char SIGNATURE_B = (char) ('B' + ('A' << 8));
@@ -213,6 +216,15 @@ public class RowData {
 		return bytes[offset + rowStart + O_NULL_MAP] & 0xFF;
 	}
 
+	public boolean isNull(final int fieldIndex) {
+		if (fieldIndex < 0 || fieldIndex >= getFieldCount()) {
+			throw new IllegalArgumentException("No such field " + fieldIndex
+					+ " in " + this);
+		} else {
+			return (getColumnMapByte(fieldIndex / 8) & (1 << (fieldIndex % 8))) != 0;
+		}
+	}
+
 	public long getIntegerValue(final int offset, final int width) {
 		if (offset < rowStart || offset + width >= rowEnd) {
 			throw new IllegalArgumentException("Bad location: " + offset + ":"
@@ -222,7 +234,7 @@ public class RowData {
 	}
 
 	public String getStringValue(final int offset, final int width,
-			final int declaredWidth) {
+			final FieldDef fieldDef) {
 		if (offset == 0 && width == 0) {
 			return null;
 		}
@@ -231,7 +243,7 @@ public class RowData {
 					+ width);
 		}
 		return CServerUtil.decodeMySQLString(bytes, offset, width,
-				declaredWidth);
+				fieldDef);
 	}
 
 	/**
@@ -265,17 +277,17 @@ public class RowData {
 		for (int index = 0; index < values.length; index++) {
 			Object object = values[index];
 			FieldDef fieldDef = rowDef.getFieldDef(index);
-			if (fieldDef.isFixedWidth()) {
+			if (fieldDef.isFixedSize()) {
 				if (object != null) {
 					offset += fieldDef.getEncoding().fromObject(fieldDef,
 							object, bytes, offset);
 				}
 			} else {
-				vmax += fieldDef.getMaxRowDataWidth();
+				vmax += fieldDef.getMaxStorageSize();
 				if (object != null) {
 					vlength += fieldDef.getEncoding().widthFromObject(fieldDef,
 							object);
-					final int width = CServerUtil.varwidth(vmax);
+					final int width = CServerUtil.varWidth(vmax);
 					switch (width) {
 					case 0:
 						break;
@@ -296,9 +308,9 @@ public class RowData {
 		for (int index = 0; index < values.length; index++) {
 			Object object = values[index];
 			final FieldDef fieldDef = rowDef.getFieldDef(index);
-			if (object != null && !fieldDef.isFixedWidth()) {
-				offset += fieldDef.getEncoding().fromObject(fieldDef, values[index],
-						bytes, offset);
+			if (object != null && !fieldDef.isFixedSize()) {
+				offset += fieldDef.getEncoding().fromObject(fieldDef,
+						values[index], bytes, offset);
 			}
 		}
 		CServerUtil.putChar(bytes, offset, SIGNATURE_B);
@@ -342,13 +354,13 @@ public class RowData {
 				for (int i = 0; i < getFieldCount(); i++) {
 					final FieldDef fieldDef = rowDef.getFieldDef(i);
 					sb.append(i == 0 ? "(" : ",");
-					final long location = fieldDef.getRowDef().fieldLocation(this,
-							fieldDef.getFieldIndex());
+					final long location = fieldDef.getRowDef().fieldLocation(
+							this, fieldDef.getFieldIndex());
 					if (location == 0) {
 						sb.append("null");
 					} else {
-					fieldDef.getEncoding().toString(fieldDef, this, sb,
-							Quote.SINGLE_QUOTE);
+						fieldDef.getEncoding().toString(fieldDef, this, sb,
+								Quote.SINGLE_QUOTE);
 					}
 				}
 				sb.append(")");
@@ -362,10 +374,9 @@ public class RowData {
 		}
 		return sb.toString();
 	}
-	
-	
+
 	public String explain() {
-		
+
 		final StringBuilder sb = new StringBuilder();
 		return sb.toString();
 	}

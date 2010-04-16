@@ -67,7 +67,9 @@ public class CServerTest implements CServerConstants {
 
 	@AfterClass
 	public static void tearDownSuite() throws Exception {
-		networkHandler.disconnectWorker();
+		if (networkHandler != null) {
+			networkHandler.disconnectWorker();
+		}
 		NetworkHandlerFactory.closeNetwork();
 		cserver.stop();
 	}
@@ -110,25 +112,24 @@ public class CServerTest implements CServerConstants {
 		assertEquals(1, ((GetAutoIncrementValueResponse) response).getValue());
 
 	}
-	
+
 	@Test
 	public void testGetTableStatisticsRequestResponse() throws Exception {
 		Message request;
 		Message response;
-		
+
 		request = createWriteRowRequest();
-		response = (WriteRowResponse) connection
-				.sendAndReceive(request);
-		assertEquals(1, ((WriteRowResponse)response).getResultCode());
+		response = (WriteRowResponse) connection.sendAndReceive(request);
+		assertEquals(1, ((WriteRowResponse) response).getResultCode());
 
 		request = new GetTableStatisticsRequest(ROW_DEF.getRowDefId());
 		response = connection.sendAndReceive(request);
-		
-		GetTableStatisticsResponse gtsr = (GetTableStatisticsResponse)response;
-		
+
+		GetTableStatisticsResponse gtsr = (GetTableStatisticsResponse) response;
+
 		final TableStatistics ts = gtsr.getTableStatistics();
 		assertEquals(1, ts.getRowCount());
-		//assertEquals(1, ts.getAutoIncrementValue());
+		// assertEquals(1, ts.getAutoIncrementValue());
 		assertTrue(ts.getCreationTime() - System.currentTimeMillis() < 10000);
 		assertEquals(8192, ts.getBlockSize());
 		// TODO - change when the histogram list is populated

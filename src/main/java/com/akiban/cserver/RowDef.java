@@ -276,7 +276,7 @@ public class RowDef {
 			return 0;
 		}
 
-		if (fieldDefs[fieldIndex].isFixedWidth()) {
+		if (fieldDefs[fieldIndex].isFixedSize()) {
 			//
 			// Look up the offset and width of a fixed-width field
 			//
@@ -447,7 +447,7 @@ public class RowDef {
 	public String getTreeName() {
 		return treeName;
 	}
-	
+
 	public String getSchemaName() {
 		return schemaName;
 	}
@@ -491,7 +491,7 @@ public class RowDef {
 	public void setTreeName(final String treeName) {
 		this.treeName = treeName;
 	}
-	
+
 	public void setSchemaName(final String schemaName) {
 		this.schemaName = schemaName;
 	}
@@ -543,11 +543,11 @@ public class RowDef {
 				varLenFieldMap[byteIndex] = new byte[512];
 			}
 			final int width;
-			if (fieldDef.isFixedWidth()) {
-				width = fieldDef.getMaxWidth();
+			if (fieldDef.isFixedSize()) {
+				width = fieldDef.getMaxStorageSize();
 			} else {
-				voffset += fieldDef.getMaxWidth() + fieldDef.getWidthOverhead();
-				width = CServerUtil.varwidth(voffset);
+				voffset += fieldDef.getMaxStorageSize();
+				width = CServerUtil.varWidth(voffset);
 			}
 			for (int i = 0; i < bit; i++) {
 				int from = fieldCoordinates[byteIndex][i];
@@ -556,14 +556,14 @@ public class RowDef {
 				fieldCoordinates[byteIndex][k] = to;
 				for (int j = bitIndex; --j >= 0;) {
 					if ((k & (1 << j)) != 0
-							&& !fieldDefs[byteIndex * 8 + j].isFixedWidth()) {
+							&& !fieldDefs[byteIndex * 8 + j].isFixedSize()) {
 						varLenFieldMap[byteIndex][k] = (byte) (k & ((0xFF >>> (7 - j))));
 						break;
 					}
 				}
 				for (int j = bitIndex + 1; --j >= 0;) {
 					if ((k & (1 << j)) != 0
-							&& !fieldDefs[byteIndex * 8 + j].isFixedWidth()) {
+							&& !fieldDefs[byteIndex * 8 + j].isFixedSize()) {
 						varLenFieldMap[byteIndex][k + 256] = (byte) (k & ((0xFF >>> (7 - j))));
 						break;
 					}
