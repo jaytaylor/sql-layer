@@ -14,6 +14,7 @@ public interface MySQLErrorConstants {
 	public final static short HA_ERR_INTERNAL_ERROR = 122;
 	public final static short HA_ERR_RECORD_CHANGED = 123;
 	public final static short HA_ERR_RECORD_DELETED = 134;
+	public final static short HA_ERR_UNSUPPORTED = 138; 
 	public final static short HA_ERR_NO_REFERENCED_ROW = 151;
 	public final static short HA_ERR_ROW_IS_REFERENCED = 152; 
 	public final static short HA_ERR_NO_SUCH_TABLE = 155;
