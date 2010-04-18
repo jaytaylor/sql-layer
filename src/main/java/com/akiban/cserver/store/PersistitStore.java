@@ -685,7 +685,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 					if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef
 							.getPKIndexDef().getFields())) {
-						throw new StoreException(UNSUPPORTED_MODIFICATION,
+						throw new StoreException(HA_ERR_ROW_IS_REFERENCED,
 								"HKey change not supported: " + oldKey + "->"
 										+ newKey);
 
