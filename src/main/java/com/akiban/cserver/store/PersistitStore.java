@@ -987,7 +987,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 
 			if (verbose && LOG.isInfoEnabled()) {
-				LOG.info("Select from table: " + rowDef.toString()
+				LOG.info("Select from table: " + rowDef.toString() 
+						+ " (indexID: " + indexId + ")" 
 						+ " scanFlags=" + scanFlags);
 				LOG.info("  from: " + start.toString(rowDefCache));
 				LOG.info("    to: " + end.toString(rowDefCache));
