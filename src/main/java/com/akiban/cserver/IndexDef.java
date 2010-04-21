@@ -257,6 +257,10 @@ public class IndexDef {
 				}
 			}
 		}
+		
+		if (at < fields.length) {
+			matches = false;
+		}
 
 		if (matches) {
 			hkeyEquivalent = true;
