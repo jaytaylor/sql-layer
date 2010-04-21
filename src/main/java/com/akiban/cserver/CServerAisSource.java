@@ -26,36 +26,44 @@ public class CServerAisSource extends Source {
 	@Override
 	protected final void read(String typename, Receiver receiver)
 			throws Exception {
-		ModelObject modelObject = MetaModel.only().definition(typename);
-		final RowDef rowDef = store.getRowDefCache().getRowDef(
-				modelObject.tableName());
-		if (rowDef == null) {
-			throw new IllegalStateException(
-					"Missing table definition for AIS table "
-							+ modelObject.name());
-		}
-		if (rowDef.getFieldCount() != modelObject.attributes().size()) {
-			throw new IllegalStateException("RowDef for table "
-					+ modelObject.name() + " does not match modelObject");
-		}
-		final RowData nullBounds = new RowData(new byte[64]);
-		nullBounds.createRow(rowDef, new Object[0]);
-		final RowCollector rowCollector = store.newRowCollector(rowDef.getRowDefId(), 0, 0, nullBounds,
-				nullBounds, new byte[] { (byte) 0xFF, (byte) 0xFF });
-		final ByteBuffer buffer = ByteBuffer.allocate(65536);
-		final RowData row = new RowData(buffer.array());
-		while (rowCollector.hasMore()) {
-			buffer.clear();
-			if (rowCollector.collectNextRow(buffer)) {
-				row.prepareRow(0);
-				if (row.getRowDefId() != rowDef.getRowDefId()) {
-					throw new IllegalStateException(
-							"Stored row has unexpected RowDefId: expected="
-									+ rowDef.getRowDefId() + " actual="
-									+ row.getRowDefId());
-				}
-				readRow(rowDef, row, modelObject, receiver);
+		final boolean verbose = store.isVerbose();
+		store.setVerbose(false);
+		try {
+
+			ModelObject modelObject = MetaModel.only().definition(typename);
+			final RowDef rowDef = store.getRowDefCache().getRowDef(
+					modelObject.tableName());
+			if (rowDef == null) {
+				throw new IllegalStateException(
+						"Missing table definition for AIS table "
+								+ modelObject.name());
 			}
+			if (rowDef.getFieldCount() != modelObject.attributes().size()) {
+				throw new IllegalStateException("RowDef for table "
+						+ modelObject.name() + " does not match modelObject");
+			}
+			final RowData nullBounds = new RowData(new byte[64]);
+			nullBounds.createRow(rowDef, new Object[0]);
+			final RowCollector rowCollector = store.newRowCollector(rowDef
+					.getRowDefId(), 0, 0, nullBounds, nullBounds, new byte[] {
+					(byte) 0xFF, (byte) 0xFF });
+			final ByteBuffer buffer = ByteBuffer.allocate(65536);
+			final RowData row = new RowData(buffer.array());
+			while (rowCollector.hasMore()) {
+				buffer.clear();
+				if (rowCollector.collectNextRow(buffer)) {
+					row.prepareRow(0);
+					if (row.getRowDefId() != rowDef.getRowDefId()) {
+						throw new IllegalStateException(
+								"Stored row has unexpected RowDefId: expected="
+										+ rowDef.getRowDefId() + " actual="
+										+ row.getRowDefId());
+					}
+					readRow(rowDef, row, modelObject, receiver);
+				}
+			}
+		} finally {
+			store.setVerbose(verbose);
 		}
 	}
 
