@@ -62,6 +62,12 @@ public class RowDef {
 	 * Schema this RowDef belongs to.
 	 */
 	private String schemaName;
+	
+	/**
+	 * Field index of the auto-increment column; -1 if none.
+	 */
+	private int autoIncrementField = -1;
+	
 	/**
 	 * RowDefs of constituent user tables. Populated only if this is the RowDef
 	 * for a group table. Null if this is the RowDef for a user table.
@@ -484,6 +490,10 @@ public class RowDef {
 		this.pkFields = pkFields;
 	}
 
+	public void setAutoIncrementField(int autoIncrementField) {
+		this.autoIncrementField = autoIncrementField;
+	}
+
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
 	}
@@ -494,6 +504,10 @@ public class RowDef {
 
 	public void setSchemaName(final String schemaName) {
 		this.schemaName = schemaName;
+	}
+
+	public int getAutoIncrementField() {
+		return autoIncrementField;
 	}
 
 	public int getHKeyDepth() {

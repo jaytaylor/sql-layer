@@ -99,12 +99,17 @@ public class RowDefCache implements CServerConstants {
 
 		// rowDefId
 		final int rowDefId = table.getTableId();
+		int autoIncrementField = -1;
 
 		// FieldDef[]
 		final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
 		for (final Column column : table.getColumns()) {
 			final int fieldIndex = column.getPosition();
 			fieldDefs[fieldIndex] = fieldDef(column);
+			if (column.getInitialAutoIncrementValue() != null
+					&& column.getInitialAutoIncrementValue() > 0) {
+				autoIncrementField = fieldIndex;
+			}
 		}
 
 		// parentRowDef
@@ -217,6 +222,7 @@ public class RowDefCache implements CServerConstants {
 		rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
 				.size()]));
 		rowDef.setOrdinal(0);
+		rowDef.setAutoIncrementField(autoIncrementField);
 
 		return rowDef;
 
