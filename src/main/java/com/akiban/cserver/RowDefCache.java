@@ -148,10 +148,7 @@ public class RowDefCache implements CServerConstants {
 			final List<IndexColumn> indexColumns = index.getColumns();
 			final List<Integer> pkFieldList = new ArrayList<Integer>(1);
 			for (final IndexColumn indexColumn : indexColumns) {
-				// TODO: indexColumn.getPosition is the position of the
-				// IndexColumn within the index, not
-				// TODO: the position of the column within the table
-				final int position = indexColumn.getPosition();
+				final int position = indexColumn.getColumn().getPosition();
 				boolean isParentJoin = false;
 				for (int i = 0; i < parentJoinFields.length; i++) {
 					if (position == parentJoinFields[i]) {
@@ -193,7 +190,7 @@ public class RowDefCache implements CServerConstants {
 			final List<IndexColumn> indexColumns = index.getColumns();
 			final List<Integer> indexColumnList = new ArrayList<Integer>(1);
 			for (final IndexColumn indexColumn : indexColumns) {
-				final int position = indexColumn.getPosition();
+				final int position = indexColumn.getColumn().getPosition();
 				indexColumnList.add(position);
 			}
 
@@ -277,7 +274,7 @@ public class RowDefCache implements CServerConstants {
 			final List<IndexColumn> indexColumns = index.getColumns();
 			final List<Integer> indexColumnList = new ArrayList<Integer>(1);
 			for (final IndexColumn indexColumn : indexColumns) {
-				final int position = indexColumn.getPosition();
+				final int position = indexColumn.getColumn().getPosition();
 				indexColumnList.add(position);
 			}
 

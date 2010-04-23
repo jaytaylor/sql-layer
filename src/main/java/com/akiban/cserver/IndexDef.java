@@ -34,18 +34,10 @@ public class IndexDef {
 	private I2H[] hkeyFields;
 
 	/**
-	 * Structure that binds information about a column. The FieldAssociation a
-	 * column defines it's position in a the hkey, in an index key or in a
-	 * table. For any of these three contexts, a value of -1 indicates that the
-	 * column is not included in that element; for example, a secondary index
-	 * may contain a field that is not in the primary key; it's hkeyLoc
-	 * coordinate is therefore -1.
-	 * 
-	 * As a special case, an instance of this class may represent a segment in
-	 * the hkey where a table's ordinal id is written. (The ordinal is an
-	 * identifier used to separate siblings in bushy trees.) This special case
-	 * is recognized when fieldIndex, hkeyLoc and indexKeyLoc are all -1.
-	 * 
+	 * Structure that determines how a field in a table binds to a key segment
+	 * of an index key. An H2I defines the field's position in an hkey and/or an
+	 * h-row. For an index field that is not part of the row's primary key, the
+	 * hKeyLoc property is -1.
 	 */
 	public static class H2I {
 
@@ -80,7 +72,15 @@ public class IndexDef {
 	}
 
 	/**
-	 * Structure that binds information about a key segment in the hkey.
+	 * Structure that binds information about an index key segment to a h-row
+	 * field. Instances are used when scanning rows by index. After an index key
+	 * is selected, the I2H objects for that index are used in constructing the
+	 * corresponding h-key to fetch the row.
+	 * 
+	 * As a special case, an instance of this class may represent a segment in
+	 * the hkey where a table's ordinal id is written. (The ordinal is an
+	 * identifier used to separate siblings in bushy trees.) This special case
+	 * is recognized when fieldIndex and indexKeyLoc are both -1.
 	 * 
 	 */
 	public static class I2H {
@@ -88,7 +88,7 @@ public class IndexDef {
 		final RowDef rowDef;
 		int fieldIndex = -1;
 		int indexKeyLoc = -1;
-		
+
 		private I2H(final RowDef rowDef) {
 			this.rowDef = rowDef;
 		}
@@ -216,9 +216,22 @@ public class IndexDef {
 	 * The elements of these arrays serve similar purposes: hkeyFields contains
 	 * I2H elements which help the
 	 * {@link com.akiban.cserver.store.PersistitStoreRowCollector} construct an
-	 * hkey given an index Key value; indexKeyFields contains H2I elements which
-	 * help the PersistitStoreRowCollector construct index Key values given HKey
-	 * and RowData objects.
+	 * h-key given an index key value; indexKeyFields contains H2I elements
+	 * which help the PersistitStoreRowCollector construct an index key given
+	 * HKey and RowData objects.
+	 * 
+	 * Once this method has finished, {@link #getHkeyFields()} returns an array
+	 * containing one I2H object for each segment of the h-key, and
+	 * {@link #getIndexKeyFields()} returns an array containing one H2I object
+	 * for each segment of the index key.
+	 * 
+	 * This method also detects whether the index is "h-key equivalent", which
+	 * means that instead of traversing this index, the RowCollector should
+	 * instead traverse the h-keys themselves. The {@link #isHKeyEquivalent()}
+	 * method returns this result.
+	 * 
+	 * This method must be called by the {@link com.akiban.cserver.RowDefCache}
+	 * before the index can be used.
 	 * 
 	 * @param rowDefCache
 	 * @param rowDef
@@ -241,6 +254,12 @@ public class IndexDef {
 		// will need to store the index even though it contains the same fields
 		// as the hkey.
 		// 
+		
+		
+		// TODO:
+		// Detect that a non-PK field of a child row may be a PK field
+		// of its parent.
+		// 
 		boolean matches = true;
 		int at = 0;
 		for (RowDef def : path) {
@@ -257,7 +276,7 @@ public class IndexDef {
 				}
 			}
 		}
-		
+
 		if (at < fields.length) {
 			matches = false;
 		}
@@ -268,8 +287,16 @@ public class IndexDef {
 			return;
 		}
 
+		//
+		// This index is not hkeyEquivalent; therefore set up the I2H and H2I
+		// arrays for the RowCollector.
+		//
 		final List<I2H> i2hList = new ArrayList<I2H>();
 		final List<H2I> h2iList = new ArrayList<H2I>();
+
+		//
+		// Start by adding an H2I for each field in the index.
+		//
 
 		for (int fieldIndex : fields) {
 			final H2I h2i = new H2I();
@@ -277,12 +304,29 @@ public class IndexDef {
 			h2iList.add(h2i);
 		}
 
+		//
+		// Now set up the I2H list, and as a side-effect, add
+		// needed information to the H2I objects.
+		//
 		for (final RowDef def : path) {
+			//
+			// This I2H is a placeholder to insert the RowDef's ordinal into
+			// the h-key.
+			//
 			final I2H ordinalI2h = new I2H(def);
 			i2hList.add(ordinalI2h);
+			//
+			// And then add an H2I for each pkField.
+			//
 			for (int i = 0; i < def.getPkFields().length; i++) {
 				final int pkField = def.getPkFields()[i]
 						+ (rowDef.isGroupTable() ? def.getColumnOffset() : 0);
+				//
+				// Search for an H2I already on the list that maps
+				// to this field. This handles, for example, an pkField
+				// that is also specified as a member of a secondary
+				// index.
+				//
 				int indexLoc = -1;
 				if (def == rowDef || rowDef.isGroupTable()) {
 					for (int j = 0; j < h2iList.size(); j++) {
@@ -294,6 +338,10 @@ public class IndexDef {
 						}
 					}
 				}
+				//
+				// If the H2I was not found above, then this pkField
+				// needs to be added to the index key.
+				//
 				if (indexLoc == -1) {
 					final H2I h2i = new H2I();
 					h2i.setHkeyLoc(i2hList.size());
@@ -304,7 +352,7 @@ public class IndexDef {
 					h2iList.add(h2i);
 				}
 				//
-				// Build the FA that maps index field location to hkey
+				// Build the I2H that maps index field location to hkey
 				//
 				final I2H i2h = new I2H(null);
 

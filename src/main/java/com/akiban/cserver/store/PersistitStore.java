@@ -64,6 +64,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		PERSISTIT_PROPERTIES.put("pwjsize", "16M");
 		PERSISTIT_PROPERTIES.put("pwdelete", "true");
 		PERSISTIT_PROPERTIES.put("pwjcount", "2");
+		PERSISTIT_PROPERTIES.put("timeout", "60000");
 	}
 
 	static String datapath = "/tmp/chunkserver_data";
@@ -372,11 +373,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					}
 					int ordinal = 0;
 					if (tableStatus.getOrdinal() != 0) {
-						ordinal = tableStatus.getRowDefId();
+						ordinal = tableStatus.getOrdinal();
 						userRowDef.setOrdinal(ordinal);
 					} else if (userRowDef.getOrdinal() != 0
 							&& tableStatus.getOrdinal() == 0) {
-						ordinal = userRowDef.getRowDefId();
+						ordinal = userRowDef.getOrdinal();
 						tableStatus.setOrdinal(ordinal);
 					}
 					if (ordinal != 0 && !assigned.add(ordinal)) {

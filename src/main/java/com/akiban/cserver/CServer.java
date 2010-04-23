@@ -98,6 +98,7 @@ public class CServer {
 		store.setVerbose(verbose);
 		ais0 = primordialAIS();
 		rowDefCache.setAIS(ais0);
+		store.setOrdinals();
 		acquireAIS();
 	}
 
