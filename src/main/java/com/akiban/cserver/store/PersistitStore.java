@@ -1024,13 +1024,16 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	@Override
 	public long getRowCount(final boolean exact, final RowData start,
-			final RowData end, final byte[] columnBitMap) {
+			final RowData end, final byte[] columnBitMap)  throws Exception {
 		//
 		// TODO: Compute a reasonable value. The value "2" is a hack -
 		// special because it's not 0 or 1, but small enough to induce
 		// MySQL to use an index rather than full table scan.
 		//
-		return 2;
+		//return 2;
+		final int tableId = start.getRowDefId();
+		final TableStatus status = tableManager.getTableStatus(tableId);
+		return status.getRowCount();
 	}
 
 	@Override
