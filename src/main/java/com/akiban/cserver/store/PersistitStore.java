@@ -1030,10 +1030,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		// special because it's not 0 or 1, but small enough to induce
 		// MySQL to use an index rather than full table scan.
 		//
-		//return 2;
-		final int tableId = start.getRowDefId();
-		final TableStatus status = tableManager.getTableStatus(tableId);
-		return status.getRowCount();
+		return 2;
+		//final int tableId = start.getRowDefId();
+		//final TableStatus status = tableManager.getTableStatus(tableId);
+		//return status.getRowCount();
 	}
 
 	@Override
