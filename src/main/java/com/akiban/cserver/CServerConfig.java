@@ -24,6 +24,7 @@ public class CServerConfig {
 
 	private final static String[] DEFAULT_SEARCH_PATH = {
 			"/usr/local/etc/akiban/chunkserver.properties",
+			"/usr/local/vanilla/chunk-server/conf/chunkserver.properties",
 			"/etc/akiban/chunkserver.properties" };
 
 	private final static String SEARCH_PATH_PROPERTY_NAME = "com.akiban.config";
