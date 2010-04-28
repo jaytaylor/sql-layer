@@ -1,6 +1,8 @@
 package com.akiban.cserver;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 
 public class CServerUtil {
@@ -400,4 +402,12 @@ public class CServerUtil {
 				: length < 0x10000 ? 2 : length < 0x1000000 ? 3 : 4;
 	}
 
+	public static long availableMemory() {
+		final MemoryUsage mu = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+		long max = mu.getMax();
+		if (max == -1) {
+			max = mu.getInit();
+		}
+		return max;
+	}
 }

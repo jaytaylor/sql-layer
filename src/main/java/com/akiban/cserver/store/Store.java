@@ -26,7 +26,7 @@ public interface Store {
 
 	void setVerbose(final boolean verbose);
 
-	RowCollector getCurrentRowCollector();
+	RowCollector getCurrentRowCollector(final int tableId);
 
 	int writeRow(final RowData rowData) throws Exception;
 

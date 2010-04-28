@@ -84,6 +84,8 @@ public class PersistitStoreTableManager {
 	 */
 	public void shutDown() throws Exception {
 		timer.cancel();
+		timer.purge();
+		
 		final Exchange exchange = statusExchange();
 		try {
 			for (final TableStatus tableStatus : statusMap.values()) {

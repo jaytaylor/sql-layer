@@ -11,6 +11,8 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import sun.reflect.ReflectionFactory.GetReflectionFactoryAction;
+
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.MySQLErrorConstants;
@@ -38,6 +40,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private int columnBitMapWidth;
 
+	private int rowDefId;
+	
 	private RowDef groupRowDef;
 
 	private IndexDef indexDef;
@@ -80,7 +84,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 		this.scanFlags = scanFlags;
 		this.columnBitMapOffset = rowDef.getColumnOffset();
 		this.columnBitMapWidth = rowDef.getFieldCount();
-
+		this.rowDefId = rowDef.getRowDefId();
+		
 		if (rowDef.isGroupTable()) {
 			this.groupRowDef = rowDef;
 		} else {
@@ -611,6 +616,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	@Override
 	public boolean hasMore() {
+		if (!more) {
+			store.removeCurrentRowCollector(rowDefId);
+		}
 		return more;
 	}
 

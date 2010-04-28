@@ -4,16 +4,19 @@ import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.MySQLErrorConstants;
@@ -44,13 +47,19 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	final static String VOLUME_NAME = "akiban_data"; // TODO - select
 	// database
 
+	private final static long MEGA = 1024 * 1024;
+
+	private final static long MEMORY_RESERVATION = 16 * MEGA;
+
+	private final static float PERSISTIT_ALLOCATION_FRACTION = 0.5f;
+
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
 	static {
 		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
-		PERSISTIT_PROPERTIES.put("buffer.count.8192", "2K");
+		// PERSISTIT_PROPERTIES.put("buffer.count.8192", "2K");
 		PERSISTIT_PROPERTIES.put("volume.1",
 				"${datapath}/akiban_system.v0,create,pageSize:8K,initialSize:10K,e"
 						+ "xtensionSize:1K,maximumSize:10G");
@@ -61,7 +70,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 				+ ".v01,create,pageSize:8k,"
 				+ "initialSize:5M,extensionSize:5M,maximumSize:100G");
 		PERSISTIT_PROPERTIES.put("pwjpath", "${datapath}/persistit.pwj");
-		PERSISTIT_PROPERTIES.put("pwjsize", "16M");
+		// PERSISTIT_PROPERTIES.put("pwjsize", "16M");
 		PERSISTIT_PROPERTIES.put("pwdelete", "true");
 		PERSISTIT_PROPERTIES.put("pwjcount", "2");
 		PERSISTIT_PROPERTIES.put("timeout", "60000");
@@ -79,7 +88,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	private PersistitStoreTableManager tableManager;
 
-	private ThreadLocal<PersistitStoreSession> sessionLocal = new ThreadLocal<PersistitStoreSession>();
+	// Using a Map<Thread, ...> instead of a ThreadLocal because we want to
+	// clear all state in the shutDown() method.
+	//
+	private Map<Thread, Map<Integer, RowCollector>> sessionRowCollectorMap = 
+		new ConcurrentHashMap<Thread, Map<Integer, RowCollector>>();
 
 	public static void setDataPath(final String path) {
 		datapath = path;
@@ -106,8 +119,19 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final String path = config.property(P_DATAPATH, datapath);
 			db.setProperty("datapath", path);
 
+			final long allocation = (long) ((CServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
+			final long pwjAllocation = Math.max(allocation / 4, 4 * MEGA);
+			final long buffers8k = Math.max((allocation - pwjAllocation)
+					/ (8192 + 4096), 512);
+			PERSISTIT_PROPERTIES.setProperty("pwjsize", Long
+					.toString(pwjAllocation));
+			PERSISTIT_PROPERTIES.setProperty("buffer.count.8192", Long
+					.toString(buffers8k));
+
 			if (LOG.isInfoEnabled()) {
 				LOG.info("PersistitStore datapath=" + path);
+				LOG.info("               pwjsize=" + pwjAllocation);
+				LOG.info("               buffers=" + buffers8k);
 			}
 			for (final Map.Entry<Object, Object> entry : config.getProperties()
 					.entrySet()) {
@@ -131,22 +155,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	public synchronized void shutDown() throws Exception {
 		if (db != null) {
 			tableManager.shutDown();
+			tableManager = null;
 			db.close();
 			db = null;
+			sessionRowCollectorMap.clear();
 		}
 	}
 
 	public Persistit getDb() {
 		return db;
-	}
-
-	PersistitStoreSession getSession() {
-		PersistitStoreSession session = sessionLocal.get();
-		if (session == null) {
-			session = new PersistitStoreSession(db);
-			sessionLocal.set(session);
-		}
-		return session;
 	}
 
 	public Exchange getExchange(final RowDef rowDef, final IndexDef indexDef)
@@ -973,8 +990,28 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	}
 
 	@Override
-	public RowCollector getCurrentRowCollector() {
-		return getSession().getCurrentRowCollector();
+	public RowCollector getCurrentRowCollector(final int tableId) {
+		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread.currentThread());
+		if (map == null) {
+			return null;
+		}
+		return map.get(tableId);
+	}
+
+	public void putCurrentRowCollector(final int tableId, final RowCollector rc) {
+		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread.currentThread());
+		if (map == null) {
+			map = new HashMap<Integer, RowCollector>();
+			sessionRowCollectorMap.put(Thread.currentThread(), map);
+		}
+		map.put(tableId, rc);
+	}
+
+	public void removeCurrentRowCollector(final int tableId) {
+		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread.currentThread());
+		if (map != null) {
+			map.remove(tableId);
+		}
 	}
 
 	@Override
@@ -1012,7 +1049,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final RowCollector rc = new PersistitStoreRowCollector(this,
 					scanFlags, start, end, columnBitMap, rowDef, indexId);
 
-			getSession().setCurrentRowCollector(rc);
+			if (rc.hasMore()) {
+				putCurrentRowCollector(rowDefId, rc);
+			}
+
 			return rc;
 		} catch (StoreException e) {
 			if (verbose && LOG.isInfoEnabled()) {
@@ -1024,16 +1064,16 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	@Override
 	public long getRowCount(final boolean exact, final RowData start,
-			final RowData end, final byte[] columnBitMap)  throws Exception {
+			final RowData end, final byte[] columnBitMap) throws Exception {
 		//
 		// TODO: Compute a reasonable value. The value "2" is a hack -
 		// special because it's not 0 or 1, but small enough to induce
 		// MySQL to use an index rather than full table scan.
 		//
 		return 2;
-		//final int tableId = start.getRowDefId();
-		//final TableStatus status = tableManager.getTableStatus(tableId);
-		//return status.getRowCount();
+		// final int tableId = start.getRowDefId();
+		// final TableStatus status = tableManager.getTableStatus(tableId);
+		// return status.getRowCount();
 	}
 
 	@Override
