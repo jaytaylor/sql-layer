@@ -75,8 +75,8 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
 		final AkibaInformationSchema aisCopy2 = new Reader(source2).load();
 
 		
-		new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais1.txt")))).save(ais);
-		new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais2.txt")))).save(aisCopy2);
+//		new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais1.txt")))).save(ais);
+//		new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais2.txt")))).save(aisCopy2);
 		
 		assertTrue(equals(ais, aisCopy2));
 
