@@ -22,14 +22,19 @@ import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.AkibaInformationSchemaImpl;
 import com.akiban.ais.model.Source;
+import com.akiban.cserver.decider.Factory;
+import com.akiban.cserver.decider.Decider;
+import com.akiban.cserver.decider.Factory.DeciderType;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
+import com.akiban.cserver.store.VStore;
 import com.akiban.message.AkibaConnection;
 import com.akiban.message.ErrorResponse;
 import com.akiban.message.ExecutionContext;
 import com.akiban.message.Message;
+import com.akiban.message.Request;
 import com.akiban.message.MessageRegistry;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
@@ -63,23 +68,17 @@ public class CServer {
 	 */
 
 	private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
-
 	private final RowDefCache rowDefCache = new RowDefCache();
-
 	private final CServerConfig config = new CServerConfig();
-
-	private final Store store = new PersistitStore(config, rowDefCache);
-
+	private final Store hstore = new PersistitStore(config, rowDefCache);
+	private final Store vstore = new VStore();
 	private AkibaInformationSchema ais0;
-
 	private AkibaInformationSchema ais;
-
 	private volatile boolean stopped = false;
-
 	private boolean verbose;
-
 	private Map<Integer, Thread> threadMap = new TreeMap<Integer, Thread>();
-
+	private Decider decider;
+	
 	public void start() throws Exception {
 
 		MessageRegistry.initialize();
@@ -94,12 +93,15 @@ public class CServer {
 		if ("true".equalsIgnoreCase(verboseString)) {
 			verbose = true;
 		}
-		store.startUp();
-		store.setVerbose(verbose);
+		Factory.setConfig(config);
+		decider = Factory.getSingleton().createDecisionEngine();
+		hstore.startUp();
+		hstore.setVerbose(verbose);
 		ais0 = primordialAIS();
 		rowDefCache.setAIS(ais0);
-		store.setOrdinals();
+		hstore.setOrdinals();
 		acquireAIS();
+		((VStore)vstore).setHStore(hstore);
 	}
 
 	public void stop() throws Exception {
@@ -113,7 +115,7 @@ public class CServer {
 		for (final Thread thread : copy) {
 			thread.interrupt();
 		}
-		store.shutDown();
+		hstore.shutDown();
 		NetworkHandlerFactory.closeNetwork();
 	}
 
@@ -153,16 +155,29 @@ public class CServer {
 	}
 
 	public Store getStore() {
-		return store;
+		return hstore;
 	}
-
+	
 	public class CServerContext implements ExecutionContext,
 			AISExecutionContext, CServerShutdownExecutionContext {
 
 		public Store getStore() {
-			return store;
+			return hstore;
 		}
 
+		public Store getStore(Request r) {
+			System.out.println("get scan hstore");
+			Decider.EngineType et = decider.decide(r);
+			if(et == Decider.EngineType.HStore) {
+				//LOG.fatal("----------------- Persistit ----------------");
+				return hstore;
+			} else {
+				assert et == Decider.EngineType.VStore;
+				//LOG.fatal("----------------- VStore -----------------");
+				return vstore;
+			}
+		}
+		
 		@Override
 		public void executeRequest(AkibaConnection connection,
 				AISRequest request) throws Exception {
@@ -258,7 +273,7 @@ public class CServer {
 	 * @throws Exception
 	 */
 	public synchronized void acquireAIS() throws Exception {
-		final Source source = new CServerAisSource(store);
+		final Source source = new CServerAisSource(hstore);
 		this.ais = new Reader(source)
 				.load(new AkibaInformationSchemaImpl(ais0));
 		installAIS();
@@ -270,7 +285,7 @@ public class CServer {
 		}
 		rowDefCache.clear();
 		rowDefCache.setAIS(ais);
-		store.setOrdinals();
+		hstore.setOrdinals();
 	}
 
 	/**

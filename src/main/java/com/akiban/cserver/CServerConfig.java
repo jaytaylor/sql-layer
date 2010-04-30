@@ -23,8 +23,8 @@ public class CServerConfig {
 			.getName());
 
 	private final static String[] DEFAULT_SEARCH_PATH = {
-			"/usr/local/etc/akiban/chunkserver.properties",
 			"/usr/local/vanilla/chunk-server/conf/chunkserver.properties",
+			"/usr/local/etc/akiban/chunkserver.properties",
 			"/etc/akiban/chunkserver.properties" };
 
 	private final static String SEARCH_PATH_PROPERTY_NAME = "com.akiban.config";
@@ -76,7 +76,7 @@ public class CServerConfig {
 		}
 	}
 
-	private void loadFromFile(final File file) throws Exception {
+	public void loadFromFile(final File file) throws Exception {
 		final Properties properties = new Properties();
 		try {
 			properties.load(new FileReader(file));
