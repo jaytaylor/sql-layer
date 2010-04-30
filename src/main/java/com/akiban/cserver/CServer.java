@@ -166,7 +166,7 @@ public class CServer {
 		}
 
 		public Store getStore(Request r) {
-			System.out.println("get scan hstore");
+			//System.out.println("get scan hstore");
 			Decider.EngineType et = decider.decide(r);
 			if(et == Decider.EngineType.HStore) {
 				//LOG.fatal("----------------- Persistit ----------------");
