@@ -453,20 +453,24 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			final Date date;
+			final int v;
 			if (value instanceof String) {
 				try {
-					date = getDateFormat(SDF_DATE).parse((String) value);
+					final Date date = getDateFormat(SDF_DATE).parse(
+							(String) value);
+					v = dateAsInt(date);
 				} catch (ParseException e) {
 					throw new RuntimeException(e);
 				}
 			} else if (value instanceof Date) {
-				date = (Date) value;
+				final Date date = (Date) value;
+				v = dateAsInt(date);
+			} else if (value instanceof Long) {
+				v = ((Long) value).intValue();
 			} else {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			int v = dateAsInt(date);
 			return putUInt(dest, offset, v, 3);
 		}
 
@@ -532,20 +536,24 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			final Date date;
+			final int v;
 			if (value instanceof String) {
 				try {
-					date = getDateFormat(SDF_TIME).parse((String) value);
+					final Date date = getDateFormat(SDF_TIME).parse(
+							(String) value);
+					v = timeAsInt(date);
 				} catch (ParseException e) {
 					throw new RuntimeException(e);
 				}
 			} else if (value instanceof Date) {
-				date = (Date) value;
+				final Date date = (Date) value;
+				v = timeAsInt(date);
+			} else if (value instanceof Long) {
+				v = ((Long) value).intValue();
 			} else {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			int v = timeAsInt(date);
 			return putUInt(dest, offset, v, 3);
 		}
 
@@ -567,7 +575,7 @@ public enum Encoding {
 			if (value == null) {
 				key.append(null);
 			} else {
-			key.append(timeAsInt((Date) value));
+				key.append(timeAsInt((Date) value));
 			}
 		}
 
@@ -579,16 +587,16 @@ public enum Encoding {
 			if (location == 0) {
 				sb.append("null");
 			} else {
-			final int v = (int) rowData.getIntegerValue((int) location, 3);
-			// Note: reverse engineered; this does not match documentation
-			// at
-			// http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
-			final int day = v / 1000000;
-			final int hour = (v / 10000) % 100;
-			final int minute = (v / 100) % 100;
-			final int second = v % 100;
-			final Date date = new Date(0, 0, day, hour, minute, second);
-			quote.append(sb, getDateFormat(SDF_TIME).format(date));
+				final int v = (int) rowData.getIntegerValue((int) location, 3);
+				// Note: reverse engineered; this does not match documentation
+				// at
+				// http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+				final int day = v / 1000000;
+				final int hour = (v / 10000) % 100;
+				final int minute = (v / 100) % 100;
+				final int second = v % 100;
+				final Date date = new Date(0, 0, day, hour, minute, second);
+				quote.append(sb, getDateFormat(SDF_TIME).format(date));
 			}
 		}
 
@@ -615,20 +623,24 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			final Date date;
+			final long v;
 			if (value instanceof String) {
 				try {
-					date = getDateFormat(SDF_DATETIME).parse((String) value);
+					final Date date = getDateFormat(SDF_DATETIME).parse(
+							(String) value);
+					v = dateTimeAsLong(date);
 				} catch (ParseException e) {
 					throw new RuntimeException(e);
 				}
 			} else if (value instanceof Date) {
-				date = (Date) value;
+				final Date date = (Date) value;
+				v = dateTimeAsLong(date);
+			} else if (value instanceof Long) {
+				v = ((Long) value).longValue();
 			} else {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			long v = dateTimeAsLong(date);
 			return putUInt(dest, offset, v, 8);
 		}
 
@@ -639,9 +651,9 @@ public enum Encoding {
 			if (location == 0) {
 				key.append(null);
 			} else {
-			long v = rowData.getIntegerValue((int) location,
-					(int) (location >>> 32));
-			key.append(v);
+				long v = rowData.getIntegerValue((int) location,
+						(int) (location >>> 32));
+				key.append(v);
 			}
 		}
 
@@ -650,7 +662,7 @@ public enum Encoding {
 			if (value == null) {
 				key.append(null);
 			} else {
-			key.append(dateTimeAsLong((Date) value));
+				key.append(dateTimeAsLong((Date) value));
 			}
 		}
 
@@ -660,21 +672,21 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			if (location == 0) {
-				sb.append((String)null);
+				sb.append((String) null);
 			} else {
-			final long v = rowData.getIntegerValue((int) location, 8);
-			// Note: reverse engineered; this does not match documentation
-			// at
-			// http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
-			final int year = (int) (v / LONG_1_E10);
-			final int month = (int) ((v / LONG_1_E8) % 100);
-			final int day = (int) ((v / LONG_1_E6) % 100);
-			final int hour = (int) ((v / LONG_1_E4) % 100);
-			final int minute = (int) ((v / LONG_100) % 100);
-			final int second = (int) (v % LONG_100);
-			final Date date = new Date(year - 1900, month - 1, day, hour,
-					minute, second);
-			quote.append(sb, getDateFormat(SDF_DATETIME).format(date));
+				final long v = rowData.getIntegerValue((int) location, 8);
+				// Note: reverse engineered; this does not match documentation
+				// at
+				// http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+				final int year = (int) (v / LONG_1_E10);
+				final int month = (int) ((v / LONG_1_E8) % 100);
+				final int day = (int) ((v / LONG_1_E6) % 100);
+				final int hour = (int) ((v / LONG_1_E4) % 100);
+				final int minute = (int) ((v / LONG_100) % 100);
+				final int second = (int) (v % LONG_100);
+				final Date date = new Date(year - 1900, month - 1, day, hour,
+						minute, second);
+				quote.append(sb, getDateFormat(SDF_DATETIME).format(date));
 			}
 		}
 
@@ -712,22 +724,24 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			final Date date;
+			final long v;
 			if (value instanceof String) {
 				try {
-					date = getDateFormat(SDF_DATETIME).parse((String) value);
+					final Date date = getDateFormat(SDF_DATETIME).parse(
+							(String) value);
+					v = (int) (date.getTime() / 1000);
 				} catch (ParseException e) {
 					throw new RuntimeException(e);
 				}
 			} else if (value instanceof Date) {
-				date = (Date) value;
-			} else if (value instanceof Number) {
-				date = new Date(((Number) value).longValue());
+				final Date date = (Date) value;
+				v = (int) (date.getTime() / 1000);
+			} else if (value instanceof Long) {
+				v = ((Long) value).longValue();
 			} else {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			final int v = (int) (date.getTime() / 1000);
 			return putUInt(dest, offset, v, 4);
 		}
 
@@ -738,9 +752,9 @@ public enum Encoding {
 			if (location == 0) {
 				key.append(null);
 			} else {
-			long v = rowData.getIntegerValue((int) location,
-					(int) (location >>> 32));
-			key.append(v);
+				long v = rowData.getIntegerValue((int) location,
+						(int) (location >>> 32));
+				key.append(v);
 			}
 		}
 
@@ -749,7 +763,7 @@ public enum Encoding {
 			if (value == null) {
 				key.append(null);
 			} else {
-			key.append(((Date) value).getTime() / 1000);
+				key.append(((Date) value).getTime() / 1000);
 			}
 		}
 
@@ -759,13 +773,13 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			if (location == 0) {
-				sb.append((String)null);
+				sb.append((String) null);
 			} else {
 
-			final long time = ((long) rowData
-					.getIntegerValue((int) location, 4)) * 1000;
-			final Date date = new Date(time);
-			quote.append(sb, getDateFormat(SDF_DATETIME).format(date));
+				final long time = ((long) rowData.getIntegerValue(
+						(int) location, 4)) * 1000;
+				final Date date = new Date(time);
+				quote.append(sb, getDateFormat(SDF_DATETIME).format(date));
 			}
 		}
 
@@ -785,20 +799,23 @@ public enum Encoding {
 		@Override
 		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
 				int offset) {
-			final Date date;
+			final int v;
 			if (value instanceof String) {
 				try {
-					date = getDateFormat(SDF_YEAR).parse((String) value);
+					final Date date = getDateFormat(SDF_YEAR).parse((String) value);
+					v = (date.getYear() - 1900);
 				} catch (ParseException e) {
 					throw new RuntimeException(e);
 				}
 			} else if (value instanceof Date) {
-				date = (Date) value;
+				final Date date = (Date) value;
+				v = (date.getYear() - 1900);
+			} else if (value instanceof Long) {
+				v = ((Long)value).intValue();
 			} else {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
 			}
-			int v = (date.getYear() - 1900);
 			return putUInt(dest, offset, v, 3);
 		}
 
@@ -810,18 +827,18 @@ public enum Encoding {
 				key.append(null);
 			} else {
 
-			long v = rowData.getIntegerValue((int) location,
-					(int) (location >>> 32));
-			key.append(v);
+				long v = rowData.getIntegerValue((int) location,
+						(int) (location >>> 32));
+				key.append(v);
 			}
-			}
+		}
 
 		@Override
 		public void toKey(FieldDef fieldDef, Object value, Key key) {
 			if (value == null) {
 				key.append(null);
 			} else {
-			key.append(((Date) value).getYear() - 1900);
+				key.append(((Date) value).getYear() - 1900);
 			}
 		}
 
@@ -831,11 +848,12 @@ public enum Encoding {
 			final long location = fieldDef.getRowDef().fieldLocation(rowData,
 					fieldDef.getFieldIndex());
 			if (location == 0) {
-				sb.append((String)null);
+				sb.append((String) null);
 			} else {
 
-			final int year = (int) rowData.getIntegerValue((int) location, 1);
-			quote.append(sb, Integer.toString(year + 1900));
+				final int year = (int) rowData.getIntegerValue((int) location,
+						1);
+				quote.append(sb, Integer.toString(year + 1900));
 			}
 		}
 
@@ -953,6 +971,107 @@ public enum Encoding {
 		}
 	};
 
+	// -------------------------
+	// Methods implemented by members of this enum:
+	// -------------------------
+
+	/**
+	 * Verify that the Encoding enum element is appropriate for the specified
+	 * Type. Used to assert that the name of the Encoding specified in
+	 * {@link com.akiban.ais.model.Types} is correct.
+	 * 
+	 * @param type
+	 * @return
+	 */
+	public abstract boolean validate(final Type type);
+
+	/**
+	 * Append the value of a field in a RowData to a StringBuilder, optionally
+	 * quoting string values.
+	 * 
+	 * @param fieldDef
+	 *            description of the field
+	 * @param rowData
+	 *            RowData containing the data to decode
+	 * @param sb
+	 *            The StringBuilder
+	 * @param quote
+	 *            Member of the {@link Quote} enum that specifies how to add
+	 *            quotation marks: none, single-quote or double-quote symbols.
+	 */
+	public abstract void toString(final FieldDef fieldDef,
+			final RowData rowData, final StringBuilder sb, final Quote quote);
+
+	/**
+	 * Convert a value supplied as an Object to a value in a RowData backing
+	 * array. This method is mostly for the convenience of unit tests. It
+	 * converts a Java Object value of an appropriate type to MySQL format. For
+	 * example, the DATE Encoding converts an object supplies as a Date, or a
+	 * String in date format to a MySQL field. For variable-length values
+	 * (VARCHAR, TEXT, etc.) this method writes the length-prefixed string
+	 * value.
+	 * 
+	 * @param fieldDef
+	 *            description of the field
+	 * @param value
+	 *            Value to convert
+	 * @param dest
+	 *            Byte array for the RowData being created
+	 * @param offset
+	 *            Offset of first byte to write in the array
+	 * @return number of RowData bytes occupied by the value
+	 */
+	public abstract int fromObject(final FieldDef fieldDef, final Object value,
+			final byte[] dest, final int offset);
+
+	/**
+	 * Size in bytes required by the
+	 * {@link #fromObject(FieldDef, Object, byte[], int)} method. For
+	 * fixed-length fields this is the field width. For variable-length fields,
+	 * this is the number of bytes used to store the item, including the number
+	 * of prefix bytes used to encode its length. For example, a VARCHAR(300)
+	 * field containing the ASCII string "abc" requires 5 bytes: 3 for the ASCII
+	 * characters plus two to encode the length value (3).
+	 * 
+	 * @param fieldDef
+	 *            description of the field
+	 * @param value
+	 *            the value
+	 * @return size in bytes
+	 */
+	public abstract int widthFromObject(final FieldDef fieldDef,
+			final Object value);
+
+	/**
+	 * Append a value from a RowData into a Persistit {@link com.persistit.Key},
+	 * converting the value from its MySQL form to Persistit's key encoding.
+	 * 
+	 * @param fieldDef
+	 *            description of the field
+	 * @param rowData
+	 *            MySQL data in RowData format
+	 * @param key
+	 *            Persistit Key to receive the value
+	 */
+	public abstract void toKey(final FieldDef fieldDef, final RowData rowData,
+			final Key key);
+
+	/**
+	 * Append a value supplied as an Object to a a Persistit
+	 * {@link com.persistit.Key}.
+	 * 
+	 * @param fieldDef
+	 *            description of the field
+	 * @param value
+	 *            the value to append
+	 * @param key
+	 *            Persistit Key to receive the value
+	 */
+	public abstract void toKey(final FieldDef fieldDef, final Object value,
+			final Key key);
+
+	// -------------------------
+
 	public final static String SDF_DATE = "yyyy-MM-dd";
 
 	public final static String SDF_YEAR = "yyyy";
@@ -978,23 +1097,6 @@ public enum Encoding {
 		}
 		return sdf;
 	}
-
-	public abstract boolean validate(final Type type);
-
-	public abstract void toString(final FieldDef fieldDef,
-			final RowData rowData, final StringBuilder sb, final Quote quote);
-
-	public abstract int fromObject(final FieldDef fieldDef, final Object value,
-			final byte[] dest, final int offset);
-
-	public abstract int widthFromObject(final FieldDef fieldDef,
-			final Object value);
-
-	public abstract void toKey(final FieldDef fieldDef, final RowData rowData,
-			final Key key);
-
-	public abstract void toKey(final FieldDef fieldDef, final Object value,
-			final Key key);
 
 	public int objectToInt(final byte[] bytes, final int offset,
 			final Object obj, final int width, final boolean unsigned) {
