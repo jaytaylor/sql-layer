@@ -173,7 +173,7 @@ public class VStoreWithAISTest extends TestCase implements
 	@Override
 	public void setUp() throws Exception {
 		rowDefCache = new RowDefCache();
-		hstore = new PersistitStore(new CServerConfig(), rowDefCache);
+		hstore = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
 		store = new VStore();
 		store.setHStore(hstore);
 		CServerUtil.cleanUpDirectory(DATA_PATH);

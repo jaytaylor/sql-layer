@@ -34,6 +34,12 @@ public class CServerConfig {
 	private final List<String> configFileNames = new ArrayList<String>();
 
 	private Exception exception;
+	
+	public static CServerConfig unitTestConfig() {
+		final CServerConfig csc = new CServerConfig();
+		csc.properties.setProperty("unit_test", "true");
+		return csc;
+	}
 
 	/**
 	 * Loads properties from all properties files on the search path. The search

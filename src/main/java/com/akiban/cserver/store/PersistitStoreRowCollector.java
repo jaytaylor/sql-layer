@@ -11,8 +11,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import sun.reflect.ReflectionFactory.GetReflectionFactoryAction;
-
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.MySQLErrorConstants;
@@ -41,7 +39,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 	private int columnBitMapWidth;
 
 	private int rowDefId;
-	
+
 	private RowDef groupRowDef;
 
 	private IndexDef indexDef;
@@ -76,6 +74,37 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private Key.Direction direction;
 
+	private I2R[] coveringFields;
+
+	/**
+	 * Structure that maps the index key field depth to a RowData's field index.
+	 * Used to supporting covering index.
+	 */
+	static class I2R {
+
+		private final int indexKeyDepth;
+
+		private final int rowDataFieldIndex;
+
+		private I2R(final int indexKeyDepth, final int rowDataFieldIndex) {
+			this.indexKeyDepth = indexKeyDepth;
+			this.rowDataFieldIndex = rowDataFieldIndex;
+		}
+
+		public int getIndexKeyDepth() {
+			return indexKeyDepth;
+		}
+
+		public int getRowDataFieldIndex() {
+			return rowDataFieldIndex;
+		}
+
+		public String toString() {
+			return "I2R(indexDepth=" + getIndexKeyDepth() + ",fieldIndex="
+					+ getRowDataFieldIndex() + ")";
+		}
+	}
+
 	PersistitStoreRowCollector(PersistitStore store, final int scanFlags,
 			final RowData start, final RowData end, final byte[] columnBitMap,
 			RowDef rowDef, final int indexId) throws Exception {
@@ -85,7 +114,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 		this.columnBitMapOffset = rowDef.getColumnOffset();
 		this.columnBitMapWidth = rowDef.getFieldCount();
 		this.rowDefId = rowDef.getRowDefId();
-		
+
 		if (rowDef.isGroupTable()) {
 			this.groupRowDef = rowDef;
 		} else {
@@ -117,9 +146,14 @@ public class PersistitStoreRowCollector implements RowCollector,
 					}
 					this.iEx = store.getExchange(rowDef, indexDef);
 					this.iFilter = computeIFilter(indexDef, rowDef, start, end);
+					if (store.isCoveringIndexSupportEnabled()) {
+						coveringFields = computeCoveringIndexFields(rowDef,
+								def, columnBitMap);
+					}
 					if (store.isVerbose() && LOG.isInfoEnabled()) {
 						LOG.info("Select using index " + indexDef + " filter="
-								+ iFilter);
+								+ iFilter
+								+ (coveringFields != null ? " covering" : ""));
 					}
 				}
 			}
@@ -359,6 +393,42 @@ public class PersistitStoreRowCollector implements RowCollector,
 	}
 
 	/**
+	 * Determine whether all of the fields specified in the columnBitMap are
+	 * covered by index key fields, and if so, return an array
+	 * 
+	 * @param rowDef
+	 * @param indexDef
+	 * @param columnBitMap
+	 * @return
+	 */
+	I2R[] computeCoveringIndexFields(final RowDef rowDef,
+			final IndexDef indexDef, final byte[] columnBitMap) {
+		if (rowDef.isGroupTable()) {
+			// For now, only works on user tables
+			return null;
+		}
+		final IndexDef.H2I[] h2iArray = indexDef.getIndexKeyFields();
+		final List<I2R> coveredFields = new ArrayList<I2R>();
+		for (int fieldIndex = 0; fieldIndex < rowDef.getFieldCount(); fieldIndex++) {
+			if (isBit(columnBitMap, fieldIndex)) {
+				boolean found = false;
+				for (int j = 0; j < h2iArray.length; j++) {
+					if (h2iArray[j].getFieldIndex() == fieldIndex) {
+						found = true;
+						coveredFields.add(new I2R(j, h2iArray[j]
+								.getFieldIndex()));
+						break;
+					}
+				}
+				if (!found) {
+					return null;
+				}
+			}
+		}
+		return coveredFields.toArray(new I2R[coveredFields.size()]);
+	}
+
+	/**
 	 * Selects the next row in tree-traversal order and puts it into the payload
 	 * ByteBuffer if there is room. Returns <tt>true</tt> if and only if a row
 	 * was added to the payload ByteBuffer. As a side-effect, this method
@@ -417,6 +487,13 @@ public class PersistitStoreRowCollector implements RowCollector,
 					return false;
 				}
 				direction = isAscending() ? Key.GT : Key.LT;
+
+				if (coveringFields != null) {
+					prepareCoveredRow(iEx, rowDefId, coveringFields);
+					pendingFromLevel = 0;
+					pendingToLevel = 1;
+					continue;
+				}
 				store.constructHKeyFromIndexKey(hKey, iEx.getKey(), indexDef);
 
 				final int differsAt = hKey.firstUniqueByteIndex(lastKey);
@@ -573,6 +650,19 @@ public class PersistitStoreRowCollector implements RowCollector,
 			}
 
 		}
+	}
+
+	void prepareCoveredRow(final Exchange exchange, final int rowDefId,
+			final I2R[] coveringFields) {
+		final RowDef rowDef = store.getRowDefCache().getRowDef(rowDefId);
+		final RowData rowData = pendingRowData[0];
+		final Object[] values = new Object[rowDef.getFieldCount()];
+		final Key key = exchange.getKey();
+		for (final I2R i2r : coveringFields) {
+			key.indexTo(i2r.getIndexKeyDepth());
+			values[i2r.getRowDataFieldIndex()] = key.decode();
+		}
+		rowData.createRow(rowDef, values);
 	}
 
 	boolean deliverRow(final RowData rowData, final ByteBuffer payload)

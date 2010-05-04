@@ -31,7 +31,7 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
 
 	@Override
 	public void setUp() throws Exception {
-		store = new PersistitStore(new CServerConfig(), new RowDefCache());
+		store = new PersistitStore(CServerConfig.unitTestConfig(), new RowDefCache());
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		store.startUp();

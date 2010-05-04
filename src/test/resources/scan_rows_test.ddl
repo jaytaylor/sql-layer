@@ -1,6 +1,6 @@
 
 /*
-schema scan_rows_test;
+schema scan_rows_test baseid=100 groupschema _akiban_scan_rows_test;
 
 group srt {
   table a {
@@ -94,7 +94,7 @@ create table aaab(
     primary key(aaab1),
     key (`aaab1`, `aaab2`),
     key (`aaab2`, `aaab3`),
-    key (`aaab3`, `aaab1`),
+    key aaab3aaab1 (`aaab3`, `aaab1`),
     key (`aaab1`, `aaab3`),
     key (`aaab2`, `aaab1`)
 ) engine = akibadb;

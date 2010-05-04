@@ -42,6 +42,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
 
+	private static final String UNIT_TEST_PROPERTY_NAME = "unit_test";
+
 	static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
 	final static String VOLUME_NAME = "akiban_data"; // TODO - select
@@ -59,7 +61,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
 		PERSISTIT_PROPERTIES.put("logfile",
 				"${logpath}/persistit_${timestamp}.log");
-		// PERSISTIT_PROPERTIES.put("buffer.count.8192", "2K");
+		PERSISTIT_PROPERTIES.put("buffer.count.8192", "1K");
 		PERSISTIT_PROPERTIES.put("volume.1",
 				"${datapath}/akiban_system.v0,create,pageSize:8K,initialSize:10K,e"
 						+ "xtensionSize:1K,maximumSize:10G");
@@ -70,7 +72,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 				+ ".v01,create,pageSize:8k,"
 				+ "initialSize:5M,extensionSize:5M,maximumSize:100G");
 		PERSISTIT_PROPERTIES.put("pwjpath", "${datapath}/persistit.pwj");
-		// PERSISTIT_PROPERTIES.put("pwjsize", "16M");
+		PERSISTIT_PROPERTIES.put("pwjsize", "16M");
 		PERSISTIT_PROPERTIES.put("pwdelete", "true");
 		PERSISTIT_PROPERTIES.put("pwjcount", "2");
 		PERSISTIT_PROPERTIES.put("timeout", "60000");
@@ -79,6 +81,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	static String datapath = "/tmp/chunkserver_data";
 
 	private boolean verbose = false;
+
+	private boolean coverEnabled = false;
 
 	private CServerConfig config;
 
@@ -91,8 +95,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	// Using a Map<Thread, ...> instead of a ThreadLocal because we want to
 	// clear all state in the shutDown() method.
 	//
-	private Map<Thread, Map<Integer, RowCollector>> sessionRowCollectorMap = 
-		new ConcurrentHashMap<Thread, Map<Integer, RowCollector>>();
+	private Map<Thread, Map<Integer, RowCollector>> sessionRowCollectorMap = new ConcurrentHashMap<Thread, Map<Integer, RowCollector>>();
 
 	public static void setDataPath(final String path) {
 		datapath = path;
@@ -118,20 +121,20 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			//
 			final String path = config.property(P_DATAPATH, datapath);
 			db.setProperty("datapath", path);
-
-			final long allocation = (long) ((CServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
-			final long pwjAllocation = Math.max(allocation / 4, 4 * MEGA);
-			final long buffers8k = Math.max((allocation - pwjAllocation)
-					/ (8192 + 4096), 512);
-			PERSISTIT_PROPERTIES.setProperty("pwjsize", Long
-					.toString(pwjAllocation));
-			PERSISTIT_PROPERTIES.setProperty("buffer.count.8192", Long
-					.toString(buffers8k));
-
+			final boolean isUnitTest = "true".equals(config
+					.property(UNIT_TEST_PROPERTY_NAME));
+			if (!isUnitTest) {
+				resetMemoryAllocation();
+			}
 			if (LOG.isInfoEnabled()) {
-				LOG.info("PersistitStore datapath=" + path);
-				LOG.info("               pwjsize=" + pwjAllocation);
-				LOG.info("               buffers=" + buffers8k);
+				LOG
+						.info("PersistitStore datapath="
+								+ path
+								+ " pwjSize="
+								+ PERSISTIT_PROPERTIES.getProperty("pwjsize")
+								+ " 8k_buffers="
+								+ PERSISTIT_PROPERTIES
+										.getProperty("buffer.count.8192"));
 			}
 			for (final Map.Entry<Object, Object> entry : config.getProperties()
 					.entrySet()) {
@@ -149,7 +152,23 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 							.getDisplayFilter()));
 
 			tableManager.startUp();
+
+			// TODO - temporary for testing
+
+			coverEnabled = "true".equalsIgnoreCase(config.property(
+					"cserver.cover", "true"));
 		}
+	}
+
+	private void resetMemoryAllocation() {
+		final long allocation = (long) ((CServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
+		final long pwjAllocation = Math.max(allocation / 4, 4 * MEGA);
+		final long buffers8k = Math.max((allocation - pwjAllocation)
+				/ (8192 + 4096), 512);
+		PERSISTIT_PROPERTIES.setProperty("pwjsize", Long
+				.toString(pwjAllocation));
+		PERSISTIT_PROPERTIES.setProperty("buffer.count.8192", Long
+				.toString(buffers8k));
 	}
 
 	public synchronized void shutDown() throws Exception {
@@ -438,6 +457,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		return verbose;
 	}
 
+	public boolean isCoveringIndexSupportEnabled() {
+		return coverEnabled;
+	}
+
 	@Override
 	public int writeRow(final RowData rowData) {
 		if (verbose && LOG.isInfoEnabled()) {
@@ -603,14 +626,18 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					// FK fields in oldRowData, in which case this test will
 					// need to change.
 					//
-					final int oldStart = rowData.getInnerStart();
-					final int oldSize = rowData.getInnerSize();
-					if (!bytesEqual(rowData.getBytes(), oldStart, oldSize, hEx
-							.getValue().getEncodedBytes(), 0, hEx.getValue()
-							.getEncodedSize())) {
-						throw new StoreException(HA_ERR_RECORD_CHANGED,
-								"Record changed at key " + hEx.getKey());
-					}
+					// TODO - review.  With covering indexes, that day has come.
+					// We can no longer do this comparison when the "old" row
+					// has only its PK fields.
+					//
+//					final int oldStart = rowData.getInnerStart();
+//					final int oldSize = rowData.getInnerSize();
+//					if (!bytesEqual(rowData.getBytes(), oldStart, oldSize, hEx
+//							.getValue().getEncodedBytes(), 0, hEx.getValue()
+//							.getEncodedSize())) {
+//						throw new StoreException(HA_ERR_RECORD_CHANGED,
+//								"Record changed at key " + hEx.getKey());
+//					}
 
 					//
 					// For Iteration 9 we disallow deleting rows that would
@@ -991,7 +1018,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	@Override
 	public RowCollector getCurrentRowCollector(final int tableId) {
-		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread.currentThread());
+		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread
+				.currentThread());
 		if (map == null) {
 			return null;
 		}
@@ -999,7 +1027,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	}
 
 	public void putCurrentRowCollector(final int tableId, final RowCollector rc) {
-		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread.currentThread());
+		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread
+				.currentThread());
 		if (map == null) {
 			map = new HashMap<Integer, RowCollector>();
 			sessionRowCollectorMap.put(Thread.currentThread(), map);
@@ -1008,7 +1037,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	}
 
 	public void removeCurrentRowCollector(final int tableId) {
-		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread.currentThread());
+		Map<Integer, RowCollector> map = sessionRowCollectorMap.get(Thread
+				.currentThread());
 		if (map != null) {
 			map.remove(tableId);
 		}
@@ -1039,9 +1069,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 
 			if (verbose && LOG.isInfoEnabled()) {
+				StringBuilder sb = new StringBuilder();
+				CServerUtil.hex(sb, columnBitMap, 0, columnBitMap.length);
 				LOG.info("Select from table: " + rowDef.toString()
 						+ " (indexID: " + indexId + ")" + " scanFlags="
-						+ scanFlags);
+						+ scanFlags + " columnBitMap=" + sb);
 				LOG.info("  from: " + start.toString(rowDefCache));
 				LOG.info("    to: " + end.toString(rowDefCache));
 			}

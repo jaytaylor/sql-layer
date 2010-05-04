@@ -46,14 +46,14 @@ public class ScanRowsTest implements CServerConstants {
 	private static RowDefCache rowDefCache;
 
 	private static SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
-	
+
 	private List<RowData> result = new ArrayList<RowData>();
 
 	@BeforeClass
 	public static void setUpSuite() throws Exception {
 
 		rowDefCache = new RowDefCache();
-		store = new PersistitStore(new CServerConfig(), rowDefCache);
+		store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		final AkibaInformationSchema ais = new DDLSource()
@@ -115,8 +115,8 @@ public class ScanRowsTest implements CServerConstants {
 				;
 			payload.flip();
 			for (int p = payload.position(); p < payload.limit();) {
-				RowData rowData = new RowData(payload.array(), payload.position(),
-						payload.limit());
+				RowData rowData = new RowData(payload.array(), payload
+						.position(), payload.limit());
 				rowData.prepareRow(p);
 				scanCount++;
 				result.add(rowData);
@@ -147,7 +147,7 @@ public class ScanRowsTest implements CServerConstants {
 		return -1;
 	}
 
-	int findIndex(final RowDef rowDef, final String name) {
+	int findIndexId(final RowDef rowDef, final String name) {
 		for (final IndexDef indexDef : rowDef.getIndexDefs()) {
 			if (indexDef.getName().equals(name)) {
 				return indexDef.getId();
@@ -216,8 +216,8 @@ public class ScanRowsTest implements CServerConstants {
 
 		{
 			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
-			int col = fieldIndex(rowDef, "aa$aa1");
-			int indexId = findIndex(rowDef, rowDef.getTableName() + "$aa_PK");
+			int col = findFieldIndex(rowDef, "aa$aa1");
+			int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
 			Object[] startValue = new Object[fc];
 			Object[] endValue = new Object[fc];
 			startValue[col] = 1;
@@ -273,8 +273,8 @@ public class ScanRowsTest implements CServerConstants {
 		}
 		{
 			final RowDef userRowDef = rowDefCache.getRowDef("aa");
-			int col = fieldIndex(rowDef, "aa$aa4");
-			int indexId = findIndex(rowDef, "aa$str");
+			int col = findFieldIndex(rowDef, "aa$aa4");
+			int indexId = findIndexId(rowDef, "aa$str");
 			Object[] startValue = new Object[fc];
 			Object[] endValue = new Object[fc];
 			startValue[col] = "1";
@@ -285,26 +285,47 @@ public class ScanRowsTest implements CServerConstants {
 			assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
 					rowDef.getRowDefId(), 0, start, end, bitMap, indexId));
 			assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-					rowDef.getRowDefId(), SCAN_FLAGS_START_EXCLUSIVE, start, end, bitMap, indexId));
+					rowDef.getRowDefId(), SCAN_FLAGS_START_EXCLUSIVE, start,
+					end, bitMap, indexId));
 			assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-					rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE, start, end, bitMap, indexId));
+					rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE, start, end,
+					bitMap, indexId));
 			assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-					rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_SINGLE_ROW, start, end, bitMap, indexId));
+					rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE
+							| SCAN_FLAGS_SINGLE_ROW, start, end, bitMap,
+					indexId));
 			assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-					rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW | SCAN_FLAGS_DESCENDING, start, end, bitMap, indexId));
+					rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW
+							| SCAN_FLAGS_DESCENDING, start, end, bitMap,
+					indexId));
 			assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-					rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW | SCAN_FLAGS_DESCENDING | SCAN_FLAGS_PREFIX, start, end, bitMap, indexId));
+					rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW
+							| SCAN_FLAGS_DESCENDING | SCAN_FLAGS_PREFIX, start,
+					end, bitMap, indexId));
 			assertEquals(26, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-					rowDef.getRowDefId(), SCAN_FLAGS_PREFIX, start, end, bitMap, indexId));
+					rowDef.getRowDefId(), SCAN_FLAGS_PREFIX, start, end,
+					bitMap, indexId));
 		}
-
 	}
-	
+
+	@Test
+	public void testCoveringIndex() throws Exception {
+		final RowDef rowDef = rowDefCache.getRowDef("aaab");
+		final int indexId = findIndexId(rowDef, "aaab3aaab1");
+		final byte[] columnBitMap = new byte[1];
+		columnBitMap[0] |= 1 << findFieldIndex(rowDef, "aaab1");
+		columnBitMap[0] |= 1 << findFieldIndex(rowDef, "aaab3");
+		final int count = scanAllRows("Covering index aaab3aaab1", rowDef
+				.getRowDefId(), SCAN_FLAGS_START_AT_EDGE
+				| SCAN_FLAGS_END_AT_EDGE, null, null, columnBitMap, indexId);
+		assertTrue(count > 0);
+	}
+
 	private void assertOk(final int a, final int b) {
 		System.out.println("AssertOk expected and got " + a + "," + b);
 	}
 
-	private int fieldIndex(final RowDef rowDef, final String name) {
+	private int findFieldIndex(final RowDef rowDef, final String name) {
 		for (int index = 0; index < rowDef.getFieldCount(); index++) {
 			if (rowDef.getFieldDef(index).getName().equals(name)) {
 				return index;
@@ -373,7 +394,7 @@ public class ScanRowsTest implements CServerConstants {
 			}
 		}
 	}
-	
+
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();

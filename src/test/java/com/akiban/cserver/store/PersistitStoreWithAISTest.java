@@ -172,7 +172,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	@Override
 	public void setUp() throws Exception {
 		rowDefCache = new RowDefCache();
-		store = new PersistitStore(new CServerConfig(), rowDefCache);
+		store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		final AkibaInformationSchema ais = new DDLSource()
