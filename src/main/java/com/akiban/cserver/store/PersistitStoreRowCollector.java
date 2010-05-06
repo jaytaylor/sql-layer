@@ -668,11 +668,13 @@ public class PersistitStoreRowCollector implements RowCollector,
 	boolean deliverRow(final RowData rowData, final ByteBuffer payload)
 			throws IOException {
 		if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
+			final int position = payload.position();
 			payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
 					.getRowSize());
 			if (store.isVerbose() && LOG.isInfoEnabled()) {
 				LOG.info("Select row: "
-						+ rowData.toString(store.getRowDefCache()));
+						+ rowData.toString(store.getRowDefCache()) + " len="
+						+ rowData.getRowSize() + " position=" + position);
 			}
 			return true;
 		} else {
