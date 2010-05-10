@@ -49,8 +49,8 @@ public class BulkLoaderClient
                 String flag = args[a++];
                 if (flag.equals("--resume")) {
                     resume = true;
-                } else if (flag.equals("--nocleanup")) {
-                    cleanup = false;
+                } else if (flag.equals("--cleanup")) {
+                    cleanup = true;
                 } else if (flag.equals("--temp")) {
                     artifactsSchema = args[a++];
                 } else if (flag.equals("--mysql")) {
@@ -154,7 +154,7 @@ public class BulkLoaderClient
     private String cserverHost;
     private int cserverPort;
     private boolean resume = false;
-    private boolean cleanup = true;
+    private boolean cleanup = false;
     private String artifactsSchema;
     private String dbHost;
     private int dbPort;
