@@ -586,7 +586,20 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		}
 	}
 
-	@Override
+    @Override
+    public void updateTableStats(RowDef rowDef, long rowCount) throws PersistitException, StoreException
+    {
+        int rowDefId = rowDef.getRowDefId();
+        TableStatus tableStatus = tableManager.getTableStatus(rowDefId);
+        if (tableStatus.isDeleted()) {
+            throw new StoreException(HA_ERR_NO_SUCH_TABLE, String.format("Deleted table %s", rowDefId));
+        }
+        tableStatus.setRowCount(rowCount);
+        tableStatus.updated();
+        tableManager.saveStatus(tableStatus);
+    }
+
+    @Override
 	public int deleteRow(final RowData rowData) throws Exception {
 		if (verbose && LOG.isInfoEnabled()) {
 			LOG.info("Delete row: " + rowData.toString(rowDefCache));

@@ -165,6 +165,10 @@ public class CServer {
 			return hstore;
 		}
 
+        public AkibaInformationSchema ais() {
+            return ais;
+        }
+
 		public Store getStore(Request r) {
 			//System.out.println("get scan hstore");
 			Decider.EngineType et = decider.decide(r);

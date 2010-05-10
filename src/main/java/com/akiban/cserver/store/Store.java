@@ -7,6 +7,7 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -33,6 +34,8 @@ public interface Store {
     int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef, final RowData rowData,
             final int[] ordinals, final FieldDef[][] fieldDefs,
             final Object[][] hKey) throws Exception;
+
+    void updateTableStats(final RowDef rowDef, long rowCount) throws PersistitException, StoreException;
 
 	int deleteRow(final RowData rowData) throws Exception;
 

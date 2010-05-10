@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Kill chunkserver and mysql
+sudo pkill -9 -f "cserver-1.0-SNAPSHOT-jar-with-dependencies.jar"
+sudo pkill -9 -f "mysqld_safe"
+sudo pkill -9 -f "mysqld"
+
+# Start chunkserver and mysql
+sudo service mysql start
+sleep 3
+chunkserver jao &
+sleep 3
+
+# Load AIS
+mysql -u root < /home/jao/svn/akiba/user_branches/jao/common/ais/src/main/resources/akiba_information_schema.sql
+mysql -u root < ../../../../resources/coi_ais.sql
+
+# Bounce servers
+sudo pkill -9 -f "cserver-1.0-SNAPSHOT-jar-with-dependencies.jar"
+sudo pkill -9 -f "mysqld_safe"
+sudo pkill -9 -f "mysqld"
+sudo service mysql start
+sleep 3
+chunkserver jao &
+sleep 3
+
+# Create and populate application schema, and create bulkload schema
+mysql -u root <<EOF
+drop schema if exists acme;
+create schema acme;
+use acme;
+\. ../../../../resources/coi_user_tables.sql
+\. ../../../../resources/load_user_tables.sql
+drop schema if exists bulkload;
+create schema bulkload;
+EOF

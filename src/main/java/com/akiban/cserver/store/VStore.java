@@ -10,6 +10,7 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
 /**
  * @author percent
@@ -71,7 +72,7 @@ public class VStore implements Store {
 	}
 
 	/**
-	 * @see com.akiban.cserver.store.Store#getCurrentRowCollector()
+	 * @see com.akiban.cserver.store.Store#getCurrentRowCollector(int)
 	 */
 	@Override
 	public RowCollector getCurrentRowCollector(int tableId) {
@@ -192,6 +193,12 @@ public class VStore implements Store {
 				fieldDefs, hKey);
 	}
 
-	private Store hstore;
+    @Override
+    public void updateTableStats(RowDef rowDef, long rowCount) throws PersistitException, StoreException
+    {
+        hstore.updateTableStats(rowDef, rowCount);
+    }
+
+    private Store hstore;
 	
 }
