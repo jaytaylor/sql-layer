@@ -1,6 +1,7 @@
 package com.akiban.cserver.store;
 
 import java.util.List;
+import java.io.File;
 
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
@@ -232,12 +233,43 @@ public class VStore
                                    Object[][] hKey) 
         throws Exception
     {
-        return hstore.writeRowForBulkLoad(hEx, 
-                                          rowDef, 
-                                          rowData, 
-                                          ordinals,
-                                          fieldDefs, 
-                                          hKey);
+        /*
+         * First check if a directory exists for this table. If not, then create it.
+         */
+        String tableName = rowDef.getTableName();
+        String tableDirectory = datapath + "/" + tableName;
+        File tableData = new File(tableDirectory);
+        if (! tableData.exists()) {
+            boolean ret = tableData.mkdir();
+            if (! ret) {
+                throw new Exception(); /* probably permission issue */
+            }
+        }
+
+        /*
+         * Go through each column in this row and ensure that a file exists for that column. For
+         * now, we have 1 file per column by default. If a file does not exist, then create it.
+         * @todo: for now, the name used per file is the column name. this obviously needs to be
+         * changed since there is nothing wrong with having multiple columns with the same name.
+         */
+        for (int i = 0; i < fieldDefs.length; i++) {
+            FieldDef[] tableFieldDefs = fieldDefs[i];
+            for (int j = 0; j < tableFieldDefs.length; j++) {
+                FieldDef field = tableFieldDefs[j];
+                String columnName = field.getName();
+                String columnFileName = tableDirectory + "/" + columnName;
+                File columnData = new File(columnFileName);
+                if (! columnData.exists()) {
+                    boolean ret = columnData.createNewFile();
+                    if (! ret) {
+                        throw new Exception();
+                    }
+                }
+                /* insert the data */
+            }
+        }
+
+        return 0;
     }
 
     @Override
@@ -248,5 +280,7 @@ public class VStore
     }
 
     private Store hstore;
+
+    static String datapath = "/tmp/chunkserver_data";
 
 }
