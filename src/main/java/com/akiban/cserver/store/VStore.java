@@ -2,6 +2,7 @@ package com.akiban.cserver.store;
 
 import java.util.List;
 import java.io.File;
+import java.io.FileOutputStream;
 
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
@@ -266,6 +267,15 @@ public class VStore
                     }
                 }
                 /* insert the data */
+                final long locationAndSize = rowDef.fieldLocation(rowData, j);
+                if (0 == locationAndSize) {
+                    /* NULL field. @todo: how do we handle NULL's in the V store? */
+                }
+                int offset = (int) locationAndSize;
+                int size = (int) (locationAndSize >>> 32);
+                byte[] bytes = rowData.getBytes();
+                FileOutputStream fout = new FileOutputStream(columnData, true);
+                fout.write(bytes);
             }
         }
 
