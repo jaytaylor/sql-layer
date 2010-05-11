@@ -161,53 +161,50 @@ public class CServer {
 	public class CServerContext implements ExecutionContext,
 			AISExecutionContext, CServerShutdownExecutionContext {
 
-		public Store getStore() {
-			return hstore;
-		}
+	    public Store getStore() {
+		return hstore;
+	    }
 
-        public AkibaInformationSchema ais() {
-            return ais;
-        }
+            public AkibaInformationSchema ais() {
+                return ais;
+            }
 
-		public Store getStore(Request r) {
-			//System.out.println("get scan hstore");
-			Decider.EngineType et = decider.decide(r);
-			if(et == Decider.EngineType.HStore) {
-				//LOG.fatal("----------------- Persistit ----------------");
-				return hstore;
-			} else {
-				assert et == Decider.EngineType.VStore;
-				//LOG.fatal("----------------- VStore -----------------");
-				return vstore;
-			}
-		}
+	    public Store getStore(Request r) {
+                Decider.EngineType et = decider.decide(r);
+                if (et == Decider.EngineType.HStore) {
+                    return hstore;
+                } else {
+                    assert et == Decider.EngineType.VStore;
+                    return vstore;
+                }
+            }
 		
-		@Override
-		public void executeRequest(AkibaConnection connection,
-				AISRequest request) throws Exception {
-			acquireAIS();
-			AISResponse aisResponse = new AISResponse(ais);
-			connection.send(aisResponse);
-		}
+            @Override
+            public void executeRequest(AkibaConnection connection,
+                AISRequest request) throws Exception {
+                acquireAIS();
+                AISResponse aisResponse = new AISResponse(ais);
+                connection.send(aisResponse);
+            }
 
-		@Override
-		public void executeResponse(AkibaConnection connection,
-				AISResponse response) throws Exception {
-			ais = response.ais();
-			installAIS();
-		}
+            @Override
+            public void executeResponse(AkibaConnection connection,
+		AISResponse response) throws Exception {
+                ais = response.ais();
+                installAIS();
+            }
 
-		@Override
-		public void executeRequest(AkibaConnection connection,
+            @Override
+            public void executeRequest(AkibaConnection connection,
 				ShutdownRequest request) throws Exception {
-			if (LOG.isInfoEnabled()) {
-				LOG.info("CServer stopping due to ShutdownRequest");
-			}
-			stop();
-			ShutdownResponse response = new ShutdownResponse();
-			connection.send(response);
-		}
-	}
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("CServer stopping due to ShutdownRequest");
+                }
+                stop();
+                ShutdownResponse response = new ShutdownResponse();
+                connection.send(response);
+            }
+        }
 
 	/**
 	 * A Runnable that reads Network messages, acts on them and returns results.
