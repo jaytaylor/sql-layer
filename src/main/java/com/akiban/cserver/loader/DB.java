@@ -1,6 +1,7 @@
 package com.akiban.cserver.loader;
 
 import com.akiban.ais.util.Command;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.DriverManager;
@@ -50,8 +51,7 @@ public class DB
                                   Integer.toString(dbPort),
                                   "-u",
                                   dbUser,
-                                  "-p",
-                                  dbPassword);
+                                  "-p" + dbPassword);
         try {
             int status = command.run(sql);
             if (status != 0) {

@@ -6,6 +6,7 @@ import com.akiban.message.MessageRegistry;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,10 +22,12 @@ public class BulkLoaderClient
 
     private void run() throws Exception
     {
-        startServer();
+        startNetwork();
         AkibaNetworkHandler networkHandler =
             NetworkHandlerFactory.getHandler(cserverHost, Integer.toString(cserverPort), null);
+        logger.info(String.format("Got network handler %s", networkHandler));
         AkibaConnection connection = AkibaConnection.createConnection(networkHandler);
+        logger.info(String.format("Got connection: %s", connection));
         try {
             BulkLoadRequest request = new BulkLoadRequest(dbHost,
                                                           dbPort,
@@ -35,9 +38,16 @@ public class BulkLoaderClient
                                                           sourceSchemas,
                                                           resume,
                                                           cleanup);
+            logger.info("About to send request");
             connection.send(request);
+            logger.info("Request sent");
+        } catch (Exception e) {
+            logger.error("Caught exception", e);
+            throw e;
         } finally {
+            logger.info("Closing network");
             NetworkHandlerFactory.closeNetwork();
+            logger.info("Network closed");
         }
     }
 
@@ -60,7 +70,7 @@ public class BulkLoaderClient
                         dbHost = hostAndPort;
                         dbPort = DEFAULT_MYSQL_PORT;
                     } else {
-                        dbHost = hostAndPort.substring(colon);
+                        dbHost = hostAndPort.substring(0, colon);
                         dbPort = Integer.parseInt(hostAndPort.substring(colon + 1));
                     }
                 } else if (flag.equals("--user")) {
@@ -97,9 +107,18 @@ public class BulkLoaderClient
         if (dbHost == null || dbUser == null || groups.isEmpty()) {
             usage(null);
         }
+        logger.info(String.format("mysql: %s:%s", dbHost, dbPort));
+        logger.info(String.format("user: %s", dbUser));
+        logger.info(String.format("password: %s", dbPassword));
+        logger.info(String.format("groups: %s", groups));
+        logger.info(String.format("cserver: %s:%s", cserverHost, cserverPort));
+        logger.info(String.format("temp: %s", artifactsSchema));
+        logger.info(String.format("sources: %s", sourceSchemas));
+        logger.info(String.format("resume: %s", resume));
+        logger.info(String.format("cleanup: %s", cleanup));
     }
 
-    private ChannelNotifier startServer()
+    private ChannelNotifier startNetwork()
     {
         MessageRegistry.reset();
         MessageRegistry.initialize();
@@ -109,6 +128,7 @@ public class BulkLoaderClient
         NetworkHandlerFactory.initializeNetwork(LOCALHOST,
                                                 Integer.toString(BULK_LOADER_CLIENT_LISTENER_PORT),
                                                 notifier);
+        logger.info("Network started");
         return notifier;
     }
 
@@ -149,6 +169,7 @@ public class BulkLoaderClient
         ""
     };
 
+    private static final Logger logger = Logger.getLogger(BulkLoaderClient.class);
     private static final String LOCALHOST = "localhost";
     private static final int DEFAULT_MYSQL_PORT = 3306;
     private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999; // because there has to be one
