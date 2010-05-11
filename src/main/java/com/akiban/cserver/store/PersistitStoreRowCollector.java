@@ -59,7 +59,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	private RowData[] pendingRowData;
 
-	private int pendingFromLevel = Integer.MAX_VALUE;
+	private int pendingFromLevel;
 
 	private int pendingToLevel;
 
@@ -166,7 +166,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 						new byte[INITIAL_BUFFER_SIZE]);
 			}
 
-			this.pendingFromLevel = Integer.MAX_VALUE;
+			this.pendingFromLevel = 0;
 			this.pendingToLevel = 0;
 			this.direction = isAscending() ? (isLeftInclusive() ? Key.GTEQ
 					: Key.GT)
@@ -453,7 +453,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 		boolean result = false;
 		SCAN_NEXT_ROW_TAP.in();
-		
+
 		final Key hKey = hEx.getKey();
 
 		if (indexDef == null) {
@@ -469,6 +469,16 @@ public class PersistitStoreRowCollector implements RowCollector,
 			//
 			if (pendingFromLevel < pendingToLevel
 					&& pendingToLevel == pendingRowData.length) {
+				/**
+				 * TODO -- Temporary (?) hack to overcome a memory corruption
+				 * issue in csclient.
+				 */
+				if (pendingFromLevel + 1 < pendingRowData.length
+						&& payload.remaining() < payload.capacity() / 16) {
+					result = false;
+					break;
+				}
+
 				if (deliverRow(pendingRowData[pendingFromLevel], payload)) {
 					pendingFromLevel++;
 					if (isSingleRowMode() && pendingFromLevel == pendingToLevel) {
@@ -691,6 +701,17 @@ public class PersistitStoreRowCollector implements RowCollector,
 			return true;
 		} else {
 			return false;
+		}
+	}
+
+	/**
+	 * TODO -- Temporary (?) hack to overcome a memory corruption issue in
+	 * csclient.
+	 */
+	@Override
+	public void refreshAncestorRows() {
+		if (pendingFromLevel > 0) {
+			pendingFromLevel = 0;
 		}
 	}
 

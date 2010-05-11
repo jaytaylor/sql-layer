@@ -23,6 +23,12 @@ public interface RowCollector {
 
 	public boolean collectNextRow(final ByteBuffer payload) throws Exception;
 	
+	/**
+	 * TODO -- Temporary (?) hack to overcome a memory
+	 * corruption issue in csclient.
+	 */
+	public void refreshAncestorRows();
+	
 	public boolean hasMore() throws Exception;
 	
 	public void close();
