@@ -23,6 +23,7 @@ import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -44,6 +45,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	private static final String UNIT_TEST_PROPERTY_NAME = "unit_test";
 
+	private static final Tap WRITE_ROW_TAP = Tap.add("write: write_row");
+	
+	private static final Tap TX_COMMIT_TAP = Tap.add("write: tx_commit");
+
+	private static final Tap TX_RETRY_TAP = Tap.add("write: tx_retry", Tap.Type.COUNT);
+
+	private static final Tap NEW_COLLECTOR_TAP = Tap.add("read: new_collector");
+	
 	static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
 	final static String VOLUME_NAME = "akiban_data"; // TODO - select
@@ -466,6 +475,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		if (verbose && LOG.isInfoEnabled()) {
 			LOG.info("Insert row: " + rowData.toString(rowDefCache));
 		}
+		WRITE_ROW_TAP.in();
 		final int rowDefId = rowData.getRowDefId();
 		final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 		Transaction transaction = null;
@@ -528,13 +538,16 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 							insertIntoIndex(indexDef, rowDef, rowData, hEx
 									.getKey());
 					}
+					TX_COMMIT_TAP.in();
 					transaction.commit();
 					return OK;
 				} catch (RollbackException re) {
+					TX_RETRY_TAP.out();
 					if (--retries < 0) {
 						throw new TransactionFailedException();
 					}
 				} finally {
+					TX_COMMIT_TAP.out();
 					transaction.end();
 				}
 			}
@@ -548,6 +561,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			return ERR;
 		} finally {
 			releaseExchange(hEx);
+			WRITE_ROW_TAP.out();
 		}
 	}
 
@@ -639,18 +653,19 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					// FK fields in oldRowData, in which case this test will
 					// need to change.
 					//
-					// TODO - review.  With covering indexes, that day has come.
+					// TODO - review. With covering indexes, that day has come.
 					// We can no longer do this comparison when the "old" row
 					// has only its PK fields.
 					//
-//					final int oldStart = rowData.getInnerStart();
-//					final int oldSize = rowData.getInnerSize();
-//					if (!bytesEqual(rowData.getBytes(), oldStart, oldSize, hEx
-//							.getValue().getEncodedBytes(), 0, hEx.getValue()
-//							.getEncodedSize())) {
-//						throw new StoreException(HA_ERR_RECORD_CHANGED,
-//								"Record changed at key " + hEx.getKey());
-//					}
+					// final int oldStart = rowData.getInnerStart();
+					// final int oldSize = rowData.getInnerSize();
+					// if (!bytesEqual(rowData.getBytes(), oldStart, oldSize,
+					// hEx
+					// .getValue().getEncodedBytes(), 0, hEx.getValue()
+					// .getEncodedSize())) {
+					// throw new StoreException(HA_ERR_RECORD_CHANGED,
+					// "Record changed at key " + hEx.getKey());
+					// }
 
 					//
 					// For Iteration 9 we disallow deleting rows that would
@@ -1062,6 +1077,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final int scanFlags, RowData start, RowData end, byte[] columnBitMap)
 			throws Exception {
 		try {
+			NEW_COLLECTOR_TAP.in();
 			final TableStatus ts = tableManager.getTableStatus(rowDefId);
 
 			if (ts.isDeleted()) {
@@ -1082,11 +1098,17 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
 
 			if (verbose && LOG.isInfoEnabled()) {
-				StringBuilder sb = new StringBuilder();
-				CServerUtil.hex(sb, columnBitMap, 0, columnBitMap.length);
-				LOG.info("Select from table: " + rowDef.toString()
-						+ " (indexID: " + indexId + ")" + " scanFlags="
-						+ scanFlags + " columnBitMap=" + sb);
+				LOG
+						.info("Select from table: "
+								+ rowDef.toString()
+								+ " (indexID: "
+								+ indexId
+								+ ")"
+								+ " scanFlags="
+								+ scanFlags
+								+ " columnBitMap="
+								+ CServerUtil.hex(columnBitMap, 0,
+										columnBitMap.length));
 				LOG.info("  from: " + start.toString(rowDefCache));
 				LOG.info("    to: " + end.toString(rowDefCache));
 			}
@@ -1097,7 +1119,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			if (rc.hasMore()) {
 				putCurrentRowCollector(rowDefId, rc);
 			}
-
+			NEW_COLLECTOR_TAP.out();
 			return rc;
 		} catch (StoreException e) {
 			if (verbose && LOG.isInfoEnabled()) {

@@ -1,8 +1,8 @@
 package com.akiban.cserver.store;
 
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DESCENDING;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_END_AT_EDGE;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_END_EXCLUSIVE;
-import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DESCENDING;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_PREFIX;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_SINGLE_ROW;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_AT_EDGE;

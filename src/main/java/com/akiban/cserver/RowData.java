@@ -1,8 +1,6 @@
 package com.akiban.cserver;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array

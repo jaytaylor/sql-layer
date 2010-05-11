@@ -1,14 +1,11 @@
 package com.akiban.cserver;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.ddl.SqlTextTarget;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.Writer;

@@ -16,6 +16,7 @@ import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
+import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
@@ -27,6 +28,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 			.getName());
 
 	private final static int INITIAL_BUFFER_SIZE = 1024;
+
+	private static final Tap SCAN_NEXT_ROW_TAP = Tap.add("read: next_row");
 
 	private final PersistitStore store;
 
@@ -448,6 +451,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 			return false;
 		}
 
+		boolean result = false;
+		SCAN_NEXT_ROW_TAP.in();
+		
 		final Key hKey = hEx.getKey();
 
 		if (indexDef == null) {
@@ -468,9 +474,11 @@ public class PersistitStoreRowCollector implements RowCollector,
 					if (isSingleRowMode() && pendingFromLevel == pendingToLevel) {
 						more = false;
 					}
-					return true;
+					result = true;
+					break;
 				} else {
-					return false;
+					result = false;
+					break;
 				}
 			}
 
@@ -484,7 +492,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 					//
 					// All done
 					//
-					return false;
+					result = false;
+					break;
 				}
 				direction = isAscending() ? Key.GT : Key.LT;
 
@@ -552,7 +561,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 						|| hKey.firstUniqueByteIndex(lastKey) < indexPinnedKeySize) {
 					if (indexDef == null) {
 						more = false;
-						return false;
+						result = false;
+						break;
 					}
 					traverseMode = false;
 					//
@@ -588,6 +598,8 @@ public class PersistitStoreRowCollector implements RowCollector,
 				}
 			}
 		}
+		SCAN_NEXT_ROW_TAP.out();
+		return result;
 	}
 
 	void prepareRow(final Exchange exchange, final int level,

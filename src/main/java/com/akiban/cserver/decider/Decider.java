@@ -2,7 +2,7 @@
  * 
  */
 package com.akiban.cserver.decider;
-import com.akiban.message.*;
+import com.akiban.message.Request;
 /**
  * @author percent
  *

@@ -11,23 +11,22 @@ public class CServerUtil {
 
 	private final static char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5',
 			'6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-	
-	public final static String NEW_LINE = 
-	System.getProperty("line.separator");
-	
+
+	public final static String NEW_LINE = System.getProperty("line.separator");
+
 	public static long getSignedIntegerByWidth(final byte[] bytes,
 			final int index, final int width) {
 		switch (width) {
 		case 0:
 			return 0;
 		case 1:
-			return (byte)bytes[index];
+			return (byte) bytes[index];
 		case 2:
-			return (short)getShort(bytes, index);
+			return (short) getShort(bytes, index);
 		case 3:
 			return getMediumInt(bytes, index);
 		case 4:
-			return (int)getInt(bytes, index);
+			return (int) getInt(bytes, index);
 		case 8:
 			return getLong(bytes, index);
 		default:
@@ -65,9 +64,9 @@ public class CServerUtil {
 
 	public static int getShort(byte[] bytes, int index) {
 		if (BIG_ENDIAN) {
-			return (short)((bytes[index + 1] & 0xFF) | (bytes[index + 0]) << 8);
+			return (short) ((bytes[index + 1] & 0xFF) | (bytes[index + 0]) << 8);
 		} else {
-			return (short)((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
+			return (short) ((bytes[index + 0] & 0xFF) | (bytes[index + 1]) << 8);
 		}
 	}
 
@@ -282,6 +281,12 @@ public class CServerUtil {
 		return sb1.toString();
 	}
 
+	public static String hex(byte[] bytes, int start, int length) {
+		final StringBuilder sb = new StringBuilder(length * 2);
+		hex(sb, bytes, start, length);
+		return sb.toString();
+	}
+
 	public static StringBuilder hex(StringBuilder sb, long value, int length) {
 		for (int i = length - 1; i >= 0; i--) {
 			sb.append(HEX_DIGITS[(int) (value >> (i * 4)) & 0xF]);
@@ -346,8 +351,9 @@ public class CServerUtil {
 	}
 
 	/**
-	 * Cracks the MySQL variable-length format.  Interprets 0, 1, 2 or 3 prefix bytes as a little-endian
-	 * string size and constructs a string from the remaining bytes.
+	 * Cracks the MySQL variable-length format. Interprets 0, 1, 2 or 3 prefix
+	 * bytes as a little-endian string size and constructs a string from the
+	 * remaining bytes.
 	 * 
 	 * TODO: does not handle non US-ASCII character sets.
 	 * 
@@ -389,21 +395,23 @@ public class CServerUtil {
 			throw new IllegalArgumentException(
 					"String is wider than available bytes: " + length);
 		}
-		
+
 		// TODO - handle char set, e.g., utf8
-		
-		final String s = new String(bytes, offset + prefixSize, width - prefixSize);
+
+		final String s = new String(bytes, offset + prefixSize, width
+				- prefixSize);
 
 		return s;
 	}
-	
+
 	public static int varWidth(final int length) {
-		return length == 0 ? 0 : length < 0x100 ? 1
-				: length < 0x10000 ? 2 : length < 0x1000000 ? 3 : 4;
+		return length == 0 ? 0 : length < 0x100 ? 1 : length < 0x10000 ? 2
+				: length < 0x1000000 ? 3 : 4;
 	}
 
 	public static long availableMemory() {
-		final MemoryUsage mu = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+		final MemoryUsage mu = ManagementFactory.getMemoryMXBean()
+				.getHeapMemoryUsage();
 		long max = mu.getMax();
 		if (max == -1) {
 			max = mu.getInit();

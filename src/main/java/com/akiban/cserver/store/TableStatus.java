@@ -1,8 +1,8 @@
 package com.akiban.cserver.store;
 
-import java.io.Serializable;
-
 import static com.akiban.cserver.store.PersistitStoreTableManager.now;
+
+import java.io.Serializable;
 
 import com.persistit.Value;
 import com.persistit.encoding.CoderContext;

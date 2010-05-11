@@ -3,12 +3,9 @@
  */
 package com.akiban.cserver.decider;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
-
-import com.akiban.cserver.decider.Decider;
-import com.akiban.cserver.decider.RoundRobin;
 
 /**
  * @author percent

@@ -22,9 +22,8 @@ import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.AkibaInformationSchemaImpl;
 import com.akiban.ais.model.Source;
-import com.akiban.cserver.decider.Factory;
 import com.akiban.cserver.decider.Decider;
-import com.akiban.cserver.decider.Factory.DeciderType;
+import com.akiban.cserver.decider.Factory;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
@@ -34,11 +33,12 @@ import com.akiban.message.AkibaConnection;
 import com.akiban.message.ErrorResponse;
 import com.akiban.message.ExecutionContext;
 import com.akiban.message.Message;
-import com.akiban.message.Request;
 import com.akiban.message.MessageRegistry;
+import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
+import com.akiban.util.Tap;
 
 /**
  * 
@@ -68,6 +68,9 @@ public class CServer {
 	 */
 
 	private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
+	
+	private static Tap CSERVER_EXEC = Tap.add("cserver_exec");
+	
 	private final RowDefCache rowDefCache = new RowDefCache();
 	private final CServerConfig config = new CServerConfig();
 	private final Store hstore = new PersistitStore(config, rowDefCache);
@@ -80,7 +83,7 @@ public class CServer {
 	private Decider decider;
 	
 	public void start() throws Exception {
-
+		Tap.registerMXBean();
 		MessageRegistry.initialize();
 		MessageRegistry.only().registerModule("com.akiban.cserver");
 		MessageRegistry.only().registerModule("com.akiban.ais");
@@ -117,6 +120,7 @@ public class CServer {
 		}
 		hstore.shutDown();
 		NetworkHandlerFactory.closeNetwork();
+		Tap.unregisterMXBean();
 	}
 
 	public class ChannelNotifier implements CommEventNotifier {
@@ -233,7 +237,9 @@ public class CServer {
 					if (LOG.isTraceEnabled()) {
 						LOG.trace("Serving message " + message);
 					}
+					CSERVER_EXEC.in();
 					message.execute(connection, context);
+					CSERVER_EXEC.out();
 					requestCounter++;
 				} catch (InterruptedException e) {
 					if (LOG.isInfoEnabled()) {

@@ -1,7 +1,6 @@
 package com.akiban.cserver;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**

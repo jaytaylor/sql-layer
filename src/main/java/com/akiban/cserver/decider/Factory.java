@@ -3,9 +3,10 @@
  */
 package com.akiban.cserver.decider;
 
-import org.apache.commons.logging.*;
-import com.akiban.cserver.*;
-import java.util.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.akiban.cserver.CServerConfig;
 
 /**
  * @author percent

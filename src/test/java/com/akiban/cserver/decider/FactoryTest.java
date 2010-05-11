@@ -3,10 +3,12 @@
  */
 package com.akiban.cserver.decider;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-import com.akiban.cserver.*;
+
+import com.akiban.cserver.CServerConfig;
 /**
  * @author percent
  *
