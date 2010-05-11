@@ -249,8 +249,8 @@ public class VStore
         /*
          * Go through each column in this row and ensure that a file exists for that column. For
          * now, we have 1 file per column by default. If a file does not exist, then create it.
-         * @todo: for now, the name used per file is the column name. this obviously needs to be
-         * changed since there is nothing wrong with having multiple columns with the same name.
+         * @todo: for now, the name used per file is the column name. Need to discuss if this needs
+         * to be changed or not.
          */
         for (int i = 0; i < fieldDefs.length; i++) {
             FieldDef[] tableFieldDefs = fieldDefs[i];
