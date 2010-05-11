@@ -9,6 +9,7 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.persistit.Exchange;
+import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
 /**
@@ -226,14 +227,16 @@ public class VStore
      *      com.akiban.cserver.FieldDef[][], java.lang.Object[][])
      */
     @Override
-    public int writeRowForBulkLoad(Exchange hEx, 
-                                   RowDef rowDef,
-                                   RowData rowData, 
-                                   int[] ordinals, 
+    public int writeRowForBulkLoad(final Exchange hEx, 
+                                   final RowDef rowDef,
+                                   final RowData rowData, 
+                                   final int[] ordinals, 
                                    FieldDef[][] fieldDefs,
-                                   Object[][] hKey) 
+                                   Object[][] hKeyValues) 
         throws Exception
     {
+        final Key hkey = constructHKey(rowDef, ordinals, fieldDefs, hKeyValues);
+
         /*
          * First check if a directory exists for this table. If not, then create it.
          */
@@ -245,6 +248,18 @@ public class VStore
             if (! ret) {
                 throw new Exception(); /* probably permission issue */
             }
+        }
+
+        /* column for the hkey. */
+        String hkeyColumnPath = tableDirectory + "/hkeyColumn";
+        File hkeyColumn = new File(hkeyColumnPath);
+        if (! hkeyColumn.exists()) {
+            boolean ret = hkeyColumn.createNewFile();
+            if (! ret) {
+                throw new Exception();
+            }
+            FileOutputStream fout = new FileOutputStream(hkeyColumn, true);
+            fout.write(hkey.getEncodedBytes()); /* write the key's bytes to disk */
         }
 
         /*
@@ -280,6 +295,27 @@ public class VStore
         }
 
         return 0;
+    }
+
+    private Key constructHKey(final RowDef rowDef,
+                              final int[] ordinals,
+                              final FieldDef[][] fieldDefs,
+                              final Object[][] hKeyValues)
+        throws Exception
+    {
+        final Key hKey = new Key(((PersistitStore) hstore).getDb());
+        hKey.clear();
+        for (int i = 0; i < hKeyValues.length; i++) {
+            hKey.append(ordinals[i]);
+            Object[] tableHKeyValues = hKeyValues[i];
+            FieldDef[] tableFieldDefs = fieldDefs[i];
+            for (int j = 0; j < tableHKeyValues.length; j++) {
+                tableFieldDefs[j].getEncoding().toKey(tableFieldDefs[j], 
+                                                      tableHKeyValues[j],
+                                                      hKey);
+            }
+        }
+        return hKey;
     }
 
     @Override
