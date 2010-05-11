@@ -2,7 +2,9 @@ package com.akiban.cserver.loader;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.store.Store;
 import com.akiban.cserver.store.PersistitStore;
+import com.akiban.cserver.store.VStore;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -25,7 +27,11 @@ public class BulkLoader
         } else {
             dataGrouper.run(tableTasksMap);
         }
-        new PersistitLoader(persistitStore, db, ais).load(finalTasks(tableTasksMap));
+        if (null != persistitStore) {
+            new PersistitLoader(persistitStore, db, ais).load(finalTasks(tableTasksMap));
+        } else {
+            new VerticalLoader(verticalStore, db, ais).load(finalTasks(tableTasksMap));
+        }
         if (cleanup) {
             dataGrouper.deleteWorkArea();
         }
@@ -44,6 +50,56 @@ public class BulkLoader
                       String dbPassword) throws ClassNotFoundException, SQLException
     {
         this.persistitStore = persistitStore;
+        this.verticalStore = null;
+        this.ais = ais;
+        this.groups = groups;
+        this.artifactsSchema = artifactsSchema;
+        this.sourceSchemas = sourceSchemas;
+        this.dbHost = dbHost;
+        this.dbUser = dbUser;
+        this.dbPort = dbPort;
+        this.dbPassword = dbPassword;
+    }
+
+    public BulkLoader(VStore verticalStore,
+                      AkibaInformationSchema ais,
+                      List<String> groups,
+                      String artifactsSchema,
+                      Map<String, String> sourceSchemas,
+                      String dbHost,
+                      int dbPort,
+                      String dbUser,
+                      String dbPassword) throws ClassNotFoundException, SQLException
+    {
+        this.persistitStore = null;
+        this.verticalStore = verticalStore;
+        this.ais = ais;
+        this.groups = groups;
+        this.artifactsSchema = artifactsSchema;
+        this.sourceSchemas = sourceSchemas;
+        this.dbHost = dbHost;
+        this.dbUser = dbUser;
+        this.dbPort = dbPort;
+        this.dbPassword = dbPassword;
+    }
+
+    public BulkLoader(Store store,
+                      AkibaInformationSchema ais,
+                      List<String> groups,
+                      String artifactsSchema,
+                      Map<String, String> sourceSchemas,
+                      String dbHost,
+                      int dbPort,
+                      String dbUser,
+                      String dbPassword) throws ClassNotFoundException, SQLException
+    {
+        if (store instanceof PersistitStore) {
+            this.persistitStore = (PersistitStore) store;
+            this.verticalStore = null;
+        } else {
+            this.persistitStore = null;
+            this.verticalStore = (VStore) store;
+        }
         this.ais = ais;
         this.groups = groups;
         this.artifactsSchema = artifactsSchema;
@@ -100,6 +156,7 @@ public class BulkLoader
     private List<String> groups;
     private Map<String, String> sourceSchemas;
     private PersistitStore persistitStore;
+    private VStore verticalStore;
     private AkibaInformationSchema ais;
     private TaskGenerator.Actions taskGeneratorActions;
 
