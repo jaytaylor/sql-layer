@@ -117,7 +117,9 @@ public class BulkLoaderClient
         for (String line : USAGE) {
             System.err.println(line);
         }
-        System.err.println(e.getMessage());
+        if (null != e) {
+            System.err.println(e.getMessage());
+        }
         System.exit(1);
     }
 
