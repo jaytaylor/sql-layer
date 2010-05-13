@@ -45,6 +45,8 @@ public class BulkLoaderClient
             logger.error("Caught exception", e);
             throw e;
         } finally {
+            logger.info("Closing network handler");
+            networkHandler.disconnectWorker();
             logger.info("Closing network");
             NetworkHandlerFactory.closeNetwork();
             logger.info("Network closed");

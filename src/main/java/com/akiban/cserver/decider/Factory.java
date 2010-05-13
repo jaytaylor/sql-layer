@@ -63,9 +63,9 @@ public class Factory {
 		if(CONFIG != null) {
 			final String value = CONFIG.property(DECISION_ENGINE);
 			if(value != null) {
-				if(value == "hstore") {
+				if(value.equals("hstore")) {
 					type = Factory.DeciderType.HStore;
-				} else if(value == "vstore") {
+				} else if(value.equals("vstore")) {
 					type = Factory.DeciderType.VStore;
 				} else {
 					assert false;

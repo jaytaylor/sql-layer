@@ -91,7 +91,9 @@ public class BulkLoader
                       String dbHost,
                       int dbPort,
                       String dbUser,
-                      String dbPassword) throws ClassNotFoundException, SQLException
+                      String dbPassword,
+                      boolean resume,
+                      boolean cleanup) throws ClassNotFoundException, SQLException
     {
         if (store instanceof PersistitStore) {
             this.persistitStore = (PersistitStore) store;
@@ -108,6 +110,8 @@ public class BulkLoader
         this.dbUser = dbUser;
         this.dbPort = dbPort;
         this.dbPassword = dbPassword;
+        this.resume = resume;
+        this.cleanup = cleanup;
     }
 
     String artifactsSchema()

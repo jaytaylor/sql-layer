@@ -1,7 +1,6 @@
 package com.akiban.cserver.loader;
 
 import com.akiban.ais.util.Command;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.DriverManager;
