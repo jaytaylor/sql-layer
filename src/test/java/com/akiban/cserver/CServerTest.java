@@ -53,6 +53,7 @@ public class CServerTest implements CServerConstants {
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		MessageRegistryBase.reset();
 		cserver = new CServer();
+		cserver.setProperty("cserver.fixed", "true");
 		cserver.start();
 		ROW_DEF.setRowType(RowType.ROOT);
 		ROW_DEF.setGroupRowDefId(ROW_DEF.getRowDefId());

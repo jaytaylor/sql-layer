@@ -37,7 +37,7 @@ public class CServerConfig {
 	
 	public static CServerConfig unitTestConfig() {
 		final CServerConfig csc = new CServerConfig();
-		csc.properties.setProperty("unit_test", "true");
+		csc.properties.setProperty("cserver.fixed", "true");
 		return csc;
 	}
 
@@ -151,5 +151,9 @@ public class CServerConfig {
 	 */
 	public String property(final String key, final String dflt) {
 		return properties.getProperty(key, dflt);
+	}
+	
+	void setProperty(final String key, final String value) {
+		properties.setProperty(key, value);
 	}
 }

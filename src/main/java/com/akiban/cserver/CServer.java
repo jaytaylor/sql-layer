@@ -391,4 +391,13 @@ public class CServer {
 	public String property(final String key, final String dflt) {
 		return config.property(key, dflt);
 	}
+	
+	/**
+	 * For unit tests
+	 * @param key
+	 * @param value
+	 */
+	public void setProperty(final String key, final String value) {
+		config.setProperty(key, value);
+	}
 }

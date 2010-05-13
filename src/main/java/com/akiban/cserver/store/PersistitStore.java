@@ -41,9 +41,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	private static final String P_DATAPATH = "cserver.datapath";
 
-	private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
+	private static final String FIXED_ALLOCATION_PROPERTY_NAME = "cserver.fixed";
 
-	private static final String UNIT_TEST_PROPERTY_NAME = "unit_test";
+	private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
 
 	private static final Tap WRITE_ROW_TAP = Tap.add("write: write_row");
 	
@@ -67,9 +67,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	private final static Properties PERSISTIT_PROPERTIES = new Properties();
 
 	static {
-		PERSISTIT_PROPERTIES.put("logpath", "${datapath}");
 		PERSISTIT_PROPERTIES.put("logfile",
-				"${logpath}/persistit_${timestamp}.log");
+				"${datapath}/persistit_${timestamp}.log");
 		PERSISTIT_PROPERTIES.put("buffer.count.8192", "1K");
 		PERSISTIT_PROPERTIES.put("volume.1",
 				"${datapath}/akiban_system.v0,create,pageSize:8K,initialSize:10K,e"
@@ -85,6 +84,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		PERSISTIT_PROPERTIES.put("pwdelete", "true");
 		PERSISTIT_PROPERTIES.put("pwjcount", "2");
 		PERSISTIT_PROPERTIES.put("timeout", "60000");
+		//
+		// Temporary setup for testing Persistit 2.1
+		//
+		PERSISTIT_PROPERTIES.put("logpath", "${datapath}/log");
+		PERSISTIT_PROPERTIES.put("logsize", "1G");
 	}
 
 	static String datapath = "/tmp/chunkserver_data";
@@ -131,31 +135,37 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			final String path = config.property(P_DATAPATH, datapath);
 			db.setProperty("datapath", path);
 			final boolean isUnitTest = "true".equals(config
-					.property(UNIT_TEST_PROPERTY_NAME));
+					.property(FIXED_ALLOCATION_PROPERTY_NAME));
 			if (!isUnitTest) {
 				resetMemoryAllocation();
 			}
-			if (LOG.isInfoEnabled()) {
-				LOG
-						.info("PersistitStore datapath="
-								+ path
-								+ " pwjSize="
-								+ PERSISTIT_PROPERTIES.getProperty("pwjsize")
-								+ " 8k_buffers="
-								+ PERSISTIT_PROPERTIES
-										.getProperty("buffer.count.8192"));
-			}
+			
+			//
+			// Override default property values with CServerConfig-specified
+			// values.
+			//
 			for (final Map.Entry<Object, Object> entry : config.getProperties()
 					.entrySet()) {
 				final String key = (String) entry.getKey();
 				final String value = (String) entry.getValue();
 				if (key.startsWith(PERSISTIT_PROPERTY_PREFIX)) {
-					db.setProperty(key.substring(PERSISTIT_PROPERTY_PREFIX
+					PERSISTIT_PROPERTIES.setProperty(key.substring(PERSISTIT_PROPERTY_PREFIX
 							.length()), value);
 				}
 			}
 
 			db.initialize(PERSISTIT_PROPERTIES);
+
+			if (LOG.isInfoEnabled()) {
+				LOG
+						.info("PersistitStore datapath="
+								+ db.getProperty("datapath")
+								+ " pwjSize="
+								+ db.getProperty("pwjsize")
+								+ " 8k_buffers="
+								+ db
+										.getProperty("buffer.count.8192"));
+			}
 			db.getManagement().setDisplayFilter(
 					new RowDataDisplayFilter(this, db.getManagement()
 							.getDisplayFilter()));
