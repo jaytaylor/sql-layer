@@ -1,6 +1,8 @@
 package com.akiban.cserver.store;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -11,6 +13,8 @@ import com.akiban.cserver.RowDefCache;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
+import com.akiban.vstore.ColumnArray;
+import com.akiban.vstore.ColumnDescriptor;
 
 /**
  * @author percent
@@ -221,6 +225,34 @@ public class VStore
         return hstore.writeRow(rowData);
     }
 
+    public void constructColumnArrays()
+    {
+        for (Map.Entry<String, String> entry : columnList.entrySet()) {
+            try {
+                File columnData = new File(entry.getValue());
+                ColumnArray colArr = new ColumnArray(columnData);
+                columnArrays.add(colArr);
+                ColumnInfo info = columnInfo.get(entry.getKey());
+                ColumnDescriptor descrip = new ColumnDescriptor(info.getSize(), info.getCount());
+                descrip.setColumnArray(colArr);
+                columnDescriptors.add(descrip);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    public List<ColumnArray> getColumnArrays()
+    {
+        return columnArrays;
+    }
+
+    public List<ColumnDescriptor> getColumnDescriptors()
+    {
+        return columnDescriptors;
+    }
+
     /**
      * @see com.akiban.cserver.store.Store#writeRowForBulkLoad(com.persistit.Exchange,
      *      com.akiban.cserver.RowDef, com.akiban.cserver.RowData, int[],
@@ -280,7 +312,11 @@ public class VStore
                     if (! ret) {
                         throw new Exception();
                     }
+                    columnList.put(columnName, columnFileName);
+                    ColumnInfo info = new ColumnInfo();
+                    columnInfo.put(columnName, info);
                 }
+                ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
                 /* insert the data */
                 final long locationAndSize = rowDef.fieldLocation(rowData, j);
                 if (0 == locationAndSize) {
@@ -291,6 +327,10 @@ public class VStore
                 byte[] bytes = rowData.getBytes();
                 FileOutputStream fout = new FileOutputStream(columnData, true);
                 fout.write(bytes);
+
+                info.incrementCount();
+                info.setSize(size);
+                columnInfo.put(columnName, info);
             }
         }
 
@@ -325,8 +365,61 @@ public class VStore
         hstore.updateTableStats(rowDef, rowCount);
     }
 
+    /*
+     * Temporary class only being used for testing purposes right now to carry metadata about
+     * columns. Once the metadata for column is actually stored in some kind of header on disk, we
+     * shouldn't need this class anymore.
+     */
+    class ColumnInfo
+    {
+        public ColumnInfo(long columnSize)
+        {
+            this.columnSize = columnSize;
+            this.count = 0;
+        }
+
+        public ColumnInfo()
+        {
+            this.columnSize = 0;
+            this.count = 0;
+        }
+
+        public void incrementCount()
+        {
+            count++;
+        }
+
+        public void setSize(long size)
+        {
+            if (0 == columnSize) {
+                columnSize = size;
+            }
+        }
+
+        public long getSize()
+        {
+            return columnSize;
+        }
+
+        public long getCount()
+        {
+            return count;
+        }
+
+        private long columnSize;
+        private long count;
+    }
+
     private Store hstore;
 
     static String datapath = "/tmp/chunkserver_data";
+
+    private HashMap<String, String> columnList;
+
+    private HashMap<String, ColumnInfo> columnInfo;
+
+    private List<ColumnArray> columnArrays;
+
+    private List<ColumnDescriptor> columnDescriptors;
 
 }

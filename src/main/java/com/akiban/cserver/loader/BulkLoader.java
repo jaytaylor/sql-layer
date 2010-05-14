@@ -31,6 +31,7 @@ public class BulkLoader
             new PersistitLoader(persistitStore, db, ais).load(finalTasks(tableTasksMap));
         } else {
             new VerticalLoader(verticalStore, db, ais).load(finalTasks(tableTasksMap));
+            verticalStore.constructColumnArrays();
         }
         if (cleanup) {
             dataGrouper.deleteWorkArea();
