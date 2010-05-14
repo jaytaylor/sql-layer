@@ -412,7 +412,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 		RowData newRowData = new RowData(new byte[256]);
 		newRowData.createRow(td.defX, new Object[] { iid, xid, 4, 424242,
 				"Description_424242" });
-		store.updateRow(oldRowData, newRowData);
+		assertEquals(OK, store.updateRow(oldRowData, newRowData));
 
 		rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
 				.getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
@@ -424,6 +424,33 @@ public class PersistitStoreWithAISTest extends TestCase implements
 				payload.position(), payload.limit());
 		updateRowData.prepareRow(updateRowData.getBufferStart());
 		System.out.println(updateRowData.toString(store.getRowDefCache()));
+		//
+		// Now attempt to update a leaf table's PK field.
+		//
+		newRowData = new RowData(new byte[256]);
+		newRowData.createRow(td.defX, new Object[] { iid, -xid, 4, 545454,
+				"Description_545454" });
+
+		assertEquals(OK, store.updateRow(updateRowData, newRowData));
+
+		rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+				.getPKIndexDef().getId(), 0, updateRowData, updateRowData,
+				columnBitMap);
+		payload.clear();
+		assertTrue(!rc.collectNextRow(payload));
+
+		rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+				.getPKIndexDef().getId(), 0, newRowData, newRowData,
+				columnBitMap);
+
+		assertTrue(rc.collectNextRow(payload));
+		payload.flip();
+
+		updateRowData = new RowData(payload.array(), payload.position(),
+				payload.limit());
+		updateRowData.prepareRow(updateRowData.getBufferStart());
+		System.out.println(updateRowData.toString(store.getRowDefCache()));
+
 		// TODO:
 		// Hand-checked the index tables. Need SELECT on secondary indexes to
 		// verify them automatically.

@@ -46,13 +46,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
 
 	private static final Tap WRITE_ROW_TAP = Tap.add("write: write_row");
-	
+
 	private static final Tap TX_COMMIT_TAP = Tap.add("write: tx_commit");
 
-	private static final Tap TX_RETRY_TAP = Tap.add("write: tx_retry", Tap.Type.COUNT);
+	private static final Tap TX_RETRY_TAP = Tap.add("write: tx_retry",
+			Tap.Type.COUNT);
 
 	private static final Tap NEW_COLLECTOR_TAP = Tap.add("read: new_collector");
-	
+
 	static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
 	final static String VOLUME_NAME = "akiban_data"; // TODO - select
@@ -139,7 +140,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			if (!isUnitTest) {
 				resetMemoryAllocation();
 			}
-			
+
 			//
 			// Override default property values with CServerConfig-specified
 			// values.
@@ -149,22 +150,19 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 				final String key = (String) entry.getKey();
 				final String value = (String) entry.getValue();
 				if (key.startsWith(PERSISTIT_PROPERTY_PREFIX)) {
-					PERSISTIT_PROPERTIES.setProperty(key.substring(PERSISTIT_PROPERTY_PREFIX
-							.length()), value);
+					PERSISTIT_PROPERTIES.setProperty(key
+							.substring(PERSISTIT_PROPERTY_PREFIX.length()),
+							value);
 				}
 			}
 
 			db.initialize(PERSISTIT_PROPERTIES);
 
 			if (LOG.isInfoEnabled()) {
-				LOG
-						.info("PersistitStore datapath="
-								+ db.getProperty("datapath")
-								+ " pwjSize="
-								+ db.getProperty("pwjsize")
-								+ " 8k_buffers="
-								+ db
-										.getProperty("buffer.count.8192"));
+				LOG.info("PersistitStore datapath="
+						+ db.getProperty("datapath") + " pwjSize="
+						+ db.getProperty("pwjsize") + " 8k_buffers="
+						+ db.getProperty("buffer.count.8192"));
 			}
 			db.getManagement().setDisplayFilter(
 					new RowDataDisplayFilter(this, db.getManagement()
@@ -610,20 +608,21 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		}
 	}
 
-    @Override
-    public void updateTableStats(RowDef rowDef, long rowCount) throws PersistitException, StoreException
-    {
-        int rowDefId = rowDef.getRowDefId();
-        TableStatus tableStatus = tableManager.getTableStatus(rowDefId);
-        if (tableStatus.isDeleted()) {
-            throw new StoreException(HA_ERR_NO_SUCH_TABLE, String.format("Deleted table %s", rowDefId));
-        }
-        tableStatus.setRowCount(rowCount);
-        tableStatus.updated();
-        tableManager.saveStatus(tableStatus);
-    }
+	@Override
+	public void updateTableStats(RowDef rowDef, long rowCount)
+			throws PersistitException, StoreException {
+		int rowDefId = rowDef.getRowDefId();
+		TableStatus tableStatus = tableManager.getTableStatus(rowDefId);
+		if (tableStatus.isDeleted()) {
+			throw new StoreException(HA_ERR_NO_SUCH_TABLE, String.format(
+					"Deleted table %s", rowDefId));
+		}
+		tableStatus.setRowCount(rowCount);
+		tableStatus.updated();
+		tableManager.saveStatus(tableStatus);
+	}
 
-    @Override
+	@Override
 	public int deleteRow(final RowData rowData) throws Exception {
 		if (verbose && LOG.isInfoEnabled()) {
 			LOG.info("Delete row: " + rowData.toString(rowDefCache));
@@ -758,58 +757,65 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 						throw new StoreException(HA_ERR_RECORD_DELETED,
 								"Missing record at key " + hEx.getKey());
 					}
+					
+					int status = OK;
 					//
 					// Verify that it hasn't changed. Note: at some point we
 					// may want to optimize the protocol to send only PK and FK
 					// fields in oldRowData, in which case this test will need
-					// to
-					// change.
+					// to change.
 					//
-					final int oldStart = oldRowData.getInnerStart();
-					final int oldSize = oldRowData.getInnerSize();
-					if (!bytesEqual(oldRowData.getBytes(), oldStart, oldSize,
-							hEx.getValue().getEncodedBytes(), 0, hEx.getValue()
-									.getEncodedSize())) {
-						throw new StoreException(HA_ERR_RECORD_CHANGED,
-								"Record changed at key " + hEx.getKey());
-					}
+					//
+					// For Iteration 11, this logic is disabled because the
+					// SELECT for update may have used a covering index, in
+					// which case the oldRowData will be incomplete.
+					//
+					// final int oldStart = oldRowData.getInnerStart();
+					// final int oldSize = oldRowData.getInnerSize();
+					// if (!bytesEqual(oldRowData.getBytes(), oldStart, oldSize,
+					// hEx.getValue().getEncodedBytes(), 0, hEx.getValue()
+					// .getEncodedSize())) {
+					// throw new StoreException(HA_ERR_RECORD_CHANGED,
+					// "Record changed at key " + hEx.getKey());
+					// }
 					//
 					// For Iteration 9, verify that only non-PK/FK fields are
 					// changing - i.e., that the hkey will be the same.
 					//
-					final Key oldKey = hEx.getKey();
-					final Key newKey = new Key(hEx.getKey());
-
 					if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef
 							.getPKIndexDef().getFields())) {
-						throw new StoreException(HA_ERR_ROW_IS_REFERENCED,
-								"HKey change not supported: " + oldKey + "->"
-										+ newKey);
+						if (hEx.hasChildren()) {
+							throw new StoreException(HA_ERR_ROW_IS_REFERENCED,
+									"Can't cascade UPDATE on PK field: "
+											+ hEx.getKey());
+						}
+						status = deleteRow(oldRowData);
+						if (status == OK) {
+							status = writeRow(newRowData);
+						}
+					} else {
+						final int start = newRowData.getInnerStart();
+						final int size = newRowData.getInnerSize();
+						hEx.getValue().ensureFit(size);
+						System.arraycopy(newRowData.getBytes(), start, hEx
+								.getValue().getEncodedBytes(), 0, size);
+						hEx.getValue().setEncodedSize(size);
 
-					}
+						// Store the h-row
+						hEx.store();
+						ts.updated();
 
-					final int start = newRowData.getInnerStart();
-					final int size = newRowData.getInnerSize();
-					hEx.getValue().ensureFit(size);
-					System.arraycopy(newRowData.getBytes(), start, hEx
-							.getValue().getEncodedBytes(), 0, size);
-					hEx.getValue().setEncodedSize(size);
-
-					// Store the h-row
-					hEx.store();
-					ts.updated();
-
-					// Update the indexes
-					//
-					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-						if (!indexDef.isHKeyEquivalent()) {
-							updateIndex(indexDef, rowDef, oldRowData,
-									newRowData, hEx.getKey());
+						// Update the indexes
+						//
+						for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+							if (!indexDef.isHKeyEquivalent()) {
+								updateIndex(indexDef, rowDef, oldRowData,
+										newRowData, hEx.getKey());
+							}
 						}
 					}
-
 					transaction.commit();
-					return OK;
+					return status;
 				} catch (RollbackException re) {
 					if (--retries < 0) {
 						throw new TransactionFailedException();
