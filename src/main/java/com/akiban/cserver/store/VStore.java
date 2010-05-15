@@ -242,7 +242,7 @@ public class VStore
         }
     }
 
-    public List<ColumnDescriptors> getColumnDescriptors()
+    public List<ColumnDescriptor> getColumnDescriptors()
     {
         return columnDescriptors;
     }
