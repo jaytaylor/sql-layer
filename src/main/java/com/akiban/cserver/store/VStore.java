@@ -1,6 +1,7 @@
 package com.akiban.cserver.store;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.File;
@@ -227,13 +228,18 @@ public class VStore
 
     public void constructColumnDescriptors()
     {
+        columnArrays = new ArrayList<ColumnArray>();
+        columnDescriptors = new ArrayList<ColumnDescriptor>();
         for (Map.Entry<String, String> entry : columnList.entrySet()) {
             try {
                 File columnData = new File(entry.getValue());
                 ColumnArray colArr = new ColumnArray(columnData);
                 columnArrays.add(colArr);
                 ColumnInfo info = columnInfo.get(entry.getKey());
-                ColumnDescriptor descrip = new ColumnDescriptor(info.getSize(), info.getCount());
+                ColumnDescriptor descrip = new ColumnDescriptor(info.getTableName(),
+                                                                info.getColumnName(),
+                                                                info.getSize(), 
+                                                                info.getCount());
                 descrip.setColumnArray(colArr);
                 columnDescriptors.add(descrip);
             } catch (Exception e) {
@@ -312,7 +318,7 @@ public class VStore
                         throw new Exception();
                     }
                     columnList.put(columnName, columnFileName);
-                    ColumnInfo info = new ColumnInfo();
+                    ColumnInfo info = new ColumnInfo(columnName, tableName);
                     columnInfo.put(columnName, info);
                 }
                 ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
@@ -325,7 +331,7 @@ public class VStore
                 int size = (int) (locationAndSize >>> 32);
                 byte[] bytes = rowData.getBytes();
                 FileOutputStream fout = new FileOutputStream(columnData, true);
-                fout.write(bytes);
+                fout.write(bytes, offset, size);
 
                 info.incrementCount();
                 info.setSize(size);
@@ -364,6 +370,11 @@ public class VStore
         hstore.updateTableStats(rowDef, rowCount);
     }
 
+    public static void setDataPath(final String path)
+    {
+        datapath = path;
+    }
+
     /*
      * Temporary class only being used for testing purposes right now to carry metadata about
      * columns. Once the metadata for column is actually stored in some kind of header on disk, we
@@ -375,6 +386,14 @@ public class VStore
         {
             this.columnSize = columnSize;
             this.count = 0;
+        }
+
+        public ColumnInfo(String columnName, String tableName)
+        {
+            this.columnSize = 0;
+            this.count = 0;
+            this.columnName = columnName;
+            this.tableName = tableName;
         }
 
         public ColumnInfo()
@@ -405,17 +424,29 @@ public class VStore
             return count;
         }
 
+        public String getTableName()
+        {
+            return tableName;
+        }
+
+        public String getColumnName()
+        {
+            return columnName;
+        }
+
         private long columnSize;
         private long count;
+        private String tableName;
+        private String columnName;
     }
 
     private Store hstore;
 
     static String datapath = "/tmp/chunkserver_data";
 
-    private HashMap<String, String> columnList;
+    private HashMap<String, String> columnList = new HashMap<String, String>();
 
-    private HashMap<String, ColumnInfo> columnInfo;
+    private HashMap<String, ColumnInfo> columnInfo = new HashMap<String, ColumnInfo>();
 
     private List<ColumnArray> columnArrays;
 
