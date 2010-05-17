@@ -61,7 +61,7 @@ public class CServerTest implements CServerConstants {
 
 		cserver.getRowDefCache().putRowDef(ROW_DEF);
 
-		networkHandler = NetworkHandlerFactory.getHandler("localhost", "8080",
+		networkHandler = NetworkHandlerFactory.getHandler("localhost", "5140",
 				null);
 		connection = AkibaConnection.createConnection(networkHandler);
 	}

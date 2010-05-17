@@ -60,7 +60,7 @@ public class CServer {
 	 * Config property name and default for the port on which the CServer will
 	 * listen for requests.
 	 */
-	private static final String P_CSERVER_PORT = "cserver.port|8080";
+	private static final String P_CSERVER_PORT = "cserver.port|5140";
 
 	/**
 	 * Config property name and default for setting of the verbose flag. When
@@ -69,7 +69,7 @@ public class CServer {
 
 	private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
 	
-	private static Tap CSERVER_EXEC = Tap.add("cserver_exec");
+	private static Tap CSERVER_EXEC = Tap.add(new Tap.PerThread("cserver", Tap.TimeStampLog.class));
 	
 	private final RowDefCache rowDefCache = new RowDefCache();
 	private final CServerConfig config = new CServerConfig();

@@ -49,8 +49,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	private static final Tap TX_COMMIT_TAP = Tap.add("write: tx_commit");
 
-	private static final Tap TX_RETRY_TAP = Tap.add("write: tx_retry",
-			Tap.Type.COUNT);
+	private static final Tap TX_RETRY_TAP = Tap.add(new Tap.Count("write: tx_retry"));
 
 	private static final Tap NEW_COLLECTOR_TAP = Tap.add("read: new_collector");
 
