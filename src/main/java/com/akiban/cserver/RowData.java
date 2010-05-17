@@ -1,6 +1,8 @@
 package com.akiban.cserver;
 
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -75,6 +77,10 @@ public class RowData {
 
 	private int rowEnd;
 
+	public RowData() {
+	    
+	}
+		
 	public RowData(final byte[] bytes) {
 		this.bytes = bytes;
 		reset(0, bytes.length);
@@ -243,7 +249,45 @@ public class RowData {
 		return CServerUtil.decodeMySQLString(bytes, offset, width,
 				fieldDef);
 	}
+	
+	public void mergeFields(final RowDef rowDef, ArrayList<ByteBuffer> fields, int index) {
+        final int fieldCount = rowDef.getFieldCount();
+        assert fields.size() == rowDef.getFieldCount();
+        int offset = rowStart;
 
+        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        offset = offset + O_NULL_MAP;
+        
+        // OMFG
+        for (int i = 0; i < fieldCount; i += 8) {
+            int b = 0;
+            for (int j = i; j < i + 8 && j < fieldCount; j++) {
+                assert fields.get(j) != null;
+                assert j < fields.size();
+                if (j >= fields.size()|| fields.get(j) == null) {
+                    b |= (1 << j - i);
+                }
+            }
+            bytes[offset++] = (byte) b;
+        }
+        
+        for (int i = 0; i < fields.size(); i++) {
+            int field_size = rowDef.getFieldDef(i).getMaxStorageSize();
+            assert rowDef.getFieldDef(i).isFixedSize() == true; 
+            fields.get(i).get(bytes, offset, field_size);
+            offset += field_size;
+        }
+        
+        CServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        offset += 6;
+        final int length = offset - rowStart;
+        CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
+        CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
+        rowEnd = offset;
+	}
+	
 	/**
 	 * For debugging only, poke some Java values supplied in the values array
 	 * into a RowData instance. The conversions are very approximate!
@@ -252,71 +296,71 @@ public class RowData {
 	 * @param values
 	 */
 	public void createRow(final RowDef rowDef, final Object[] values) {
-		final int fieldCount = rowDef.getFieldCount();
-		if (values.length > rowDef.getFieldCount()) {
-			throw new IllegalArgumentException("Too many values.");
-		}
-		int offset = rowStart;
-		CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-		CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-		CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
-		offset = offset + O_NULL_MAP;
-		for (int index = 0; index < fieldCount; index += 8) {
-			int b = 0;
-			for (int j = index; j < index + 8 && j < fieldCount; j++) {
-				if (j >= values.length || values[j] == null) {
-					b |= (1 << j - index);
-				}
-			}
-			bytes[offset++] = (byte) b;
-		}
-		int vlength = 0;
-		int vmax = 0;
-		for (int index = 0; index < values.length; index++) {
-			Object object = values[index];
-			FieldDef fieldDef = rowDef.getFieldDef(index);
-			if (fieldDef.isFixedSize()) {
-				if (object != null) {
-					offset += fieldDef.getEncoding().fromObject(fieldDef,
-							object, bytes, offset);
-				}
-			} else {
-				vmax += fieldDef.getMaxStorageSize();
-				if (object != null) {
-					vlength += fieldDef.getEncoding().widthFromObject(fieldDef,
-							object);
-					final int width = CServerUtil.varWidth(vmax);
-					switch (width) {
-					case 0:
-						break;
-					case 1:
-						CServerUtil.putByte(bytes, offset, (byte) vlength);
-						break;
-					case 2:
-						CServerUtil.putChar(bytes, offset, (char) vlength);
-						break;
-					case 3:
-						CServerUtil.putMediumInt(bytes, offset, (int) vlength);
-						break;
-					}
-					offset += width;
-				}
-			}
-		}
-		for (int index = 0; index < values.length; index++) {
-			Object object = values[index];
-			final FieldDef fieldDef = rowDef.getFieldDef(index);
-			if (object != null && !fieldDef.isFixedSize()) {
-				offset += fieldDef.getEncoding().fromObject(fieldDef,
-						values[index], bytes, offset);
-			}
-		}
-		CServerUtil.putChar(bytes, offset, SIGNATURE_B);
-		offset += 6;
-		final int length = offset - rowStart;
-		CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
-		CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
-		rowEnd = offset;
+        final int fieldCount = rowDef.getFieldCount();
+        if (values.length > rowDef.getFieldCount()) {
+            throw new IllegalArgumentException("Too many values.");
+        }
+        int offset = rowStart;
+        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        offset = offset + O_NULL_MAP;
+        for (int index = 0; index < fieldCount; index += 8) {
+            int b = 0;
+            for (int j = index; j < index + 8 && j < fieldCount; j++) {
+                if (j >= values.length || values[j] == null) {
+                    b |= (1 << j - index);
+                }
+            }
+            bytes[offset++] = (byte) b;
+        }
+        int vlength = 0;
+        int vmax = 0;
+        for (int index = 0; index < values.length; index++) {
+            Object object = values[index];
+            FieldDef fieldDef = rowDef.getFieldDef(index);
+            if (fieldDef.isFixedSize()) {
+                if (object != null) {
+                    offset += fieldDef.getEncoding().fromObject(fieldDef,
+                            object, bytes, offset);
+                }
+            } else {
+                vmax += fieldDef.getMaxStorageSize();
+                if (object != null) {
+                    vlength += fieldDef.getEncoding().widthFromObject(fieldDef,
+                            object);
+                    final int width = CServerUtil.varWidth(vmax);
+                    switch (width) {
+                    case 0:
+                        break;
+                    case 1:
+                        CServerUtil.putByte(bytes, offset, (byte) vlength);
+                        break;
+                    case 2:
+                        CServerUtil.putChar(bytes, offset, (char) vlength);
+                        break;
+                    case 3:
+                        CServerUtil.putMediumInt(bytes, offset, (int) vlength);
+                        break;
+                    }
+                    offset += width;
+                }
+            }
+        }
+        for (int index = 0; index < values.length; index++) {
+            Object object = values[index];
+            final FieldDef fieldDef = rowDef.getFieldDef(index);
+            if (object != null && !fieldDef.isFixedSize()) {
+                offset += fieldDef.getEncoding().fromObject(fieldDef,
+                        values[index], bytes, offset);
+            }
+        }
+        CServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        offset += 6;
+        final int length = offset - rowStart;
+        CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
+        CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
+        rowEnd = offset;
 	}
 
 	private byte[] getBytes(final Object object) {

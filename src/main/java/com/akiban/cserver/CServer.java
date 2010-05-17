@@ -104,7 +104,7 @@ public class CServer {
 		rowDefCache.setAIS(ais0);
 		hstore.setOrdinals();
 		acquireAIS();
-		((VStore)vstore).setHStore(hstore);
+		((VStore)vstore).setHStore((PersistitStore)hstore);
 	}
 
 	public void stop() throws Exception {

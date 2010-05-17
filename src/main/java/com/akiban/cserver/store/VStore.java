@@ -236,10 +236,9 @@ public class VStore
                 ColumnArray colArr = new ColumnArray(columnData);
                 columnArrays.add(colArr);
                 ColumnInfo info = columnInfo.get(entry.getKey());
-                ColumnDescriptor descrip = new ColumnDescriptor(info.getTableName(),
-                                                                info.getColumnName(),
-                                                                info.getSize(), 
-                                                                info.getCount());
+                ColumnDescriptor descrip = new ColumnDescriptor(null, info.getTableName(),
+                                                                info.getColumnName(), 
+                                                                info.getSize(), info.getCount());
                 descrip.setColumnArray(colArr);
                 columnDescriptors.add(descrip);
             } catch (Exception e) {
@@ -382,7 +381,7 @@ public class VStore
      */
     class ColumnInfo
     {
-        public ColumnInfo(long columnSize)
+        public ColumnInfo(int columnSize)
         {
             this.columnSize = columnSize;
             this.count = 0;
@@ -407,19 +406,19 @@ public class VStore
             count++;
         }
 
-        public void setSize(long size)
+        public void setSize(int size)
         {
             if (0 == columnSize) {
                 columnSize = size;
             }
         }
 
-        public long getSize()
+        public int getSize()
         {
             return columnSize;
         }
 
-        public long getCount()
+        public int getCount()
         {
             return count;
         }
@@ -434,8 +433,8 @@ public class VStore
             return columnName;
         }
 
-        private long columnSize;
-        private long count;
+        private int columnSize;
+        private int count;
         private String tableName;
         private String columnName;
     }
