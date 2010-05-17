@@ -123,7 +123,9 @@ public class BulkLoader
     String sourceSchema(String targetSchema)
     {
         String sourceSchema = sourceSchemas.get(targetSchema);
-        assert sourceSchema != null : targetSchema;
+        if (sourceSchema == null) {
+            sourceSchema = targetSchema;
+        }
         return sourceSchema;
     }
 

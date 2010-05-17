@@ -9,6 +9,7 @@ import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.StoreException;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
+import org.apache.log4j.Logger;
 
 import java.sql.ResultSet;
 
@@ -50,6 +51,8 @@ public class PersistitAdapter
         columnPositions = task.columnPositions();
         dbRow = new Object[leafTable.getColumns().size()];
         rowData = new RowData(new byte[ROW_DATA_BUFFER_SIZE]);
+        logger.info(String.format("Creating PersistitAdapter for %s. rowDef %s, group rowDef %s",
+                                  task.artifactTableName(), leafRowDef.getRowDefId(), leafRowDef.getGroupRowDefId()));
         exchange = store.getExchange(leafRowDef, null);
     }
 
@@ -93,6 +96,7 @@ public class PersistitAdapter
         store.releaseExchange(exchange);
     }
 
+    private static final Logger logger = Logger.getLogger(PersistitAdapter.class);
     private static final int ROW_DATA_BUFFER_SIZE = 1 << 16; // 64k
 
     private final PersistitStore store;
