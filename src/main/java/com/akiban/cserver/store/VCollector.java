@@ -28,6 +28,7 @@ public class VCollector implements RowCollector {
         hasMore = false;
         rowSize = 0;
         totalBytes = 0;
+        fields = 0;
         columnMapper = null;
         userTables = null;
         
@@ -38,6 +39,7 @@ public class VCollector implements RowCollector {
         for (int i = 0; i < columnBitMap.length*8; i++) {
             if((columnBitMap[i / 8] & (1 << (i % 8))) != 0) {
                 projection.set(i, true);
+                fields++;
             }
         }
         
@@ -73,7 +75,7 @@ public class VCollector implements RowCollector {
     public void setColumnDescriptors(List<ColumnDescriptor> theColumns) {
         assert theColumns.size() > 0;
         columns = theColumns;
-        long fieldCount = columns.iterator().next().getFieldCount();
+        int fieldCount = columns.iterator().next().getFieldCount();
         Iterator<ColumnDescriptor> i = columns.iterator();
         rowSize = 0;
 
@@ -86,7 +88,8 @@ public class VCollector implements RowCollector {
         // XXX - this is because the null map requires 1 byte per 8 fields.  
         //       this needs to be improved in the RowData/RowDef -- i.e. 
         //       we should not be calculating it in this way.
-        rowSize += RowData.MINIMUM_RECORD_LENGTH + (fieldCount/8+1);
+        System.out.println("fields = "+fields+", field/8 = "+fields/8+", nullMapBytes = "+(fields%8 == 0 ? fields/8 : fields/8+1));
+        rowSize += RowData.MINIMUM_RECORD_LENGTH + (fields%8 == 0 ? fields/8 : fields/8+1);
         totalBytes = fieldCount * (long) rowSize;
     }
 
@@ -140,6 +143,7 @@ public class VCollector implements RowCollector {
 
     private boolean hasMore;
     private int rowSize;
+    private int fields;
     private long totalBytes;
     private RowDef table;
     private ArrayList<RowDef> userTables;

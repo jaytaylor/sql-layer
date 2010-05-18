@@ -138,14 +138,15 @@ public class VCollectorTest {
             RowDef rowDef = i.next();
             // System.out.println("rowDef debugToString = "+
             // rowDef.debugToString() + "<----");
-            System.out.println("rowDef to string = " + rowDef.toString()
+            /*System.out.println("rowDef to string = " + rowDef.toString()
                     + "<---");
             System.out.println("rowDef get ordinal = " + rowDef.getOrdinal()
                     + "<---");
-
+*/
             FieldDef[] fields = rowDef.getFieldDefs();
             int j = 0;
             while (j < fields.length) {
+                /*
                 System.out.print("field name = " + fields[j].getName());
                 System.out.print(", index = " + fields[j].getFieldIndex());
                 System.out.print(", size = " + fields[j].getMaxStorageSize());
@@ -155,6 +156,7 @@ public class VCollectorTest {
                 System.out.print(", type = " + fields[j].getType());
                 System.out.println(" and is fixed size = "
                         + fields[j].isFixedSize());
+                        */
                 j++;
             }
 
@@ -201,18 +203,19 @@ public class VCollectorTest {
             
             byte[] columnBitMap = new byte[mapSize];
 
-            for (int i = 0; i < mapSize; i++) {
-                columnBitMap[i/8] |= 1 << i % 8;
+            for (int i = 0; i < testRowDef.getFieldCount(); i++) {
+                columnBitMap[i/8] |= 1 << (i % 8);
             }
-
+            
             VCollector vc = new VCollector(CServerConfig.unitTestConfig(),
                     rowDefCache, testRowDef.getRowDefId(), columnBitMap);
 
             vc.setColumnDescriptors(columnDes);
+            System.out.println("fieldCount = "+testRowDef.getFieldCount() + "mapSize ="+ mapSize);
             ByteBuffer buffer = ByteBuffer.allocate((rowSize
-                    + RowData.MINIMUM_RECORD_LENGTH + 1)
+                    + RowData.MINIMUM_RECORD_LENGTH + mapSize)
                     * rows);
-            /*boolean copied = vc.collectNextRow(buffer);
+            boolean copied = vc.collectNextRow(buffer);
             assertTrue(copied);
             assertFalse(vc.hasMore());
             Iterator<RowData> j = rowData.iterator();
@@ -223,7 +226,6 @@ public class VCollectorTest {
                 buffer.get(actual);
                 assertArrayEquals(expected, actual);
             }
-            */
         } catch (Exception e) {
             System.out.println("ERROR because " + e.getMessage());
             e.printStackTrace();
@@ -234,7 +236,7 @@ public class VCollectorTest {
 
     @Test
     public void testGetProjection() throws Exception {
-        /*setupDatabase();
+        setupDatabase();
         Random rand = new Random(31337);
         List<RowDef> rowDefs = rowDefCache.getRowDefs();
         Iterator<RowDef> i = rowDefs.iterator();
@@ -251,12 +253,12 @@ public class VCollectorTest {
 
             assert vc.getProjection().equals(projection);
             assertTrue(vc.getProjection().equals(projection));
-        }*/
+        }
     }
 
     @Test
     public void testGetUserTables() throws Exception {
-/*        setupDatabase();
+        setupDatabase();
         Random rand = new Random(31337);
         List<RowDef> rowDefs = rowDefCache.getRowDefs();
         Iterator<RowDef> i = rowDefs.iterator();
@@ -279,6 +281,5 @@ public class VCollectorTest {
             assertTrue(tables.size() > 0);
             // implement me.
         }
-        */
     }
 }
