@@ -220,10 +220,13 @@ public class RowDef {
 				sb.append(i == 0 ? "{" : ",");
 				sb.append(userTableRowDefs[i].getRowDefId());
 				sb.append("->");
-				sb.append(userTableRowDefs[i].getColumnOffset());
+			    sb.append(userTableRowDefs[i].getColumnOffset());
+			    sb.append(":"+userTableRowDefs[i].getFieldCount());
 			}
 			sb.append("}");
 		}
+		sb.append("groupColumnOffset, fieldcount "+getColumnOffset()+", "+getFieldCount());
+		
 		for (int i = 0; i < fieldDefs.length; i++) {
 			sb.append(i == 0 ? "[" : ",");
 			sb.append(fieldDefs[i].getType());
