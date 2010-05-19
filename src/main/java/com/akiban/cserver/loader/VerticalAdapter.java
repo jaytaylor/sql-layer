@@ -26,7 +26,7 @@ public class VerticalAdapter
         ordinals = new int[nKeySegments];
         hKey = new Object[nKeySegments][];
         RowDefCache rowDefCache = store.getRowDefCache();
-        leafRowDef = rowDefCache.getRowDef(leafTable.getName().getTableName());
+        leafRowDef = rowDefCache.getRowDef(leafTable.getName().getDescription());
         RowDef rowDef = leafRowDef;
         UserTable table = leafTable;
         int depth = nKeySegments;
