@@ -24,6 +24,10 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	private final static File DATA_PATH = new File("/tmp/data");
 
 	private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
+	
+	private final static String SCHEMA = "data_dictionary_test";
+
+	private final static String GROUP_SCHEMA = "akiba_objects";
 
 	private PersistitStore store;
 
@@ -32,14 +36,22 @@ public class PersistitStoreWithAISTest extends TestCase implements
 	private interface RowVisitor {
 		void visit(final int depth) throws Exception;
 	}
+	
+	private RowDef userRowDef(final String name) {
+		return rowDefCache.getRowDef(SCHEMA + "." + name);
+	}
+
+	private RowDef groupRowDef(final String name) {
+		return rowDefCache.getRowDef(GROUP_SCHEMA + "." + name);
+	}
 
 	private class TestData {
-		final RowDef defC = rowDefCache.getRowDef("customer");
-		final RowDef defO = rowDefCache.getRowDef("order");
-		final RowDef defI = rowDefCache.getRowDef("item");
-		final RowDef defA = rowDefCache.getRowDef("address");
-		final RowDef defX = rowDefCache.getRowDef("component");
-		final RowDef defCOI = rowDefCache.getRowDef("_akiba_coi");
+		final RowDef defC = userRowDef("customer");
+		final RowDef defO = userRowDef("order");
+		final RowDef defI = userRowDef("item");
+		final RowDef defA = userRowDef("address");
+		final RowDef defX = userRowDef("component");
+		final RowDef defCOI = groupRowDef("_akiba_coi");
 		final RowData rowC = new RowData(new byte[256]);
 		final RowData rowO = new RowData(new byte[256]);
 		final RowData rowI = new RowData(new byte[256]);

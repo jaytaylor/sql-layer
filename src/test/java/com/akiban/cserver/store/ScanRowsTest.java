@@ -39,6 +39,10 @@ public class ScanRowsTest implements CServerConstants {
 
 	private final static String DDL_FILE_NAME = "src/test/resources/scan_rows_test.ddl";
 
+	private final static String SCHEMA = "scan_rows_test";
+
+	private final static String GROUP_SCHEMA = "_akiban_scan_rows_test";
+
 	private final static boolean VERBOSE = false;
 
 	private static PersistitStore store;
@@ -60,7 +64,8 @@ public class ScanRowsTest implements CServerConstants {
 				.buildAIS(DDL_FILE_NAME);
 		rowDefCache.setAIS(ais);
 		for (UserTable table : ais.getUserTables().values()) {
-			tableMap.put(table.getName().getTableName(), table);
+			tableMap.put(table.getName().getSchemaName() + "."
+					+ table.getName().getTableName(), table);
 		}
 		store.startUp();
 		store.setOrdinals();
@@ -75,6 +80,14 @@ public class ScanRowsTest implements CServerConstants {
 		tableMap.clear();
 	}
 
+	private RowDef userRowDef(final String name) {
+		return rowDefCache.getRowDef(SCHEMA + "." + name);
+	}
+
+	private RowDef groupRowDef(final String name) {
+		return rowDefCache.getRowDef(GROUP_SCHEMA + "." + name);
+	}
+
 	private void populateTables() throws Exception {
 		final RowData rowData = new RowData(new byte[256]);
 		// Create the tables in alphabetical order. Bacause of the
@@ -82,7 +95,7 @@ public class ScanRowsTest implements CServerConstants {
 		// their children.
 		for (String name : tableMap.keySet()) {
 			final RowDef rowDef = rowDefCache.getRowDef(name);
-			final int level = name.length();
+			final int level = name.length() - SCHEMA.length() - 1;
 			int k = (int) Math.pow(10, level);
 			for (int i = 0; i < k; i++) {
 				rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8,
@@ -158,7 +171,7 @@ public class ScanRowsTest implements CServerConstants {
 
 	@Test
 	public void testScanRows() throws Exception {
-		final RowDef rowDef = rowDefCache.getRowDef("_akiba_srt");
+		final RowDef rowDef = groupRowDef("_akiba_srt");
 		final int fc = rowDef.getFieldCount();
 		final RowData start = new RowData(new byte[256]);
 		final RowData end = new RowData(new byte[256]);
@@ -166,7 +179,7 @@ public class ScanRowsTest implements CServerConstants {
 
 		{
 			// Just the root table rows
-			final RowDef userRowDef = rowDefCache.getRowDef("a");
+			final RowDef userRowDef = userRowDef("a");
 			start.createRow(rowDef, new Object[fc]);
 			end.createRow(rowDef, new Object[fc]);
 			bitMap = bitsToRoot(userRowDef, rowDef);
@@ -174,7 +187,7 @@ public class ScanRowsTest implements CServerConstants {
 		}
 
 		{
-			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			final RowDef userRowDef = userRowDef("aaaa");
 			start.createRow(rowDef, new Object[fc]);
 			end.createRow(rowDef, new Object[fc]);
 			bitMap = bitsToRoot(userRowDef, rowDef);
@@ -183,7 +196,7 @@ public class ScanRowsTest implements CServerConstants {
 		}
 
 		{
-			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			final RowDef userRowDef = userRowDef("aaaa");
 			int pkcol = columnOffset(userRowDef, rowDef);
 			assertTrue(pkcol >= 0);
 			pkcol += userRowDef.getPkFields()[0];
@@ -199,7 +212,7 @@ public class ScanRowsTest implements CServerConstants {
 		}
 
 		{
-			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			final RowDef userRowDef = userRowDef("aaaa");
 			int pkcol = columnOffset(userRowDef, rowDef);
 			assertTrue(pkcol >= 0);
 			pkcol += userRowDef.getPkFields()[0];
@@ -215,7 +228,7 @@ public class ScanRowsTest implements CServerConstants {
 		}
 
 		{
-			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			final RowDef userRowDef = userRowDef("aaaa");
 			int col = findFieldIndex(rowDef, "aa$aa1");
 			int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
 			Object[] startValue = new Object[fc];
@@ -232,14 +245,14 @@ public class ScanRowsTest implements CServerConstants {
 
 	@Test
 	public void testScanFlags() throws Exception {
-		final RowDef rowDef = rowDefCache.getRowDef("_akiba_srt");
+		final RowDef rowDef = groupRowDef("_akiba_srt");
 		final int fc = rowDef.getFieldCount();
 		final RowData start = new RowData(new byte[256]);
 		final RowData end = new RowData(new byte[256]);
 		byte[] bitMap;
 
 		{
-			final RowDef userRowDef = rowDefCache.getRowDef("a");
+			final RowDef userRowDef = userRowDef("a");
 			bitMap = bitsToRoot(userRowDef, rowDef);
 			assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
 					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE, null,
@@ -261,7 +274,7 @@ public class ScanRowsTest implements CServerConstants {
 		}
 
 		{
-			final RowDef userRowDef = rowDefCache.getRowDef("aaaa");
+			final RowDef userRowDef = userRowDef("aaaa");
 			bitMap = bitsToRoot(userRowDef, rowDef);
 			assertEquals(11110, scanAllRows("all aaaa", rowDef.getRowDefId(),
 					SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE, null,
@@ -272,7 +285,7 @@ public class ScanRowsTest implements CServerConstants {
 					findIndexId(rowDef, userRowDef, 1)));
 		}
 		{
-			final RowDef userRowDef = rowDefCache.getRowDef("aa");
+			final RowDef userRowDef = userRowDef("aa");
 			int col = findFieldIndex(rowDef, "aa$aa4");
 			int indexId = findIndexId(rowDef, "aa$str");
 			Object[] startValue = new Object[fc];
@@ -310,7 +323,7 @@ public class ScanRowsTest implements CServerConstants {
 
 	@Test
 	public void testCoveringIndex() throws Exception {
-		final RowDef rowDef = rowDefCache.getRowDef("aaab");
+		final RowDef rowDef = userRowDef("aaab");
 		final int indexId = findIndexId(rowDef, "aaab3aaab1");
 		final byte[] columnBitMap = new byte[1];
 		columnBitMap[0] |= 1 << findFieldIndex(rowDef, "aaab1");
@@ -371,7 +384,7 @@ public class ScanRowsTest implements CServerConstants {
 
 		final RowData start = new RowData(new byte[256]);
 		final RowData end = new RowData(new byte[256]);
-		final RowDef rowDef = rowDefCache.getRowDef("aaaa");
+		final RowDef rowDef = userRowDef("aaaa");
 		start.createRow(rowDef, new Object[] { null, 123 });
 		end.createRow(rowDef, new Object[] { null, 132 });
 		final int indexId = findIndexId(rowDef, rowDef, 1);

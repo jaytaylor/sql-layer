@@ -314,18 +314,15 @@ public class RowDefCache implements CServerConstants {
 	 * @param rowDef
 	 */
 	public synchronized void putRowDef(final RowDef rowDef) {
-		Integer key = Integer.valueOf(rowDef.getRowDefId());
+		final Integer key = Integer.valueOf(rowDef.getRowDefId());
+		final String name = rowDef.getSchemaName() == null ? rowDef.getTableName() : rowDef.getSchemaName() + "." + rowDef.getTableName();
 		if (cacheMap.containsKey(key)
-				|| nameMap.containsKey(rowDef.getTableName())) {
+				|| nameMap.containsKey(name)) {
 			throw new IllegalStateException("RowDef " + rowDef
 					+ " already exists");
 		}
 		cacheMap.put(key, rowDef);
-		nameMap.put(rowDef.getTableName(), key);
-		if (rowDef.getSchemaName() != null) {
-			nameMap.put(rowDef.getSchemaName() + "." + rowDef.getTableName(),
-					key);
-		}
+		nameMap.put(name, key);
 	}
 
 	@Override
