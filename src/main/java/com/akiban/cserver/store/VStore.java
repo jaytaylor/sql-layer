@@ -237,7 +237,7 @@ public class VStore
                 columnArrays.add(colArr);
                 ColumnInfo info = columnInfo.get(entry.getKey());
                 ColumnDescriptor descrip = new ColumnDescriptor(null, info.getTableName(),
-                                                                info.getColumnName(), 
+                                                                info.getColumnName(), info.getTableId(), info.getOrdinal(), 
                                                                 info.getSize(), info.getCount());
                 descrip.setColumnArray(colArr);
                 columnDescriptors.add(descrip);
@@ -276,6 +276,8 @@ public class VStore
         /*
          * First check if a directory exists for this table. If not, then create it.
          */
+        int tableId = rowDef.getRowDefId();
+        
         String tableName = rowDef.getTableName();
         String tableDirectory = datapath + "/" + tableName;
         File tableData = new File(tableDirectory);
@@ -317,9 +319,12 @@ public class VStore
                         throw new Exception();
                     }
                     columnList.put(columnName, columnFileName);
-                    ColumnInfo info = new ColumnInfo(columnName, tableName);
+                    ColumnInfo info = new ColumnInfo(columnName, tableName, tableId, i);
                     columnInfo.put(columnName, info);
+                } else {
+                    assert false;
                 }
+                
                 ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
                 /* insert the data */
                 final long locationAndSize = rowDef.fieldLocation(rowData, j);
@@ -387,8 +392,10 @@ public class VStore
             this.count = 0;
         }
 
-        public ColumnInfo(String columnName, String tableName)
+        public ColumnInfo(String columnName, String tableName, int tableId, int ordinal)
         {
+            this.tableId = tableId;
+            this.ordinal = ordinal;
             this.columnSize = 0;
             this.count = 0;
             this.columnName = columnName;
@@ -423,6 +430,16 @@ public class VStore
             return count;
         }
 
+        public int getTableId()
+        {
+            return tableId;
+        }
+
+        public int getOrdinal()
+        {
+            return ordinal;
+        }
+
         public String getTableName()
         {
             return tableName;
@@ -432,7 +449,9 @@ public class VStore
         {
             return columnName;
         }
-
+        
+        private int tableId;
+        private int ordinal;
         private int columnSize;
         private int count;
         private String tableName;

@@ -88,7 +88,7 @@ public class VCollector implements RowCollector {
         // XXX - this is because the null map requires 1 byte per 8 fields.  
         //       this needs to be improved in the RowData/RowDef -- i.e. 
         //       we should not be calculating it in this way.
-        System.out.println("fields = "+fields+", field/8 = "+fields/8+", nullMapBytes = "+(fields%8 == 0 ? fields/8 : fields/8+1));
+        //System.out.println("fields = "+fields+", field/8 = "+fields/8+", nullMapBytes = "+(fields%8 == 0 ? fields/8 : fields/8+1));
         rowSize += RowData.MINIMUM_RECORD_LENGTH + (fields%8 == 0 ? fields/8 : fields/8+1);
         totalBytes = fieldCount * (long) rowSize;
     }

@@ -97,7 +97,7 @@ public class VCollectorTest {
             try {
                 columns.get(i).writeEncodedColumn(encodedColumns.get(i));
                 columnDes.add(new ColumnDescriptor(schemaName, tableName,
-                        fields[i].getName(), fields[i].getMaxStorageSize(),
+                        fields[i].getName(), rowDef.getRowDefId(), i, fields[i].getMaxStorageSize(),
                         rows));
                 columnArray.add(new ColumnArray(new File(prefix
                         + fields[i].getName())));
