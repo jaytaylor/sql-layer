@@ -11,33 +11,43 @@ import org.apache.commons.logging.LogFactory;
 import java.sql.SQLException;
 import java.util.*;
 
-public class BulkLoader
+public class BulkLoader extends Thread
 {
-    public void run() throws java.lang.Exception
+    // Thread interface
+
+    @Override
+    public void run()
     {
-        DB db = new DB(dbHost, dbPort, dbUser, dbPassword);
-        if (taskGeneratorActions == null) {
-            taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
+        try {
+            DB db = new DB(dbHost, dbPort, dbUser, dbPassword);
+            if (taskGeneratorActions == null) {
+                taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
+            }
+            IdentityHashMap<UserTable, TableTasks> tableTasksMap =
+                new TaskGenerator(this, taskGeneratorActions).generateTasks();
+            DataGrouper dataGrouper = new DataGrouper(db, artifactsSchema);
+            if (resume) {
+                dataGrouper.resume();
+            } else {
+                dataGrouper.run(tableTasksMap);
+            }
+            if (null != persistitStore) {
+                new PersistitLoader(persistitStore, db, ais).load(finalTasks(tableTasksMap));
+            } else {
+                new VerticalLoader(verticalStore, db, ais).load(finalTasks(tableTasksMap));
+                verticalStore.constructColumnDescriptors();
+            }
+            if (cleanup) {
+                dataGrouper.deleteWorkArea();
+            }
+            logger.info("Loading complete");
+        } catch (Exception e) {
+            logger.error("Bulk load terminated with exception", e);
+            termination = e;
         }
-        IdentityHashMap<UserTable, TableTasks> tableTasksMap =
-            new TaskGenerator(this, taskGeneratorActions).generateTasks();
-        DataGrouper dataGrouper = new DataGrouper(db, artifactsSchema);
-        if (resume) {
-            dataGrouper.resume();
-        } else {
-            dataGrouper.run(tableTasksMap);
-        }
-        if (null != persistitStore) {
-            new PersistitLoader(persistitStore, db, ais).load(finalTasks(tableTasksMap));
-        } else {
-            new VerticalLoader(verticalStore, db, ais).load(finalTasks(tableTasksMap));
-            verticalStore.constructColumnDescriptors();
-        }
-        if (cleanup) {
-            dataGrouper.deleteWorkArea();
-        }
-        logger.info("Loading complete");
     }
+
+    // BulkLoader interface
 
     // For testing
     public BulkLoader(PersistitStore persistitStore,
@@ -115,6 +125,13 @@ public class BulkLoader
         this.cleanup = cleanup;
     }
 
+    public Exception termination()
+    {
+        return termination;
+    }
+
+    // For use by this package
+
     String artifactsSchema()
     {
         return artifactsSchema;
@@ -166,6 +183,7 @@ public class BulkLoader
     private VStore verticalStore;
     private AkibaInformationSchema ais;
     private TaskGenerator.Actions taskGeneratorActions;
+    private Exception termination = null;
 
     public static class RuntimeException extends java.lang.RuntimeException
     {

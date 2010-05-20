@@ -1,6 +1,7 @@
 package com.akiban.cserver.util;
 
 import com.akiban.cserver.message.BulkLoadRequest;
+import com.akiban.cserver.message.BulkLoadResponse;
 import com.akiban.message.AkibaConnection;
 import com.akiban.message.MessageRegistry;
 import com.akiban.network.AkibaNetworkHandler;
@@ -39,7 +40,7 @@ public class BulkLoaderClient
                                                           resume,
                                                           cleanup);
             logger.info("About to send request");
-            connection.send(request);
+            BulkLoadResponse response = (BulkLoadResponse) connection.sendAndReceive(request);
             logger.info("Request sent");
         } catch (Exception e) {
             logger.error("Caught exception", e);
