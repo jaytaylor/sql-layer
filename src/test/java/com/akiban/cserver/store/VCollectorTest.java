@@ -13,6 +13,7 @@ import com.akiban.cserver.*;
 import com.akiban.vstore.ColumnArray;
 import com.akiban.vstore.ColumnArrayGenerator;
 import com.akiban.vstore.ColumnDescriptor;
+//import com.akiban.vstore.VMeta;
 import com.akiban.ais.ddl.*;
 import com.akiban.ais.model.*;
 
@@ -23,7 +24,7 @@ import com.akiban.ais.model.*;
 public class VCollectorTest {
 
     private final static String VCOLLECTOR_DDL = "src/test/resources/vcollector_test.ddl";
-    private final static String VCOLLECTOR_TEST_DATADIR = "src/test/resources/vcollector_test_data/";
+    private final static String VCOLLECTOR_TEST_DATADIR = "vcollector_test_data/";
     private static RowDefCache rowDefCache;
     private int rows = 15;
     private int rowSize = 0;
@@ -33,7 +34,8 @@ public class VCollectorTest {
     private ArrayList<ColumnArrayGenerator> columns = new ArrayList<ColumnArrayGenerator>();
     private ArrayList<ArrayList<byte[]>> encodedColumns = new ArrayList<ArrayList<byte[]>>();
     private ArrayList<RowData> rowData = new ArrayList<RowData>();
-
+  //  private VMeta meta;
+    
     public void generateEncodedData(RowDef rowDef) throws Exception {
 
         File directory = new File(VCOLLECTOR_TEST_DATADIR);
@@ -45,8 +47,7 @@ public class VCollectorTest {
 
         String schemaName = rowDef.getSchemaName();
         String tableName = rowDef.getTableName();
-        String prefix = VCOLLECTOR_TEST_DATADIR + schemaName + "." + tableName
-                + ".";
+        String prefix = VCOLLECTOR_TEST_DATADIR+schemaName+tableName;
 
         FieldDef[] fields = rowDef.getFieldDefs();
         assert fields.length == rowDef.getFieldCount();
@@ -96,12 +97,12 @@ public class VCollectorTest {
         for (int i = 0; i < fields.length; i++) {
             try {
                 columns.get(i).writeEncodedColumn(encodedColumns.get(i));
-                columnDes.add(new ColumnDescriptor(schemaName, tableName,
+                columnDes.add(new ColumnDescriptor(VCOLLECTOR_TEST_DATADIR+schemaName, tableName,
                         fields[i].getName(), rowDef.getRowDefId(), i, fields[i].getMaxStorageSize(),
                         rows));
-                columnArray.add(new ColumnArray(new File(prefix
-                        + fields[i].getName())));
-                columnDes.get(i).setColumnArray(columnArray.get(i));
+                //columnArray.add(new ColumnArray(new File(prefix
+               //+ fields[i].getName())));
+                //columnDes.get(i).setColumnArray(columnArray.get(i));
             } catch (FileNotFoundException e) {
                 System.out.println("FILE NOT FOUND");
                 // e.printStackTrace();
@@ -162,6 +163,7 @@ public class VCollectorTest {
 
             if (rowDef.getRowDefId() == 1001) {
                 generateEncodedData(rowDef);
+                //meta = new VMeta((ArrayList<ColumnDescriptor>) columnDes);
                 testRowDef = rowDef;
             }
         }
@@ -206,10 +208,10 @@ public class VCollectorTest {
             for (int i = 0; i < testRowDef.getFieldCount(); i++) {
                 columnBitMap[i/8] |= 1 << (i % 8);
             }
-            
-            VCollector vc = new VCollector(CServerConfig.unitTestConfig(),
+            // XXX vmeta setup
+            VCollector vc = new VCollector(null,
                     rowDefCache, testRowDef.getRowDefId(), columnBitMap);
-
+            
             vc.setColumnDescriptors(columnDes);
             System.out.println("fieldCount = "+testRowDef.getFieldCount() + "mapSize ="+ mapSize);
             ByteBuffer buffer = ByteBuffer.allocate((rowSize
@@ -247,8 +249,8 @@ public class VCollectorTest {
             projection.clear();
             byte[] bitMap = setupBitMap(projection, rand, rowDef
                     .getFieldCount());
-
-            VCollector vc = new VCollector(CServerConfig.unitTestConfig(),
+            // XXX - vmeta setup
+            VCollector vc = new VCollector(null,
                     rowDefCache, rowDef.getRowDefId(), bitMap);
 
             assert vc.getProjection().equals(projection);
@@ -274,7 +276,7 @@ public class VCollectorTest {
             byte[] bitMap = setupBitMap(projection, rand, rowDef
                     .getFieldCount());
 
-            VCollector vc = new VCollector(CServerConfig.unitTestConfig(),
+            VCollector vc = new VCollector(null,
                     rowDefCache, rowDef.getRowDefId(), bitMap);
 
             ArrayList<RowDef> tables = vc.getUserTables();

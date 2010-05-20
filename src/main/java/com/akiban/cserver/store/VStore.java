@@ -236,10 +236,10 @@ public class VStore
                 ColumnArray colArr = new ColumnArray(columnData);
                 columnArrays.add(colArr);
                 ColumnInfo info = columnInfo.get(entry.getKey());
+                // XXX - schema name is required
                 ColumnDescriptor descrip = new ColumnDescriptor(null, info.getTableName(),
                                                                 info.getColumnName(), info.getTableId(), info.getOrdinal(), 
                                                                 info.getSize(), info.getCount());
-                descrip.setColumnArray(colArr);
                 columnDescriptors.add(descrip);
             } catch (Exception e) {
                 e.printStackTrace();

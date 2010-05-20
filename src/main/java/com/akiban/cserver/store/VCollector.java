@@ -21,7 +21,7 @@ import java.util.*;
 
 public class VCollector implements RowCollector {
 
-    public VCollector(final CServerConfig c, final RowDefCache rowDefCache,
+    public VCollector(VMeta meta, final RowDefCache rowDefCache,
             final int rowDefId, final byte[] columnBitMap) {
         
         assert columnBitMap != null;
@@ -39,6 +39,7 @@ public class VCollector implements RowCollector {
         for (int i = 0; i < columnBitMap.length*8; i++) {
             if((columnBitMap[i / 8] & (1 << (i % 8))) != 0) {
                 projection.set(i, true);
+                
                 fields++;
             }
         }
@@ -72,10 +73,10 @@ public class VCollector implements RowCollector {
     }
     
     // XXX - hack for testing purposes
-    public void setColumnDescriptors(List<ColumnDescriptor> theColumns) {
+    public void setColumnDescriptors(List<ColumnDescriptor> theColumns) throws Exception {
         assert theColumns.size() > 0;
         columns = theColumns;
-        int fieldCount = columns.iterator().next().getFieldCount();
+        int fieldCount = (int)columns.iterator().next().getFieldCount();
         Iterator<ColumnDescriptor> i = columns.iterator();
         rowSize = 0;
 

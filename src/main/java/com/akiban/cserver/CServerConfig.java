@@ -55,6 +55,7 @@ public class CServerConfig {
 			final String[] paths = search.split(File.pathSeparator);
 			searchPath.addAll(Arrays.asList(paths));
 		}
+		
 		searchPath.addAll(Arrays.asList(DEFAULT_SEARCH_PATH));
 		if (LOG.isInfoEnabled()) {
 			LOG.info("CServerConfig search path: " + searchPath);
