@@ -122,8 +122,11 @@ public class DataGrouper
                     int taskId = resultSet.getInt(1);
                     String command = resultSet.getString(2);
                     updateConnection.new Update(TEMPLATE_MARK_STARTED, artifactsSchema, taskId).execute();
+                    long start = System.nanoTime();
                     db.spawn(command);
-                    updateConnection.new Update(TEMPLATE_MARK_COMPLETED, artifactsSchema, taskId).execute();
+                    long stop = System.nanoTime();
+                    double timeSec = ((double)(stop - start)) / ONE_BILLION;
+                    updateConnection.new Update(TEMPLATE_MARK_COMPLETED, artifactsSchema, timeSec, taskId).execute();
                 } finally {
                     updateConnection.close();
                 }
@@ -146,6 +149,7 @@ public class DataGrouper
         "                   'GenerateParentBySort'," +
         "                   'GenerateParentByMerge') not null, " +
         "    state enum('waiting', 'started', 'completed') not null, " +
+        "    time_sec double, " +
         "    user_table_schema varchar(64) not null, " +
         "    user_table_table varchar(64) not null, " +
         "    user_table_depth int not null, " +
@@ -160,7 +164,8 @@ public class DataGrouper
         "where task_id = %s";
     private static final String TEMPLATE_MARK_COMPLETED =
         "update %s.task " +
-        "set state = 'completed' " +
+        "set state = 'completed', " +
+        "    time_sec = %s " +
         "where task_id = %s";
     private static final String TEMPLATE_FINAL_TASKS =
         "select task_id, command " +
@@ -188,6 +193,7 @@ public class DataGrouper
         "update %s.task " +
         "set state = 'waiting' " +
         "where task_id = %s";
+    private static final int ONE_BILLION = 1000 * 1000 * 1000;
 
     private final DB db;
     private final String artifactsSchema;
