@@ -16,6 +16,7 @@ import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 import com.akiban.vstore.ColumnArray;
 import com.akiban.vstore.ColumnDescriptor;
+import com.akiban.vstore.VMeta;
 
 /**
  * @author percent
@@ -227,6 +228,7 @@ public class VStore
     }
 
     public void constructColumnDescriptors()
+        throws Exception
     {
         columnArrays = new ArrayList<ColumnArray>();
         columnDescriptors = new ArrayList<ColumnDescriptor>();
@@ -245,9 +247,14 @@ public class VStore
                 e.printStackTrace();
             }
         }
+        /* hard-code metadata file name for now */
+        String metaFileName = datapath + "/vstoreMetaFile";
+        File metaFile = new File(metaFileName);
+        VMeta vmeta = new VMeta(columnDescriptors);
+        vmeta.write(metaFile);
     }
 
-    public List<ColumnDescriptor> getColumnDescriptors()
+    public ArrayList<ColumnDescriptor> getColumnDescriptors()
     {
         return columnDescriptors;
     }
@@ -468,6 +475,6 @@ public class VStore
 
     private List<ColumnArray> columnArrays;
 
-    private List<ColumnDescriptor> columnDescriptors;
+    private ArrayList<ColumnDescriptor> columnDescriptors;
 
 }
