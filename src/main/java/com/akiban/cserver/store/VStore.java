@@ -294,43 +294,40 @@ public class VStore
          * @todo: for now, the name used per file is the column name. Need to discuss if this needs
          * to be changed or not.
          */
-        for (int i = 0; i < fieldDefs.length; i++) {
-            FieldDef[] tableFieldDefs = fieldDefs[i];
-            for (int j = 0; j < tableFieldDefs.length; j++) {
-                FieldDef field = tableFieldDefs[j];
-                String columnName = field.getName();
-                String columnFileName = prefix + columnName;
-                File columnData = new File(columnFileName);
-                if (! columnData.exists()) {
-                    boolean ret = columnData.createNewFile();
-                    if (! ret) {
-                        throw new Exception();
-                    }
-                    columnList.put(columnName, columnFileName);
-                    ColumnInfo info = new ColumnInfo(columnName, 
-                                                     tableName, 
-                                                     schemaName, 
-                                                     rowDef.getRowDefId(),
-                                                     i);
-                    columnInfo.put(columnName, info);
-                } 
-                
-                ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
-                /* insert the data */
-                final long locationAndSize = rowDef.fieldLocation(rowData, j);
-                if (0 == locationAndSize) {
-                    /* NULL field. @todo: how do we handle NULL's in the V store? */
+        for (int i = 0; i < rowDef.getFieldCount(); i++) {
+            FieldDef field = rowDef.getFieldDef(i);
+            String columnName = field.getName();
+            String columnFileName = prefix + columnName;
+            File columnData = new File(columnFileName);
+            if (! columnData.exists()) {
+                boolean ret = columnData.createNewFile();
+                if (! ret) {
+                    throw new Exception();
                 }
-                int offset = (int) locationAndSize;
-                int size = (int) (locationAndSize >>> 32);
-                byte[] bytes = rowData.getBytes();
-                FileOutputStream fout = new FileOutputStream(columnData, true);
-                fout.write(bytes, offset, size);
-
-                info.incrementCount();
-                info.setSize(size);
+                columnList.put(columnName, columnFileName);
+                ColumnInfo info = new ColumnInfo(columnName, 
+                    tableName, 
+                    schemaName, 
+                    rowDef.getRowDefId(),
+                    i);
                 columnInfo.put(columnName, info);
+            } 
+
+            ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
+            /* insert the data */
+            final long locationAndSize = rowDef.fieldLocation(rowData, i);
+            if (0 == locationAndSize) {
+                /* NULL field. @todo: how do we handle NULL's in the V store? */
             }
+            int offset = (int) locationAndSize;
+            int size = (int) (locationAndSize >>> 32);
+            byte[] bytes = rowData.getBytes();
+            FileOutputStream fout = new FileOutputStream(columnData, true);
+            fout.write(bytes, offset, size);
+
+            info.incrementCount();
+            info.setSize(size);
+            columnInfo.put(columnName, info);
         }
 
         return 0;
