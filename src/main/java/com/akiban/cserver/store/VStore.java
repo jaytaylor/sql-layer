@@ -230,6 +230,7 @@ public class VStore
     public void constructColumnDescriptors()
         throws Exception
     {
+        String prefix = datapath + "/";
         columnArrays = new ArrayList<ColumnArray>();
         columnDescriptors = new ArrayList<ColumnDescriptor>();
         for (Map.Entry<String, String> entry : columnList.entrySet()) {
@@ -238,7 +239,8 @@ public class VStore
                 ColumnArray colArr = new ColumnArray(columnData);
                 columnArrays.add(colArr);
                 ColumnInfo info = columnInfo.get(entry.getKey());
-                ColumnDescriptor descrip = new ColumnDescriptor(info.getSchemaName(), 
+                ColumnDescriptor descrip = new ColumnDescriptor(prefix,
+                                                                info.getSchemaName(), 
                                                                 info.getTableName(),
                                                                 info.getColumnName(), 
                                                                 info.getTableId(), 
@@ -283,33 +285,8 @@ public class VStore
     {
         final Key hkey = constructHKey(rowDef, ordinals, fieldDefs, hKeyValues);
         String schemaName = rowDef.getSchemaName();
-
-        /*
-         * First check if a directory exists for this table. If not, then create it.
-         */
-        int tableId = rowDef.getRowDefId();
-        
         String tableName = rowDef.getTableName();
-        String tableDirectory = datapath + "/" + tableName;
-        File tableData = new File(tableDirectory);
-        if (! tableData.exists()) {
-            boolean ret = tableData.mkdir();
-            if (! ret) {
-                throw new Exception(); /* probably permission issue */
-            }
-        }
-
-        /* column for the hkey. */
-        String hkeyColumnPath = tableDirectory + "/hkeyColumn";
-        File hkeyColumn = new File(hkeyColumnPath);
-        if (! hkeyColumn.exists()) {
-            boolean ret = hkeyColumn.createNewFile();
-            if (! ret) {
-                throw new Exception();
-            }
-            FileOutputStream fout = new FileOutputStream(hkeyColumn, true);
-            fout.write(hkey.getEncodedBytes()); /* write the key's bytes to disk */
-        }
+        String prefix = datapath + "/" + schemaName + tableName;
 
         /*
          * Go through each column in this row and ensure that a file exists for that column. For
@@ -322,7 +299,7 @@ public class VStore
             for (int j = 0; j < tableFieldDefs.length; j++) {
                 FieldDef field = tableFieldDefs[j];
                 String columnName = field.getName();
-                String columnFileName = tableDirectory + "/" + columnName;
+                String columnFileName = prefix + columnName;
                 File columnData = new File(columnFileName);
                 if (! columnData.exists()) {
                     boolean ret = columnData.createNewFile();
@@ -330,7 +307,11 @@ public class VStore
                         throw new Exception();
                     }
                     columnList.put(columnName, columnFileName);
-                    ColumnInfo info = new ColumnInfo(columnName, tableName, schemaName, tableId, i);
+                    ColumnInfo info = new ColumnInfo(columnName, 
+                                                     tableName, 
+                                                     schemaName, 
+                                                     rowDef.getRowDefId(),
+                                                     i);
                     columnInfo.put(columnName, info);
                 } 
                 
