@@ -238,8 +238,7 @@ public class VStore
                 ColumnArray colArr = new ColumnArray(columnData);
                 columnArrays.add(colArr);
                 ColumnInfo info = columnInfo.get(entry.getKey());
-                // XXX - schema name is required
-                ColumnDescriptor descrip = new ColumnDescriptor(null, 
+                ColumnDescriptor descrip = new ColumnDescriptor(info.getSchemaName(), 
                                                                 info.getTableName(),
                                                                 info.getColumnName(), 
                                                                 info.getTableId(), 
@@ -477,7 +476,7 @@ public class VStore
 
     private Store hstore;
 
-    static String datapath = "/tmp/chunkserver_data";
+    static String datapath = "/usr/local/akiba/data";
 
     private HashMap<String, String> columnList = new HashMap<String, String>();
 
