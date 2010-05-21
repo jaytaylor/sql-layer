@@ -239,9 +239,13 @@ public class VStore
                 columnArrays.add(colArr);
                 ColumnInfo info = columnInfo.get(entry.getKey());
                 // XXX - schema name is required
-                ColumnDescriptor descrip = new ColumnDescriptor(null, info.getTableName(),
-                                                                info.getColumnName(), info.getTableId(), info.getOrdinal(), 
-                                                                info.getSize(), info.getCount());
+                ColumnDescriptor descrip = new ColumnDescriptor(null, 
+                                                                info.getTableName(),
+                                                                info.getColumnName(), 
+                                                                info.getTableId(), 
+                                                                info.getOrdinal(), 
+                                                                info.getSize(), 
+                                                                info.getCount());
                 columnDescriptors.add(descrip);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -279,6 +283,7 @@ public class VStore
         throws Exception
     {
         final Key hkey = constructHKey(rowDef, ordinals, fieldDefs, hKeyValues);
+        String schemaName = rowDef.getSchemaName();
 
         /*
          * First check if a directory exists for this table. If not, then create it.
@@ -326,7 +331,7 @@ public class VStore
                         throw new Exception();
                     }
                     columnList.put(columnName, columnFileName);
-                    ColumnInfo info = new ColumnInfo(columnName, tableName, tableId, i);
+                    ColumnInfo info = new ColumnInfo(columnName, tableName, schemaName, tableId, i);
                     columnInfo.put(columnName, info);
                 } 
                 
@@ -397,7 +402,7 @@ public class VStore
             this.count = 0;
         }
 
-        public ColumnInfo(String columnName, String tableName, int tableId, int ordinal)
+        public ColumnInfo(String columnName, String tableName, String schemaName, int tableId, int ordinal)
         {
             this.tableId = tableId;
             this.ordinal = ordinal;
@@ -405,6 +410,7 @@ public class VStore
             this.count = 0;
             this.columnName = columnName;
             this.tableName = tableName;
+            this.schemaName = schemaName;
         }
 
         public ColumnInfo()
@@ -445,6 +451,11 @@ public class VStore
             return ordinal;
         }
 
+        public String getSchemaName()
+        {
+            return schemaName;
+        }
+
         public String getTableName()
         {
             return tableName;
@@ -459,6 +470,7 @@ public class VStore
         private int ordinal;
         private int columnSize;
         private int count;
+        private String schemaName;
         private String tableName;
         private String columnName;
     }
