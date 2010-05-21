@@ -8,9 +8,7 @@ package com.akiban.cserver.store;
  *
  */
 
-import java.nio.ByteBuffer;
-//import java.util.Properties;
-
+import java.nio.ByteBuffer; //import java.util.Properties;
 
 import com.akiban.vstore.*;
 import com.akiban.cserver.*;
@@ -23,7 +21,7 @@ public class VCollector implements RowCollector {
 
     public VCollector(VMeta meta, final RowDefCache rowDefCache,
             final int rowDefId, final byte[] columnBitMap) {
-        
+
         assert columnBitMap != null;
         hasMore = false;
         rowSize = 0;
@@ -31,30 +29,30 @@ public class VCollector implements RowCollector {
         fields = 0;
         columnMapper = null;
         userTables = null;
-        
+
         table = rowDefCache.getRowDef(rowDefId);
         projection = new BitSet(table.getFieldCount());
         projection.clear();
-        
-        for (int i = 0; i < columnBitMap.length*8; i++) {
-            if((columnBitMap[i / 8] & (1 << (i % 8))) != 0) {
+
+        for (int i = 0; i < columnBitMap.length * 8; i++) {
+            if ((columnBitMap[i / 8] & (1 << (i % 8))) != 0) {
                 projection.set(i, true);
-                
+
                 fields++;
             }
         }
-        
+
         if (!table.isGroupTable()) {
             table = rowDefCache.getRowDef(table.getGroupRowDefId());
         }
-        
-        userTables = new ArrayList<RowDef>();        
+
+        userTables = new ArrayList<RowDef>();
         for (int i = 0; i < table.getUserTableRowDefs().length; i++) {
             final RowDef utable = table.getUserTableRowDefs()[i];
             int offset = utable.getColumnOffset();
             int distance = offset + utable.getFieldCount();
             assert distance <= table.getFieldCount();
-            for(int j = offset; j < distance; j++) {
+            for (int j = offset; j < distance; j++) {
                 if (projection.get(j)) {
                     userTables.add(utable);
                 }
@@ -67,16 +65,17 @@ public class VCollector implements RowCollector {
     public BitSet getProjection() {
         return projection;
     }
-    
+
     public ArrayList<RowDef> getUserTables() {
-        return userTables;   
+        return userTables;
     }
-    
+
     // XXX - hack for testing purposes
-    public void setColumnDescriptors(List<ColumnDescriptor> theColumns) throws Exception {
+    public void setColumnDescriptors(List<ColumnDescriptor> theColumns)
+            throws Exception {
         assert theColumns.size() > 0;
         columns = theColumns;
-        int fieldCount = (int)columns.iterator().next().getFieldCount();
+        int fieldCount = (int) columns.iterator().next().getFieldCount();
         Iterator<ColumnDescriptor> i = columns.iterator();
         rowSize = 0;
 
@@ -86,11 +85,11 @@ public class VCollector implements RowCollector {
             rowSize += cdes.getFieldSize();
             assert fieldCount == cdes.getFieldCount();
         }
-        // XXX - this is because the null map requires 1 byte per 8 fields.  
-        //       this needs to be improved in the RowData/RowDef -- i.e. 
-        //       we should not be calculating it in this way.
-        //System.out.println("fields = "+fields+", field/8 = "+fields/8+", nullMapBytes = "+(fields%8 == 0 ? fields/8 : fields/8+1));
-        rowSize += RowData.MINIMUM_RECORD_LENGTH + (fields%8 == 0 ? fields/8 : fields/8+1);
+        // XXX - this is because the null map requires 1 byte per 8 fields.
+        // this needs to be improved in the RowData/RowDef -- i.e.
+        // we should not be calculating it in this way.
+        rowSize += RowData.MINIMUM_RECORD_LENGTH
+                + (fields % 8 == 0 ? fields / 8 : fields / 8 + 1);
         totalBytes = fieldCount * (long) rowSize;
     }
 
@@ -111,8 +110,8 @@ public class VCollector implements RowCollector {
         assert buffers.size() == columns.size();
 
         if (done) {
-            //System.out.println("chunkSize =" + chunkSize + "totalBytes = "
-            //        + totalBytes);
+            // System.out.println("chunkSize =" + chunkSize + "totalBytes = "
+            // + totalBytes);
             assert chunkSize >= totalBytes;
             int size = buffers.get(0).capacity();
             assert size >= columns.get(0).getFieldSize();
@@ -127,9 +126,15 @@ public class VCollector implements RowCollector {
             RowData newRow = new RowData(payload.array(), ((int) i) * rowSize,
                     rowSize);
             BitSet nullMap = new BitSet(table.getFieldCount());
-            nullMap.andNot(projection);
-            //System.out.println("nullMap ="+nullMap.toString()+" null map size = "+ nullMap.size() +", null map length "+nullMap.length()+"null map");
-            //System.out.println("projection ="+projection.toString()+" projection size = "+ projection.size() +", projection length "+projection.length()+" projection ");
+            nullMap.clear();
+            for(int j=0; j < table.getFieldCount(); j++) {
+                if(!projection.get(j)) {
+                    nullMap.set(j, true);
+                }
+            }
+            //System.out.println("nullMap ="+nullMap.toString()+" null map size = "+ nullMap.size() +", null map length "+nullMap.length()
+            //        +"null map");
+            //System.out.println("projection ="+projection.toString()+ "projection size = "+ projection.size() +", projection length"+projection.length()+" projection ");
             newRow.mergeFields(table, buffers, i, nullMap);
         }
         return true;

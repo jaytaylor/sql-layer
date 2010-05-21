@@ -254,7 +254,6 @@ public class RowData {
             int index, BitSet nullMap) {
         assert nullMap != null;
         final int fieldCount = rowDef.getFieldCount();
-        assert fields.size() == rowDef.getFieldCount();
         int offset = rowStart;
 
         CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
@@ -262,27 +261,35 @@ public class RowData {
         CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
 
         offset = offset + O_NULL_MAP;
-        int mapSize = ((fieldCount % 8) == 0 ? fieldCount : fieldCount + 1);        
+        int mapSize = ((fieldCount % 8) == 0 ? fieldCount : fieldCount + 1);
         bytes[offset] = 0;
-        
-        for(int i=0; i < mapSize; i++) {
-            if(nullMap.get(i)) { 
-                bytes[offset] |= 1 << (i % 8); 
+
+        for (int i = 0; i < mapSize; i++) {
+            // if this bit is set in the nullMap, then it gets set in the
+            // RowData's null map bit field - %.
+            if (nullMap.get(i)) {
+                bytes[offset] |= 1 << (i % 8);
             }
-            if((i+1) % 8 == 0) { 
+            // if we've looked at 8 fields move to the next bit field, which
+            // is the next byte - %.
+            if ((i + 1) % 8 == 0) {
                 offset++;
                 bytes[offset] = 0;
             }
         }
         offset++;
 
-        for(int i = 0; i < fields.size(); i++) {
-            if(!nullMap.get(i)) {
-                int fieldSize = rowDef.getFieldDef(i).getMaxStorageSize();
-                assert rowDef.getFieldDef(i).isFixedSize() == true;
-                fields.get(i).get(bytes, offset, fieldSize);
+        // the field variable iterates over the fields and the position
+        // variable iterates over the buffers. the buffer may not have every
+        // field because nullMap is used to represent projections - %.
+        for (int field = 0, position = 0; field < fieldCount; field++) {
+            if (!nullMap.get(field)) {
+                int fieldSize = rowDef.getFieldDef(field).getMaxStorageSize();
+                assert rowDef.getFieldDef(field).isFixedSize() == true;
+                fields.get(position).get(bytes, offset, fieldSize);
+                position++;
                 offset += fieldSize;
-            }
+            } 
         }
 
         CServerUtil.putChar(bytes, offset, SIGNATURE_B);

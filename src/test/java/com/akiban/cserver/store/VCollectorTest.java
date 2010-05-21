@@ -10,7 +10,6 @@ import java.io.*;
 import java.nio.ByteBuffer;
 
 import com.akiban.cserver.*;
-import com.akiban.vstore.ColumnArray;
 import com.akiban.vstore.ColumnArrayGenerator;
 import com.akiban.vstore.ColumnDescriptor;
 import com.akiban.vstore.VMeta;
@@ -34,8 +33,9 @@ public class VCollectorTest {
     private ArrayList<ArrayList<byte[]>> encodedColumns = new ArrayList<ArrayList<byte[]>>();
     private ArrayList<RowData> rowData = new ArrayList<RowData>();
     private VMeta meta;
-    
-    public void generateEncodedData(RowDef rowDef) throws Exception {
+
+    public void generateEncodedData(RowDef rowDef, BitSet projection)
+            throws Exception {
 
         File directory = new File(VCOLLECTOR_TEST_DATADIR);
         if (!directory.exists()) {
@@ -46,7 +46,7 @@ public class VCollectorTest {
 
         String schemaName = rowDef.getSchemaName();
         String tableName = rowDef.getTableName();
-        String prefix = VCOLLECTOR_TEST_DATADIR+schemaName+tableName;
+        String prefix = VCOLLECTOR_TEST_DATADIR + schemaName + tableName;
 
         FieldDef[] fields = rowDef.getFieldDefs();
         assert fields.length == rowDef.getFieldCount();
@@ -54,10 +54,12 @@ public class VCollectorTest {
 
         for (int i = 0; i < fields.length; i++) {
             assert fields[i].isFixedSize() == true;
-            rowSize += fields[i].getMaxStorageSize();
-            columns.add(new ColumnArrayGenerator(prefix + fields[i].getName(),
+            if(projection.get(i)) {
+                rowSize += fields[i].getMaxStorageSize();
+                columns.add(new ColumnArrayGenerator(prefix + fields[i].getName(),
                     1337 + i, fields[i].getMaxStorageSize(), rows));
-            encodedColumns.add(new ArrayList<byte[]>());
+                encodedColumns.add(new ArrayList<byte[]>());
+            }
         }
 
         // God, why can't this be easier?
@@ -65,43 +67,57 @@ public class VCollectorTest {
         for (int i = 0; i < rows; i++) {
             Object[] aRow = new Object[rowDef.getFieldCount()];
             RowData aRowData = new RowData(new byte[rowSize
-                    + RowData.MINIMUM_RECORD_LENGTH + 1]);
+                    + RowData.MINIMUM_RECORD_LENGTH +1]);// ((rowDef.getFieldCount()%8) == 0? rowDef.getFieldCount()/8 : rowDef.getFieldCount()/8+1)]);
 
-            for (int j = 0; j < rowDef.getFieldCount(); j++) {
-                byte[] b = columns.get(j).generateMemoryFile(1).get(0);
-                assert b.length == 4;
-
-                int rawFieldInt = ((int) (b[0] & 0xff) << 24)
+            for (int j = 0, k = 0; j < rowDef.getFieldCount(); j++) {
+                if(projection.get(j)) {
+                    byte[] b = columns.get(k).generateMemoryFile(1).get(0);
+                    assert b.length == 4;
+                    k++;
+                    int rawFieldInt = ((int) (b[0] & 0xff) << 24)
                         | ((int) (b[1] & 0xff) << 16)
                         | ((int) (b[2] & 0xff) << 8) | (int) b[3] & 0xff;
-                aRow[j] = rawFieldInt;
+                    aRow[j] = rawFieldInt;
+                } else {
+                    aRow[j] = null;
+                }
             }
+            
             aRowData.createRow(rowDef, aRow);
             rowData.add(aRowData);
 
-            for (int j = 0; j < rowDef.getFieldCount(); j++) {
-                long offset_width = rowDef.fieldLocation(aRowData, j);
-                int offset = (int) offset_width;
-                int width = (int) (offset_width >>> 32);
-                byte[] bytes = aRowData.getBytes();
-                byte[] field = new byte[width];
-                // System.out.print("offset = "+offset+", width = "+width);
-                for (int k = 0; k < width; k++) {
-                    field[k] = bytes[offset + k];
+            for (int j = 0, k = 0; j < rowDef.getFieldCount(); j++) {
+                if(projection.get(j)){
+                    long offset_width = rowDef.fieldLocation(aRowData, j);
+                    int offset = (int) offset_width;
+                    int width = (int) (offset_width >>> 32);
+                    byte[] bytes = aRowData.getBytes();
+                    byte[] field = new byte[width];
+//                    System.out.println("offset = "+offset+", width = "+width);
+                    for (int l = 0; l < width; l++) {
+                        field[l] = bytes[offset + l];
+                    }
+                    encodedColumns.get(k).add(field);
+                    k++;
                 }
-                encodedColumns.get(j).add(field);
             }
         }
 
-        for (int i = 0; i < fields.length; i++) {
+        for (int i = 0, j=0; i < fields.length; i++) {
             try {
-                columns.get(i).writeEncodedColumn(encodedColumns.get(i));
-                columnDes.add(new ColumnDescriptor(VCOLLECTOR_TEST_DATADIR+schemaName, tableName,
-                        fields[i].getName(), rowDef.getRowDefId(), i, fields[i].getMaxStorageSize(),
-                        rows));
-                //columnArray.add(new ColumnArray(new File(prefix
-               //+ fields[i].getName())));
-                //columnDes.get(i).setColumnArray(columnArray.get(i));
+                if(projection.get(i)) {
+                    assert fields[i] != null;
+                    columns.get(j).writeEncodedColumn(encodedColumns.get(j));
+                    j++;
+                    columnDes
+                        .add(new ColumnDescriptor(VCOLLECTOR_TEST_DATADIR
+                                + schemaName, tableName, fields[i].getName(),
+                                rowDef.getRowDefId(), i, fields[i]
+                                        .getMaxStorageSize(), rows));
+                }
+                // columnArray.add(new ColumnArray(new File(prefix
+                // + fields[i].getName())));
+                // columnDes.get(i).setColumnArray(columnArray.get(i));
             } catch (FileNotFoundException e) {
                 System.out.println("FILE NOT FOUND");
                 // e.printStackTrace();
@@ -119,7 +135,6 @@ public class VCollectorTest {
     public void setupDatabase() throws Exception {
 
         rowDefCache = new RowDefCache();
-        byte[] columns = new byte[1];
 
         AkibaInformationSchema ais = null;
         try {
@@ -139,31 +154,29 @@ public class VCollectorTest {
             RowDef rowDef = i.next();
             // System.out.println("rowDef debugToString = "+
             // rowDef.debugToString() + "<----");
-            /*System.out.println("rowDef to string = " + rowDef.toString()
-                    + "<---");
-            System.out.println("rowDef get ordinal = " + rowDef.getOrdinal()
-                    + "<---");
-*/
+            /*
+             * System.out.println("rowDef to string = " + rowDef.toString() +
+             * "<---"); System.out.println("rowDef get ordinal = " +
+             * rowDef.getOrdinal() + "<---");
+             */
             FieldDef[] fields = rowDef.getFieldDefs();
             int j = 0;
             while (j < fields.length) {
                 /*
-                System.out.print("field name = " + fields[j].getName());
-                System.out.print(", index = " + fields[j].getFieldIndex());
-                System.out.print(", size = " + fields[j].getMaxStorageSize());
-                System.out
-                        .print(", prefix size = " + fields[j].getPrefixSize());
-                System.out.print(", encoding = " + fields[j].getEncoding());
-                System.out.print(", type = " + fields[j].getType());
-                System.out.println(" and is fixed size = "
-                        + fields[j].isFixedSize());
-                        */
+                 * System.out.print("field name = " + fields[j].getName());
+                 * System.out.print(", index = " + fields[j].getFieldIndex());
+                 * System.out.print(", size = " +
+                 * fields[j].getMaxStorageSize()); System.out
+                 * .print(", prefix size = " + fields[j].getPrefixSize());
+                 * System.out.print(", encoding = " + fields[j].getEncoding());
+                 * System.out.print(", type = " + fields[j].getType());
+                 * System.out.println(" and is fixed size = " +
+                 * fields[j].isFixedSize());
+                 */
                 j++;
             }
 
             if (rowDef.getRowDefId() == 1001) {
-                generateEncodedData(rowDef);
-                //meta = new VMeta((ArrayList<ColumnDescriptor>) columnDes);
                 testRowDef = rowDef;
             }
         }
@@ -197,24 +210,25 @@ public class VCollectorTest {
         try {
 
             setupDatabase();
-            
-            int mapSize = testRowDef.getFieldCount()/8;
-            if(testRowDef.getFieldCount() % 8 != 0) {
+            int mapSize = testRowDef.getFieldCount() / 8;
+            if (testRowDef.getFieldCount() % 8 != 0) {
                 mapSize++;
             }
-            
+
             byte[] columnBitMap = new byte[mapSize];
-
+            BitSet projection = new BitSet(mapSize);
             for (int i = 0; i < testRowDef.getFieldCount(); i++) {
-                columnBitMap[i/8] |= 1 << (i % 8);
+                columnBitMap[i / 8] |= 1 << (i % 8);
+                projection.set(i, true);
             }
+            generateEncodedData(testRowDef, projection);
 
-            VCollector vc = new VCollector(meta,
-                    rowDefCache, testRowDef.getRowDefId(), columnBitMap);
-            
+            VCollector vc = new VCollector(meta, rowDefCache, testRowDef
+                    .getRowDefId(), columnBitMap);
+
             vc.setColumnDescriptors(columnDes);
-//            System.out.println("fieldCount = "+testRowDef.getFieldCount() + 
-//                               "mapSize ="+ mapSize);
+            // System.out.println("fieldCount = "+testRowDef.getFieldCount() +
+            // "mapSize ="+ mapSize);
             ByteBuffer buffer = ByteBuffer.allocate((rowSize
                     + RowData.MINIMUM_RECORD_LENGTH + mapSize)
                     * rows);
@@ -234,31 +248,80 @@ public class VCollectorTest {
             e.printStackTrace();
             fail("vcollector build failed");
         }
-        System.out.println("----------------------------------------------");
-        byte b = 0;
-        b |=  ((1 << 0));
-        System.out.println("b = "+Integer.toHexString(b)); 
-        b |=  ((1 << 1));
-        System.out.println("b = "+Integer.toHexString(b)); 
-        b |=  ((1 << 2) & 0xff); 
-        System.out.println("b = "+Integer.toHexString(b)); 
-        b |=  ((1 << 3) & 0xff); 
-        System.out.println("b = "+Integer.toHexString(b)); 
-        b |=  ((1 << 4) & 0xff); 
-        System.out.println("b = "+Integer.toHexString(b)); 
-        b |=  ((1 << 5) & 0xff); 
-        System.out.println("b = "+Integer.toHexString(b)); 
-        b |=  ((1 << 6) & 0xff); 
-        System.out.println("b = "+Integer.toHexString(b)); 
-        b |=  ((1 << 7) & 0xff); 
-        System.out.println("b = "+Integer.toHexString(b)); 
-        
+        /*
+         * System.out.println("----------------------------------------------");
+         * byte b = 0; b |= ((1 << 0));
+         * System.out.println("b = "+Integer.toHexString(b)); b |= ((1 << 1));
+         * System.out.println("b = "+Integer.toHexString(b)); b |= ((1 << 2) &
+         * 0xff); System.out.println("b = "+Integer.toHexString(b)); b |= ((1 <<
+         * 3) & 0xff); System.out.println("b = "+Integer.toHexString(b)); b |=
+         * ((1 << 4) & 0xff); System.out.println("b = "+Integer.toHexString(b));
+         * b |= ((1 << 5) & 0xff);
+         * System.out.println("b = "+Integer.toHexString(b)); b |= ((1 << 6) &
+         * 0xff); System.out.println("b = "+Integer.toHexString(b)); b |= ((1 <<
+         * 7) & 0xff); System.out.println("b = "+Integer.toHexString(b));
+         */
+    }
 
+    @Test
+    public void testProjection() throws Exception {
         
+        Random r = new Random(1337);
+        
+       for(int h = 0; h < 1337; h++) {
+           rowDefCache = null;
+           testRowDef = null;
+           columnDes = new ArrayList<ColumnDescriptor>();
+           columns = new ArrayList<ColumnArrayGenerator>();
+           encodedColumns = new ArrayList<ArrayList<byte[]>>();
+           rowData = new ArrayList<RowData>();
+           meta = null;
 
+        try {
+            setupDatabase();
+            int mapSize = testRowDef.getFieldCount()/8;
+            if(testRowDef.getFieldCount() % 8 != 0) {
+                mapSize++;
+            }
             
+            byte[] columnBitMap = new byte[mapSize];
+            BitSet projection = new BitSet(mapSize);
+            boolean none = true;
+            for (int i = 0; i < testRowDef.getFieldCount(); i++) {
+                if(r.nextBoolean() || (none == true && i+1 == testRowDef.getFieldCount())) {
+                    projection.set(i, true);
+                    columnBitMap[i/8] |= 1 << (i % 8);
+                    none = false;
+                }
+            }
+            generateEncodedData(testRowDef, projection);
+            
+            VCollector vc = new VCollector(meta,
+                    rowDefCache, testRowDef.getRowDefId(), columnBitMap);
+            vc.setColumnDescriptors(columnDes);
+//            System.out.println("fieldCount = "+testRowDef.getFieldCount() + 
+//                               "mapSize ="+ mapSize);
+            ByteBuffer buffer = ByteBuffer.allocate((rowSize
+                    +RowData.MINIMUM_RECORD_LENGTH+mapSize)
+                    * rows);
+            boolean copied = vc.collectNextRow(buffer);
+            assertTrue(copied);
+            assertFalse(vc.hasMore());
+            Iterator<RowData> j = rowData.iterator();
+            while (j.hasNext()) {
+                RowData row = j.next();
+                byte[] expected = row.getBytes();
+                byte[] actual = new byte[expected.length];
+                buffer.get(actual);
+                assertArrayEquals(expected, actual);
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR because " + e.getMessage());
+            e.printStackTrace();
+            fail("vcollector build failed");
+        }
         
-
+     }
     }
 
     @Test
@@ -275,8 +338,8 @@ public class VCollectorTest {
             byte[] bitMap = setupBitMap(projection, rand, rowDef
                     .getFieldCount());
 
-            VCollector vc = new VCollector(null,
-                    rowDefCache, rowDef.getRowDefId(), bitMap);
+            VCollector vc = new VCollector(null, rowDefCache, rowDef
+                    .getRowDefId(), bitMap);
 
             assert vc.getProjection().equals(projection);
             assertTrue(vc.getProjection().equals(projection));
@@ -301,8 +364,8 @@ public class VCollectorTest {
             byte[] bitMap = setupBitMap(projection, rand, rowDef
                     .getFieldCount());
 
-            VCollector vc = new VCollector(null,
-                    rowDefCache, rowDef.getRowDefId(), bitMap);
+            VCollector vc = new VCollector(null, rowDefCache, rowDef
+                    .getRowDefId(), bitMap);
 
             ArrayList<RowDef> tables = vc.getUserTables();
             assertTrue(tables.size() > 0);
