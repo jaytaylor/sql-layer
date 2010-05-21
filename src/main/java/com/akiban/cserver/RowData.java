@@ -252,6 +252,7 @@ public class RowData {
 
     public void mergeFields(final RowDef rowDef, ArrayList<ByteBuffer> fields,
             int index, BitSet nullMap) {
+        assert nullMap != null;
         final int fieldCount = rowDef.getFieldCount();
         assert fields.size() == rowDef.getFieldCount();
         int offset = rowStart;
@@ -259,32 +260,29 @@ public class RowData {
         CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
         CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
         CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+
         offset = offset + O_NULL_MAP;
+        int mapSize = ((fieldCount % 8) == 0 ? fieldCount : fieldCount + 1);        
+        bytes[offset] = 0;
         
-        /*int mapSize = (fieldCount % 8 == 0 ? fieldCount : fieldCount + 1);
-         * for (int i = 0; i < mapSize; i++) { // if (nullMap != null) { if
-         * (nullMap != null && nullMap.get(i)) { bytes[offset] |= 1 << i % 8; }
-         * if (i != 0 && i % 8 == 0) { offset++; } }
-         */
-
-        // OMFG
-        for (int i = 0; i < fieldCount; i += 8) {
-            int b = 0;
-            for (int j = i; j < i + 8 && j < fieldCount; j++) {
-                assert fields.get(j) != null;
-                assert j < fields.size();
-                if (j >= fields.size() || fields.get(j) == null) {
-                    b |= (1 << j - i);
-                }
+        for(int i=0; i < mapSize; i++) {
+            if(nullMap.get(i)) { 
+                bytes[offset] |= 1 << (i % 8); 
             }
-            bytes[offset++] = (byte) b;
+            if((i+1) % 8 == 0) { 
+                offset++;
+                bytes[offset] = 0;
+            }
         }
+        offset++;
 
-        for (int i = 0; i < fields.size(); i++) {
-            int field_size = rowDef.getFieldDef(i).getMaxStorageSize();
-            assert rowDef.getFieldDef(i).isFixedSize() == true;
-            fields.get(i).get(bytes, offset, field_size);
-            offset += field_size;
+        for(int i = 0; i < fields.size(); i++) {
+            if(!nullMap.get(i)) {
+                int fieldSize = rowDef.getFieldDef(i).getMaxStorageSize();
+                assert rowDef.getFieldDef(i).isFixedSize() == true;
+                fields.get(i).get(bytes, offset, fieldSize);
+                offset += fieldSize;
+            }
         }
 
         CServerUtil.putChar(bytes, offset, SIGNATURE_B);
@@ -368,16 +366,6 @@ public class RowData {
         CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
         CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
         rowEnd = offset;
-    }
-
-    private byte[] getBytes(final Object object) {
-        if (object == null) {
-            return new byte[0];
-        } else if (object instanceof byte[]) {
-            return (byte[]) object;
-        } else {
-            return ((String) object).getBytes();
-        }
     }
 
     /**

@@ -13,7 +13,7 @@ import com.akiban.cserver.*;
 import com.akiban.vstore.ColumnArray;
 import com.akiban.vstore.ColumnArrayGenerator;
 import com.akiban.vstore.ColumnDescriptor;
-//import com.akiban.vstore.VMeta;
+import com.akiban.vstore.VMeta;
 import com.akiban.ais.ddl.*;
 import com.akiban.ais.model.*;
 
@@ -29,12 +29,11 @@ public class VCollectorTest {
     private int rows = 15;
     private int rowSize = 0;
     private RowDef testRowDef = null;
-    private List<ColumnDescriptor> columnDes = new ArrayList<ColumnDescriptor>();
-    private ArrayList<ColumnArray> columnArray = new ArrayList<ColumnArray>();
+    private ArrayList<ColumnDescriptor> columnDes = new ArrayList<ColumnDescriptor>();
     private ArrayList<ColumnArrayGenerator> columns = new ArrayList<ColumnArrayGenerator>();
     private ArrayList<ArrayList<byte[]>> encodedColumns = new ArrayList<ArrayList<byte[]>>();
     private ArrayList<RowData> rowData = new ArrayList<RowData>();
-  //  private VMeta meta;
+    private VMeta meta;
     
     public void generateEncodedData(RowDef rowDef) throws Exception {
 
@@ -114,6 +113,7 @@ public class VCollectorTest {
             }
 
         }
+        meta = new VMeta(columnDes);
     }
 
     public void setupDatabase() throws Exception {
@@ -208,12 +208,13 @@ public class VCollectorTest {
             for (int i = 0; i < testRowDef.getFieldCount(); i++) {
                 columnBitMap[i/8] |= 1 << (i % 8);
             }
-            // XXX vmeta setup
-            VCollector vc = new VCollector(null,
+
+            VCollector vc = new VCollector(meta,
                     rowDefCache, testRowDef.getRowDefId(), columnBitMap);
             
             vc.setColumnDescriptors(columnDes);
-            System.out.println("fieldCount = "+testRowDef.getFieldCount() + "mapSize ="+ mapSize);
+//            System.out.println("fieldCount = "+testRowDef.getFieldCount() + 
+//                               "mapSize ="+ mapSize);
             ByteBuffer buffer = ByteBuffer.allocate((rowSize
                     + RowData.MINIMUM_RECORD_LENGTH + mapSize)
                     * rows);
@@ -233,6 +234,30 @@ public class VCollectorTest {
             e.printStackTrace();
             fail("vcollector build failed");
         }
+        System.out.println("----------------------------------------------");
+        byte b = 0;
+        b |=  ((1 << 0));
+        System.out.println("b = "+Integer.toHexString(b)); 
+        b |=  ((1 << 1));
+        System.out.println("b = "+Integer.toHexString(b)); 
+        b |=  ((1 << 2) & 0xff); 
+        System.out.println("b = "+Integer.toHexString(b)); 
+        b |=  ((1 << 3) & 0xff); 
+        System.out.println("b = "+Integer.toHexString(b)); 
+        b |=  ((1 << 4) & 0xff); 
+        System.out.println("b = "+Integer.toHexString(b)); 
+        b |=  ((1 << 5) & 0xff); 
+        System.out.println("b = "+Integer.toHexString(b)); 
+        b |=  ((1 << 6) & 0xff); 
+        System.out.println("b = "+Integer.toHexString(b)); 
+        b |=  ((1 << 7) & 0xff); 
+        System.out.println("b = "+Integer.toHexString(b)); 
+        
+
+        
+
+            
+        
 
     }
 
@@ -249,7 +274,7 @@ public class VCollectorTest {
             projection.clear();
             byte[] bitMap = setupBitMap(projection, rand, rowDef
                     .getFieldCount());
-            // XXX - vmeta setup
+
             VCollector vc = new VCollector(null,
                     rowDefCache, rowDef.getRowDefId(), bitMap);
 
@@ -281,7 +306,7 @@ public class VCollectorTest {
 
             ArrayList<RowDef> tables = vc.getUserTables();
             assertTrue(tables.size() > 0);
-            // implement me.
+            // XXX - implement me.
         }
     }
 }

@@ -111,8 +111,8 @@ public class VCollector implements RowCollector {
         assert buffers.size() == columns.size();
 
         if (done) {
-            System.out.println("chunkSize =" + chunkSize + "totalBytes = "
-                    + totalBytes);
+            //System.out.println("chunkSize =" + chunkSize + "totalBytes = "
+            //        + totalBytes);
             assert chunkSize >= totalBytes;
             int size = buffers.get(0).capacity();
             assert size >= columns.get(0).getFieldSize();
@@ -126,7 +126,11 @@ public class VCollector implements RowCollector {
         for (int i = 0; i < numRows; i++) {
             RowData newRow = new RowData(payload.array(), ((int) i) * rowSize,
                     rowSize);
-            newRow.mergeFields(table, buffers, i, null);
+            BitSet nullMap = new BitSet(table.getFieldCount());
+            nullMap.andNot(projection);
+            //System.out.println("nullMap ="+nullMap.toString()+" null map size = "+ nullMap.size() +", null map length "+nullMap.length()+"null map");
+            //System.out.println("projection ="+projection.toString()+" projection size = "+ projection.size() +", projection length "+projection.length()+" projection ");
+            newRow.mergeFields(table, buffers, i, nullMap);
         }
         return true;
     }
