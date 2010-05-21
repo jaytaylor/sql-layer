@@ -328,9 +328,7 @@ public class VStore
                     columnList.put(columnName, columnFileName);
                     ColumnInfo info = new ColumnInfo(columnName, tableName, tableId, i);
                     columnInfo.put(columnName, info);
-                } else {
-                    assert false;
-                }
+                } 
                 
                 ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
                 /* insert the data */
