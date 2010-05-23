@@ -67,7 +67,7 @@ public class VCollectorTest {
         for (int i = 0; i < rows; i++) {
             Object[] aRow = new Object[rowDef.getFieldCount()];
             RowData aRowData = new RowData(new byte[rowSize
-                    + RowData.MINIMUM_RECORD_LENGTH +1]);// ((rowDef.getFieldCount()%8) == 0? rowDef.getFieldCount()/8 : rowDef.getFieldCount()/8+1)]);
+                    + RowData.MINIMUM_RECORD_LENGTH +((rowDef.getFieldCount()%8) == 0? rowDef.getFieldCount()/8 : rowDef.getFieldCount()/8+1)]);
 
             for (int j = 0, k = 0; j < rowDef.getFieldCount(); j++) {
                 if(projection.get(j)) {
@@ -196,10 +196,11 @@ public class VCollectorTest {
             projection.set(j, rand.nextBoolean());
             if (projection.get(j)) {
                 bitMap[offset] |= 1 << j % 8;
-                if ((j + 1) % 8 == 0) {
-                    offset++;
-                }
             }
+            if ((j + 1) % 8 == 0) {
+                offset++;
+            }
+
         }
         return bitMap;
     }
@@ -299,8 +300,8 @@ public class VCollectorTest {
             VCollector vc = new VCollector(meta,
                     rowDefCache, testRowDef.getRowDefId(), columnBitMap);
             vc.setColumnDescriptors(columnDes);
-//            System.out.println("fieldCount = "+testRowDef.getFieldCount() + 
-//                               "mapSize ="+ mapSize);
+            //System.out.println("fieldCount = "+testRowDef.getFieldCount() + 
+            //                   "mapSize ="+ mapSize+"h ="+h);
             ByteBuffer buffer = ByteBuffer.allocate((rowSize
                     +RowData.MINIMUM_RECORD_LENGTH+mapSize)
                     * rows);

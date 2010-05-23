@@ -74,7 +74,7 @@ public class VCollector implements RowCollector {
             throws Exception {
         assert theColumns.size() > 0;
         columns = theColumns;
-        int fieldCount = (int) columns.iterator().next().getFieldCount();
+        int rowCount = (int) columns.iterator().next().getFieldCount();
         Iterator<ColumnDescriptor> i = columns.iterator();
         rowSize = 0;
 
@@ -82,15 +82,15 @@ public class VCollector implements RowCollector {
             ColumnDescriptor cdes = i.next();
             columnMapper.add(cdes);
             rowSize += cdes.getFieldSize();
-            assert fieldCount == cdes.getFieldCount();
+            assert rowCount == cdes.getFieldCount();
         }
         // XXX - this is because the null map requires 1 byte per 8 fields.
         // this needs to be improved in the RowData/RowDef --
         // we should not be calculating it; it should be returned by the row
         // data.
         rowSize += RowData.MINIMUM_RECORD_LENGTH
-                + (fields % 8 == 0 ? fields / 8 : fields / 8 + 1);
-        totalBytes = fieldCount * (long) rowSize;
+                + (table.getFieldCount() % 8 == 0 ? table.getFieldCount() / 8 : table.getFieldCount() / 8 + 1);
+        totalBytes = rowCount * (long) rowSize;
     }
 
     @Override
@@ -110,13 +110,11 @@ public class VCollector implements RowCollector {
         assert buffers.size() == columns.size();
 
         if (done) {
-            // System.out.println("chunkSize =" + chunkSize + "totalBytes = "
-            // + totalBytes);
-            assert chunkSize >= totalBytes;
             int size = buffers.get(0).capacity();
             assert size >= columns.get(0).getFieldSize();
             numRows = size / columns.get(0).getFieldSize();
             assert numRows > 0;
+            columnMapper.close();
 
             // XXX - this is badness.
             hasMore = false;
