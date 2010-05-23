@@ -8,13 +8,9 @@ package com.akiban.cserver.store;
  *
  */
 
-import java.nio.ByteBuffer; //import java.util.Properties;
-
+import java.nio.ByteBuffer;
 import com.akiban.vstore.*;
 import com.akiban.cserver.*;
-
-//import org.apache.commons.logging.Log;
-//import org.apache.commons.logging.LogFactory;
 import java.util.*;
 
 public class VCollector implements RowCollector {
@@ -33,12 +29,15 @@ public class VCollector implements RowCollector {
         table = rowDefCache.getRowDef(rowDefId);
         projection = new BitSet(table.getFieldCount());
         projection.clear();
-
-        for (int i = 0; i < columnBitMap.length * 8; i++) {
+        nullMap = new BitSet(table.getFieldCount());
+        nullMap.clear();
+        
+        for (int i = 0; i < table.getFieldCount(); i++) {
             if ((columnBitMap[i / 8] & (1 << (i % 8))) != 0) {
                 projection.set(i, true);
-
                 fields++;
+            } else {
+                nullMap.set(i, true);
             }
         }
 
@@ -86,8 +85,9 @@ public class VCollector implements RowCollector {
             assert fieldCount == cdes.getFieldCount();
         }
         // XXX - this is because the null map requires 1 byte per 8 fields.
-        // this needs to be improved in the RowData/RowDef -- i.e.
-        // we should not be calculating it in this way.
+        // this needs to be improved in the RowData/RowDef --
+        // we should not be calculating it; it should be returned by the row
+        // data.
         rowSize += RowData.MINIMUM_RECORD_LENGTH
                 + (fields % 8 == 0 ? fields / 8 : fields / 8 + 1);
         totalBytes = fieldCount * (long) rowSize;
@@ -125,15 +125,7 @@ public class VCollector implements RowCollector {
         for (int i = 0; i < numRows; i++) {
             RowData newRow = new RowData(payload.array(), ((int) i) * rowSize,
                     rowSize);
-            BitSet nullMap = new BitSet(table.getFieldCount());
-            nullMap.clear();
-            for(int j=0; j < table.getFieldCount(); j++) {
-                if(!projection.get(j)) {
-                    nullMap.set(j, true);
-                }
-            }
-            //System.out.println("nullMap ="+nullMap.toString()+" null map size = "+ nullMap.size() +", null map length "+nullMap.length()
-            //        +"null map");
+            //System.out.println("nullMap ="+nullMap.toString()+" null map size = "+ nullMap.size() +", null map length "+nullMap.length() +"null map");
             //System.out.println("projection ="+projection.toString()+ "projection size = "+ projection.size() +", projection length"+projection.length()+" projection ");
             newRow.mergeFields(table, buffers, i, nullMap);
         }
@@ -160,4 +152,5 @@ public class VCollector implements RowCollector {
     private ColumnMapper columnMapper;
     private List<ColumnDescriptor> columns;
     private BitSet projection;
+    private BitSet nullMap;
 }
