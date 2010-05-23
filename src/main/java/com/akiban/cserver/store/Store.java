@@ -6,6 +6,7 @@ import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.message.ScanRowsRequest;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
@@ -44,6 +45,12 @@ public interface Store {
 
 	long getAutoIncrementValue(final int rowDefId) throws Exception;
 
+    /**
+     * @param scanRowsRequest
+     * @return
+     */
+    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest) throws Exception;
+	
 	RowCollector newRowCollector(final int rowDefId, final int indexId,
 			final int scanFlags, final RowData start, final RowData end,
 			final byte[] columnBitMap) throws Exception;

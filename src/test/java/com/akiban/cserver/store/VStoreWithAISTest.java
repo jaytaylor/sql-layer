@@ -31,7 +31,7 @@ public class VStoreWithAISTest extends TestCase implements
 
 	private PersistitStore hstore;
 
-	private VStore store;
+	private VStoreOld store;
 
 	private RowDefCache rowDefCache;
 
@@ -188,7 +188,7 @@ public class VStoreWithAISTest extends TestCase implements
 	public void setUp() throws Exception {
 		rowDefCache = new RowDefCache();
 		hstore = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
-		store = new VStore();
+		store = new VStoreOld();
 		store.setHStore(hstore);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());

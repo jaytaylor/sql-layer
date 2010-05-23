@@ -3,7 +3,7 @@ package com.akiban.cserver.loader;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.VStore;
+import com.akiban.cserver.store.VStoreOld;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import org.apache.commons.logging.Log;
@@ -14,7 +14,7 @@ import java.util.List;
 
 public class VerticalLoader
 {
-    public VerticalLoader(VStore store, DB db, AkibaInformationSchema ais) throws Exception
+    public VerticalLoader(VStoreOld store, DB db, AkibaInformationSchema ais) throws Exception
     {
         this.store = store;
         this.db = db;
@@ -51,5 +51,5 @@ public class VerticalLoader
     private static final String SQL_TEMPLATE = "select * from %s";
 
     private final DB db;
-    private final VStore store;
+    private final VStoreOld store;
 }

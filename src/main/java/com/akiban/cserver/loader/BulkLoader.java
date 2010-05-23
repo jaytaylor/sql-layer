@@ -4,7 +4,7 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.VStore;
+import com.akiban.cserver.store.VStoreOld;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -72,7 +72,7 @@ public class BulkLoader extends Thread
         this.dbPassword = dbPassword;
     }
 
-    public BulkLoader(VStore verticalStore,
+    public BulkLoader(VStoreOld verticalStore,
                       AkibaInformationSchema ais,
                       List<String> groups,
                       String artifactsSchema,
@@ -111,7 +111,7 @@ public class BulkLoader extends Thread
             this.verticalStore = null;
         } else {
             this.persistitStore = null;
-            this.verticalStore = (VStore) store;
+            this.verticalStore = (VStoreOld) store;
         }
         this.ais = ais;
         this.groups = groups;
@@ -180,7 +180,7 @@ public class BulkLoader extends Thread
     private List<String> groups;
     private Map<String, String> sourceSchemas;
     private PersistitStore persistitStore;
-    private VStore verticalStore;
+    private VStoreOld verticalStore;
     private AkibaInformationSchema ais;
     private TaskGenerator.Actions taskGeneratorActions;
     private Exception termination = null;

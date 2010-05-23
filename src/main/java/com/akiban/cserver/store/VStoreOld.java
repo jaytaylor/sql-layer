@@ -1,6 +1,3 @@
-/**
- * 
- */
 package com.akiban.cserver.store;
 
 import java.util.List;
@@ -13,11 +10,11 @@ import java.io.FileOutputStream;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-//import com.akiban.cserver.RowDefCache;
-//import com.akiban.cserver.message.ScanRowsRequest;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.message.ScanRowsRequest;
 import com.persistit.Exchange;
 import com.persistit.Key;
-//import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitException;
 import com.akiban.vstore.ColumnArray;
 import com.akiban.vstore.ColumnDescriptor;
 import com.akiban.vstore.VMeta;
@@ -26,21 +23,223 @@ import com.akiban.vstore.VMeta;
  * @author percent
  * @author posulliv
  */
-public class VStore {
+public class VStoreOld 
+    implements Store 
+{
 
-    public static void setDataPath(final String path)
+    public void setHStore(Store hstore) 
     {
-        DATA_PATH = path;
+        this.hstore = hstore;
     }
-    
-    public VStore(Store store) {
-        this.hstore = store;
+
+    public Store getHStore() 
+    {
+        return hstore;
     }
+
+    /**
+     * @see com.akiban.cserver.store.Store#deleteRow(com.akiban.cserver.RowData)
+     */
+    @Override
+    public int deleteRow(RowData rowData) throws Exception 
+    {
+        return hstore.deleteRow(rowData);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#dropSchema(java.lang.String)
+     */
+    @Override
+    public int dropSchema(String schemaName) throws Exception 
+    {
+        return hstore.dropSchema(schemaName);
+    }
+
+    /** 
+     * @see com.akiban.cserver.store.Store#dropTable(int)
+     */
+    @Override
+    public int dropTable(int rowDefId) throws Exception 
+    {
+        return hstore.dropTable(rowDefId);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#fetchRows(java.lang.String,
+     *      java.lang.String, java.lang.String, java.lang.Object,
+     *      java.lang.Object, java.lang.String)
+     */
+    @Override
+    public List<RowData> fetchRows(String schemaName, 
+                                   String tableName,
+                                   String columnName, 
+                                   Object least, 
+                                   Object greatest,
+                                   String leafTableName) 
+        throws Exception 
+    {
+        return hstore.fetchRows(schemaName, 
+                                tableName, 
+                                columnName, 
+                                least,
+                                greatest, 
+                                leafTableName);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#getAutoIncrementValue(int)
+     */
+    @Override
+    public long getAutoIncrementValue(int rowDefId) throws Exception 
+    {
+        return hstore.getAutoIncrementValue(rowDefId);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#getCurrentRowCollector(int)
+     */
+    @Override
+    public RowCollector getCurrentRowCollector(int tableId) 
+    {
+        return hstore.getCurrentRowCollector(tableId);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#getRowCount(boolean,
+     *      com.akiban.cserver.RowData, com.akiban.cserver.RowData, byte[])
+     */
+    @Override
+    public long getRowCount(boolean exact, 
+                            RowData start, 
+                            RowData end,
+                            byte[] columnBitMap) 
+        throws Exception
+    {
+        return hstore.getRowCount(exact, start, end, columnBitMap);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#getRowDefCache()
+     */
+    @Override
+    public RowDefCache getRowDefCache() 
+    {
+        return hstore.getRowDefCache();
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#getTableStatistics(int)
+     */
+    @Override
+    public TableStatistics getTableStatistics(int tableId) throws Exception 
+    {
+        return hstore.getTableStatistics(tableId);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#isVerbose()
+     */
+    @Override
+    public boolean isVerbose() 
+    {
+        return hstore.isVerbose();
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#newRowCollector(int, int, int,
+     *      com.akiban.cserver.RowData, com.akiban.cserver.RowData, byte[])
+     */
+    @Override
+    public RowCollector newRowCollector(int rowDefId, 
+                                        int indexId,
+                                        int scanFlags, 
+                                        RowData start, 
+                                        RowData end, 
+                                        byte[] columnBitMap)
+        throws Exception 
+    {
+        return hstore.newRowCollector(rowDefId, 
+                                      indexId, 
+                                      scanFlags, 
+                                      start, 
+                                      end,
+                                      columnBitMap);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#setOrdinals()
+     */
+    @Override
+    public void setOrdinals() throws Exception 
+    {
+        hstore.setOrdinals();
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#setVerbose(boolean)
+     */
+    @Override
+    public void setVerbose(boolean verbose) 
+    {
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#shutDown()
+     */
+    @Override
+    public void shutDown() throws Exception 
+    {
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#startUp()
+     */
+    @Override
+    public void startUp() throws Exception 
+    {
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#truncateTable(int)
+     */
+    @Override
+    public int truncateTable(int rowDefId) throws Exception 
+    {
+        return hstore.truncateTable(rowDefId);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#updateRow(com.akiban.cserver.RowData,
+     *      com.akiban.cserver.RowData)
+     */
+    @Override
+    public int updateRow(RowData oldRowData, RowData newRowData)
+        throws Exception 
+    {
+        return hstore.updateRow(oldRowData, newRowData);
+    }
+
+    /**
+     * @see com.akiban.cserver.store.Store#writeRow(com.akiban.cserver.RowData)
+     */
+    @Override
+    public int writeRow(RowData rowData) throws Exception 
+    {
+        return hstore.writeRow(rowData);
+    }
+
+    @Override
+    public void updateTableStats(RowDef rowDef, long rowCount) 
+        throws PersistitException, StoreException
+    {
+        hstore.updateTableStats(rowDef, rowCount);
+    }
+
     
     public void constructColumnDescriptors()
         throws Exception
     {
-        String prefix = DATA_PATH + "/";
+        String prefix = datapath + "/";
         columnArrays = new ArrayList<ColumnArray>();
         columnDescriptors = new ArrayList<ColumnDescriptor>();
         for (Map.Entry<String, String> entry : columnList.entrySet()) {
@@ -63,7 +262,7 @@ public class VStore {
             }
         }
         /* hard-code metadata file name for now */
-        String metaFileName = DATA_PATH + "/vstoreMetaFile";
+        String metaFileName = datapath + "/vstoreMetaFile";
         File metaFile = new File(metaFileName);
         VMeta vmeta = new VMeta(columnDescriptors);
         vmeta.write(metaFile);
@@ -84,6 +283,7 @@ public class VStore {
      *      com.akiban.cserver.RowDef, com.akiban.cserver.RowData, int[],
      *      com.akiban.cserver.FieldDef[][], java.lang.Object[][])
      */
+    @Override
     public int writeRowForBulkLoad(final Exchange hEx, 
                                    final RowDef rowDef,
                                    final RowData rowData, 
@@ -95,7 +295,7 @@ public class VStore {
         final Key hkey = constructHKey(rowDef, ordinals, fieldDefs, hKeyValues);
         String schemaName = rowDef.getSchemaName();
         String tableName = rowDef.getTableName();
-        String prefix = DATA_PATH + "/" + schemaName + tableName;
+        String prefix = datapath + "/" + schemaName + tableName;
 
         /*
          * Go through each column in this row and ensure that a file exists for that column. For
@@ -161,6 +361,11 @@ public class VStore {
             }
         }
         return hKey;
+    }
+
+    public static void setDataPath(final String path)
+    {
+        datapath = path;
     }
 
     /*
@@ -249,11 +454,26 @@ public class VStore {
         private String columnName;
     }
 
-    static String DATA_PATH = "/usr/local/akiba/data";
-    
     private Store hstore;
+
+    static String datapath = "/usr/local/akiba/data";
+
     private HashMap<String, String> columnList = new HashMap<String, String>();
+
     private HashMap<String, ColumnInfo> columnInfo = new HashMap<String, ColumnInfo>();
+
     private List<ColumnArray> columnArrays;
+
     private ArrayList<ColumnDescriptor> columnDescriptors;
+
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.Store#newRowCollector(com.akiban.cserver.message.ScanRowsRequest)
+     */
+    @Override
+    public RowCollector newRowCollector(ScanRowsRequest scanRowsRequest)
+            throws Exception {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

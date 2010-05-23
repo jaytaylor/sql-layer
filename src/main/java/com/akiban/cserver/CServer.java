@@ -22,19 +22,15 @@ import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.AkibaInformationSchemaImpl;
 import com.akiban.ais.model.Source;
-import com.akiban.cserver.decider.Decider;
-import com.akiban.cserver.decider.Factory;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
-import com.akiban.cserver.store.VStore;
 import com.akiban.message.AkibaConnection;
 import com.akiban.message.ErrorResponse;
 import com.akiban.message.ExecutionContext;
 import com.akiban.message.Message;
 import com.akiban.message.MessageRegistry;
-import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
@@ -74,13 +70,11 @@ public class CServer {
 	private final RowDefCache rowDefCache = new RowDefCache();
 	private final CServerConfig config = new CServerConfig();
 	private final Store hstore = new PersistitStore(config, rowDefCache);
-	private final Store vstore = new VStore();
 	private AkibaInformationSchema ais0;
 	private AkibaInformationSchema ais;
 	private volatile boolean stopped = false;
 	private boolean verbose;
 	private Map<Integer, Thread> threadMap = new TreeMap<Integer, Thread>();
-	private Decider decider;
 	
 	public void start() throws Exception {
 		Tap.registerMXBean();
@@ -96,15 +90,12 @@ public class CServer {
 		if ("true".equalsIgnoreCase(verboseString)) {
 			verbose = true;
 		}
-		Factory.setConfig(config);
-		decider = Factory.getSingleton().createDecisionEngine();
 		hstore.startUp();
 		hstore.setVerbose(verbose);
 		ais0 = primordialAIS();
 		rowDefCache.setAIS(ais0);
 		hstore.setOrdinals();
 		acquireAIS();
-		((VStore)vstore).setHStore((PersistitStore)hstore);
 	}
 
 	public void stop() throws Exception {
@@ -166,49 +157,38 @@ public class CServer {
 			AISExecutionContext, CServerShutdownExecutionContext {
 
 	    public Store getStore() {
-		return hstore;
+	        return hstore;
 	    }
 
-            public AkibaInformationSchema ais() {
-                return ais;
-            }
-
-	    public Store getStore(Request r) {
-                Decider.EngineType et = decider.decide(r);
-                if (et == Decider.EngineType.HStore) {
-                    return hstore;
-                } else {
-                    assert et == Decider.EngineType.VStore;
-                    return vstore;
-                }
-            }
-		
-            @Override
-            public void executeRequest(AkibaConnection connection,
-                AISRequest request) throws Exception {
-                acquireAIS();
-                AISResponse aisResponse = new AISResponse(ais);
-                connection.send(aisResponse);
-            }
-
-            @Override
-            public void executeResponse(AkibaConnection connection,
-		AISResponse response) throws Exception {
-                ais = response.ais();
-                installAIS();
-            }
-
-            @Override
-            public void executeRequest(AkibaConnection connection,
-				ShutdownRequest request) throws Exception {
-                if (LOG.isInfoEnabled()) {
-                    LOG.info("CServer stopping due to ShutdownRequest");
-                }
-                stop();
-                ShutdownResponse response = new ShutdownResponse();
-                connection.send(response);
-            }
+        public AkibaInformationSchema ais() {
+            return ais;
         }
+	    
+        @Override
+        public void executeRequest(AkibaConnection connection, 
+                AISRequest request) throws Exception {
+            acquireAIS();
+            AISResponse aisResponse = new AISResponse(ais);
+            connection.send(aisResponse);
+        }
+        @Override
+        public void executeResponse(AkibaConnection connection, 
+            AISResponse response) throws Exception {
+            ais = response.ais();
+            installAIS();
+        }
+
+        @Override
+        public void executeRequest(AkibaConnection connection,
+            ShutdownRequest request) throws Exception {
+            if (LOG.isInfoEnabled()) {
+                LOG.info("CServer stopping due to ShutdownRequest");
+            }
+            stop();
+            ShutdownResponse response = new ShutdownResponse();
+            connection.send(response);
+        }
+	}
 
 	/**
 	 * A Runnable that reads Network messages, acts on them and returns results.

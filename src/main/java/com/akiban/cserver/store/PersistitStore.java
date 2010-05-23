@@ -23,6 +23,9 @@ import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.decider.Decider;
+import com.akiban.cserver.decider.DecisionEngine;
+import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -104,7 +107,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	private final RowDefCache rowDefCache;
 
 	private PersistitStoreTableManager tableManager;
-
+	private final DecisionEngine scanDecider;
+	private final VStore vstore;
+	
 	// Using a Map<Thread, ...> instead of a ThreadLocal because we want to
 	// clear all state in the shutDown() method.
 	//
@@ -112,12 +117,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	public static void setDataPath(final String path) {
 		datapath = path;
+		VStore.setDataPath(datapath);
 	}
 
 	public PersistitStore(final CServerConfig config, final RowDefCache cache) {
 		this.rowDefCache = cache;
 		this.config = config;
 		this.tableManager = new PersistitStoreTableManager(this);
+		this.scanDecider = DecisionEngine.createDecisionEngine(config);
+		this.vstore = new VStore(this);
 	}
 
 	public synchronized void startUp() throws Exception {
@@ -580,6 +588,17 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		if (verbose && LOG.isInfoEnabled()) {
 			LOG.info("Insert row: " + rowData.toString(rowDefCache));
 		}
+
+		try {
+		    vstore.writeRowForBulkLoad(hEx, rowDef, rowData, ordinals, fieldDefs, hKeyValues);
+		} catch (StoreException e) {
+		    e.printStackTrace();
+		    LOG.error("VStore.writeRowForBulkLoad failed");
+	    } catch (Throwable t) {
+            t.printStackTrace();
+            LOG.error("VStore.writeRowForBulkLoad failed");            
+	   }   
+	    
 		try {
 			constructHKey(hEx, rowDef, ordinals, fieldDefs, hKeyValues);
 			final int start = rowData.getInnerStart();
@@ -599,12 +618,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					insertIntoIndex(indexDef, rowDef, rowData, hEx.getKey());
 			}
 			return OK;
-		} catch (StoreException e) {
-			return e.getResult();
-		} catch (Throwable t) {
-			t.printStackTrace();
-			return ERR;
-		}
+        } catch (StoreException e) {
+            return e.getResult();
+        } catch (Throwable t) {
+            t.printStackTrace();
+            return ERR;
+        }
 	}
 
 	@Override
@@ -1086,62 +1105,114 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			map.remove(tableId);
 		}
 	}
+	
+	public final RowDef checkRequest(int rowDefId, RowData start, RowData end, int indexId, int scanFlags) throws Exception {
+        final TableStatus ts = tableManager.getTableStatus(rowDefId);
+
+        if (ts.isDeleted()) {
+            throw new StoreException(HA_ERR_NO_SUCH_TABLE, "Table "
+                    + getRowDefCache().getRowDef(rowDefId).getTableName()
+                    + " has been deleted");
+        }
+
+        if (start != null && start.getRowDefId() != rowDefId) {
+            throw new IllegalArgumentException(
+                    "Start and end RowData must specify the same rowDefId");
+        }
+
+        if (end != null && end.getRowDefId() != rowDefId) {
+            throw new IllegalArgumentException(
+                    "Start and end RowData must specify the same rowDefId");
+        }
+        return rowDefCache.getRowDef(rowDefId);
+	}
+	
+	public RowCollector newRowCollector(ScanRowsRequest request) throws Exception {
+        
+	       try {
+               NEW_COLLECTOR_TAP.in();
+               
+	           int rowDefId = request.getTableId();
+	           RowData start = request.getStart();
+	           RowData end = request.getEnd();
+	           int indexId = request.getIndexId();
+	           int scanFlags = request.getScanFlags();
+	           byte[] columnBitMap = request.getColumnBitMap();
+	           final RowDef rowDef = checkRequest(rowDefId, start, end, indexId, scanFlags);
+
+	            if (verbose && LOG.isInfoEnabled()) {
+	                LOG.info("Select from table: "+rowDef.toString()+
+	                  " (indexID: "+ indexId+ ")"+ " scanFlags="+scanFlags+
+	                  " columnBitMap="+
+	                  CServerUtil.hex(columnBitMap, 0,columnBitMap.length));
+	                LOG.info("  from: " + start.toString(rowDefCache));
+	                LOG.info("    to: " + end.toString(rowDefCache));
+	            }
+
+	            Decider.RowCollectorType et = scanDecider.makeDecision(request);
+	            RowCollector rc = null;
+	            if (et == Decider.RowCollectorType.PersistitRowCollector) {
+                    rc = new PersistitStoreRowCollector(this, scanFlags, 
+                            start, end, columnBitMap, rowDef, indexId);
+	            } else {
+	                assert et == Decider.RowCollectorType.VCollector;
+	                // XXX - VCollector is not usable yet
+	                assert false == true;
+	                throw new Error();
+	                //final RowCollector vcollector=null; //= new VCollector(this);
+	                //        scanFlags, start, end, columnBitMap, rowDef, indexId);
+	            }
+	            if (rc.hasMore()) {
+                    putCurrentRowCollector(rowDefId, rc);
+                }
+                NEW_COLLECTOR_TAP.out();
+                return rc;
+	        } catch (StoreException e) {
+	            if (verbose && LOG.isInfoEnabled()) {
+	                LOG.info("updateRow error " + e.getResult(), e);
+	            }
+	            throw e;
+	        }
+	}
+	
 
 	@Override
 	public RowCollector newRowCollector(final int rowDefId, int indexId,
-			final int scanFlags, RowData start, RowData end, byte[] columnBitMap)
-			throws Exception {
-		try {
-			NEW_COLLECTOR_TAP.in();
-			final TableStatus ts = tableManager.getTableStatus(rowDefId);
+            final int scanFlags, RowData start, RowData end, byte[] columnBitMap)
+    throws Exception {
+        try {
+            NEW_COLLECTOR_TAP.in();
+            final RowDef rowDef = checkRequest(rowDefId, start, end, indexId, scanFlags);
+            if (verbose && LOG.isInfoEnabled()) {
+                LOG
+                        .info("Select from table: "
+                                + rowDef.toString()
+                                + " (indexID: "
+                                + indexId
+                                + ")"
+                                + " scanFlags="
+                                + scanFlags
+                                + " columnBitMap="
+                                + CServerUtil.hex(columnBitMap, 0,
+                                        columnBitMap.length));
+                LOG.info("  from: " + start.toString(rowDefCache));
+                LOG.info("    to: " + end.toString(rowDefCache));
+            }
+            
+            final RowCollector rc = new PersistitStoreRowCollector(this,
+                    scanFlags, start, end, columnBitMap, rowDef, indexId);
 
-			if (ts.isDeleted()) {
-				throw new StoreException(HA_ERR_NO_SUCH_TABLE, "Table "
-						+ getRowDefCache().getRowDef(rowDefId).getTableName()
-						+ " has been deleted");
-			}
-
-			if (start != null && start.getRowDefId() != rowDefId) {
-				throw new IllegalArgumentException(
-						"Start and end RowData must specify the same rowDefId");
-			}
-
-			if (end != null && end.getRowDefId() != rowDefId) {
-				throw new IllegalArgumentException(
-						"Start and end RowData must specify the same rowDefId");
-			}
-			final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-
-			if (verbose && LOG.isInfoEnabled()) {
-				LOG
-						.info("Select from table: "
-								+ rowDef.toString()
-								+ " (indexID: "
-								+ indexId
-								+ ")"
-								+ " scanFlags="
-								+ scanFlags
-								+ " columnBitMap="
-								+ CServerUtil.hex(columnBitMap, 0,
-										columnBitMap.length));
-				LOG.info("  from: " + start.toString(rowDefCache));
-				LOG.info("    to: " + end.toString(rowDefCache));
-			}
-
-			final RowCollector rc = new PersistitStoreRowCollector(this,
-					scanFlags, start, end, columnBitMap, rowDef, indexId);
-
-			if (rc.hasMore()) {
-				putCurrentRowCollector(rowDefId, rc);
-			}
-			NEW_COLLECTOR_TAP.out();
-			return rc;
-		} catch (StoreException e) {
-			if (verbose && LOG.isInfoEnabled()) {
-				LOG.info("updateRow error " + e.getResult(), e);
-			}
-			throw e;
-		}
+            if (rc.hasMore()) {
+                putCurrentRowCollector(rowDefId, rc);
+            }
+            NEW_COLLECTOR_TAP.out();
+            return rc;
+        } catch (StoreException e) {
+            if (verbose && LOG.isInfoEnabled()) {
+                LOG.info("updateRow error " + e.getResult(), e);
+            }
+            throw e;
+        }
 	}
 
 	@Override

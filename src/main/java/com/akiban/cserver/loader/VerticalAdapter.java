@@ -6,7 +6,7 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.VStore;
+import com.akiban.cserver.store.VStoreOld;
 import com.akiban.cserver.store.StoreException;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -15,7 +15,7 @@ import java.sql.ResultSet;
 
 public class VerticalAdapter
 {
-    public VerticalAdapter(VStore store, GenerateFinalTask task)
+    public VerticalAdapter(VStoreOld store, GenerateFinalTask task)
         throws PersistitException
     {
         this.store = store;
@@ -94,7 +94,7 @@ public class VerticalAdapter
 
     private static final int ROW_DATA_BUFFER_SIZE = 1 << 16; // 64k
 
-    private final VStore store;
+    private final VStoreOld store;
     private final RowDef leafRowDef;
     private final FieldDef[][] fieldDefs;
     private final int[] ordinals;

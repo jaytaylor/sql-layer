@@ -21,7 +21,7 @@ public class VCollector implements RowCollector {
         assert columnBitMap != null;
         hasMore = false;
         rowSize = 0;
-        totalBytes = 0;
+//        totalBytes = 0;
         fields = 0;
         columnMapper = null;
         userTables = null;
@@ -90,7 +90,7 @@ public class VCollector implements RowCollector {
         // data.
         rowSize += RowData.MINIMUM_RECORD_LENGTH
                 + (table.getFieldCount() % 8 == 0 ? table.getFieldCount() / 8 : table.getFieldCount() / 8 + 1);
-        totalBytes = rowCount * (long) rowSize;
+//        totalBytes = rowCount * (long) rowSize;
     }
 
     @Override
@@ -115,7 +115,6 @@ public class VCollector implements RowCollector {
             numRows = size / columns.get(0).getFieldSize();
             assert numRows > 0;
             columnMapper.close();
-
             // XXX - this is badness.
             hasMore = false;
         }
@@ -123,8 +122,6 @@ public class VCollector implements RowCollector {
         for (int i = 0; i < numRows; i++) {
             RowData newRow = new RowData(payload.array(), ((int) i) * rowSize,
                     rowSize);
-            //System.out.println("nullMap ="+nullMap.toString()+" null map size = "+ nullMap.size() +", null map length "+nullMap.length() +"null map");
-            //System.out.println("projection ="+projection.toString()+ "projection size = "+ projection.size() +", projection length"+projection.length()+" projection ");
             newRow.mergeFields(table, buffers, i, nullMap);
         }
         return true;
@@ -144,7 +141,7 @@ public class VCollector implements RowCollector {
     private boolean hasMore;
     private int rowSize;
     private int fields;
-    private long totalBytes;
+    //private long totalBytes;
     private RowDef table;
     private ArrayList<RowDef> userTables;
     private ColumnMapper columnMapper;

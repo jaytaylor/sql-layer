@@ -3,25 +3,25 @@
  */
 package com.akiban.cserver.decider;
 
-import com.akiban.message.Request;
+import com.akiban.cserver.message.ScanRowsRequest;
 
 /**
  * @author percent
  *
  */
 public class Monadic implements Decider {
-	public Monadic(Decider.EngineType type) {
+	public Monadic(Decider.RowCollectorType type) {
 		engineType = type;
 	}
 	
 	/**
 	 *  (non-Javadoc)
-	 * @see com.akiban.cserver.decider.Decider#decide(com.akiban.message.Request)
+	 * @see com.akiban.cserver.decider.Decider#decide(com.akiban.message.ScanRowsRequest)
 	 */
 	@Override
-	public EngineType decide(Request r) {
+	public RowCollectorType decide(ScanRowsRequest r) {
 		return engineType;
 	}
 	
-	public Decider.EngineType engineType;
+	public Decider.RowCollectorType engineType;
 }
