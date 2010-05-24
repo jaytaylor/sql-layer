@@ -596,10 +596,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		} catch (StoreException e) {
 		    e.printStackTrace();
 		    LOG.error("VStore.writeRowForBulkLoad failed");
-	    } catch (Throwable t) {
-            t.printStackTrace();
-            LOG.error("VStore.writeRowForBulkLoad failed");            
-	   }   
+	        } catch (Throwable t) {
+                    t.printStackTrace();
+                    LOG.error("VStore.writeRowForBulkLoad failed");            
+	        }   
 	    
 		try {
 			constructHKey(hEx, rowDef, ordinals, fieldDefs, hKeyValues);
