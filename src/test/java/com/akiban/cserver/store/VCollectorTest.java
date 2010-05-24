@@ -110,8 +110,8 @@ public class VCollectorTest {
                     columns.get(j).writeEncodedColumn(encodedColumns.get(j));
                     j++;
                     columnDes
-                        .add(new ColumnDescriptor(VCOLLECTOR_TEST_DATADIR
-                                + schemaName, tableName, fields[i].getName(),
+                        .add(new ColumnDescriptor(VCOLLECTOR_TEST_DATADIR,
+                                 schemaName, tableName, fields[i].getName(),
                                 rowDef.getRowDefId(), i, fields[i]
                                         .getMaxStorageSize(), rows));
                 }
