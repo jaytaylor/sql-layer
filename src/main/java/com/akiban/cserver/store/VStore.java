@@ -36,6 +36,11 @@ public class VStore {
     public VStore(Store store) {
         this.hstore = store;
     }
+
+    public VStore(Store store, final String path) {
+        this.hstore = store;
+        DATA_PATH = path;
+    }
     
     public void constructColumnDescriptors()
         throws Exception

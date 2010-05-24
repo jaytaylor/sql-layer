@@ -125,7 +125,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		this.config = config;
 		this.tableManager = new PersistitStoreTableManager(this);
 		this.scanDecider = DecisionEngine.createDecisionEngine(config);
-		this.vstore = new VStore(this);
+		this.vstore = new VStore(this, config.property(P_DATAPATH, datapath));
 	}
 
 	public synchronized void startUp() throws Exception {
@@ -594,10 +594,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		} catch (StoreException e) {
 		    e.printStackTrace();
 		    LOG.error("VStore.writeRowForBulkLoad failed");
-	    } catch (Throwable t) {
-            t.printStackTrace();
-            LOG.error("VStore.writeRowForBulkLoad failed");            
-	   }   
+	        } catch (Throwable t) {
+                    t.printStackTrace();
+                    LOG.error("VStore.writeRowForBulkLoad failed");            
+	        }   
 	    
 		try {
 			constructHKey(hEx, rowDef, ordinals, fieldDefs, hKeyValues);
