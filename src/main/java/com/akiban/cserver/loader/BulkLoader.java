@@ -2,15 +2,13 @@ package com.akiban.cserver.loader;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
-import com.akiban.cserver.store.VStoreOld;
+import com.akiban.cserver.store.PersistitStore;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BulkLoader extends Thread
 {
@@ -21,34 +19,25 @@ public class BulkLoader extends Thread
     {
         try {
             DB db = new DB(dbHost, dbPort, dbUser, dbPassword);
-            prepareWorkArea(db);
-            tracker = new Tracker(db, artifactsSchema);
-            tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
-                         dbUser, dbHost, dbPort, groups, resume, cleanup);
             if (taskGeneratorActions == null) {
                 taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
             }
             IdentityHashMap<UserTable, TableTasks> tableTasksMap =
                 new TaskGenerator(this, taskGeneratorActions).generateTasks();
-            DataGrouper dataGrouper = new DataGrouper(db, artifactsSchema, tracker);
+            DataGrouper dataGrouper = new DataGrouper(db, artifactsSchema);
             if (resume) {
                 dataGrouper.resume();
             } else {
                 dataGrouper.run(tableTasksMap);
             }
-            if (null != persistitStore) {
-                new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tableTasksMap));
-            } else {
-                new VerticalLoader(verticalStore, db, ais).load(finalTasks(tableTasksMap));
-                verticalStore.constructColumnDescriptors();
-            }
+            new PersistitLoader(persistitStore, db, ais).load(finalTasks(tableTasksMap));
+            persistitStore.syncColumns(); /* temporary for now until VStore is more stabilized */
             if (cleanup) {
-                deleteWorkArea(db);
+                dataGrouper.deleteWorkArea();
             }
-            tracker.info("Loading complete");
-            termination = new OKException();
+            logger.info("Loading complete");
         } catch (Exception e) {
-            tracker.error("Bulk load terminated with exception", e);
+            logger.error("Bulk load terminated with exception", e);
             termination = e;
         }
     }
@@ -67,7 +56,6 @@ public class BulkLoader extends Thread
                       String dbPassword) throws ClassNotFoundException, SQLException
     {
         this.persistitStore = persistitStore;
-        this.verticalStore = null;
         this.ais = ais;
         this.groups = groups;
         this.artifactsSchema = artifactsSchema;
@@ -76,47 +64,6 @@ public class BulkLoader extends Thread
         this.dbUser = dbUser;
         this.dbPort = dbPort;
         this.dbPassword = dbPassword;
-    }
-
-    public static synchronized BulkLoader start(Store store,
-                                                AkibaInformationSchema ais,
-                                                List<String> groups,
-                                                String artifactsSchema,
-                                                Map<String, String> sourceSchemas,
-                                                String dbHost,
-                                                int dbPort,
-                                                String dbUser,
-                                                String dbPassword,
-                                                boolean resume,
-                                                boolean cleanup) throws ClassNotFoundException, SQLException, InProgressException
-    {
-        if (inProgress == null) {
-            inProgress = new BulkLoader(store,
-                                        ais,
-                                        groups,
-                                        artifactsSchema,
-                                        sourceSchemas,
-                                        dbHost,
-                                        dbPort,
-                                        dbUser,
-                                        dbPassword,
-                                        resume,
-                                        cleanup);
-            inProgress.start();
-        } else {
-            throw new InProgressException();
-        }
-        return inProgress;
-    }
-
-    public static BulkLoader inProgress()
-    {
-        return inProgress;
-    }
-
-    public List<Event> recentEvents(int lastEventId) throws Exception
-    {
-        return tracker.recentEvents(lastEventId);
     }
 
     public BulkLoader(Store store,
@@ -131,13 +78,7 @@ public class BulkLoader extends Thread
                       boolean resume,
                       boolean cleanup) throws ClassNotFoundException, SQLException
     {
-        if (store instanceof PersistitStore) {
-            this.persistitStore = (PersistitStore) store;
-            this.verticalStore = null;
-        } else {
-            this.persistitStore = null;
-            this.verticalStore = (VStoreOld) store;
-        }
+        this.persistitStore = (PersistitStore) store;
         this.ais = ais;
         this.groups = groups;
         this.artifactsSchema = artifactsSchema;
@@ -181,8 +122,6 @@ public class BulkLoader extends Thread
         return ais;
     }
 
-    // For use by this class
-
     private static List<GenerateFinalTask> finalTasks(IdentityHashMap<UserTable, TableTasks> tableTasksMap)
     {
         List<GenerateFinalTask> finalTasks = new ArrayList<GenerateFinalTask>();
@@ -195,58 +134,7 @@ public class BulkLoader extends Thread
         return finalTasks;
     }
 
-    private void prepareWorkArea(DB db)
-        throws SQLException
-    {
-        DB.Connection connection = db.new Connection();
-        try {
-            connection.new DDL(TEMPLATE_DROP_BULK_LOAD_SCHEMA, artifactsSchema).execute();
-            connection.new DDL(TEMPLATE_CREATE_BULK_LOAD_SCHEMA, artifactsSchema).execute();
-            connection.new DDL(TEMPLATE_CREATE_TASKS_TABLE, artifactsSchema).execute();
-        } finally {
-            connection.close();
-        }
-    }
-
-    public void deleteWorkArea(DB db) throws SQLException
-    {
-        DB.Connection connection = db.new Connection();
-        try {
-            tracker.info("Deleting work area");
-            connection.new DDL(TEMPLATE_DROP_BULK_LOAD_SCHEMA, artifactsSchema).execute();
-        } finally {
-            connection.close();
-        }
-    }
-
-    // State
-
-    private static final String TEMPLATE_DROP_BULK_LOAD_SCHEMA =
-        "drop schema if exists %s";
-    private static final String TEMPLATE_CREATE_BULK_LOAD_SCHEMA =
-        "create schema %s";
-    private static final String TEMPLATE_CREATE_TASKS_TABLE =
-        "create table %s.task(" +
-        "    task_id int auto_increment, " +
-        "    task_type enum('GenerateFinalBySort', " +
-        "                   'GenerateFinalByMerge', " +
-        "                   'GenerateChild', " +
-        "                   'GenerateParentBySort'," +
-        "                   'GenerateParentByMerge') not null, " +
-        "    state enum('waiting', 'started', 'completed') not null, " +
-        "    time_sec double, " +
-        "    user_table_schema varchar(64) not null, " +
-        "    user_table_table varchar(64) not null, " +
-        "    user_table_depth int not null, " +
-        "    artifact_schema varchar(64) not null, " +
-        "    artifact_table varchar(64) not null, " +
-        "    command varchar(10000) not null, " +
-        "    primary key(task_id)" +
-        ")";
-
-    // TODO: Once this is set, it is never unset. This enables tracking of progress by BulkLoaderClient even after the
-    // TODO: bulk load is complete. But it doesn't allow for a second bulk load. Need to fix that.
-    private static BulkLoader inProgress = null;
+    private static final Log logger = LogFactory.getLog(BulkLoader.class.getName());
 
     private boolean resume = false;
     private boolean cleanup = true;
@@ -258,18 +146,12 @@ public class BulkLoader extends Thread
     private List<String> groups;
     private Map<String, String> sourceSchemas;
     private PersistitStore persistitStore;
-    private VStoreOld verticalStore;
     private AkibaInformationSchema ais;
     private TaskGenerator.Actions taskGeneratorActions;
     private Exception termination = null;
-    private Tracker tracker;
 
     public static class RuntimeException extends java.lang.RuntimeException
     {
-        RuntimeException()
-        {
-        }
-
         RuntimeException(String message)
         {
             super(message);
@@ -287,30 +169,5 @@ public class BulkLoader extends Thread
         {
             super(message);
         }
-    }
-
-    public static class DBSpawnFailedException extends RuntimeException
-    {
-        DBSpawnFailedException(String sql, Integer exitCode, Throwable th)
-        {
-            super(String.format("sql: %s, exit code: %s", sql, exitCode), th);
-            this.exitCode = exitCode;
-        }
-
-        public int exitCode()
-        {
-            return exitCode;
-        }
-
-        private final int exitCode;
-    }
-
-    // Not actually thrown - indicates normal termination
-    public static class OKException extends RuntimeException
-    {
-    }
-
-    public static class InProgressException extends Exception
-    {
     }
 }

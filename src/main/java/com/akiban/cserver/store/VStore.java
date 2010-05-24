@@ -113,17 +113,25 @@ public class VStore {
             String columnName = field.getName();
             String columnFileName = prefix + columnName;
             File columnData = new File(columnFileName);
-            if (! columnData.exists()) {
+            ColumnInfo tmp_info = columnInfo.get(columnName); /* @todo: temporary only */
+            if (! columnData.exists() || tmp_info == null) {
+                /* 
+                 * delete old file from previous run.
+                 * @TODO: this is only until VStore supports drop table
+                 */
+                columnData.delete();
                 boolean ret = columnData.createNewFile();
                 if (! ret) {
                     throw new Exception();
                 }
+                /* delete this file on exit (only until vstore supports dropping of tables) */
+                columnData.deleteOnExit();
                 columnList.put(columnName, columnFileName);
                 ColumnInfo info = new ColumnInfo(columnName, 
-                    tableName, 
-                    schemaName, 
-                    rowDef.getRowDefId(),
-                    i);
+                                                 tableName, 
+                                                 schemaName, 
+                                                 rowDef.getRowDefId(),
+                                                 i);
                 columnInfo.put(columnName, info);
             } 
 

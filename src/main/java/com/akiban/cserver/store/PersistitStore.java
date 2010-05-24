@@ -125,7 +125,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		this.config = config;
 		this.tableManager = new PersistitStoreTableManager(this);
 		this.scanDecider = DecisionEngine.createDecisionEngine(config);
-		this.vstore = new VStore(this, config.property(P_DATAPATH, datapath));
+                final String path = config.property(P_DATAPATH, datapath);
+		this.vstore = new VStore(this, path);
 	}
 
 	public synchronized void startUp() throws Exception {
@@ -142,6 +143,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			//
 			final String path = config.property(P_DATAPATH, datapath);
 			db.setProperty("datapath", path);
+                        vstore.setDataPath(path);
 			final boolean isUnitTest = "true".equals(config
 					.property(FIXED_ALLOCATION_PROPERTY_NAME));
 			if (!isUnitTest) {
@@ -594,10 +596,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		} catch (StoreException e) {
 		    e.printStackTrace();
 		    LOG.error("VStore.writeRowForBulkLoad failed");
-	        } catch (Throwable t) {
-                    t.printStackTrace();
-                    LOG.error("VStore.writeRowForBulkLoad failed");            
-	        }   
+	    } catch (Throwable t) {
+            t.printStackTrace();
+            LOG.error("VStore.writeRowForBulkLoad failed");            
+	   }   
 	    
 		try {
 			constructHKey(hEx, rowDef, ordinals, fieldDefs, hKeyValues);
@@ -625,6 +627,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             return ERR;
         }
 	}
+
+        public void syncColumns()
+            throws Exception
+        {
+            vstore.constructColumnDescriptors();
+        }
 
 	@Override
 	public void updateTableStats(RowDef rowDef, long rowCount)
