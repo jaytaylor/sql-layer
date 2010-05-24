@@ -1,13 +1,17 @@
 package com.akiban.cserver.util;
 
+import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
 import com.akiban.cserver.message.BulkLoadResponse;
+import com.akiban.cserver.message.BulkLoadStatusRequest;
 import com.akiban.message.AkibaConnection;
 import com.akiban.message.MessageRegistry;
+import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
-import org.apache.log4j.Logger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,19 +33,44 @@ public class BulkLoaderClient
         logger.info(String.format("Got network handler %s", networkHandler));
         AkibaConnection connection = AkibaConnection.createConnection(networkHandler);
         logger.info(String.format("Got connection: %s", connection));
+        int exitCode = 0;
         try {
-            BulkLoadRequest request = new BulkLoadRequest(dbHost,
-                                                          dbPort,
-                                                          dbUser,
-                                                          dbPassword,
-                                                          groups,
-                                                          artifactsSchema,
-                                                          sourceSchemas,
-                                                          resume,
-                                                          cleanup);
-            logger.info("About to send request");
-            BulkLoadResponse response = (BulkLoadResponse) connection.sendAndReceive(request);
-            logger.info("Request sent");
+            Request request = new BulkLoadRequest(dbHost,
+                                                  dbPort,
+                                                  dbUser,
+                                                  dbPassword,
+                                                  groups,
+                                                  artifactsSchema,
+                                                  sourceSchemas,
+                                                  resume,
+                                                  cleanup);
+            BulkLoadResponse response;
+            BulkLoadResponse badEnding = null;
+            do {
+                logger.info(String.format("About to send request %s", request));
+                response = (BulkLoadResponse) connection.sendAndReceive(request);
+                logger.info(String.format("Received resopnse %s", response));
+                List<Event> events = response.events();
+                if (events != null) {
+                    for (Event event : events) {
+                        logger.info(String.format("%s (%s sec): %s", event.eventId(), event.timeSec(), event.message()));
+                    }
+                    if (!response.isIdle()) {
+                        if (response.terminatedByException()) {
+                            badEnding = response;
+                        }
+                        Thread.sleep(10000);
+                        request = new BulkLoadStatusRequest(events.isEmpty()
+                                                            ? -1
+                                                            : events.get(events.size() - 1).eventId());
+                    }
+                }
+            } while (!response.isIdle());
+            if (badEnding != null) {
+                logger.error(String.format("Bulk load terminated by %s: %s",
+                                           response.exceptionClassName(), response.exceptionMessage()));
+                exitCode = response.exitCode();
+            }
         } catch (Exception e) {
             logger.error("Caught exception", e);
             throw e;
@@ -51,6 +80,8 @@ public class BulkLoaderClient
             logger.info("Closing network");
             NetworkHandlerFactory.closeNetwork();
             logger.info("Network closed");
+            logger.info(String.format("Exit code: %s", exitCode));
+            System.exit(exitCode);
         }
     }
 
@@ -172,7 +203,7 @@ public class BulkLoaderClient
         ""
     };
 
-    private static final Logger logger = Logger.getLogger(BulkLoaderClient.class);
+    private static final Log logger = LogFactory.getLog(BulkLoaderClient.class);
     private static final String LOCALHOST = "localhost";
     private static final int DEFAULT_MYSQL_PORT = 3306;
     private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999; // because there has to be one

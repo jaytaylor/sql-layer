@@ -1,23 +1,20 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.store.PersistitStore;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.sql.ResultSet;
 import java.util.List;
 
 public class PersistitLoader
 {
-    public PersistitLoader(PersistitStore store, DB db, AkibaInformationSchema ais) throws Exception
+    public PersistitLoader(PersistitStore store, DB db, Tracker tracker) throws Exception
     {
         this.store = store;
         this.db = db;
-        transaction = store.getDb().getTransaction();
+        this.tracker = tracker;
+        this.transaction = store.getDb().getTransaction();
     }
 
     public void load(List<GenerateFinalTask> finalTasks) throws Exception
@@ -34,7 +31,7 @@ public class PersistitLoader
             try {
                 transaction.rollback();
             } catch (PersistitException rollbackException) {
-                logger.error("Caught exception while rolling back following earlier failure", rollbackException);
+                tracker.error("Caught exception while rolling back following earlier failure", rollbackException);
             }
             throw e;
         } finally {
@@ -42,9 +39,9 @@ public class PersistitLoader
         }
     }
 
-    private void load(GenerateFinalTask task, DB.Connection connection) throws Exception
+    private void load(final GenerateFinalTask task, DB.Connection connection) throws Exception
     {
-        logger.info(String.format("Loading persistit for %s", task.artifactTableName()));
+        tracker.info(String.format("Loading persistit for %s", task.artifactTableName()));
         final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task);
         connection.new Query(SQL_TEMPLATE, task.artifactTableName())
         {
@@ -52,15 +49,21 @@ public class PersistitLoader
             protected void handleRow(ResultSet resultSet) throws Exception
             {
                 persistitAdapter.handleRow(resultSet);
+                if ((++count % LOG_INTERVAL) == 0) {
+                    tracker.info("%s: %s", task.artifactTableName(), count);
+                }
             }
+
+            private int count = 0;
         }.execute();
         persistitAdapter.close();
     }
 
-    private static final Log logger = LogFactory.getLog(PersistitLoader.class.getName());
     private static final String SQL_TEMPLATE = "select * from %s";
+    private static final int LOG_INTERVAL = 1000;
 
     private final DB db;
     private final PersistitStore store;
-    private Transaction transaction;
+    private final Tracker tracker;
+    private final Transaction transaction;
 }

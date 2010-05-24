@@ -1,6 +1,7 @@
 package com.akiban.cserver.loader;
 
 import com.akiban.ais.util.Command;
+import org.apache.commons.logging.Log;
 
 import java.io.IOException;
 import java.sql.DriverManager;
@@ -30,37 +31,36 @@ public class DB
             : String.format("jdbc:mysql://%s:%s/%s", dbHost, dbPort, schema);
     }
 
-    public void spawn(String sql)
+    public void spawn(String sql, Log logger)
     {
         Command command =
             dbPassword == null
-            ? Command.printOutput(System.out,
-                                  String.format("%s/bin/mysql", mysqlInstallDir()),
-                                  "-h",
-                                  dbHost,
-                                  "-P",
-                                  Integer.toString(dbPort),
-                                  "-u",
-                                  dbUser)
-            : Command.printOutput(System.out,
-                                  String.format("%s/bin/mysql", mysqlInstallDir()),
-                                  "-h",
-                                  dbHost,
-                                  "-P",
-                                  Integer.toString(dbPort),
-                                  "-u",
-                                  dbUser,
-                                  "-p" + dbPassword);
+            ? Command.logOutput(logger,
+                                String.format("%s/bin/mysql", mysqlInstallDir()),
+                                "-h",
+                                dbHost,
+                                "-P",
+                                Integer.toString(dbPort),
+                                "-u",
+                                dbUser)
+            : Command.logOutput(logger,
+                                String.format("%s/bin/mysql", mysqlInstallDir()),
+                                "-h",
+                                dbHost,
+                                "-P",
+                                Integer.toString(dbPort),
+                                "-u",
+                                dbUser,
+                                "-p" + dbPassword);
         try {
             int status = command.run(sql);
             if (status != 0) {
-                throw new BulkLoader.RuntimeException(String.format("Exit code %s while running %s",
-                                                                    status, sql));
+                throw new BulkLoader.DBSpawnFailedException(sql, status, null);
             }
         } catch (IOException e) {
-            throw new BulkLoader.RuntimeException(String.format("Caught IOException while running %s", sql), e);
+            throw new BulkLoader.DBSpawnFailedException(sql, null, e);
         } catch (Command.Exception e) {
-            throw new BulkLoader.RuntimeException(String.format("Caught Command.Exception while running %s", sql), e);
+            throw new BulkLoader.DBSpawnFailedException(sql, null, e);
         }
     }
 
