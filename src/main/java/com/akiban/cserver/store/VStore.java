@@ -148,6 +148,8 @@ public class VStore {
             info.incrementCount();
             info.setSize(size);
             columnInfo.put(columnName, info);
+            fout.flush();
+            fout.close();
         }
 
         return 0;
