@@ -124,8 +124,6 @@ public class VStore {
                 if (! ret) {
                     throw new Exception();
                 }
-                /* delete this file on exit (only until vstore supports dropping of tables) */
-                columnData.deleteOnExit();
                 columnList.put(columnName, columnFileName);
                 ColumnInfo info = new ColumnInfo(columnName, 
                                                  tableName, 
