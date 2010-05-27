@@ -14,8 +14,6 @@ import com.akiban.vstore.*;
 import com.akiban.cserver.*;
 import java.util.*;
 
-import org.antlr.misc.Graph.Node;
-
 public class VCollector implements RowCollector {
 
     public VCollector(VMeta meta, final RowDefCache rowDefCache,
@@ -30,12 +28,14 @@ public class VCollector implements RowCollector {
         userTables = null;
 
         table = rowDefCache.getRowDef(rowDefId);
-        assert table != null;
+        
         projection = new BitSet(table.getFieldCount());
-        projection.clear();
         nullMap = new BitSet(table.getFieldCount());
-        nullMap.clear();
         columnMapper = new ColumnMapper();
+        
+        assert table != null;
+        projection.clear();
+        nullMap.clear();
         
         for (int i = 0; i < table.getFieldCount(); i++) {
             if ((columnBitMap[i / 8] & (1 << (i % 8))) != 0) {
@@ -130,7 +130,7 @@ public class VCollector implements RowCollector {
 
         ArrayList<ByteBuffer> buffers = new ArrayList<ByteBuffer>();
         int numRows = chunkSize / rowSize;
-        ColumnMapper.MapInfo ret = columnMapper.mapChunk(buffers, chunkSize);
+        ColumnMapper.MapInfo ret = columnMapper.mapChunk(buffers, chunkSize - ((rowSize - rawDataSize)*numRows));
 
         if (!ret.more) {
             assert ret.bytes % rawDataSize == 0;
