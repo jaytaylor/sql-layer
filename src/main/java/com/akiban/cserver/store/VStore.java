@@ -128,7 +128,7 @@ public class VStore {
                 ColumnInfo info = new ColumnInfo(columnName, 
                                                  tableName, 
                                                  schemaName, 
-                                                 rowDef.getRowDefId(),
+                                                 rowDef.getGroupRowDefId(),
                                                  i);
                 columnInfo.put(columnName, info);
             } 
