@@ -124,12 +124,14 @@ public class VCollector implements RowCollector {
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception {
         assert hasMore == true;
-        
+        int count = 0;
         int chunkSize = payload.limit() - payload.position();
         assert chunkSize > 0;
 
         ArrayList<ByteBuffer> buffers = new ArrayList<ByteBuffer>();
         int numRows = chunkSize / rowSize;
+        // computeHKeys(numRows);
+        // compute
         ColumnMapper.MapInfo ret = columnMapper.mapChunk(buffers,  
                 chunkSize - ((rowSize - rawDataSize)*numRows));
 
@@ -145,6 +147,7 @@ public class VCollector implements RowCollector {
             RowData newRow = new RowData(payload.array(), ((int)i)*rowSize,
                     rowSize);
             newRow.mergeFields(table, buffers, i, nullMap);
+            System.out.println("row number "+i);
         }
         return true;
     }

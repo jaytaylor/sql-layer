@@ -6,7 +6,7 @@ from optparse import OptionParser
 def generate_integer_columns(file, count):
     
     for i in range(0, int(count)):
-        f.write('`field'+str(i)+'` int(11) NOT NULL default \'0\'\n')
+        f.write('`field'+str(i)+'` int(11) NOT NULL default \'0\',\n')
         
     return;
 

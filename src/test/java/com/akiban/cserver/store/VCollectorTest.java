@@ -23,6 +23,7 @@ import com.akiban.ais.model.*;
 public class VCollectorTest {
 
     private final static String VCOLLECTOR_DDL = "src/test/resources/vcollector_test.ddl";
+    private final static String MANY_DDL = "src/test/resources/many_columns.ddl";
     private final static String VCOLLECTOR_TEST_DATADIR = "vcollector_test_data/";
     private static RowDefCache rowDefCache;
     private int rows = 15;
@@ -182,14 +183,14 @@ public class VCollectorTest {
             List<RowDef> rowDefs = rowDefCache.getRowDefs();
             Iterator<RowDef> i = rowDefs.iterator();
             while (i.hasNext()) {
-                
+
                 RowDef rowDef = i.next();
-                if(!rowDef.isGroupTable()) {
+                if (!rowDef.isGroupTable()) {
                     continue;
                 }
-                
+
                 testRowDef = rowDef;
-                
+
                 int mapSize = testRowDef.getFieldCount() / 8;
                 if (testRowDef.getFieldCount() % 8 != 0) {
                     mapSize++;
@@ -209,38 +210,39 @@ public class VCollectorTest {
                 meta = null;
 
                 generateEncodedData(testRowDef, projection);
-                //System.out.println("RowDef id = "+testRowDef.getRowDefId()
-                //+" table name = "+ testRowDef.getTableName());
-                
-                VCollector vc = new VCollector(meta, rowDefCache, 
-                        testRowDef.getRowDefId(), columnBitMap);
+                // System.out.println("RowDef id = "+testRowDef.getRowDefId()
+                // +" table name = "+ testRowDef.getTableName());
+
+                VCollector vc = new VCollector(meta, rowDefCache, testRowDef
+                        .getRowDefId(), columnBitMap);
 
                 ByteBuffer buffer = ByteBuffer.allocate((rowSize
                         + RowData.MINIMUM_RECORD_LENGTH + mapSize)
                         * rows);
-               /* System.out.println(">>>>>>>> tableId: "+testRowDef.getTableName()
-                        +", "+ testRowDef.getRowDefId() +", "
-                        + testRowDef.getParentRowDefId());
-                */
-                if(testRowDef.getRowDefId() == 1003) {
-                    //System.out.println("----> debugToString: "+testRowDef.debugToString());
-                    //System.out.println("----> parentJoin fields: "+testRowDef.getParentJoinFields());
-                    //System.out.println("----> rowType: "+testRowDef.getRowType());
-                    //System.out.println("----> isGroup: "+testRowDef.isGroupTable());
-                    //System.out.println("----> getUserTableRowDefs: "+testRowDef.getUserTableRowDefs());
-                    //System.out.println("----> groupRowDef: "+testRowDef.getGroupRowDefId());
-                    
-                boolean copied = vc.collectNextRow(buffer);
-                assertTrue(copied);
-                assertFalse(vc.hasMore());
-                Iterator<RowData> j = rowData.iterator();
-                while (j.hasNext()) {
-                    RowData row = j.next();
-                    byte[] expected = row.getBytes();
-                    byte[] actual = new byte[expected.length];
-                    buffer.get(actual);
-                    assertArrayEquals(expected, actual);
-                }
+                /*
+                 * System.out.println(">>>>>>>> tableId: "+testRowDef.getTableName
+                 * () +", "+ testRowDef.getRowDefId() +", " +
+                 * testRowDef.getParentRowDefId());
+                 */
+                if (testRowDef.getRowDefId() == 1003) {
+                    // System.out.println("----> debugToString: "+testRowDef.debugToString());
+                    // System.out.println("----> parentJoin fields: "+testRowDef.getParentJoinFields());
+                    // System.out.println("----> rowType: "+testRowDef.getRowType());
+                    // System.out.println("----> isGroup: "+testRowDef.isGroupTable());
+                    // System.out.println("----> getUserTableRowDefs: "+testRowDef.getUserTableRowDefs());
+                    // System.out.println("----> groupRowDef: "+testRowDef.getGroupRowDefId());
+
+                    boolean copied = vc.collectNextRow(buffer);
+                    assertTrue(copied);
+                    assertFalse(vc.hasMore());
+                    Iterator<RowData> j = rowData.iterator();
+                    while (j.hasNext()) {
+                        RowData row = j.next();
+                        byte[] expected = row.getBytes();
+                        byte[] actual = new byte[expected.length];
+                        buffer.get(actual);
+                        assertArrayEquals(expected, actual);
+                    }
                 }
             }
 
@@ -344,7 +346,7 @@ public class VCollectorTest {
 
     @Test
     public void testProjection() throws Exception {
-
+/*
         Random r = new Random(1337);
         rowDefCache = null;
         testRowDef = null;
@@ -357,7 +359,7 @@ public class VCollectorTest {
                 Iterator<RowDef> m = rowDefs.iterator();
                 while (m.hasNext()) {
                     RowDef rowDef = m.next();
-                    if(!rowDef.isGroupTable()) {
+                    if (!rowDef.isGroupTable()) {
                         continue;
                     }
                     testRowDef = rowDef;
@@ -410,7 +412,7 @@ public class VCollectorTest {
                 fail("vcollector build failed");
             }
 
-        }
+        }*/
     }
 
     @Test
@@ -423,19 +425,17 @@ public class VCollectorTest {
 
         while (i.hasNext()) {
             RowDef rowDef = i.next();
-            if(!rowDef.isGroupTable()) {
+            if (!rowDef.isGroupTable()) {
                 continue;
             }
-            
+
             BitSet projection = new BitSet(rowDef.getFieldCount());
             projection.clear();
             byte[] bitMap = setupBitMap(projection, rand, rowDef
                     .getFieldCount());
 
-            
-            
             generateEncodedData(rowDef, projection);
-            
+
             VCollector vc = new VCollector(meta, rowDefCache, rowDef
                     .getRowDefId(), bitMap);
 
@@ -455,7 +455,7 @@ public class VCollectorTest {
         while (i.hasNext()) {
 
             RowDef rowDef = i.next();
-            if(!rowDef.isGroupTable()) {
+            if (!rowDef.isGroupTable()) {
                 continue;
             }
 
@@ -474,5 +474,76 @@ public class VCollectorTest {
             // XXX - implement me.
         }
     }
-    
+
+    @Test
+    public void testManyColumns() throws Exception {
+        rowDefCache = new RowDefCache();
+
+        AkibaInformationSchema ais = null;
+        try {
+            ais = new DDLSource().buildAIS(MANY_DDL);
+        } catch (Exception e1) {
+            e1.printStackTrace();
+            fail("ais gen failed");
+            return;
+        }
+        rowDefCache.setAIS(ais);
+        try {
+            List<RowDef> rowDefs = rowDefCache.getRowDefs();
+            Iterator<RowDef> i = rowDefs.iterator();
+            while (i.hasNext()) {
+
+                RowDef rowDef = i.next();
+                if (!rowDef.isGroupTable()) {
+                    continue;
+                }
+
+                testRowDef = rowDef;
+
+                int mapSize = testRowDef.getFieldCount() / 8;
+                if (testRowDef.getFieldCount() % 8 != 0) {
+                    mapSize++;
+                }
+
+                byte[] columnBitMap = new byte[mapSize];
+                BitSet projection = new BitSet(mapSize);
+                for (int j = 0; j < testRowDef.getFieldCount(); j++) {
+                    columnBitMap[j / 8] |= 1 << (j % 8);
+                    projection.set(j, true);
+                }
+
+                columnDes = new ArrayList<ColumnDescriptor>();
+                columns = new ArrayList<ColumnArrayGenerator>();
+                encodedColumns = new ArrayList<ArrayList<byte[]>>();
+                rowData = new ArrayList<RowData>();
+                meta = null;
+
+                generateEncodedData(testRowDef, projection);
+
+                VCollector vc = new VCollector(meta, rowDefCache, testRowDef
+                        .getRowDefId(), columnBitMap);
+
+                ByteBuffer buffer = ByteBuffer.allocate((rowSize
+                        + RowData.MINIMUM_RECORD_LENGTH + mapSize)
+                        * rows);
+
+                boolean copied = vc.collectNextRow(buffer);
+                assertTrue(copied);
+                assertFalse(vc.hasMore());
+                Iterator<RowData> j = rowData.iterator();
+                while (j.hasNext()) {
+                    RowData row = j.next();
+                    byte[] expected = row.getBytes();
+                    byte[] actual = new byte[expected.length];
+                    buffer.get(actual);
+                    assertArrayEquals(expected, actual);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("ERROR because " + e.getMessage());
+            e.printStackTrace();
+            fail("vcollector build failed");
+        }
+    }
+
 }
