@@ -266,6 +266,83 @@ public class VCollectorTest {
     }
 
     @Test
+    public void testCollectNextRow()
+        throws Exception
+    {
+        try {
+            setupDatabase();
+            List<RowDef> rowDefs = rowDefCache.getRowDefs();
+            Iterator<RowDef> iter = rowDefs.iterator();
+            while (iter.hasNext()) {
+                RowDef rowDef = iter.next();
+                if (! rowDef.isGroupTable()) {
+                    continue;
+                }
+
+                int mapSize = rowDef.getFieldCount() / 8;
+                if (rowDef.getFieldCount() % 8 != 0) {
+                    mapSize++;
+                }
+
+                byte[] columnBitMap = new byte[mapSize];
+                BitSet projection = new BitSet(mapSize);
+                for (int j = 0; j < rowDef.getFieldCount(); j++) {
+                    columnBitMap[j / 8] |= 1 << (j % 8);
+                    projection.set(j, true);
+                }
+
+                columnDes = new ArrayList<ColumnDescriptor>();
+                columns = new ArrayList<ColumnArrayGenerator>();
+                encodedColumns = new ArrayList<ArrayList<byte[]>>();
+                rowData = new ArrayList<RowData>();
+                meta = null;
+
+                generateEncodedData(rowDef, projection);
+
+                VCollector vc = new VCollector(meta, 
+                                               rowDefCache, 
+                                               rowDef.getRowDefId(), 
+                                               columnBitMap);
+
+                /* we want to retrieve 5 row chunks at a time from the VCollector */
+                int rowChunk = 5;
+                int currentRow = 0; /* used as an index into the rowData array */
+                int totalRowSize = rowSize + RowData.MINIMUM_RECORD_LENGTH + mapSize;
+                int bufferSize = totalRowSize * rowChunk;
+                ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+                if (rowDef.getRowDefId() == 1003) {
+                    int i = 0;
+                    while (i < rows) {
+                        if (vc.hasMore()) {
+                            buffer.clear();
+                            vc.collectNextRow(buffer);
+                            /* iterate through the rows placed in the ByteBuffer */
+                            int rowIter = 0;
+                            while (rowIter < rowChunk) {
+                                byte[] actual = new byte[totalRowSize];
+                                buffer.get(actual , 0, totalRowSize);
+                                RowData row = (RowData) rowData.get(currentRow);
+                                byte[] expected = row.getBytes();
+                                assertArrayEquals(expected, actual);
+                                currentRow++;
+                                rowIter++;
+                            }
+                            /* go on to the next row chunk */
+                            i += rowChunk;
+                        } else {
+                            break; /* we have no more rows to get */
+                        }
+                    }
+                    assertEquals(i, rows);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("testCollectNextRow test failed");
+        }
+    }
+
+    @Test
     public void testProjection() throws Exception {
 
         Random r = new Random(1337);
