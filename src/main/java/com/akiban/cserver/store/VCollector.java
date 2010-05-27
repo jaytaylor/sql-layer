@@ -50,14 +50,14 @@ public class VCollector implements RowCollector {
             table = rowDefCache.getRowDef(table.getGroupRowDefId());
         }
 
-        ArrayList<Tree<VTable>> nodes = new ArrayList<Tree<VTable>>();
-        ArrayList<Tree<VTable>> rootCandidates = new ArrayList<Tree<VTable>>();
+        ArrayList<Tree<Table>> nodes = new ArrayList<Tree<Table>>();
+        ArrayList<Tree<Table>> rootCandidates = new ArrayList<Tree<Table>>();
         
         userTables = new ArrayList<RowDef>();
         for (int i = 0; i < table.getUserTableRowDefs().length; i++) {
             
             final RowDef utable = table.getUserTableRowDefs()[i];
-            Tree<VTable> node = new Tree<VTable>(new VTable(utable.getParentRowDefId(), 
+            Tree<Table> node = new Tree<Table>(new Table(utable.getParentRowDefId(), 
                     utable.getRowDefId()));
             
             int offset = utable.getColumnOffset();
@@ -76,9 +76,9 @@ public class VCollector implements RowCollector {
             }
  
             rootCandidates.add(node);
-            Iterator<Tree<VTable>> j = nodes.iterator();
+            Iterator<Tree<Table>> j = nodes.iterator();
             while(j.hasNext()) {
-                Tree<VTable> t = j.next();
+                Tree<Table> t = j.next();
                 if(t.getNode().getRoot()  == node.getNode().getTableId()) {
                     node.add(t);
                     assert rootCandidates.remove(t);
@@ -112,7 +112,7 @@ public class VCollector implements RowCollector {
         return userTables;
     }
 
-    public Tree<VTable> getHierarchy() {
+    public Tree<Table> getHierarchy() {
         return hierarchy;
     }
     
@@ -130,7 +130,8 @@ public class VCollector implements RowCollector {
 
         ArrayList<ByteBuffer> buffers = new ArrayList<ByteBuffer>();
         int numRows = chunkSize / rowSize;
-        ColumnMapper.MapInfo ret = columnMapper.mapChunk(buffers, chunkSize - ((rowSize - rawDataSize)*numRows));
+        ColumnMapper.MapInfo ret = columnMapper.mapChunk(buffers,  
+                chunkSize - ((rowSize - rawDataSize)*numRows));
 
         if (!ret.more) {
             assert ret.bytes % rawDataSize == 0;
@@ -168,5 +169,5 @@ public class VCollector implements RowCollector {
     private ColumnMapper columnMapper;
     private BitSet projection;
     private BitSet nullMap;
-    private Tree<VTable> hierarchy;
+    private Tree<Table> hierarchy;
 }
