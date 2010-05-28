@@ -147,7 +147,6 @@ public class VCollector implements RowCollector {
             RowData newRow = new RowData(payload.array(), ((int)i)*rowSize,
                     rowSize);
             newRow.mergeFields(table, buffers, i, nullMap);
-            System.out.println("row number "+i);
         }
         return true;
     }
