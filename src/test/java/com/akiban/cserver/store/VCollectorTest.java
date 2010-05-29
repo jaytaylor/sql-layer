@@ -24,7 +24,7 @@ public class VCollectorTest {
 
     private final static String VCOLLECTOR_DDL = "src/test/resources/vcollector_test.ddl";
     private final static String MANY_DDL = "src/test/resources/many_columns.ddl";
-    private final static String VCOLLECTOR_TEST_DATADIR = "vcollector_test_data/";
+    private final static String VCOLLECTOR_TEST_DATADIR = "target/vcollector_test_data/";
     private static RowDefCache rowDefCache;
     private int rows = 15;
     private int rowSize = 0;
