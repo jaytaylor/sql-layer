@@ -123,7 +123,7 @@ public class CServerTest implements CServerConstants {
 		response = (WriteRowResponse) connection.sendAndReceive(request);
 		assertEquals(1, ((WriteRowResponse) response).getResultCode());
 
-		request = new GetTableStatisticsRequest(ROW_DEF.getRowDefId());
+		request = new GetTableStatisticsRequest(ROW_DEF.getRowDefId(), (byte)0);
 		response = connection.sendAndReceive(request);
 
 		GetTableStatisticsResponse gtsr = (GetTableStatisticsResponse) response;
