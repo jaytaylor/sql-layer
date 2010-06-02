@@ -11,7 +11,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
@@ -26,8 +25,6 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 	static final Log LOG = LogFactory.getLog(PersistitStoreRowCollector.class
 			.getName());
-
-	private final static int INITIAL_BUFFER_SIZE = 1024;
 
 	private static final Tap SCAN_NEXT_ROW_TAP = Tap.add("read: next_row");
 
@@ -163,7 +160,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 
 			for (int level = 0; level < pendingRowData.length; level++) {
 				pendingRowData[level] = new RowData(
-						new byte[INITIAL_BUFFER_SIZE]);
+						new byte[PersistitStore.INITIAL_BUFFER_SIZE]);
 			}
 
 			this.pendingFromLevel = 0;
@@ -618,59 +615,13 @@ public class PersistitStoreRowCollector implements RowCollector,
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("Preparing row at " + exchange);
 		}
-		final byte[] bytes = exchange.getValue().getEncodedBytes();
-		final int size = exchange.getValue().getEncodedSize();
-		int rowDataSize = size + RowData.ENVELOPE_SIZE;
-
-		if (rowDataSize < RowData.MINIMUM_RECORD_LENGTH) {
-			if (LOG.isErrorEnabled()) {
-				LOG.error("Value at " + exchange.getKey()
-						+ " is not a valid row - skipping");
-			}
-			throw new StoreException(HA_ERR_INTERNAL_ERROR,
-					"Corrupt RowData at " + exchange.getKey());
-		} else {
-			final int rowDefId = CServerUtil.getInt(bytes, RowData.O_ROW_DEF_ID
-					- RowData.LEFT_ENVELOPE_SIZE);
-			if (rowDefId != expectedRowDefId && expectedRowDefId != 0) {
-				//
-				// Add code to here to evolve data to required expectedRowDefId
-				//
-				throw new StoreException(HA_ERR_INTERNAL_ERROR,
-						"Unable to convert rowDefId " + rowDefId
-								+ " to expected rowDefId " + expectedRowDefId);
-			}
-
-			final RowData rowData = pendingRowData[level];
-			byte[] buffer = rowData.getBytes();
-			if (rowDataSize > buffer.length) {
-				buffer = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
-				rowData.reset(buffer);
-			}
-			//
-			// Assemble the Row in a byte array to allow column
-			// elision
-			//
-			CServerUtil.putInt(buffer, RowData.O_LENGTH_A, rowDataSize);
-			CServerUtil.putChar(buffer, RowData.O_SIGNATURE_A,
-					RowData.SIGNATURE_A);
-			System
-					.arraycopy(exchange.getValue().getEncodedBytes(), 0,
-							buffer, RowData.O_FIELD_COUNT, exchange.getValue()
-									.getEncodedSize());
-			CServerUtil.putChar(buffer, RowData.O_SIGNATURE_B + rowDataSize,
-					RowData.SIGNATURE_B);
-			CServerUtil.putInt(buffer, RowData.O_LENGTH_B + rowDataSize,
-					rowDataSize);
-			rowData.prepareRow(0);
-
-			// Remove unwanted columns
-			//
-			if (!isDeepMode()) {
-				rowData.elide(columnBitMap, columnOffset - columnBitMapOffset,
-						columnBitMapWidth);
-			}
-
+		store.expandRowData(exchange, expectedRowDefId, pendingRowData[level]);
+		//
+		// Remove unwanted columns
+		//
+		if (!isDeepMode()) {
+			pendingRowData[level].elide(columnBitMap, columnOffset
+					- columnBitMapOffset, columnBitMapWidth);
 		}
 	}
 

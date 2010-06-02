@@ -370,6 +370,52 @@ public enum Encoding {
 		}
 
 	},
+	VARBINARY {
+
+		@Override
+		public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
+				int offset) {
+			if (!(value instanceof byte[])) {
+				throw new IllegalArgumentException(value
+						+ " must be a byte array");
+			}
+			return putByteArray((byte[]) value, dest, offset, fieldDef);
+		}
+
+		@Override
+		public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
+			toKeyByteArrayEncoding(fieldDef, rowData, key);
+		}
+
+		@Override
+		public void toKey(FieldDef fieldDef, Object value, Key key) {
+			key.append(value);
+		}
+
+		@Override
+		public void toString(FieldDef fieldDef, RowData rowData,
+				StringBuilder sb, final Quote quote) {
+			final long location = fieldDef.getRowDef().fieldLocation(rowData,
+					fieldDef.getFieldIndex());
+			int offset = (int) location + fieldDef.getPrefixSize();
+			int size = (int) (location >>> 32) - fieldDef.getPrefixSize();
+			sb.append("0x");
+			sb.append(CServerUtil.hex(rowData.getBytes(), offset, size));
+		}
+
+		@Override
+		public int widthFromObject(final FieldDef fieldDef, final Object value) {
+			int prefixWidth = fieldDef.getPrefixSize();
+			return ((byte[]) value).length + prefixWidth;
+		}
+
+		@Override
+		public boolean validate(Type type) {
+			long w = type.maxSizeBytes();
+			return !type.fixedSize() && w < 65536;
+		}
+
+	},
 	BLOB {
 		// TODO - temporarily we handle just like VARCHAR
 		@Override
@@ -802,7 +848,8 @@ public enum Encoding {
 			final int v;
 			if (value instanceof String) {
 				try {
-					final Date date = getDateFormat(SDF_YEAR).parse((String) value);
+					final Date date = getDateFormat(SDF_YEAR).parse(
+							(String) value);
 					v = (date.getYear() - 1900);
 				} catch (ParseException e) {
 					throw new RuntimeException(e);
@@ -811,7 +858,7 @@ public enum Encoding {
 				final Date date = (Date) value;
 				v = (date.getYear() - 1900);
 			} else if (value instanceof Long) {
-				v = ((Long)value).intValue();
+				v = ((Long) value).intValue();
 			} else {
 				throw new IllegalArgumentException(
 						"Requires a String or a Date");
@@ -1166,11 +1213,15 @@ public enum Encoding {
 	 * @param fieldDef
 	 * @return
 	 */
-	public int objectToString(final Object obj, final byte[] bytes,
-			final int offset, final FieldDef fieldDef) {
+	int objectToString(final Object obj, final byte[] bytes, final int offset,
+			final FieldDef fieldDef) {
 		final String s = obj == null ? "" : obj.toString();
+		return putByteArray(stringBytes(s), bytes, offset, fieldDef);
+	}
+
+	int putByteArray(final byte[] b, final byte[] bytes, final int offset,
+			final FieldDef fieldDef) {
 		int prefixSize = fieldDef.getPrefixSize();
-		final byte[] b = stringBytes(s);
 		final int size = b.length;
 		switch (prefixSize) {
 		case 0:
@@ -1193,6 +1244,7 @@ public enum Encoding {
 		System.arraycopy(b, 0, bytes, offset + prefixSize, size);
 
 		return prefixSize + size;
+
 	}
 
 	int putInt(final byte[] bytes, final int offset, final long value,
@@ -1250,6 +1302,18 @@ public enum Encoding {
 				fieldDef.getFieldIndex());
 		key.append(CServerUtil.decodeMySQLString(rowData.getBytes(),
 				(int) location, (int) (location >>> 32), fieldDef));
+	}
+
+	void toKeyByteArrayEncoding(final FieldDef fieldDef, final RowData rowData,
+			final Key key) {
+		final long location = fieldDef.getRowDef().fieldLocation(rowData,
+				fieldDef.getFieldIndex());
+		final int offset = (int) location;
+		final int length = (int) (location >>> 32);
+		final byte[] bytes = new byte[length - fieldDef.getPrefixSize()];
+		System.arraycopy(rowData.getBytes(), offset + fieldDef.getPrefixSize(),
+				bytes, 0, bytes.length);
+		key.append(bytes);
 	}
 
 	// TODO -

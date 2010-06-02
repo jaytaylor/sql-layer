@@ -27,6 +27,7 @@ import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.AkibaConnection;
+import com.akiban.message.AkibaConnectionImpl;
 import com.akiban.message.ErrorResponse;
 import com.akiban.message.ExecutionContext;
 import com.akiban.message.Message;
@@ -90,10 +91,11 @@ public class CServer {
 		if ("true".equalsIgnoreCase(verboseString)) {
 			verbose = true;
 		}
-		hstore.startUp();
-		hstore.setVerbose(verbose);
 		ais0 = primordialAIS();
 		rowDefCache.setAIS(ais0);
+		
+		hstore.startUp();
+		hstore.setVerbose(verbose);
 		hstore.setOrdinals();
 		acquireAIS();
 	}
@@ -123,7 +125,7 @@ public class CServer {
 			}
 			final String threadName = "CServer_" + handler.getId();
 			final Thread thread = new Thread(new CServerRunnable(
-					AkibaConnection.createConnection(handler)), threadName);
+					AkibaConnectionImpl.createConnection(handler)), threadName);
 			thread.setDaemon(true);
 			thread.start();
 			synchronized (threadMap) {
@@ -281,7 +283,7 @@ public class CServer {
 	 * 
 	 * @throws Exception
 	 */
-	AkibaInformationSchema primordialAIS() throws Exception {
+	public AkibaInformationSchema primordialAIS() throws Exception {
 		if (ais0 != null) {
 			return ais0;
 		}

@@ -1,22 +1,24 @@
 package com.akiban.cserver.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
 import com.akiban.cserver.message.BulkLoadResponse;
 import com.akiban.cserver.message.BulkLoadStatusRequest;
 import com.akiban.message.AkibaConnection;
+import com.akiban.message.AkibaConnectionImpl;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class BulkLoaderClient
 {
@@ -31,7 +33,7 @@ public class BulkLoaderClient
         AkibaNetworkHandler networkHandler =
             NetworkHandlerFactory.getHandler(cserverHost, Integer.toString(cserverPort), null);
         logger.info(String.format("Got network handler %s", networkHandler));
-        AkibaConnection connection = AkibaConnection.createConnection(networkHandler);
+        AkibaConnection connection = AkibaConnectionImpl.createConnection(networkHandler);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {

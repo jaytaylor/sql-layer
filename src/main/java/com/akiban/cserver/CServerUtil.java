@@ -337,7 +337,9 @@ public class CServerUtil {
 			throw new IllegalStateException(file + " must be a directory");
 		} else {
 			final File[] files = file.listFiles();
-			cleanUpFiles(files);
+			if (files != null) {
+				cleanUpFiles(files);
+			}
 		}
 	}
 

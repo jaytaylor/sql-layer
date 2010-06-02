@@ -11,6 +11,7 @@ import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -475,5 +476,11 @@ public class VStoreOld
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public void analyzeTable(int tableId) throws Exception {
+		throw new UnsupportedOperationException();
+		
+	}
 
 }

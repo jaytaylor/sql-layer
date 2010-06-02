@@ -1,11 +1,12 @@
-package com.akiban.cserver.store;
+package com.akiban.cserver;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.cserver.RowData;
 
 public class TableStatistics {
+
+	public final static int LOW_CARDINALITY = 1;
 
 	private final int rowDefId;
 	
@@ -82,18 +83,22 @@ public class TableStatistics {
 	public void addHistogram(Histogram histogram) {
 		this.histograms.add(histogram);
 	}
+	
+	public void clearHistograms() {
+		this.histograms.clear();
+	}
 
 	public int getRowDefId() {
 		return rowDefId;
 	}
 	
-	public class Histogram {
+	public static class Histogram {
 		
 		private final int indexId;
 		
 		private List<HistogramSample> samples = new ArrayList<HistogramSample>();
 		
-		Histogram(final int indexId) {
+		public Histogram(final int indexId) {
 			this.indexId = indexId;
 		
 		}
@@ -111,9 +116,9 @@ public class TableStatistics {
 		}
 	}
 	
-	public class HistogramSample {
+	public static class HistogramSample {
 		
-		HistogramSample(final RowData rowData, final long rowCount) {
+		public HistogramSample(final RowData rowData, final long rowCount) {
 			this.rowData = rowData;
 			this.rowCount = rowCount;
 		}

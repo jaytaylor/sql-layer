@@ -6,6 +6,7 @@ import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -144,5 +145,14 @@ public interface Store {
 	List<RowData> fetchRows(final String schemaName, final String tableName,
 			final String columnName, final Object least, final Object greatest,
 			final String leafTableName) throws Exception;
+
+	
+	/**
+	 * Analyze statistical information about a table. Specifically, construct
+	 * histograms for its indexes.
+	 * @param tableId
+	 * @throws Exception
+	 */
+	void analyzeTable(int tableId) throws Exception;
 
 }

@@ -21,8 +21,8 @@ import com.akiban.cserver.message.GetTableStatisticsResponse;
 import com.akiban.cserver.message.WriteRowRequest;
 import com.akiban.cserver.message.WriteRowResponse;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.TableStatistics;
 import com.akiban.message.AkibaConnection;
+import com.akiban.message.AkibaConnectionImpl;
 import com.akiban.message.Message;
 import com.akiban.message.MessageRegistryBase;
 import com.akiban.network.AkibaNetworkHandler;
@@ -63,7 +63,7 @@ public class CServerTest implements CServerConstants {
 
 		networkHandler = NetworkHandlerFactory.getHandler("localhost", "5140",
 				null);
-		connection = AkibaConnection.createConnection(networkHandler);
+		connection = AkibaConnectionImpl.createConnection(networkHandler);
 	}
 
 	@AfterClass
