@@ -1272,6 +1272,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 				.getLastWriteTime()));
 		ts.setBlockSize(8192);
 		ts.setRowCount(status.getRowCount());
+		indexManager.populateTableStatistics(ts);
 		return ts;
 	}
 
