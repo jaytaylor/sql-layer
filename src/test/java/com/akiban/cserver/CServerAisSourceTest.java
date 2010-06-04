@@ -10,7 +10,6 @@ import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.AkibaInformationSchemaImpl;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
 import com.akiban.cserver.store.PersistitStore;
@@ -86,8 +85,8 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
 		final ByteBuffer bb1 = ByteBuffer.allocate(100000);
 		final ByteBuffer bb2 = ByteBuffer.allocate(100000);
 		
-		new Writer(new MessageTarget(bb1)).save((AkibaInformationSchemaImpl)ais1);
-		new Writer(new MessageTarget(bb2)).save((AkibaInformationSchemaImpl)ais2);
+		new Writer(new MessageTarget(bb1)).save((AkibaInformationSchema)ais1);
+		new Writer(new MessageTarget(bb2)).save((AkibaInformationSchema)ais2);
 		bb1.flip();
 		bb2.flip();
 		if (bb1.limit() != bb2.limit()) {

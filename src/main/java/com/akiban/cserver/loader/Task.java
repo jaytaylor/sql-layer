@@ -96,7 +96,7 @@ public abstract class Task
     {
         this.loader = loader;
         this.table = table;
-        artifactTableName = new TableNameImpl(artifactsSchema(),
+        artifactTableName = new TableName(artifactsSchema(),
                                               String.format("%s%s", table.getName().getTableName(), artifactSuffix));
     }
 
@@ -156,7 +156,7 @@ public abstract class Task
 
     protected TableName sourceTableName(TableName targetTableName)
     {
-        return new TableNameImpl(loader.sourceSchema(targetTableName.getSchemaName()), targetTableName.getTableName());
+        return new TableName(loader.sourceSchema(targetTableName.getSchemaName()), targetTableName.getTableName());
     }
 
     protected static String quote(String s)

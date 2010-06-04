@@ -20,7 +20,6 @@ import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.AkibaInformationSchemaImpl;
 import com.akiban.ais.model.Source;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
@@ -264,7 +263,7 @@ public class CServer {
 	public synchronized void acquireAIS() throws Exception {
 		final Source source = new CServerAisSource(hstore);
 		this.ais = new Reader(source)
-				.load(new AkibaInformationSchemaImpl(ais0));
+				.load(new AkibaInformationSchema(ais0));
 		installAIS();
 	}
 
