@@ -3,6 +3,7 @@
  */
 package com.akiban.cserver.store;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,9 +18,11 @@ import com.akiban.cserver.RowDef;
 //import com.akiban.cserver.message.ScanRowsRequest;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.KeyState;
 //import com.persistit.exception.PersistitException;
-import com.akiban.vstore.ColumnArray;
-import com.akiban.vstore.ColumnDescriptor;
+
+import com.akiban.vstore.FieldArray;
+import com.akiban.vstore.IColumnDescriptor;
 import com.akiban.vstore.VMeta;
 
 /**
@@ -35,6 +38,7 @@ public class VStore {
     
     public VStore(Store store) {
         this.hstore = store;
+        hkeyInfo = new HashMap<Integer, ColumnInfo>();
     }
 
     public VStore(Store store, final String path) {
@@ -46,15 +50,15 @@ public class VStore {
         throws Exception
     {
         String prefix = DATA_PATH + "/";
-        columnArrays = new ArrayList<ColumnArray>();
-        columnDescriptors = new ArrayList<ColumnDescriptor>();
+        fieldArrays = new ArrayList<FieldArray>();
+        columnDescriptors = new ArrayList<IColumnDescriptor>();
+        hkeyDescriptors = new ArrayList<IColumnDescriptor>();
+        
         for (Map.Entry<String, String> entry : columnList.entrySet()) {
             try {
-                File columnData = new File(entry.getValue());
-                ColumnArray colArr = new ColumnArray(columnData);
-                columnArrays.add(colArr);
+
                 ColumnInfo info = columnInfo.get(entry.getKey());
-                ColumnDescriptor descrip = new ColumnDescriptor(prefix,
+                IColumnDescriptor descrip = IColumnDescriptor.create(prefix,
                                                                 info.getSchemaName(), 
                                                                 info.getTableName(),
                                                                 info.getColumnName(), 
@@ -62,26 +66,40 @@ public class VStore {
                                                                 info.getOrdinal(), 
                                                                 info.getSize(), 
                                                                 info.getCount());
+                File columnData = new File(entry.getValue());
+                FieldArray colArr = descrip.createFieldArray();
+                fieldArrays.add(colArr);
+                
+                
                 columnDescriptors.add(descrip);
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        
         }
+        
+        for(ColumnInfo info : hkeyInfo.values()) {
+            IColumnDescriptor hkeyDes = IColumnDescriptor.create(prefix,
+                    info.schemaName, info.tableName, info.tableId, info.count);
+            hkeyDescriptors.add(hkeyDes);
+            
+        }
+        
         /* hard-code metadata file name for now */
         String metaFileName = DATA_PATH + "/vstoreMetaFile";
         File metaFile = new File(metaFileName);
-        VMeta vmeta = new VMeta(columnDescriptors);
+        VMeta vmeta = new VMeta(hkeyDescriptors, columnDescriptors);
         vmeta.write(metaFile);
     }
 
-    public ArrayList<ColumnDescriptor> getColumnDescriptors()
+    public ArrayList<IColumnDescriptor> getColumnDescriptors()
     {
         return columnDescriptors;
     }
 
-    public List<ColumnArray> getColumnArrays()
+    public List<FieldArray> getColumnArrays()
     {
-        return columnArrays;
+        return fieldArrays;
     }
 
     /**
@@ -98,10 +116,33 @@ public class VStore {
         throws Exception
     {
         final Key hkey = constructHKey(rowDef, ordinals, fieldDefs, hKeyValues);
+        KeyState hkeyState = new KeyState(hkey);
         String schemaName = rowDef.getSchemaName();
         String tableName = rowDef.getTableName();
         String prefix = DATA_PATH + "/" + schemaName + tableName;
-
+        
+        File hkeyMeta = new File(prefix+"-hkey.meta");
+        File hkeyData = new File(prefix+"-hkey.data");
+        
+        FileOutputStream keyout = new FileOutputStream(hkeyMeta, true);
+        
+        keyout.write(hkeyState.getBytes().length);
+        keyout.close();
+        keyout = new FileOutputStream(hkeyData, true);
+        keyout.write(hkeyState.getBytes());
+        keyout.close();
+        
+        if(hkeyInfo.get(rowDef.getRowDefId()) == null) {
+            ColumnInfo info = new ColumnInfo("hkey", tableName, 
+                                                    schemaName, 
+                                                    rowDef.getRowDefId(),
+                                                    -1);
+            info.incrementCount();
+            hkeyInfo.put(rowDef.getRowDefId(), info);
+        } else {
+            hkeyInfo.get(rowDef.getRowDefId()).incrementCount();
+        }
+        
         /*
          * Go through each column in this row and ensure that a file exists for that column. For
          * now, we have 1 file per column by default. If a file does not exist, then create it.
@@ -126,10 +167,10 @@ public class VStore {
                 }
                 columnList.put(columnName, columnFileName);
                 ColumnInfo info = new ColumnInfo(columnName, 
-                                                 tableName, 
-                                                 schemaName, 
-                                                 rowDef.getGroupRowDefId(),
-                                                 i);
+                        tableName,
+                        schemaName, 
+                        rowDef.getRowDefId(),
+                        i);
                 columnInfo.put(columnName, info);
             } 
 
@@ -267,6 +308,8 @@ public class VStore {
     private Store hstore;
     private HashMap<String, String> columnList = new HashMap<String, String>();
     private HashMap<String, ColumnInfo> columnInfo = new HashMap<String, ColumnInfo>();
-    private List<ColumnArray> columnArrays;
-    private ArrayList<ColumnDescriptor> columnDescriptors;
+    private HashMap<Integer, ColumnInfo> hkeyInfo;
+    private List<FieldArray> fieldArrays;
+    private ArrayList<IColumnDescriptor> columnDescriptors;
+    private ArrayList<IColumnDescriptor> hkeyDescriptors;
 }

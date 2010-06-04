@@ -1,9 +1,13 @@
 package com.akiban.cserver;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
+
+import com.akiban.vstore.FieldArray;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -75,7 +79,6 @@ public class RowData {
     private int bufferEnd;
 
     private int rowStart;
-
     private int rowEnd;
 
     public RowData() {
@@ -101,6 +104,11 @@ public class RowData {
     public void reset(final byte[] bytes) {
         this.bytes = bytes;
         reset(0, bytes.length);
+    }
+
+    public void reset(final byte[] bytes, final int offset, final int length) {
+        this.bytes = bytes;
+        reset(offset, length);
     }
 
     /**
@@ -250,8 +258,8 @@ public class RowData {
         return CServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
-    public void mergeFields(final RowDef rowDef, ArrayList<ByteBuffer> fields,
-            int index, BitSet nullMap) {
+    public void mergeFields(final RowDef rowDef, List<FieldArray> fields, BitSet nullMap)
+            throws IOException {
         assert nullMap != null;
         final int fieldCount = rowDef.getFieldCount();
         int offset = rowStart;
@@ -265,13 +273,10 @@ public class RowData {
         bytes[offset] = 0;
 
         for (int i = 0; i < mapSize; i++) {
-            // if this bit is set in the nullMap, then it gets set in the
-            // RowData's null map bit field - %.
             if (nullMap.get(i)) {
+                assert false;
                 bytes[offset] |= 1 << (i % 8);
-            }
-            // if we've looked at 8 fields move to the next bit field, which
-            // is the next byte - %.
+            } 
             if ((i + 1) % 8 == 0) {
                 offset++;
                 bytes[offset] = 0;
@@ -279,17 +284,21 @@ public class RowData {
         }
         offset++;
 
-        // the field variable iterates over the fields and the position
-        // variable iterates over the buffers. the buffer may not have every
-        // field because nullMap is used to represent projections - %.
+        // If the row is a projection, then the field array list is less than
+        // the field count. To account for this situation the field
+        // variable iterates over the columns and the position variable
+        // iterates over the field array list -- James
         for (int field = 0, position = 0; field < fieldCount; field++) {
+//            System.out.println("table "+rowDef.getTableName()+"field count = "+fieldCount+" position = "+position);
             if (!nullMap.get(field)) {
-                int fieldSize = rowDef.getFieldDef(field).getMaxStorageSize();
                 assert rowDef.getFieldDef(field).isFixedSize() == true;
-                fields.get(position).get(bytes, offset, fieldSize);
+                int fieldSize = fields.get(position).getNextFieldSize();
+                fields.get(position).copyNextField(bytes, offset);
                 position++;
                 offset += fieldSize;
-            } 
+            } else {
+                assert false;
+            }
         }
 
         CServerUtil.putChar(bytes, offset, SIGNATURE_B);

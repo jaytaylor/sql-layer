@@ -12,36 +12,40 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import com.akiban.vstore.*;
 import com.akiban.cserver.*;
+import com.persistit.Key;
+import com.persistit.KeyState;
+import com.persistit.Persistit;
+
 import java.util.*;
 
 public class VCollector implements RowCollector {
 
     public VCollector(VMeta meta, final RowDefCache rowDefCache,
-            final int rowDefId, final byte[] columnBitMap) throws IOException {        
+            final int rowDefId, final byte[] columnBitMap) throws IOException {
         assert columnBitMap != null;
         assert meta != null;
-        
+
         hasMore = true;
-        rowSize = 0;
-        rawDataSize = 0;
         fields = 0;
         userTables = null;
 
         table = rowDefCache.getRowDef(rowDefId);
-        
         projection = new BitSet(table.getFieldCount());
         nullMap = new BitSet(table.getFieldCount());
-        columnMapper = new ColumnMapper();
-        
+        keyQueue = new PriorityQueue<KeyState>();
+        keyMap = new TreeMap<KeyState, TableDescriptor>();
+
         assert table != null;
         projection.clear();
         nullMap.clear();
-        
+
         for (int i = 0; i < table.getFieldCount(); i++) {
             if ((columnBitMap[i / 8] & (1 << (i % 8))) != 0) {
                 projection.set(i, true);
                 fields++;
             } else {
+//                System.out.println("index = "+i);
+                assert false;
                 nullMap.set(i, true);
             }
         }
@@ -50,72 +54,69 @@ public class VCollector implements RowCollector {
             table = rowDefCache.getRowDef(table.getGroupRowDefId());
         }
 
-        ArrayList<Tree<Table>> nodes = new ArrayList<Tree<Table>>();
-        ArrayList<Tree<Table>> rootCandidates = new ArrayList<Tree<Table>>();
-        
-        userTables = new ArrayList<RowDef>();
+        ArrayList<TableDescriptor> tables = new ArrayList<TableDescriptor>();
+        userTables = new TreeMap<Integer, RowDef>();
         for (int i = 0; i < table.getUserTableRowDefs().length; i++) {
-            
+
             final RowDef utable = table.getUserTableRowDefs()[i];
-            Tree<Table> node = new Tree<Table>(new Table(utable.getParentRowDefId(), 
-                    utable.getRowDefId()));
-            
+            TableDescriptor candidate = null;
+
             int offset = utable.getColumnOffset();
             int distance = offset + utable.getFieldCount();
             assert distance <= table.getFieldCount();
-            for (int j = offset; j < distance; j++) {
+            for (int j = offset, k = 0; j < distance; j++, k++) {
                 if (projection.get(j)) {
-                    userTables.add(utable);
-                    ColumnDescriptor cdes = meta.lookup(table.getRowDefId(), j);
+
+                    if(candidate == null) {
+                        IColumnDescriptor kdes = meta.getHKey(utable.getRowDefId());
+                        assert kdes != null;
+                        candidate = new TableDescriptor(kdes, utable.getParentRowDefId(),
+                                utable.getRowDefId());
+                    }
+                    //System.out.println(utable.getTableName()+ ", fieldname: "+utable.getFieldDef(k).getName());
+                    IColumnDescriptor cdes = meta.lookup(utable.getRowDefId(), k);
                     assert cdes != null;
-                    assert node.getNode() != null;
-                    node.getNode().add(cdes);
-                    columnMapper.add(cdes);
-                    rawDataSize += cdes.getFieldSize();
+                    assert candidate != null;
+                    candidate.add(cdes);
                 }
             }
- 
-            rootCandidates.add(node);
-            Iterator<Tree<Table>> j = nodes.iterator();
-            while(j.hasNext()) {
-                Tree<Table> t = j.next();
-                if(t.getNode().getRoot()  == node.getNode().getTableId()) {
-                    node.add(t);
-                    assert rootCandidates.remove(t);
-                } else if(node.getNode().getRoot() == t.getNode().getTableId()) {
-                    t.add(node);
-                    assert rootCandidates.remove(node);
-               }
+            
+            // XXX - h4x0r
+            if(candidate != null) {
+                assert candidate.getFieldArrayList().size() > 0;
+                totalRows += candidate.getRows();
+                userTables.put(utable.getRowDefId(), utable);
+                tables.add(candidate);
+                List<byte[]> keyBytes = candidate.scanKeys();
+                Iterator<byte[]> k = keyBytes.iterator();
+                while(k.hasNext()) {
+                    byte[] key = k.next();
+                    Key pk = new Key((Persistit)null);
+                    KeyState ks = new KeyState(key);
+                    pk.clear();
+                    ks.copyTo(pk);
+//                    System.out.println("Table = "+utable.getTableName()+" key = "+pk);
+                    keyMap.put(ks, candidate);
+                    keyQueue.add(ks);
+                    
+                }
             }
-            nodes.add(node);
         }
-        //System.out.println("nodes = "+ nodes);
-        //System.out.println("rootCandidates = "+rootCandidates);
-        assert rootCandidates.size() == 1;
-        hierarchy = rootCandidates.get(0);
-        assert hierarchy != null;
-        // XXX - this is because the null map requires 1 byte per 8 fields.
-        // this needs to be improved in the RowData/RowDef --
-        // we should not be calculating it; it should be returned by the row
-        // data.
-        rowSize = rawDataSize + RowData.MINIMUM_RECORD_LENGTH
-                + (table.getFieldCount() % 8 == 0 ? table.getFieldCount() / 8
-                        : table.getFieldCount() / 8 + 1);
         assert userTables.size() > 0;
     }
-    
+
     public BitSet getProjection() {
         return projection;
     }
 
-    public ArrayList<RowDef> getUserTables() {
-        return userTables;
+    public Collection<RowDef> getUserTables() {
+        return userTables.values();
     }
 
-    public Tree<Table> getHierarchy() {
+    public Tree<TableDescriptor> getHierarchy() {
         return hierarchy;
     }
-    
+
     @Override
     public void close() {
         assert false;
@@ -124,31 +125,54 @@ public class VCollector implements RowCollector {
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception {
         assert hasMore == true;
-        int count = 0;
-        int chunkSize = payload.limit() - payload.position();
-        assert chunkSize > 0;
 
-        ArrayList<ByteBuffer> buffers = new ArrayList<ByteBuffer>();
-        int numRows = chunkSize / rowSize;
-        // computeHKeys(numRows);
-        // compute
-        ColumnMapper.MapInfo ret = columnMapper.mapChunk(buffers,  
-                chunkSize - ((rowSize - rawDataSize)*numRows));
+        int chunkDepth = 0;
+        RowData row = new RowData();
+        boolean scannedARow = false;
+        Key pkey = new Key((Persistit)null);
+        pkey.clear();
+        
+        for (; rowIndex < totalRows; rowIndex++) {
 
-        if (!ret.more) {
-            assert ret.bytes % rawDataSize == 0;
-            numRows = (int)ret.bytes/rawDataSize;
-            columnMapper.close();
-            // XXX - this is badness.
+            KeyState nextKey = keyQueue.poll();
+            assert nextKey != null;
+            List<FieldArray> fields = keyMap.get(nextKey).getFieldArrayList();
+            RowDef rowDef = userTables.get(keyMap.get(nextKey).getTableId());
+            
+            int nextRowSize = 0;
+            for (int i = 0; i < fields.size(); i++) {
+                nextRowSize += fields.get(i).getNextFieldSize();
+            }
+            nextRowSize += RowData.MINIMUM_RECORD_LENGTH+(rowDef.getFieldCount() % 8 == 0 ?
+                    rowDef.getFieldCount()/8 : rowDef.getFieldCount()/8+1);
+            assert nextRowSize > 0;
+            
+            if (nextRowSize > payload.limit() - payload.position()) {
+                keyQueue.add(nextKey);
+                break;
+            } else {
+                pkey.clear();
+                nextKey.copyTo(pkey);
+                /*System.out.println("VCollector: table = "
+                        +userTables.get(keyMap.get(nextKey).getTableId()).getTableName()
+                        +", key = "+pkey
+                        +", chunkDepth = "+chunkDepth+", nextRowSize = "
+                        +nextRowSize+" fields ="+fields.size());
+                */
+                row.reset(payload.array(), chunkDepth, nextRowSize);
+                row.mergeFields(userTables.get(keyMap.get(nextKey).getTableId()), fields, nullMap);
+                keyMap.get(nextKey).incrementCursor();
+                scannedARow = true;
+                chunkDepth += nextRowSize;
+            }
+        }
+
+        if (rowIndex == totalRows) {
             hasMore = false;
         }
 
-        for (int i = 0; i < numRows; i++) {
-            RowData newRow = new RowData(payload.array(), ((int)i)*rowSize,
-                    rowSize);
-            newRow.mergeFields(table, buffers, i, nullMap);
-        }
-        return true;
+        assert hasMore || scannedARow;
+        return scannedARow;
     }
 
     @Override
@@ -163,13 +187,23 @@ public class VCollector implements RowCollector {
     }
 
     private boolean hasMore;
-    private int rowSize;
-    private int rawDataSize;
-    private int fields;
-    private RowDef table;
-    private ArrayList<RowDef> userTables;
-    private ColumnMapper columnMapper;
+    
     private BitSet projection;
     private BitSet nullMap;
-    private Tree<Table> hierarchy;
+    private Tree<TableDescriptor> hierarchy;
+    
+    TreeMap<KeyState, TableDescriptor> keyMap;
+    PriorityQueue<KeyState> keyQueue;
+    private int totalRows;
+
+//    private int rowSize;
+//    private int rawDataSize;
+    private int rowIndex;
+//    private int rows;
+    private int fields;
+    private RowDef table;
+    private TreeMap<Integer, RowDef> userTables;
+    // private ArrayList<FieldArray> fields;
+    // private ColumnMapper columnMapper;
+
 }

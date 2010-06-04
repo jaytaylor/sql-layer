@@ -4,7 +4,6 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
-import com.akiban.cserver.store.VStoreOld;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
