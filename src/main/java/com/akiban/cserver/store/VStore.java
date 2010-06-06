@@ -3,11 +3,11 @@
  */
 package com.akiban.cserver.store;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -38,12 +38,18 @@ public class VStore {
     
     public VStore(Store store) {
         this.hstore = store;
-        hkeyInfo = new HashMap<Integer, ColumnInfo>();
+        hkeyInfo = new TreeMap<Integer, ColumnInfo>();
+        columnList = new HashMap<String, String>();
+        columnInfo = new HashMap<String, ColumnInfo>();
+
     }
 
     public VStore(Store store, final String path) {
         this.hstore = store;
         DATA_PATH = path;
+        hkeyInfo = new TreeMap<Integer, ColumnInfo>();
+        columnList = new HashMap<String, String>();
+        columnInfo = new HashMap<String, ColumnInfo>();
     }
     
     public void constructColumnDescriptors()
@@ -127,10 +133,12 @@ public class VStore {
         FileOutputStream keyout = new FileOutputStream(hkeyMeta, true);
         
         keyout.write(hkeyState.getBytes().length);
+        keyout.flush();
         keyout.close();
         keyout = new FileOutputStream(hkeyData, true);
         keyout.write(hkeyState.getBytes());
-        keyout.close();
+        keyout.flush();
+        keyout.close();        
         
         if(hkeyInfo.get(rowDef.getRowDefId()) == null) {
             ColumnInfo info = new ColumnInfo("hkey", tableName, 
@@ -306,9 +314,9 @@ public class VStore {
     static String DATA_PATH = "/usr/local/akiba/data";
     
     private Store hstore;
-    private HashMap<String, String> columnList = new HashMap<String, String>();
-    private HashMap<String, ColumnInfo> columnInfo = new HashMap<String, ColumnInfo>();
-    private HashMap<Integer, ColumnInfo> hkeyInfo;
+    private HashMap<String, String> columnList;
+    private HashMap<String, ColumnInfo> columnInfo;
+    private TreeMap<Integer, ColumnInfo> hkeyInfo;
     private List<FieldArray> fieldArrays;
     private ArrayList<IColumnDescriptor> columnDescriptors;
     private ArrayList<IColumnDescriptor> hkeyDescriptors;

@@ -73,7 +73,8 @@ public class VCollector implements RowCollector {
                         candidate = new TableDescriptor(kdes, utable.getParentRowDefId(),
                                 utable.getRowDefId());
                     }
-                    //System.out.println(utable.getTableName()+ ", fieldname: "+utable.getFieldDef(k).getName());
+                    //System.out.println(utable.getTableName()+ ", fieldname: "
+                    // +utable.getFieldDef(k).getName());
                     IColumnDescriptor cdes = meta.lookup(utable.getRowDefId(), k);
                     assert cdes != null;
                     assert candidate != null;
