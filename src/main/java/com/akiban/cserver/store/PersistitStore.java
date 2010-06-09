@@ -1266,22 +1266,37 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	public TableStatistics getTableStatistics(int tableId) throws Exception {
 		final RowDef rowDef = rowDefCache.getRowDef(tableId);
 		final TableStatistics ts = new TableStatistics(tableId);
+		final TableStatus status = tableManager.getTableStatus(tableId);
 		if (rowDef.getRowType() == RowType.GROUP) {
 			ts.setRowCount(2);
+			ts.setAutoIncrementValue (-1);
 		} else {
-			final TableStatus status = tableManager.getTableStatus(tableId);
 			ts.setAutoIncrementValue(status.getAutoIncrementValue());
-			ts.setCreationTime(status.getCreationTime());
-			ts.setUpdateTime(Math.max(status.getLastUpdateTime(), status
-					.getLastWriteTime()));
 			ts.setRowCount(status.getRowCount());
-			indexManager.populateTableStatistics(ts);
 		}
+		ts.setUpdateTime(Math.max(status.getLastUpdateTime(), status
+				.getLastWriteTime()));
+		ts.setCreationTime(status.getCreationTime());
 		// TODO - get correct values
 		ts.setMeanRecordLength(100);
 		ts.setBlockSize(8192);
+		indexManager.populateTableStatistics(ts);
 		return ts;
 	}
+//	@Override
+//	public TableStatistics getTableStatistics(int tableId) throws Exception {
+//		final TableStatus status = tableManager.getTableStatus(tableId);
+//		final TableStatistics ts = new TableStatistics(tableId);
+//		ts.setAutoIncrementValue(status.getAutoIncrementValue());
+//		ts.setCreationTime(status.getCreationTime());
+//		ts.setMeanRecordLength(100);
+//		ts.setUpdateTime(Math.max(status.getLastUpdateTime(), status
+//				.getLastWriteTime()));
+//		ts.setBlockSize(8192);
+//		ts.setRowCount(status.getRowCount());
+//		indexManager.populateTableStatistics(ts);
+//		return ts;
+//	}
 
 	@Override
 	public void analyzeTable(final int tableId) throws Exception {
