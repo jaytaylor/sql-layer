@@ -78,8 +78,11 @@ public class VCollectorTest {
                     // System.out.println("----> isGroup: "+testRowDef.isGroupTable());
                     // System.out.println("----> getUserTableRowDefs: "+testRowDef.getUserTableRowDefs());
                     // System.out.println("----> groupRowDef: "+testRowDef.getGroupRowDefId());
-
+                    //System.out.println(buffer.position());
+                    //if(true)
+                    //    return;
                     boolean copied = vc.collectNextRow(buffer);
+                    buffer.position(0);
                     assertTrue(copied);
                     assertFalse(vc.hasMore());
                     int rowCount = 0;
