@@ -148,7 +148,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		File directory = new File(path+"/vstore");
 		if (!directory.exists()) {
 		    if (!directory.mkdir()) {
-		        throw new Exception();
+		        //throw new Exception();
 		    }
 		}  
 
