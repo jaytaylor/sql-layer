@@ -258,7 +258,8 @@ public class RowData {
         return CServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
-    public void mergeFields(final RowDef rowDef, List<FieldArray> fields, BitSet nullMap)
+    // XXX the nullMapOffset business is horrendous; please fix me.
+    public void mergeFields(final RowDef rowDef, List<FieldArray> fields, BitSet nullMap, int nullMapOffset)
             throws IOException {
         assert nullMap != null;
         final int fieldCount = rowDef.getFieldCount();
@@ -272,12 +273,12 @@ public class RowData {
         int mapSize = ((fieldCount % 8) == 0 ? fieldCount : fieldCount + 1);
         bytes[offset] = 0;
 
-        for (int i = 0; i < mapSize; i++) {
+        for (int i = nullMapOffset, j=0; j < mapSize; i++, j++) {
             if (nullMap.get(i)) {
-                assert false;
-                bytes[offset] |= 1 << (i % 8);
+//                assert false;
+                bytes[offset] |= 1 << (j % 8);
             } 
-            if ((i + 1) % 8 == 0) {
+            if ((j + 1) % 8 == 0) {
                 offset++;
                 bytes[offset] = 0;
             }
@@ -288,16 +289,16 @@ public class RowData {
         // the field count. To account for this situation the field
         // variable iterates over the columns and the position variable
         // iterates over the field array list -- James
-        for (int field = 0, position = 0; field < fieldCount; field++) {
-//            System.out.println("table "+rowDef.getTableName()+"field count = "+fieldCount+" position = "+position);
-            if (!nullMap.get(field)) {
+        for (int groupOffset = nullMapOffset, field =  0, position = 0;
+            field < fieldCount; groupOffset++, field++) {
+            System.out.println("table "+rowDef.getTableName()+"field count = "
+                                +fieldCount+" position = "+position);
+            if (!nullMap.get(groupOffset)) {
                 assert rowDef.getFieldDef(field).isFixedSize() == true;
                 int fieldSize = fields.get(position).getNextFieldSize();
                 fields.get(position).copyNextField(bytes, offset);
                 position++;
                 offset += fieldSize;
-            } else {
-                assert false;
             }
         }
 
