@@ -1,5 +1,8 @@
 package com.akiban.cserver;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 /**
  * Uses JDBC to push and then retrieve rows with arbitrary field values through the
  * AkibaDB engine; verifies that Chunk Server and ASE agree on RowData format.
@@ -30,6 +33,10 @@ public class VerifyRowData {
 	 */
 	private static final String P_MYSQLPASSWORD = "mysql.password|akibaDB";
 
-	private final CServer cserver = new CServer();
+	private final CServer cserver;
+	
+	public VerifyRowData() throws Exception {
+	    cserver = new CServer(false);
+	}
 
 }

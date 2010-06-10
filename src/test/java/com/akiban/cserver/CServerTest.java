@@ -52,7 +52,7 @@ public class CServerTest implements CServerConstants {
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		MessageRegistryBase.reset();
-		cserver = new CServer();
+		cserver = new CServer(false);
 		cserver.setProperty("cserver.fixed", "true");
 		cserver.start();
 		ROW_DEF.setRowType(RowType.ROOT);
@@ -146,7 +146,7 @@ public class CServerTest implements CServerConstants {
 	public void testDrupalSchema() throws Exception {
 		final AkibaInformationSchema ais = new DDLSource()
 				.buildAIS(DDL_FILE_NAME);
-		final CServer cserver = new CServer();
+		final CServer cserver = new CServer(false);
 		cserver.getRowDefCache().setAIS(ais);
 	}
 

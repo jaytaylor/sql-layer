@@ -52,7 +52,7 @@ public abstract class AbstractScanBase implements CServerConstants {
 		store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
 		CServerUtil.cleanUpDirectory(DATA_PATH);
 		PersistitStore.setDataPath(DATA_PATH.getPath());
-		final AkibaInformationSchema ais0 = new CServer().primordialAIS();
+		final AkibaInformationSchema ais0 = new CServer(false).primordialAIS();
 		rowDefCache.setAIS(ais0);
 		final AkibaInformationSchema ais = new DDLSource()
 				.buildAIS(DDL_FILE_NAME);

@@ -23,6 +23,7 @@ import com.persistit.KeyState;
 
 import com.akiban.vstore.FieldArray;
 import com.akiban.vstore.IColumnDescriptor;
+import com.akiban.vstore.IFormat;
 import com.akiban.vstore.VMeta;
 
 /**
@@ -41,7 +42,6 @@ public class VStore {
         hkeyInfo = new TreeMap<Integer, ColumnInfo>();
         columnList = new HashMap<String, String>();
         columnInfo = new HashMap<String, ColumnInfo>();
-
     }
 
     public VStore(Store store, final String path) {
@@ -55,7 +55,7 @@ public class VStore {
     public void constructColumnDescriptors()
         throws Exception
     {
-        String prefix = DATA_PATH + "/";
+        String prefix = DATA_PATH + "/vstore/";
         fieldArrays = new ArrayList<FieldArray>();
         columnDescriptors = new ArrayList<IColumnDescriptor>();
         hkeyDescriptors = new ArrayList<IColumnDescriptor>();
@@ -75,8 +75,7 @@ public class VStore {
                 File columnData = new File(entry.getValue());
                 FieldArray colArr = descrip.createFieldArray();
                 fieldArrays.add(colArr);
-                
-                
+                System.out.println("VSTore: creating columnDes: "+descrip.getSchema()+descrip.getTable()+descrip.getColumn()+", fieldCount = "+descrip.getFieldCount()+" id = "+descrip.getId());
                 columnDescriptors.add(descrip);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -92,7 +91,7 @@ public class VStore {
         }
         
         /* hard-code metadata file name for now */
-        String metaFileName = DATA_PATH + "/vstoreMetaFile";
+        String metaFileName = DATA_PATH + "/vstore/.vmeta";
         File metaFile = new File(metaFileName);
         VMeta vmeta = new VMeta(hkeyDescriptors, columnDescriptors);
         vmeta.write(metaFile);
@@ -125,14 +124,15 @@ public class VStore {
         KeyState hkeyState = new KeyState(hkey);
         String schemaName = rowDef.getSchemaName();
         String tableName = rowDef.getTableName();
-        String prefix = DATA_PATH + "/" + schemaName + tableName;
+        String prefix = DATA_PATH + "/vstore/" + schemaName + tableName;
         
         File hkeyMeta = new File(prefix+"-hkey.meta");
         File hkeyData = new File(prefix+"-hkey.data");
         
         FileOutputStream keyout = new FileOutputStream(hkeyMeta, true);
-        
-        keyout.write(hkeyState.getBytes().length);
+        byte[] metaSize = new byte[4];
+        IFormat.packInt(metaSize, 0, hkeyState.getBytes().length);
+        keyout.write(metaSize);
         keyout.flush();
         keyout.close();
         keyout = new FileOutputStream(hkeyData, true);
@@ -181,7 +181,7 @@ public class VStore {
                         i);
                 columnInfo.put(columnName, info);
             } 
-
+            
             ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
             /* insert the data */
             final long locationAndSize = rowDef.fieldLocation(rowData, i);

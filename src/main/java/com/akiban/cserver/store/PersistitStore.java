@@ -2,6 +2,9 @@ package com.akiban.cserver.store;
 
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +32,7 @@ import com.akiban.cserver.decider.Decider;
 import com.akiban.cserver.decider.DecisionEngine;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.util.Tap;
+import com.akiban.vstore.VMeta;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -117,6 +121,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	private final DecisionEngine scanDecider;
 	private final VStore vstore;
+    private VMeta vmeta;
+    private String vmetaFileName;
 
 	// Using a Map<Thread, ...> instead of a ThreadLocal because we want to
 	// clear all state in the shutDown() method.
@@ -128,14 +134,32 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		VStore.setDataPath(datapath);
 	}
 
-	public PersistitStore(final CServerConfig config, final RowDefCache cache) {
+	public PersistitStore(final CServerConfig config, final RowDefCache cache) throws Exception {
 		this.rowDefCache = cache;
 		this.config = config;
+		//this.config.setProperty("cserver.decision_engine", "vstore");
 		this.tableManager = new PersistitStoreTableManager(this);
 		this.indexManager = new PersistitStoreIndexManager(this);
 		this.scanDecider = DecisionEngine.createDecisionEngine(config);
+		
 		final String path = config.property(P_DATAPATH, datapath);
 		this.vstore = new VStore(this, path);
+
+		File directory = new File(path+"/vstore");
+		if (!directory.exists()) {
+		    if (!directory.mkdir()) {
+		        throw new Exception();
+		    }
+		}  
+
+	    vmetaFileName = path+"/vstore/.vmeta";		
+		//System.out.println("---------- VMetafile == "+vmetaFileName+" ----------");
+		File vmetaFile = new File(vmetaFileName);
+		if(vmetaFile.exists()) {
+		    this.vmeta = new VMeta(vmetaFile);
+		} else {
+		    vmeta = null;
+		}
 	}
 
 	public synchronized void startUp() throws Exception {
@@ -152,7 +176,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			//
 			final String path = config.property(P_DATAPATH, datapath);
 			db.setProperty("datapath", path);
-			vstore.setDataPath(path);
+
 			final boolean isUnitTest = "true".equals(config
 					.property(FIXED_ALLOCATION_PROPERTY_NAME));
 			if (!isUnitTest) {
@@ -647,6 +671,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	public void syncColumns() throws Exception {
 		vstore.constructColumnDescriptors();
+		//System.out.println("Sync columns");
+		vmeta = new VMeta(new File(vmetaFileName));
 	}
 
 	@Override
@@ -731,7 +757,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					hEx.remove();
 					ts.incrementRowCount(-1);
 					ts.deleted();
-
 					// Remove the indexes, including the PK index
 					for (final IndexDef indexDef : rowDef.getIndexDefs()) {
 						if (!indexDef.isHKeyEquivalent()) {
@@ -1002,7 +1027,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					if (deleteGroup) {
 						tableManager.getTableStatus(groupRowDef.getRowDefId())
 								.setDeleted(true);
-						//
+						//IOException
 						// Remove the index trees
 						//
 						for (IndexDef indexDef : groupRowDef.getIndexDefs()) {
@@ -1185,15 +1210,13 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			Decider.RowCollectorType et = scanDecider.makeDecision(request);
 			RowCollector rc = null;
 			if (et == Decider.RowCollectorType.PersistitRowCollector) {
-				rc = new PersistitStoreRowCollector(this, scanFlags, start,
-						end, columnBitMap, rowDef, indexId);
+			    //System.out.println("------------ creating scanRowsRequest RowCollector -------------");
+                rc = new PersistitStoreRowCollector(this, scanFlags, start,
+                        end, columnBitMap, rowDef, indexId);
 			} else {
-				assert et == Decider.RowCollectorType.VCollector;
-				// XXX - VCollector is not usable yet
-				assert false == true;
-				throw new Error();
-				// final RowCollector vcollector=null; //= new VCollector(this);
-				// scanFlags, start, end, columnBitMap, rowDef, indexId);
+			    //System.out.println("------------ creating scanRowsRequest VCOLLECTOR -------------");
+			    //assert vmeta != null;
+                rc = new VCollector(vmeta, rowDefCache, rowDefId, columnBitMap);
 			}
 			if (rc.hasMore()) {
 				putCurrentRowCollector(rowDefId, rc);

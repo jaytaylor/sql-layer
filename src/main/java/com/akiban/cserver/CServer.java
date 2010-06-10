@@ -6,6 +6,8 @@
 package com.akiban.cserver;
 
 import java.io.DataInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,14 +69,30 @@ public class CServer {
 	
 	private static Tap CSERVER_EXEC = Tap.add(new Tap.PerThread("cserver", Tap.TimeStampLog.class));
 	
-	private final RowDefCache rowDefCache = new RowDefCache();
-	private final CServerConfig config = new CServerConfig();
-	private final Store hstore = new PersistitStore(config, rowDefCache);
-	private AkibaInformationSchema ais0;
-	private AkibaInformationSchema ais;
-	private volatile boolean stopped = false;
-	private boolean verbose;
-	private Map<Integer, Thread> threadMap = new TreeMap<Integer, Thread>();
+    private final RowDefCache rowDefCache;
+    private final CServerConfig config;
+    private final Store hstore;
+    private AkibaInformationSchema ais0;
+    private AkibaInformationSchema ais;
+    private volatile boolean stopped;
+    private boolean verbose;
+    private Map<Integer, Thread> threadMap;
+
+	public CServer(boolean loadConfig) throws Exception {
+	    rowDefCache = new RowDefCache();
+	    config = new CServerConfig();
+	    if(loadConfig) {
+	        config.load();
+	        if (config.getException() != null) {
+	            LOG.fatal("CServer configuration failed");
+	            throw new Exception("CServer configuration failed");
+	        }
+	    }
+
+	    hstore = new PersistitStore(config, rowDefCache);
+	    stopped = false;
+	    threadMap = new TreeMap<Integer, Thread>();
+	}
 	
 	public void start() throws Exception {
 		Tap.registerMXBean();
@@ -307,13 +325,14 @@ public class CServer {
 	 *            the command line arguments
 	 */
 	public static void main(String[] args) throws Exception {
-		final CServer server = new CServer();
-		server.config.load();
-		if (server.config.getException() != null) {
-			LOG.fatal("CServer configuration failed");
-			return;
+	    try {
+	        final CServer server = new CServer(true);
+	        server.start();
+	    } catch(Exception e) {
+		    e.printStackTrace();
+		    return;
 		}
-		server.start();
+		
 
                 // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk Server
                 /*

@@ -32,7 +32,7 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
 		PersistitStore.setDataPath(DATA_PATH.getPath());
 		store.startUp();
 		store.setVerbose(true);
-		store.getRowDefCache().setAIS(new CServer().primordialAIS());
+		store.getRowDefCache().setAIS(new CServer(false).primordialAIS());
 		this.ais = new DDLSource().buildAIS(DDL_FILE_NAME);
 	}
 
