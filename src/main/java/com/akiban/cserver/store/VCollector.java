@@ -57,11 +57,12 @@ public class VCollector implements RowCollector {
                 projection.set(i, true);
                 fields++;
             } else {
-                // System.out.println("index = "+i);
-                assert false;
+                System.out.println("VCollector: null column index = "+i);
+                //assert false;
                 nullMap.set(i, true);
             }
         }
+        System.out.println("VCollector: Null map = "+nullMap);
     }
     
     public void configureGroupTableCollector(VMeta meta) throws FileNotFoundException, IOException {
@@ -83,7 +84,7 @@ public class VCollector implements RowCollector {
 
     public void configureUserTableCollector(VMeta meta, RowDef utable, int offset, int distance) throws FileNotFoundException, IOException {
         TableDescriptor candidate = null;
-        
+        //System.out.println("VCollector: configure User table collector offset"+)
         for (int j = offset, k = 0; j < distance; j++, k++) {
             if (projection.get(j)) {
                 if (candidate == null) {
@@ -95,7 +96,7 @@ public class VCollector implements RowCollector {
                 }
                 System.out.println("VCollector: " + utable.getTableName()
                         + ", fieldname: " + utable.getFieldDef(k).getName()
-                        + ", k = " + k + ", rowDefId = "
+                        + ", k = " + k + ", j = "+ j +", rowDefId = "
                         + utable.getRowDefId() + ", fixedSize = "
                         + utable.getFieldDef(k).isFixedSize());
 
@@ -190,11 +191,13 @@ public class VCollector implements RowCollector {
                                 .getTableName() + ", key = " + pkey
                         + ", chunkDepth = " + chunkDepth + ", nextRowSize = "
                         + nextRowSize + " fields =" + fields.size());
-
+                int offset = 0;
+                if(table.isGroupTable()) {
+                    offset = userTables.get(keyMap.get(nextKey).getTableId()).getColumnOffset();
+                }
+                
                 row.reset(payload.array(), chunkDepth, nextRowSize);
-                row
-                        .mergeFields(userTables.get(keyMap.get(nextKey)
-                                .getTableId()), fields, nullMap);
+                row.mergeFields(userTables.get(keyMap.get(nextKey).getTableId()), fields, nullMap, offset);
                 payload.position(nextRowSize + payload.position());
 
                 int k = chunkDepth;

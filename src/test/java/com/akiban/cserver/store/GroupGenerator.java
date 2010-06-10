@@ -35,8 +35,8 @@ import com.persistit.Persistit;
  */
 public class GroupGenerator {
 
-    public GroupGenerator(String prefix, AkibaInformationSchema ais, RowDefCache cache) {
-        randomProjection = false;
+    public GroupGenerator(String prefix, AkibaInformationSchema ais, RowDefCache cache, boolean randomProjection) {
+        this.randomProjection = randomProjection;
         this.ais = ais;
         this.prefix = prefix;
         this.rowDefCache = cache;
@@ -51,6 +51,10 @@ public class GroupGenerator {
         bitMaps = new TreeMap<Integer, byte[]>();
     }
 
+    //public void generateUser(RowDef userRowDef) throws Exception {
+        
+    //}
+    
     public void generateGroup(RowDef groupRowDef) throws Exception {
         Table table = ais.getTable(groupRowDef.getSchemaName(), groupRowDef.getTableName());
         assert table.isGroupTable();
@@ -83,44 +87,59 @@ public class GroupGenerator {
         return groupSize;
     }
     
+    int last_position=0;
+    int last_offset=0;
     private void setupGroupBitMap(Table table) {
         int mapSize = table.getColumns().size()/8;
         if (table.getColumns().size() % 8 != 0) {
             mapSize++;
         }
-        groupBitMap = new byte[mapSize];
-        for(int i=0 ; i < groupBitMap.length; i++) {
-            for(int j = 0 ; j < 8; j++) {
-                groupBitMap[i] |= 1 << j % 8;
-            }
-        }
-        // j < table.getColumns().size(); j++) {
-        Iterator<Integer> i = projections.keySet().iterator();
         
-        int offset = 0;
-        int position = 0;
-        while(i.hasNext()) {
-            Integer key = i.next();
-            
-            BitSet projection = projections.get(key);
-            int fields = rowDefCache.getRowDef(key).getFieldCount();
-            //System.out.println("Group gen: table = " +rowDefCache.getRowDef(key).getTableName()+" fields "+fields+ "bitmap.length ="+groupBitMap.length);
-            for(position = 0; position < fields; position++) {
-                if(projection.get(position)) {
-                    groupBitMap[offset] |= 1 << position % 8;
-                } else {
-//                    System.out.println("group gen: position "+position);
-                    assert false;
-                }
-                position++;
-                if (position % 8 == 0) {
-                    offset++;
-                    assert offset < groupBitMap.length;
-                }
+        groupBitMap = new byte[mapSize];
+        /**        
+         *   for(int i=0, offset = 0; i < groupBitMap.length*8; i++) {
+         *   groupBitMap[offset] |= 1 << i % 8;
+         *   if(((i + 1) % 8) == 0) {
+         *       offset++;
+         *   }
+         * }
+         */
+        
+        assert table.isGroupTable();
+        setupUserBitMap(((GroupTable)table).getRoot(), 0, 0);
+        int lastBit = table.getColumns().size();
+        for(int endBits = lastBit; endBits % 8 != 0; endBits++) {
+            groupBitMap[groupBitMap.length-1] |= 1 << endBits % 8;
+        }
+
+    }
+    
+    private void setupUserBitMap(UserTable utable, int byteOffset, int bitOffset) {
+        assert groupBitMap != null;
+        BitSet projection = projections.get(utable.getTableId());
+        int fields = rowDefCache.getRowDef(utable.getTableId()).getFieldCount();
+        System.out.println("Group gen: table = " 
+                +rowDefCache.getRowDef(utable.getTableId()).getTableName()
+                +" fields = "+fields+ "bitmap.length = "+groupBitMap.length);
+
+        
+        for(int ucolumnOffset = 0; ucolumnOffset < fields; ) {
+            if(projection.get(ucolumnOffset)) {
+                System.out.println("GroupGen: setting bit index ="+bitOffset);
+                groupBitMap[byteOffset] |= 1 << bitOffset % 8;
+            }
+            ucolumnOffset++;
+            bitOffset++;
+            if (bitOffset % 8 == 0) {
+                byteOffset++;
+                assert byteOffset < groupBitMap.length;
             }
         }
-        for(; position % 8 != 0; position++) {
-            groupBitMap[offset] |= 1 << position % 8;
+        Iterator<Join> children = utable.getChildJoins().iterator();
+        while (children.hasNext()) {
+            Join k = children.next();
+            UserTable child = k.getChild();
+            setupUserBitMap(child, byteOffset, bitOffset);
         }
     }
     
@@ -133,7 +152,7 @@ public class GroupGenerator {
 
         byte[] bitMap = new byte[mapSize];
         bitMap[0] |= 1;
-        projection.set(0);
+        projection.set(0, true);
 
         for (int j = 1, offset = 0; j < fieldCount; j++) {
             if (randomProjection) {
@@ -148,6 +167,7 @@ public class GroupGenerator {
                 offset++;
             }
         }
+        System.out.println("table name = "+table.getName().getTableName()+", projection = "+projection);
         projections.put(table.getTableId(), projection);
         bitMaps.put(table.getTableId(), bitMap);
     }
@@ -171,9 +191,10 @@ public class GroupGenerator {
                         table.getName().getTableName(), fields[i].getName(),
                         rowDef.getRowDefId(), i, fields[i].getMaxStorageSize(), 
                         rowsPerTable.get(table.getTableId())));
-            } else {
+            } 
+            /*else {
                 assert false;
-            }
+            }*/
         }
     
         Iterator<Join> children = table.getChildJoins().iterator();
@@ -214,9 +235,9 @@ public class GroupGenerator {
                         + fields[i].getName(), 1337 + i, fields[i]
                         .getMaxStorageSize(), rows));
                 encodedColumns.add(new ArrayList<byte[]>());
-            } else {
+            } /*else {
                 assert false;
-            }
+            }*/
         }
 
         HKeyColumnArrayGenerator hkeyGen = new HKeyColumnArrayGenerator(pathPrefix);
@@ -256,9 +277,9 @@ public class GroupGenerator {
             assert fields[i].isFixedSize() == true;
             if (projection.get(i)) {
                 rowSize += fields[i].getMaxStorageSize();
-            } else {
+            } /*else {
                 assert false;
-            }
+            }*/
         }
         
         int totalRowSize = rowSize+RowData.MINIMUM_RECORD_LENGTH
