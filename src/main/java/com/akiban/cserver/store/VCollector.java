@@ -57,12 +57,12 @@ public class VCollector implements RowCollector {
                 projection.set(i, true);
                 fields++;
             } else {
-                System.out.println("VCollector: null column index = "+i);
+                //System.out.println("VCollector: null column index = "+i);
                 //assert false;
                 nullMap.set(i, true);
             }
         }
-        System.out.println("VCollector: Null map = "+nullMap);
+//        System.out.println("VCollector: Null map = "+nullMap);
     }
     
     public void configureGroupTableCollector(VMeta meta) throws FileNotFoundException, IOException {
@@ -73,10 +73,10 @@ public class VCollector implements RowCollector {
             final RowDef utable = table.getUserTableRowDefs()[i];
             int offset = utable.getColumnOffset();
             int distance = offset + utable.getFieldCount();
-            System.out.println("VCollector: " + utable.getTableName()
-                    + " column offset = " + utable.getColumnOffset()
-                    + " tableID = " + utable.getRowDefId()
-                    + " group tableID = " + table.getRowDefId());
+//            System.out.println("VCollector: " + utable.getTableName()
+//                    + " column offset = " + utable.getColumnOffset()
+//                    + " tableID = " + utable.getRowDefId()
+//                    + " group tableID = " + table.getRowDefId());
             configureUserTableCollector(meta, utable, offset, distance);
             assert distance <= table.getFieldCount();
         }
@@ -94,11 +94,11 @@ public class VCollector implements RowCollector {
                     candidate = new TableDescriptor(kdes, utable
                             .getParentRowDefId(), utable.getRowDefId());
                 }
-                System.out.println("VCollector: " + utable.getTableName()
-                        + ", fieldname: " + utable.getFieldDef(k).getName()
-                        + ", k = " + k + ", j = "+ j +", rowDefId = "
-                        + utable.getRowDefId() + ", fixedSize = "
-                        + utable.getFieldDef(k).isFixedSize());
+                //System.out.println("VCollector: " + utable.getTableName()
+                        //+ ", fieldname: " + utable.getFieldDef(k).getName()
+                        //+ ", k = " + k + ", j = "+ j +", rowDefId = "
+                        //+ utable.getRowDefId() + ", fixedSize = "
+                        //+ utable.getFieldDef(k).isFixedSize());
 
                 IColumnDescriptor cdes = meta.lookup(utable.getRowDefId(),
                         k);
@@ -122,8 +122,8 @@ public class VCollector implements RowCollector {
                 KeyState ks = new KeyState(key);
                 pk.clear();
                 ks.copyTo(pk);
-                System.out.println("VCollector: Table = "
-                        + utable.getTableName() + " key = " + pk);
+                //System.out.println("VCollector: Table = "
+                //        + utable.getTableName() + " key = " + pk);
                 keyMap.put(ks, candidate);
                 keyQueue.add(ks);
 
@@ -157,7 +157,7 @@ public class VCollector implements RowCollector {
             return false;
         }
         int chunkDepth = payload.position();
-        System.out.println("chunk depth = " + chunkDepth);
+//        System.out.println("chunk depth = " + chunkDepth);
         RowData row = new RowData();
         boolean scannedARow = false;
         Key pkey = new Key((Persistit) null);
@@ -186,11 +186,12 @@ public class VCollector implements RowCollector {
                 pkey.clear();
                 nextKey.copyTo(pkey);
 
-                System.out.println("VCollector: table = "
+                /*System.out.println("VCollector: table = "
                         + userTables.get(keyMap.get(nextKey).getTableId())
                                 .getTableName() + ", key = " + pkey
                         + ", chunkDepth = " + chunkDepth + ", nextRowSize = "
                         + nextRowSize + " fields =" + fields.size());
+                        */
                 int offset = 0;
                 if(table.isGroupTable()) {
                     offset = userTables.get(keyMap.get(nextKey).getTableId()).getColumnOffset();
@@ -201,14 +202,15 @@ public class VCollector implements RowCollector {
                 payload.position(nextRowSize + payload.position());
 
                 int k = chunkDepth;
-                while (k < chunkDepth + nextRowSize) {
+/*                while (k < chunkDepth + nextRowSize) {
                     System.out.print(Integer.toHexString(payload.array()[k])
                             + " ");
                     k++;
                 }
-                System.out.println("<--- rowcollection complete --->");
-                System.out.println("toString = " + row.toString(cache));
-                System.out.println("---------- after to string ----------");
+                */
+               //System.out.println("<--- rowcollection complete --->");
+               // System.out.println("toString = " + row.toString(cache));
+               // System.out.println("---------- after to string ----------");
                 keyMap.get(nextKey).incrementCursor();
                 scannedARow = true;
                 chunkDepth += nextRowSize;
