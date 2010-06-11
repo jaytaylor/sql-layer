@@ -101,7 +101,7 @@ create table index_analysis(
     analysis_timestamp  timestamp,
     item_number         int,
     key_string          varchar(2048),
-    index_row_data      varbinary(65535),
+    index_row_data      varbinary(4096),
     count               bigint,
     primary key(table_id, index_id, item_number)
 ) engine = akibadb;

@@ -1347,26 +1347,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		return ts;
 	}
 
-	// @Override
-	// public TableStatistics getTableStatistics(int tableId) throws Exception {
-	// final TableStatus status = tableManager.getTableStatus(tableId);
-	// final TableStatistics ts = new TableStatistics(tableId);
-	// ts.setAutoIncrementValue(status.getAutoIncrementValue());
-	// ts.setCreationTime(status.getCreationTime());
-	// ts.setMeanRecordLength(100);
-	// ts.setUpdateTime(Math.max(status.getLastUpdateTime(), status
-	// .getLastWriteTime()));
-	// ts.setBlockSize(8192);
-	// ts.setRowCount(status.getRowCount());
-	// indexManager.populateTableStatistics(ts);
-	// return ts;
-	// }
-
 	@Override
 	public void analyzeTable(final int tableId) throws Exception {
 		final RowDef rowDef = rowDefCache.getRowDef(tableId);
 		if (verbose && LOG.isInfoEnabled()) {
-			LOG.info("Get auto-inc value for table: " + rowDef.toString());
+			LOG.info("Analyze table: " + rowDef);
 		}
 		indexManager.analyzeTable(rowDef);
 	}

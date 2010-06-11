@@ -194,7 +194,7 @@ public class PersistitStoreIndexManager {
 			final Exchange exchange = store.getExchange(indexAnalysisRowDef,
 					null);
 			exchange.clear().append(indexAnalysisRowDef.getOrdinal()).append(
-					tableId).append(indexDef.getId()).append(Key.BEFORE);
+					(long)tableId).append((long)indexDef.getId()).append(Key.BEFORE);
 			List<RowData> rows = new ArrayList<RowData>();
 			while (exchange.next()) {
 				final RowData rowData = new RowData(new byte[exchange
@@ -222,9 +222,10 @@ public class PersistitStoreIndexManager {
 				rowData.prepareRow(0);
 				histogram.addSample(new HistogramSample(rowData, rowCount));
 			}
-			if (!histogram.getHistogramSamples().isEmpty()) {
-				tableStatistics.addHistogram(histogram);
-			}
+			// TODO - uncomment when Tom is ready
+//			if (!histogram.getHistogramSamples().isEmpty()) {
+//				tableStatistics.addHistogram(histogram);
+//			}
 		}
 	}
 }
