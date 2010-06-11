@@ -118,14 +118,14 @@ public class GroupGenerator {
         assert groupBitMap != null;
         BitSet projection = projections.get(utable.getTableId());
         int fields = rowDefCache.getRowDef(utable.getTableId()).getFieldCount();
-        System.out.println("Group gen: table = " 
-                +rowDefCache.getRowDef(utable.getTableId()).getTableName()
-                +" fields = "+fields+ "bitmap.length = "+groupBitMap.length);
+//        System.out.println("Group gen: table = " 
+//                +rowDefCache.getRowDef(utable.getTableId()).getTableName()
+//                +" fields = "+fields+ "bitmap.length = "+groupBitMap.length);
 
         
         for(int ucolumnOffset = 0; ucolumnOffset < fields; ) {
             if(projection.get(ucolumnOffset)) {
-                System.out.println("GroupGen: setting bit index ="+bitOffset);
+                //System.out.println("GroupGen: setting bit index ="+bitOffset);
                 groupBitMap[byteOffset] |= 1 << bitOffset % 8;
             }
             ucolumnOffset++;
@@ -167,7 +167,7 @@ public class GroupGenerator {
                 offset++;
             }
         }
-        System.out.println("table name = "+table.getName().getTableName()+", projection = "+projection);
+        //System.out.println("table name = "+table.getName().getTableName()+", projection = "+projection);
         projections.put(table.getTableId(), projection);
         bitMaps.put(table.getTableId(), bitMap);
     }
