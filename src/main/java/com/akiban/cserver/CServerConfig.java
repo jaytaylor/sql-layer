@@ -154,7 +154,7 @@ public class CServerConfig {
 		return properties.getProperty(key, dflt);
 	}
 	
-	void setProperty(final String key, final String value) {
+	public void setProperty(final String key, final String value) {
 		properties.setProperty(key, value);
 	}
 }
