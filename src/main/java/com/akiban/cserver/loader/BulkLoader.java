@@ -6,10 +6,7 @@ import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BulkLoader extends Thread
 {
@@ -19,7 +16,7 @@ public class BulkLoader extends Thread
     public void run()
     {
         try {
-            DB db = new DB(dbHost, dbPort, dbUser, dbPassword);
+            DB db = dbHost == null ? null : new DB(dbHost, dbPort, dbUser, dbPassword);
             prepareWorkArea(db);
             tracker = new Tracker(db, artifactsSchema);
             tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
@@ -51,25 +48,15 @@ public class BulkLoader extends Thread
     // BulkLoader interface
 
     // For testing
-    public BulkLoader(PersistitStore persistitStore,
-                      AkibaInformationSchema ais,
-                      List<String> groups,
+    BulkLoader(AkibaInformationSchema ais,
+                      String group,
                       String artifactsSchema,
-                      Map<String, String> sourceSchemas,
-                      String dbHost,
-                      int dbPort,
-                      String dbUser,
-                      String dbPassword) throws ClassNotFoundException, SQLException
+                      TaskGenerator.Actions actions) throws ClassNotFoundException, SQLException
     {
-        this.persistitStore = persistitStore;
         this.ais = ais;
-        this.groups = groups;
+        this.groups = Arrays.asList(group);
         this.artifactsSchema = artifactsSchema;
-        this.sourceSchemas = sourceSchemas;
-        this.dbHost = dbHost;
-        this.dbUser = dbUser;
-        this.dbPort = dbPort;
-        this.dbPassword = dbPassword;
+        this.taskGeneratorActions = actions;
     }
 
     public static synchronized BulkLoader start(Store store,
@@ -101,6 +88,11 @@ public class BulkLoader extends Thread
             throw new InProgressException();
         }
         return inProgress;
+    }
+
+    public static synchronized void done()
+    {
+        inProgress = null;
     }
 
     public static BulkLoader inProgress()
@@ -186,24 +178,28 @@ public class BulkLoader extends Thread
     private void prepareWorkArea(DB db)
         throws SQLException
     {
-        DB.Connection connection = db.new Connection();
-        try {
-            connection.new DDL(TEMPLATE_DROP_BULK_LOAD_SCHEMA, artifactsSchema).execute();
-            connection.new DDL(TEMPLATE_CREATE_BULK_LOAD_SCHEMA, artifactsSchema).execute();
-            connection.new DDL(TEMPLATE_CREATE_TASKS_TABLE, artifactsSchema).execute();
-        } finally {
-            connection.close();
+        if (db != null) {
+            DB.Connection connection = db.new Connection();
+            try {
+                connection.new DDL(TEMPLATE_DROP_BULK_LOAD_SCHEMA, artifactsSchema).execute();
+                connection.new DDL(TEMPLATE_CREATE_BULK_LOAD_SCHEMA, artifactsSchema).execute();
+                connection.new DDL(TEMPLATE_CREATE_TASKS_TABLE, artifactsSchema).execute();
+            } finally {
+                connection.close();
+            }
         }
     }
 
     public void deleteWorkArea(DB db) throws SQLException
     {
-        DB.Connection connection = db.new Connection();
-        try {
-            tracker.info("Deleting work area");
-            connection.new DDL(TEMPLATE_DROP_BULK_LOAD_SCHEMA, artifactsSchema).execute();
-        } finally {
-            connection.close();
+        if (db != null) {
+            DB.Connection connection = db.new Connection();
+            try {
+                tracker.info("Deleting work area");
+                connection.new DDL(TEMPLATE_DROP_BULK_LOAD_SCHEMA, artifactsSchema).execute();
+            } finally {
+                connection.close();
+            }
         }
     }
 

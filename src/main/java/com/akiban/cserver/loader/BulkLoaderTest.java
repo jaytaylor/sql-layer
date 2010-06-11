@@ -1,6 +1,13 @@
 package com.akiban.cserver.loader;
 
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.UserTable;
+import junit.framework.Assert;
 import junit.framework.TestCase;
+
+import java.util.*;
 
 public class BulkLoaderTest extends TestCase
 {
@@ -13,7 +20,6 @@ public class BulkLoaderTest extends TestCase
     public void testDummy()
     {}
 
-/*
     public void testCOI() throws Exception
     {
         AISBuilder builder = new AISBuilder();
@@ -44,7 +50,7 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "oi", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "bulkload", "localhost", "root", null, actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
         Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
                                           ais.getUserTable("schema", "order")),
@@ -88,7 +94,7 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "oi", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "bulkload", "localhost", "root", null, actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
         Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
                                           ais.getUserTable("schema", "order"),
@@ -137,7 +143,7 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "ca", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "bulkload", "localhost", "root", null, actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
         Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
                                           ais.getUserTable("schema", "order"),
@@ -187,7 +193,7 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "ix", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "bulkload", "localhost", "root", null, actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
         Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
                                           ais.getUserTable("schema", "order")),
@@ -200,7 +206,7 @@ public class BulkLoaderTest extends TestCase
     private static class TestActions implements TaskGenerator.Actions
     {
         @Override
-        public void generateTasksForTableContainingHKeyColumns(String artifactsSchema,
+        public void generateTasksForTableContainingHKeyColumns(BulkLoader loader,
                                                                UserTable table,
                                                                IdentityHashMap<UserTable, TableTasks> tasks)
         {
@@ -208,7 +214,7 @@ public class BulkLoaderTest extends TestCase
         }
 
         @Override
-        public void generateTasksForTableNotContainingHKeyColumns(String artifactsSchema,
+        public void generateTasksForTableNotContainingHKeyColumns(BulkLoader loader,
                                                                   Join join,
                                                                   IdentityHashMap<UserTable, TableTasks> tasks)
         {
@@ -218,5 +224,4 @@ public class BulkLoaderTest extends TestCase
         final List<UserTable> hKey = new ArrayList<UserTable>();
         final List<Join> noHKey = new ArrayList<Join>();
     }
-*/
 }

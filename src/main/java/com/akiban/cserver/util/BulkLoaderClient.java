@@ -1,13 +1,5 @@
 package com.akiban.cserver.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
 import com.akiban.cserver.message.BulkLoadResponse;
@@ -19,6 +11,13 @@ import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BulkLoaderClient
 {
@@ -33,42 +32,55 @@ public class BulkLoaderClient
         AkibaNetworkHandler networkHandler =
             NetworkHandlerFactory.getHandler(cserverHost, Integer.toString(cserverPort), null);
         logger.info(String.format("Got network handler %s", networkHandler));
-        AkibaConnection connection = AkibaConnectionImpl.createConnection(networkHandler);
+        connection = AkibaConnectionImpl.createConnection(networkHandler);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {
-            Request request = new BulkLoadRequest(dbHost,
-                                                  dbPort,
-                                                  dbUser,
-                                                  dbPassword,
-                                                  groups,
-                                                  artifactsSchema,
-                                                  sourceSchemas,
-                                                  resume,
-                                                  cleanup);
+            Request request =
+                resume
+                ? BulkLoadRequest.resume(dbHost,
+                                         dbPort,
+                                         dbUser,
+                                         dbPassword,
+                                         groups,
+                                         artifactsSchema,
+                                         sourceSchemas,
+                                         cleanup)
+                : BulkLoadRequest.start(dbHost,
+                                        dbPort,
+                                        dbUser,
+                                        dbPassword,
+                                        groups,
+                                        artifactsSchema,
+                                        sourceSchemas,
+                                        cleanup);
             BulkLoadResponse response;
             BulkLoadResponse badEnding = null;
             do {
-                logger.info(String.format("About to send request %s", request));
-                response = (BulkLoadResponse) connection.sendAndReceive(request);
-                logger.info(String.format("Received resopnse %s", response));
-                List<Event> events = response.events();
-                if (events != null) {
-                    for (Event event : events) {
-                        logger.info(String.format("%s (%s sec): %s", event.eventId(), event.timeSec(), event.message()));
+                response = runRequest(request);
+                if (!response.isIdle()) {
+                    if (response.terminatedByException()) {
+                        badEnding = response;
                     }
-                    if (!response.isIdle()) {
-                        if (response.terminatedByException()) {
-                            badEnding = response;
-                        }
-                        Thread.sleep(10000);
-                        request = new BulkLoadStatusRequest(events.isEmpty()
-                                                            ? -1
-                                                            : events.get(events.size() - 1).eventId());
-                    }
+                    Thread.sleep(10000);
+                    List<Event> events = response.events();
+                    int nEvents = events.size();
+                    request = new BulkLoadStatusRequest(nEvents == 0
+                                                        ? -1
+                                                        : events.get(nEvents - 1).eventId());
                 }
-            } while (!response.isIdle());
-            if (badEnding != null) {
+            } while (badEnding == null && !response.isIdle());
+            if (badEnding == null) {
+                request = BulkLoadRequest.done(dbHost,
+                                               dbPort,
+                                               dbUser,
+                                               dbPassword,
+                                               groups,
+                                               artifactsSchema,
+                                               sourceSchemas,
+                                               cleanup);
+                runRequest(request);
+            } else {
                 logger.error(String.format("Bulk load terminated by %s: %s",
                                            response.exceptionClassName(), response.exceptionMessage()));
                 exitCode = response.exitCode();
@@ -85,6 +97,20 @@ public class BulkLoaderClient
             logger.info(String.format("Exit code: %s", exitCode));
             System.exit(exitCode);
         }
+    }
+
+    private BulkLoadResponse runRequest(Request request) throws Exception
+    {
+        logger.info(String.format("About to send request %s", request));
+        BulkLoadResponse response = (BulkLoadResponse) connection.sendAndReceive(request);
+        logger.info(String.format("Received response %s", response));
+        List<Event> events = response.events();
+        if (events != null) {
+            for (Event event : events) {
+                logger.info(String.format("%s (%s sec): %s", event.eventId(), event.timeSec(), event.message()));
+            }
+        }
+        return response;
     }
 
     private BulkLoaderClient(String[] args) throws Exception
@@ -210,6 +236,7 @@ public class BulkLoaderClient
     private static final int DEFAULT_MYSQL_PORT = 3306;
     private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999; // because there has to be one
 
+    private AkibaConnection connection;
     private String cserverHost;
     private int cserverPort;
     private boolean resume = false;

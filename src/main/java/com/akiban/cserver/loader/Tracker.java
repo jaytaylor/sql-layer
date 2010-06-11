@@ -33,41 +33,47 @@ public class Tracker
     public List<Event> recentEvents(int lastEventId) throws Exception
     {
         final List<Event> events = new ArrayList<Event>();
-        connection.new Query(TEMPLATE_RECENT_EVENTS, schema, lastEventId)
-        {
-            @Override
-            protected void handleRow(ResultSet resultSet) throws Exception
+        if (connection != null) {
+            connection.new Query(TEMPLATE_RECENT_EVENTS, schema, lastEventId)
             {
-                int c = 0;
-                int eventId = resultSet.getInt(++c);
-                Date timestamp = resultSet.getDate(++c);
-                double timeSec = resultSet.getDouble(++c);
-                String message = resultSet.getString(++c);
-                events.add(new Event(eventId, timestamp, timeSec, message));
-            }
-        }.execute();
+                @Override
+                protected void handleRow(ResultSet resultSet) throws Exception
+                {
+                    int c = 0;
+                    int eventId = resultSet.getInt(++c);
+                    Date timestamp = resultSet.getDate(++c);
+                    double timeSec = resultSet.getDouble(++c);
+                    String message = resultSet.getString(++c);
+                    events.add(new Event(eventId, timestamp, timeSec, message));
+                }
+            }.execute();
+        }
         return events;
     }
 
     public Tracker(DB db, String schema) throws SQLException
     {
-        this.connection = db.new Connection();
+        this.connection = db == null ? null : db.new Connection();
         this.schema = schema;
-        this.connection.new DDL(TEMPLATE_CREATE_PROGRESS_TABLE, schema).execute();
+        if (this.connection != null) {
+            this.connection.new DDL(TEMPLATE_CREATE_PROGRESS_TABLE, schema).execute();
+        }
     }
 
     private void recordEvent(String message)
     {
-        long nowNsec = System.nanoTime();
-        try {
-            connection.new Update(TEMPLATE_LOG_PROGRESS,
-                                  schema,
-                                  ((double) (nowNsec - lastEventTimeNsec)) / ONE_BILLION,
-                                  message).execute();
-        } catch (SQLException e) {
-            logger.error(String.format("Unable to record event in %s.progress: %s", schema, message));
+        if (connection != null) {
+            long nowNsec = System.nanoTime();
+            try {
+                connection.new Update(TEMPLATE_LOG_PROGRESS,
+                                      schema,
+                                      ((double) (nowNsec - lastEventTimeNsec)) / ONE_BILLION,
+                                      message).execute();
+            } catch (SQLException e) {
+                logger.error(String.format("Unable to record event in %s.progress: %s", schema, message));
+            }
+            lastEventTimeNsec = nowNsec;
         }
-        lastEventTimeNsec = nowNsec;
     }
 
     private static final Log logger = LogFactory.getLog(Tracker.class);
