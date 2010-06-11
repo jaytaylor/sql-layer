@@ -33,11 +33,13 @@ public interface Store {
 
 	int writeRow(final RowData rowData) throws Exception;
 
-    int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef, final RowData rowData,
-            final int[] ordinals, final FieldDef[][] fieldDefs,
-            final Object[][] hKey) throws Exception;
+	int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
+			final RowData rowData, final int[] ordinals,
+			final FieldDef[][] fieldDefs, final Object[][] hKey)
+			throws Exception;
 
-    void updateTableStats(final RowDef rowDef, long rowCount) throws PersistitException, StoreException;
+	void updateTableStats(final RowDef rowDef, long rowCount)
+			throws PersistitException, StoreException;
 
 	int deleteRow(final RowData rowData) throws Exception;
 
@@ -46,12 +48,13 @@ public interface Store {
 
 	long getAutoIncrementValue(final int rowDefId) throws Exception;
 
-    /**
-     * @param scanRowsRequest
-     * @return
-     */
-    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest) throws Exception;
-	
+	/**
+	 * @param scanRowsRequest
+	 * @return
+	 */
+	RowCollector newRowCollector(ScanRowsRequest scanRowsRequest)
+			throws Exception;
+
 	RowCollector newRowCollector(final int rowDefId, final int indexId,
 			final int scanFlags, final RowData start, final RowData end,
 			final byte[] columnBitMap) throws Exception;
@@ -146,13 +149,29 @@ public interface Store {
 			final String columnName, final Object least, final Object greatest,
 			final String leafTableName) throws Exception;
 
-	
 	/**
 	 * Analyze statistical information about a table. Specifically, construct
 	 * histograms for its indexes.
+	 * 
 	 * @param tableId
 	 * @throws Exception
 	 */
 	void analyzeTable(int tableId) throws Exception;
+
+	/**
+	 * Register a CommittedUpdateListener to handle update events.
+	 * 
+	 * @param listener
+	 *            The listener to add
+	 */
+	void addCommittedUpdateListener(final CommittedUpdateListener listener);
+
+	/**
+	 * Remove a CommitedUpdateListener.
+	 * 
+	 * @param listener
+	 *            The listener to remove
+	 */
+	void removeCommittedUpdateListener(final CommittedUpdateListener listener);
 
 }

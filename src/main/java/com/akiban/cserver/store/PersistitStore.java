@@ -3,10 +3,9 @@ package com.akiban.cserver.store;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,8 +34,10 @@ import com.akiban.util.Tap;
 import com.akiban.vstore.VMeta;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.KeyState;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
+import com.persistit.Transaction.CommitListener;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
@@ -64,7 +65,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			"write: tx_retry"));
 
 	private static final Tap NEW_COLLECTOR_TAP = Tap.add("read: new_collector");
-
+	
 	static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
 	final static String VOLUME_NAME = "akiban_data"; // TODO - select
@@ -121,9 +122,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	private final DecisionEngine scanDecider;
 	private final VStore vstore;
-    private VMeta vmeta;
-    private String vmetaFileName;
+	private VMeta vmeta;
+	private String vmetaFileName;
+	
+	private boolean forceToDisk = false;	// default to "group commit"
 
+	private List<CommittedUpdateListener> updateListeners = Collections
+			.synchronizedList(new ArrayList<CommittedUpdateListener>());
+	
 	// Using a Map<Thread, ...> instead of a ThreadLocal because we want to
 	// clear all state in the shutDown() method.
 	//
@@ -134,31 +140,32 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		VStore.setDataPath(datapath);
 	}
 
-	public PersistitStore(final CServerConfig config, final RowDefCache cache) throws Exception {
+	public PersistitStore(final CServerConfig config, final RowDefCache cache)
+			throws Exception {
 		this.rowDefCache = cache;
 		this.config = config;
-		//this.config.setProperty("cserver.decision_engine", "vstore");
+		// this.config.setProperty("cserver.decision_engine", "vstore");
 		this.tableManager = new PersistitStoreTableManager(this);
 		this.indexManager = new PersistitStoreIndexManager(this);
 		this.scanDecider = DecisionEngine.createDecisionEngine(config);
-		
+
 		final String path = config.property(P_DATAPATH, datapath);
 		this.vstore = new VStore(this, path);
 
-		File directory = new File(path+"/vstore");
+		File directory = new File(path + "/vstore");
 		if (!directory.exists()) {
-		    if (!directory.mkdir()) {
-		        //throw new Exception();
-		    }
-		}  
+			if (!directory.mkdir()) {
+				// throw new Exception();
+			}
+		}
 
-	    vmetaFileName = path+"/vstore/.vmeta";		
-		//System.out.println("---------- VMetafile == "+vmetaFileName+" ----------");
+		vmetaFileName = path + "/vstore/.vmeta";
+		// System.out.println("---------- VMetafile == "+vmetaFileName+" ----------");
 		File vmetaFile = new File(vmetaFileName);
-		if(vmetaFile.exists()) {
-		    this.vmeta = new VMeta(vmetaFile);
+		if (vmetaFile.exists()) {
+			this.vmeta = new VMeta(vmetaFile);
 		} else {
-		    vmeta = null;
+			vmeta = null;
 		}
 	}
 
@@ -596,7 +603,18 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 							insertIntoIndex(indexDef, rowData, hEx.getKey());
 					}
 					TX_COMMIT_TAP.in();
-					transaction.commit();
+					if (updateListeners.isEmpty()) {
+						transaction.commit(forceToDisk);
+					} else {
+						final KeyState keyState = new KeyState(hEx.getKey());
+						transaction.commit(new CommitListener() {
+							public void committed() {
+								for (final CommittedUpdateListener cul : updateListeners) {
+									cul.inserted(keyState, rowDef, rowData);
+								}
+							}
+						}, forceToDisk);
+					}
 					return OK;
 				} catch (RollbackException re) {
 					TX_RETRY_TAP.out();
@@ -671,7 +689,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
 	public void syncColumns() throws Exception {
 		vstore.constructColumnDescriptors();
-		//System.out.println("Sync columns");
+		// System.out.println("Sync columns");
 		vmeta = new VMeta(new File(vmetaFileName));
 	}
 
@@ -763,7 +781,18 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 							deleteIndex(indexDef, rowDef, rowData, hEx.getKey());
 						}
 					}
-					transaction.commit();
+					if (updateListeners.isEmpty()) {
+						transaction.commit(forceToDisk);
+					} else {
+						final KeyState keyState = new KeyState(hEx.getKey());
+						transaction.commit(new CommitListener() {
+							public void committed() {
+								for (final CommittedUpdateListener cul : updateListeners) {
+									cul.deleted(keyState, rowDef, rowData);
+								}
+							}
+						}, forceToDisk);
+					}
 					return OK;
 				} catch (RollbackException re) {
 					if (--retries < 0) {
@@ -880,7 +909,18 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 							}
 						}
 					}
-					transaction.commit();
+					if (updateListeners.isEmpty()) {
+						transaction.commit(forceToDisk);
+					} else {
+						final KeyState keyState = new KeyState(hEx.getKey());
+						transaction.commit(new CommitListener() {
+							public void committed() {
+								for (final CommittedUpdateListener cul : updateListeners) {
+									cul.updated(keyState, rowDef, oldRowData, newRowData);
+								}
+							}
+						}, forceToDisk);
+					}
 					return status;
 				} catch (RollbackException re) {
 					if (--retries < 0) {
@@ -961,7 +1001,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					ts0.setRowCount(0);
 					ts0.deleted();
 
-					transaction.commit();
+					transaction.commit(forceToDisk);
 					return OK;
 
 				} catch (RollbackException re) {
@@ -1027,7 +1067,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 					if (deleteGroup) {
 						tableManager.getTableStatus(groupRowDef.getRowDefId())
 								.setDeleted(true);
-						//IOException
+						// IOException
 						// Remove the index trees
 						//
 						for (IndexDef indexDef : groupRowDef.getIndexDefs()) {
@@ -1052,7 +1092,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 						}
 						tableManager.deleteStatus(groupRowDef.getRowDefId());
 					}
-					transaction.commit();
+					transaction.commit(forceToDisk);
 					return OK;
 				} catch (RollbackException re) {
 					if (--retries < 0) {
@@ -1210,13 +1250,13 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 			Decider.RowCollectorType et = scanDecider.makeDecision(request);
 			RowCollector rc = null;
 			if (et == Decider.RowCollectorType.PersistitRowCollector) {
-			    //System.out.println("------------ creating scanRowsRequest RowCollector -------------");
-                rc = new PersistitStoreRowCollector(this, scanFlags, start,
-                        end, columnBitMap, rowDef, indexId);
+				// System.out.println("------------ creating scanRowsRequest RowCollector -------------");
+				rc = new PersistitStoreRowCollector(this, scanFlags, start,
+						end, columnBitMap, rowDef, indexId);
 			} else {
-			    //System.out.println("------------ creating scanRowsRequest VCOLLECTOR -------------");
-			    //assert vmeta != null;
-                rc = new VCollector(vmeta, rowDefCache, rowDefId, columnBitMap);
+				// System.out.println("------------ creating scanRowsRequest VCOLLECTOR -------------");
+				// assert vmeta != null;
+				rc = new VCollector(vmeta, rowDefCache, rowDefId, columnBitMap);
 			}
 			if (rc.hasMore()) {
 				putCurrentRowCollector(rowDefId, rc);
@@ -1292,7 +1332,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		final TableStatus status = tableManager.getTableStatus(tableId);
 		if (rowDef.getRowType() == RowType.GROUP) {
 			ts.setRowCount(2);
-			ts.setAutoIncrementValue (-1);
+			ts.setAutoIncrementValue(-1);
 		} else {
 			ts.setAutoIncrementValue(status.getAutoIncrementValue());
 			ts.setRowCount(status.getRowCount());
@@ -1306,20 +1346,21 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		indexManager.populateTableStatistics(ts);
 		return ts;
 	}
-//	@Override
-//	public TableStatistics getTableStatistics(int tableId) throws Exception {
-//		final TableStatus status = tableManager.getTableStatus(tableId);
-//		final TableStatistics ts = new TableStatistics(tableId);
-//		ts.setAutoIncrementValue(status.getAutoIncrementValue());
-//		ts.setCreationTime(status.getCreationTime());
-//		ts.setMeanRecordLength(100);
-//		ts.setUpdateTime(Math.max(status.getLastUpdateTime(), status
-//				.getLastWriteTime()));
-//		ts.setBlockSize(8192);
-//		ts.setRowCount(status.getRowCount());
-//		indexManager.populateTableStatistics(ts);
-//		return ts;
-//	}
+
+	// @Override
+	// public TableStatistics getTableStatistics(int tableId) throws Exception {
+	// final TableStatus status = tableManager.getTableStatus(tableId);
+	// final TableStatistics ts = new TableStatistics(tableId);
+	// ts.setAutoIncrementValue(status.getAutoIncrementValue());
+	// ts.setCreationTime(status.getCreationTime());
+	// ts.setMeanRecordLength(100);
+	// ts.setUpdateTime(Math.max(status.getLastUpdateTime(), status
+	// .getLastWriteTime()));
+	// ts.setBlockSize(8192);
+	// ts.setRowCount(status.getRowCount());
+	// indexManager.populateTableStatistics(ts);
+	// return ts;
+	// }
 
 	@Override
 	public void analyzeTable(final int tableId) throws Exception {
@@ -1561,6 +1602,16 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		CServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
 				rowDataSize);
 		rowData.prepareRow(0);
+	}
+
+	@Override
+	public void addCommittedUpdateListener(CommittedUpdateListener listener) {
+		updateListeners.add(listener);
+	}
+
+	@Override
+	public void removeCommittedUpdateListener(CommittedUpdateListener listener) {
+		updateListeners.remove(listener);
 	}
 
 }

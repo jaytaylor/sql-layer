@@ -2,7 +2,12 @@ package com.akiban.cserver.store;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.text.DefaultCaret;
 
 import junit.framework.TestCase;
 
@@ -16,6 +21,7 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.util.ByteBufferFactory;
+import com.persistit.KeyState;
 import com.persistit.Volume;
 
 public class PersistitStoreWithAISTest extends TestCase implements
@@ -556,6 +562,79 @@ public class PersistitStoreWithAISTest extends TestCase implements
 			}
 			assertEquals(157, list.size());
 		}
+	}
+	
+	public void testCommittedUpdateListener() throws Exception {
+		final Map<Integer, AtomicInteger> counts = new HashMap<Integer, AtomicInteger>();
+		final CommittedUpdateListener listener = new CommittedUpdateListener() {
+			
+			@Override
+			public void updated(KeyState keyState, RowDef rowDef, RowData oldRowData,
+					RowData newRowData) {
+				ai(rowDef).addAndGet(1000000);
+			}
+			
+			@Override
+			public void inserted(KeyState keyState, RowDef rowDef, RowData rowData) {
+				ai(rowDef).addAndGet(1);
+			}
+			
+			@Override
+			public void deleted(KeyState keyState, RowDef rowDef, RowData rowData) {
+				ai(rowDef).addAndGet(1000);
+			}
+			
+			AtomicInteger ai(final RowDef rowDef) {
+				AtomicInteger ai = counts.get(rowDef.getRowDefId());
+				if (ai == null) {
+					ai = new AtomicInteger();
+					counts.put(rowDef.getRowDefId(), ai);
+				}
+				return ai;
+			}
+		};
+		
+		store.addCommittedUpdateListener(listener);
+		final TestData td = new TestData(5, 5, 5, 5);
+		td.insertTestRows();
+		assertEquals(5, counts.get(td.defC.getRowDefId()).intValue());
+		assertEquals(25, counts.get(td.defO.getRowDefId()).intValue());
+		assertEquals(125, counts.get(td.defI.getRowDefId()).intValue());
+		assertEquals(625, counts.get(td.defX.getRowDefId()).intValue());
+		//
+		// Now delete or change every other X rows
+		//
+		int scanCount = 0;
+		td.rowX.createRow(td.defX, new Object[0]);
+		final byte[] columnBitMap = new byte[] { (byte) 0x1F };
+		final RowCollector rc = store.newRowCollector(td.defX.getRowDefId(),
+				td.defX.getPKIndexDef().getId(), 0, td.rowX, td.rowX,
+				columnBitMap);
+		final ByteBuffer payload = ByteBufferFactory.allocate(256);
+
+		while (rc.hasMore()) {
+			payload.clear();
+			while (rc.collectNextRow(payload))
+				;
+			payload.flip();
+			RowData rowData = new RowData(payload.array(), payload.position(),
+					payload.limit());
+			for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
+				rowData.prepareRow(p);
+				if (scanCount++ % 2 == 0) {
+				assertEquals(OK, store.deleteRow(rowData));
+				} else {
+					assertEquals(OK, store.updateRow(rowData, rowData));
+				}
+				p = rowData.getRowEnd();
+			}
+		}
+		
+		assertEquals(5, counts.get(td.defC.getRowDefId()).intValue());
+		assertEquals(25, counts.get(td.defO.getRowDefId()).intValue());
+		assertEquals(125, counts.get(td.defI.getRowDefId()).intValue());
+		assertEquals(312313625, counts.get(td.defX.getRowDefId()).intValue());
+		
 	}
 
 }
