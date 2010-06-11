@@ -291,8 +291,8 @@ public class RowData {
         // iterates over the field array list -- James
         for (int groupOffset = nullMapOffset, field =  0, position = 0;
             field < fieldCount; groupOffset++, field++) {
-            System.out.println("table "+rowDef.getTableName()+"field count = "
-                                +fieldCount+" position = "+position);
+//            System.out.println("table "+rowDef.getTableName()+"field count = "
+//                                +fieldCount+" position = "+position);
             if (!nullMap.get(groupOffset)) {
                 assert rowDef.getFieldDef(field).isFixedSize() == true;
                 int fieldSize = fields.get(position).getNextFieldSize();
