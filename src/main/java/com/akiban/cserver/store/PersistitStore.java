@@ -92,10 +92,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		PERSISTIT_PROPERTIES.put("volume.3", "${datapath}/" + VOLUME_NAME
 				+ ".v01,create,pageSize:8k,"
 				+ "initialSize:5M,extensionSize:5M,maximumSize:100G");
-		PERSISTIT_PROPERTIES.put("pwjpath", "${datapath}/persistit.pwj");
-		PERSISTIT_PROPERTIES.put("pwjsize", "16M");
-		PERSISTIT_PROPERTIES.put("pwdelete", "true");
-		PERSISTIT_PROPERTIES.put("pwjcount", "2");
+		PERSISTIT_PROPERTIES.put("sysvolume", "akiban_system");
+		PERSISTIT_PROPERTIES.put("txnvolume", "akiban_txn");
 		PERSISTIT_PROPERTIES.put("timeout", "60000");
 		//
 		// Temporary setup for testing Persistit 2.1

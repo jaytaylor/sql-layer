@@ -25,7 +25,7 @@ class RowDataDisplayFilter implements DisplayFilter {
 	}
 
 	public String toValueDisplayString(final Exchange exchange) {
-		if (exchange.getTree().getVolume().getPathName().contains("_data")
+		if (exchange.getTree().getVolume().getPath().contains("_data")
 				&& !exchange.getTree().getName().contains("_status_") 
 				&& !exchange.getTree().getName().contains("$$")) {
 			final Value value = exchange.getValue();

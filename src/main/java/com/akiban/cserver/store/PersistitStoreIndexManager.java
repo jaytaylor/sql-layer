@@ -31,9 +31,9 @@ public class PersistitStoreIndexManager {
 	private final static String ANALYSIS_TABLE_NAME = "akiba_information_schema.index_analysis";
 
 	private final static int DEFAULT_SAMPLE_SIZE = 32;
-	
+
 	private final static int STARTING_TREE_DEPTH = 2;
-	
+
 	/**
 	 * Field number in index_analysis table. Change if akiba_inormation_schema
 	 * changes.
@@ -51,6 +51,12 @@ public class PersistitStoreIndexManager {
 	private final static int INDEX_LEVEL_MULTIPLIER = 200;
 
 	private final static int SAMPLE_SIZE_MULTIPLIER = 32;
+	
+	// TODO - remove this once the ASE can handle returned
+	// histograms without crashing. This is a temporary hack
+	// for unit testing.
+	static boolean enableHistograms = false;
+	
 
 	private final PersistitStore store;
 
@@ -65,7 +71,7 @@ public class PersistitStoreIndexManager {
 	}
 
 	public void analyzeTable(final RowDef rowDef) throws Exception {
-		analyzeTable(rowDef, DEFAULT_SAMPLE_SIZE);
+		analyzeTable(rowDef, DEFAULT_SAMPLE_SIZE - 1);
 	}
 
 	public void analyzeTable(final RowDef rowDef, final int sampleSize)
@@ -82,7 +88,8 @@ public class PersistitStoreIndexManager {
 		// First try to enumerate the values. If there are more than
 		KeyHistogram keyHistogram = null;
 		final int keyDepth = indexDef.getFields().length;
-		int treeLevel = Math.max(0, iEx.getTree().getDepth() - STARTING_TREE_DEPTH);
+		int treeLevel = Math.max(0, iEx.getTree().getDepth()
+				- STARTING_TREE_DEPTH);
 		while (treeLevel >= 0) {
 			keyHistogram = iEx.computeHistogram(Key.LEFT_GUARD_KEY,
 					Key.RIGHT_GUARD_KEY, sampleSize, keyDepth, treeLevel);
@@ -94,9 +101,14 @@ public class PersistitStoreIndexManager {
 		}
 
 		if (LOG.isInfoEnabled()) {
-			LOG.info(String.format("Analyzed index %s in table %s: %,d keys at keyDepth/treeLevel %d/%d",
-					indexDef.getName(), indexDef.getRowDef().getTableName(),
-					keyHistogram.getKeyCount(), keyDepth, Math.max(0, treeLevel)));
+			LOG
+					.info(String
+							.format(
+									"Analyzed index %s in table %s: %,d keys at keyDepth/treeLevel %d/%d",
+									indexDef.getName(), indexDef.getRowDef()
+											.getTableName(), keyHistogram
+											.getKeyCount(), keyDepth, Math.max(
+											0, treeLevel)));
 		}
 
 		final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
@@ -171,6 +183,22 @@ public class PersistitStoreIndexManager {
 
 					store.writeRow(rowData);
 				}
+				//
+				// Add artificial end row containing all nulls.
+				//
+				indexRowData.createRow(indexDef.getRowDef(), new Object[0]);
+				final byte[] indexRowBytes = new byte[indexRowData.getRowSize()];
+
+				System.arraycopy(indexRowData.getBytes(), indexRowData
+						.getRowStart(), indexRowBytes, 0, indexRowData
+						.getRowSize());
+
+				rowData.createRow(indexAnalysisRowDef, new Object[] {
+						indexDef.getRowDef().getRowDefId(), indexDef.getId(),
+						now, ++itemNumber, key.toString(), indexRowBytes,
+						keyHistogram0.getKeyCount() * multiplier });
+
+				store.writeRow(rowData);
 			}
 		}, 10, 100, false);
 	}
@@ -194,7 +222,8 @@ public class PersistitStoreIndexManager {
 			final Exchange exchange = store.getExchange(indexAnalysisRowDef,
 					null);
 			exchange.clear().append(indexAnalysisRowDef.getOrdinal()).append(
-					(long)tableId).append((long)indexDef.getId()).append(Key.BEFORE);
+					(long) tableId).append((long) indexDef.getId()).append(
+					Key.BEFORE);
 			List<RowData> rows = new ArrayList<RowData>();
 			while (exchange.next()) {
 				final RowData rowData = new RowData(new byte[exchange
@@ -222,10 +251,10 @@ public class PersistitStoreIndexManager {
 				rowData.prepareRow(0);
 				histogram.addSample(new HistogramSample(rowData, rowCount));
 			}
-			// TODO - uncomment when Tom is ready
-//			if (!histogram.getHistogramSamples().isEmpty()) {
-//				tableStatistics.addHistogram(histogram);
-//			}
+			// TODO - remove the enableHistograms flag when Tom is ready
+			if (enableHistograms && !histogram.getHistogramSamples().isEmpty()) {
+				tableStatistics.addHistogram(histogram);
+			}
 		}
 	}
 }
