@@ -26,7 +26,7 @@ import com.persistit.Persistit;
  */
 public class DeltaMonitorTest {
 
-    int count;
+    volatile int count;
     RowDef rdef;
     RowData rdata;
     Key key;
