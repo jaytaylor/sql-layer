@@ -156,15 +156,17 @@ public class VCollector implements RowCollector {
         if (!hasMore) {
             return false;
         }
+        
         int chunkDepth = payload.position();
 //        System.out.println("chunk depth = " + chunkDepth);
         RowData row = new RowData();
         boolean scannedARow = false;
-        Key pkey = new Key((Persistit) null);
-        pkey.clear();
+        //Key pkey = new Key((Persistit) null);
+        //pkey.clear();
 
         for (; rowIndex < totalRows; rowIndex++) {
-
+            
+            //KeyState nextKey = keyQueue.peek(); 
             KeyState nextKey = keyQueue.poll();
             assert nextKey != null;
             List<FieldArray> fields = keyMap.get(nextKey).getFieldArrayList();
@@ -183,31 +185,30 @@ public class VCollector implements RowCollector {
                 keyQueue.add(nextKey);
                 break;
             } else {
-                pkey.clear();
-                nextKey.copyTo(pkey);
+                //pkey.clear();
+                //nextKey.copyTo(pkey);
 
-                /*System.out.println("VCollector: table = "
-                        + userTables.get(keyMap.get(nextKey).getTableId())
-                                .getTableName() + ", key = " + pkey
-                        + ", chunkDepth = " + chunkDepth + ", nextRowSize = "
-                        + nextRowSize + " fields =" + fields.size());
-                        */
+                //System.out.println("VCollector: table = "
+                //        + userTables.get(keyMap.get(nextKey).getTableId())
+                //                .getTableName() + ", key = " + pkey
+                //        + ", chunkDepth = " + chunkDepth + ", nextRowSize = "
+                //        + nextRowSize + " fields =" + fields.size());
+
                 int offset = 0;
                 if(table.isGroupTable()) {
                     offset = userTables.get(keyMap.get(nextKey).getTableId()).getColumnOffset();
                 }
-                
+
                 row.reset(payload.array(), chunkDepth, nextRowSize);
                 row.mergeFields(userTables.get(keyMap.get(nextKey).getTableId()), fields, nullMap, offset);
                 payload.position(nextRowSize + payload.position());
 
-                int k = chunkDepth;
-/*                while (k < chunkDepth + nextRowSize) {
-                    System.out.print(Integer.toHexString(payload.array()[k])
-                            + " ");
-                    k++;
-                }
-                */
+                //int k = chunkDepth;
+                //while (k < chunkDepth + nextRowSize) {
+                //    System.out.print(Integer.toHexString(payload.array()[k])
+                //            + " ");
+                //    k++;
+                //}
                //System.out.println("<--- rowcollection complete --->");
                // System.out.println("toString = " + row.toString(cache));
                // System.out.println("---------- after to string ----------");
@@ -252,6 +253,7 @@ public class VCollector implements RowCollector {
     // private int rows;
     private int fields;
     private RowDef table;
+    //private TreeMap<KeyState, Deltas> deltas;
     private TreeMap<Integer, RowDef> userTables;
     private RowDefCache cache;
     // private ArrayList<FieldArray> fields;
