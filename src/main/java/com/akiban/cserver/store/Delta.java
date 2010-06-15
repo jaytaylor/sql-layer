@@ -58,6 +58,8 @@ public class Delta implements Comparable {
 
     public int compareTo(Object obj) {
         assert obj instanceof Delta;
+        assert key != null;
+        assert ((Delta)obj).key != null;
         return key.compareTo(((Delta) obj).key);
     }
 

@@ -5,6 +5,7 @@ package com.akiban.cserver.store;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +56,7 @@ public class DeltaMonitorTest {
     }
     
     @Test
-    public void testDeltaMonitor() {
+    public void testDeltaMonitorLockBlocks() {
         setupTest();
         DeltaMonitor dm = new DeltaMonitor();
         dm.readLock();
@@ -67,6 +68,34 @@ public class DeltaMonitorTest {
         dm.releaseReadLock();
         while(count == 1) ;
         assertEquals(2, count);
+    }
+    
+    @Test
+    public void testMergeInsert() throws IOException {
+        setupTest();
+        DeltaMonitor dm = new DeltaMonitor();
+        dm.inserted(ks0, rdef, rdata);
+        dm.inserted(ks1, rdef, rdata);
+        dm.configureInsertCursor(rdef.getRowDefId());
+        BitSet nullmap = new BitSet(rdef.getFieldCount());
+        for(int i = 0; i < rdef.getFieldCount(); i++) {
+            nullmap.set(i, true);
+        }
+        boolean copied = dm.mergeInsert(ks01, rdef.getRowDefId(), rdata, nullmap, 0);
+        assertTrue(copied);
+        boolean assertionTriggered = false;
+        try {
+        copied = dm.mergeInsert(ks1, rdef.getRowDefId(), rdata, nullmap, 0);
+        } catch(AssertionError e) {
+            assertionTriggered = true;
+        }
+        assertTrue(assertionTriggered);
+        
+        copied = dm.mergeInsert(ks11, rdef.getRowDefId(), rdata, nullmap, 0);
+        assertTrue(copied);
+        
+        copied = dm.mergeInsert(ks11, rdef.getRowDefId(), rdata, nullmap, 0);
+        assertFalse(copied);
     }
     
     public void setupTest() {
@@ -88,18 +117,18 @@ public class DeltaMonitorTest {
         key = new Key((Persistit)null);
         key.clear();
         key.append(0);
-        KeyState ks0 = new KeyState(key);
+        ks0 = new KeyState(key);
 
         key1 = new Key((Persistit)null);
         key1.clear();
         key1.append(1);
-        KeyState ks1 = new KeyState(key1);
+        ks1 = new KeyState(key1);
         
         key.append(1);
-        KeyState ks01 = new KeyState(key);
+        ks01 = new KeyState(key);
         
         key1.append(1);
-        KeyState ks11 = new KeyState(key1);
+        ks11 = new KeyState(key1);
                 
         rdef = rowDefCache.getRowDef(new String("toy_test.parent"));
         assert rdef != null;

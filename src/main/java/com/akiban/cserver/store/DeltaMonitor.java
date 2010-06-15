@@ -22,6 +22,7 @@ public class DeltaMonitor implements CommittedUpdateListener {
     
     public DeltaMonitor() {
        inserts = new TreeMap<Integer, PriorityQueue<Delta>>();
+       insertCursors = new TreeMap<Integer, PriorityQueue<Delta>>();
        rwLock = new ReentrantReadWriteLock();
     }
         
@@ -39,8 +40,14 @@ public class DeltaMonitor implements CommittedUpdateListener {
     }
     
     public boolean mergeInsert(KeyState nextKey, int tableId, RowData rowData, BitSet nullMap, 
-            int nullMapOffset) throws IOException {
+                               int nullMapOffset) throws IOException {
+        assert insertCursors.get(tableId) != null;
+        
         boolean ret = false;
+        if(insertCursors.get(tableId).size() == 0) {
+            return ret;
+        }
+        
         Delta d = insertCursors.get(tableId).peek();
         int preceeds = d.getKey().compareTo(nextKey);
         assert preceeds != 0; 
@@ -64,12 +71,13 @@ public class DeltaMonitor implements CommittedUpdateListener {
     @Override
     public void inserted(KeyState keyState, RowDef rowDef, RowData rowData) {
         Delta newDelta = new Delta(Delta.Type.Insert, keyState, rowDef, rowData);
-        // XXX - This is a big-ass hammer lock.  This should probably make this 
-        //       more fine grained.
+        // XXX - This is a big-ass hammer lock.  This should probably be more 
+        //       fine grained.
         rwLock.writeLock().lock();
         if(inserts.get(rowDef.getRowDefId()) == null) {
             inserts.put(rowDef.getRowDefId(), new PriorityQueue<Delta>());
         } 
+        assert inserts.get(rowDef.getRowDefId()) != null;
         boolean success = inserts.get(rowDef.getRowDefId()).add(newDelta);
         assert success;
         rwLock.writeLock().unlock();
