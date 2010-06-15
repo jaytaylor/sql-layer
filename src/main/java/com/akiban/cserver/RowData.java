@@ -258,18 +258,9 @@ public class RowData {
         return CServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
-    // XXX the nullMapOffset business is horrendous; please fix me.
-    public void mergeFields(final RowDef rowDef, List<FieldArray> fields, BitSet nullMap, int nullMapOffset)
-            throws IOException {
-        assert nullMap != null;
-        final int fieldCount = rowDef.getFieldCount();
-        int offset = rowStart;
 
-        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
-
-        offset = offset + O_NULL_MAP;
+    public int setupNullMap(BitSet nullMap, int nullMapOffset, int currentOffset, int fieldCount) {
+        int offset = currentOffset + O_NULL_MAP;
         int mapSize = ((fieldCount % 8) == 0 ? fieldCount : fieldCount + 1);
         bytes[offset] = 0;
 
@@ -284,6 +275,56 @@ public class RowData {
             }
         }
         offset++;
+        return offset;
+    }    
+    
+    public void copy(final RowDef rowDef, RowData rdata, BitSet nullMap, int nullMapOffset) throws IOException {
+        final int fieldCount = rowDef.getFieldCount();
+        int offset = rowStart;
+
+        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        
+        offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
+        // If the row is a projection, then the field array list is less than
+        // the field count. To account for this situation the field
+        // variable iterates over the columns and the position variable
+        // iterates over the field array list -- James
+        for (int groupOffset = nullMapOffset, field =  0, position = 0;
+            field < fieldCount; groupOffset++, field++) {
+//            System.out.println("table "+rowDef.getTableName()+"field count = "
+//                                +fieldCount+" position = "+position);
+            if (!nullMap.get(groupOffset)) {
+                assert rowDef.getFieldDef(field).isFixedSize() == true;
+                long offsetWidth = rowDef.fieldLocation(rdata, field);
+                System.arraycopy(rdata.getBytes(), ((int)offsetWidth), bytes, offset,
+                        ((int)(offsetWidth>>>32)));
+                position++;
+                offset += ((int)(offsetWidth>>>32));
+            }
+        }
+
+        CServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        offset += 6;
+        final int length = offset - rowStart;
+        CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
+        CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
+        rowEnd = offset;
+    }
+    
+    // XXX the nullMapOffset business is horrendous; please fix me.
+    public void mergeFields(final RowDef rowDef, List<FieldArray> fields, BitSet nullMap, int nullMapOffset)
+            throws IOException {
+        assert nullMap != null;
+        final int fieldCount = rowDef.getFieldCount();
+        int offset = rowStart;
+
+        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        
+        offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
 
         // If the row is a projection, then the field array list is less than
         // the field count. To account for this situation the field
