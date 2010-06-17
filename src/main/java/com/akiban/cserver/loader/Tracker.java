@@ -3,6 +3,8 @@ package com.akiban.cserver.loader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,11 +20,16 @@ public class Tracker
         recordEvent(message);
     }
 
-    public void error(String template, Object... args)
+    public void error(String template, Exception e, Object... args)
     {
         String message = String.format(template, args);
-        logger.error(message);
+        StringWriter stringWriter = new StringWriter();
+        e.printStackTrace(new PrintWriter(stringWriter));
+        String stack = stringWriter.toString();
+        logger.error(message, e);
+        logger.error(stack);
         recordEvent(message);
+        recordEvent(stack);
     }
 
     public Log logger()
