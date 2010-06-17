@@ -9,7 +9,7 @@ import java.util.*; //import java.io.*;
 import java.nio.ByteBuffer;
 
 import com.akiban.cserver.*;
-import com.akiban.vstore.ColumnArrayGenerator; //import com.akiban.vstore.ColumnArrayGenerator;
+//import com.akiban.vstore.ColumnArrayGenerator;
 //import com.akiban.vstore.IColumnDescriptor;
 //import com.akiban.vstore.VMeta;
 import com.akiban.ais.ddl.*;
@@ -57,7 +57,7 @@ public class VCollectorTest {
                     continue;
                 }
 
-                if (rowDef.getRowDefId() == 1003) {
+                //if (rowDef.getRowDefId() == 1003) {
                     GroupGenerator dbGen = new GroupGenerator(
                             VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, false, true);
                     dbGen.generateGroup(rowDef, 2);
@@ -117,7 +117,7 @@ public class VCollectorTest {
                         assertArrayEquals(expected, actual);
                     }
                 }
-           }
+           //}
 
         } catch (Exception e) {
             System.out.println("ERROR because " + e.getMessage());
@@ -263,7 +263,89 @@ public class VCollectorTest {
             }
         }
     }
+    
+    @Test
+    public void testInsertOnlyProjection() throws Exception {
 
+        Random r = new Random(1337);
+        for (int h = 0; h < 133; h++) {
+            try {
+                setupDatabase();
+                List<RowDef> rowDefs = rowDefCache.getRowDefs();
+                Iterator<RowDef> i = rowDefs.iterator();
+                while (i.hasNext()) {
+                    RowDef rowDef = i.next();
+                    if (!rowDef.isGroupTable()) {
+                        continue;
+                    }
+
+                    //if (rowDef.getRowDefId() == 1003) {
+                        GroupGenerator dbGen = new GroupGenerator(
+                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, true, true);
+                        dbGen.generateGroup(rowDef);
+                        ArrayList<RowData> rowData = dbGen.getInsertRows();
+
+                        int mapSize = rowDef.getFieldCount() / 8;
+                        if (rowDef.getFieldCount() % 8 != 0) {
+                            mapSize++;
+                        }
+
+                        byte[] columnBitMap = new byte[mapSize];
+                        BitSet projection = new BitSet(mapSize);
+                        boolean none = true;
+                        for (int j = 0; j < rowDef.getFieldCount(); j++) {
+                            if (r.nextBoolean()
+                               || (none == true && j + 1 == rowDef.getFieldCount())) {
+                                projection.set(j, true);
+                                columnBitMap[j / 8] |= 1 << (j % 8);
+                                none = false;
+                            }
+                        }
+                        
+                        VCollector vc = new VCollector(null, dbGen.getDeltas(),
+                                rowDefCache, rowDef.getRowDefId(), dbGen
+                                        .getGroupBitMap());
+                        ByteBuffer buffer = ByteBuffer.allocate(dbGen
+                                .getGroupSize());
+
+                        boolean copied = vc.collectNextRow(buffer);
+                        buffer.position(0);
+                        assertTrue(copied);
+                        assertFalse(vc.hasMore());
+                        int rowCount = 0;
+                        Iterator<RowData> j = rowData.iterator();
+                        while (j.hasNext()) {
+                            RowData row = j.next();
+                            byte[] expected = row.getBytes();
+                            byte[] actual = new byte[expected.length];
+                            buffer.get(actual);
+                            /*
+                             * System.out.println(" count = "+rowCount++); int k
+                             * = 0; while(k < expected.length) {
+                             * System.out.print
+                             * (Integer.toHexString(expected[k])+" "); k++; } k
+                             * = 0; System.out.println(); while (k <
+                             * actual.length) {
+                             * System.out.print(Integer.toHexString
+                             * (actual[k])+" "); k++; } System.out.println();
+                             */
+                            assertArrayEquals(expected, actual);
+                        }
+//                    }
+                }
+    
+
+            } catch (Exception e) {
+                System.out.println("ERROR because " + e.getMessage());
+                e.printStackTrace();
+                fail("vcollector build failed");
+            }
+        }
+    }
+
+
+ 
+    
     @Test
     public void testGetProjection() throws Exception {
 

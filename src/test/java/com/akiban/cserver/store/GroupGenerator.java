@@ -44,6 +44,7 @@ public class GroupGenerator {
         this.rowDefCache = cache;
         this.createInsertDeltas = createInsertDeltas;
         rowData = new ArrayList<RowData>();
+        insertRowData = new ArrayList<RowData>();
         columnDes = new ArrayList<IColumnDescriptor>();
         hkeyDes = new ArrayList<IColumnDescriptor>();
         rowsPerTable = new TreeMap<Integer, Integer>();
@@ -102,6 +103,10 @@ public class GroupGenerator {
         */
     }
 
+    public ArrayList<RowData> getInsertRows() {
+        return insertRowData;
+    }
+    
     public DeltaMonitor getDeltas() {
         return deltas;
     }
@@ -374,6 +379,7 @@ public class GroupGenerator {
         RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
         RowData aRowData = generateRowData(rowDef, columns, projection);
         rowData.add(aRowData);
+        insertRowData.add(aRowData);
         //System.out.println("inserted row ############ "+aRowData.toString(rowDefCache));
         deltas.inserted(new KeyState(key.append(0)), rowDef, aRowData);
     }
@@ -445,6 +451,7 @@ public class GroupGenerator {
     private AkibaInformationSchema ais;
     
     private ArrayList<RowData> rowData;
+    private ArrayList<RowData> insertRowData;
     private VMeta meta;
     private byte[] groupBitMap;
     private int groupSize;

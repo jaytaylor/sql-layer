@@ -25,28 +25,35 @@ public class VCollector implements RowCollector {
             final RowDefCache rowDefCache, final int rowDefId,
             final byte[] columnBitMap) throws IOException {
         assert columnBitMap != null;
-        assert meta != null;
-
         deltaMonitor = dm;
         hasMore = true;
-        fields = 0;
-        userTables = null;
+        rowIndex = 0;
         table = rowDefCache.getRowDef(rowDefId);
+        assert table != null;
+        
+        userTables = new TreeMap<Integer, RowDef>();
         projection = new BitSet(table.getFieldCount());
         nullMap = new BitSet(table.getFieldCount());
-        keyQueue = new PriorityQueue<KeyState>();
-        keyMap = new TreeMap<KeyState, TableDescriptor>();
-
-        assert table != null;
-        projection.clear();
-        nullMap.clear();
-        userTables = new TreeMap<Integer, RowDef>();
-
         configureBitMap(columnBitMap);
-        if (!table.isGroupTable()) {
-            configureUserTableCollector(meta, table, 0, table.getFieldCount());
+        assert !projection.isEmpty();
+        
+        if (meta == null) {
+            totalRows = 0;
+            if(!table.isGroupTable()) {
+                userTables.put(table.getRowDefId(), table);
+            } else {
+                findUserTableIds();
+            }
         } else {
-            configureGroupTableCollector(meta);
+            fields = 0;
+            keyQueue = new PriorityQueue<KeyState>();
+            keyMap = new TreeMap<KeyState, TableDescriptor>();
+            if (!table.isGroupTable()) {
+                configureUserTableCollector(meta, table, 0, 
+                        table.getFieldCount());
+            } else {
+                configureGroupTableCollector(meta);
+            }
         }
         assert userTables.size() > 0;
         createInsertCursor();
@@ -80,6 +87,21 @@ public class VCollector implements RowCollector {
         // System.out.println("VCollector: Null map = "+nullMap);
     }
 
+    public void findUserTableIds()
+            throws FileNotFoundException, IOException {
+        for (int i = 0; i < table.getUserTableRowDefs().length; i++) {
+            final RowDef utable = table.getUserTableRowDefs()[i];
+            int offset = utable.getColumnOffset();
+            int distance = offset + utable.getFieldCount();
+            for (int j = offset, k = 0; j < distance; j++, k++) {
+                if (projection.get(j)) {
+                    userTables.put(utable.getRowDefId(), utable);
+                }
+            }
+            assert distance <= table.getFieldCount();
+        }
+    }
+    
     public void configureGroupTableCollector(VMeta meta)
             throws FileNotFoundException, IOException {
         // ArrayList<TableDescriptor> tables = new ArrayList<TableDescriptor>();
@@ -256,8 +278,8 @@ public class VCollector implements RowCollector {
             while (insertCursor.get() != null) {
                 Delta d = insertCursor.get();
                 assert d != null;
-                if (d.getRowData().getRowSize() > (payload.limit() - payload
-                        .position())) {
+                if (d.getRowData().getRowSize() 
+                        > (payload.limit() - payload.position())) {
                     break;
                 }
                 insertCursor.remove();
