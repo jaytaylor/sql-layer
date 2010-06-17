@@ -277,15 +277,7 @@ public class BulkLoader extends Thread
         DBSpawnFailedException(String sql, Integer exitCode, Throwable th)
         {
             super(String.format("sql: %s, exit code: %s", sql, exitCode), th);
-            this.exitCode = exitCode;
         }
-
-        public int exitCode()
-        {
-            return exitCode;
-        }
-
-        private final int exitCode;
     }
 
     // Not actually thrown - indicates normal termination
