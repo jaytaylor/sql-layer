@@ -55,7 +55,7 @@ public class PersistitStoreIndexManager {
 	// TODO - remove this once the ASE can handle returned
 	// histograms without crashing. This is a temporary hack
 	// for unit testing.
-	static boolean enableHistograms = false;
+	static boolean enableHistograms = true;
 
 	private final PersistitStore store;
 
