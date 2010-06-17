@@ -51,12 +51,11 @@ public class PersistitStoreIndexManager {
 	private final static int INDEX_LEVEL_MULTIPLIER = 200;
 
 	private final static int SAMPLE_SIZE_MULTIPLIER = 32;
-	
+
 	// TODO - remove this once the ASE can handle returned
 	// histograms without crashing. This is a temporary hack
 	// for unit testing.
 	static boolean enableHistograms = false;
-	
 
 	private final PersistitStore store;
 
@@ -243,13 +242,16 @@ public class PersistitStoreIndexManager {
 								(int) (rowCountLocation >>> 32));
 				final long rowDataLocation = indexAnalysisRowDef.fieldLocation(
 						rowData, ROW_DATA_FIELD_INDEX);
+				final int prefix = indexAnalysisRowDef.getFieldDef(
+						ROW_DATA_FIELD_INDEX).getPrefixSize();
 				final RowData indexRowData = new RowData(
-						new byte[(int) (rowDataLocation >>> 32)]);
-				System.arraycopy(rowData.getBytes(), (int) rowDataLocation,
-						indexRowData.getBytes(), 0, indexRowData
-								.getBufferLength());
-				rowData.prepareRow(0);
-				histogram.addSample(new HistogramSample(rowData, rowCount));
+						new byte[(int) (rowDataLocation >>> 32) - prefix]);
+				System.arraycopy(rowData.getBytes(), (int) rowDataLocation
+						+ prefix, indexRowData.getBytes(), 0, indexRowData
+						.getBufferLength());
+				indexRowData.prepareRow(0);
+				histogram
+						.addSample(new HistogramSample(indexRowData, rowCount));
 			}
 			// TODO - remove the enableHistograms flag when Tom is ready
 			if (enableHistograms && !histogram.getHistogramSamples().isEmpty()) {
