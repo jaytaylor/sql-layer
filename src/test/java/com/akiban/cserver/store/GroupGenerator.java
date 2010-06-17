@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -35,42 +36,76 @@ import com.persistit.Persistit;
  */
 public class GroupGenerator {
 
-    public GroupGenerator(String prefix, AkibaInformationSchema ais, RowDefCache cache, boolean randomProjection) {
+    public GroupGenerator(String prefix, AkibaInformationSchema ais, RowDefCache cache, 
+            boolean randomProjection, boolean createInsertDeltas) {
         this.randomProjection = randomProjection;
         this.ais = ais;
         this.prefix = prefix;
         this.rowDefCache = cache;
+        this.createInsertDeltas = createInsertDeltas;
         rowData = new ArrayList<RowData>();
         columnDes = new ArrayList<IColumnDescriptor>();
         hkeyDes = new ArrayList<IColumnDescriptor>();
         rowsPerTable = new TreeMap<Integer, Integer>();
         encodedColumnMap = new TreeMap<Integer, ArrayList<ArrayList<byte[]>>>(); 
         columnMap = new TreeMap<Integer, ArrayList<ColumnArrayGenerator>>();
+        columnMap1 = new TreeMap<Integer, ArrayList<ColumnArrayGenerator>>();
         hkeyMap = new TreeMap<Integer, HKeyColumnArrayGenerator>();
         projections = new TreeMap<Integer, BitSet>();
         bitMaps = new TreeMap<Integer, byte[]>();
+        deltas = new DeltaMonitor();
     }
-
-    //public void generateUser(RowDef userRowDef) throws Exception {
-        
-    //}
     
     public void generateGroup(RowDef groupRowDef) throws Exception {
+        generateGroup(groupRowDef, 2);
+    }
+
+    public void generateGroup(RowDef groupRowDef, int rows) throws Exception {
         Table table = ais.getTable(groupRowDef.getSchemaName(), groupRowDef.getTableName());
         assert table.isGroupTable();
         UserTable utable = ((GroupTable) table).getRoot();
-        setup(utable, 2);
+        rowBase = rows;
+        setup(utable, rowBase);
         setupGroupBitMap(table);
-
+        
         Key key = new Key((Persistit) null);
         key.clear();
-        generateRows(utable, key, 0, 2);
-
+        generateRows(utable, key, 0, rowBase);
+        if(createInsertDeltas) {
+            generateInsertRows(utable, key, rowBase);
+        }
+/*
+        Iterator<Integer> j = rowsPerTable.keySet().iterator();
+        while(j.hasNext()) {
+            int tableId = j.next().intValue();
+            System.out.println(rowDefCache.getRowDef(tableId).getTableName()+" rows = "+rowsPerTable.get(tableId));
+        }
+*/
         writeColumns(utable);
         generateDescriptors(utable);
         meta = new VMeta(hkeyDes, columnDes);
+        /*int count=0;
+        Iterator<RowData> j = rowData.iterator();
+        while (j.hasNext()) {
+            RowData row = j.next();
+            byte[] expected = row.getBytes();
+            int k =0;
+            System.out.print(row.toString(rowDefCache)+", count = "+count+++" --- ");
+            while(k < expected.length) {
+                  
+                  System.out.print(Integer.toHexString(expected[k])+" "); 
+                  k++; 
+              } 
+              System.out.println();
+            
+        }
+        */
     }
 
+    public DeltaMonitor getDeltas() {
+        return deltas;
+    }
+    
     public ArrayList<RowData> getRows() { 
          return rowData;
     }
@@ -192,9 +227,6 @@ public class GroupGenerator {
                         rowDef.getRowDefId(), i, fields[i].getMaxStorageSize(), 
                         rowsPerTable.get(table.getTableId())));
             } 
-            /*else {
-                assert false;
-            }*/
         }
     
         Iterator<Join> children = table.getChildJoins().iterator();
@@ -226,60 +258,55 @@ public class GroupGenerator {
         generateProjection(table, fields.length);
         BitSet projection = projections.get(table.getTableId());
         ArrayList<ColumnArrayGenerator> columns = new ArrayList<ColumnArrayGenerator>();
+        ArrayList<ColumnArrayGenerator> columns1 = new ArrayList<ColumnArrayGenerator>();
         ArrayList<ArrayList<byte[]>> encodedColumns = new ArrayList<ArrayList<byte[]>>();
         for (int i = 0; i < fields.length; i++) {
+            int actualRows = rows;
+            if(createInsertDeltas) {
+                actualRows *= 2;
+            }
             assert fields[i].isFixedSize() == true;
             if (projection.get(i)) {
                 rowSize += fields[i].getMaxStorageSize();
                 columns.add(new ColumnArrayGenerator(pathPrefix
                         + fields[i].getName(), 1337 + i, fields[i]
                         .getMaxStorageSize(), rows));
+
+                columns1.add(new ColumnArrayGenerator(pathPrefix
+                        + fields[i].getName(), 1337 + i, fields[i]
+                        .getMaxStorageSize(), actualRows));
                 encodedColumns.add(new ArrayList<byte[]>());
-            } /*else {
-                assert false;
-            }*/
+            }
         }
 
         HKeyColumnArrayGenerator hkeyGen = new HKeyColumnArrayGenerator(pathPrefix);
 
         hkeyMap.put(table.getTableId(), hkeyGen);
         rowsPerTable.put(table.getTableId(), 0);
-//        System.out.println("group gen: "+table.getName().getTableName()+ ", rows = "+rows);
+        //System.out.println("group gen: "+table.getName().getTableName()+ ", rows = "+rows);
         columnMap.put(table.getTableId(), columns);
+        columnMap1.put(table.getTableId(), columns1);
         encodedColumnMap.put(table.getTableId(), encodedColumns);
         
         Iterator<Join> children = table.getChildJoins().iterator();
         while (children.hasNext()) {
             Join j = children.next();
             UserTable child = j.getChild();
-            setup(child, rows*2);
+            setup(child, rows*rowBase);
         }
     }
 
-    private void generateARow(UserTable table, Key keyPrefix) throws Exception {
-
-        BitSet projection = projections.get(table.getTableId());
-        ArrayList<ColumnArrayGenerator> columns = columnMap.get(table.getTableId());
-        ArrayList<ArrayList<byte[]>> encodedColumns = encodedColumnMap.get(table.getTableId());
-        
-        int rows = rowsPerTable.get(table.getTableId());
-        rows++;
-        rowsPerTable.put(table.getTableId(), rows);
-
-        HKeyColumnArrayGenerator hkeys = hkeyMap.get(table.getTableId());
-        hkeys.append(new KeyState(keyPrefix), 1);
+    private RowData generateRowData(RowDef rowDef, ArrayList<ColumnArrayGenerator> columns, BitSet projection) {
 
         // God, why can't this be easier?
-        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
+        
         FieldDef[] fields = rowDef.getFieldDefs();
         int rowSize = 0;
         for (int i = 0; i < fields.length; i++) {
             assert fields[i].isFixedSize() == true;
             if (projection.get(i)) {
                 rowSize += fields[i].getMaxStorageSize();
-            } /*else {
-                assert false;
-            }*/
+            }
         }
         
         int totalRowSize = rowSize+RowData.MINIMUM_RECORD_LENGTH
@@ -303,8 +330,24 @@ public class GroupGenerator {
                 aRow[j] = null;
             }
         }
-
         aRowData.createRow(rowDef, aRow);
+        return aRowData;        
+    }
+    
+    private void generateARow(UserTable table, Key keyPrefix) throws Exception {
+
+        BitSet projection = projections.get(table.getTableId());
+        ArrayList<ColumnArrayGenerator> columns = columnMap1.get(table.getTableId());
+        ArrayList<ArrayList<byte[]>> encodedColumns = encodedColumnMap.get(table.getTableId());
+        
+        int rows = rowsPerTable.get(table.getTableId());
+        rows++;
+        rowsPerTable.put(table.getTableId(), rows);
+
+        HKeyColumnArrayGenerator hkeys = hkeyMap.get(table.getTableId());
+        hkeys.append(new KeyState(keyPrefix), 1);
+        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
+        RowData aRowData = generateRowData(rowDef,columns, projection);
         rowData.add(aRowData);
 
         for (int j = 0, k = 0; j < rowDef.getFieldCount(); j++) {
@@ -323,21 +366,50 @@ public class GroupGenerator {
         }
     }
 
+    private void generateInsertRow(UserTable table, Key key) throws Exception {
+
+        BitSet projection = projections.get(table.getTableId());
+        ArrayList<ColumnArrayGenerator> columns = columnMap1.get(table.getTableId());
+
+        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
+        RowData aRowData = generateRowData(rowDef, columns, projection);
+        rowData.add(aRowData);
+        //System.out.println("inserted row ############ "+aRowData.toString(rowDefCache));
+        deltas.inserted(new KeyState(key.append(0)), rowDef, aRowData);
+    }
+
+    private void generateInsertRows(UserTable table, Key keyPrefix, int rows) throws Exception {
+        for (int i = rows; i < rows+rows; i++) {
+            Key newKey = new Key(keyPrefix);
+            newKey.append(i);
+            //System.out.println("creating row = "+table.getName().getTableName()+" key = "+newKey);
+            Key anotherNewKey = new Key(newKey);
+            anotherNewKey.append(0);
+            generateInsertRow(table, anotherNewKey);
+
+            Iterator<Join> children = table.getChildJoins().iterator();
+            
+            while (children.hasNext()) {
+                Join j = children.next();
+                UserTable child = j.getChild();
+                generateInsertRows(child, newKey, rows);
+            }
+        }
+    }
+  
     private void generateRows(UserTable table, Key keyPrefix, int offset, int rows) throws Exception {
-        
-        for (int i = offset; i < offset+rows; i++) {
+        for (int i = 0; i < rows; i++) {
             Key newKey = new Key(keyPrefix);
             newKey.append(i);
             //System.out.println("creating row = "+table.getName().getTableName()+" key = "+newKey);
             generateARow(table, newKey);
+
             Iterator<Join> children = table.getChildJoins().iterator();
             
-            int newOffset=0;
             while (children.hasNext()) {
                 Join j = children.next();
                 UserTable child = j.getChild();
-                generateRows(child, newKey, newOffset, rows);
-                newOffset += rows;
+                generateRows(child, newKey, 0, rows);
             }
         }
     }
@@ -346,6 +418,7 @@ public class GroupGenerator {
         BitSet projection = projections.get(table.getTableId());
         ArrayList<ColumnArrayGenerator> columns = columnMap.get(table.getTableId());
         ArrayList<ArrayList<byte[]>> encodedColumns = encodedColumnMap.get(table.getTableId());
+                
         RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
         FieldDef[] fields = rowDef.getFieldDefs();
         
@@ -364,9 +437,9 @@ public class GroupGenerator {
     }
     
     private final String prefix;
-    //private final int rows = 2;
     private final Random rand = new Random(31337);
     
+    private int rowBase;
     private boolean randomProjection;
     private RowDefCache rowDefCache;
     private AkibaInformationSchema ais;
@@ -375,11 +448,16 @@ public class GroupGenerator {
     private VMeta meta;
     private byte[] groupBitMap;
     private int groupSize;
+    private boolean createInsertDeltas;
+    private DeltaMonitor deltas;
     private ArrayList<IColumnDescriptor> columnDes;
     private ArrayList<IColumnDescriptor> hkeyDes;
     private TreeMap<Integer, Integer> rowsPerTable;
+    private PriorityQueue<KeyState> keys;
+    private TreeMap<KeyState, RowData> rowDataMap;
     private TreeMap<Integer, ArrayList<ArrayList<byte[]>>> encodedColumnMap;
     private TreeMap<Integer, ArrayList<ColumnArrayGenerator>> columnMap;
+    private TreeMap<Integer, ArrayList<ColumnArrayGenerator>> columnMap1;
     private TreeMap<Integer, HKeyColumnArrayGenerator> hkeyMap;
     private TreeMap<Integer, BitSet> projections;
     private TreeMap<Integer, byte[]> bitMaps;

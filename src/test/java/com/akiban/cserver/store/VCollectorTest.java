@@ -59,11 +59,15 @@ public class VCollectorTest {
 
                 if (rowDef.getRowDefId() == 1003) {
                     GroupGenerator dbGen = new GroupGenerator(
-                            VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, false);
-                    dbGen.generateGroup(rowDef);
+                            VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, false, true);
+                    dbGen.generateGroup(rowDef, 2);
                     ArrayList<RowData> rowData = dbGen.getRows();
-
-                    VCollector vc = new VCollector(dbGen.getMeta(),
+                    //DeltaMonitor dm = new DeltaMonitor();
+                    //System.out.println("###############################################");
+                    //dbGen.getDeltas().dumpInserts(rowDefCache);
+                    //if(true)
+                        //return;
+                    VCollector vc = new VCollector(dbGen.getMeta(), dbGen.getDeltas(),
                             rowDefCache, rowDef.getRowDefId(), dbGen
                                     .getGroupBitMap());
                     // System.out.println("GroupSize = "+ dbGen.getGroupSize());
@@ -95,19 +99,25 @@ public class VCollectorTest {
                         byte[] expected = row.getBytes();
                         byte[] actual = new byte[expected.length];
                         buffer.get(actual);
-                        /*
-                         * System.out.println(" count = "+rowCount++); int k =
-                         * 0; while(k < expected.length) {
-                         * System.out.print(Integer
-                         * .toHexString(expected[k])+" "); k++; } k = 0;
-                         * System.out.println(); while (k < actual.length) {
-                         * System.out.print(Integer.toHexString(actual[k])+" ");
-                         * k++; } System.out.println();
-                         */
+                      /*  
+                          System.out.println(" count = "+rowCount++); 
+                          int k =0; 
+                          while(k < expected.length) {
+                              System.out.print(Integer.toHexString(expected[k])+" "); 
+                              k++; 
+                          } 
+                          k = 0;
+                          System.out.println(); 
+                          while (k < actual.length) {
+                              System.out.print(Integer.toHexString(actual[k])+" ");
+                              k++; 
+                          } 
+                          System.out.println();
+                        */ 
                         assertArrayEquals(expected, actual);
                     }
                 }
-            }
+           }
 
         } catch (Exception e) {
             System.out.println("ERROR because " + e.getMessage());
@@ -179,7 +189,6 @@ public class VCollectorTest {
 
         Random r = new Random(1337);
         for (int h = 0; h < 133; h++) {
-
             try {
                 setupDatabase();
                 List<RowDef> rowDefs = rowDefCache.getRowDefs();
@@ -190,9 +199,9 @@ public class VCollectorTest {
                         continue;
                     }
 
-                    if (rowDef.getRowDefId() == 1003) {
+                    //if (rowDef.getRowDefId() == 1003) {
                         GroupGenerator dbGen = new GroupGenerator(
-                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, true);
+                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, true, false);
                         dbGen.generateGroup(rowDef);
                         ArrayList<RowData> rowData = dbGen.getRows();
 
@@ -212,8 +221,9 @@ public class VCollectorTest {
                                 none = false;
                             }
                         }
-
-                        VCollector vc = new VCollector(dbGen.getMeta(),
+                        DeltaMonitor dm = new DeltaMonitor();
+                        
+                        VCollector vc = new VCollector(dbGen.getMeta(), dm,
                                 rowDefCache, rowDef.getRowDefId(), dbGen
                                         .getGroupBitMap());
                         ByteBuffer buffer = ByteBuffer.allocate(dbGen
@@ -242,8 +252,9 @@ public class VCollectorTest {
                              */
                             assertArrayEquals(expected, actual);
                         }
-                    }
+//                    }
                 }
+    
 
             } catch (Exception e) {
                 System.out.println("ERROR because " + e.getMessage());

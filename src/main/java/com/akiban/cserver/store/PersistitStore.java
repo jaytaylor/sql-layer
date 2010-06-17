@@ -122,6 +122,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 	private final VStore vstore;
 	private VMeta vmeta;
 	private String vmetaFileName;
+	private DeltaMonitor deltaMonitor;
 	
 	private boolean forceToDisk = false;	// default to "group commit"
 
@@ -146,17 +147,17 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 		this.tableManager = new PersistitStoreTableManager(this);
 		this.indexManager = new PersistitStoreIndexManager(this);
 		this.scanDecider = DecisionEngine.createDecisionEngine(config);
-
+		this.deltaMonitor = new DeltaMonitor();
+		this.addCommittedUpdateListener(this.deltaMonitor);
+		
 		final String path = config.property(P_DATAPATH, datapath);
 		this.vstore = new VStore(this, path);
-
 		File directory = new File(path + "/vstore");
 		if (!directory.exists()) {
 			if (!directory.mkdir()) {
 				// throw new Exception();
 			}
 		}
-
 		vmetaFileName = path + "/vstore/.vmeta";
 		// System.out.println("---------- VMetafile == "+vmetaFileName+" ----------");
 		File vmetaFile = new File(vmetaFileName);
@@ -1253,8 +1254,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 						end, columnBitMap, rowDef, indexId);
 			} else {
 				// System.out.println("------------ creating scanRowsRequest VCOLLECTOR -------------");
-				// assert vmeta != null;
-				rc = new VCollector(vmeta, rowDefCache, rowDefId, columnBitMap);
+			    assert vmeta != null;
+			    assert false;
+				rc = new VCollector(vmeta, deltaMonitor, rowDefCache, rowDefId, columnBitMap);
+				throw new Error("VStore is not configured");
 			}
 			if (rc.hasMore()) {
 				putCurrentRowCollector(rowDefId, rc);
