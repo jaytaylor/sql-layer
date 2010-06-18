@@ -30,27 +30,34 @@ import com.akiban.vstore.VMeta;
  * @author percent
  * @author posulliv
  */
-public class VStore {
+public class VWriter {
 
     public static void setDataPath(final String path)
     {
         DATA_PATH = path;
     }
     
-    public VStore(Store store) {
+    public VWriter(Store store) {
         this.hstore = store;
         hkeyInfo = new TreeMap<Integer, ColumnInfo>();
         columnList = new HashMap<String, String>();
         columnInfo = new HashMap<String, ColumnInfo>();
     }
 
-    public VStore(Store store, final String path) {
+    public VWriter(Store store, final String path) {
         this.hstore = store;
         DATA_PATH = path;
         hkeyInfo = new TreeMap<Integer, ColumnInfo>();
         columnList = new HashMap<String, String>();
         columnInfo = new HashMap<String, ColumnInfo>();
     }
+
+/*    
+    public int writeDeltas(DeltaMonitor delta) {
+        delta.createInsertCursor();
+        return 0;
+    }
+  */
     
     public void constructColumnDescriptors()
         throws Exception
@@ -75,7 +82,11 @@ public class VStore {
                 File columnData = new File(entry.getValue());
                 FieldArray colArr = descrip.createFieldArray();
                 fieldArrays.add(colArr);
-                System.out.println("VSTore: creating columnDes: "+descrip.getSchema()+descrip.getTable()+descrip.getColumn()+", fieldCount = "+descrip.getFieldCount()+" id = "+descrip.getId());
+                
+                System.out.println("VSTore: creating columnDes: "+descrip.getSchema()
+                        +descrip.getTable()+descrip.getColumn()+", fieldCount = "
+                        +descrip.getFieldCount()+" id = "+descrip.getId());
+                
                 columnDescriptors.add(descrip);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -106,7 +117,7 @@ public class VStore {
     {
         return fieldArrays;
     }
-
+    
     /**
      * @see com.akiban.cserver.store.Store#writeRowForBulkLoad(com.persistit.Exchange,
      *      com.akiban.cserver.RowDef, com.akiban.cserver.RowData, int[],
