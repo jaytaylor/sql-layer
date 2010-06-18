@@ -3,9 +3,8 @@
  */
 package com.akiban.cserver.store;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.BitSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
@@ -13,7 +12,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
 import com.persistit.KeyState;
 
 /**
@@ -24,11 +22,11 @@ public class DeltaMonitor implements CommittedUpdateListener {
 
     public static class DeltaCursor {
         public DeltaCursor(PriorityQueue<Delta> queue) {
+            assert queue != null;
             this.queue = queue;
         }
 
         public boolean check(KeyState nextKey) {
-            assert queue != null;
             boolean ret = false;
             if (queue.size() == 0) {
                 return ret;
@@ -52,19 +50,32 @@ public class DeltaMonitor implements CommittedUpdateListener {
             return queue.poll();
         }
 
-        PriorityQueue<Delta> queue;
+        private PriorityQueue<Delta> queue;
     }
 
     public DeltaMonitor() {
         inserts = new TreeMap<Integer, ArrayList<Delta>>();
         rwLock = new ReentrantReadWriteLock();
     }
-
+    
+    public DeltaCursor createInsertCursor() {
+        PriorityQueue<Delta> queue = new PriorityQueue<Delta>();
+        
+        Iterator<ArrayList<Delta>> i = inserts.values().iterator();
+        while (i.hasNext()) {
+            Iterator<Delta> j = i.next().iterator();
+            while(j.hasNext()) {
+                queue.add(j.next());   
+            }
+        }
+        return new DeltaCursor(queue);
+    }
+    
     public DeltaCursor createInsertCursor(ArrayList<Integer> tableIds) {
 
         PriorityQueue<Delta> queue = new PriorityQueue<Delta>();
-        Iterator<Integer> i = tableIds.iterator();
 
+        Iterator<Integer> i = tableIds.iterator();
         while (i.hasNext()) {
             int tableId = i.next().intValue();
             if (inserts.get(tableId) != null) {

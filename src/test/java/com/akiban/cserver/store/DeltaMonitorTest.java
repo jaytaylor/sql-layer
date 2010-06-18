@@ -30,7 +30,8 @@ import com.persistit.Persistit;
 public class DeltaMonitorTest {
 
     volatile int count;
-    RowDef rdef;
+    RowDef parentrdef;
+    RowDef childrdef;
     RowData rdata;
     Key key;
     Key key1;
@@ -51,7 +52,7 @@ public class DeltaMonitorTest {
         }
         public void run() {
             count ++;
-            dm.inserted(ks0, rdef, rdata);
+            dm.inserted(ks0, parentrdef, rdata);
             count ++;
             
         }
@@ -73,36 +74,120 @@ public class DeltaMonitorTest {
     }
     
     @Test
-    public void testMergeInsert() throws IOException {
+    public void testInsertCursor() throws IOException {
         setupTest();
-        /*
         DeltaMonitor dm = new DeltaMonitor();
-        dm.inserted(ks0, rdef, rdata);
-        dm.inserted(ks1, rdef, rdata);
-        ArrayList<Integer> tableIds = new ArrayList<Integer>();
-        tableIds.add(rdef.getRowDefId());
-        DeltaCursor cursor = dm.createInsertCursor(tableIds);
-        BitSet nullmap = new BitSet(rdef.getFieldCount());
-        for(int i = 0; i < rdef.getFieldCount(); i++) {
-            nullmap.set(i, true);
-        }
+        dm.inserted(ks11, childrdef, rdata);
+        dm.inserted(ks1, parentrdef, rdata);
+        dm.inserted(ks01, childrdef, rdata);
+        dm.inserted(ks0, parentrdef, rdata);
+        ArrayList<Integer> ptable =new ArrayList<Integer>();
+        ptable.add(parentrdef.getRowDefId()); 
+        DeltaCursor cursor = dm.createInsertCursor(ptable);
+        Delta d = cursor.get();
+        assertEquals(ks0, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(parentrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
         
-        boolean copied = cursor.mergeInsert(ks01, rdef.getRowDefId(), rdata, nullmap, 0);
-        assertTrue(copied);
-        boolean assertionTriggered = false;
-        try {
-        copied = cursor.mergeInsert(ks1, rdef.getRowDefId(), rdata, nullmap, 0);
+        assertEquals(true, cursor.check(ks1));
+        assertEquals(true, cursor.check(ks11));
+        assertEquals(true, cursor.check(ks01));
+        assertEquals(d, cursor.remove());
+        
+        d = cursor.get();
+        assertEquals(ks1, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(parentrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
+        assertEquals(false, cursor.check(ks0));
+        assertEquals(true, cursor.check(ks11));
+        assertEquals(false, cursor.check(ks01));
+        assertEquals(d, cursor.remove());
+        
+        ptable =new ArrayList<Integer>();
+        ptable.add(childrdef.getRowDefId()); 
+        cursor = dm.createInsertCursor(ptable);
+        
+        d = cursor.get();
+        assertEquals(ks01, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(childrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
+        assertEquals(true, cursor.check(ks1));
+        assertEquals(true, cursor.check(ks11));
+        assertEquals(false, cursor.check(ks0));
+        assertEquals(d, cursor.remove());
+        
+        d = cursor.get();
+        assertEquals(ks11, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(childrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
+        assertEquals(false, cursor.check(ks0));
+        assertEquals(false, cursor.check(ks01));
+        assertEquals(false, cursor.check(ks1));
+        assertEquals(d, cursor.remove());
+        boolean asserted = false;
+        try{
+            cursor.remove();
         } catch(AssertionError e) {
-            assertionTriggered = true;
+            asserted = true;
         }
-        assertTrue(assertionTriggered);
+        assertEquals(true, asserted);
         
-        copied = cursor.mergeInsert(ks11, rdef.getRowDefId(), rdata, nullmap, 0);
-        assertTrue(copied);
         
-        copied = cursor.mergeInsert(ks11, rdef.getRowDefId(), rdata, nullmap, 0);
-        assertFalse(copied);
-        */
+        ptable =new ArrayList<Integer>();
+        ptable.add(parentrdef.getRowDefId());
+        ptable.add(childrdef.getRowDefId());
+        cursor = dm.createInsertCursor(ptable);
+        d = cursor.get();
+        assertEquals(ks0, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(parentrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
+        assertEquals(true, cursor.check(ks1));
+        assertEquals(true, cursor.check(ks11));
+        assertEquals(true, cursor.check(ks01));
+        assertEquals(d, cursor.remove());
+        
+        d = cursor.get();
+        assertEquals(ks01, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(childrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
+        assertEquals(true, cursor.check(ks1));
+        assertEquals(true, cursor.check(ks11));
+        assertEquals(false, cursor.check(ks0));
+        assertEquals(d, cursor.remove());
+
+        d = cursor.get();
+        assertEquals(ks1, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(parentrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
+        assertEquals(false, cursor.check(ks0));
+        assertEquals(true, cursor.check(ks11));
+        assertEquals(false, cursor.check(ks01));
+        assertEquals(d, cursor.remove());
+     
+        d = cursor.get();
+        assertEquals(ks11, d.getKey());
+        assertEquals(rdata, d.getRowData());
+        assertEquals(childrdef, d.getRowDef());
+        assertEquals(Delta.Type.Insert, d.getType());
+        assertEquals(false, cursor.check(ks0));
+        assertEquals(false, cursor.check(ks01));
+        assertEquals(false, cursor.check(ks1));
+        assertEquals(d, cursor.remove());
+        asserted = false;
+        try{
+            cursor.remove();
+        } catch(AssertionError e) {
+            asserted = true;
+        }
+        assertEquals(true, asserted);
+
     }
     
     public void setupTest() {
@@ -137,39 +222,22 @@ public class DeltaMonitorTest {
         key1.append(1);
         ks11 = new KeyState(key1);
                 
-        rdef = rowDefCache.getRowDef(new String("toy_test.parent"));
-        assert rdef != null;
+        parentrdef = rowDefCache.getRowDef(new String("toy_test.parent"));
+        assert parentrdef != null;
+        
+        childrdef = rowDefCache.getRowDef(new String("toy_test.child"));
+        assert childrdef != null;
+
         rdata = new RowData(new byte[420]);
         
         Integer[] values = new Integer[2];
         values[0] = new Integer(42);
         values[1] = new Integer(11);
-        rdata.createRow(rdef, values);
-        
+        rdata.createRow(parentrdef, values);
 
-        d0 = new Delta(Delta.Type.Insert,ks0, rdef, rdata);
-        d01 = new Delta(Delta.Type.Insert,ks01, rdef, rdata);
-        d1 = new Delta(Delta.Type.Insert,ks1, rdef, rdata);
-        d11 = new Delta(Delta.Type.Insert,ks11, rdef, rdata);
-
-        
-       rdef = rowDefCache.getRowDef("toy_test.parent");
-       rdata = new RowData(new byte[420]);
-        
-        values = new Integer[2];
-        values[0] = new Integer(42);
-        values[1] = null;
-        rdata.createRow(rdef, values);
-        /*d = new Delta(Delta.Type.Insert,ks1, rdef, rdata);
-        BitSet nullMap = d.getNullMap();
-        
-        for(int i = 0; i < rdef.getFieldCount(); i++) {
-            if(rdata.isNull(i)) {
-                assertTrue(nullMap.get(i));
-            } else {
-                assertFalse(nullMap.get(i));
-            }
-        }
-        */
+        //d0 = new Delta(Delta.Type.Insert,ks0, parentrdef, rdata);
+        //d01 = new Delta(Delta.Type.Insert,ks01, childrdef, rdata);
+        //d1 = new Delta(Delta.Type.Insert,ks1, parentrdef, rdata);
+        //d11 = new Delta(Delta.Type.Insert,ks11, childrdef, rdata);
     }
 }

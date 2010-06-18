@@ -122,7 +122,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     // vstore components
     private final DecisionEngine scanDecider;
-    private VStore vstore;
+    private VWriter vstore;
     private VMeta vmeta;
     private String vmetaFileName;
     private DeltaMonitor deltaMonitor;
@@ -141,7 +141,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     public static void setDataPath(final String path) {
         datapath = path;
-        VStore.setDataPath(datapath);
+        VWriter.setDataPath(datapath);
     }
 
     private void configureVStore(String path) throws FileNotFoundException, IOException {
@@ -161,7 +161,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 //LOG.info("VMeta not created");
                 vmeta = null;
             }
-            this.vstore = new VStore(this, path);
+            this.vstore = new VWriter(this, path);
         } else {
             //LOG.info("Path directory invalid: "+path);
         }
@@ -197,7 +197,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         return deltaThreshold;
     }
         
-    public VStore getVStore() {
+    public VWriter getVStore() {
         return vstore;
     }
     
