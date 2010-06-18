@@ -29,6 +29,7 @@ public class VCollector implements RowCollector {
         hasMore = true;
         rowIndex = 0;
         table = rowDefCache.getRowDef(rowDefId);
+        cache = rowDefCache;
         assert table != null;
         
         userTables = new TreeMap<Integer, RowDef>();
@@ -259,12 +260,12 @@ public class VCollector implements RowCollector {
                 row.mergeFields(userTables
                         .get(keyMap.get(nextKey).getTableId()), fields,
                         nullMap, offset);
-                // int k = chunkDepth;
-                // while (k < chunkDepth + nextRowSize) {
-                // System.out.print(Integer.toHexString(payload.array()[k])+" ");
-                // k++;
-                // }
-                // System.out.println("toString = " + row.toString(cache));
+//              int k = chunkDepth;
+//              while (k < chunkDepth + nextRowSize) {
+//                  System.out.print(Integer.toHexString(payload.array()[k])+" ");
+//                  k++;
+//              }
+//          System.out.println("VCollector decoded row = " + row.toString(cache));
                 keyMap.get(nextKey).incrementCursor();
                 scannedARow = true;
                 chunkDepth += nextRowSize;
@@ -296,6 +297,18 @@ public class VCollector implements RowCollector {
                 chunkDepth += d.getRowData().getRowSize();
                 payload.position(d.getRowData().getRowSize()
                         + payload.position());
+                
+                int k = chunkDepth - d.getRowData().getRowSize();
+                System.out.print("VCollector.LOG rowRawBytes = ");
+                while (k < chunkDepth) {
+                    System.out.print(Integer.toHexString(payload.array()[k])+" ");
+                    k++;
+                }
+                System.out.println();
+                System.out.println("VCollector decoded row = " + row.toString(cache));
+
+
+                
             }
             // XXX - this is horrendous. We have a potential dead lock here.
             // If the rowCollector is not called until it is done
@@ -322,7 +335,7 @@ public class VCollector implements RowCollector {
     private int totalRows;
     private int rowIndex;
     private int fields;
-
+    private RowDefCache cache;
     private BitSet projection;
     private BitSet nullMap;
     private RowDef table;

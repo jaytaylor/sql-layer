@@ -1299,10 +1299,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             } else {
                 // System.out.println("------------ creating scanRowsRequest VCOLLECTOR -------------");
                 //assert vmeta != null;
-                assert false;
+                //assert false;
                 rc = new VCollector(vmeta, deltaMonitor, rowDefCache, rowDefId,
                         columnBitMap);
-                throw new Error("Exactly what do you think you're doing?");
+                //throw new Error("Exactly what do you think you're doing?");
             }
             if (rc.hasMore()) {
                 putCurrentRowCollector(rowDefId, rc);
