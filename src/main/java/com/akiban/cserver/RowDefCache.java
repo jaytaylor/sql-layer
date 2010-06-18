@@ -303,8 +303,7 @@ public class RowDefCache implements CServerConstants {
 	}
 
 	RowDef lookUpRowDef(final int rowDefId) {
-		throw new UnsupportedOperationException("No RowDef for rowDefId="
-				+ rowDefId);
+		return null;
 	}
 
 	/**

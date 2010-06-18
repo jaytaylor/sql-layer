@@ -114,6 +114,22 @@ public class TableStatistics {
 		public void addSample(final HistogramSample sample) {
 			this.samples.add(sample);
 		}
+		
+		public String toString() {
+			final StringBuilder sb = new StringBuilder("Histogram(" + indexId + ")[");
+			boolean first = true;
+			for (final HistogramSample sample: samples) {
+				if (!first) {
+					sb.append(",");
+				}
+					sb.append(CServerUtil.NEW_LINE);
+					sb.append("  ");
+					sb.append(sample);
+			}
+			sb.append(CServerUtil.NEW_LINE);
+			sb.append("]");
+			return sb.toString();
+		}
 	}
 	
 	public static class HistogramSample {
@@ -134,6 +150,10 @@ public class TableStatistics {
 		}
 		
 		private final long rowCount;
+		
+		public String toString() {
+			return String.format("%,8d->%s", rowCount, rowData.toString());
+		}
 		
 	}
 }
