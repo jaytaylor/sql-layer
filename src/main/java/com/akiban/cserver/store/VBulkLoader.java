@@ -157,7 +157,7 @@ public class VBulkLoader {
             String columnName = field.getName();
             String columnFileName = prefix + columnName;
             File columnData = new File(columnFileName);
-            VWriterInfo tmp_info = columnInfo.get(columnName); /* @todo: temporary only */
+            VWriterInfo tmp_info = columnInfo.get(columnFileName); /* @todo: temporary only */
             if (! columnData.exists() || tmp_info == null) {
                 /* 
                  * delete old file from previous run.
@@ -168,13 +168,13 @@ public class VBulkLoader {
                 if (! ret) {
                     throw new Exception();
                 }
-                columnList.put(columnName, columnFileName);
+                columnList.put(columnFileName, columnName);
                 VWriterInfo info = new VWriterInfo(columnName, 
                         tableName,
                         schemaName, 
                         rowDef.getRowDefId(),
                         i);
-                columnInfo.put(columnName, info);
+                columnInfo.put(columnFileName, info);
             } 
             
             VWriterInfo info = columnInfo.get(columnName); /* @todo: temporary only */
@@ -191,7 +191,7 @@ public class VBulkLoader {
 
             info.incrementCount();
             info.setSize(size);
-            columnInfo.put(columnName, info);
+            columnInfo.put(columnFileName, info);
             fout.flush();
             fout.close();
         }
