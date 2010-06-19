@@ -57,9 +57,12 @@ public class VCollectorTest {
                     continue;
                 }
 
+                VStoreTestStub testStub = new VStoreTestStub();
+                testStub.threshold = 1048576;
+                
                 //if (rowDef.getRowDefId() == 1003) {
                     GroupGenerator dbGen = new GroupGenerator(
-                            VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, false, true);
+                            VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub, false, true);
                     dbGen.generateGroup(rowDef, 2);
                     ArrayList<RowData> rowData = dbGen.getRows();
                     //DeltaMonitor dm = new DeltaMonitor();
@@ -199,9 +202,11 @@ public class VCollectorTest {
                         continue;
                     }
 
+                    VStoreTestStub testStub = new VStoreTestStub();
+                    testStub.threshold = 1048576;
                     //if (rowDef.getRowDefId() == 1003) {
                         GroupGenerator dbGen = new GroupGenerator(
-                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, true, false);
+                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub, true, false);
                         dbGen.generateGroup(rowDef);
                         ArrayList<RowData> rowData = dbGen.getRows();
 
@@ -221,9 +226,10 @@ public class VCollectorTest {
                                 none = false;
                             }
                         }
-                        DeltaMonitor dm = new DeltaMonitor();
                         
-                        VCollector vc = new VCollector(dbGen.getMeta(), dm,
+                        //DeltaMonitor dm = new DeltaMonitor(testStub);
+                        
+                        VCollector vc = new VCollector(dbGen.getMeta(), null,
                                 rowDefCache, rowDef.getRowDefId(), dbGen
                                         .getGroupBitMap());
                         ByteBuffer buffer = ByteBuffer.allocate(dbGen
@@ -278,10 +284,13 @@ public class VCollectorTest {
                     if (!rowDef.isGroupTable()) {
                         continue;
                     }
+                    
+                    VStoreTestStub testStub = new VStoreTestStub();
+                    testStub.threshold = 1048576;
 
                     //if (rowDef.getRowDefId() == 1003) {
                         GroupGenerator dbGen = new GroupGenerator(
-                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, true, true);
+                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub, true, true);
                         dbGen.generateGroup(rowDef);
                         ArrayList<RowData> rowData = dbGen.getInsertRows();
 

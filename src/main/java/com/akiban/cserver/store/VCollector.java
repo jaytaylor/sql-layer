@@ -57,7 +57,9 @@ public class VCollector implements RowCollector {
             }
         }
         assert userTables.size() > 0;
-        createInsertCursor();
+        if(deltaMonitor != null) {
+            createInsertCursor();
+        }
     }
 
     public void createInsertCursor() {
@@ -131,12 +133,12 @@ public class VCollector implements RowCollector {
                     candidate = new TableDescriptor(kdes, utable
                             .getParentRowDefId(), utable.getRowDefId());
                 }
-                // System.out.println("VCollector: " + utable.getTableName()
-                // + ", fieldname: " + utable.getFieldDef(k).getName()
-                // + ", k = " + k + ", j = "+ j +", rowDefId = "
-                // + utable.getRowDefId() + ", fixedSize = "
-                // + utable.getFieldDef(k).isFixedSize());
-
+                 //System.out.println("VCollector: " + utable.getTableName()
+                 //+ ", fieldname: " + utable.getFieldDef(k).getName()
+                 //+ ", k = " + k + ", j = "+ j +", rowDefId = "
+                 //+ utable.getRowDefId() + ", fixedSize = "
+                 //+ utable.getFieldDef(k).isFixedSize());
+                
                 IColumnDescriptor cdes = meta.lookup(utable.getRowDefId(), k);
                 assert cdes != null;
                 assert candidate != null;
@@ -199,7 +201,7 @@ public class VCollector implements RowCollector {
             KeyState nextKey = keyQueue.peek();
             assert nextKey != null;
 
-            if (insertCursor.check(nextKey)) {
+            if (deltaMonitor != null && insertCursor.check(nextKey)) {
                 assert false;
                 Delta d = insertCursor.get();
                 assert d != null;
@@ -274,7 +276,7 @@ public class VCollector implements RowCollector {
             }
         }
 
-        if (rowIndex == totalRows) {
+        if (rowIndex == totalRows && deltaMonitor != null) {
             hasMore = false;
             while (insertCursor.get() != null) {
                 Delta d = insertCursor.get();
@@ -298,14 +300,14 @@ public class VCollector implements RowCollector {
                 payload.position(d.getRowData().getRowSize()
                         + payload.position());
                 
-                int k = chunkDepth - d.getRowData().getRowSize();
-                System.out.print("VCollector.LOG rowRawBytes = ");
-                while (k < chunkDepth) {
-                    System.out.print(Integer.toHexString(payload.array()[k])+" ");
-                    k++;
-                }
-                System.out.println();
-                System.out.println("VCollector decoded row = " + row.toString(cache));
+                //int k = chunkDepth - d.getRowData().getRowSize();
+                //System.out.print("VCollector.LOG rowRawBytes = ");
+                //while (k < chunkDepth) {
+                //    System.out.print(Integer.toHexString(payload.array()[k])+" ");
+                //    k++;
+                //}
+                //System.out.println();
+                //System.out.println("VCollector decoded row = " + row.toString(cache));
 
 
                 
@@ -314,9 +316,11 @@ public class VCollector implements RowCollector {
             // If the rowCollector is not called until it is done
             // the delta will not be unlocked.
             deltaMonitor.releaseReadLock();
+        } else if(rowIndex == totalRows) {
+            hasMore = false;
         }
-
-        assert hasMore || scannedARow;
+        
+        //assert hasMore || scannedARow;
         return scannedARow;
     }
 

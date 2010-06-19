@@ -36,7 +36,7 @@ import com.persistit.Persistit;
  */
 public class GroupGenerator {
 
-    public GroupGenerator(String prefix, AkibaInformationSchema ais, RowDefCache cache, 
+    public GroupGenerator(String prefix, AkibaInformationSchema ais, RowDefCache cache, VStore vstore, 
             boolean randomProjection, boolean createInsertDeltas) {
         this.randomProjection = randomProjection;
         this.ais = ais;
@@ -54,7 +54,7 @@ public class GroupGenerator {
         hkeyMap = new TreeMap<Integer, HKeyColumnArrayGenerator>();
         projections = new TreeMap<Integer, BitSet>();
         bitMaps = new TreeMap<Integer, byte[]>();
-        deltas = new DeltaMonitor();
+        deltas = new DeltaMonitor(vstore);
     }
     
     public void generateGroup(RowDef groupRowDef) throws Exception {

@@ -61,7 +61,10 @@ public class DeltaMonitorTest {
     @Test
     public void testDeltaMonitorLockBlocks() {
         setupTest();
-        DeltaMonitor dm = new DeltaMonitor();
+        VStoreTestStub vstore = new VStoreTestStub();
+        vstore.threshold = 1048576;
+        vstore.datapath = "";
+        DeltaMonitor dm = new DeltaMonitor(vstore);
         dm.readLock();
         WriteLockTester locktester = new WriteLockTester(dm);
         assertEquals(0, count);
@@ -76,7 +79,10 @@ public class DeltaMonitorTest {
     @Test
     public void testInsertCursor() throws IOException {
         setupTest();
-        DeltaMonitor dm = new DeltaMonitor();
+        VStoreTestStub vstore = new VStoreTestStub();
+        vstore.threshold = 1048576;
+        vstore.datapath = "";
+        DeltaMonitor dm = new DeltaMonitor(vstore);
         dm.inserted(ks11, childrdef, rdata);
         dm.inserted(ks1, parentrdef, rdata);
         dm.inserted(ks01, childrdef, rdata);

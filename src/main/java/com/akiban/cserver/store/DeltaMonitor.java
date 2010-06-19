@@ -40,11 +40,11 @@ public class DeltaMonitor implements CommittedUpdateListener {
             }
             return ret;
         }
-        
+
         public Delta get() {
             return queue.peek();
         }
-        
+
         public Delta remove() {
             assert queue != null && queue.size() > 0;
             return queue.poll();
@@ -53,24 +53,26 @@ public class DeltaMonitor implements CommittedUpdateListener {
         private PriorityQueue<Delta> queue;
     }
 
-    public DeltaMonitor() {
+    public DeltaMonitor(VStore vstore) {
         inserts = new TreeMap<Integer, ArrayList<Delta>>();
         rwLock = new ReentrantReadWriteLock();
+        this.vstore = vstore;
+        count = 0;
     }
-    
+
     public DeltaCursor createInsertCursor() {
         PriorityQueue<Delta> queue = new PriorityQueue<Delta>();
-        
+
         Iterator<ArrayList<Delta>> i = inserts.values().iterator();
         while (i.hasNext()) {
             Iterator<Delta> j = i.next().iterator();
-            while(j.hasNext()) {
-                queue.add(j.next());   
+            while (j.hasNext()) {
+                queue.add(j.next());
             }
         }
         return new DeltaCursor(queue);
     }
-    
+
     public DeltaCursor createInsertCursor(ArrayList<Integer> tableIds) {
 
         PriorityQueue<Delta> queue = new PriorityQueue<Delta>();
@@ -109,6 +111,27 @@ public class DeltaMonitor implements CommittedUpdateListener {
         assert inserts.get(rowDef.getRowDefId()) != null;
         boolean success = inserts.get(rowDef.getRowDefId()).add(newDelta);
         assert success;
+        count++;
+
+        // XXX - Writing the V's should be a background task, and
+        // not while holding a write lock that blocks the entire system. However
+        // there are other questions that can be answered first (such as how do
+        // we decide to write the deltas). This implementation servers as a
+        // simple, concrete basis to work from while some of the background 
+        // elements gain more focus.
+        if (count == vstore.getDeltaThreshold()) {
+            VDeltaWriter dwriter = new VDeltaWriter(vstore.getDataPath(),
+                    vstore.getVMeta(), this.createInsertCursor());
+            try {
+                dwriter.write();
+            } catch(Exception e) {
+                e.printStackTrace();
+                throw new Error("----------- Failed to write deltas -----------");
+            }
+            vstore.setVMeta(dwriter.getMeta());
+            count = 0;
+        }
+        assert count < vstore.getDeltaThreshold();
         rwLock.writeLock().unlock();
     }
 
@@ -125,4 +148,6 @@ public class DeltaMonitor implements CommittedUpdateListener {
     // TreeMap<Integer, PriorityQueue<Delta>> updates;
     // TreeMap<Integer, PriorityQueue<Delta>> deletes;
     ReentrantReadWriteLock rwLock;
+    VStore vstore;
+    int count;
 }

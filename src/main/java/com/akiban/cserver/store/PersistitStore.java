@@ -46,7 +46,7 @@ import com.persistit.exception.TransactionFailedException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class PersistitStore implements CServerConstants, MySQLErrorConstants,
-        Store {
+        Store, VStore {
 
     final static int INITIAL_BUFFER_SIZE = 1024;
 
@@ -122,7 +122,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     // vstore components
     private final DecisionEngine scanDecider;
-    private VWriter vstore;
+    private VBulkLoader vBulkLoader;
     private VMeta vmeta;
     private String vmetaFileName;
     private DeltaMonitor deltaMonitor;
@@ -141,7 +141,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     public static void setDataPath(final String path) {
         datapath = path;
-        VWriter.setDataPath(datapath);
+        VBulkLoader.setDataPath(datapath);
     }
 
     private void configureVStore(String path) throws FileNotFoundException, IOException {
@@ -161,7 +161,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 //LOG.info("VMeta not created");
                 vmeta = null;
             }
-            this.vstore = new VWriter(this, path);
         } else {
             //LOG.info("Path directory invalid: "+path);
         }
@@ -177,16 +176,20 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         final String path = config.property(P_DATAPATH, datapath);
 
         this.scanDecider = DecisionEngine.createDecisionEngine(config);
-        this.deltaMonitor = new DeltaMonitor();
+        deltaThreshold = new Integer(config.property("cserver.delta_threshold",
+                                                     "1048576")).intValue();
+        deltaMonitor = new DeltaMonitor(this);
         if (config.property("cserver.delta_store", "off").equals("on")) {
             deltaMonitorActivated = true;
             this.addCommittedUpdateListener(this.deltaMonitor);
         } else {
             deltaMonitorActivated = false;
         }
-        deltaThreshold = new Integer(config.property("cserver.delta_threshold", "1048576"))
-                .intValue();
         configureVStore(path);
+    }
+    
+    public String getDataPath() {
+        return config.property(P_DATAPATH, datapath);
     }
     
     public boolean isDeltaMonitorActivated() {
@@ -197,16 +200,24 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         return deltaThreshold;
     }
         
-    public VWriter getVStore() {
-        return vstore;
+    public VBulkLoader getVStore() {
+        return vBulkLoader;
     }
     
     public VMeta getVMeta() {
         return vmeta;
     }
-
+    
+    public void setVMeta(VMeta meta) {
+        vmeta = meta;
+    }
+    
     public DecisionEngine getDecisionEngine() {
         return scanDecider;
+    }
+
+    public DeltaMonitor getDeltaMonitor() {
+        return deltaMonitor;
     }
     
     public synchronized void startUp() throws Exception {
@@ -692,7 +703,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         }
 
         try {
-            vstore.writeRowForBulkLoad(hEx, rowDef, rowData, ordinals,
+            // XXX - At this time we only expect an empty database to be bulk 
+            //       loaded.  Some additional functionality is required to 
+            //       bulk load an existing database, hence the assert below.
+            assert vmeta == null;
+            if(vBulkLoader == null) {
+                vBulkLoader = new VBulkLoader(this, datapath);
+            }
+            vBulkLoader.writeRowForBulkLoad(hEx, rowDef, rowData, ordinals,
                     fieldDefs, hKeyValues);
         } catch (StoreException e) {
             e.printStackTrace();
@@ -730,9 +748,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     public void syncColumns() throws Exception {
-        vstore.constructColumnDescriptors();
+        vBulkLoader.constructColumnDescriptors();
         // System.out.println("Sync columns");
         vmeta = new VMeta(new File(vmetaFileName));
+        vBulkLoader = null;
     }
 
     @Override

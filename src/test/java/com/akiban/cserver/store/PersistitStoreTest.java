@@ -32,7 +32,13 @@ public class PersistitStoreTest {
             if (!rowDef.isGroupTable()) {
                 continue;
             }
-            GroupGenerator dbGen = new GroupGenerator(DATA_PATH.getAbsolutePath()+"/vstore/", ais, rowDefCache, false, true);
+            VStoreTestStub vstore = new VStoreTestStub();
+            vstore.threshold = 1048576;
+            vstore.datapath = "";
+            
+            GroupGenerator dbGen = new GroupGenerator(
+                    DATA_PATH.getAbsolutePath()+"/vstore/", ais, rowDefCache,
+                    vstore, false, true);
             dbGen.generateGroup(rowDef, 2);
             dbGen.getMeta().write(new File(DATA_PATH.getAbsoluteFile()+"/vstore/.vmeta"));
         }
@@ -58,7 +64,6 @@ public class PersistitStoreTest {
         assertEquals(1048576, store.getDeltaThreshold());
         assertEquals(null, store.getVMeta());
 
-        
         // config.setProperty("cserver.decision_engine", "vstore");
         config.setProperty("cserver.delta_threshold", "10");
         config.setProperty("cserver.delta_store", "on");

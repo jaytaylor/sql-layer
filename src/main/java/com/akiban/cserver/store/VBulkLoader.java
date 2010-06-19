@@ -30,47 +30,39 @@ import com.akiban.vstore.VMeta;
  * @author percent
  * @author posulliv
  */
-public class VWriter {
+public class VBulkLoader {
 
     public static void setDataPath(final String path)
     {
         DATA_PATH = path;
     }
     
-    public VWriter(Store store) {
+    public VBulkLoader(Store store) {
         this.hstore = store;
-        hkeyInfo = new TreeMap<Integer, ColumnInfo>();
+        hkeyInfo = new TreeMap<Integer, VWriterInfo>();
         columnList = new HashMap<String, String>();
-        columnInfo = new HashMap<String, ColumnInfo>();
+        columnInfo = new HashMap<String, VWriterInfo>();
     }
 
-    public VWriter(Store store, final String path) {
+    public VBulkLoader(Store store, final String path) {
         this.hstore = store;
         DATA_PATH = path;
-        hkeyInfo = new TreeMap<Integer, ColumnInfo>();
+        hkeyInfo = new TreeMap<Integer, VWriterInfo>();
         columnList = new HashMap<String, String>();
-        columnInfo = new HashMap<String, ColumnInfo>();
+        columnInfo = new HashMap<String, VWriterInfo>();
     }
 
-/*    
-    public int writeDeltas(DeltaMonitor delta) {
-        delta.createInsertCursor();
-        return 0;
-    }
-  */
-    
     public void constructColumnDescriptors()
         throws Exception
     {
         String prefix = DATA_PATH + "/vstore/";
-        fieldArrays = new ArrayList<FieldArray>();
         columnDescriptors = new ArrayList<IColumnDescriptor>();
         hkeyDescriptors = new ArrayList<IColumnDescriptor>();
         
         for (Map.Entry<String, String> entry : columnList.entrySet()) {
             try {
 
-                ColumnInfo info = columnInfo.get(entry.getKey());
+                VWriterInfo info = columnInfo.get(entry.getKey());
                 IColumnDescriptor descrip = IColumnDescriptor.create(prefix,
                                                                 info.getSchemaName(), 
                                                                 info.getTableName(),
@@ -79,10 +71,7 @@ public class VWriter {
                                                                 info.getOrdinal(), 
                                                                 info.getSize(), 
                                                                 info.getCount());
-                File columnData = new File(entry.getValue());
-                FieldArray colArr = descrip.createFieldArray();
-                fieldArrays.add(colArr);
-                
+                    
                 System.out.println("VSTore: creating columnDes: "+descrip.getSchema()
                         +descrip.getTable()+descrip.getColumn()+", fieldCount = "
                         +descrip.getFieldCount()+" id = "+descrip.getId());
@@ -94,9 +83,9 @@ public class VWriter {
         
         }
         
-        for(ColumnInfo info : hkeyInfo.values()) {
+        for(VWriterInfo info : hkeyInfo.values()) {
             IColumnDescriptor hkeyDes = IColumnDescriptor.create(prefix,
-                    info.schemaName, info.tableName, info.tableId, info.count);
+                    info.getSchemaName(), info.getTableName(), info.getTableId(), info.getCount());
             hkeyDescriptors.add(hkeyDes);
             
         }
@@ -111,11 +100,6 @@ public class VWriter {
     public ArrayList<IColumnDescriptor> getColumnDescriptors()
     {
         return columnDescriptors;
-    }
-
-    public List<FieldArray> getColumnArrays()
-    {
-        return fieldArrays;
     }
     
     /**
@@ -152,7 +136,7 @@ public class VWriter {
         keyout.close();        
         
         if(hkeyInfo.get(rowDef.getRowDefId()) == null) {
-            ColumnInfo info = new ColumnInfo("hkey", tableName, 
+            VWriterInfo info = new VWriterInfo("hkey", tableName, 
                                                     schemaName, 
                                                     rowDef.getRowDefId(),
                                                     -1);
@@ -173,7 +157,7 @@ public class VWriter {
             String columnName = field.getName();
             String columnFileName = prefix + columnName;
             File columnData = new File(columnFileName);
-            ColumnInfo tmp_info = columnInfo.get(columnName); /* @todo: temporary only */
+            VWriterInfo tmp_info = columnInfo.get(columnName); /* @todo: temporary only */
             if (! columnData.exists() || tmp_info == null) {
                 /* 
                  * delete old file from previous run.
@@ -185,7 +169,7 @@ public class VWriter {
                     throw new Exception();
                 }
                 columnList.put(columnName, columnFileName);
-                ColumnInfo info = new ColumnInfo(columnName, 
+                VWriterInfo info = new VWriterInfo(columnName, 
                         tableName,
                         schemaName, 
                         rowDef.getRowDefId(),
@@ -193,7 +177,7 @@ public class VWriter {
                 columnInfo.put(columnName, info);
             } 
             
-            ColumnInfo info = columnInfo.get(columnName); /* @todo: temporary only */
+            VWriterInfo info = columnInfo.get(columnName); /* @todo: temporary only */
             /* insert the data */
             final long locationAndSize = rowDef.fieldLocation(rowData, i);
             if (0 == locationAndSize) {
@@ -236,99 +220,12 @@ public class VWriter {
         return hKey;
     }
 
-    /*
-     * Temporary class only being used for testing purposes right now to carry metadata about
-     * columns. Once the metadata for column is actually stored in some kind of header on disk, we
-     * shouldn't need this class anymore.
-     */
-    class ColumnInfo
-    {
-        public ColumnInfo(int columnSize)
-        {
-            this.columnSize = columnSize;
-            this.count = 0;
-        }
-
-        public ColumnInfo(String columnName, String tableName, String schemaName, int tableId, int ordinal)
-        {
-            this.tableId = tableId;
-            this.ordinal = ordinal;
-            this.columnSize = 0;
-            this.count = 0;
-            this.columnName = columnName;
-            this.tableName = tableName;
-            this.schemaName = schemaName;
-        }
-
-        public ColumnInfo()
-        {
-            this.columnSize = 0;
-            this.count = 0;
-        }
-
-        public void incrementCount()
-        {
-            count++;
-        }
-
-        public void setSize(int size)
-        {
-            if (0 == columnSize) {
-                columnSize = size;
-            }
-        }
-
-        public int getSize()
-        {
-            return columnSize;
-        }
-
-        public int getCount()
-        {
-            return count;
-        }
-
-        public int getTableId()
-        {
-            return tableId;
-        }
-
-        public int getOrdinal()
-        {
-            return ordinal;
-        }
-
-        public String getSchemaName()
-        {
-            return schemaName;
-        }
-
-        public String getTableName()
-        {
-            return tableName;
-        }
-
-        public String getColumnName()
-        {
-            return columnName;
-        }
-        
-        private int tableId;
-        private int ordinal;
-        private int columnSize;
-        private int count;
-        private String schemaName;
-        private String tableName;
-        private String columnName;
-    }
-
     static String DATA_PATH = "/usr/local/akiba/data";
     
     private Store hstore;
     private HashMap<String, String> columnList;
-    private HashMap<String, ColumnInfo> columnInfo;
-    private TreeMap<Integer, ColumnInfo> hkeyInfo;
-    private List<FieldArray> fieldArrays;
+    private HashMap<String, VWriterInfo> columnInfo;
+    private TreeMap<Integer, VWriterInfo> hkeyInfo;
     private ArrayList<IColumnDescriptor> columnDescriptors;
     private ArrayList<IColumnDescriptor> hkeyDescriptors;
 }
