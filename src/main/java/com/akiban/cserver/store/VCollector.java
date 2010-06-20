@@ -128,6 +128,7 @@ public class VCollector implements RowCollector {
         for (int j = offset, k = 0; j < distance; j++, k++) {
             if (projection.get(j)) {
                 if (candidate == null) {
+                    System.out.println("looking up HKey for descriptor = "+utable.getTableName());
                     IColumnDescriptor kdes = meta.getHKey(utable.getRowDefId());
                     assert kdes != null;
                     candidate = new TableDescriptor(kdes, utable

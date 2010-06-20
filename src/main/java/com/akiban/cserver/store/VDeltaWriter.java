@@ -4,10 +4,12 @@
 package com.akiban.cserver.store;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -26,10 +28,14 @@ import com.akiban.vstore.VMeta;
  */
 public class VDeltaWriter {
 
-    public VDeltaWriter(final String path, VMeta vmeta, DeltaCursor dcursor) {
-        cursor = dcursor;
-        meta = vmeta;
+    public VDeltaWriter(final String path, VMeta vmeta, DeltaCursor dcursor, 
+            HashSet<RowDef> tables) {
+        
         dataPath = path + "/vstore/";
+        meta = vmeta;
+        cursor = dcursor;
+        this.tables = tables; 
+        
         File dataPathFile = new File(dataPath);
 
         if (!dataPathFile.exists()) {
@@ -44,23 +50,106 @@ public class VDeltaWriter {
     }
 
     public void write() throws Exception {
-        assert meta == null;
-        System.out.println("cursor.get = " + cursor.get());
+        //assert meta == null;
+        
+        if(meta == null) {
+            //System.out.println("cursor.get = " + cursor.get());
+            writeDelta();
+        } else {
+            rewrite();
+        }
+    }
+
+
+    private void rewrite() throws Exception {
+        VRewriteHelper helper = new VRewriteHelper(meta, cursor, tables);
+        System.out.println("get total rows = "+ helper.getTotalRows());
+        
+        for(int rowCount = 0; rowCount < helper.getTotalRows(); rowCount++) {
+            Delta d = helper.getNextRow();
+            assert d != null;
+            assert d.getType() == Delta.Type.Insert;
+            
+            // KeyState hkeyState = new KeyState(hkey);
+            // String schemaName = rowDef.getSchemaName();
+            // String tableName = rowDef.getTableName();
+            String prefix = dataPath+d.getRowDef().getSchemaName()+d.getRowDef().getTableName()+".rewrite-inprogress.";   
+            //System.out.println
+            writeKey(prefix, d.getKey(), d.getRowDef());
+            writeRow(prefix, d.getRowDef(), d.getRowData());
+        }
+        //helper.close();
+        
+        //if(true) 
+//            return;
+        boolean deleted = false;
+        
+        Iterator<RowDef> i = tables.iterator();
+        while(i.hasNext()) {
+            
+            RowDef r = i.next();
+            String rewrite_prefix = dataPath+r.getSchemaName()+r.getTableName()+".rewrite-inprogress.";
+            String prefix = dataPath+r.getSchemaName()+r.getTableName();
+            
+            
+            File oldHKeyMeta = new File(prefix + "-hkey.meta");
+            if(oldHKeyMeta.exists()) {
+                deleted = oldHKeyMeta.delete();
+                assert deleted;
+            }
+            File newHKeyMeta = new File(rewrite_prefix + "-hkey.meta");
+            boolean renamed = newHKeyMeta.renameTo(oldHKeyMeta);
+            assert renamed;
+            
+            File oldHKeyData = new File(prefix + "-hkey.data");
+            if(oldHKeyData.exists()) {
+                deleted = oldHKeyData.delete();
+                assert deleted;
+            }
+            File newHKeyData = new File(rewrite_prefix + "-hkey.data");
+            renamed = newHKeyData.renameTo(oldHKeyData);
+            assert renamed;
+
+            
+            for(int field = 0; field < r.getFieldCount(); field++) {
+                FieldDef fieldDef = r.getFieldDef(field);
+                String name = fieldDef.getName();
+                
+                File oldFile = new File(prefix+name);
+                if(oldFile.exists()) {
+                    deleted = oldFile.delete(); 
+                    assert deleted;
+                }
+                File newFile = new File(rewrite_prefix+name);
+                renamed = newFile.renameTo(oldFile);
+                assert renamed;
+            }
+        }
+
+        String metaFileName = dataPath + ".vmeta";
+        File metaFile = new File(metaFileName);
+        if(metaFile.exists()) {
+            deleted = metaFile.delete();
+            assert deleted;
+        }
+        createMeta();
+    }
+    
+    private void writeDelta() throws Exception {
         while (cursor.get() != null) {
             Delta d = cursor.remove();
             assert d.getType() == Delta.Type.Insert;
-
             // KeyState hkeyState = new KeyState(hkey);
             // String schemaName = rowDef.getSchemaName();
             // String tableName = rowDef.getTableName();
             String prefix = dataPath + d.getRowDef().getSchemaName()
-                    + d.getRowDef().getTableName();
+            + d.getRowDef().getTableName();
             writeKey(prefix, d.getKey(), d.getRowDef());
             writeRow(prefix, d.getRowDef(), d.getRowData());
-        }
-        createMeta();
+        }        
+        createMeta();        
     }
-
+        
     private void createMeta() throws Exception {
         String prefix = dataPath;
         columnDescriptors = new ArrayList<IColumnDescriptor>();
@@ -93,7 +182,11 @@ public class VDeltaWriter {
 
         String metaFileName = dataPath + ".vmeta";
         File metaFile = new File(metaFileName);
-        meta = new VMeta(hkeyDescriptors, columnDescriptors);
+        if(meta ==  null) {
+            meta = new VMeta(hkeyDescriptors, columnDescriptors);
+        } else {
+            meta.append(hkeyDescriptors, columnDescriptors);
+        }
         meta.write(metaFile);
     }
 
@@ -132,7 +225,7 @@ public class VDeltaWriter {
             FieldDef field = rowDef.getFieldDef(i);
 
             String name = field.getName();
-            System.out.println("name = " + name);
+            System.out.println("prefix= "+prefix+", name = " + name);
             String fileName = prefix + name;
             File columnFile = new File(fileName);
             VWriterInfo info = columnInfo.get(fileName);
@@ -152,7 +245,8 @@ public class VDeltaWriter {
             long locationAndSize = rowDef.fieldLocation(rowData, i);
             if (0 == locationAndSize) {
                 // XXX - nulls are not supported.
-                throw new Exception();
+                System.out.println("VDeltaWriter.writeRow: null field????  schema.table.name = "+rowDef.getSchemaName()+"."+rowDef.getTableName()+"."+name);
+                //throw new Exception();
             }
             int offset = (int) locationAndSize;
             int size = (int) (locationAndSize >>> 32);
@@ -172,10 +266,11 @@ public class VDeltaWriter {
         return meta;
     }
 
-    private DeltaCursor cursor;
-    private VMeta meta;
     private String dataPath;
-
+    private VMeta meta;
+    private DeltaCursor cursor;
+    
+    private HashSet<RowDef> tables;
     private TreeMap<String, String> fileNameColumnNameMap;
     private TreeMap<String, VWriterInfo> columnInfo;
     private TreeMap<Integer, VWriterInfo> hkeyInfo;

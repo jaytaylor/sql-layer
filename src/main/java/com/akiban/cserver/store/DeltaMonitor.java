@@ -5,8 +5,10 @@ package com.akiban.cserver.store;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -26,6 +28,10 @@ public class DeltaMonitor implements CommittedUpdateListener {
             this.queue = queue;
         }
 
+        public int size() {
+            return queue.size();
+        }
+        
         public boolean check(KeyState nextKey) {
             boolean ret = false;
             if (queue.size() == 0) {
@@ -49,7 +55,7 @@ public class DeltaMonitor implements CommittedUpdateListener {
             assert queue != null && queue.size() > 0;
             return queue.poll();
         }
-
+        
         private PriorityQueue<Delta> queue;
     }
 
@@ -60,9 +66,21 @@ public class DeltaMonitor implements CommittedUpdateListener {
         count = 0;
     }
 
+    public HashSet<RowDef> getTables() {
+        HashSet<RowDef> tables = new HashSet<RowDef>();
+        Iterator<ArrayList<Delta>> i = inserts.values().iterator();
+        while (i.hasNext()) {
+            Iterator<Delta> j = i.next().iterator();
+            while (j.hasNext()) {
+                Delta d = j.next();
+                tables.add(d.getRowDef());
+            }
+        }
+        return tables;
+    }
+    
     public DeltaCursor createInsertCursor() {
         PriorityQueue<Delta> queue = new PriorityQueue<Delta>();
-
         Iterator<ArrayList<Delta>> i = inserts.values().iterator();
         while (i.hasNext()) {
             Iterator<Delta> j = i.next().iterator();
@@ -72,11 +90,11 @@ public class DeltaMonitor implements CommittedUpdateListener {
         }
         return new DeltaCursor(queue);
     }
-
+    
     public DeltaCursor createInsertCursor(ArrayList<Integer> tableIds) {
 
         PriorityQueue<Delta> queue = new PriorityQueue<Delta>();
-
+        
         Iterator<Integer> i = tableIds.iterator();
         while (i.hasNext()) {
             int tableId = i.next().intValue();
@@ -101,9 +119,16 @@ public class DeltaMonitor implements CommittedUpdateListener {
 
     @Override
     public void inserted(KeyState keyState, RowDef rowDef, RowData rowData) {
+
+        // XXX - hack for demonstration purposes
+        if(!rowDef.getSchemaName().equals("toy_test")) {
+            return;
+        }
+
         Delta newDelta = new Delta(Delta.Type.Insert, keyState, rowDef, rowData);
         // XXX - This is a big-ass hammer lock. This should probably be more
         // fine grained.
+        
         rwLock.writeLock().lock();
         if (inserts.get(rowDef.getRowDefId()) == null) {
             inserts.put(rowDef.getRowDefId(), new ArrayList<Delta>());
@@ -112,7 +137,7 @@ public class DeltaMonitor implements CommittedUpdateListener {
         boolean success = inserts.get(rowDef.getRowDefId()).add(newDelta);
         assert success;
         count++;
-
+        System.out.println("Count = "+count);
         // XXX - Writing the V's should be a background task, and
         // not while holding a write lock that blocks the entire system. However
         // there are other questions that can be answered first (such as how do
@@ -121,7 +146,7 @@ public class DeltaMonitor implements CommittedUpdateListener {
         // elements gain more focus.
         if (count == vstore.getDeltaThreshold()) {
             VDeltaWriter dwriter = new VDeltaWriter(vstore.getDataPath(),
-                    vstore.getVMeta(), this.createInsertCursor());
+                    vstore.getVMeta(), this.createInsertCursor(), this.getTables());
             try {
                 dwriter.write();
             } catch(Exception e) {
@@ -129,6 +154,7 @@ public class DeltaMonitor implements CommittedUpdateListener {
                 throw new Error("----------- Failed to write deltas -----------");
             }
             vstore.setVMeta(dwriter.getMeta());
+            inserts = new TreeMap<Integer, ArrayList<Delta>>();
             count = 0;
         }
         assert count < vstore.getDeltaThreshold();

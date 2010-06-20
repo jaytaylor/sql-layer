@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -74,6 +75,40 @@ public class DeltaMonitorTest {
         dm.releaseReadLock();
         while(count == 1) ;
         assertEquals(2, count);
+    }
+
+    
+    @Test
+    public void testGetTables() throws IOException {
+        setupTest();
+        VStoreTestStub vstore = new VStoreTestStub();
+        vstore.threshold = 1048576;
+        vstore.datapath = "";
+        DeltaMonitor dm = new DeltaMonitor(vstore);
+        dm.inserted(ks11, childrdef, rdata);
+        dm.inserted(ks1, parentrdef, rdata);
+        dm.inserted(ks01, childrdef, rdata);
+        dm.inserted(ks0, parentrdef, rdata);
+        
+        HashSet<RowDef> rowdefs = dm.getTables();
+        assertEquals(2, rowdefs.size());
+        Iterator<RowDef> i = rowdefs.iterator();
+        RowDef r = i.next();
+        boolean child = false;
+        if(r == childrdef) {
+            child = true;
+        } else if(r == parentrdef) {
+            ;
+        } else {
+            fail("get tables test");
+        }
+        
+        r = i.next();
+        if(child) {
+            assertEquals(parentrdef, r);
+        } else { 
+            assertEquals(childrdef, r);
+        }
     }
     
     @Test

@@ -2,6 +2,7 @@
  * 
  */
 package com.akiban.cserver.decider;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.message.ScanRowsRequest;
 /**
  * @author percent
@@ -9,5 +10,5 @@ import com.akiban.cserver.message.ScanRowsRequest;
  */
 public interface Decider {
 	public static enum RowCollectorType {VCollector, PersistitRowCollector};
-	public RowCollectorType decide(ScanRowsRequest r);
+	public RowCollectorType decide(ScanRowsRequest r, RowDef rowDef);
 }

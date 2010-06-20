@@ -1309,7 +1309,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 LOG.info("    to: " + end.toString(rowDefCache));
             }
 
-            Decider.RowCollectorType et = scanDecider.makeDecision(request);
+            Decider.RowCollectorType et = scanDecider.makeDecision(request, rowDef);
             RowCollector rc = null;
             if (et == Decider.RowCollectorType.PersistitRowCollector) {
                 // System.out.println("------------ creating scanRowsRequest RowCollector -------------");
@@ -1319,8 +1319,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 // System.out.println("------------ creating scanRowsRequest VCOLLECTOR -------------");
                 //assert vmeta != null;
                 //assert false;
+                deltaMonitor.readLock();
+                System.out.println("------------ creating scanRowsRequest VCOLLECTOR (holding readLock) -------------");
                 rc = new VCollector(vmeta, deltaMonitor, rowDefCache, rowDefId,
                         columnBitMap);
+                deltaMonitor.releaseReadLock();
                 //throw new Error("Exactly what do you think you're doing?");
             }
             if (rc.hasMore()) {

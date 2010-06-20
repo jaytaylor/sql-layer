@@ -19,14 +19,14 @@ public class MonadicTest {
 	@Test
 	public void testDecide() {
 		Monadic m = new Monadic(Decider.RowCollectorType.VCollector);
-		assertEquals(Decider.RowCollectorType.VCollector, m.decide(null));
-		assertEquals(Decider.RowCollectorType.VCollector, m.decide(null));
-		assertEquals(Decider.RowCollectorType.VCollector, m.decide(null));
+		assertEquals(Decider.RowCollectorType.VCollector, m.decide(null, null));
+		assertEquals(Decider.RowCollectorType.VCollector, m.decide(null, null));
+		assertEquals(Decider.RowCollectorType.VCollector, m.decide(null, null));
 		
 		m = new Monadic(Decider.RowCollectorType.PersistitRowCollector);
-		assertEquals(Decider.RowCollectorType.PersistitRowCollector, m.decide(null));
-		assertEquals(Decider.RowCollectorType.PersistitRowCollector, m.decide(null));
-		assertEquals(Decider.RowCollectorType.PersistitRowCollector, m.decide(null));
+		assertEquals(Decider.RowCollectorType.PersistitRowCollector, m.decide(null, null));
+		assertEquals(Decider.RowCollectorType.PersistitRowCollector, m.decide(null, null));
+		assertEquals(Decider.RowCollectorType.PersistitRowCollector, m.decide(null, null));
 	}
 
 }

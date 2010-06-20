@@ -4,6 +4,7 @@
 package com.akiban.cserver.decider;
 
 import com.akiban.cserver.CServerConfig;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.message.ScanRowsRequest;
 
 /**
@@ -35,9 +36,9 @@ public class DecisionEngine {
        return ret;
     }
     
-    public Decider.RowCollectorType makeDecision(ScanRowsRequest request) {
+    public Decider.RowCollectorType makeDecision(ScanRowsRequest request, RowDef rowDef) {
         assert decider != null && request != null;
-        return decider.decide(request);
+        return decider.decide(request, rowDef);
     }
 
     public Strategy getStrategy() {

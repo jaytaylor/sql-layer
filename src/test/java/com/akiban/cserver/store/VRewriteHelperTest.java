@@ -31,7 +31,7 @@ import com.persistit.Persistit;
  * @author percent
  * 
  */
-public class VDeltaWriterTest {
+public class VRewriteHelperTest {
 
     private final static String VCOLLECTOR_DDL = "src/test/resources/vcollector_test-1.ddl";
     private final static String MANY_DDL = "src/test/resources/many_columns.ddl";
@@ -75,74 +75,6 @@ public class VDeltaWriterTest {
     }
 
     @Test
-    public void testDeltaRewriter() throws Exception {
-
-        try {
-
-            setupDatabase();
-            List<RowDef> rowDefs = rowDefCache.getRowDefs();
-            Iterator<RowDef> i = rowDefs.iterator();
-            while (i.hasNext()) {
-
-                RowDef rowDef = i.next();
-                if (!rowDef.isGroupTable()) {
-                    continue;
-                }
-
-                File file = new File(VCOLLECTOR_TEST_DATADIR + "/vstore");
-                delete(file);
-
-                VStoreTestStub vstore = new VStoreTestStub();
-                vstore.threshold = 1048576;
-                vstore.datapath = VCOLLECTOR_TEST_DATADIR;
-                GroupGenerator dbGen = new GroupGenerator(vstore.datapath+"/vstore/", ais,
-                        rowDefCache, vstore, false, true);
-                dbGen.generateGroup(rowDef);
-                ArrayList<RowData> rowData = dbGen.getRows();
-                VDeltaWriter vwriter = new VDeltaWriter(vstore.datapath, dbGen.getMeta(),
-                        dbGen.getDeltas().createInsertCursor(), dbGen.getDeltas().getTables());
-                vwriter.write();
-
-                VCollector vc = new VCollector(vwriter.getMeta(), null, 
-                        rowDefCache, rowDef.getRowDefId(), dbGen.getGroupBitMap());
-
-                ByteBuffer buffer = ByteBuffer.allocate(dbGen.getGroupSize());
-
-                boolean copied = vc.collectNextRow(buffer);
-                buffer.position(0);
-                assertTrue(copied);
-                assertFalse(vc.hasMore());
-                int rowCount = 0;
-                Iterator<RowData> j = rowData.iterator();
-                while (j.hasNext()) {
-                    RowData row = j.next();
-                    byte[] expected = row.getBytes();
-                    byte[] actual = new byte[expected.length];
-                    buffer.get(actual);
-                    /*
-                     * System.out.println(" count = "+rowCount++); int k = 0;
-                     * while(k < expected.length) { System.out.print
-                     * (Integer.toHexString(expected[k])+" "); k++; } k = 0;
-                     * System.out.println(); while (k < actual.length) {
-                     * System.out.print(Integer.toHexString (actual[k])+" ");
-                     * k++; } System.out.println();
-                     */
-                    assertArrayEquals(expected, actual);
-                }
-
-            }
-
-        } catch (Exception e) {
-            System.out.println("ERROR because " + e.getMessage());
-            e.printStackTrace();
-            fail("vcollector build failed");
-        } finally {
-            File file = new File(VCOLLECTOR_TEST_DATADIR + "/vstore");
-            file.delete();
-        }
-    }   
-    
-    @Test
     public void testDeltaWriter() throws Exception {
 
         try {
@@ -165,31 +97,22 @@ public class VDeltaWriterTest {
                 VStoreTestStub vstore = new VStoreTestStub();
                 vstore.threshold = 1048576;
                 vstore.datapath = VCOLLECTOR_TEST_DATADIR;
-                GroupGenerator dbGen = new GroupGenerator(vstore.datapath+"/vstore/", ais,
+                GroupGenerator dbGen = new GroupGenerator(vstore.datapath, ais,
                         rowDefCache, vstore, false, true);
                 dbGen.generateGroup(rowDef);
-                ArrayList<RowData> rowData = dbGen.getInsertRows();
-                VDeltaWriter vwriter = new VDeltaWriter(vstore.datapath, null,
+                ArrayList<RowData> rowData = dbGen.getRows();
+                
+                VRewriteHelper vrewriter = new VRewriteHelper(dbGen.getMeta(), 
                         dbGen.getDeltas().createInsertCursor(), dbGen.getDeltas().getTables());
-                vwriter.write();
-
-                VCollector vc = new VCollector(vwriter.getMeta(),
-                        new DeltaMonitor(vstore), rowDefCache, rowDef
-                                .getRowDefId(), dbGen.getGroupBitMap());
-
-                ByteBuffer buffer = ByteBuffer.allocate(dbGen.getGroupSize());
-
-                boolean copied = vc.collectNextRow(buffer);
-                buffer.position(0);
-                assertTrue(copied);
-                assertFalse(vc.hasMore());
-                int rowCount = 0;
                 Iterator<RowData> j = rowData.iterator();
-                while (j.hasNext()) {
+                //System.out.println("rowdata.size ()" = )
+                assertEquals(rowData.size(), vrewriter.getTotalRows());
+                for(int rowCount = 0; rowCount < vrewriter.getTotalRows(); rowCount++) {
+                    Delta d = vrewriter.getNextRow();
                     RowData row = j.next();
                     byte[] expected = row.getBytes();
-                    byte[] actual = new byte[expected.length];
-                    buffer.get(actual);
+                    byte[] actual = d.getRowData().getBytes();
+                    
                     /*
                      * System.out.println(" count = "+rowCount++); int k = 0;
                      * while(k < expected.length) { System.out.print
@@ -199,6 +122,7 @@ public class VDeltaWriterTest {
                      * k++; } System.out.println();
                      */
                     assertArrayEquals(expected, actual);
+                    
                 }
 
             }
