@@ -3,14 +3,13 @@
  */
 package com.akiban.cserver.store;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 
 import org.junit.Test;
 
@@ -26,7 +25,7 @@ import com.persistit.Persistit;
 
 /**
  * @author percent
- *
+ * 
  */
 public class DeltaMonitorTest {
 
@@ -47,18 +46,20 @@ public class DeltaMonitorTest {
 
     public class WriteLockTester extends Thread {
         DeltaMonitor dm;
+
         public WriteLockTester(DeltaMonitor dm) {
             count = 0;
             this.dm = dm;
         }
+
         public void run() {
-            count ++;
+            count++;
             dm.inserted(ks0, parentrdef, rdata);
-            count ++;
-            
+            count++;
+
         }
     }
-    
+
     @Test
     public void testDeltaMonitorLockBlocks() {
         setupTest();
@@ -70,14 +71,15 @@ public class DeltaMonitorTest {
         WriteLockTester locktester = new WriteLockTester(dm);
         assertEquals(0, count);
         locktester.start();
-        while(count == 0) ;
+        while (count == 0)
+            ;
         assertEquals(1, count);
         dm.releaseReadLock();
-        while(count == 1) ;
+        while (count == 1)
+            ;
         assertEquals(2, count);
     }
 
-    
     @Test
     public void testGetTables() throws IOException {
         setupTest();
@@ -89,28 +91,28 @@ public class DeltaMonitorTest {
         dm.inserted(ks1, parentrdef, rdata);
         dm.inserted(ks01, childrdef, rdata);
         dm.inserted(ks0, parentrdef, rdata);
-        
+
         HashSet<RowDef> rowdefs = dm.getTables();
         assertEquals(2, rowdefs.size());
         Iterator<RowDef> i = rowdefs.iterator();
         RowDef r = i.next();
         boolean child = false;
-        if(r == childrdef) {
+        if (r == childrdef) {
             child = true;
-        } else if(r == parentrdef) {
+        } else if (r == parentrdef) {
             ;
         } else {
             fail("get tables test");
         }
-        
+
         r = i.next();
-        if(child) {
+        if (child) {
             assertEquals(parentrdef, r);
-        } else { 
+        } else {
             assertEquals(childrdef, r);
         }
     }
-    
+
     @Test
     public void testInsertCursor() throws IOException {
         setupTest();
@@ -122,20 +124,20 @@ public class DeltaMonitorTest {
         dm.inserted(ks1, parentrdef, rdata);
         dm.inserted(ks01, childrdef, rdata);
         dm.inserted(ks0, parentrdef, rdata);
-        ArrayList<Integer> ptable =new ArrayList<Integer>();
-        ptable.add(parentrdef.getRowDefId()); 
+        ArrayList<Integer> ptable = new ArrayList<Integer>();
+        ptable.add(parentrdef.getRowDefId());
         DeltaCursor cursor = dm.createInsertCursor(ptable);
         Delta d = cursor.get();
         assertEquals(ks0, d.getKey());
         assertEquals(rdata, d.getRowData());
         assertEquals(parentrdef, d.getRowDef());
         assertEquals(Delta.Type.Insert, d.getType());
-        
+
         assertEquals(true, cursor.check(ks1));
         assertEquals(true, cursor.check(ks11));
         assertEquals(true, cursor.check(ks01));
         assertEquals(d, cursor.remove());
-        
+
         d = cursor.get();
         assertEquals(ks1, d.getKey());
         assertEquals(rdata, d.getRowData());
@@ -145,11 +147,11 @@ public class DeltaMonitorTest {
         assertEquals(true, cursor.check(ks11));
         assertEquals(false, cursor.check(ks01));
         assertEquals(d, cursor.remove());
-        
-        ptable =new ArrayList<Integer>();
-        ptable.add(childrdef.getRowDefId()); 
+
+        ptable = new ArrayList<Integer>();
+        ptable.add(childrdef.getRowDefId());
         cursor = dm.createInsertCursor(ptable);
-        
+
         d = cursor.get();
         assertEquals(ks01, d.getKey());
         assertEquals(rdata, d.getRowData());
@@ -159,7 +161,7 @@ public class DeltaMonitorTest {
         assertEquals(true, cursor.check(ks11));
         assertEquals(false, cursor.check(ks0));
         assertEquals(d, cursor.remove());
-        
+
         d = cursor.get();
         assertEquals(ks11, d.getKey());
         assertEquals(rdata, d.getRowData());
@@ -170,15 +172,14 @@ public class DeltaMonitorTest {
         assertEquals(false, cursor.check(ks1));
         assertEquals(d, cursor.remove());
         boolean asserted = false;
-        try{
+        try {
             cursor.remove();
-        } catch(AssertionError e) {
+        } catch (AssertionError e) {
             asserted = true;
         }
         assertEquals(true, asserted);
-        
-        
-        ptable =new ArrayList<Integer>();
+
+        ptable = new ArrayList<Integer>();
         ptable.add(parentrdef.getRowDefId());
         ptable.add(childrdef.getRowDefId());
         cursor = dm.createInsertCursor(ptable);
@@ -191,7 +192,7 @@ public class DeltaMonitorTest {
         assertEquals(true, cursor.check(ks11));
         assertEquals(true, cursor.check(ks01));
         assertEquals(d, cursor.remove());
-        
+
         d = cursor.get();
         assertEquals(ks01, d.getKey());
         assertEquals(rdata, d.getRowData());
@@ -211,7 +212,7 @@ public class DeltaMonitorTest {
         assertEquals(true, cursor.check(ks11));
         assertEquals(false, cursor.check(ks01));
         assertEquals(d, cursor.remove());
-     
+
         d = cursor.get();
         assertEquals(ks11, d.getKey());
         assertEquals(rdata, d.getRowData());
@@ -222,18 +223,18 @@ public class DeltaMonitorTest {
         assertEquals(false, cursor.check(ks1));
         assertEquals(d, cursor.remove());
         asserted = false;
-        try{
+        try {
             cursor.remove();
-        } catch(AssertionError e) {
+        } catch (AssertionError e) {
             asserted = true;
         }
         assertEquals(true, asserted);
 
     }
-    
+
     public void setupTest() {
-       String VCOLLECTOR_DDL = "src/test/resources/vcollector_test-1.ddl";
-        
+        String VCOLLECTOR_DDL = "src/test/resources/vcollector_test-1.ddl";
+
         RowDefCache rowDefCache = new RowDefCache();
 
         AkibaInformationSchema ais = null;
@@ -244,41 +245,41 @@ public class DeltaMonitorTest {
             fail("ais gen failed");
             return;
         }
-        
+
         rowDefCache.setAIS(ais);
-        
-        key = new Key((Persistit)null);
+
+        key = new Key((Persistit) null);
         key.clear();
         key.append(0);
         ks0 = new KeyState(key);
 
-        key1 = new Key((Persistit)null);
+        key1 = new Key((Persistit) null);
         key1.clear();
         key1.append(1);
         ks1 = new KeyState(key1);
-        
+
         key.append(1);
         ks01 = new KeyState(key);
-        
+
         key1.append(1);
         ks11 = new KeyState(key1);
-                
+
         parentrdef = rowDefCache.getRowDef(new String("toy_test.parent"));
         assert parentrdef != null;
-        
+
         childrdef = rowDefCache.getRowDef(new String("toy_test.child"));
         assert childrdef != null;
 
         rdata = new RowData(new byte[420]);
-        
+
         Integer[] values = new Integer[2];
         values[0] = new Integer(42);
         values[1] = new Integer(11);
         rdata.createRow(parentrdef, values);
 
-        //d0 = new Delta(Delta.Type.Insert,ks0, parentrdef, rdata);
-        //d01 = new Delta(Delta.Type.Insert,ks01, childrdef, rdata);
-        //d1 = new Delta(Delta.Type.Insert,ks1, parentrdef, rdata);
-        //d11 = new Delta(Delta.Type.Insert,ks11, childrdef, rdata);
+        // d0 = new Delta(Delta.Type.Insert,ks0, parentrdef, rdata);
+        // d01 = new Delta(Delta.Type.Insert,ks01, childrdef, rdata);
+        // d1 = new Delta(Delta.Type.Insert,ks1, parentrdef, rdata);
+        // d11 = new Delta(Delta.Type.Insert,ks11, childrdef, rdata);
     }
 }

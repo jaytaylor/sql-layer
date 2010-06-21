@@ -3,25 +3,21 @@ package com.akiban.cserver.loader;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 
-public class GenerateFinalBySortTask extends GenerateFinalTask
-{
+public class GenerateFinalBySortTask extends GenerateFinalTask {
     @Override
-    public String type()
-    {
+    public String type() {
         return "GenerateFinalBySort";
     }
 
-    public GenerateFinalBySortTask(BulkLoader loader, UserTable table)
-    {
+    public GenerateFinalBySortTask(BulkLoader loader, UserTable table) {
         super(loader, table);
         hKey(hKeyColumns(table));
         order(hKey());
-        sql(String.format(SQL_TEMPLATE,
-                          quote(artifactTableName()),
-                          commaSeparatedColumnDeclarations(table.getColumns()),
-                          commaSeparatedColumnNames(table.getColumns()),
-                          quote(sourceTableName(table.getName())),
-                          commaSeparatedColumnNames(hKey())));
+        sql(String.format(SQL_TEMPLATE, quote(artifactTableName()),
+                commaSeparatedColumnDeclarations(table.getColumns()),
+                commaSeparatedColumnNames(table.getColumns()),
+                quote(sourceTableName(table.getName())),
+                commaSeparatedColumnNames(hKey())));
         hKeyColumnPositions = new int[hKey().size()];
         int p = 0;
         for (Column column : hKey()) {
@@ -45,9 +41,6 @@ public class GenerateFinalBySortTask extends GenerateFinalTask
         }
     }
 
-    private static final String SQL_TEMPLATE =
-        "create table %s(%s) " +
-        "select %s " +
-        "from %s " +
-        "order by %s";
+    private static final String SQL_TEMPLATE = "create table %s(%s) "
+            + "select %s " + "from %s " + "order by %s";
 }

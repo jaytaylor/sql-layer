@@ -3,16 +3,14 @@
  */
 package com.akiban.cserver.store;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
 import org.junit.After;
 import org.junit.Test;
@@ -22,10 +20,6 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.store.DeltaMonitor.DeltaCursor;
-import com.persistit.Key;
-import com.persistit.KeyState;
-import com.persistit.Persistit;
 
 /**
  * @author percent
@@ -70,27 +64,27 @@ public class VRewriteHelperTest {
 
     @After
     public void tearDown() throws Exception {
-        File file = new File(VCOLLECTOR_TEST_DATADIR+"/vstore");
-        //assert delete(file);
+        File file = new File(VCOLLECTOR_TEST_DATADIR + "/vstore");
+        // assert delete(file);
     }
 
     @Test
     public void testDeltaWriter() throws Exception {
 
         try {
-            //boolean one = false;
+            // boolean one = false;
             setupDatabase();
             List<RowDef> rowDefs = rowDefCache.getRowDefs();
             Iterator<RowDef> i = rowDefs.iterator();
             while (i.hasNext()) {
-                //if (one)
-//                    return;
+                // if (one)
+                // return;
 
                 RowDef rowDef = i.next();
                 if (!rowDef.isGroupTable()) {
                     continue;
                 }
-                //one = true;
+                // one = true;
                 File file = new File(VCOLLECTOR_TEST_DATADIR + "/vstore");
                 delete(file);
 
@@ -101,18 +95,19 @@ public class VRewriteHelperTest {
                         rowDefCache, vstore, false, true);
                 dbGen.generateGroup(rowDef);
                 ArrayList<RowData> rowData = dbGen.getRows();
-                
-                VRewriteHelper vrewriter = new VRewriteHelper(dbGen.getMeta(), 
-                        dbGen.getDeltas().createInsertCursor(), dbGen.getDeltas().getTables());
+
+                VRewriteHelper vrewriter = new VRewriteHelper(dbGen.getMeta(),
+                        dbGen.getDeltas().createInsertCursor(), dbGen
+                                .getDeltas().getTables());
                 Iterator<RowData> j = rowData.iterator();
-                //System.out.println("rowdata.size ()" = )
+                // System.out.println("rowdata.size ()" = )
                 assertEquals(rowData.size(), vrewriter.getTotalRows());
-                for(int rowCount = 0; rowCount < vrewriter.getTotalRows(); rowCount++) {
+                for (int rowCount = 0; rowCount < vrewriter.getTotalRows(); rowCount++) {
                     Delta d = vrewriter.getNextRow();
                     RowData row = j.next();
                     byte[] expected = row.getBytes();
                     byte[] actual = d.getRowData().getBytes();
-                    
+
                     /*
                      * System.out.println(" count = "+rowCount++); int k = 0;
                      * while(k < expected.length) { System.out.print
@@ -122,7 +117,7 @@ public class VRewriteHelperTest {
                      * k++; } System.out.println();
                      */
                     assertArrayEquals(expected, actual);
-                    
+
                 }
 
             }

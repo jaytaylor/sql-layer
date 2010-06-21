@@ -54,10 +54,12 @@ public class VRewriteHelper {
     public int getTotalRows() {
         return totalRows;
     }
-    
+
     public Delta getNextRow() throws Exception {
         Delta d = null;
-        //System.out.println("ondisk index = "+ ondiskIndex+", ondiskRows = "+ondiskRows+", deltaindex =" + deltaIndex+", deltaRows ="+ deltaRows);
+        // System.out.println("ondisk index = "+
+        // ondiskIndex+", ondiskRows = "+ondiskRows+", deltaindex =" +
+        // deltaIndex+", deltaRows ="+ deltaRows);
         if (ondiskIndex < ondiskRows && deltaIndex < deltaRows) {
             KeyState nextKey = keyQueue.peek();
             if (cursor.check(nextKey)) {
@@ -65,15 +67,15 @@ public class VRewriteHelper {
             } else {
                 d = nextOndiskRow(nextKey);
             }
-        } else if(ondiskIndex < ondiskRows){
+        } else if (ondiskIndex < ondiskRows) {
             KeyState nextKey = keyQueue.peek();
             d = nextOndiskRow(nextKey);
-        } else if(deltaIndex < deltaRows) {
+        } else if (deltaIndex < deltaRows) {
             d = nextDeltaRow();
         }
         return d;
     }
-    
+
     private void scanKeys(TableDescriptor tdes) throws IOException {
 
         List<byte[]> keyBytes = tdes.scanKeys();
@@ -94,7 +96,7 @@ public class VRewriteHelper {
     private void addTable(VMeta meta, RowDef utable)
             throws FileNotFoundException, IOException {
         IColumnDescriptor kdes = meta.getHKey(utable.getRowDefId());
-        if(kdes == null) {
+        if (kdes == null) {
             // if there's no key, then this table is only in the deltas, so
             // we don't need to do anything.
             return;
@@ -122,10 +124,8 @@ public class VRewriteHelper {
     }
 
     private Delta nextOndiskRow(KeyState nextKey) throws IOException {
-        List<FieldArray> fields = keyMap.get(nextKey)
-                .getFieldArrayList();
-        RowDef rowDef = userTables
-                .get(keyMap.get(nextKey).getTableId());
+        List<FieldArray> fields = keyMap.get(nextKey).getFieldArrayList();
+        RowDef rowDef = userTables.get(keyMap.get(nextKey).getTableId());
 
         int nextRowSize = 0;
         for (int i = 0; i < fields.size(); i++) {
@@ -133,15 +133,13 @@ public class VRewriteHelper {
         }
         assert nextRowSize > 0;
         nextRowSize += RowData.MINIMUM_RECORD_LENGTH
-                + (rowDef.getFieldCount() % 8 == 0 ? rowDef
-                        .getFieldCount() / 8
+                + (rowDef.getFieldCount() % 8 == 0 ? rowDef.getFieldCount() / 8
                         : rowDef.getFieldCount() / 8 + 1);
         byte[] store = new byte[nextRowSize];
         RowData row = new RowData(store);
         BitSet nullmap = new BitSet(rowDef.getFieldCount());
-        row.mergeFields(userTables
-                .get(keyMap.get(nextKey).getTableId()), fields,
-                nullmap, 0);
+        row.mergeFields(userTables.get(keyMap.get(nextKey).getTableId()),
+                fields, nullmap, 0);
 
         // System.out.println("VCollector: table = "
         // +
@@ -163,7 +161,7 @@ public class VRewriteHelper {
         ondiskIndex++;
         return d;
     }
-    
+
     private Delta nextDeltaRow() {
         Delta d = cursor.get();
         if (d != null) {
@@ -172,7 +170,7 @@ public class VRewriteHelper {
         deltaIndex++;
         return d;
     }
-    
+
     private int deltaIndex;
     private int deltaRows;
     private int ondiskIndex;

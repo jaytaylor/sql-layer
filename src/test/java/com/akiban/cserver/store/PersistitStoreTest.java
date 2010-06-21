@@ -1,11 +1,13 @@
 package com.akiban.cserver.store;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
@@ -35,12 +37,13 @@ public class PersistitStoreTest {
             VStoreTestStub vstore = new VStoreTestStub();
             vstore.threshold = 1048576;
             vstore.datapath = "";
-            
-            GroupGenerator dbGen = new GroupGenerator(
-                    DATA_PATH.getAbsolutePath()+"/vstore/", ais, rowDefCache,
-                    vstore, false, true);
+
+            GroupGenerator dbGen = new GroupGenerator(DATA_PATH
+                    .getAbsolutePath()
+                    + "/vstore/", ais, rowDefCache, vstore, false, true);
             dbGen.generateGroup(rowDef, 2);
-            dbGen.getMeta().write(new File(DATA_PATH.getAbsoluteFile()+"/vstore/.vmeta"));
+            dbGen.getMeta().write(
+                    new File(DATA_PATH.getAbsoluteFile() + "/vstore/.vmeta"));
         }
     }
 
@@ -101,18 +104,18 @@ public class PersistitStoreTest {
 
         CServerUtil.cleanUpDirectory(DATA_PATH);
         PersistitStore.setDataPath(DATA_PATH.getPath());
-        
+
         CServerUtil.cleanUpDirectory(DATA_PATH);
         PersistitStore.setDataPath(DATA_PATH.getPath());
         ais = new DDLSource().buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);
 
         loadVData();
-      
+
         store.startUp();
-      
+
         assertTrue((null != store.getVMeta()));
-        
+
         store.setOrdinals();
         store.shutDown();
         store = null;

@@ -14,7 +14,9 @@ import com.persistit.KeyState;
  * 
  */
 public class Delta implements Comparable {
-    public enum Type {Insert, Update, Delete};
+    public enum Type {
+        Insert, Update, Delete
+    };
 
     public Delta(Type type, KeyState key, RowDef rowDef, RowData rowData) {
         assert type == Type.Insert;
@@ -26,7 +28,7 @@ public class Delta implements Comparable {
 
         for (int i = 0; i < rowDef.getFieldCount(); i++) {
             if (this.rowData.isNull(i)) {
-                //assert false;
+                // assert false;
                 this.nullMap.set(i, true);
             }
         }
@@ -39,7 +41,7 @@ public class Delta implements Comparable {
     public BitSet getNullMap() {
         return nullMap;
     }
-    
+
     public Type getType() {
         return type;
     }
@@ -59,7 +61,7 @@ public class Delta implements Comparable {
     public int compareTo(Object obj) {
         assert obj instanceof Delta;
         assert key != null;
-        assert ((Delta)obj).key != null;
+        assert ((Delta) obj).key != null;
         return key.compareTo(((Delta) obj).key);
     }
 

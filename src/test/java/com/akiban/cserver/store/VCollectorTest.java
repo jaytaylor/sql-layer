@@ -3,17 +3,25 @@
  */
 package com.akiban.cserver.store;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
-import java.util.*; //import java.io.*;
-import java.nio.ByteBuffer;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import com.akiban.cserver.*;
-//import com.akiban.vstore.ColumnArrayGenerator;
-//import com.akiban.vstore.IColumnDescriptor;
-//import com.akiban.vstore.VMeta;
-import com.akiban.ais.ddl.*;
-import com.akiban.ais.model.*;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+
+import org.junit.Test;
+
+import com.akiban.ais.ddl.DDLSource;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
 
 /**
  * @author percent
@@ -59,68 +67,62 @@ public class VCollectorTest {
 
                 VStoreTestStub testStub = new VStoreTestStub();
                 testStub.threshold = 1048576;
-                
-                //if (rowDef.getRowDefId() == 1003) {
-                    GroupGenerator dbGen = new GroupGenerator(
-                            VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub, false, true);
-                    dbGen.generateGroup(rowDef, 2);
-                    ArrayList<RowData> rowData = dbGen.getRows();
-                    //DeltaMonitor dm = new DeltaMonitor();
-                    //System.out.println("###############################################");
-                    //dbGen.getDeltas().dumpInserts(rowDefCache);
-                    //if(true)
-                        //return;
-                    VCollector vc = new VCollector(dbGen.getMeta(), dbGen.getDeltas(),
-                            rowDefCache, rowDef.getRowDefId(), dbGen
-                                    .getGroupBitMap());
-                    // System.out.println("GroupSize = "+ dbGen.getGroupSize());
-                    ByteBuffer buffer = ByteBuffer.allocate(dbGen
-                            .getGroupSize());
-                    /*
-                     * System.out.println(">>>>>>>> tableId: "+testRowDef.getTableName
-                     * () +", "+ testRowDef.getRowDefId() +", " +
-                     * testRowDef.getParentRowDefId());
-                     */
 
-                    // System.out.println("----> debugToString: "+testRowDef.debugToString());
-                    // System.out.println("----> parentJoin fields: "+testRowDef.getParentJoinFields());
-                    // System.out.println("----> rowType: "+testRowDef.getRowType());
-                    // System.out.println("----> isGroup: "+testRowDef.isGroupTable());
-                    // System.out.println("----> getUserTableRowDefs: "+testRowDef.getUserTableRowDefs());
-                    // System.out.println("----> groupRowDef: "+testRowDef.getGroupRowDefId());
-                    // System.out.println(buffer.position());
-                    // if(true)
-                    // return;
-                    boolean copied = vc.collectNextRow(buffer);
-                    buffer.position(0);
-                    assertTrue(copied);
-                    assertFalse(vc.hasMore());
-                    int rowCount = 0;
-                    Iterator<RowData> j = rowData.iterator();
-                    while (j.hasNext()) {
-                        RowData row = j.next();
-                        byte[] expected = row.getBytes();
-                        byte[] actual = new byte[expected.length];
-                        buffer.get(actual);
-                      /*  
-                          System.out.println(" count = "+rowCount++); 
-                          int k =0; 
-                          while(k < expected.length) {
-                              System.out.print(Integer.toHexString(expected[k])+" "); 
-                              k++; 
-                          } 
-                          k = 0;
-                          System.out.println(); 
-                          while (k < actual.length) {
-                              System.out.print(Integer.toHexString(actual[k])+" ");
-                              k++; 
-                          } 
-                          System.out.println();
-                        */ 
-                        assertArrayEquals(expected, actual);
-                    }
+                // if (rowDef.getRowDefId() == 1003) {
+                GroupGenerator dbGen = new GroupGenerator(
+                        VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub,
+                        false, true);
+                dbGen.generateGroup(rowDef, 2);
+                ArrayList<RowData> rowData = dbGen.getRows();
+                // DeltaMonitor dm = new DeltaMonitor();
+                // System.out.println("###############################################");
+                // dbGen.getDeltas().dumpInserts(rowDefCache);
+                // if(true)
+                // return;
+                VCollector vc = new VCollector(dbGen.getMeta(), dbGen
+                        .getDeltas(), rowDefCache, rowDef.getRowDefId(), dbGen
+                        .getGroupBitMap());
+                // System.out.println("GroupSize = "+ dbGen.getGroupSize());
+                ByteBuffer buffer = ByteBuffer.allocate(dbGen.getGroupSize());
+                /*
+                 * System.out.println(">>>>>>>> tableId: "+testRowDef.getTableName
+                 * () +", "+ testRowDef.getRowDefId() +", " +
+                 * testRowDef.getParentRowDefId());
+                 */
+
+                // System.out.println("----> debugToString: "+testRowDef.debugToString());
+                // System.out.println("----> parentJoin fields: "+testRowDef.getParentJoinFields());
+                // System.out.println("----> rowType: "+testRowDef.getRowType());
+                // System.out.println("----> isGroup: "+testRowDef.isGroupTable());
+                // System.out.println("----> getUserTableRowDefs: "+testRowDef.getUserTableRowDefs());
+                // System.out.println("----> groupRowDef: "+testRowDef.getGroupRowDefId());
+                // System.out.println(buffer.position());
+                // if(true)
+                // return;
+                boolean copied = vc.collectNextRow(buffer);
+                buffer.position(0);
+                assertTrue(copied);
+                assertFalse(vc.hasMore());
+                int rowCount = 0;
+                Iterator<RowData> j = rowData.iterator();
+                while (j.hasNext()) {
+                    RowData row = j.next();
+                    byte[] expected = row.getBytes();
+                    byte[] actual = new byte[expected.length];
+                    buffer.get(actual);
+                    /*
+                     * System.out.println(" count = "+rowCount++); int k =0;
+                     * while(k < expected.length) {
+                     * System.out.print(Integer.toHexString(expected[k])+" ");
+                     * k++; } k = 0; System.out.println(); while (k <
+                     * actual.length) {
+                     * System.out.print(Integer.toHexString(actual[k])+" ");
+                     * k++; } System.out.println();
+                     */
+                    assertArrayEquals(expected, actual);
                 }
-           //}
+            }
+            // }
 
         } catch (Exception e) {
             System.out.println("ERROR because " + e.getMessage());
@@ -204,63 +206,62 @@ public class VCollectorTest {
 
                     VStoreTestStub testStub = new VStoreTestStub();
                     testStub.threshold = 1048576;
-                    //if (rowDef.getRowDefId() == 1003) {
-                        GroupGenerator dbGen = new GroupGenerator(
-                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub, true, false);
-                        dbGen.generateGroup(rowDef);
-                        ArrayList<RowData> rowData = dbGen.getRows();
+                    // if (rowDef.getRowDefId() == 1003) {
+                    GroupGenerator dbGen = new GroupGenerator(
+                            VCOLLECTOR_TEST_DATADIR, ais, rowDefCache,
+                            testStub, true, false);
+                    dbGen.generateGroup(rowDef);
+                    ArrayList<RowData> rowData = dbGen.getRows();
 
-                        int mapSize = rowDef.getFieldCount() / 8;
-                        if (rowDef.getFieldCount() % 8 != 0) {
-                            mapSize++;
-                        }
+                    int mapSize = rowDef.getFieldCount() / 8;
+                    if (rowDef.getFieldCount() % 8 != 0) {
+                        mapSize++;
+                    }
 
-                        byte[] columnBitMap = new byte[mapSize];
-                        BitSet projection = new BitSet(mapSize);
-                        boolean none = true;
-                        for (int j = 0; j < rowDef.getFieldCount(); j++) {
-                            if (r.nextBoolean()
-                               || (none == true && j + 1 == rowDef.getFieldCount())) {
-                                projection.set(j, true);
-                                columnBitMap[j / 8] |= 1 << (j % 8);
-                                none = false;
-                            }
+                    byte[] columnBitMap = new byte[mapSize];
+                    BitSet projection = new BitSet(mapSize);
+                    boolean none = true;
+                    for (int j = 0; j < rowDef.getFieldCount(); j++) {
+                        if (r.nextBoolean()
+                                || (none == true && j + 1 == rowDef
+                                        .getFieldCount())) {
+                            projection.set(j, true);
+                            columnBitMap[j / 8] |= 1 << (j % 8);
+                            none = false;
                         }
-                        
-                        //DeltaMonitor dm = new DeltaMonitor(testStub);
-                        
-                        VCollector vc = new VCollector(dbGen.getMeta(), null,
-                                rowDefCache, rowDef.getRowDefId(), dbGen
-                                        .getGroupBitMap());
-                        ByteBuffer buffer = ByteBuffer.allocate(dbGen
-                                .getGroupSize());
+                    }
 
-                        boolean copied = vc.collectNextRow(buffer);
-                        buffer.position(0);
-                        assertTrue(copied);
-                        assertFalse(vc.hasMore());
-                        int rowCount = 0;
-                        Iterator<RowData> j = rowData.iterator();
-                        while (j.hasNext()) {
-                            RowData row = j.next();
-                            byte[] expected = row.getBytes();
-                            byte[] actual = new byte[expected.length];
-                            buffer.get(actual);
-                            /*
-                             * System.out.println(" count = "+rowCount++); int k
-                             * = 0; while(k < expected.length) {
-                             * System.out.print
-                             * (Integer.toHexString(expected[k])+" "); k++; } k
-                             * = 0; System.out.println(); while (k <
-                             * actual.length) {
-                             * System.out.print(Integer.toHexString
-                             * (actual[k])+" "); k++; } System.out.println();
-                             */
-                            assertArrayEquals(expected, actual);
-                        }
-//                    }
+                    // DeltaMonitor dm = new DeltaMonitor(testStub);
+
+                    VCollector vc = new VCollector(dbGen.getMeta(), null,
+                            rowDefCache, rowDef.getRowDefId(), dbGen
+                                    .getGroupBitMap());
+                    ByteBuffer buffer = ByteBuffer.allocate(dbGen
+                            .getGroupSize());
+
+                    boolean copied = vc.collectNextRow(buffer);
+                    buffer.position(0);
+                    assertTrue(copied);
+                    assertFalse(vc.hasMore());
+                    int rowCount = 0;
+                    Iterator<RowData> j = rowData.iterator();
+                    while (j.hasNext()) {
+                        RowData row = j.next();
+                        byte[] expected = row.getBytes();
+                        byte[] actual = new byte[expected.length];
+                        buffer.get(actual);
+                        /*
+                         * System.out.println(" count = "+rowCount++); int k =
+                         * 0; while(k < expected.length) { System.out.print
+                         * (Integer.toHexString(expected[k])+" "); k++; } k = 0;
+                         * System.out.println(); while (k < actual.length) {
+                         * System.out.print(Integer.toHexString
+                         * (actual[k])+" "); k++; } System.out.println();
+                         */
+                        assertArrayEquals(expected, actual);
+                    }
+                    // }
                 }
-    
 
             } catch (Exception e) {
                 System.out.println("ERROR because " + e.getMessage());
@@ -269,7 +270,7 @@ public class VCollectorTest {
             }
         }
     }
-    
+
     @Test
     public void testInsertOnlyProjection() throws Exception {
 
@@ -284,65 +285,64 @@ public class VCollectorTest {
                     if (!rowDef.isGroupTable()) {
                         continue;
                     }
-                    
+
                     VStoreTestStub testStub = new VStoreTestStub();
                     testStub.threshold = 1048576;
 
-                    //if (rowDef.getRowDefId() == 1003) {
-                        GroupGenerator dbGen = new GroupGenerator(
-                                VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub, true, true);
-                        dbGen.generateGroup(rowDef);
-                        ArrayList<RowData> rowData = dbGen.getInsertRows();
+                    // if (rowDef.getRowDefId() == 1003) {
+                    GroupGenerator dbGen = new GroupGenerator(
+                            VCOLLECTOR_TEST_DATADIR, ais, rowDefCache,
+                            testStub, true, true);
+                    dbGen.generateGroup(rowDef);
+                    ArrayList<RowData> rowData = dbGen.getInsertRows();
 
-                        int mapSize = rowDef.getFieldCount() / 8;
-                        if (rowDef.getFieldCount() % 8 != 0) {
-                            mapSize++;
-                        }
+                    int mapSize = rowDef.getFieldCount() / 8;
+                    if (rowDef.getFieldCount() % 8 != 0) {
+                        mapSize++;
+                    }
 
-                        byte[] columnBitMap = new byte[mapSize];
-                        BitSet projection = new BitSet(mapSize);
-                        boolean none = true;
-                        for (int j = 0; j < rowDef.getFieldCount(); j++) {
-                            if (r.nextBoolean()
-                               || (none == true && j + 1 == rowDef.getFieldCount())) {
-                                projection.set(j, true);
-                                columnBitMap[j / 8] |= 1 << (j % 8);
-                                none = false;
-                            }
+                    byte[] columnBitMap = new byte[mapSize];
+                    BitSet projection = new BitSet(mapSize);
+                    boolean none = true;
+                    for (int j = 0; j < rowDef.getFieldCount(); j++) {
+                        if (r.nextBoolean()
+                                || (none == true && j + 1 == rowDef
+                                        .getFieldCount())) {
+                            projection.set(j, true);
+                            columnBitMap[j / 8] |= 1 << (j % 8);
+                            none = false;
                         }
-                        
-                        VCollector vc = new VCollector(null, dbGen.getDeltas(),
-                                rowDefCache, rowDef.getRowDefId(), dbGen
-                                        .getGroupBitMap());
-                        ByteBuffer buffer = ByteBuffer.allocate(dbGen
-                                .getGroupSize());
+                    }
 
-                        boolean copied = vc.collectNextRow(buffer);
-                        buffer.position(0);
-                        assertTrue(copied);
-                        assertFalse(vc.hasMore());
-                        int rowCount = 0;
-                        Iterator<RowData> j = rowData.iterator();
-                        while (j.hasNext()) {
-                            RowData row = j.next();
-                            byte[] expected = row.getBytes();
-                            byte[] actual = new byte[expected.length];
-                            buffer.get(actual);
-                            /*
-                             * System.out.println(" count = "+rowCount++); int k
-                             * = 0; while(k < expected.length) {
-                             * System.out.print
-                             * (Integer.toHexString(expected[k])+" "); k++; } k
-                             * = 0; System.out.println(); while (k <
-                             * actual.length) {
-                             * System.out.print(Integer.toHexString
-                             * (actual[k])+" "); k++; } System.out.println();
-                             */
-                            assertArrayEquals(expected, actual);
-                        }
-//                    }
+                    VCollector vc = new VCollector(null, dbGen.getDeltas(),
+                            rowDefCache, rowDef.getRowDefId(), dbGen
+                                    .getGroupBitMap());
+                    ByteBuffer buffer = ByteBuffer.allocate(dbGen
+                            .getGroupSize());
+
+                    boolean copied = vc.collectNextRow(buffer);
+                    buffer.position(0);
+                    assertTrue(copied);
+                    assertFalse(vc.hasMore());
+                    int rowCount = 0;
+                    Iterator<RowData> j = rowData.iterator();
+                    while (j.hasNext()) {
+                        RowData row = j.next();
+                        byte[] expected = row.getBytes();
+                        byte[] actual = new byte[expected.length];
+                        buffer.get(actual);
+                        /*
+                         * System.out.println(" count = "+rowCount++); int k =
+                         * 0; while(k < expected.length) { System.out.print
+                         * (Integer.toHexString(expected[k])+" "); k++; } k = 0;
+                         * System.out.println(); while (k < actual.length) {
+                         * System.out.print(Integer.toHexString
+                         * (actual[k])+" "); k++; } System.out.println();
+                         */
+                        assertArrayEquals(expected, actual);
+                    }
+                    // }
                 }
-    
 
             } catch (Exception e) {
                 System.out.println("ERROR because " + e.getMessage());
@@ -352,9 +352,6 @@ public class VCollectorTest {
         }
     }
 
-
- 
-    
     @Test
     public void testGetProjection() throws Exception {
 

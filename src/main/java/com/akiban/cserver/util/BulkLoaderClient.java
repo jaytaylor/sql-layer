@@ -1,5 +1,13 @@
 package com.akiban.cserver.util;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
 import com.akiban.cserver.message.BulkLoadResponse;
@@ -11,49 +19,26 @@ import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-public class BulkLoaderClient
-{
-    public static void main(String[] args) throws Exception
-    {
+public class BulkLoaderClient {
+    public static void main(String[] args) throws Exception {
         new BulkLoaderClient(args).run();
     }
 
-    private void run() throws Exception
-    {
+    private void run() throws Exception {
         startNetwork();
-        AkibaNetworkHandler networkHandler =
-            NetworkHandlerFactory.getHandler(cserverHost, Integer.toString(cserverPort), null);
+        AkibaNetworkHandler networkHandler = NetworkHandlerFactory.getHandler(
+                cserverHost, Integer.toString(cserverPort), null);
         logger.info(String.format("Got network handler %s", networkHandler));
         connection = AkibaConnectionImpl.createConnection(networkHandler);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {
-            Request request =
-                resume
-                ? BulkLoadRequest.resume(dbHost,
-                                         dbPort,
-                                         dbUser,
-                                         dbPassword,
-                                         groups,
-                                         artifactsSchema,
-                                         sourceSchemas,
-                                         cleanup)
-                : BulkLoadRequest.start(dbHost,
-                                        dbPort,
-                                        dbUser,
-                                        dbPassword,
-                                        groups,
-                                        artifactsSchema,
-                                        sourceSchemas,
-                                        cleanup);
+            Request request = resume ? BulkLoadRequest.resume(dbHost, dbPort,
+                    dbUser, dbPassword, groups, artifactsSchema, sourceSchemas,
+                    cleanup) : BulkLoadRequest
+                    .start(dbHost, dbPort, dbUser, dbPassword, groups,
+                            artifactsSchema, sourceSchemas, cleanup);
             BulkLoadResponse response;
             BulkLoadResponse badEnding = null;
             do {
@@ -65,24 +50,19 @@ public class BulkLoaderClient
                     Thread.sleep(10000);
                     List<Event> events = response.events();
                     int nEvents = events.size();
-                    request = new BulkLoadStatusRequest(nEvents == 0
-                                                        ? -1
-                                                        : events.get(nEvents - 1).eventId());
+                    request = new BulkLoadStatusRequest(nEvents == 0 ? -1
+                            : events.get(nEvents - 1).eventId());
                 }
             } while (badEnding == null && !response.isIdle());
             if (badEnding == null) {
-                request = BulkLoadRequest.done(dbHost,
-                                               dbPort,
-                                               dbUser,
-                                               dbPassword,
-                                               groups,
-                                               artifactsSchema,
-                                               sourceSchemas,
-                                               cleanup);
+                request = BulkLoadRequest.done(dbHost, dbPort, dbUser,
+                        dbPassword, groups, artifactsSchema, sourceSchemas,
+                        cleanup);
                 runRequest(request);
             } else {
                 logger.error(String.format("Bulk load terminated by %s: %s",
-                                           response.exceptionClassName(), response.exceptionMessage()));
+                        response.exceptionClassName(), response
+                                .exceptionMessage()));
                 exitCode = response.exitCode();
             }
         } catch (Exception e) {
@@ -99,22 +79,22 @@ public class BulkLoaderClient
         }
     }
 
-    private BulkLoadResponse runRequest(Request request) throws Exception
-    {
+    private BulkLoadResponse runRequest(Request request) throws Exception {
         logger.info(String.format("About to send request %s", request));
-        BulkLoadResponse response = (BulkLoadResponse) connection.sendAndReceive(request);
+        BulkLoadResponse response = (BulkLoadResponse) connection
+                .sendAndReceive(request);
         logger.info(String.format("Received response %s", response));
         List<Event> events = response.events();
         if (events != null) {
             for (Event event : events) {
-                logger.info(String.format("%s (%s sec): %s", event.eventId(), event.timeSec(), event.message()));
+                logger.info(String.format("%s (%s sec): %s", event.eventId(),
+                        event.timeSec(), event.message()));
             }
         }
         return response;
     }
 
-    private BulkLoaderClient(String[] args) throws Exception
-    {
+    private BulkLoaderClient(String[] args) throws Exception {
         int a = 0;
         try {
             while (a < args.length) {
@@ -133,7 +113,8 @@ public class BulkLoaderClient
                         dbPort = DEFAULT_MYSQL_PORT;
                     } else {
                         dbHost = hostAndPort.substring(0, colon);
-                        dbPort = Integer.parseInt(hostAndPort.substring(colon + 1));
+                        dbPort = Integer.parseInt(hostAndPort
+                                .substring(colon + 1));
                     }
                 } else if (flag.equals("--user")) {
                     dbUser = args[a++];
@@ -155,7 +136,8 @@ public class BulkLoaderClient
                         usage(null);
                     } else {
                         cserverHost = hostAndPort.substring(0, colon);
-                        cserverPort = Integer.parseInt(hostAndPort.substring(colon + 1));
+                        cserverPort = Integer.parseInt(hostAndPort
+                                .substring(colon + 1));
                     }
                 } else if (flag.equals("--group")) {
                     groups.add(args[a++]);
@@ -180,22 +162,19 @@ public class BulkLoaderClient
         logger.info(String.format("cleanup: %s", cleanup));
     }
 
-    private ChannelNotifier startNetwork()
-    {
+    private ChannelNotifier startNetwork() {
         MessageRegistry.reset();
         MessageRegistry.initialize();
         MessageRegistry.only().registerModule("com.akiban.cserver.message");
         MessageRegistry.only().registerModule("com.akiban.message");
         ChannelNotifier notifier = new ChannelNotifier();
-        NetworkHandlerFactory.initializeNetwork(LOCALHOST,
-                                                Integer.toString(BULK_LOADER_CLIENT_LISTENER_PORT),
-                                                notifier);
+        NetworkHandlerFactory.initializeNetwork(LOCALHOST, Integer
+                .toString(BULK_LOADER_CLIENT_LISTENER_PORT), notifier);
         logger.info("Network started");
         return notifier;
     }
 
-    private static void usage(Exception e) throws Exception
-    {
+    private static void usage(Exception e) throws Exception {
         for (String line : USAGE) {
             System.err.println(line);
         }
@@ -206,35 +185,37 @@ public class BulkLoaderClient
     }
 
     private static final String[] USAGE = {
-        "aload --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ " +
-        "--cserver CSERVER_HOST:CSERVER_PORT " +
-        "--temp TEMP_SCHEMA (--source TARGET_SCHEMA:SOURCE_SCHEMA)* [--resume] [--nocleanup]",
-        "",
-        "Copies data from a MySQL database into a chunkserver. Data is transformed in the MySQL database, before it ",
-        "is written to the chunkserver. ",
-        "",
-        "The database being copied is located at MYSQL_HOST:MYSQL_PORT, and is accessed as USER, identified by ",
-        "PASSWORD if provided. Only the named GROUPs will be copied. At least one GROUP must be specified, and ",
-        "multiple GROUPs may be specified, (repeating the --group flag for each).",
-        "",
-        "The chunkserver being loaded is located at CSERVER_HOST:CSERVER_PORT.",
-        "The database being loaded must already have a schema installed. Loading will add data to presumably empty tables.",
-        "By default, the source and target schema names are assumed to match. If they don't, then source schema names",
-        "can be specified using one or more --source specifications. For example --source abc:def will copy data from",
-        "the abc schema of the database at HOST:PORT into the def schema locally. Table names must match in source and",
-        "target schemas.",
-        "",
-        "If --resume is specified, then the previously attempted migration, whose state is stored in TEMP_SCHEMA, ",
-        "is resumed. If --resume is not specified, then any state from a previous load, saved in TEMP_SCHEMA, is lost.",
-        "",
-        "If --nocleanup is specified, then the TEMP_SCHEMA is not deleted when the load completes.",
-        ""
-    };
+            "aload --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ "
+                    + "--cserver CSERVER_HOST:CSERVER_PORT "
+                    + "--temp TEMP_SCHEMA (--source TARGET_SCHEMA:SOURCE_SCHEMA)* [--resume] [--nocleanup]",
+            "",
+            "Copies data from a MySQL database into a chunkserver. Data is transformed in the MySQL database, before it ",
+            "is written to the chunkserver. ",
+            "",
+            "The database being copied is located at MYSQL_HOST:MYSQL_PORT, and is accessed as USER, identified by ",
+            "PASSWORD if provided. Only the named GROUPs will be copied. At least one GROUP must be specified, and ",
+            "multiple GROUPs may be specified, (repeating the --group flag for each).",
+            "",
+            "The chunkserver being loaded is located at CSERVER_HOST:CSERVER_PORT.",
+            "The database being loaded must already have a schema installed. Loading will add data to presumably empty tables.",
+            "By default, the source and target schema names are assumed to match. If they don't, then source schema names",
+            "can be specified using one or more --source specifications. For example --source abc:def will copy data from",
+            "the abc schema of the database at HOST:PORT into the def schema locally. Table names must match in source and",
+            "target schemas.",
+            "",
+            "If --resume is specified, then the previously attempted migration, whose state is stored in TEMP_SCHEMA, ",
+            "is resumed. If --resume is not specified, then any state from a previous load, saved in TEMP_SCHEMA, is lost.",
+            "",
+            "If --nocleanup is specified, then the TEMP_SCHEMA is not deleted when the load completes.",
+            "" };
 
     private static final Log logger = LogFactory.getLog(BulkLoaderClient.class);
     private static final String LOCALHOST = "localhost";
     private static final int DEFAULT_MYSQL_PORT = 3306;
-    private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999; // because there has to be one
+    private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999; // because
+    // there
+    // has to
+    // be one
 
     private AkibaConnection connection;
     private String cserverHost;
@@ -251,16 +232,13 @@ public class BulkLoaderClient
 
     // Inner classes
 
-    public class ChannelNotifier implements CommEventNotifier
-    {
+    public class ChannelNotifier implements CommEventNotifier {
         @Override
-        public void onConnect(AkibaNetworkHandler handler)
-        {
+        public void onConnect(AkibaNetworkHandler handler) {
         }
 
         @Override
-        public void onDisconnect(AkibaNetworkHandler handler)
-        {
+        public void onDisconnect(AkibaNetworkHandler handler) {
             handler.disconnectWorker();
         }
     }

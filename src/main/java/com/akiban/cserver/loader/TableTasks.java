@@ -4,55 +4,43 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TableTasks
-{
-    public void saveTasks(DB.Connection connection) throws SQLException
-    {
+public class TableTasks {
+    public void saveTasks(DB.Connection connection) throws SQLException {
         for (Task task : tasks()) {
-            connection.new Update(TEMPLATE_SAVE_TASK,
-                                  task.artifactTableName().getSchemaName(),
-                                  task.type(),
-                                  task.table().getName().getSchemaName(),
-                                  task.table().getName().getTableName(),
-                                  task.table().getDepth(),
-                                  task.artifactTableName().getSchemaName(),
-                                  task.artifactTableName().getTableName(),
-                                  task.sql()).execute();
+            connection.new Update(TEMPLATE_SAVE_TASK, task.artifactTableName()
+                    .getSchemaName(), task.type(), task.table().getName()
+                    .getSchemaName(), task.table().getName().getTableName(),
+                    task.table().getDepth(), task.artifactTableName()
+                            .getSchemaName(), task.artifactTableName()
+                            .getTableName(), task.sql()).execute();
         }
     }
 
-    public GenerateFinalTask generateFinal()
-    {
+    public GenerateFinalTask generateFinal() {
         return this.generateFinal;
     }
 
-    public GenerateParentTask generateParent()
-    {
+    public GenerateParentTask generateParent() {
         return this.generateParent;
     }
 
-    public GenerateChildTask generateChild()
-    {
+    public GenerateChildTask generateChild() {
         return this.generateChild;
     }
 
-    public void generateFinal(GenerateFinalTask task)
-    {
+    public void generateFinal(GenerateFinalTask task) {
         this.generateFinal = task;
     }
 
-    public void generateParent(GenerateParentTask task)
-    {
+    public void generateParent(GenerateParentTask task) {
         this.generateParent = task;
     }
 
-    public void generateChild(GenerateChildTask task)
-    {
+    public void generateChild(GenerateChildTask task) {
         this.generateChild = task;
     }
 
-    private List<Task> tasks()
-    {
+    private List<Task> tasks() {
         List<Task> tasks = new ArrayList<Task>();
         if (generateFinal != null) {
             tasks.add(generateFinal);
@@ -66,26 +54,13 @@ public class TableTasks
         return tasks;
     }
 
-    private static final String TEMPLATE_SAVE_TASK =
-        "insert into %s.task(" +
-        "    task_type, " +
-        "    state, " +
-        "    user_table_schema, " +
-        "    user_table_table, " +
-        "    user_table_depth, " +
-        "    artifact_schema, " +
-        "    artifact_table, " +
-        "    command " +
-        ") values(" +
-        "    '%s'," +
-        "    'waiting'," +
-        "    '%s'," +
-        "    '%s'," +
-        "    '%s'," +
-        "    '%s'," +
-        "    '%s'," +
-        "    '%s'" +
-        ")";
+    private static final String TEMPLATE_SAVE_TASK = "insert into %s.task("
+            + "    task_type, " + "    state, " + "    user_table_schema, "
+            + "    user_table_table, " + "    user_table_depth, "
+            + "    artifact_schema, " + "    artifact_table, " + "    command "
+            + ") values(" + "    '%s'," + "    'waiting'," + "    '%s',"
+            + "    '%s'," + "    '%s'," + "    '%s'," + "    '%s',"
+            + "    '%s'" + ")";
 
     private GenerateFinalTask generateFinal;
     private GenerateParentTask generateParent;

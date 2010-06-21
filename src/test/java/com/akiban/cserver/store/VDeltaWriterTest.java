@@ -3,16 +3,16 @@
  */
 package com.akiban.cserver.store;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
 import org.junit.After;
 import org.junit.Test;
@@ -22,10 +22,6 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.store.DeltaMonitor.DeltaCursor;
-import com.persistit.Key;
-import com.persistit.KeyState;
-import com.persistit.Persistit;
 
 /**
  * @author percent
@@ -70,8 +66,8 @@ public class VDeltaWriterTest {
 
     @After
     public void tearDown() throws Exception {
-        File file = new File(VCOLLECTOR_TEST_DATADIR+"/vstore");
-        //assert delete(file);
+        File file = new File(VCOLLECTOR_TEST_DATADIR + "/vstore");
+        // assert delete(file);
     }
 
     @Test
@@ -95,16 +91,18 @@ public class VDeltaWriterTest {
                 VStoreTestStub vstore = new VStoreTestStub();
                 vstore.threshold = 1048576;
                 vstore.datapath = VCOLLECTOR_TEST_DATADIR;
-                GroupGenerator dbGen = new GroupGenerator(vstore.datapath+"/vstore/", ais,
-                        rowDefCache, vstore, false, true);
+                GroupGenerator dbGen = new GroupGenerator(vstore.datapath
+                        + "/vstore/", ais, rowDefCache, vstore, false, true);
                 dbGen.generateGroup(rowDef);
                 ArrayList<RowData> rowData = dbGen.getRows();
-                VDeltaWriter vwriter = new VDeltaWriter(vstore.datapath, dbGen.getMeta(),
-                        dbGen.getDeltas().createInsertCursor(), dbGen.getDeltas().getTables());
+                VDeltaWriter vwriter = new VDeltaWriter(vstore.datapath, dbGen
+                        .getMeta(), dbGen.getDeltas().createInsertCursor(),
+                        dbGen.getDeltas().getTables());
                 vwriter.write();
 
-                VCollector vc = new VCollector(vwriter.getMeta(), null, 
-                        rowDefCache, rowDef.getRowDefId(), dbGen.getGroupBitMap());
+                VCollector vc = new VCollector(vwriter.getMeta(), null,
+                        rowDefCache, rowDef.getRowDefId(), dbGen
+                                .getGroupBitMap());
 
                 ByteBuffer buffer = ByteBuffer.allocate(dbGen.getGroupSize());
 
@@ -140,37 +138,38 @@ public class VDeltaWriterTest {
             File file = new File(VCOLLECTOR_TEST_DATADIR + "/vstore");
             file.delete();
         }
-    }   
-    
+    }
+
     @Test
     public void testDeltaWriter() throws Exception {
 
         try {
-            //boolean one = false;
+            // boolean one = false;
             setupDatabase();
             List<RowDef> rowDefs = rowDefCache.getRowDefs();
             Iterator<RowDef> i = rowDefs.iterator();
             while (i.hasNext()) {
-                //if (one)
-//                    return;
+                // if (one)
+                // return;
 
                 RowDef rowDef = i.next();
                 if (!rowDef.isGroupTable()) {
                     continue;
                 }
-                //one = true;
+                // one = true;
                 File file = new File(VCOLLECTOR_TEST_DATADIR + "/vstore");
                 delete(file);
 
                 VStoreTestStub vstore = new VStoreTestStub();
                 vstore.threshold = 1048576;
                 vstore.datapath = VCOLLECTOR_TEST_DATADIR;
-                GroupGenerator dbGen = new GroupGenerator(vstore.datapath+"/vstore/", ais,
-                        rowDefCache, vstore, false, true);
+                GroupGenerator dbGen = new GroupGenerator(vstore.datapath
+                        + "/vstore/", ais, rowDefCache, vstore, false, true);
                 dbGen.generateGroup(rowDef);
                 ArrayList<RowData> rowData = dbGen.getInsertRows();
                 VDeltaWriter vwriter = new VDeltaWriter(vstore.datapath, null,
-                        dbGen.getDeltas().createInsertCursor(), dbGen.getDeltas().getTables());
+                        dbGen.getDeltas().createInsertCursor(), dbGen
+                                .getDeltas().getTables());
                 vwriter.write();
 
                 VCollector vc = new VCollector(vwriter.getMeta(),

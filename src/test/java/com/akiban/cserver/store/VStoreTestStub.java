@@ -8,15 +8,14 @@ import com.akiban.vstore.VMeta;
 
 /**
  * @author percent
- *
+ * 
  */
 public class VStoreTestStub implements VStore {
 
     public String datapath = "";
     public int threshold = 1048576;
     public VMeta meta = null;
-    
-    
+
     @Override
     public String getDataPath() {
         assert false;

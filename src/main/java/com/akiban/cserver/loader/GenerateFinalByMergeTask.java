@@ -1,45 +1,42 @@
 package com.akiban.cserver.loader;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.velocity.VelocityContext;
+
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISTextGenerator;
-import org.apache.velocity.VelocityContext;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class GenerateFinalByMergeTask extends GenerateFinalTask
-{
+public class GenerateFinalByMergeTask extends GenerateFinalTask {
     @Override
-    public String type()
-    {
+    public String type() {
         return "GenerateFinalByMerge";
     }
 
     /*
-     * We are computing T$final for table T. finalArtifact identifies T, called originalTable in the code.
-     * hKeyTask is the task that computes T$parent, which has all hkey columns of T.
-     *
-     * E.g., for the COI example, computing I:
-     *     - I(iid, oid, ...)
-     *     - I$parent(cid, oid, iid)
-     *     - I$final(iid, oid, ..., cid)
-     *
-     * In I$parent, cid and oid are the Column objects from the O table. But in I, oid is of course from the I
-     * table. So in computing the columns for I$final, we need to map the O.oid column to I.iid to recognize the
-     * fact that I$final already has an oid column.
+     * We are computing T$final for table T. finalArtifact identifies T, called
+     * originalTable in the code. hKeyTask is the task that computes T$parent,
+     * which has all hkey columns of T.
+     * 
+     * E.g., for the COI example, computing I: - I(iid, oid, ...) -
+     * I$parent(cid, oid, iid) - I$final(iid, oid, ..., cid)
+     * 
+     * In I$parent, cid and oid are the Column objects from the O table. But in
+     * I, oid is of course from the I table. So in computing the columns for
+     * I$final, we need to map the O.oid column to I.iid to recognize the fact
+     * that I$final already has an oid column.
      */
 
-    public GenerateFinalByMergeTask(BulkLoader loader,
-                                    UserTable table,
-                                    GenerateParentTask parentTask,
-                                    AkibaInformationSchema ais)
-        throws Exception
-    {
+    public GenerateFinalByMergeTask(BulkLoader loader, UserTable table,
+            GenerateParentTask parentTask, AkibaInformationSchema ais)
+            throws Exception {
         super(loader, table);
-        // Final table contains columns of original table and other columns from parentTask that complete the hkey.
+        // Final table contains columns of original table and other columns from
+        // parentTask that complete the hkey.
         addColumns(table.getColumns());
         Join join = table.getParentJoin();
         List<Column> hKey = new ArrayList<Column>();
@@ -48,7 +45,8 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
             if (columns().contains(hKeyColumn)) {
                 hKey.add(hKeyColumn);
             } else {
-                Column hKeyColumnInOriginalTable = join.getMatchingChild(hKeyColumn);
+                Column hKeyColumnInOriginalTable = join
+                        .getMatchingChild(hKeyColumn);
                 if (hKeyColumnInOriginalTable == null) {
                     hKey.add(hKeyColumn);
                     hKeyColumnsNotInOriginalTable.add(hKeyColumn);
@@ -56,7 +54,8 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
                     hKey.add(hKeyColumnInOriginalTable);
                 } else {
                     hKey.add(hKeyColumnInOriginalTable);
-                    hKeyColumnsNotInOriginalTable.add(hKeyColumnInOriginalTable);
+                    hKeyColumnsNotInOriginalTable
+                            .add(hKeyColumnInOriginalTable);
                 }
             }
         }
@@ -73,8 +72,10 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
             }
             hKeyColumnPositions[p++] = hKeyColumnPosition;
         }
-        // Compute original table's column positions. Original table columns were added to columns,
-        // so it's just the first elements of columns. But verify just to be safe.
+        // Compute original table's column positions. Original table columns
+        // were added to columns,
+        // so it's just the first elements of columns. But verify just to be
+        // safe.
         columnPositions = new int[table.getColumns().size()];
         p = 0;
         for (Column column : table.getColumns()) {
@@ -84,11 +85,15 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
             }
             columnPositions[p++] = columnPosition;
         }
-        // Join the original table (e.g. item) and the hkey table (e.g. item$parent) to form the final table,
-        // (e.g. item$final). This is done using the join template which joins (x, y) -> output.
-        // Output columns are formed by taking all the columns of x and the columns of y which have no
+        // Join the original table (e.g. item) and the hkey table (e.g.
+        // item$parent) to form the final table,
+        // (e.g. item$final). This is done using the join template which joins
+        // (x, y) -> output.
+        // Output columns are formed by taking all the columns of x and the
+        // columns of y which have no
         // counterpart in x.
-        String procedureName = String.format("%s$merge_final", table.getName().getTableName());
+        String procedureName = String.format("%s$merge_final", table.getName()
+                .getTableName());
         AISTextGenerator generator = new AISTextGenerator(ais);
         VelocityContext context = new VelocityContext();
         context.put("procedureName", procedureName);

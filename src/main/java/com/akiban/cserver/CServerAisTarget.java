@@ -18,11 +18,11 @@ import com.akiban.cserver.store.Store;
  */
 public class CServerAisTarget extends Target {
 
-	private final Store store;
+    private final Store store;
 
-	// Target interface
+    // Target interface
 
-	public void deleteAll() throws Exception {
+    public void deleteAll() throws Exception {
         deleteTable(type);
         deleteTable(group);
         deleteTable(table);
@@ -31,66 +31,67 @@ public class CServerAisTarget extends Target {
         deleteTable(joinColumn);
         deleteTable(index);
         deleteTable(indexColumn);
-	}
-	
-	private void deleteTable(final String name) throws Exception {
-		final ModelObject modelObject = MetaModel.only().definition(name);
-		final RowDef rowDef = store.getRowDefCache().getRowDef(modelObject.tableName());
-		if (rowDef == null) {
-			throw new IllegalStateException(
-					"Missing table definition for AIS table "
-							+ name);
-		}
-		store.dropTable(rowDef.getGroupRowDefId());
-	}
+    }
 
-	@Override
-	public void writeCount(int count) throws Exception {
-	}
+    private void deleteTable(final String name) throws Exception {
+        final ModelObject modelObject = MetaModel.only().definition(name);
+        final RowDef rowDef = store.getRowDefCache().getRowDef(
+                modelObject.tableName());
+        if (rowDef == null) {
+            throw new IllegalStateException(
+                    "Missing table definition for AIS table " + name);
+        }
+        store.dropTable(rowDef.getGroupRowDefId());
+    }
 
-	public void close() throws SQLException {
-	}
+    @Override
+    public void writeCount(int count) throws Exception {
+    }
 
-	public CServerAisTarget(final Store store) {
-		this.store = store;
-	}
+    public void close() throws SQLException {
+    }
 
-	// For use by this class
+    public CServerAisTarget(final Store store) {
+        this.store = store;
+    }
 
-	@Override
-	protected final void write(String typename, Map<String, Object> map)
-			throws Exception {
-		ModelObject modelObject = MetaModel.only().definition(typename);
-		final RowDef rowDef = store.getRowDefCache().getRowDef(
-				modelObject.tableName());
-		if (rowDef == null) {
-			throw new IllegalStateException(
-					"Missing table definition for AIS table "
-							+ modelObject.name());
-		}
-		final Object[] values = new Object[rowDef.getFieldCount()];
+    // For use by this class
 
-		for (int index = 0; index < modelObject.attributes().size(); index++) {
-			final ModelObject.Attribute attribute = modelObject.attributes()
-					.get(index);
+    @Override
+    protected final void write(String typename, Map<String, Object> map)
+            throws Exception {
+        ModelObject modelObject = MetaModel.only().definition(typename);
+        final RowDef rowDef = store.getRowDefCache().getRowDef(
+                modelObject.tableName());
+        if (rowDef == null) {
+            throw new IllegalStateException(
+                    "Missing table definition for AIS table "
+                            + modelObject.name());
+        }
+        final Object[] values = new Object[rowDef.getFieldCount()];
 
-			switch (attribute.type()) {
-			case INTEGER:
-				values[index] = (Integer) map.get(attribute.name());
-				break;
-			case LONG:
-				values[index] = (Long) map.get(attribute.name());
-				break;
-			case STRING:
-				values[index] = (String) map.get(attribute.name());
-				break;
-			case BOOLEAN:
-				values[index] = ((Boolean) map.get(attribute.name())).booleanValue() ? 1 : 0;
-				break;
-			}
-		}
-		final RowData rowData = new RowData(new byte[1024]);
-		rowData.createRow(rowDef, values);
-		store.writeRow(rowData);
-	}
+        for (int index = 0; index < modelObject.attributes().size(); index++) {
+            final ModelObject.Attribute attribute = modelObject.attributes()
+                    .get(index);
+
+            switch (attribute.type()) {
+            case INTEGER:
+                values[index] = (Integer) map.get(attribute.name());
+                break;
+            case LONG:
+                values[index] = (Long) map.get(attribute.name());
+                break;
+            case STRING:
+                values[index] = (String) map.get(attribute.name());
+                break;
+            case BOOLEAN:
+                values[index] = ((Boolean) map.get(attribute.name()))
+                        .booleanValue() ? 1 : 0;
+                break;
+            }
+        }
+        final RowData rowData = new RowData(new byte[1024]);
+        rowData.createRow(rowDef, values);
+        store.writeRow(rowData);
+    }
 }

@@ -1,9 +1,7 @@
 package com.akiban.cserver;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
@@ -57,7 +55,7 @@ public class RowData {
     // Needs to be about the same size as the smaller of:
     // com.akiban.network.AkibaCommPipelineFactory#MAX_PACKET_SIZE
     // com.akiban.message.AkibaConnectionImpl#MAX_PACKET_SIZE
-    // These two limit the network throughput message size. 
+    // These two limit the network throughput message size.
     public final static int MAXIMUM_RECORD_LENGTH = 8 * 1024 * 1024;
 
     public final static char SIGNATURE_A = (char) ('A' + ('B' << 8));
@@ -262,17 +260,17 @@ public class RowData {
         return CServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
-
-    public int setupNullMap(BitSet nullMap, int nullMapOffset, int currentOffset, int fieldCount) {
+    public int setupNullMap(BitSet nullMap, int nullMapOffset,
+            int currentOffset, int fieldCount) {
         int offset = currentOffset + O_NULL_MAP;
         int mapSize = ((fieldCount % 8) == 0 ? fieldCount : fieldCount + 1);
         bytes[offset] = 0;
 
-        for (int i = nullMapOffset, j=0; j < mapSize; i++, j++) {
+        for (int i = nullMapOffset, j = 0; j < mapSize; i++, j++) {
             if (nullMap.get(i)) {
-//                assert false;
+                // assert false;
                 bytes[offset] |= 1 << (j % 8);
-            } 
+            }
             if ((j + 1) % 8 == 0) {
                 offset++;
                 bytes[offset] = 0;
@@ -280,32 +278,32 @@ public class RowData {
         }
         offset++;
         return offset;
-    }    
-    
-    public void copy(final RowDef rowDef, RowData rdata, BitSet nullMap, int nullMapOffset) throws IOException {
+    }
+
+    public void copy(final RowDef rowDef, RowData rdata, BitSet nullMap,
+            int nullMapOffset) throws IOException {
         final int fieldCount = rowDef.getFieldCount();
         int offset = rowStart;
 
         CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
         CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
         CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
-        
+
         offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
         // If the row is a projection, then the field array list is less than
         // the field count. To account for this situation the field
         // variable iterates over the columns and the position variable
         // iterates over the field array list -- James
-        for (int groupOffset = nullMapOffset, field =  0, position = 0;
-            field < fieldCount; groupOffset++, field++) {
-//            System.out.println("table "+rowDef.getTableName()+"field count = "
-//                                +fieldCount+" position = "+position);
+        for (int groupOffset = nullMapOffset, field = 0, position = 0; field < fieldCount; groupOffset++, field++) {
+            // System.out.println("table "+rowDef.getTableName()+"field count = "
+            // +fieldCount+" position = "+position);
             if (!nullMap.get(groupOffset)) {
                 assert rowDef.getFieldDef(field).isFixedSize() == true;
                 long offsetWidth = rowDef.fieldLocation(rdata, field);
-                System.arraycopy(rdata.getBytes(), ((int)offsetWidth), bytes, offset,
-                        ((int)(offsetWidth>>>32)));
+                System.arraycopy(rdata.getBytes(), ((int) offsetWidth), bytes,
+                        offset, ((int) (offsetWidth >>> 32)));
                 position++;
-                offset += ((int)(offsetWidth>>>32));
+                offset += ((int) (offsetWidth >>> 32));
             }
         }
 
@@ -316,10 +314,10 @@ public class RowData {
         CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
         rowEnd = offset;
     }
-    
+
     // XXX the nullMapOffset business is horrendous; please fix me.
-    public void mergeFields(final RowDef rowDef, List<FieldArray> fields, BitSet nullMap, int nullMapOffset)
-            throws IOException {
+    public void mergeFields(final RowDef rowDef, List<FieldArray> fields,
+            BitSet nullMap, int nullMapOffset) throws IOException {
         assert nullMap != null;
         final int fieldCount = rowDef.getFieldCount();
         int offset = rowStart;
@@ -327,17 +325,16 @@ public class RowData {
         CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
         CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
         CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
-        
+
         offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
 
         // If the row is a projection, then the field array list is less than
         // the field count. To account for this situation the field
         // variable iterates over the columns and the position variable
         // iterates over the field array list -- James
-        for (int groupOffset = nullMapOffset, field =  0, position = 0;
-            field < fieldCount; groupOffset++, field++) {
-//            System.out.println("table "+rowDef.getTableName()+"field count = "
-//                                +fieldCount+" position = "+position);
+        for (int groupOffset = nullMapOffset, field = 0, position = 0; field < fieldCount; groupOffset++, field++) {
+            // System.out.println("table "+rowDef.getTableName()+"field count = "
+            // +fieldCount+" position = "+position);
             if (!nullMap.get(groupOffset)) {
                 assert rowDef.getFieldDef(field).isFixedSize() == true;
                 int fieldSize = fields.get(position).getNextFieldSize();

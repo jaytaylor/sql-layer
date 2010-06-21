@@ -3,157 +3,157 @@ package com.akiban.cserver;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class TableStatistics {
 
-	public final static int LOW_CARDINALITY = 1;
+    public final static int LOW_CARDINALITY = 1;
 
-	private final int rowDefId;
-	
-	private long rowCount;
-	
-	private long autoIncrementValue;
-	
-	private int meanRecordLength;
-	
-	private int blockSize;
-	
-	private long creationTime;
-	
-	private long updateTime;
-	
-	private List<Histogram> histograms = new ArrayList<Histogram>();
-	
-	public TableStatistics(final int rowDefId) {
-		this.rowDefId = rowDefId;
-	}
-	
-	public long getRowCount() {
-		return rowCount;
-	}
+    private final int rowDefId;
 
-	public void setRowCount(long rowCount) {
-		this.rowCount = rowCount;
-	}
+    private long rowCount;
 
-	public long getAutoIncrementValue() {
-		return autoIncrementValue;
-	}
+    private long autoIncrementValue;
 
-	public void setAutoIncrementValue(long autoIncrementValue) {
-		this.autoIncrementValue = autoIncrementValue;
-	}
+    private int meanRecordLength;
 
-	public int getMeanRecordLength() {
-		return meanRecordLength;
-	}
+    private int blockSize;
 
-	public void setMeanRecordLength(int meanRecordLength) {
-		this.meanRecordLength = meanRecordLength;
-	}
+    private long creationTime;
 
-	public int getBlockSize() {
-		return blockSize;
-	}
+    private long updateTime;
 
-	public void setBlockSize(int blockSize) {
-		this.blockSize = blockSize;
-	}
+    private List<Histogram> histograms = new ArrayList<Histogram>();
 
-	public long getCreationTime() {
-		return creationTime;
-	}
+    public TableStatistics(final int rowDefId) {
+        this.rowDefId = rowDefId;
+    }
 
-	public void setCreationTime(long creationTime) {
-		this.creationTime = creationTime;
-	}
+    public long getRowCount() {
+        return rowCount;
+    }
 
-	public long getUpdateTime() {
-		return updateTime;
-	}
+    public void setRowCount(long rowCount) {
+        this.rowCount = rowCount;
+    }
 
-	public void setUpdateTime(long updateTime) {
-		this.updateTime = updateTime;
-	}
+    public long getAutoIncrementValue() {
+        return autoIncrementValue;
+    }
 
-	public List<Histogram> getHistogramList() {
-		return histograms;
-	}
+    public void setAutoIncrementValue(long autoIncrementValue) {
+        this.autoIncrementValue = autoIncrementValue;
+    }
 
-	public void addHistogram(Histogram histogram) {
-		this.histograms.add(histogram);
-	}
-	
-	public void clearHistograms() {
-		this.histograms.clear();
-	}
+    public int getMeanRecordLength() {
+        return meanRecordLength;
+    }
 
-	public int getRowDefId() {
-		return rowDefId;
-	}
-	
-	public static class Histogram {
-		
-		private final int indexId;
-		
-		private List<HistogramSample> samples = new ArrayList<HistogramSample>();
-		
-		public Histogram(final int indexId) {
-			this.indexId = indexId;
-		
-		}
+    public void setMeanRecordLength(int meanRecordLength) {
+        this.meanRecordLength = meanRecordLength;
+    }
 
-		public int getIndexId() {
-			return indexId;
-		}
-		
-		public final List<HistogramSample> getHistogramSamples() {
-			return samples;
-		}
-		
-		public void addSample(final HistogramSample sample) {
-			this.samples.add(sample);
-		}
-		
-		public String toString() {
-			final StringBuilder sb = new StringBuilder("Histogram(" + indexId + ")[");
-			boolean first = true;
-			for (final HistogramSample sample: samples) {
-				if (!first) {
-					sb.append(",");
-				}
-					sb.append(CServerUtil.NEW_LINE);
-					sb.append("  ");
-					sb.append(sample);
-			}
-			sb.append(CServerUtil.NEW_LINE);
-			sb.append("]");
-			return sb.toString();
-		}
-	}
-	
-	public static class HistogramSample {
-		
-		public HistogramSample(final RowData rowData, final long rowCount) {
-			this.rowData = rowData;
-			this.rowCount = rowCount;
-		}
-		
-		private final RowData rowData;
-		
-		public RowData getRowData() {
-			return rowData;
-		}
+    public int getBlockSize() {
+        return blockSize;
+    }
 
-		public long getRowCount() {
-			return rowCount;
-		}
-		
-		private final long rowCount;
-		
-		public String toString() {
-			return String.format("%,8d->%s", rowCount, rowData.toString());
-		}
-		
-	}
+    public void setBlockSize(int blockSize) {
+        this.blockSize = blockSize;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    public long getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(long updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public List<Histogram> getHistogramList() {
+        return histograms;
+    }
+
+    public void addHistogram(Histogram histogram) {
+        this.histograms.add(histogram);
+    }
+
+    public void clearHistograms() {
+        this.histograms.clear();
+    }
+
+    public int getRowDefId() {
+        return rowDefId;
+    }
+
+    public static class Histogram {
+
+        private final int indexId;
+
+        private List<HistogramSample> samples = new ArrayList<HistogramSample>();
+
+        public Histogram(final int indexId) {
+            this.indexId = indexId;
+
+        }
+
+        public int getIndexId() {
+            return indexId;
+        }
+
+        public final List<HistogramSample> getHistogramSamples() {
+            return samples;
+        }
+
+        public void addSample(final HistogramSample sample) {
+            this.samples.add(sample);
+        }
+
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("Histogram(" + indexId
+                    + ")[");
+            boolean first = true;
+            for (final HistogramSample sample : samples) {
+                if (!first) {
+                    sb.append(",");
+                }
+                sb.append(CServerUtil.NEW_LINE);
+                sb.append("  ");
+                sb.append(sample);
+            }
+            sb.append(CServerUtil.NEW_LINE);
+            sb.append("]");
+            return sb.toString();
+        }
+    }
+
+    public static class HistogramSample {
+
+        public HistogramSample(final RowData rowData, final long rowCount) {
+            this.rowData = rowData;
+            this.rowCount = rowCount;
+        }
+
+        private final RowData rowData;
+
+        public RowData getRowData() {
+            return rowData;
+        }
+
+        public long getRowCount() {
+            return rowCount;
+        }
+
+        private final long rowCount;
+
+        public String toString() {
+            return String.format("%,8d->%s", rowCount, rowData.toString());
+        }
+
+    }
 }

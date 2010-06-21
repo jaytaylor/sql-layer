@@ -1,5 +1,7 @@
 package com.akiban.cserver.loader;
 
+import java.sql.ResultSet;
+
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
@@ -10,22 +12,20 @@ import com.akiban.cserver.store.StoreException;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-import java.sql.ResultSet;
-
-public class PersistitAdapter
-{
+public class PersistitAdapter {
     public PersistitAdapter(PersistitStore store, GenerateFinalTask task)
-        throws PersistitException
-    {
+            throws PersistitException {
         this.store = store;
         UserTable leafTable = task.table();
         int nKeySegments = leafTable.getDepth() + 1;
-        // Traverse group from table to root. Gather RowDefs, ordinals, and create the hKey structure.
+        // Traverse group from table to root. Gather RowDefs, ordinals, and
+        // create the hKey structure.
         fieldDefs = new FieldDef[nKeySegments][];
         ordinals = new int[nKeySegments];
         hKey = new Object[nKeySegments][];
         RowDefCache rowDefCache = store.getRowDefCache();
-        leafRowDef = rowDefCache.getRowDef(leafTable.getName().getDescription());
+        leafRowDef = rowDefCache
+                .getRowDef(leafTable.getName().getDescription());
         RowDef rowDef = leafRowDef;
         UserTable table = leafTable;
         int depth = nKeySegments;
@@ -35,13 +35,15 @@ public class PersistitAdapter
             // fieldDefs
             fieldDefs[depth] = new FieldDef[nPKColumns];
             for (int i = 0; i < nPKColumns; i++) {
-                fieldDefs[depth][i] = rowDef.getFieldDef(rowDef.getPkFields()[i]);
+                fieldDefs[depth][i] = rowDef
+                        .getFieldDef(rowDef.getPkFields()[i]);
             }
             // hkey
             hKey[depth] = new Object[nPKColumns];
             // ordinals
             ordinals[depth] = rowDef.getOrdinal();
-            table = table.getParentJoin() == null ? null : table.getParentJoin().getParent();
+            table = table.getParentJoin() == null ? null : table
+                    .getParentJoin().getParent();
             if (table != null) {
                 rowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
             }
@@ -53,8 +55,7 @@ public class PersistitAdapter
         exchange = store.getExchange(leafRowDef, null);
     }
 
-    public void handleRow(ResultSet resultSet) throws Exception
-    {
+    public void handleRow(ResultSet resultSet) throws Exception {
         // Populate rowData
         for (int i = 0; i < dbRow.length; i++) {
             dbRow[i] = resultSet.getObject(columnPositions[i] + 1);
@@ -84,11 +85,11 @@ public class PersistitAdapter
             }
         }
         // Insert row
-        store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, fieldDefs, hKey);
+        store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals,
+                fieldDefs, hKey);
     }
 
-    public void close() throws StoreException, PersistitException
-    {
+    public void close() throws StoreException, PersistitException {
         store.updateTableStats(leafRowDef, rowCount);
         store.releaseExchange(exchange);
     }

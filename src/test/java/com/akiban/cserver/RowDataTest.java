@@ -3,9 +3,10 @@
  */
 package com.akiban.cserver;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.BitSet;
 
 import org.junit.Test;
@@ -18,7 +19,7 @@ import com.akiban.ais.model.AkibaInformationSchema;
  * 
  */
 public class RowDataTest {
-    
+
     RowDefCache rowDefCache;
     AkibaInformationSchema ais;
     RowDef rdef;
@@ -28,7 +29,7 @@ public class RowDataTest {
     RowData rdata3;
     RowData rdataEmpty;
     String VCOLLECTOR_DDL = "src/test/resources/vcollector_test-1.ddl";
-    
+
     public void clearbytes(byte[] store) {
         for (int i = 0; i < store.length; i++) {
             store[i] = 0;
@@ -54,7 +55,7 @@ public class RowDataTest {
         } catch (Exception e1) {
             e1.printStackTrace();
             throw new Exception("ais gen failed");
-            
+
         }
 
         rowDefCache.setAIS(ais);
@@ -114,20 +115,20 @@ public class RowDataTest {
         values[0] = new Integer(42);
         values[1] = new Integer(11);
         rdata.createRow(rdef, values);
-        
+
         assertFalse(rdata.isNull(0));
         assertFalse(rdata.isNull(1));
-        
+
         values[1] = null;
         rdata.createRow(rdef, values);
         assertFalse(rdata.isNull(0));
         assertTrue(rdata.isNull(1));
-        
+
         values[0] = null;
         rdata.createRow(rdef, values);
         assertTrue(rdata.isNull(0));
         assertTrue(rdata.isNull(1));
-        
+
         values[1] = new Integer(420);
         rdata.createRow(rdef, values);
         assertTrue(rdata.isNull(0));

@@ -14,8 +14,8 @@ public class VWriterInfo {
         this.count = 0;
     }
 
-    public VWriterInfo(String columnName, String tableName,
-            String schemaName, int tableId, int ordinal) {
+    public VWriterInfo(String columnName, String tableName, String schemaName,
+            int tableId, int ordinal) {
         this.tableId = tableId;
         this.ordinal = ordinal;
         this.columnSize = 0;

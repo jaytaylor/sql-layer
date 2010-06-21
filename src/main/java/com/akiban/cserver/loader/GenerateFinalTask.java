@@ -2,20 +2,16 @@ package com.akiban.cserver.loader;
 
 import com.akiban.ais.model.UserTable;
 
-public abstract class GenerateFinalTask extends Task
-{
-    public final int[] hKeyColumnPositions()
-    {
+public abstract class GenerateFinalTask extends Task {
+    public final int[] hKeyColumnPositions() {
         return hKeyColumnPositions;
     }
 
-    public final int[] columnPositions()
-    {
+    public final int[] columnPositions() {
         return columnPositions;
     }
 
-    protected GenerateFinalTask(BulkLoader loader, UserTable table)
-    {
+    protected GenerateFinalTask(BulkLoader loader, UserTable table) {
         super(loader, table, "$final");
     }
 
