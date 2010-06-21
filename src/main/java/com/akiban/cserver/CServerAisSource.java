@@ -75,40 +75,40 @@ public class CServerAisSource extends Source {
             final FieldDef fieldDef = rowDef.getFieldDef(index);
             final long location = rowDef.fieldLocation(rowData, index);
             final String attrName = modelObject.attributes().get(index).name();
-            switch (modelObject.attributes().get(index).type()) {
-            case BOOLEAN: {
-                assert fieldDef.isFixedSize();
-                final int v = (int) rowData.getIntegerValue((int) location,
-                        (int) (location >>> 32));
-                values.put(attrName, Boolean.valueOf(v != 0));
-                break;
-            }
-            case INTEGER: {
-                assert fieldDef.isFixedSize();
-                final int v = (int) rowData.getIntegerValue((int) location,
-                        (int) (location >>> 32));
-                values.put(attrName, Integer.valueOf(v));
-                break;
-            }
-            case LONG: {
-                assert fieldDef.isFixedSize();
-                if (location == 0) {
-                    values.put(attrName, null);
-                } else {
+            if (location == 0) {
+                values.put(attrName, null);
+            } else {
+                switch (modelObject.attributes().get(index).type()) {
+                case BOOLEAN: {
+                    assert fieldDef.isFixedSize();
+                    final int v = (int) rowData.getIntegerValue((int) location,
+                            (int) (location >>> 32));
+                    values.put(attrName, Boolean.valueOf(v != 0));
+                    break;
+                }
+                case INTEGER: {
+                    assert fieldDef.isFixedSize();
+                    final int v = (int) rowData.getIntegerValue((int) location,
+                            (int) (location >>> 32));
+                    values.put(attrName, Integer.valueOf(v));
+                    break;
+                }
+                case LONG: {
+                    assert fieldDef.isFixedSize();
                     final long v = (int) rowData.getIntegerValue(
                             (int) location, (int) (location >>> 32));
                     values.put(attrName, Long.valueOf(v));
+                    break;
                 }
-                break;
-            }
-            case STRING: {
-                final String v = rowData.getStringValue((int) location,
-                        (int) (location >>> 32), fieldDef);
-                values.put(attrName, v);
-                break;
-            }
-            default:
-                throw new Error("Missing case");
+                case STRING: {
+                    final String v = rowData.getStringValue((int) location,
+                            (int) (location >>> 32), fieldDef);
+                    values.put(attrName, v);
+                    break;
+                }
+                default:
+                    throw new Error("Missing case");
+                }
             }
         }
         receiver.receive(values);
