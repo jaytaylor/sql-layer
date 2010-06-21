@@ -270,8 +270,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
             if (LOG.isInfoEnabled()) {
                 LOG.info("PersistitStore datapath="
-                        + db.getProperty("datapath") + " pwjSize="
-                        + db.getProperty("pwjsize") + " 8k_buffers="
+                        + db.getProperty("datapath") + " 8k_buffers="
                         + db.getProperty("buffer.count.8192"));
             }
             db.getManagement().setDisplayFilter(
@@ -291,11 +290,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     private void resetMemoryAllocation() {
         final long allocation = (long) ((CServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
-        final long pwjAllocation = Math.max(allocation / 4, 4 * MEGA);
-        final long buffers8k = Math.max((allocation - pwjAllocation)
+        final long buffers8k = Math.max(allocation
                 / (8192 + 4096), 512);
-        PERSISTIT_PROPERTIES.setProperty("pwjsize", Long
-                .toString(pwjAllocation));
         PERSISTIT_PROPERTIES.setProperty("buffer.count.8192", Long
                 .toString(buffers8k));
     }

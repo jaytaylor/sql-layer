@@ -168,6 +168,15 @@ public class RowDefCache implements CServerConstants {
             }
         }
 
+        // Handle unusual case in which table does not specify a primary
+        // key by simply adding every column.
+        if (pkFields == null || pkFields.length == 0) {
+            pkFields = new int[fieldDefs.length];
+            for (int fieldIndex = 0; fieldIndex < pkFields.length; fieldIndex++) {
+                pkFields[fieldIndex] = fieldIndex;
+            }
+        }
+
         // root table
         UserTable root = table;
         while (root.getParentJoin() != null) {
@@ -188,6 +197,11 @@ public class RowDefCache implements CServerConstants {
         final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
         for (final Index index : table.getIndexes()) {
             final List<IndexColumn> indexColumns = index.getColumns();
+            if (indexColumns.isEmpty()) {
+                // Don't try to create an index for an artificial
+                // IndexDef that has no fields.
+                continue;
+            }
             final List<Integer> indexColumnList = new ArrayList<Integer>(1);
             for (final IndexColumn indexColumn : indexColumns) {
                 final int position = indexColumn.getColumn().getPosition();
@@ -272,6 +286,11 @@ public class RowDefCache implements CServerConstants {
         final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
         for (final Index index : table.getIndexes()) {
             final List<IndexColumn> indexColumns = index.getColumns();
+            if (indexColumns.isEmpty()) {
+                // Don't try to create a group table index for an
+                // artificial IndeDef that has no fields.
+                continue;
+            }
             final List<Integer> indexColumnList = new ArrayList<Integer>(1);
             for (final IndexColumn indexColumn : indexColumns) {
                 final int position = indexColumn.getColumn().getPosition();

@@ -82,16 +82,37 @@ public class PersistitStoreIndexManager {
 
     public void analyzeIndex(final IndexDef indexDef, final int sampleSize)
             throws Exception {
-        final Exchange iEx = store.getExchange(indexDef.getRowDef(), indexDef);
+        
+        final Exchange probeEx;
+        final Key startKey;
+        final Key endKey;
+        final int keyDepth;
+        
+        if (indexDef.isHKeyEquivalent()) {
+            probeEx = store.getExchange(indexDef.getRowDef(), null);
+            startKey = new Key(store.getDb());
+            endKey = new Key(store.getDb());
+            final IndexDef.I2H[] i2hFields = indexDef.getHkeyFields();
+            assert i2hFields[0].isOrdinalType();
+            startKey.append(i2hFields[0].getOrdinal());
+            endKey.append(i2hFields[0].getOrdinal());
+            startKey.append(Key.BEFORE);
+            endKey.append(Key.AFTER);
+            keyDepth = i2hFields.length;
+        } else {
+            probeEx = store.getExchange(indexDef.getRowDef(), indexDef);
+            startKey = Key.LEFT_GUARD_KEY;
+            endKey = Key.RIGHT_GUARD_KEY;
+            keyDepth = indexDef.getFields().length;
+        }
 
         // First try to enumerate the values. If there are more than
         KeyHistogram keyHistogram = null;
-        final int keyDepth = indexDef.getFields().length;
-        int treeLevel = Math.max(0, iEx.getTree().getDepth()
+        int treeLevel = Math.max(0, probeEx.getTree().getDepth()
                 - STARTING_TREE_DEPTH);
         while (treeLevel >= 0) {
-            keyHistogram = iEx.computeHistogram(Key.LEFT_GUARD_KEY,
-                    Key.RIGHT_GUARD_KEY, sampleSize, keyDepth, treeLevel);
+            keyHistogram = probeEx.computeHistogram(startKey,
+                    endKey, sampleSize, keyDepth, treeLevel);
             if (keyHistogram.getKeyCount() > sampleSize
                     * SAMPLE_SIZE_MULTIPLIER) {
                 break;
@@ -100,20 +121,16 @@ public class PersistitStoreIndexManager {
         }
 
         if (LOG.isInfoEnabled()) {
-            LOG
-                    .info(String
-                            .format(
-                                    "Analyzed index %s in table %s: %,d keys at keyDepth/treeLevel %d/%d",
-                                    indexDef.getName(), indexDef.getRowDef()
-                                            .getTableName(), keyHistogram
-                                            .getKeyCount(), keyDepth, Math.max(
-                                            0, treeLevel)));
+            LOG.info(String.format("Analyzed index %s in table %s: %,d keys "
+                    + "at keyDepth/treeLevel %d/%d", indexDef.getName(),
+                    indexDef.getRowDef().getTableName(), keyHistogram
+                            .getKeyCount(), keyDepth, Math.max(0, treeLevel)));
         }
 
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
-        final Exchange exchange = store.getExchange(indexAnalysisRowDef, null);
-        final Transaction transaction = exchange.getTransaction();
+        final Exchange analysisEx = store.getExchange(indexAnalysisRowDef, null);
+        final Transaction transaction = analysisEx.getTransaction();
         final Date now = new Date();
         final KeyHistogram keyHistogram0 = keyHistogram;
         final int multiplier = keyHistogram.getTreeDepth() == 1 ? INDEX_LEVEL_MULTIPLIER
@@ -137,9 +154,9 @@ public class PersistitStoreIndexManager {
                 // Remove previous analysis
                 //
                 try {
-                    store.constructHKey(exchange, indexAnalysisRowDef, rowData);
-                    exchange.getKey().cut();
-                    exchange.remove(Key.GT);
+                    store.constructHKey(analysisEx, indexAnalysisRowDef, rowData);
+                    analysisEx.getKey().cut();
+                    analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {
                     throw e;
                 } catch (Exception e) {

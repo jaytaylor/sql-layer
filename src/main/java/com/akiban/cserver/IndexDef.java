@@ -253,7 +253,6 @@ public class IndexDef {
         // will need to store the index even though it contains the same fields
         // as the hkey.
         // 
-
         // TODO:
         // Detect that a non-PK field of a child row may be a PK field
         // of its parent.
@@ -281,13 +280,10 @@ public class IndexDef {
 
         if (matches) {
             hkeyEquivalent = true;
-            // no need to do more - this IndexDef will not be used.
-            return;
         }
 
         //
-        // This index is not hkeyEquivalent; therefore set up the I2H and H2I
-        // arrays for the RowCollector.
+        // Set up the I2H and H2I arrays for the RowCollector.
         //
         final List<I2H> i2hList = new ArrayList<I2H>();
         final List<H2I> h2iList = new ArrayList<H2I>();
@@ -354,7 +350,7 @@ public class IndexDef {
                 //
                 final I2H i2h = new I2H(null);
 
-                if (def == rowDef) {
+                if (def == rowDef || rowDef.isGroupTable()) {
                     i2h.setFieldIndex(pkField);
                 }
                 i2h.setIndexKeyLoc(indexLoc);

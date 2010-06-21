@@ -113,8 +113,7 @@ create table aac(
     aac1 int not null,
     aac2 int not null,
     aac3 int not null,
-    aac4 varchar(64) not null,
-    primary key(aac1)
+    aac4 varchar(64) not null
 ) engine = akibadb;
  
 create table ab(
