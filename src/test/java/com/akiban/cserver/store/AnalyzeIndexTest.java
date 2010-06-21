@@ -44,4 +44,21 @@ public class AnalyzeIndexTest extends AbstractScanBase {
 		}
 		assertEquals(32, histogram.getHistogramSamples().size());
 	}
+	@Test
+
+	public void testGroupTableStatistics() throws Exception {
+		final RowDef rowDef = groupRowDef("_akiba_srt");
+		store.analyzeTable(rowDef.getRowDefId());
+		final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
+		store.getIndexManager().populateTableStatistics(ts);
+		final int indexId = findIndexId(rowDef, "aa$str");
+		TableStatistics.Histogram histogram = null;
+		for (TableStatistics.Histogram h : ts.getHistogramList()) {
+			if (h.getIndexId() == indexId) {
+				histogram = h;
+				break;
+			}
+		}
+		assertEquals(32, histogram.getHistogramSamples().size());
+	}
 }
