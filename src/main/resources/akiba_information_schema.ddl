@@ -84,6 +84,7 @@ create table index_columns (
     column_name       varchar(64),
     ordinal_position int,
     is_ascending     tinyint,
+    indexed_length   int,
     primary key(schema_name, table_name, index_name, column_name)
 ) engine = akibadb;
 

@@ -30,9 +30,7 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "customer", "customer_name", 1, "varchar",
                 64L, 0L, false, false);
         builder.index("schema", "customer", "customer_pk", true, "PRIMARY KEY");
-        builder
-                .indexColumn("schema", "customer", "customer_pk", "cid", 0,
-                        true);
+        builder.indexColumn("schema", "customer", "customer_pk", "cid", 0, true, null);
         builder.userTable("schema", "order");
         builder
                 .column("schema", "order", "oid", 0, "int", 0L, 0L, false,
@@ -43,14 +41,14 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "order", "order_date", 2, "int", 0L, 0L,
                 false, false);
         builder.index("schema", "order", "order_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "order", "order_pk", "oid", 0, true);
+        builder.indexColumn("schema", "order", "order_pk", "oid", 0, true, null);
         builder.userTable("schema", "item");
         builder.column("schema", "item", "iid", 0, "int", 0L, 0L, false, false);
         builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false);
         builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false,
                 false);
         builder.index("schema", "item", "item_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "item", "item_pk", "iid", 0, true);
+        builder.indexColumn("schema", "item", "item_pk", "iid", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "cid", "schema",
                 "order", "cid");
@@ -81,9 +79,7 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "customer", "customer_name", 1, "varchar",
                 64L, 0L, false, false);
         builder.index("schema", "customer", "customer_pk", true, "PRIMARY KEY");
-        builder
-                .indexColumn("schema", "customer", "customer_pk", "cid", 0,
-                        true);
+        builder.indexColumn("schema", "customer", "customer_pk", "cid", 0, true, null);
         builder.userTable("schema", "order");
         builder
                 .column("schema", "order", "oid", 0, "int", 0L, 0L, false,
@@ -94,8 +90,8 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "order", "order_date", 2, "int", 0L, 0L,
                 false, false);
         builder.index("schema", "order", "order_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "order", "order_pk", "cid", 0, true);
-        builder.indexColumn("schema", "order", "order_pk", "oid", 1, true);
+        builder.indexColumn("schema", "order", "order_pk", "cid", 0, true, null);
+        builder.indexColumn("schema", "order", "order_pk", "oid", 1, true, null);
         builder.userTable("schema", "item");
         builder.column("schema", "item", "iid", 0, "int", 0L, 0L, false, false);
         builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false);
@@ -103,9 +99,9 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "item", "quantity", 3, "int", 0L, 0L, false,
                 false);
         builder.index("schema", "item", "item_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "item", "item_pk", "cid", 0, true);
-        builder.indexColumn("schema", "item", "item_pk", "oid", 1, true);
-        builder.indexColumn("schema", "item", "item_pk", "iid", 2, true);
+        builder.indexColumn("schema", "item", "item_pk", "cid", 0, true, null);
+        builder.indexColumn("schema", "item", "item_pk", "oid", 1, true, null);
+        builder.indexColumn("schema", "item", "item_pk", "iid", 2, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "cid", "schema",
                 "order", "cid");
@@ -137,9 +133,7 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "customer", "customer_name", 1, "varchar",
                 64L, 0L, false, false);
         builder.index("schema", "customer", "customer_pk", true, "PRIMARY KEY");
-        builder
-                .indexColumn("schema", "customer", "customer_pk", "cid", 0,
-                        true);
+        builder.indexColumn("schema", "customer", "customer_pk", "cid", 0, true, null);
         builder.userTable("schema", "order");
         builder
                 .column("schema", "order", "oid", 0, "int", 0L, 0L, false,
@@ -150,14 +144,14 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "order", "order_date", 2, "int", 0L, 0L,
                 false, false);
         builder.index("schema", "order", "order_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "order", "order_pk", "oid", 0, true);
+        builder.indexColumn("schema", "order", "order_pk", "oid", 0, true, null);
         builder.userTable("schema", "item");
         builder.column("schema", "item", "iid", 0, "int", 0L, 0L, false, false);
         builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false);
         builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false,
                 false);
         builder.index("schema", "item", "item_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "item", "item_pk", "iid", 0, true);
+        builder.indexColumn("schema", "item", "item_pk", "iid", 0, true, null);
         builder.userTable("schema", "address");
         builder.column("schema", "address", "aid", 0, "int", 0L, 0L, false,
                 false);
@@ -168,7 +162,7 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "address", "line2", 3, "varchar", 100L, 0L,
                 false, false);
         builder.index("schema", "address", "address_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "address", "address_pk", "aid", 0, true);
+        builder.indexColumn("schema", "address", "address_pk", "aid", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "cid", "schema",
                 "order", "cid");
@@ -204,9 +198,7 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "customer", "customer_name", 1, "varchar",
                 64L, 0L, false, false);
         builder.index("schema", "customer", "customer_pk", true, "PRIMARY KEY");
-        builder
-                .indexColumn("schema", "customer", "customer_pk", "cid", 0,
-                        true);
+        builder.indexColumn("schema", "customer", "customer_pk", "cid", 0, true, null);
         builder.userTable("schema", "order");
         builder
                 .column("schema", "order", "oid", 0, "int", 0L, 0L, false,
@@ -217,20 +209,20 @@ public class BulkLoaderTest extends TestCase {
         builder.column("schema", "order", "order_date", 2, "int", 0L, 0L,
                 false, false);
         builder.index("schema", "order", "order_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "order", "order_pk", "oid", 0, true);
+        builder.indexColumn("schema", "order", "order_pk", "oid", 0, true, null);
         builder.userTable("schema", "item");
         builder.column("schema", "item", "iid", 0, "int", 0L, 0L, false, false);
         builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false);
         builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false,
                 false);
         builder.index("schema", "item", "item_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "item", "item_pk", "iid", 0, true);
+        builder.indexColumn("schema", "item", "item_pk", "iid", 0, true, null);
         builder.userTable("schema", "x");
         builder.column("schema", "x", "xid", 0, "int", 0L, 0L, false, false);
         builder.column("schema", "x", "iid", 1, "int", 0L, 0L, false, false);
         builder.column("schema", "x", "foobar", 2, "int", 0L, 0L, false, false);
         builder.index("schema", "x", "x_pk", true, "PRIMARY KEY");
-        builder.indexColumn("schema", "x", "x_pk", "xid", 0, true);
+        builder.indexColumn("schema", "x", "x_pk", "xid", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "cid", "schema",
                 "order", "cid");
