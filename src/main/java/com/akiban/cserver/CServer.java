@@ -21,6 +21,7 @@ import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Source;
+import com.akiban.cserver.manage.MXBeanManager;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.store.PersistitStore;
@@ -56,7 +57,7 @@ public class CServer {
      * Config property name and default for the port on which the CServer will
      * listen for requests.
      */
-    private static final String P_CSERVER_PORT = "cserver.port|5140";
+	public static final String P_CSERVER_PORT = "cserver.port|5140";
 
     /**
      * Config property name and default for setting of the verbose flag. When
@@ -95,6 +96,7 @@ public class CServer {
 
     public void start() throws Exception {
         Tap.registerMXBean();
+        MXBeanManager.registerMXBean(config);
         MessageRegistry.initialize();
         MessageRegistry.only().registerModule("com.akiban.cserver");
         MessageRegistry.only().registerModule("com.akiban.ais");
