@@ -95,7 +95,7 @@ public class CServerAisSource extends Source {
                 }
                 case LONG: {
                     assert fieldDef.isFixedSize();
-                    final long v = (int) rowData.getIntegerValue(
+                    final long v = rowData.getIntegerValue(
                             (int) location, (int) (location >>> 32));
                     values.put(attrName, Long.valueOf(v));
                     break;
