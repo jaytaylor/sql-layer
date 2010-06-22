@@ -138,8 +138,8 @@ public class VCollector implements RowCollector {
         for (int j = offset, k = 0; j < distance; j++, k++) {
             if (projection.get(j)) {
                 if (candidate == null) {
-                    System.out.println("looking up HKey for descriptor = "
-                            + utable.getTableName());
+//                    System.out.println("looking up HKey for descriptor = "
+//                            + utable.getTableName());
                     IColumnDescriptor kdes = meta.getHKey(utable.getRowDefId());
                     assert kdes != null;
                     candidate = new TableDescriptor(kdes, utable
@@ -252,17 +252,17 @@ public class VCollector implements RowCollector {
                         + (rowDef.getFieldCount() % 8 == 0 ? rowDef
                                 .getFieldCount() / 8
                                 : rowDef.getFieldCount() / 8 + 1);
-
-                if (nextRowSize > (payload.limit() - payload.position())) {
+                //System.out.println("nextRowSize = "+nextRowSize + " remaining = "+ (payload.limit() - payload.position()));
+                if (nextRowSize >= (payload.limit() - payload.position())) {
                     break;
                 }
 
-                // System.out.println("VCollector: table = "
-                // +
-                // userTables.get(keyMap.get(nextKey).getTableId()).getTableName()
-                // + ", key = " + pkey
-                // + ", chunkDepth = " + chunkDepth + ", nextRowSize = "
-                // + nextRowSize + " fields =" + fields.size());
+                 //System.out.println("VCollector: table = "
+                 //+
+                 //userTables.get(keyMap.get(nextKey).getTableId()).getTableName()
+                 //+ ", key = " + nextKey
+                 //+ ", chunkDepth = " + chunkDepth + ", nextRowSize = "
+                 //+ nextRowSize + " fields =" + fields.size()+" totalRows = "+totalRows+", rowIndex = "+rowIndex);
                 int offset = 0;
                 if (table.isGroupTable()) {
                     offset = userTables.get(keyMap.get(nextKey).getTableId())
