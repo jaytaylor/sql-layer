@@ -205,7 +205,7 @@ public class VCollector implements RowCollector {
         }
 
         int chunkDepth = payload.position();
-        // System.out.println("chunk depth = " + chunkDepth);
+        System.out.println("chunk depth = " + chunkDepth);
         RowData row = new RowData();
         boolean scannedARow = false;
 
@@ -252,8 +252,7 @@ public class VCollector implements RowCollector {
                         + (rowDef.getFieldCount() % 8 == 0 ? rowDef
                                 .getFieldCount() / 8
                                 : rowDef.getFieldCount() / 8 + 1);
-                //System.out.println("nextRowSize = "+nextRowSize + " remaining = "+ (payload.limit() - payload.position()));
-                if (nextRowSize >= (payload.limit() - payload.position())) {
+                if (nextRowSize > (payload.limit() - payload.position())) {
                     break;
                 }
 
@@ -290,7 +289,9 @@ public class VCollector implements RowCollector {
         }
 
         if (rowIndex == totalRows && deltaMonitor != null) {
-            hasMore = false;
+
+            
+
             while (insertCursor.get() != null) {
                 Delta d = insertCursor.get();
                 assert d != null;
@@ -322,12 +323,15 @@ public class VCollector implements RowCollector {
                 // System.out.println();
                 // System.out.println("VCollector decoded row = " +
                 // row.toString(cache));
-
             }
-            // XXX - this is horrendous. We have a potential dead lock here.
-            // If the rowCollector is not called until it is done
-            // the delta will not be unlocked.
-            deltaMonitor.releaseReadLock();
+            
+            if(insertCursor.get() == null) {
+                hasMore = false;
+                // XXX - this is horrendous. We have a potential dead lock here.
+                // If the rowCollector is not called until it is done
+                // the delta will not be unlocked.
+                deltaMonitor.releaseReadLock();
+            }            
         } else if (rowIndex == totalRows) {
             hasMore = false;
         }

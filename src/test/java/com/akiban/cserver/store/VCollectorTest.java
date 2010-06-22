@@ -145,6 +145,124 @@ public class VCollectorTest {
 
     }
 
+
+    @Test
+    public void testMultipleChunks() throws Exception {
+
+        try {
+            setupDatabase();
+
+            List<RowDef> rowDefs = rowDefCache.getRowDefs();
+            Iterator<RowDef> i = rowDefs.iterator();
+            while (i.hasNext()) {
+
+                RowDef rowDef = i.next();
+                if (!rowDef.isGroupTable()) {
+                    continue;
+                }
+
+                VStoreTestStub testStub = new VStoreTestStub();
+                testStub.threshold = 1048576;
+
+                // if (rowDef.getRowDefId() == 1003) {
+                GroupGenerator dbGen = new GroupGenerator(
+                        VCOLLECTOR_TEST_DATADIR, ais, rowDefCache, testStub,
+                        false, true);
+                dbGen.generateGroup(rowDef, 2);
+                ArrayList<RowData> rowData = dbGen.getRows();
+                // DeltaMonitor dm = new DeltaMonitor();
+                // System.out.println("###############################################");
+                // dbGen.getDeltas().dumpInserts(rowDefCache);
+                // if(true)
+                // return;
+                VCollector vc = new VCollector(dbGen.getMeta(), dbGen
+                        .getDeltas(), rowDefCache, rowDef.getRowDefId(), dbGen
+                        .getGroupBitMap());
+                System.out.println("GroupSize = "+ dbGen.getGroupSize());
+                ByteBuffer buffer = ByteBuffer.allocate(dbGen.getGroupSize()/2);
+                Iterator<RowData> j = rowData.iterator();
+                
+                for(int ka = 0 ; ka < 2; ka++) {
+                /*
+                 * System.out.println(">>>>>>>> tableId: "+testRowDef.getTableName
+                 * () +", "+ testRowDef.getRowDefId() +", " +
+                 * testRowDef.getParentRowDefId());
+                 */
+
+                // System.out.println("----> debugToString: "+testRowDef.debugToString());
+                // System.out.println("----> parentJoin fields: "+testRowDef.getParentJoinFields());
+                // System.out.println("----> rowType: "+testRowDef.getRowType());
+                // System.out.println("----> isGroup: "+testRowDef.isGroupTable());
+                // System.out.println("----> getUserTableRowDefs: "+testRowDef.getUserTableRowDefs());
+                // System.out.println("----> groupRowDef: "+testRowDef.getGroupRowDefId());
+                // System.out.println(buffer.position());
+                // if(true)
+                // return;
+                boolean copied = vc.collectNextRow(buffer);
+                assertTrue(copied); 
+                
+                if(ka == 0) {
+                    assertTrue(vc.hasMore());
+                } else {
+                    assertFalse(vc.hasMore());
+                }
+                System.out.println("After collection position = "+buffer.position()+" limit = "+buffer.limit());
+                buffer.position(0);
+                System.out.println("After first flip position = "+buffer.position()+" limit = "+buffer.limit());
+                int rowCount = 0;
+
+                int rows = 0;
+                while(rows < rowData.size()/2) {
+                    rows++;
+                    assertTrue(j.hasNext());
+                    RowData row = j.next();
+                    byte[] expected = row.getBytes();
+                    byte[] actual = new byte[expected.length];
+                    buffer.get(actual);
+                    
+                      System.out.println(" count = "+rowCount++); 
+                      int k =0;
+                      while(k < expected.length) {
+                      System.out.print(Integer.toHexString(expected[k])+" ");
+                      k++; } k = 0; System.out.println(); while (k <
+                      actual.length) {
+                      System.out.print(Integer.toHexString(actual[k])+" ");
+                      k++; } System.out.println();
+                     
+                    assertArrayEquals(expected, actual);
+                }
+                buffer.position(0);
+                System.out.println("After second flip position = "+buffer.position()+" limit = "+buffer.limit());
+                //break;
+             }
+                
+
+            }
+            // }
+
+        } catch (Exception e) {
+            System.out.println("ERROR because " + e.getMessage());
+            e.printStackTrace();
+            fail("vcollector build failed");
+        }
+        /*
+         * System.out.println("----------------------------------------------");
+         * byte b = 0; b |= ((1 << 0));
+         * System.out.println("b = "+Integer.toHexString(b)); b |= ((1 << 1));
+         * System.out.println("b = "+Integer.toHexString(b)); b |= ((1 << 2) &
+         * 0xff); System.out.println("b = "+Integer.toHexString(b)); b |= ((1 <<
+         * 3) & 0xff); System.out.println("b = "+Integer.toHexString(b)); b |=
+         * ((1 << 4) & 0xff); System.out.println("b = "+Integer.toHexString(b));
+         * b |= ((1 << 5) & 0xff);
+         * System.out.println("b = "+Integer.toHexString(b)); b |= ((1 << 6) &
+         * 0xff); System.out.println("b = "+Integer.toHexString(b)); b |= ((1 <<
+         * 7) & 0xff); System.out.println("b = "+Integer.toHexString(b));
+         */
+
+    }
+
+    
+    
     @Test
     public void testCollectNextRow() throws Exception {
         /*
@@ -236,6 +354,7 @@ public class VCollectorTest {
                     VCollector vc = new VCollector(dbGen.getMeta(), null,
                             rowDefCache, rowDef.getRowDefId(), dbGen
                                     .getGroupBitMap());
+                    System.out.println("size = "+ dbGen.getGroupSize());
                     ByteBuffer buffer = ByteBuffer.allocate(dbGen
                             .getGroupSize());
 
