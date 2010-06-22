@@ -215,7 +215,7 @@ public class RowDefCache implements CServerConstants {
             }
 
             final String treeName = groupTableName + "$$" + index.getIndexId();
-            final IndexDef indexDef = new IndexDef(index.getIndexNameObject()
+            final IndexDef indexDef = new IndexDef(index.getIndexName()
                     .getName(), rowDef, treeName, index.getIndexId(),
                     indexFields, index.isPrimaryKey(), index.isUnique());
             if (index.isPrimaryKey()) {
@@ -304,7 +304,7 @@ public class RowDefCache implements CServerConstants {
             }
 
             final String treeName = groupTableName + "$$" + index.getIndexId();
-            final IndexDef indexDef = new IndexDef(index.getIndexNameObject()
+            final IndexDef indexDef = new IndexDef(index.getIndexName()
                     .getName(), rowDef, treeName, index.getIndexId(),
                     indexFields, false, index.isUnique());
             indexDefList.add(indexDef);

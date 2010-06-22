@@ -15,7 +15,7 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions {
         TableTasks tableTasks = tableTasks(tasks, table);
         if (tableTasks.generateParent() != null) {
             // Shouldn't discover the need for this task twice
-            throw new BulkLoader.InternalError(table.getDescription());
+            throw new BulkLoader.InternalError(table.toString());
         }
         GenerateFinalBySortTask task = new GenerateFinalBySortTask(loader,
                 table);
