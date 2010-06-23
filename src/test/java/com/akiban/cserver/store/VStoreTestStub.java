@@ -4,7 +4,6 @@
 package com.akiban.cserver.store;
 
 import com.akiban.cserver.decider.DecisionEngine;
-import com.akiban.vstore.VMeta;
 
 /**
  * @author percent

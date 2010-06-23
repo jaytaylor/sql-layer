@@ -33,7 +33,6 @@ import com.akiban.cserver.decider.Decider;
 import com.akiban.cserver.decider.DecisionEngine;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.util.Tap;
-import com.akiban.vstore.VMeta;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyState;
@@ -714,7 +713,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             // bulk load an existing database, hence the assert below.
             assert vmeta == null;
             if (vBulkLoader == null) {
-                vBulkLoader = new VBulkLoader(this, datapath);
+                String path = config.property(P_DATAPATH, datapath);
+                vBulkLoader = new VBulkLoader(this, path);
             }
             vBulkLoader.writeRowForBulkLoad(hEx, rowDef, rowData, ordinals,
                     fieldDefs, hKeyValues);

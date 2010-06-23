@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.BitSet;
 import java.util.List;
 
-import com.akiban.vstore.FieldArray;
+import com.akiban.cserver.store.FieldArray;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -333,9 +333,12 @@ public class RowData {
         // variable iterates over the columns and the position variable
         // iterates over the field array list -- James
         for (int groupOffset = nullMapOffset, field = 0, position = 0; field < fieldCount; groupOffset++, field++) {
-            // System.out.println("table "+rowDef.getTableName()+"field count = "
-            // +fieldCount+" position = "+position);
+
             if (!nullMap.get(groupOffset)) {
+                
+                //System.out.println("table "+rowDef.getTableName()+"field count = "
+                //        +fieldCount+" position = "+position+" offset = "+offset);
+                
                 assert rowDef.getFieldDef(field).isFixedSize() == true;
                 int fieldSize = fields.get(position).getNextFieldSize();
                 fields.get(position).copyNextField(bytes, offset);

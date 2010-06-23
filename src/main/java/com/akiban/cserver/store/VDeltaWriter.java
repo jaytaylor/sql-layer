@@ -15,9 +15,6 @@ import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.store.DeltaMonitor.DeltaCursor;
-import com.akiban.vstore.IColumnDescriptor;
-import com.akiban.vstore.IFormat;
-import com.akiban.vstore.VMeta;
 import com.persistit.KeyState;
 
 /**

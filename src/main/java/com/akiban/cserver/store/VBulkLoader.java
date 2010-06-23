@@ -13,9 +13,6 @@ import java.util.TreeMap;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.vstore.IColumnDescriptor;
-import com.akiban.vstore.IFormat;
-import com.akiban.vstore.VMeta;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyState;
@@ -160,12 +157,9 @@ public class VBulkLoader {
                 VWriterInfo info = new VWriterInfo(columnName, tableName,
                         schemaName, rowDef.getRowDefId(), i);
                 columnInfo.put(columnFileName, info);
-            }
-
-            VWriterInfo info = columnInfo.get(columnName); /*
-                                                            * @todo: temporary
-                                                            * only
-                                                            */
+            } 
+            
+            VWriterInfo info = columnInfo.get(columnFileName); /* @todo: temporary only */
             /* insert the data */
             final long locationAndSize = rowDef.fieldLocation(rowData, i);
             if (0 == locationAndSize) {

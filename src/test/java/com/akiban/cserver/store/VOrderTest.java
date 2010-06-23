@@ -12,8 +12,6 @@ import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.vstore.HKeyColumnArrayGenerator;
-import com.akiban.vstore.VariableLengthArray;
 import com.persistit.Key;
 import com.persistit.KeyState;
 

@@ -20,10 +20,6 @@ import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.vstore.ColumnArrayGenerator;
-import com.akiban.vstore.HKeyColumnArrayGenerator;
-import com.akiban.vstore.IColumnDescriptor;
-import com.akiban.vstore.VMeta;
 import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
@@ -54,6 +50,7 @@ public class GroupGenerator {
         projections = new TreeMap<Integer, BitSet>();
         bitMaps = new TreeMap<Integer, byte[]>();
         deltas = new DeltaMonitor(vstore);
+        groupSize = 0;
     }
 
     public void generateGroup(RowDef groupRowDef) throws Exception {
