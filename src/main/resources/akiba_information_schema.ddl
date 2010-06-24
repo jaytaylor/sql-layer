@@ -23,6 +23,7 @@ create table tables(
     table_type        varchar(8),
     table_id          smallint,
     group_name        varchar(64),
+    source_types      int,
     primary key(schema_name, table_name),
     foreign key(group_name) references groups
 ) engine = akibadb;
@@ -55,6 +56,8 @@ create table joins(
     child_table_name        varchar(64),
     group_name              varchar(64),
     join_weight             int,
+    grouping_usage          int,
+    source_types            int,
     primary key(join_name)
 ) engine = akibadb;
 
