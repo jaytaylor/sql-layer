@@ -42,6 +42,8 @@ create table columns (
     group_column_name   varchar(64),
     maximum_size		bigint,
     prefix_size			int,
+    character_set             varchar(32),
+    collation           varchar(32),
     primary key(schema_name, table_name, column_name)
 ) engine = akibadb;
 
