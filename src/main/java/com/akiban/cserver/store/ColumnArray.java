@@ -1,4 +1,4 @@
-package com.akiban.vstore;
+package com.akiban.cserver.store;
 
 import java.nio.*;
 import java.nio.channels.*;

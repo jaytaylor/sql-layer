@@ -6,7 +6,10 @@
 package com.akiban.cserver;
 
 import java.io.DataInputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -24,6 +27,7 @@ import com.akiban.ais.model.Source;
 import com.akiban.cserver.manage.MXBeanManager;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
+import com.akiban.cserver.message.ToStringWithRowDefCache;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.AkibaConnection;
@@ -57,17 +61,19 @@ public class CServer {
      * Config property name and default for the port on which the CServer will
      * listen for requests.
      */
-	public static final String P_CSERVER_PORT = "cserver.port|5140";
+    public static final String P_CSERVER_PORT = "cserver.port|5140";
 
     /**
      * Config property name and default for setting of the verbose flag. When
      * true, many CServer methods log verbosely at INFO level.
      */
 
-    private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
+    private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose|false";
 
     private static Tap CSERVER_EXEC = Tap.add(new Tap.PerThread("cserver",
             Tap.TimeStampLog.class));
+
+    private static int DEFAULT_MAX_CAPTURE_COUNT = 10;
 
     private final RowDefCache rowDefCache;
     private final CServerConfig config;
@@ -75,8 +81,11 @@ public class CServer {
     private AkibaInformationSchema ais0;
     private AkibaInformationSchema ais;
     private volatile boolean stopped;
-    private boolean verbose;
     private Map<Integer, Thread> threadMap;
+
+    private volatile int maxCaptureCount = DEFAULT_MAX_CAPTURE_COUNT;
+    private volatile boolean enableMessageCapture;
+    private List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
 
     public CServer(boolean loadConfig) throws Exception {
         rowDefCache = new RowDefCache();
@@ -96,7 +105,7 @@ public class CServer {
 
     public void start() throws Exception {
         Tap.registerMXBean();
-        MXBeanManager.registerMXBean(config);
+        MXBeanManager.registerMXBean(this, config);
         MessageRegistry.initialize();
         MessageRegistry.only().registerModule("com.akiban.cserver");
         MessageRegistry.only().registerModule("com.akiban.ais");
@@ -104,11 +113,8 @@ public class CServer {
         ChannelNotifier callback = new ChannelNotifier();
         NetworkHandlerFactory.initializeNetwork(property(P_CSERVER_HOST),
                 property(P_CSERVER_PORT), (CommEventNotifier) callback);
-        final String verboseString = config.property(VERBOSE_PROPERTY_NAME
-                + "|false");
-        if ("true".equalsIgnoreCase(verboseString)) {
-            verbose = true;
-        }
+        final boolean verbose = "true"
+                .equalsIgnoreCase(property(VERBOSE_PROPERTY_NAME));
         ais0 = primordialAIS();
         rowDefCache.setAIS(ais0);
 
@@ -223,8 +229,6 @@ public class CServer {
 
         private final ExecutionContext context = new CServerContext();
 
-        private int requestCounter;
-
         public CServerRunnable(final AkibaConnection connection) {
             this.connection = connection;
         }
@@ -232,6 +236,9 @@ public class CServer {
         public void run() {
 
             Message message = null;
+            long startTime = 0;
+            long endTime = 0;
+            long gapTime = 0;
             while (!stopped) {
                 try {
                     message = connection.receive();
@@ -239,9 +246,35 @@ public class CServer {
                         LOG.trace("Serving message " + message);
                     }
                     CSERVER_EXEC.in();
+
+                    if (enableMessageCapture) {
+                        startTime = System.nanoTime();
+                        gapTime = startTime - endTime;
+                    }
+
+                    CapturedMessage capturedMessage = null;
+
+                    if (enableMessageCapture) {
+                        synchronized (capturedMessageList) {
+                            if (capturedMessageList.isEmpty()) {
+                                gapTime = 0;
+                            }
+                            if (capturedMessageList.size() < maxCaptureCount) {
+                                capturedMessage = new CapturedMessage(message);
+                                capturedMessageList.add(capturedMessage);
+                            }
+                        }
+                    }
+
                     message.execute(connection, context);
+
+                    if (capturedMessage != null) {
+                        endTime = System.nanoTime();
+                        capturedMessage.finish(endTime - startTime, gapTime);
+                    }
+
                     CSERVER_EXEC.out();
-                    requestCounter++;
+
                 } catch (InterruptedException e) {
                     if (LOG.isInfoEnabled()) {
                         LOG.info("Thread " + Thread.currentThread().getName()
@@ -381,5 +414,85 @@ public class CServer {
      */
     public void setProperty(final String key, final String value) {
         config.setProperty(key, value);
+    }
+
+    public static class CapturedMessage {
+        final long eventTime;
+        long gap;
+        long elapsed;
+        final Message message;
+        final String threadName;
+
+        private CapturedMessage(final Message message) {
+            this.eventTime = System.currentTimeMillis();
+            this.message = message;
+            this.threadName = Thread.currentThread().getName();
+        }
+
+        private void finish(final long elapsed, final long gap) {
+            this.elapsed = elapsed;
+            this.gap = gap;
+        }
+
+        public long getEventTime() {
+            return eventTime;
+        }
+
+        public long getElapsedTime() {
+            return elapsed;
+        }
+
+        public Message getMessage() {
+            return message;
+        }
+
+        public String getThreadName() {
+            return threadName;
+        }
+
+        private final static SimpleDateFormat SDF = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss.SSS");
+        private final static String TO_STRING_FORMAT = "%12s  %s  elapsed=%,12dus  gap=%,12dus  %s";
+
+        @Override
+        public String toString() {
+            return toString(null);
+        }
+
+        public String toString(final RowDefCache rowDefCache) {
+            return String
+                    .format(
+                            TO_STRING_FORMAT,
+                            threadName,
+                            SDF.format(new Date(eventTime)),
+                            elapsed,
+                            gap,
+                            message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
+                                    .toString(rowDefCache)
+                                    : message.toString());
+        }
+    }
+
+    public void setMessageCaptureEnabled(final boolean enabled) {
+        enableMessageCapture = enabled;
+        if (enabled) {
+            clearCapturedMessages();
+        }
+    }
+
+    public void setMaxCapturedMessageCound(final int max) {
+        maxCaptureCount = max;
+    }
+
+    public void clearCapturedMessages() {
+        synchronized (capturedMessageList) {
+            capturedMessageList.clear();
+        }
+    }
+
+    public List<CapturedMessage> getCapturedMessageList() {
+        synchronized (capturedMessageList) {
+            return new ArrayList<CapturedMessage>(capturedMessageList);
+        }
     }
 }

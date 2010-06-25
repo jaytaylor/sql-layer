@@ -189,9 +189,25 @@ public class PersistitStoreRowCollector implements RowCollector,
                 break;
             }
         }
+        //
         // Handles special case of SELECT COUNT(*)
+        // In the special-special case that this is a one-table group,
+        // project onto that table.  Otherwise, if this is a group table,
+        // we can't infer what the projection should be so we throw
+        // an IllegalStateException.
+        //
         if (isEmpty) {
-            return new RowDef[] { rowDef };
+
+            if (rowDef.isGroupTable()) {
+                if (rowDef.getUserTableRowDefs().length == 1) {
+                    return rowDef.getUserTableRowDefs();
+                } else {
+                    throw new IllegalStateException(
+                            "Attempt to SELECT COUNT(*) on a group table");
+                }
+            } else {
+                return new RowDef[] { rowDef };
+            }
         }
 
         List<RowDef> projectedRowDefList = new ArrayList<RowDef>();

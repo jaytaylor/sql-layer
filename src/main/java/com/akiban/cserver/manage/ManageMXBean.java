@@ -11,4 +11,19 @@ public interface ManageMXBean
     int getNetworkPort();
     
     int getJmxPort();
+    
+    void enableVerboseLogging();
+    
+    void disableVerboseLogging();
+    
+    void startMessageCapture();
+    
+    void stopMessageCapture();
+    
+    void displayCapturedMessages();
+    
+    void clearCapturedMessages();
+    
+    void setMaxCapturedMessageCount(final int count);
+    
 }

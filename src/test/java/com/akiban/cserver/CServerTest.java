@@ -4,6 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectInstance;
+import javax.management.ObjectName;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -14,6 +21,7 @@ import org.junit.Test;
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Types;
+import com.akiban.cserver.manage.ManageMXBean;
 import com.akiban.cserver.message.GetAutoIncrementValueRequest;
 import com.akiban.cserver.message.GetAutoIncrementValueResponse;
 import com.akiban.cserver.message.GetTableStatisticsRequest;
@@ -46,6 +54,9 @@ public class CServerTest implements CServerConstants {
     private static AkibaConnection connection;
 
     private static CServer cserver;
+    
+    private static ObjectName mxbeanName;
+
 
     @BeforeClass
     public static void setUpSuite() throws Exception {
@@ -64,6 +75,7 @@ public class CServerTest implements CServerConstants {
         networkHandler = NetworkHandlerFactory.getHandler("localhost", "5140",
                 null);
         connection = AkibaConnectionImpl.createConnection(networkHandler);
+        mxbeanName = new ObjectName(ManageMXBean.MANAGE_BEAN_NAME);
     }
 
     @AfterClass
@@ -84,6 +96,7 @@ public class CServerTest implements CServerConstants {
     public void tearDown() throws Exception {
     }
 
+
     // Currently it seems we can't run two tests in one class
     // with our NetworkHandler, so this one is removed.
     //
@@ -100,6 +113,8 @@ public class CServerTest implements CServerConstants {
         Message request;
         Message response;
 
+        startMessageCapture();
+        
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
         response = connection.sendAndReceive(request);
         assertEquals(-1, ((GetAutoIncrementValueResponse) response).getValue());
@@ -112,6 +127,8 @@ public class CServerTest implements CServerConstants {
         response = connection.sendAndReceive(request);
         assertEquals(1, ((GetAutoIncrementValueResponse) response).getValue());
 
+        displayCapturedMessages();
+        stopMessageCapture();
     }
 
     @Test
@@ -158,4 +175,17 @@ public class CServerTest implements CServerConstants {
         return request;
     }
 
+    private void startMessageCapture() throws Exception {
+        ManagementFactory.getPlatformMBeanServer().invoke(mxbeanName, "startMessageCapture", new Object[0], new String[0]);
+    }
+
+    private void stopMessageCapture() throws Exception {
+        ManagementFactory.getPlatformMBeanServer().invoke(mxbeanName, "stopMessageCapture", new Object[0], new String[0]);
+    }
+    
+    private void displayCapturedMessages() throws Exception {
+        ManagementFactory.getPlatformMBeanServer().invoke(mxbeanName, "displayCapturedMessages", new Object[0], new String[0]);
+    }
+    
+    
 }

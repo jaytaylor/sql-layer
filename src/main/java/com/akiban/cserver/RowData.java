@@ -239,6 +239,16 @@ public class RowData {
             return (getColumnMapByte(fieldIndex / 8) & (1 << (fieldIndex % 8))) != 0;
         }
     }
+    
+    public boolean isAllNull() {
+        final int fieldCount = getFieldCount();
+        for (int fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++) {
+            if (!isNull(fieldIndex)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     public long getIntegerValue(final int offset, final int width) {
         if (offset < rowStart || offset + width >= rowEnd) {
