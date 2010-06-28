@@ -15,6 +15,7 @@ import com.akiban.cserver.TableStatistics.Histogram;
 import com.akiban.cserver.TableStatistics.HistogramSample;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.KeyFilter;
 import com.persistit.KeyHistogram;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
@@ -87,6 +88,7 @@ public class PersistitStoreIndexManager {
         final Key startKey;
         final Key endKey;
         final int keyDepth;
+        KeyFilter keyFilter = null;
         
         if (indexDef.isHKeyEquivalent()) {
             probeEx = store.getExchange(indexDef.getRowDef(), null);
@@ -94,11 +96,18 @@ public class PersistitStoreIndexManager {
             endKey = new Key(store.getDb());
             final IndexDef.I2H[] i2hFields = indexDef.getHkeyFields();
             assert i2hFields[0].isOrdinalType();
+            final KeyFilter.Term[] terms = new KeyFilter.Term[i2hFields.length];
             startKey.append(i2hFields[0].getOrdinal());
             endKey.append(i2hFields[0].getOrdinal());
+            terms[0] = KeyFilter.simpleTerm(i2hFields[0].getOrdinal());
             startKey.append(Key.BEFORE);
             endKey.append(Key.AFTER);
             keyDepth = i2hFields.length;
+            for (int depth = 1; depth < i2hFields.length; depth++) {
+                terms[depth] = KeyFilter.ALL;
+            }
+            keyFilter = new KeyFilter(terms, terms.length, terms.length);
+            
         } else {
             probeEx = store.getExchange(indexDef.getRowDef(), indexDef);
             startKey = Key.LEFT_GUARD_KEY;
@@ -112,7 +121,7 @@ public class PersistitStoreIndexManager {
                 - STARTING_TREE_DEPTH);
         while (treeLevel >= 0) {
             keyHistogram = probeEx.computeHistogram(startKey,
-                    endKey, sampleSize, keyDepth, treeLevel);
+                    endKey, sampleSize, keyDepth, keyFilter, treeLevel);
             if (keyHistogram.getKeyCount() > sampleSize
                     * SAMPLE_SIZE_MULTIPLIER) {
                 break;
@@ -133,8 +142,7 @@ public class PersistitStoreIndexManager {
         final Transaction transaction = analysisEx.getTransaction();
         final Date now = new Date();
         final KeyHistogram keyHistogram0 = keyHistogram;
-        final int multiplier = keyHistogram.getTreeDepth() == 1 ? INDEX_LEVEL_MULTIPLIER
-                : 1;
+        final int multiplier = (int)(Math.pow(INDEX_LEVEL_MULTIPLIER, keyHistogram.getTreeDepth()));
         final Key key = new Key((Persistit) null);
         final RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
         final RowData indexRowData = new RowData(new byte[ROW_DATA_LENGTH]);

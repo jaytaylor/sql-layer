@@ -248,7 +248,7 @@ public class CServer {
                     CSERVER_EXEC.in();
 
                     if (enableMessageCapture) {
-                        startTime = System.nanoTime();
+                        startTime = System.nanoTime() / 1000;
                         gapTime = startTime - endTime;
                     }
 
@@ -266,10 +266,17 @@ public class CServer {
                         }
                     }
 
+                    if (hstore.isVerbose() && LOG.isInfoEnabled()) {
+                        LOG.info("Executing "
+                                        + (message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
+                                                .toString(rowDefCache)
+                                                : message.toString()));
+                    }
+
                     message.execute(connection, context);
 
                     if (capturedMessage != null) {
-                        endTime = System.nanoTime();
+                        endTime = System.nanoTime() / 1000;
                         capturedMessage.finish(endTime - startTime, gapTime);
                     }
 

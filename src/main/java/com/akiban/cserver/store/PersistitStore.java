@@ -595,9 +595,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     @Override
     public int writeRow(final RowData rowData) {
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Insert row: " + rowData.toString(rowDefCache));
-        }
         WRITE_ROW_TAP.in();
         final int rowDefId = rowData.getRowDefId();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
@@ -704,7 +701,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             final FieldDef[][] fieldDefs, final Object[][] hKeyValues)
             throws Exception {
         if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Insert row: " + rowData.toString(rowDefCache));
+            LOG.info("BulkLoad writeRow: " + rowData.toString(rowDefCache));
         }
 
         try {
@@ -776,9 +773,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     @Override
     public int deleteRow(final RowData rowData) throws Exception {
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Delete row: " + rowData.toString(rowDefCache));
-        }
         final int rowDefId = rowData.getRowDefId();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Transaction transaction = null;
@@ -884,10 +878,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     @Override
     public int updateRow(final RowData oldRowData, final RowData newRowData) {
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Update old: " + oldRowData.toString(rowDefCache));
-            LOG.info("       new: " + newRowData.toString(rowDefCache));
-        }
         final int rowDefId = oldRowData.getRowDefId();
         if (newRowData.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException(
@@ -1018,9 +1008,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     @Override
     public int truncateTable(final int rowDefId) throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Truncate table: " + rowDef + " and it's group!");
-        }
         Transaction transaction = null;
 
         RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
@@ -1099,9 +1086,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     @Override
     public int dropTable(final int rowDefId) throws Exception {
         RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Drop table: " + rowDef.toString());
-        }
         try {
             final Transaction transaction = db.getTransaction();
             int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -1183,9 +1167,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     @Override
     public int dropSchema(final String schemaName) throws Exception {
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Drop schema: " + schemaName);
-        }
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
             if (rowDef.getSchemaName().equals(schemaName)) {
                 dropTable(rowDef.getRowDefId());
@@ -1197,9 +1178,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     @Override
     public long getAutoIncrementValue(final int rowDefId) throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Get auto-inc value for table: " + rowDef.toString());
-        }
         final Exchange exchange;
         final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
                 .getRowDef(rowDef.getGroupRowDefId());
@@ -1299,22 +1277,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
                     scanFlags);
 
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG
-                        .info("Select from table: "
-                                + rowDef.toString()
-                                + " (indexID: "
-                                + indexId
-                                + ")"
-                                + " scanFlags="
-                                + scanFlags
-                                + " columnBitMap="
-                                + CServerUtil.hex(columnBitMap, 0,
-                                        columnBitMap.length));
-                LOG.info("  from: " + start.toString(rowDefCache));
-                LOG.info("    to: " + end.toString(rowDefCache));
-            }
-
             Decider.RowCollectorType et = scanDecider.makeDecision(request,
                     rowDef);
             RowCollector rc = null;
@@ -1355,22 +1317,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             NEW_COLLECTOR_TAP.in();
             final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
                     scanFlags);
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG
-                        .info("Select from table: "
-                                + rowDef.toString()
-                                + " (indexID: "
-                                + indexId
-                                + ")"
-                                + " scanFlags="
-                                + scanFlags
-                                + " columnBitMap="
-                                + CServerUtil.hex(columnBitMap, 0,
-                                        columnBitMap.length));
-                LOG.info("  from: " + start.toString(rowDefCache));
-                LOG.info("    to: " + end.toString(rowDefCache));
-            }
-
             final RowCollector rc = new PersistitStoreRowCollector(this,
                     scanFlags, start, end, columnBitMap, rowDef, indexId);
 
@@ -1426,9 +1372,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     @Override
     public void analyzeTable(final int tableId) throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
-        if (verbose && LOG.isInfoEnabled()) {
-            LOG.info("Analyze table: " + rowDef);
-        }
         indexManager.analyzeTable(rowDef);
     }
 
