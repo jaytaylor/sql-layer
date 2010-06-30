@@ -5,6 +5,7 @@ import java.util.List;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServer.CapturedMessage;
+import com.akiban.cserver.store.PersistitStore;
 
 class ManageMXBeanImpl implements ManageMXBean {
 
@@ -88,5 +89,16 @@ class ManageMXBeanImpl implements ManageMXBean {
     @Override
     public void clearCapturedMessages() {
         cserver.clearCapturedMessages();
+    }
+
+    // TODO - temporary
+    @Override
+    public String copyBackPages() {
+        try {
+            ((PersistitStore) cserver.getStore()).getDb().copyBackPages();
+        } catch (Exception e) {
+            return e.toString();
+        }
+        return "done";
     }
 }

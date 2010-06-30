@@ -120,6 +120,19 @@ public class ScanRowsTest extends AbstractScanBase {
                             | SCAN_FLAGS_START_EXCLUSIVE
                             | SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_DESCENDING,
                     null, null, bitMap, 0));
+            final RowData nullRow = new RowData(new byte[256]);
+            nullRow.createRow(userRowDef, new Object[0]);
+            assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
+                    SCAN_FLAGS_START_AT_EDGE 
+                            | SCAN_FLAGS_START_EXCLUSIVE
+                            | SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_DESCENDING,
+                    null, nullRow, bitMap, 0));
+            assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
+                    SCAN_FLAGS_END_AT_EDGE 
+                            | SCAN_FLAGS_START_EXCLUSIVE
+                            | SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_DESCENDING,
+                    nullRow, null, bitMap, 0));
+            
         }
 
         {

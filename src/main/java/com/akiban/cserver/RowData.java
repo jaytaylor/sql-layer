@@ -466,7 +466,7 @@ public class RowData {
                     final long location = fieldDef.getRowDef().fieldLocation(
                             this, fieldDef.getFieldIndex());
                     if (location == 0) {
-                        sb.append("null");
+                       // sb.append("null");
                     } else {
                         fieldDef.getEncoding().toString(fieldDef, this, sb,
                                 Quote.SINGLE_QUOTE);
