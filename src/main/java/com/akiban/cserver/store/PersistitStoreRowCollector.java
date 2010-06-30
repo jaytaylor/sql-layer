@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,7 +28,11 @@ public class PersistitStoreRowCollector implements RowCollector,
             .getName());
 
     private static final Tap SCAN_NEXT_ROW_TAP = Tap.add("read: next_row");
+    
+    private static final AtomicLong counter = new AtomicLong();
 
+    private long id;
+    
     private final PersistitStore store;
 
     private final byte[] columnBitMap;
@@ -76,6 +81,12 @@ public class PersistitStoreRowCollector implements RowCollector,
 
     private I2R[] coveringFields;
 
+    private long deliveredRows;
+
+    private long deliveredBuffers;
+
+    private long deliveredBytes;
+
     /**
      * Structure that maps the index key field depth to a RowData's field index.
      * Used to supporting covering index.
@@ -108,6 +119,7 @@ public class PersistitStoreRowCollector implements RowCollector,
     PersistitStoreRowCollector(PersistitStore store, final int scanFlags,
             final RowData start, final RowData end, final byte[] columnBitMap,
             RowDef rowDef, final int indexId) throws Exception {
+        this.id = counter.incrementAndGet();
         this.store = store;
         this.columnBitMap = columnBitMap;
         this.scanFlags = scanFlags;
@@ -192,7 +204,7 @@ public class PersistitStoreRowCollector implements RowCollector,
         //
         // Handles special case of SELECT COUNT(*)
         // In the special-special case that this is a one-table group,
-        // project onto that table.  Otherwise, if this is a group table,
+        // project onto that table. Otherwise, if this is a group table,
         // we can't infer what the projection should be so we throw
         // an IllegalStateException.
         //
@@ -325,7 +337,7 @@ public class PersistitStoreRowCollector implements RowCollector,
      * @param fieldIndex
      * @return
      */
-    KeyFilter.Term computeKeyFilterTerm(final Key key, final RowDef rowDef,
+    private KeyFilter.Term computeKeyFilterTerm(final Key key, final RowDef rowDef,
             final RowData start, final RowData end, final int fieldIndex) {
         if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
             return KeyFilter.ALL;
@@ -343,6 +355,7 @@ public class PersistitStoreRowCollector implements RowCollector,
                                 start);
             } else {
                 key.append(Key.BEFORE);
+                key.setEncodedSize(key.getEncodedSize() + 1);
             }
             if (highLoc != 0) {
                 store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), end);
@@ -660,13 +673,16 @@ public class PersistitStoreRowCollector implements RowCollector,
             final int position = payload.position();
             payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
                     .getRowSize());
-            if (store.isVerbose() && LOG.isInfoEnabled()) {
+            if (store.isVerbose() && LOG.isDebugEnabled()) {
                 LOG.info("Select row: "
                         + rowData.toString(store.getRowDefCache()) + " len="
                         + rowData.getRowSize() + " position=" + position);
             }
+            deliveredRows++;
+            deliveredBytes += rowData.getRowSize();
             return true;
         } else {
+            deliveredBuffers++;
             return false;
         }
     }
@@ -710,6 +726,11 @@ public class PersistitStoreRowCollector implements RowCollector,
     public boolean hasMore() {
         if (!more) {
             store.removeCurrentRowCollector(rowDefId);
+            if (store.isVerbose() && LOG.isInfoEnabled()) {
+                LOG.info(String.format("RowCollector %d delivered %,d rows in "
+                        + "%,d buffers / %,d bytes", id, deliveredRows,
+                        deliveredBuffers + 1, deliveredBytes));
+            }
         }
         return more;
     }
@@ -724,5 +745,17 @@ public class PersistitStoreRowCollector implements RowCollector,
             store.releaseExchange(iEx);
             iEx = null;
         }
+    }
+
+    public long getDeliveredRows() {
+        return deliveredRows;
+    }
+
+    public long getDeliveredBuffers() {
+        return deliveredBuffers;
+    }
+    
+    public long getId() {
+        return id;
     }
 }
