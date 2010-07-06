@@ -22,7 +22,7 @@ public class HKeyDescriptor extends IColumnDescriptor {
         if (prefix.equals("")) {
             prefix.equals("./");
         } else {
-            prefix += "/";
+            prefix += "/"; 
         }
 
         this.dataPath = prefix;
@@ -47,7 +47,8 @@ public class HKeyDescriptor extends IColumnDescriptor {
         
         metaFile = new File(this.dataPath + schema + table +"-hkey.meta");
         dataFile = new File(this.dataPath + schema + table +"-hkey.data");
-        assert metaFile.exists() && dataFile.exists();
+        assert metaFile.exists() : metaFile.toString();
+        assert dataFile.exists() : dataFile.toString();
     }
 
     public HKeyDescriptor(String prefix, byte[] meta) {
