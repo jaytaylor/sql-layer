@@ -682,7 +682,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 }
             }
         } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
+            if (/*verbose &&*/ LOG.isInfoEnabled()) {
                 LOG.info("writeRow error " + e.getResult(), e);
             }
             return e.getResult();
@@ -864,7 +864,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 }
             }
         } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
+            if (/*verbose &&*/ LOG.isInfoEnabled()) {
                 LOG.info("deleteRow error " + e.getResult(), e);
             }
             return e.getResult();
@@ -989,7 +989,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 }
             }
         } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
+            if (/*verbose &&*/ LOG.isInfoEnabled()) {
                 LOG.info("updateRow error " + e.getResult(), e);
             }
             return e.getResult();
@@ -1068,12 +1068,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 }
             }
         } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
+            if (/**verbose &&**/ LOG.isInfoEnabled()) {
                 LOG.info("truncateTable error " + e.getResult(), e);
             }
             return e.getResult();
         } catch (Throwable t) {
-            LOG.error("dropTable failed: ", t);
+            LOG.error("trucateTable failed: ", t);
             return ERR;
         }
     }
@@ -1094,10 +1094,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 try {
                     final TableStatus ts = tableManager
                             .getTableStatus(rowDefId);
-                    if (ts.isDeleted()) {
-                        throw new StoreException(HA_ERR_NO_SUCH_TABLE, "Table "
-                                + rowDef.getTableName() + " has been deleted");
-                    }
+//                    if (ts.isDeleted()) {
+//                        throw new StoreException(HA_ERR_NO_SUCH_TABLE, "Table "
+//                                + rowDef.getTableName() + " has been deleted");
+//                    }
                     boolean deleteGroup = true;
                     ts.setDeleted(true);
                     tableManager.saveStatus(ts);
@@ -1154,11 +1154,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     transaction.end();
                 }
             }
-        } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG.info("updateRow error " + e.getResult(), e);
-            }
-            return e.getResult();
+//        } catch (StoreException e) {
+//            if (/*verbose &&*/ LOG.isInfoEnabled()) {
+//                LOG.info("dropTable error " + e.getResult(), e);
+//            }
+//            return e.getResult();
         } catch (Throwable t) {
             LOG.error("dropTable failed: ", t);
             return ERR;

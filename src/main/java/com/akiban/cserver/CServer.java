@@ -80,6 +80,7 @@ public class CServer {
     private final Store hstore;
     private AkibaInformationSchema ais0;
     private AkibaInformationSchema ais;
+    private volatile boolean open;
     private volatile boolean stopped;
     private Map<Integer, Thread> threadMap;
 
@@ -99,7 +100,6 @@ public class CServer {
         }
 
         hstore = new PersistitStore(config, rowDefCache);
-        stopped = false;
         threadMap = new TreeMap<Integer, Thread>();
     }
 
@@ -122,6 +122,7 @@ public class CServer {
         hstore.setVerbose(verbose);
         hstore.setOrdinals();
         acquireAIS();
+        open = true;
     }
 
     public void stop() throws Exception {
@@ -245,6 +246,16 @@ public class CServer {
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("Serving message " + message);
                     }
+                    
+                    while (!open) {
+                        LOG.warn("Waiting for startup complete.");
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ie) {
+                            
+                        }
+                    }
+                    
                     CSERVER_EXEC.in();
 
                     if (enableMessageCapture) {
