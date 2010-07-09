@@ -89,9 +89,11 @@ public class RowDefCache implements CServerConstants {
     }
 
     private FieldDef fieldDef(final Column column) {
-        return new FieldDef(column.getName(), column.getType(), column
-                .getMaxStorageSize().intValue(), column.getPrefixSize()
-                .intValue());
+        return new FieldDef(column.getName(), column.getType(), 
+                column.getMaxStorageSize().intValue(),
+                column.getPrefixSize().intValue(), 
+                column.getTypeParameter1(),
+                column.getTypeParameter2());
     }
 
     private RowDef createUserTableRowDef(final AkibaInformationSchema ais,

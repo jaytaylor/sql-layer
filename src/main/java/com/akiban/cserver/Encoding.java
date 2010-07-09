@@ -1,5 +1,6 @@
 package com.akiban.cserver;
 
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -10,7 +11,6 @@ import com.akiban.ais.model.Type;
 import com.persistit.Key;
 
 public enum Encoding {
-
     INT {
 
         @Override
@@ -263,70 +263,334 @@ public enum Encoding {
     },
     DECIMAL {
 
-        @Override
-        public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                int offset) {
-            throw new UnsupportedOperationException();
+        /**
+         * Unpack an int from a byte buffer when stored high bytes first.
+         * Corresponds to the defines in found in MySQL's myisampack.h
+         * 
+         * @param len
+         *            length to pull out of buffer
+         * @param buf
+         *            source array to get bytes from
+         * @param off
+         *            offset to start at in buf
+         */
+        private int miUnpack(int len, byte[] buf, int off) {
+            int val = 0;
+
+            if (len == 1) {
+                val = buf[off];
+            } else if (len == 2) {
+                val = (buf[off + 0] << 8) | 
+                      (buf[off + 1] & 0xFF);
+            } else if (len == 3) {
+                val = (buf[off + 0] << 16) | 
+                     ((buf[off + 1] & 0xFF) << 8) |
+                      (buf[off + 2] & 0xFF);
+
+                if ((buf[off] & 128) != 0)
+                    val |= (255 << 24);
+            } else if (len == 4) {
+                val = (buf[off + 0] << 24) | 
+                     ((buf[off + 1] & 0xFF) << 16) |
+                     ((buf[off + 2] & 0xFF) << 8) | 
+                      (buf[off + 3] & 0xFF);
+            }
+
+            return val;
+        }
+
+        /**
+         * Pack an int into a byte buffer stored with high bytes first.
+         * Corresponds to the defines in found in MySQL's myisampack.h
+         * 
+         * @param len
+         *            length to put into buffer
+         * @param val
+         *            value to store in the buffer
+         * @param buf
+         *            destination array to put bytes in
+         * @param off
+         *            offset to start at in buf
+         */
+        private void miPack(int len, int val, byte[] buf, int offset) {
+            if (len == 1) {
+                buf[offset] = (byte) (val);
+            } else if (len == 2) {
+                buf[offset + 1] = (byte) (val);
+                buf[offset + 0] = (byte) (val >> 8);
+            } else if (len == 3) {
+                buf[offset + 2] = (byte) (val);
+                buf[offset + 1] = (byte) (val >> 8);
+                buf[offset + 0] = (byte) (val >> 16);
+            } else if (len == 4) {
+                buf[offset + 3] = (byte) (val);
+                buf[offset + 2] = (byte) (val >> 8);
+                buf[offset + 1] = (byte) (val >> 16);
+                buf[offset + 0] = (byte) (val >> 24);
+            }
+        }
+        
+        private int calcBinSize(int digits) {
+            int full = digits / DECIMAL_DIGIT_PER;
+            int partial = digits % DECIMAL_DIGIT_PER;
+            return (full * DECIMAL_TYPE_SIZE) + DECIMAL_BYTE_DIGITS[partial];
         }
 
         @Override
         public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-            throw new UnsupportedOperationException();
+            final long location = fieldDef.getRowDef().fieldLocation(rowData,
+                    fieldDef.getFieldIndex());
+            if (location == 0) {
+                key.append(null);
+            } else {
+                StringBuilder sb = new StringBuilder();
+                toString(fieldDef, rowData, sb, Quote.NONE);
+
+                BigDecimal decimal = new BigDecimal(sb.toString());
+                key.append(decimal);
+            }
         }
 
         @Override
         public void toKey(FieldDef fieldDef, Object value, Key key) {
-            throw new UnsupportedOperationException();
+            key.append(value);
+        }
+        
+        @Override
+        public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
+                int offset) {
+            final String from;
+
+            if (value instanceof BigDecimal) {
+                from = ((BigDecimal) value).toPlainString();
+            } else if (value instanceof Number) {
+                from = ((Number) value).toString();
+            } else if (value instanceof String) {
+                from = (String) value;
+            } else if (value == null) {
+                from = new String();
+            } else {
+                throw new IllegalArgumentException(value +
+                        " must be a Number or a String");
+            }
+
+            final int mask = (from.charAt(0) == '-') ? -1 : 0;
+            int fromOff = 0;
+
+            if (mask != 0)
+                ++fromOff;
+
+            int intCnt = from.indexOf('.');
+            int fracCnt = from.length() - intCnt - 1;
+            
+            if(intCnt == -1)
+            {
+                intCnt = from.length();
+                fracCnt = 0;
+            }
+            
+            final int intFull = intCnt / DECIMAL_DIGIT_PER;
+            final int intPart = intCnt % DECIMAL_DIGIT_PER;
+            final int fracFull = fracCnt / DECIMAL_DIGIT_PER;
+            final int fracPart = fracCnt % DECIMAL_DIGIT_PER;
+            final int intSize = calcBinSize(intCnt);
+
+            final int declPrec = fieldDef.getTypeParameter1().intValue();
+            final int declScale = fieldDef.getTypeParameter2().intValue();
+            final int declIntSize = calcBinSize(declPrec - declScale);
+            final int declFracSize = calcBinSize(declScale);
+
+            int toItOff = offset;
+            int toEndOff = offset + declIntSize + declFracSize;
+
+            for (int i = 0; (intSize + i) < declIntSize; ++i)
+                dest[toItOff++] = (byte) mask;
+
+            int sum = 0;
+
+            // Partial integer
+            if (intPart != 0) {
+                for (int i = 0; i < intPart; ++i) {
+                    sum *= 10;
+                    sum += (from.charAt(fromOff + i) - '0');
+                }
+
+                int count = DECIMAL_BYTE_DIGITS[intPart];
+                miPack(count, sum ^ mask, dest, toItOff);
+
+                toItOff += count;
+                fromOff += intPart;
+            }
+
+            // Full integers
+            for (int i = 0; i < intFull; ++i) {
+                sum = 0;
+
+                for (int j = 0; j < DECIMAL_DIGIT_PER; ++j) {
+                    sum *= 10;
+                    sum += (from.charAt(fromOff + j) - '0');
+                }
+
+                int count = DECIMAL_TYPE_SIZE;
+                miPack(count, sum ^ mask, dest, toItOff);
+
+                toItOff += count;
+                fromOff += DECIMAL_DIGIT_PER;
+            }
+
+            // Move past decimal point (or to end)
+            ++fromOff;
+
+            // Full fractions
+            for (int i = 0; i < fracFull; ++i) {
+                sum = 0;
+
+                for (int j = 0; j < DECIMAL_DIGIT_PER; ++j) {
+                    sum *= 10;
+                    sum += (from.charAt(fromOff + j) - '0');
+                }
+
+                int count = DECIMAL_TYPE_SIZE;
+                miPack(count, sum ^ mask, dest, toItOff);
+
+                toItOff += count;
+                fromOff += DECIMAL_DIGIT_PER;
+            }
+
+            // Fraction left over
+            if (fracPart != 0) {
+                sum = 0;
+
+                for (int i = 0; i < fracPart; ++i) {
+                    sum *= 10;
+                    sum += (from.charAt(fromOff + i) - '0');
+                }
+
+                int count = DECIMAL_BYTE_DIGITS[fracPart];
+                miPack(count, sum ^ mask, dest, toItOff);
+
+                toItOff += count;
+            }
+
+            while (toItOff < toEndOff)
+                dest[toItOff++] = (byte) mask;
+
+            dest[offset] ^= 0x80;
+
+            return declIntSize + declFracSize;
         }
 
         @Override
         public void toString(FieldDef fieldDef, RowData rowData,
                 StringBuilder sb, final Quote quote) {
-            throw new UnsupportedOperationException();
+            final int precision = fieldDef.getTypeParameter1().intValue();
+            final int scale = fieldDef.getTypeParameter2().intValue();
+
+            final int intCount = precision - scale;
+            final int intFull = intCount / DECIMAL_DIGIT_PER;
+            final int intPartial = intCount % DECIMAL_DIGIT_PER;
+            final int fracFull = scale / DECIMAL_DIGIT_PER;
+            final int fracPartial = scale % DECIMAL_DIGIT_PER;
+
+            final int location = (int) fieldDef.getRowDef().fieldLocation(
+                    rowData, fieldDef.getFieldIndex());
+
+            int curOff = location;
+            byte[] from = rowData.getBytes();
+
+            final int mask = (from[curOff] & 0x80) != 0 ? 0 : -1;
+
+            // Flip high bit during processing
+            from[curOff] ^= 0x80;
+
+            if (mask != 0)
+                sb.append('-');
+
+            boolean hadOutput = false;
+            if (intPartial != 0) {
+                int count = DECIMAL_BYTE_DIGITS[intPartial];
+                int x = miUnpack(count, from, curOff) ^ mask;
+                curOff += count;
+                if (x != 0) {
+                    hadOutput = true;
+                    sb.append(x);
+                }
+            }
+
+            for (int i = 0; i < intFull; ++i) {
+                int x = miUnpack(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
+                curOff += DECIMAL_TYPE_SIZE;
+
+                if (hadOutput) {
+                    sb.append(String.format("%09d", x));
+                } else if (x != 0) {
+                    hadOutput = true;
+                    sb.append(x);
+                }
+            }
+
+            if (fracFull + fracPartial > 0)
+                sb.append(hadOutput ? "." : "0.");
+
+            for (int i = 0; i < fracFull; ++i) {
+                int x = miUnpack(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
+                curOff += DECIMAL_TYPE_SIZE;
+                sb.append(String.format("%09d", x));
+            }
+
+            if (fracPartial != 0) {
+                int count = DECIMAL_BYTE_DIGITS[fracPartial];
+                int x = miUnpack(count, from, curOff) ^ mask;
+                int width = scale - (fracFull * DECIMAL_DIGIT_PER);
+                sb.append(String.format("%0" + width + "d", x));
+            }
+
+            // Restore high bit
+            from[location] ^= 0x80;
         }
 
         @Override
         public int widthFromObject(final FieldDef fieldDef, final Object value) {
-            throw new UnsupportedOperationException();
+            return fieldDef.getMaxStorageSize();
         }
 
         @Override
         public boolean validate(Type type) {
-            throw new UnsupportedOperationException();
-        }
+            return type.fixedSize() && type.nTypeParameters() == 2;
+        } 
     },
     U_DECIMAL {
 
         @Override
         public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
                 int offset) {
-            throw new UnsupportedOperationException();
+            return DECIMAL.fromObject(fieldDef, value, dest, offset);
         }
 
         @Override
         public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-            throw new UnsupportedOperationException();
+            DECIMAL.toKey(fieldDef, rowData, key);
         }
 
         @Override
         public void toKey(FieldDef fieldDef, Object value, Key key) {
-            throw new UnsupportedOperationException();
+            DECIMAL.toKey(fieldDef, value, key);
         }
 
         @Override
         public void toString(FieldDef fieldDef, RowData rowData,
                 StringBuilder sb, final Quote quote) {
-            throw new UnsupportedOperationException();
+            DECIMAL.toString(fieldDef, rowData, sb, quote);
         }
 
         @Override
         public int widthFromObject(final FieldDef fieldDef, final Object value) {
-            throw new UnsupportedOperationException();
+            return DECIMAL.widthFromObject(fieldDef, value);
         }
 
         @Override
         public boolean validate(Type type) {
-            throw new UnsupportedOperationException();
+            return DECIMAL.validate(type);
         }
     },
     VARCHAR {
@@ -1268,4 +1532,12 @@ public enum Encoding {
         return b;
     }
 
+    //
+    // DECIMAL related defines as specified at: 
+    // http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html
+    // In short, up to 9 digits get packed into a 4 bytes.
+    //
+    private static final int DECIMAL_TYPE_SIZE = 4;
+    private static final int DECIMAL_DIGIT_PER = 9;
+    private static final int DECIMAL_BYTE_DIGITS[] = {0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
 }
