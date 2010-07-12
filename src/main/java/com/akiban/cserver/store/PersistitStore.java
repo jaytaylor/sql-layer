@@ -751,6 +751,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     public void syncColumns() throws Exception {
+        if(vBulkLoader == null) {
+            return;
+        }
+        
         vBulkLoader.constructColumnDescriptors();
         // System.out.println("Sync columns");
         vmeta = new VMeta(new File(vmetaFileName));
