@@ -389,6 +389,40 @@ public class PersistitStoreWithAISTest extends TestCase implements
         assertNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNull(volume.getTree(td.defI.getPkTreeName(), false));
     }
+    
+    public void testDropSchema() throws Exception {
+        //
+        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
+        for (int loop = 0; loop < 20; loop++) {
+            final TestData td = new TestData(10, 10, 10, 10);
+            td.insertTestRows();
+            store.dropSchema(SCHEMA);
+            assertNull(volume.getTree(td.defCOI.getTreeName(), false));
+            assertNull(volume.getTree(td.defO.getPkTreeName(), false));
+            assertNull(volume.getTree(td.defI.getPkTreeName(), false));
+        }
+    }
+
+    public void testBug47() throws Exception {
+        //
+        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
+        for (int loop = 0; loop < 20; loop++) {
+            final TestData td = new TestData(10, 10, 10, 10);
+            td.insertTestRows();
+            assertEquals(OK, store.dropTable(td.defI.getRowDefId()));
+            assertEquals(OK, store.dropTable(td.defO.getRowDefId()));
+            assertEquals(OK, store.dropTable(td.defC.getRowDefId()));
+            assertEquals(OK, store.dropTable(td.defCOI.getRowDefId()));
+            assertEquals(OK, store.dropTable(td.defA.getRowDefId()));
+            assertEquals(OK, store.dropSchema(SCHEMA));
+            
+            assertNull(volume.getTree(td.defCOI.getTreeName(), false));
+            assertNull(volume.getTree(td.defO.getPkTreeName(), false));
+            assertNull(volume.getTree(td.defI.getPkTreeName(), false));
+            
+        }
+    }
+
 
     public void testUniqueIndexes() throws Exception {
         final TestData td = new TestData(5, 5, 5, 5);
