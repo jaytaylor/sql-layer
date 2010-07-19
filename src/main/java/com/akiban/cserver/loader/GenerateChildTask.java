@@ -7,13 +7,16 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
-public class GenerateChildTask extends Task {
+public class GenerateChildTask extends Task
+{
     @Override
-    public String type() {
+    public String type()
+    {
         return "GenerateChild";
     }
 
-    public GenerateChildTask(BulkLoader loader, UserTable table) {
+    public GenerateChildTask(BulkLoader loader, UserTable table)
+    {
         super(loader, table, "$child");
         // Get the child columns of the join connecting child table to parent,
         // in the same order as the parent's

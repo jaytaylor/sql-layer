@@ -8,16 +8,19 @@ import java.util.IdentityHashMap;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.Command;
 
-public class DataGrouper {
+public class DataGrouper
+{
     public DataGrouper(DB db, String artifactsSchema, Tracker tracker)
-            throws SQLException {
+            throws SQLException
+    {
         this.db = db;
         this.artifactsSchema = artifactsSchema;
         this.tracker = tracker;
     }
 
     public void run(IdentityHashMap<UserTable, TableTasks> tableTasksMap)
-            throws Exception {
+            throws Exception
+    {
         DB.Connection connection = db.new Connection();
         try {
             saveTasks(connection, tableTasksMap);
@@ -27,7 +30,8 @@ public class DataGrouper {
         }
     }
 
-    public void resume() throws Exception {
+    public void resume() throws Exception
+    {
         DB.Connection connection = db.new Connection();
         try {
             cleanupFailedTasks(connection);
@@ -37,11 +41,14 @@ public class DataGrouper {
         }
     }
 
-    private void cleanupFailedTasks(DB.Connection connection) throws Exception {
+    private void cleanupFailedTasks(DB.Connection connection) throws Exception
+    {
         tracker.info(String.format("Cleanup from failed tasks"));
-        connection.new Query(TEMPLATE_ABANDONED_TASKS, artifactsSchema) {
+        connection.new Query(TEMPLATE_ABANDONED_TASKS, artifactsSchema)
+        {
             @Override
-            protected void handleRow(ResultSet resultSet) throws Exception {
+            protected void handleRow(ResultSet resultSet) throws Exception
+            {
                 int taskId = resultSet.getInt(1);
                 String artifactTable = resultSet.getString(2);
                 final DB.Connection cleanupConnection = db.new Connection();
@@ -57,7 +64,8 @@ public class DataGrouper {
         }.execute();
     }
 
-    private void runTasks(DB.Connection connection) throws Exception {
+    private void runTasks(DB.Connection connection) throws Exception
+    {
         /*
          * Task execution order: 1. $child 2. $parent in order of increasing
          * depth 3. $final This guarantees that artifacts are created before
@@ -70,8 +78,9 @@ public class DataGrouper {
     }
 
     private void saveTasks(DB.Connection connection,
-            IdentityHashMap<UserTable, TableTasks> tableTasksMap)
-            throws SQLException {
+                           IdentityHashMap<UserTable, TableTasks> tableTasksMap)
+            throws SQLException
+    {
         tracker.info("Saving tasks");
         for (TableTasks tableTasks : tableTasksMap.values()) {
             tableTasks.saveTasks(connection);
@@ -79,11 +88,14 @@ public class DataGrouper {
     }
 
     private void runTasks(String label, String taskQueryTemplate,
-            DB.Connection connection) throws Exception {
-        connection.new Query(taskQueryTemplate, artifactsSchema) {
+                          DB.Connection connection) throws Exception
+    {
+        connection.new Query(taskQueryTemplate, artifactsSchema)
+        {
             @Override
             protected void handleRow(ResultSet resultSet) throws SQLException,
-                    Command.Exception, IOException {
+                    Command.Exception, IOException
+            {
                 // Need a separate connection for updates because the first
                 // connection (running the tasks query),
                 // is streaming results and can't support another statement at

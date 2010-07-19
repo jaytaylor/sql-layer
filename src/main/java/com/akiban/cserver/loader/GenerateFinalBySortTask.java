@@ -3,13 +3,16 @@ package com.akiban.cserver.loader;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 
-public class GenerateFinalBySortTask extends GenerateFinalTask {
+public class GenerateFinalBySortTask extends GenerateFinalTask
+{
     @Override
-    public String type() {
+    public String type()
+    {
         return "GenerateFinalBySort";
     }
 
-    public GenerateFinalBySortTask(BulkLoader loader, UserTable table) {
+    public GenerateFinalBySortTask(BulkLoader loader, UserTable table)
+    {
         super(loader, table);
         hKey(hKeyColumns(table));
         order(hKey());

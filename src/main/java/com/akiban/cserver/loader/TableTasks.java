@@ -4,8 +4,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TableTasks {
-    public void saveTasks(DB.Connection connection) throws SQLException {
+public class TableTasks
+{
+    public void saveTasks(DB.Connection connection) throws SQLException
+    {
         for (Task task : tasks()) {
             connection.new Update(TEMPLATE_SAVE_TASK, task.artifactTableName()
                     .getSchemaName(), task.type(), task.table().getName()
@@ -16,31 +18,38 @@ public class TableTasks {
         }
     }
 
-    public GenerateFinalTask generateFinal() {
+    public GenerateFinalTask generateFinal()
+    {
         return this.generateFinal;
     }
 
-    public GenerateParentTask generateParent() {
+    public GenerateParentTask generateParent()
+    {
         return this.generateParent;
     }
 
-    public GenerateChildTask generateChild() {
+    public GenerateChildTask generateChild()
+    {
         return this.generateChild;
     }
 
-    public void generateFinal(GenerateFinalTask task) {
+    public void generateFinal(GenerateFinalTask task)
+    {
         this.generateFinal = task;
     }
 
-    public void generateParent(GenerateParentTask task) {
+    public void generateParent(GenerateParentTask task)
+    {
         this.generateParent = task;
     }
 
-    public void generateChild(GenerateChildTask task) {
+    public void generateChild(GenerateChildTask task)
+    {
         this.generateChild = task;
     }
 
-    private List<Task> tasks() {
+    private List<Task> tasks()
+    {
         List<Task> tasks = new ArrayList<Task>();
         if (generateFinal != null) {
             tasks.add(generateFinal);

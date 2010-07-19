@@ -11,14 +11,17 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class Tracker {
-    public void info(String template, Object... args) {
+public class Tracker
+{
+    public void info(String template, Object... args)
+    {
         String message = String.format(template, args);
         logger.info(message);
         recordEvent(message);
     }
 
-    public void error(String template, Exception e, Object... args) {
+    public void error(String template, Exception e, Object... args)
+    {
         String message = String.format(template, args);
         StringWriter stringWriter = new StringWriter();
         e.printStackTrace(new PrintWriter(stringWriter));
@@ -29,16 +32,20 @@ public class Tracker {
         recordEvent(stack);
     }
 
-    public Log logger() {
+    public Log logger()
+    {
         return logger;
     }
 
-    public List<Event> recentEvents(int lastEventId) throws Exception {
+    public List<Event> recentEvents(int lastEventId) throws Exception
+    {
         final List<Event> events = new ArrayList<Event>();
         if (connection != null) {
-            connection.new Query(TEMPLATE_RECENT_EVENTS, schema, lastEventId) {
+            connection.new Query(TEMPLATE_RECENT_EVENTS, schema, lastEventId)
+            {
                 @Override
-                protected void handleRow(ResultSet resultSet) throws Exception {
+                protected void handleRow(ResultSet resultSet) throws Exception
+                {
                     int c = 0;
                     int eventId = resultSet.getInt(++c);
                     Date timestamp = resultSet.getDate(++c);
@@ -51,7 +58,8 @@ public class Tracker {
         return events;
     }
 
-    public Tracker(DB db, String schema) throws SQLException {
+    public Tracker(DB db, String schema) throws SQLException
+    {
         this.connection = db == null ? null : db.new Connection();
         this.schema = schema;
         if (this.connection != null) {
@@ -60,7 +68,8 @@ public class Tracker {
         }
     }
 
-    private void recordEvent(String message) {
+    private void recordEvent(String message)
+    {
         if (connection != null) {
             long nowNsec = System.nanoTime();
             try {

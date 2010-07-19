@@ -11,9 +11,11 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISTextGenerator;
 
-public class GenerateFinalByMergeTask extends GenerateFinalTask {
+public class GenerateFinalByMergeTask extends GenerateFinalTask
+{
     @Override
-    public String type() {
+    public String type()
+    {
         return "GenerateFinalByMerge";
     }
 
@@ -32,8 +34,9 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask {
      */
 
     public GenerateFinalByMergeTask(BulkLoader loader, UserTable table,
-            GenerateParentTask parentTask, AkibaInformationSchema ais)
-            throws Exception {
+                                    GenerateParentTask parentTask, AkibaInformationSchema ais)
+            throws Exception
+    {
         super(loader, table);
         // Final table contains columns of original table and other columns from
         // parentTask that complete the hkey.

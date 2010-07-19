@@ -7,16 +7,19 @@ import com.akiban.cserver.store.PersistitStore;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
-public class PersistitLoader {
+public class PersistitLoader
+{
     public PersistitLoader(PersistitStore store, DB db, Tracker tracker)
-            throws Exception {
+            throws Exception
+    {
         this.store = store;
         this.db = db;
         this.tracker = tracker;
         this.transaction = store.getDb().getTransaction();
     }
 
-    public void load(List<GenerateFinalTask> finalTasks) throws Exception {
+    public void load(List<GenerateFinalTask> finalTasks) throws Exception
+    {
         transaction.begin();
         DB.Connection connection = db.new Connection();
         try {
@@ -42,14 +45,17 @@ public class PersistitLoader {
     }
 
     private void load(final GenerateFinalTask task, DB.Connection connection)
-            throws Exception {
+            throws Exception
+    {
         tracker.info(String.format("Loading persistit for %s", task
                 .artifactTableName()));
         final PersistitAdapter persistitAdapter = new PersistitAdapter(store,
                 task);
-        connection.new Query(SQL_TEMPLATE, task.artifactTableName()) {
+        connection.new Query(SQL_TEMPLATE, task.artifactTableName())
+        {
             @Override
-            protected void handleRow(ResultSet resultSet) throws Exception {
+            protected void handleRow(ResultSet resultSet) throws Exception
+            {
                 persistitAdapter.handleRow(resultSet);
                 if ((++count % LOG_INTERVAL) == 0) {
                     tracker.info("%s: %s", task.artifactTableName(), count);

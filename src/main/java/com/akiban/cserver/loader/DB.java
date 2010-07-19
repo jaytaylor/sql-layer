@@ -10,31 +10,46 @@ import org.apache.commons.logging.Log;
 
 import com.akiban.ais.util.Command;
 
-public class DB {
+public class DB
+{
     public DB(String dbHost, int dbPort, String dbUser, String dbPassword)
-            throws ClassNotFoundException, SQLException {
+            throws ClassNotFoundException, SQLException
+    {
         this(dbHost, dbPort, dbUser, dbPassword, null);
     }
 
     public DB(String dbHost, int dbPort, String dbUser, String dbPassword,
-            String schema) throws ClassNotFoundException, SQLException {
+              String schema) throws ClassNotFoundException, SQLException
+    {
         this.dbHost = dbHost;
         this.dbPort = dbPort;
         this.dbUser = dbUser;
         this.dbPassword = dbPassword;
         Class.forName("com.mysql.jdbc.Driver");
         dbURL = schema == null ? String.format("jdbc:mysql://%s:%s", dbHost,
-                dbPort) : String.format("jdbc:mysql://%s:%s/%s", dbHost,
-                dbPort, schema);
+                                               dbPort) : String.format("jdbc:mysql://%s:%s/%s", dbHost,
+                                                                       dbPort, schema);
     }
 
-    public void spawn(String sql, Log logger) {
-        Command command = dbPassword == null ? Command.logOutput(logger, String
-                .format("%s/bin/mysql", mysqlInstallDir()), "-h", dbHost, "-P",
-                Integer.toString(dbPort), "-u", dbUser) : Command.logOutput(
-                logger, String.format("%s/bin/mysql", mysqlInstallDir()), "-h",
-                dbHost, "-P", Integer.toString(dbPort), "-u", dbUser, "-p"
-                        + dbPassword);
+    public void spawn(String sql, Log logger)
+    {
+        Command command =
+                dbPassword == null
+                ? Command.logOutput(logger,
+                                    String.format("%s/bin/mysql", mysqlInstallDir()),
+                                    "-h",
+                                    dbHost,
+                                    "-P",
+                                    Integer.toString(dbPort), "-u", dbUser)
+                : Command.logOutput(logger,
+                                    String.format("%s/bin/mysql", mysqlInstallDir()),
+                                    "-h",
+                                    dbHost,
+                                    "-P",
+                                    Integer.toString(dbPort),
+                                    "-u",
+                                    dbUser,
+                                    "-p" + dbPassword);
         try {
             int status = command.run(sql);
             if (status != 0) {
@@ -47,7 +62,8 @@ public class DB {
         }
     }
 
-    private String mysqlInstallDir() {
+    private String mysqlInstallDir()
+    {
         String mysqlInstallDir = System.getProperty(MYSQL_INSTALL_DIR);
         if (mysqlInstallDir == null) {
             throw new BulkLoader.RuntimeException(String.format(
@@ -64,30 +80,36 @@ public class DB {
     private final String dbPassword;
     private final String dbURL;
 
-    public class Connection {
-        public void close() throws SQLException {
+    public class Connection
+    {
+        public void close() throws SQLException
+        {
             connection.close();
         }
 
-        Connection() throws SQLException {
+        Connection() throws SQLException
+        {
             connection = DriverManager.getConnection(dbURL, dbUser, dbPassword);
         }
 
         private final java.sql.Connection connection;
 
-        public abstract class Query {
-            public Query(String template, Object... args) throws SQLException {
+        public abstract class Query
+        {
+            public Query(String template, Object... args) throws SQLException
+            {
                 sql = String.format(template, args);
             }
 
-            public void execute() throws Exception {
+            public void execute() throws Exception
+            {
                 // Use TYPE_FORWARD_ONLY, CONCUR_READ_ONLY and
                 // setFetchSize(MIN_VALUE) so that result set is streamed.
                 // Otherwise, the driver will try to pull the entire result set
                 // into memory.
                 Statement stmt = connection
                         .createStatement(ResultSet.TYPE_FORWARD_ONLY,
-                                ResultSet.CONCUR_READ_ONLY);
+                                         ResultSet.CONCUR_READ_ONLY);
                 try {
                     stmt.setFetchSize(Integer.MIN_VALUE);
                     ResultSet resultSet = stmt.executeQuery(sql);
@@ -109,12 +131,15 @@ public class DB {
             private String sql;
         }
 
-        public class Update {
-            public Update(String template, Object... args) throws SQLException {
+        public class Update
+        {
+            public Update(String template, Object... args) throws SQLException
+            {
                 sql = String.format(template, args);
             }
 
-            public int execute() throws SQLException {
+            public int execute() throws SQLException
+            {
                 Statement stmt = connection.createStatement();
                 int updateCount;
                 try {
@@ -128,12 +153,15 @@ public class DB {
             private String sql;
         }
 
-        public class DDL {
-            public DDL(String template, Object... args) throws SQLException {
+        public class DDL
+        {
+            public DDL(String template, Object... args) throws SQLException
+            {
                 sql = String.format(template, args);
             }
 
-            public void execute() throws SQLException {
+            public void execute() throws SQLException
+            {
                 Statement stmt = connection.createStatement();
                 try {
                     stmt.execute(sql);

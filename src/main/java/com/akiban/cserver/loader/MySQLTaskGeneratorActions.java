@@ -6,12 +6,14 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
-public class MySQLTaskGeneratorActions implements TaskGenerator.Actions {
+public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
+{
     // TaskGenerator.Actions interface
 
     @Override
     public void generateTasksForTableContainingHKeyColumns(BulkLoader loader,
-            UserTable table, IdentityHashMap<UserTable, TableTasks> tasks) {
+                                                           UserTable table, IdentityHashMap<UserTable, TableTasks> tasks)
+    {
         TableTasks tableTasks = tableTasks(tasks, table);
         if (tableTasks.generateParent() != null) {
             // Shouldn't discover the need for this task twice
@@ -26,7 +28,8 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions {
     @Override
     public void generateTasksForTableNotContainingHKeyColumns(
             BulkLoader loader, Join join,
-            IdentityHashMap<UserTable, TableTasks> tasks) throws Exception {
+            IdentityHashMap<UserTable, TableTasks> tasks) throws Exception
+    {
         // Generate parent's $parent
         UserTable parent = join.getParent();
         TableTasks parentTasks = tableTasks(tasks, parent);
@@ -60,14 +63,16 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions {
 
     // MySQLTaskGeneratorActions
 
-    public MySQLTaskGeneratorActions(AkibaInformationSchema ais) {
+    public MySQLTaskGeneratorActions(AkibaInformationSchema ais)
+    {
         this.ais = ais;
     }
 
     // For use by this class
 
     private static TableTasks tableTasks(
-            IdentityHashMap<UserTable, TableTasks> tasks, UserTable table) {
+            IdentityHashMap<UserTable, TableTasks> tasks, UserTable table)
+    {
         TableTasks tableTasks = tasks.get(table);
         if (tableTasks == null) {
             tableTasks = new TableTasks();

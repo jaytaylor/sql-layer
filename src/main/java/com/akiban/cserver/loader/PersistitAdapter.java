@@ -12,9 +12,11 @@ import com.akiban.cserver.store.StoreException;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-public class PersistitAdapter {
+public class PersistitAdapter
+{
     public PersistitAdapter(PersistitStore store, GenerateFinalTask task)
-            throws PersistitException {
+            throws PersistitException
+    {
         this.store = store;
         UserTable leafTable = task.table();
         int nKeySegments = leafTable.getDepth() + 1;
@@ -55,7 +57,8 @@ public class PersistitAdapter {
         exchange = store.getExchange(leafRowDef, null);
     }
 
-    public void handleRow(ResultSet resultSet) throws Exception {
+    public void handleRow(ResultSet resultSet) throws Exception
+    {
         // Populate rowData
         for (int i = 0; i < dbRow.length; i++) {
             dbRow[i] = resultSet.getObject(columnPositions[i] + 1);
@@ -89,7 +92,8 @@ public class PersistitAdapter {
                 fieldDefs, hKey);
     }
 
-    public void close() throws StoreException, PersistitException {
+    public void close() throws StoreException, PersistitException
+    {
         store.updateTableStats(leafRowDef, rowCount);
         store.releaseExchange(exchange);
     }

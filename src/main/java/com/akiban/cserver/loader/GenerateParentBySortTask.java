@@ -2,13 +2,16 @@ package com.akiban.cserver.loader;
 
 import com.akiban.ais.model.UserTable;
 
-public class GenerateParentBySortTask extends GenerateParentTask {
+public class GenerateParentBySortTask extends GenerateParentTask
+{
     @Override
-    public String type() {
+    public String type()
+    {
         return "GenerateParentBySort";
     }
 
-    public GenerateParentBySortTask(BulkLoader loader, UserTable table) {
+    public GenerateParentBySortTask(BulkLoader loader, UserTable table)
+    {
         super(loader, table);
         hKey(hKeyColumns(table));
         addColumns(hKey());

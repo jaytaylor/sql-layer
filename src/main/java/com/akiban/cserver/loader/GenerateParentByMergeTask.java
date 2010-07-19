@@ -10,9 +10,11 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISTextGenerator;
 
-public class GenerateParentByMergeTask extends GenerateParentTask {
+public class GenerateParentByMergeTask extends GenerateParentTask
+{
     @Override
-    public String type() {
+    public String type()
+    {
         return "GenerateParentByMerge";
     }
 
@@ -23,8 +25,9 @@ public class GenerateParentByMergeTask extends GenerateParentTask {
      * ordered by oid
      */
     public GenerateParentByMergeTask(BulkLoader loader, UserTable table,
-            GenerateParentTask parentTask, GenerateChildTask childTask,
-            AkibaInformationSchema ais) throws Exception {
+                                     GenerateParentTask parentTask, GenerateChildTask childTask,
+                                     AkibaInformationSchema ais) throws Exception
+    {
         super(loader, table);
         // Merged table contains columns of parent and columns of child that
         // don't participate in the join.

@@ -13,16 +13,20 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
-public class BulkLoaderTest extends TestCase {
+public class BulkLoaderTest extends TestCase
+{
     @Override
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         System.out.println(">>> " + getName());
     }
 
-    public void testDummy() {
+    public void testDummy()
+    {
     }
 
-    public void testCOI() throws Exception {
+    public void testCOI() throws Exception
+    {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
@@ -61,7 +65,8 @@ public class BulkLoaderTest extends TestCase {
                 .getParentJoin()), actions.noHKey);
     }
 
-    public void testCOIWithCascadingKeys() throws Exception {
+    public void testCOIWithCascadingKeys() throws Exception
+    {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
@@ -104,7 +109,8 @@ public class BulkLoaderTest extends TestCase {
         Assert.assertTrue(actions.noHKey.isEmpty());
     }
 
-    public void testCOIA() throws Exception {
+    public void testCOIA() throws Exception
+    {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
@@ -156,7 +162,8 @@ public class BulkLoaderTest extends TestCase {
                 .getParentJoin()), actions.noHKey);
     }
 
-    public void testCOIX() throws Exception {
+    public void testCOIX() throws Exception
+    {
         // Table X is child of I. Ensures that "type 2" table works as parent.
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "customer");
@@ -210,18 +217,21 @@ public class BulkLoaderTest extends TestCase {
                 .getParentJoin()), actions.noHKey);
     }
 
-    private static class TestActions implements TaskGenerator.Actions {
+    private static class TestActions implements TaskGenerator.Actions
+    {
         @Override
         public void generateTasksForTableContainingHKeyColumns(
                 BulkLoader loader, UserTable table,
-                IdentityHashMap<UserTable, TableTasks> tasks) {
+                IdentityHashMap<UserTable, TableTasks> tasks)
+        {
             hKey.add(table);
         }
 
         @Override
         public void generateTasksForTableNotContainingHKeyColumns(
                 BulkLoader loader, Join join,
-                IdentityHashMap<UserTable, TableTasks> tasks) {
+                IdentityHashMap<UserTable, TableTasks> tasks)
+        {
             noHKey.add(join);
         }
 

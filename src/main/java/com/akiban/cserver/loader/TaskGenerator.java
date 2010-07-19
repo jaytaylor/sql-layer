@@ -19,14 +19,17 @@ import com.akiban.ais.model.UserTable;
  * in the section "Algorithm for generating tasks".
  */
 
-public class TaskGenerator {
-    public TaskGenerator(BulkLoader loader, Actions actions) {
+public class TaskGenerator
+{
+    public TaskGenerator(BulkLoader loader, Actions actions)
+    {
         this.loader = loader;
         this.actions = actions;
     }
 
     public IdentityHashMap<UserTable, TableTasks> generateTasks()
-            throws Exception {
+            throws Exception
+    {
         for (Group group : loader.ais().getGroups().values()) {
             if (loader.groups().contains(group.getName())) {
                 generateTasks(group);
@@ -35,7 +38,8 @@ public class TaskGenerator {
         return tasks;
     }
 
-    private void generateTasks(Group group) throws Exception {
+    private void generateTasks(Group group) throws Exception
+    {
         logger.info("Generating tasks");
         UserTable root = group.getGroupTable().getRoot();
         actions.generateTasksForTableContainingHKeyColumns(loader, root, tasks);
@@ -50,7 +54,8 @@ public class TaskGenerator {
     }
 
     private void generateTasks(List<Column> hKeyColumns, Join join)
-            throws Exception {
+            throws Exception
+    {
         List<Column> childHKeyColumns = Task.columnsInChild(hKeyColumns, join);
         UserTable childTable = join.getChild();
         if (hKeyColumns.size() > 0
@@ -93,12 +98,13 @@ public class TaskGenerator {
     private final Actions actions;
     private final IdentityHashMap<UserTable, TableTasks> tasks = new IdentityHashMap<UserTable, TableTasks>();
 
-    public interface Actions {
+    public interface Actions
+    {
         void generateTasksForTableContainingHKeyColumns(BulkLoader loader,
-                UserTable table, IdentityHashMap<UserTable, TableTasks> tasks);
+                                                        UserTable table, IdentityHashMap<UserTable, TableTasks> tasks);
 
         void generateTasksForTableNotContainingHKeyColumns(BulkLoader loader,
-                Join join, IdentityHashMap<UserTable, TableTasks> tasks)
+                                                           Join join, IdentityHashMap<UserTable, TableTasks> tasks)
                 throws Exception;
     }
 }
