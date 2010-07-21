@@ -6,19 +6,25 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.akiban.util.Command;
 import org.apache.commons.logging.Log;
-
-import com.akiban.ais.util.Command;
+import org.apache.log4j.Level;
 
 public class DB
 {
-    public DB(String dbHost, int dbPort, String dbUser, String dbPassword)
+    public DB(String dbHost,
+              int dbPort,
+              String dbUser,
+              String dbPassword)
             throws ClassNotFoundException, SQLException
     {
         this(dbHost, dbPort, dbUser, dbPassword, null);
     }
 
-    public DB(String dbHost, int dbPort, String dbUser, String dbPassword,
+    public DB(String dbHost,
+              int dbPort,
+              String dbUser,
+              String dbPassword,
               String schema) throws ClassNotFoundException, SQLException
     {
         this.dbHost = dbHost;
@@ -34,22 +40,26 @@ public class DB
     public void spawn(String sql, Log logger)
     {
         Command command =
-                dbPassword == null
-                ? Command.logOutput(logger,
-                                    String.format("%s/bin/mysql", mysqlInstallDir()),
-                                    "-h",
-                                    dbHost,
-                                    "-P",
-                                    Integer.toString(dbPort), "-u", dbUser)
-                : Command.logOutput(logger,
-                                    String.format("%s/bin/mysql", mysqlInstallDir()),
-                                    "-h",
-                                    dbHost,
-                                    "-P",
-                                    Integer.toString(dbPort),
-                                    "-u",
-                                    dbUser,
-                                    "-p" + dbPassword);
+            dbPassword == null
+            ? Command.logOutput(logger,
+                                Level.INFO,
+                                String.format("%s/bin/mysql", mysqlInstallDir()),
+                                "-h",
+                                dbHost,
+                                "-P",
+                                Integer.toString(dbPort),
+                                "-u",
+                                dbUser)
+            : Command.logOutput(logger,
+                                Level.INFO,
+                                String.format("%s/bin/mysql", mysqlInstallDir()),
+                                "-h",
+                                dbHost,
+                                "-P",
+                                Integer.toString(dbPort),
+                                "-u",
+                                dbUser,
+                                "-p" + dbPassword);
         try {
             int status = command.run(sql);
             if (status != 0) {

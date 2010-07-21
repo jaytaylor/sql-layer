@@ -3,11 +3,14 @@ package com.akiban.cserver;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import com.akiban.admin.Admin;
+import com.akiban.admin.AdminKey;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -31,7 +34,7 @@ public class CServerConfig {
 
     private final Properties properties = new Properties();
 
-    private final List<String> configFileNames = new ArrayList<String>();
+    private boolean usingAdmin;
 
     private Exception exception;
 
@@ -49,13 +52,41 @@ public class CServerConfig {
      * @throws Exception
      */
     public void load() throws Exception {
+        // If akiban.admin is specified, then assume we're using admin to configure the
+        // chunkserver.
+        String akibanAdmin = System.getProperty(Admin.AKIBAN_ADMIN);
+        usingAdmin = akibanAdmin != null;
+        if (usingAdmin) {
+            loadFromAdmin();
+        } else {
+            loadFromFiles();
+        }
+        LOG.warn(String.format("chunkserver properties: %s", properties));
+    }
+
+    /**
+     * @deprecated This is here only until Admin is fully baked into the product
+     */
+    boolean usingAdmin()
+    {
+        return usingAdmin;
+    }
+
+    private void loadFromAdmin() throws IOException
+    {
+        Admin admin = Admin.only();
+        properties.putAll(admin.get(AdminKey.CONFIG_CHUNKSERVER).properties());
+        LOG.warn(String.format("Loaded CServerConfig from %s: %s", admin.initializer(), AdminKey.CONFIG_CHUNKSERVER));
+    }
+
+    private void loadFromFiles() throws Exception
+    {
         final List<String> searchPath = new ArrayList<String>();
         final String search = System.getProperty(SEARCH_PATH_PROPERTY_NAME);
         if (search != null && search.length() > 0) {
             final String[] paths = search.split(File.pathSeparator);
             searchPath.addAll(Arrays.asList(paths));
         }
-
         searchPath.addAll(Arrays.asList(DEFAULT_SEARCH_PATH));
         if (LOG.isInfoEnabled()) {
             LOG.info("CServerConfig search path: " + searchPath);
@@ -83,13 +114,14 @@ public class CServerConfig {
         }
     }
 
-    public void loadFromFile(final File file) throws Exception {
+    private void loadFromFile(final File file) throws Exception {
         final Properties properties = new Properties();
         try {
             properties.load(new FileReader(file));
+            LOG.warn(String.format("Loaded CServerConfig from %s", file));
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
-                LOG.error("Failed to load properties from: " + file, e);
+                LOG.error(String.format("Failed to load properties from %s", file), e);
                 if (exception == null) {
                     exception = e;
                 }
@@ -97,7 +129,6 @@ public class CServerConfig {
             return;
         }
         this.properties.putAll(properties);
-        configFileNames.add(file.getAbsolutePath());
     }
 
     /**
@@ -117,13 +148,6 @@ public class CServerConfig {
      */
     public Exception getException() {
         return exception;
-    }
-
-    /**
-     * @return The list of configuration file names.
-     */
-    public List<String> getConfigFileNames() {
-        return configFileNames;
     }
 
     /**

@@ -21,38 +21,40 @@ public class BulkLoader extends Thread
     @Override
     public void run()
     {
+        DB db = null;
         try {
-            DB db = null;
-            try {
-                db = dbHost == null ? null : new DB(dbHost, dbPort, dbUser, dbPassword);
-            } catch (Exception e) {
-                logger.error("Unable to initialize DB object", e);
-            }
-            tracker = new Tracker(db, artifactsSchema);
-            prepareWorkArea(db);
-            tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
-                         dbUser, dbHost, dbPort, groups, resume, cleanup);
-            if (taskGeneratorActions == null) {
-                taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
-            }
-            IdentityHashMap<UserTable, TableTasks> tableTasksMap =
-                    new TaskGenerator(this, taskGeneratorActions).generateTasks();
-            DataGrouper dataGrouper = new DataGrouper(db, artifactsSchema, tracker);
-            if (resume) {
-                dataGrouper.resume();
-            } else {
-                dataGrouper.run(tableTasksMap);
-            }
-            new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tableTasksMap));
-            persistitStore.syncColumns();
-            if (cleanup) {
-                deleteWorkArea(db);
-            }
-            tracker.info("Loading complete");
-            termination = new OKException();
+            db = dbHost == null ? null : new DB(dbHost, dbPort, dbUser, dbPassword);
         } catch (Exception e) {
-            tracker.error("Bulk load terminated with exception", e);
-            termination = e;
+            logger.error("Unable to initialize DB object", e);
+        }
+        if (db != null) {
+            try {
+                tracker = new Tracker(db, artifactsSchema);
+                prepareWorkArea(db);
+                tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
+                             dbUser, dbHost, dbPort, groups, resume, cleanup);
+                if (taskGeneratorActions == null) {
+                    taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
+                }
+                IdentityHashMap<UserTable, TableTasks> tableTasksMap =
+                        new TaskGenerator(this, taskGeneratorActions).generateTasks();
+                DataGrouper dataGrouper = new DataGrouper(db, artifactsSchema, tracker);
+                if (resume) {
+                    dataGrouper.resume();
+                } else {
+                    dataGrouper.run(tableTasksMap);
+                }
+                new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tableTasksMap));
+                persistitStore.syncColumns();
+                if (cleanup) {
+                    deleteWorkArea(db);
+                }
+                tracker.info("Loading complete");
+                termination = new OKException();
+            } catch (Exception e) {
+                tracker.error("Bulk load terminated with exception", e);
+                termination = e;
+            }
         }
     }
 
@@ -108,10 +110,17 @@ public class BulkLoader extends Thread
         return tracker.recentEvents(lastEventId);
     }
 
-    public BulkLoader(Store store, AkibaInformationSchema ais,
-                      List<String> groups, String artifactsSchema,
-                      Map<String, String> sourceSchemas, String dbHost, int dbPort,
-                      String dbUser, String dbPassword, boolean resume, boolean cleanup)
+    public BulkLoader(Store store,
+                      AkibaInformationSchema ais,
+                      List<String> groups,
+                      String artifactsSchema,
+                      Map<String, String> sourceSchemas,
+                      String dbHost,
+                      int dbPort,
+                      String dbUser,
+                      String dbPassword,
+                      boolean resume,
+                      boolean cleanup)
             throws ClassNotFoundException, SQLException
     {
         this.persistitStore = (PersistitStore) store;
@@ -210,22 +219,23 @@ public class BulkLoader extends Thread
 
     private static final String TEMPLATE_DROP_BULK_LOAD_SCHEMA = "drop schema if exists %s";
     private static final String TEMPLATE_CREATE_BULK_LOAD_SCHEMA = "create schema %s";
-    private static final String TEMPLATE_CREATE_TASKS_TABLE = "create table %s.task("
-                                                              + "    task_id int auto_increment, "
-                                                              + "    task_type enum('GenerateFinalBySort', "
-                                                              + "                   'GenerateFinalByMerge', "
-                                                              + "                   'GenerateChild', "
-                                                              + "                   'GenerateParentBySort',"
-                                                              + "                   'GenerateParentByMerge') not null, "
-                                                              + "    state enum('waiting', 'started', 'completed') not null, "
-                                                              + "    time_sec double, "
-                                                              + "    user_table_schema varchar(64) not null, "
-                                                              + "    user_table_table varchar(64) not null, "
-                                                              + "    user_table_depth int not null, "
-                                                              + "    artifact_schema varchar(64) not null, "
-                                                              + "    artifact_table varchar(64) not null, "
-                                                              + "    command varchar(10000) not null, "
-                                                              + "    primary key(task_id)" + ")";
+    private static final String TEMPLATE_CREATE_TASKS_TABLE =
+            "create table %s.task("
+            + "    task_id int auto_increment, "
+            + "    task_type enum('GenerateFinalBySort', "
+            + "                   'GenerateFinalByMerge', "
+            + "                   'GenerateChild', "
+            + "                   'GenerateParentBySort',"
+            + "                   'GenerateParentByMerge') not null, "
+            + "    state enum('waiting', 'started', 'completed') not null, "
+            + "    time_sec double, "
+            + "    user_table_schema varchar(64) not null, "
+            + "    user_table_table varchar(64) not null, "
+            + "    user_table_depth int not null, "
+            + "    artifact_schema varchar(64) not null, "
+            + "    artifact_table varchar(64) not null, "
+            + "    command varchar(10000) not null, "
+            + "    primary key(task_id)" + ")";
 
     // TODO: Once this is set, it is never unset. This enables tracking of
     // progress by BulkLoaderClient even after the

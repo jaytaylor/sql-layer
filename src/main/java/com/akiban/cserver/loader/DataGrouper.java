@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.IdentityHashMap;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.util.Command;
+import com.akiban.util.Command;
 
 public class DataGrouper
 {
@@ -78,7 +78,8 @@ public class DataGrouper
     }
 
     private void saveTasks(DB.Connection connection,
-                           IdentityHashMap<UserTable, TableTasks> tableTasksMap)
+                           IdentityHashMap<UserTable,
+                           TableTasks> tableTasksMap)
             throws SQLException
     {
         tracker.info("Saving tasks");

@@ -39,7 +39,7 @@ class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public int getNetworkPort() {
-        String value = config.property(CServer.P_CSERVER_PORT);
+        String value = cserver.port();
         return Integer.parseInt(value);
     }
 

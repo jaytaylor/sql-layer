@@ -27,10 +27,10 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
 
     @Override
     public void setUp() throws Exception {
-        store = new PersistitStore(CServerConfig.unitTestConfig(),
-                new RowDefCache());
         CServerUtil.cleanUpDirectory(DATA_PATH);
         PersistitStore.setDataPath(DATA_PATH.getPath());
+        store = new PersistitStore(CServerConfig.unitTestConfig(),
+                new RowDefCache());
         store.startUp();
         store.setVerbose(true);
         store.getRowDefCache().setAIS(new CServer(false).primordialAIS());

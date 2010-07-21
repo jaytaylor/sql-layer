@@ -112,7 +112,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         PERSISTIT_PROPERTIES.put("logsize", "1G");
     }
 
-    static String datapath = "/tmp/chunkserver_data";
+    private static final String DEFAULT_DATAPATH = "/tmp/chunkserver_data";
+
+    static String datapath = null;
 
     private boolean verbose = false;
 
@@ -148,6 +150,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     private Map<Thread, Map<Integer, RowCollector>> sessionRowCollectorMap = new ConcurrentHashMap<Thread, Map<Integer, RowCollector>>();
 
     public static void setDataPath(final String path) {
+/* This creates problems for unit tests because several of them are run in one VM and static state persists.
+        synchronized (PersistitStore.class) {
+            if (datapath != null && !datapath.equals(path)) {
+                throw new StoreException
+                    (-1, String.format("Cannot reset datapath. Current value: %s, new value: %s",
+                                       datapath, path));
+            }
+*/
         datapath = path;
         VBulkLoader.setDataPath(datapath);
     }
@@ -231,6 +241,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     public synchronized void startUp() throws Exception {
 
+        synchronized (PersistitStore.class) {
+            if (datapath == null) {
+                datapath = DEFAULT_DATAPATH;
+            }
+        }
         // Util.printRuntimeInfo();
 
         if (db == null) {
@@ -249,6 +264,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             if (!isUnitTest) {
                 resetMemoryAllocation();
             }
+
+            ensureDirectoryExists(path, false);
 
             //
             // Override default property values with CServerConfig-specified
@@ -284,6 +301,25 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     "cserver.cover", "true"));
 
             configureVStore(path);
+        }
+    }
+
+    private static void ensureDirectoryExists(String path, boolean alreadyTriedCreatingDirectory)
+        throws StoreException
+    {
+        File dir = new File(path);
+        if (dir.exists()) {
+            if (!dir.isDirectory()) {
+                throw new StoreException(-1, String.format("%s exists but is not a directory", dir));
+            }
+        } else {
+            if (alreadyTriedCreatingDirectory) {
+                throw new StoreException
+                    (-1, String.format("Unable to create directory %s. Permissions problem?", dir));
+            } else {
+                dir.mkdirs();
+                ensureDirectoryExists(path, true);
+            }
         }
     }
 

@@ -162,7 +162,8 @@ public class BulkLoaderClient {
         logger.info(String.format("cleanup: %s", cleanup));
     }
 
-    private ChannelNotifier startNetwork() {
+    private ChannelNotifier startNetwork()
+    {
         MessageRegistry.reset();
         MessageRegistry.initialize();
         MessageRegistry.only().registerModule("com.akiban.cserver.message");
@@ -212,10 +213,8 @@ public class BulkLoaderClient {
     private static final Log logger = LogFactory.getLog(BulkLoaderClient.class);
     private static final String LOCALHOST = "localhost";
     private static final int DEFAULT_MYSQL_PORT = 3306;
-    private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999; // because
-    // there
-    // has to
-    // be one
+    // Networking layer requires a listening port
+    private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999;
 
     private AkibaConnection connection;
     private String cserverHost;

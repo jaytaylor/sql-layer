@@ -7,6 +7,8 @@ public interface CServerConstants extends MySQLErrorConstants {
     public final static short ERR = 100;
     public final static short MISSING_OR_CORRUPT_ROW_DEF = 99;
     public final static short UNSUPPORTED_MODIFICATION = 98;
+    public final static int DEFAULT_CSERVER_PORT = 5140;
+    public final static String DEFAULT_CSERVER_PORT_STRING = Integer.toString(DEFAULT_CSERVER_PORT);
 
     // From include/my_base.h:
 
