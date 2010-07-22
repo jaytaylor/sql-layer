@@ -69,9 +69,9 @@ public class VariableLengthArray implements FieldArray {
             size = (int)metaColumnSize - metaOffset;
         }
         assert size >= 0;
-        if(size <= 0) {
-            System.out.println("metaOffset  = "+ metaOffset +" metaColumnSize "+metaColumnSize +", mapSize"+mapSize);
-        }
+//        if(size <= 0) {
+//            System.out.println("metaOffset  = "+ metaOffset +" metaColumnSize "+metaColumnSize +", mapSize"+mapSize);
+//        }
         assert size > 0;
         
         metaColumn =  metaChan.map(FileChannel.MapMode.READ_ONLY, metaOffset, size);

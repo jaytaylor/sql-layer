@@ -1,6 +1,6 @@
 
 /*
-schema data_dictionary_test;
+schema data_dictionary_test groupschema akiba_objects;
 
 group coi {
   table customer {
@@ -26,7 +26,7 @@ create table `order`(
     customer_id bigint not null,
     order_date int not null,
     primary key(order_id),
-    foreign key(customer_id) references customer
+    foreign key(customer_id) references customer(customer_id)
 ) engine = akibadb;
 
 create table `address`(
@@ -44,7 +44,7 @@ create table item(
     quantity int not null,
     unit_price int not null,
     primary key(part_id),
-    foreign key(order_id) references `order`
+    foreign key(order_id) references `order`(order_id)
 ) engine = akibadb;
 
 create table component(
@@ -54,7 +54,7 @@ create table component(
     unique_id int not null,
     description varchar(50),
     primary key (`component_id`),
-    foreign key `fk` (`part_id`),
+    foreign key `fk` (`part_id`) references item(`part_id`),
     unique key `uk` (`unique_id`),
     key `xk` (supplier_id)
 ) engine = akibadb;

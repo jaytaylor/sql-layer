@@ -21,11 +21,10 @@ create table tables(
     schema_name       varchar(64),
     table_name        varchar(64),
     table_type        varchar(8),
-    table_id          smallint,
+    table_id          int,
     group_name        varchar(64),
     source_types      int,
-    primary key(schema_name, table_name),
-    foreign key(group_name) references groups
+    primary key(schema_name, table_name)
 ) engine = akibadb;
 
 create table columns (
@@ -43,7 +42,7 @@ create table columns (
     group_column_name   varchar(64),
     maximum_size		bigint,
     prefix_size			int,
-    character_set             varchar(32),
+    character_set       varchar(32),
     collation           varchar(32),
     primary key(schema_name, table_name, column_name)
 ) engine = akibadb;
@@ -87,9 +86,9 @@ create table index_columns (
     table_name        varchar(64),
     index_name        varchar(64),
     column_name       varchar(64),
-    ordinal_position int,
-    is_ascending     tinyint,
-    indexed_length   int,
+    ordinal_position  int,
+    is_ascending      tinyint,
+    indexed_length    int,
     primary key(schema_name, table_name, index_name, column_name)
 ) engine = akibadb;
 

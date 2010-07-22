@@ -30,6 +30,8 @@ public interface Store {
     void setVerbose(final boolean verbose);
 
     RowCollector getCurrentRowCollector(final int tableId);
+    
+    int createTable(final String createTableStatements) throws Exception;
 
     int writeRow(final RowData rowData) throws Exception;
 

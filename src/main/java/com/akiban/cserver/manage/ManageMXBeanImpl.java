@@ -101,4 +101,17 @@ class ManageMXBeanImpl implements ManageMXBean {
         }
         return "done";
     }
+    
+    @Override
+    public void enableExperimentalSchema() {
+        cserver.setExperimentalSchema(true);
+    }
+    
+    @Override
+    public void disableExperimentalSchema() {
+        cserver.setExperimentalSchema(false);
+    }
+    
+    
+
 }

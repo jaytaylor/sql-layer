@@ -17,7 +17,6 @@ import com.persistit.KeyState;
 
 public class VOrderTest extends TestCase implements CServerConstants {
 
-    private final static File DATA_PATH = new File("/tmp/data/");
     private final static String DDL_FILE_NAME = "src/test/resources/vordering_test.ddl";
     private final static String PREFIX = "vorder_test";
     private PersistitStore store;
@@ -31,8 +30,6 @@ public class VOrderTest extends TestCase implements CServerConstants {
     public void setUp() throws Exception {
         rowDefCache = new RowDefCache();
         store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
-        CServerUtil.cleanUpDirectory(DATA_PATH);
-        PersistitStore.setDataPath(DATA_PATH.getPath());
         final AkibaInformationSchema ais = new DDLSource()
                 .buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);

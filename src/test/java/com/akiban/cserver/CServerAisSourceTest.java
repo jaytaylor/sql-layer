@@ -17,8 +17,6 @@ import com.akiban.cserver.store.Store;
 
 public class CServerAisSourceTest extends TestCase implements CServerConstants {
 
-    private final static File DATA_PATH = new File("/tmp/data");
-
     private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
 
     private Store store;
@@ -27,8 +25,6 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
 
     @Override
     public void setUp() throws Exception {
-        CServerUtil.cleanUpDirectory(DATA_PATH);
-        PersistitStore.setDataPath(DATA_PATH.getPath());
         store = new PersistitStore(CServerConfig.unitTestConfig(),
                 new RowDefCache());
         store.startUp();

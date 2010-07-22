@@ -81,15 +81,50 @@ public class PersistitStoreIndexManager {
         }
     }
 
+    public void deleteIndexAnalysis(final IndexDef indexDef) throws Exception {
+        final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
+                ANALYSIS_TABLE_NAME);
+        if (indexAnalysisRowDef == null) {
+            // true for some unit tests
+            return;
+        }
+        final Exchange analysisEx = store
+                .getExchange(indexAnalysisRowDef, null);
+        final Transaction transaction = analysisEx.getTransaction();
+        transaction.run(new TransactionRunnable() {
+            @Override
+            public void runTransaction() throws PersistitException,
+                    RollbackException {
+
+                RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
+                rowData.createRow(indexAnalysisRowDef, new Object[] {
+                        indexDef.getRowDef().getRowDefId(), indexDef.getId() });
+                //
+                // Remove previous analysis
+                //
+                try {
+                    store.constructHKey(analysisEx, indexAnalysisRowDef,
+                            rowData);
+                    analysisEx.getKey().cut();
+                    analysisEx.remove(Key.GT);
+                } catch (PersistitException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
+
     public void analyzeIndex(final IndexDef indexDef, final int sampleSize)
             throws Exception {
-        
+
         final Exchange probeEx;
         final Key startKey;
         final Key endKey;
         final int keyDepth;
         KeyFilter keyFilter = null;
-        
+
         if (indexDef.isHKeyEquivalent()) {
             probeEx = store.getExchange(indexDef.getRowDef(), null);
             startKey = new Key(store.getDb());
@@ -107,7 +142,7 @@ public class PersistitStoreIndexManager {
                 terms[depth] = KeyFilter.ALL;
             }
             keyFilter = new KeyFilter(terms, terms.length, terms.length);
-            
+
         } else {
             probeEx = store.getExchange(indexDef.getRowDef(), indexDef);
             startKey = Key.LEFT_GUARD_KEY;
@@ -120,8 +155,8 @@ public class PersistitStoreIndexManager {
         int treeLevel = Math.max(0, probeEx.getTree().getDepth()
                 - STARTING_TREE_DEPTH);
         while (treeLevel >= 0) {
-            keyHistogram = probeEx.computeHistogram(startKey,
-                    endKey, sampleSize, keyDepth, keyFilter, treeLevel);
+            keyHistogram = probeEx.computeHistogram(startKey, endKey,
+                    sampleSize, keyDepth, keyFilter, treeLevel);
             if (keyHistogram.getKeyCount() > sampleSize
                     * SAMPLE_SIZE_MULTIPLIER) {
                 break;
@@ -138,11 +173,13 @@ public class PersistitStoreIndexManager {
 
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
-        final Exchange analysisEx = store.getExchange(indexAnalysisRowDef, null);
+        final Exchange analysisEx = store
+                .getExchange(indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
         final Date now = new Date();
         final KeyHistogram keyHistogram0 = keyHistogram;
-        final int multiplier = (int)(Math.pow(INDEX_LEVEL_MULTIPLIER, keyHistogram.getTreeDepth()));
+        final int multiplier = (int) (Math.pow(INDEX_LEVEL_MULTIPLIER,
+                keyHistogram.getTreeDepth()));
         final Key key = new Key((Persistit) null);
         final RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
         final RowData indexRowData = new RowData(new byte[ROW_DATA_LENGTH]);
@@ -162,7 +199,8 @@ public class PersistitStoreIndexManager {
                 // Remove previous analysis
                 //
                 try {
-                    store.constructHKey(analysisEx, indexAnalysisRowDef, rowData);
+                    store.constructHKey(analysisEx, indexAnalysisRowDef,
+                            rowData);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {

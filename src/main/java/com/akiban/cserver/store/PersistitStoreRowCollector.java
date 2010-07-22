@@ -81,11 +81,15 @@ public class PersistitStoreRowCollector implements RowCollector,
 
     private I2R[] coveringFields;
 
-    private long deliveredRows;
+    private int deliveredRows;
+    
+    private int almostDeliveredRows;
 
-    private long deliveredBuffers;
+    private int deliveredBuffers;
 
     private long deliveredBytes;
+    
+    private int repeatedRows;
 
     /**
      * Structure that maps the index key field depth to a RowData's field index.
@@ -474,6 +478,8 @@ public class PersistitStoreRowCollector implements RowCollector,
                             + "available bytes: " + available);
         }
         if (!more) {
+            deliveredBytes += payload.position();
+            deliveredBuffers++;
             return false;
         }
 
@@ -495,17 +501,8 @@ public class PersistitStoreRowCollector implements RowCollector,
             //
             if (pendingFromLevel < pendingToLevel
                     && pendingToLevel == pendingRowData.length) {
-                /**
-                 * TODO -- Temporary (?) hack to overcome a memory corruption
-                 * issue in csclient.
-                 */
-                if (pendingFromLevel + 1 < pendingRowData.length
-                        && payload.remaining() < payload.capacity() / 16) {
-                    result = false;
-                    break;
-                }
 
-                if (deliverRow(pendingRowData[pendingFromLevel], payload)) {
+                if (deliverRow(pendingRowData[pendingFromLevel], payload, pendingFromLevel + 1 == pendingRowData.length)) {
                     pendingFromLevel++;
                     if (isSingleRowMode() && pendingFromLevel == pendingToLevel) {
                         more = false;
@@ -635,6 +632,7 @@ public class PersistitStoreRowCollector implements RowCollector,
             }
         }
         SCAN_NEXT_ROW_TAP.out();
+
         return result;
     }
 
@@ -667,34 +665,31 @@ public class PersistitStoreRowCollector implements RowCollector,
         rowData.createRow(rowDef, values);
     }
 
-    boolean deliverRow(final RowData rowData, final ByteBuffer payload)
+    boolean deliverRow(final RowData rowData, final ByteBuffer payload, final boolean isLeaf)
             throws IOException {
         if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
             final int position = payload.position();
             payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
                     .getRowSize());
+            almostDeliveredRows++;
+            if (isLeaf) {
+                payload.mark();
+                deliveredRows = almostDeliveredRows;
+            }
             if (store.isVerbose() && LOG.isDebugEnabled()) {
                 LOG.info("Select row: "
                         + rowData.toString(store.getRowDefCache()) + " len="
                         + rowData.getRowSize() + " position=" + position);
             }
-            deliveredRows++;
-            deliveredBytes += rowData.getRowSize();
             return true;
         } else {
-            deliveredBuffers++;
-            return false;
-        }
-    }
-
-    /**
-     * TODO -- Temporary (?) hack to overcome a memory corruption issue in
-     * csclient.
-     */
-    @Override
-    public void refreshAncestorRows() {
-        if (pendingFromLevel > 0) {
+            // ScanRowsMoreRequest: deliver a full hierarchy.
+            repeatedRows += pendingFromLevel - (almostDeliveredRows - deliveredRows);
             pendingFromLevel = 0;
+            // Trim off any non-leaf rows at end of buffer
+            payload.reset();
+            almostDeliveredRows = deliveredRows;
+            return false;
         }
     }
 
@@ -724,15 +719,18 @@ public class PersistitStoreRowCollector implements RowCollector,
 
     @Override
     public boolean hasMore() {
-        if (!more) {
+        if (!more && pendingFromLevel >= pendingToLevel) {
+            close();
             store.removeCurrentRowCollector(rowDefId);
             if (store.isVerbose() && LOG.isInfoEnabled()) {
                 LOG.info(String.format("RowCollector %d delivered %,d rows in "
                         + "%,d buffers / %,d bytes", id, deliveredRows,
                         deliveredBuffers + 1, deliveredBytes));
             }
+            return false;
+        } else {
+            return true;
         }
-        return more;
     }
 
     @Override
@@ -747,12 +745,20 @@ public class PersistitStoreRowCollector implements RowCollector,
         }
     }
 
-    public long getDeliveredRows() {
+    public int getDeliveredRows() {
         return deliveredRows;
     }
 
-    public long getDeliveredBuffers() {
+    public int getDeliveredBuffers() {
         return deliveredBuffers;
+    }
+    
+    public long getDeliveredBytes() {
+        return deliveredBytes;
+    }
+    
+    public int getRepeatedRows() {
+        return repeatedRows;
     }
     
     public long getId() {

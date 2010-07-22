@@ -56,10 +56,10 @@ public class VBulkLoader {
                                 .getColumnName(), info.getTableId(), info
                                 .getOrdinal(), info.getSize(), info.getCount());
 
-                System.out.println("VSTore: creating columnDes: "
-                        + descrip.getSchema() + descrip.getTable()
-                        + descrip.getColumn() + ", fieldCount = "
-                        + descrip.getFieldCount() + " id = " + descrip.getId());
+//                System.out.println("VSTore: creating columnDes: "
+//                        + descrip.getSchema() + descrip.getTable()
+//                        + descrip.getColumn() + ", fieldCount = "
+//                        + descrip.getFieldCount() + " id = " + descrip.getId());
 
                 columnDescriptors.add(descrip);
             } catch (Exception e) {

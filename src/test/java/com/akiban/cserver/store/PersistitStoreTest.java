@@ -13,20 +13,21 @@ import org.junit.Test;
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConfig;
-import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.decider.DecisionEngine;
 
 public class PersistitStoreTest {
 
-    private final static File DATA_PATH = new File("/tmp/data");
     private final static String DDL_FILE_NAME = "src/test/resources/vcollector_test-1.ddl";
     private PersistitStore store;
     private RowDefCache rowDefCache;
     private AkibaInformationSchema ais;
 
     private void loadVData() throws Exception {
+        final CServerConfig config = CServerConfig.unitTestConfig();
+        final String dataPath = new File(config.property("cserver.datapath"))
+                .getAbsolutePath();
         List<RowDef> rowDefs = rowDefCache.getRowDefs();
         Iterator<RowDef> i = rowDefs.iterator();
         while (i.hasNext()) {
@@ -38,12 +39,10 @@ public class PersistitStoreTest {
             vstore.threshold = 1048576;
             vstore.datapath = "";
 
-            GroupGenerator dbGen = new GroupGenerator(DATA_PATH
-                    .getAbsolutePath()
-                    + "/vstore/", ais, rowDefCache, vstore, false, true);
+            GroupGenerator dbGen = new GroupGenerator(dataPath + "/vstore/",
+                    ais, rowDefCache, vstore, false, true);
             dbGen.generateGroup(rowDef, 2);
-            dbGen.getMeta().write(
-                    new File(DATA_PATH.getAbsoluteFile() + "/vstore/.vmeta"));
+            dbGen.getMeta().write(new File(dataPath + "/vstore/.vmeta"));
         }
     }
 
@@ -102,11 +101,6 @@ public class PersistitStoreTest {
         assertEquals(1000, store.getDeltaThreshold());
         assertEquals(null, store.getVMeta());
 
-        CServerUtil.cleanUpDirectory(DATA_PATH);
-        PersistitStore.setDataPath(DATA_PATH.getPath());
-
-        CServerUtil.cleanUpDirectory(DATA_PATH);
-        PersistitStore.setDataPath(DATA_PATH.getPath());
         ais = new DDLSource().buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);
 

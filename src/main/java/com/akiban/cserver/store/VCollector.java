@@ -201,7 +201,7 @@ public class VCollector implements RowCollector {
         }
 
         int chunkDepth = payload.position();
-        System.out.println("chunk depth = " + chunkDepth);
+//        System.out.println("chunk depth = " + chunkDepth);
         RowData row = new RowData();
         boolean scannedARow = false;
 
@@ -341,11 +341,27 @@ public class VCollector implements RowCollector {
         // assert false;
         return hasMore;
     }
-
-    @Override
-    public void refreshAncestorRows() {
-        assert false;
+    
+    public int getDeliveredRows() {
+        return -1;
     }
+
+    public int getDeliveredBuffers() {
+        return -1;
+    }
+    
+    public long getDeliveredBytes() {
+        return -1;
+    }
+    
+    public int getRepeatedRows() {
+        return -1;
+    }
+    
+    public long getId() {
+        return -1;
+    }
+
 
     private boolean hasMore;
     private int totalRows;

@@ -26,6 +26,10 @@ public interface ManageMXBean
     
     void setMaxCapturedMessageCount(final int count);
     
+    void enableExperimentalSchema();
+    
+    void disableExperimentalSchema();
+    
     // TODO - temporary
     String copyBackPages();
     

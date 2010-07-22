@@ -15,6 +15,12 @@
 	<dependencies>
 
 		<dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.9</version>
+        </dependency>
+
+		<dependency>
 			<groupId>com.thimbleware.jmemcached</groupId>
 			<artifactId>jmemcached-cli</artifactId>
 			<version>0.9.3-AKIBAN</version>
@@ -67,21 +73,6 @@
             <artifactId>akiban-admin</artifactId>
             <version>1.0.0</version>
         </dependency>
-
-<!--
-The akiban-vstore project appears to be hollowed out.  No need for this dependency?
-		<dependency>
-			<groupId>com.akiban</groupId>
-			<artifactId>akiban-vstore</artifactId>
-			<version>0.0.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>commons-logging</groupId>
-			<artifactId>commons-logging</artifactId>
-			<version>1.1</version>
-		</dependency>
--->
 	</dependencies>
 
 	<build>

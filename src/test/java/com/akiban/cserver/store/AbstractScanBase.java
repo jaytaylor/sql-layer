@@ -2,7 +2,6 @@ package com.akiban.cserver.store;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +26,6 @@ import com.akiban.util.ByteBufferFactory;
 
 public abstract class AbstractScanBase implements CServerConstants {
 
-    protected final static File DATA_PATH = new File("/tmp/data");
-
     protected final static String DDL_FILE_NAME = "src/test/resources/scan_rows_test.ddl";
 
     protected final static String SCHEMA = "scan_rows_test";
@@ -50,8 +47,6 @@ public abstract class AbstractScanBase implements CServerConstants {
 
         rowDefCache = new RowDefCache();
         store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
-        CServerUtil.cleanUpDirectory(DATA_PATH);
-        PersistitStore.setDataPath(DATA_PATH.getPath());
         final AkibaInformationSchema ais0 = new CServer(false).primordialAIS();
         rowDefCache.setAIS(ais0);
         final AkibaInformationSchema ais = new DDLSource()
@@ -138,7 +133,7 @@ public abstract class AbstractScanBase implements CServerConstants {
         if (VERBOSE) {
             System.out.println();
         }
-        return scanCount;
+        return scanCount - (int)rc.getRepeatedRows();
     }
 
     protected int findIndexId(final RowDef groupRowDef,

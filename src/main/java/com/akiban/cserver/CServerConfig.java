@@ -31,6 +31,8 @@ public class CServerConfig {
             "/etc/akiban/chunkserver.properties" };
 
     private final static String SEARCH_PATH_PROPERTY_NAME = "com.akiban.config";
+    
+    private final static String DEFAULT_UNIT_TEST_DATA_PATH = "/tmp/data";
 
     private final Properties properties = new Properties();
 
@@ -39,8 +41,10 @@ public class CServerConfig {
     private Exception exception;
 
     public static CServerConfig unitTestConfig() {
+        CServerUtil.cleanUpDirectory(new File(DEFAULT_UNIT_TEST_DATA_PATH));
         final CServerConfig csc = new CServerConfig();
-        csc.properties.setProperty("cserver.fixed", "true");
+        csc.setProperty("cserver.datapath", DEFAULT_UNIT_TEST_DATA_PATH);
+        csc.setProperty("cserver.fixed", "true");
         return csc;
     }
 

@@ -1,7 +1,6 @@
 package com.akiban.cserver;
 
 import java.io.DataInputStream;
-import java.net.BindException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,20 +8,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.akiban.admin.Admin;
-import com.akiban.ais.io.Writer;
-import com.akiban.ais.util.AISPrinter;
-import com.akiban.util.Command;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.akiban.admin.Admin;
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.io.Reader;
+import com.akiban.ais.io.Writer;
 import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Source;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.util.AISPrinter;
 import com.akiban.cserver.manage.MXBeanManager;
 import com.akiban.cserver.message.ShutdownRequest;
 import com.akiban.cserver.message.ShutdownResponse;
@@ -39,8 +38,6 @@ import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 import com.akiban.util.Tap;
-import org.apache.log4j.Level;
-import org.jboss.netty.channel.ChannelException;
 
 /**
  * @author peter
@@ -61,7 +58,8 @@ public class CServer implements CServerConstants {
     /**
      * Port on which the CServer will listen for requests.
      */
-    public static final String CSERVER_PORT = System.getProperty("cserver.port", DEFAULT_CSERVER_PORT_STRING);
+    public static final String CSERVER_PORT = System.getProperty(
+            "cserver.port", DEFAULT_CSERVER_PORT_STRING);
 
     /**
      * Config property name and default for setting of the verbose flag. When
@@ -73,18 +71,20 @@ public class CServer implements CServerConstants {
     private static final String DATAPATH_PROPERTY_NAME = "cserver.datapath";
 
     /**
-     * Name of this chunkserver. Must match one of the entries in /config/cluster.properties
-     * (managed by Admin).
+     * Name of this chunkserver. Must match one of the entries in
+     * /config/cluster.properties (managed by Admin).
      */
-    private static final String CSERVER_NAME = System.getProperty("cserver.name");
+    private static final String CSERVER_NAME = System
+            .getProperty("cserver.name");
 
-    private static Tap CSERVER_EXEC = Tap.add(new Tap.PerThread("cserver", Tap.TimeStampLog.class));
+    private static Tap CSERVER_EXEC = Tap.add(new Tap.PerThread("cserver",
+            Tap.TimeStampLog.class));
 
     private static int DEFAULT_MAX_CAPTURE_COUNT = 10;
 
     private final RowDefCache rowDefCache;
     private final CServerConfig config;
-    private final Store hstore;
+    private final PersistitStore hstore;
     private final String cserverPort;
     private AkibaInformationSchema ais0;
     private AkibaInformationSchema ais;
@@ -93,21 +93,32 @@ public class CServer implements CServerConstants {
     private Map<Integer, Thread> threadMap;
     private boolean leadCServer;
     private AISDistributor aisDistributor;
+    private boolean experimentalSchema;
 
     private volatile int maxCaptureCount = DEFAULT_MAX_CAPTURE_COUNT;
     private volatile boolean enableMessageCapture;
     private List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
 
-    public CServer(boolean loadConfig) throws Exception {
+    /**
+     * Construct a chunk server. If <tt>loadConfig</tt> is false then use default unit
+     * test properties.
+     * @param loadConfig
+     * @throws Exception
+     */
+    public CServer(final boolean loadConfig) throws Exception {
         cserverPort = CSERVER_PORT;
         rowDefCache = new RowDefCache();
-        config = new CServerConfig();
         if (loadConfig) {
-            config.load();
-            if (config.getException() != null) {
-                LOG.fatal("CServer configuration failed");
-                throw new Exception("CServer configuration failed");
+            config = new CServerConfig();
+            if (loadConfig) {
+                config.load();
+                if (config.getException() != null) {
+                    LOG.fatal("CServer configuration failed");
+                    throw new Exception("CServer configuration failed");
+                }
             }
+        } else {
+            config = CServerConfig.unitTestConfig();
         }
 
         hstore = new PersistitStore(config, rowDefCache);
@@ -115,7 +126,8 @@ public class CServer implements CServerConstants {
     }
 
     public void start() throws Exception {
-        LOG.warn(String.format("Starting chunkserver %s on port %s", CSERVER_NAME, CSERVER_PORT));
+        LOG.warn(String.format("Starting chunkserver %s on port %s",
+                CSERVER_NAME, CSERVER_PORT));
         Tap.registerMXBean();
         MXBeanManager.registerMXBean(this, config);
         MessageRegistry.initialize();
@@ -123,18 +135,18 @@ public class CServer implements CServerConstants {
         MessageRegistry.only().registerModule("com.akiban.ais");
         MessageRegistry.only().registerModule("com.akiban.message");
         NetworkHandlerFactory.initializeNetwork("localhost", // property(P_CSERVER_HOST),
-                                                CSERVER_PORT,
-                                                new ChannelNotifier());
+                CSERVER_PORT, new ChannelNotifier());
         ais0 = primordialAIS();
         rowDefCache.setAIS(ais0);
-        PersistitStore.setDataPath(config.property(DATAPATH_PROPERTY_NAME));
         hstore.startUp();
-        hstore.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false").equalsIgnoreCase("true"));
+        hstore.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
+                .equalsIgnoreCase("true"));
         hstore.setOrdinals();
         acquireAIS();
         if (config.usingAdmin()) {
             Admin admin = Admin.only();
-            leadCServer = admin.clusterConfig().leadChunkserver().name().equals(CSERVER_NAME);
+            leadCServer = admin.clusterConfig().leadChunkserver().name()
+                    .equals(CSERVER_NAME);
             admin.markChunkserverUp(CSERVER_NAME);
             if (isLeader()) {
                 aisDistributor = new AISDistributor(this);
@@ -143,7 +155,7 @@ public class CServer implements CServerConstants {
             leadCServer = true;
         }
         LOG.warn(String.format("Started chunkserver %s on port %s, lead = %s",
-                               CSERVER_NAME, CSERVER_PORT, isLeader()));
+                CSERVER_NAME, CSERVER_PORT, isLeader()));
         open = true;
     }
 
@@ -166,8 +178,7 @@ public class CServer implements CServerConstants {
         Tap.unregisterMXBean();
     }
 
-    public String port()
-    {
+    public String port() {
         return cserverPort;
     }
 
@@ -285,16 +296,16 @@ public class CServer implements CServerConstants {
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("Serving message " + message);
                     }
-                    
+
                     while (!open) {
                         LOG.warn("Waiting for startup complete.");
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ie) {
-                            
+
                         }
                     }
-                    
+
                     CSERVER_EXEC.in();
 
                     if (enableMessageCapture) {
@@ -317,7 +328,8 @@ public class CServer implements CServerConstants {
                     }
 
                     if (hstore.isVerbose() && LOG.isInfoEnabled()) {
-                        LOG.info("Executing "
+                        LOG
+                                .info("Executing "
                                         + (message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
                                                 .toString(rowDefCache)
                                                 : message.toString()));
@@ -371,8 +383,19 @@ public class CServer implements CServerConstants {
      * @throws Exception
      */
     public synchronized void acquireAIS() throws Exception {
-        final Source source = new CServerAisSource(hstore);
-        this.ais = new Reader(source).load(new AkibaInformationSchema(ais0));
+        if (experimentalSchema) {
+            final String schema = hstore.getSchema();
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Acquiring AIS from schema: " + CServerUtil.NEW_LINE
+                        + schema);
+            }
+            this.ais = new DDLSource().buildAISFromString(schema, ais0);
+            new Writer(new CServerAisTarget(hstore)).save(ais);
+        } else {
+            final Source source = new CServerAisSource(hstore);
+            this.ais = new Reader(source)
+                    .load(new AkibaInformationSchema(ais0));
+        }
         installAIS();
     }
 
@@ -423,7 +446,8 @@ public class CServer implements CServerConstants {
     }
 
     /**
-     * @param args the command line arguments
+     * @param args
+     *            the command line arguments
      */
     public static void main(String[] args) throws Exception {
         try {
@@ -561,5 +585,9 @@ public class CServer implements CServerConstants {
         synchronized (capturedMessageList) {
             return new ArrayList<CapturedMessage>(capturedMessageList);
         }
+    }
+
+    public void setExperimentalSchema(final boolean enabled) {
+        experimentalSchema = enabled;
     }
 }

@@ -61,10 +61,10 @@ public class CServerTest implements CServerConstants {
     @BeforeClass
     public static void setUpSuite() throws Exception {
         CServerUtil.cleanUpDirectory(DATA_PATH);
-        PersistitStore.setDataPath(DATA_PATH.getPath());
         MessageRegistryBase.reset();
         cserver = new CServer(false);
         cserver.setProperty("cserver.fixed", "true");
+        cserver.setProperty("cserver.datapath", DATA_PATH.getPath());
         cserver.start();
         ROW_DEF.setRowType(RowType.ROOT);
         ROW_DEF.setGroupRowDefId(ROW_DEF.getRowDefId());

@@ -25,8 +25,6 @@ import com.persistit.Volume;
 public class PersistitStoreWithAISTest extends TestCase implements
         CServerConstants {
 
-    private final static File DATA_PATH = new File("/tmp/data");
-
     private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
 
     private final static String SCHEMA = "data_dictionary_test";
@@ -189,8 +187,6 @@ public class PersistitStoreWithAISTest extends TestCase implements
     public void setUp() throws Exception {
         rowDefCache = new RowDefCache();
         store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
-        CServerUtil.cleanUpDirectory(DATA_PATH);
-        PersistitStore.setDataPath(DATA_PATH.getPath());
         final AkibaInformationSchema ais = new DDLSource()
                 .buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);
@@ -325,11 +321,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
                 for (int p = rowData.getBufferStart(); p < rowData
                         .getBufferEnd();) {
                     rowData.prepareRow(p);
+                    System.out.println(rowData.toString(rowDefCache));
                     p = rowData.getRowEnd();
                     scanCount++;
                 }
             }
-            assertEquals(17, scanCount);
+            assertEquals(rc.getDeliveredRows(), scanCount);
+            assertEquals(17, scanCount - rc.getRepeatedRows());
             td.end();
             System.out.println("testScanCOIrows: scanned " + scanCount
                     + " rows in " + (td.elapsed / 1000L) + "us");
@@ -382,12 +380,31 @@ public class PersistitStoreWithAISTest extends TestCase implements
         assertTrue(store.getTableManager()
                 .getTableStatus(td.defI.getRowDefId()).isDeleted());
 
-        result = store.dropTable(td.defCOI.getRowDefId());
+        result = store.dropTable(td.defA.getRowDefId());
+        assertEquals(OK, result);
+        assertNotNull(volume.getTree(td.defA.getPkTreeName(), false));
+        assertTrue(store.getTableManager()
+                .getTableStatus(td.defA.getRowDefId()).isDeleted());
+
+        result = store.dropTable(td.defC.getRowDefId());
+        assertEquals(OK, result);
+        assertTrue(store.getTableManager()
+                .getTableStatus(td.defC.getRowDefId()).isDeleted());
+
+        result = store.dropTable(td.defO.getRowDefId());
+        assertEquals(OK, result);
+        assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
+        assertTrue(store.getTableManager()
+                .getTableStatus(td.defO.getRowDefId()).isDeleted());
+
+        result = store.dropTable(td.defX.getRowDefId());
         assertEquals(OK, result);
 
         assertNull(volume.getTree(td.defCOI.getTreeName(), false));
         assertNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNull(volume.getTree(td.defI.getPkTreeName(), false));
+        assertNull(volume.getTree(td.defX.getPkTreeName(), false));
+        assertNull(volume.getTree(td.defA.getPkTreeName(), false));
     }
     
     public void testDropSchema() throws Exception {
@@ -414,6 +431,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
             assertEquals(OK, store.dropTable(td.defC.getRowDefId()));
             assertEquals(OK, store.dropTable(td.defCOI.getRowDefId()));
             assertEquals(OK, store.dropTable(td.defA.getRowDefId()));
+            assertEquals(OK, store.dropTable(td.defX.getRowDefId()));
             assertEquals(OK, store.dropSchema(SCHEMA));
             
             assertNull(volume.getTree(td.defCOI.getTreeName(), false));

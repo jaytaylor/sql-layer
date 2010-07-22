@@ -135,7 +135,7 @@ public class DeltaMonitor implements CommittedUpdateListener {
         boolean success = inserts.get(rowDef.getRowDefId()).add(newDelta);
         assert success;
         count++;
-        System.out.println("Count = " + count);
+        //System.out.println("Count = " + count);
         // XXX - Writing the V's should be a background task, and
         // not while holding a write lock that blocks the entire system. However
         // there are other questions that can be answered first (such as how do

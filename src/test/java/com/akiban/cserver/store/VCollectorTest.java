@@ -220,15 +220,15 @@ public class VCollectorTest {
                     byte[] actual = new byte[expected.length];
                     buffer.get(actual);
                     
-                      System.out.println(" count = "+rowCount++); 
-                      int k =0;
-                      while(k < expected.length) {
-                      System.out.print(Integer.toHexString(expected[k])+" ");
-                      k++; } k = 0; System.out.println(); while (k <
-                      actual.length) {
-                      System.out.print(Integer.toHexString(actual[k])+" ");
-                      k++; } System.out.println();
-                     
+//                      System.out.println(" count = "+rowCount++); 
+//                      int k =0;
+//                      while(k < expected.length) {
+//                      System.out.print(Integer.toHexString(expected[k])+" ");
+//                      k++; } k = 0; System.out.println(); while (k <
+//                      actual.length) {
+//                      System.out.print(Integer.toHexString(actual[k])+" ");
+//                      k++; } System.out.println();
+//                     
                     assertArrayEquals(expected, actual);
                 }
                 buffer.position(0);
@@ -354,7 +354,7 @@ public class VCollectorTest {
                     VCollector vc = new VCollector(dbGen.getMeta(), null,
                             rowDefCache, rowDef.getRowDefId(), dbGen
                                     .getGroupBitMap());
-                    System.out.println("size = "+ dbGen.getGroupSize());
+//                    System.out.println("size = "+ dbGen.getGroupSize());
                     ByteBuffer buffer = ByteBuffer.allocate(dbGen
                             .getGroupSize());
 

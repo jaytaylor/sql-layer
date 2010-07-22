@@ -56,7 +56,7 @@ public class VDeltaWriter {
 
     private void rewrite() throws Exception {
         VRewriteHelper helper = new VRewriteHelper(meta, cursor, tables);
-        System.out.println("get total rows = " + helper.getTotalRows());
+//        System.out.println("get total rows = " + helper.getTotalRows());
 
         for (int rowCount = 0; rowCount < helper.getTotalRows(); rowCount++) {
             Delta d = helper.getNextRow();
@@ -188,7 +188,7 @@ public class VDeltaWriter {
 
         File hkeyMeta = new File(prefix + "-hkey.meta");
         File hkeyData = new File(prefix + "-hkey.data");
-        System.out.println("writing key for tableID = " + rowDef.getRowDefId());
+//        System.out.println("writing key for tableID = " + rowDef.getRowDefId());
         FileOutputStream keyout = new FileOutputStream(hkeyMeta, true);
         byte[] metaSize = new byte[4];
         IFormat.packInt(metaSize, 0, key.getBytes().length);
@@ -217,7 +217,7 @@ public class VDeltaWriter {
             FieldDef field = rowDef.getFieldDef(i);
 
             String name = field.getName();
-            System.out.println("prefix= " + prefix + ", name = " + name);
+//            System.out.println("prefix= " + prefix + ", name = " + name);
             String fileName = prefix + name;
             File columnFile = new File(fileName);
             VWriterInfo info = columnInfo.get(fileName);
@@ -237,11 +237,11 @@ public class VDeltaWriter {
             long locationAndSize = rowDef.fieldLocation(rowData, i);
             if (0 == locationAndSize) {
                 // XXX - nulls are not supported.
-                System.out
-                        .println("VDeltaWriter.writeRow: null field????  schema.table.name = "
-                                + rowDef.getSchemaName()
-                                + "."
-                                + rowDef.getTableName() + "." + name);
+//                System.out
+//                        .println("VDeltaWriter.writeRow: null field????  schema.table.name = "
+//                                + rowDef.getSchemaName()
+//                                + "."
+//                                + rowDef.getTableName() + "." + name);
                 // throw new Exception();
             }
             int offset = (int) locationAndSize;
