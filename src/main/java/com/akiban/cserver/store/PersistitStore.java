@@ -18,8 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
@@ -31,16 +29,17 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.RowType;
 import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.CServer.CreateTableStruct;
 import com.akiban.cserver.decider.Decider;
 import com.akiban.cserver.decider.DecisionEngine;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
+import com.persistit.TransactionRunnable;
 import com.persistit.Transaction.CommitListener;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -60,6 +59,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     private static final String FIXED_ALLOCATION_PROPERTY_NAME = "cserver.fixed";
 
     private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
+    
+    private static final String EXPERIMENTAL_SCHEMA_FLAG = "schema";
 
     private static final Tap WRITE_ROW_TAP = Tap.add(new Tap.PerThread(
             "write: write_row"));
@@ -124,6 +125,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     private static final String DEFAULT_DATAPATH = "/tmp/chunkserver_data";
 
     private boolean verbose = false;
+    
+    private String experimental = "";
 
     private boolean coverEnabled = false;
 
@@ -136,6 +139,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     private PersistitStoreTableManager tableManager;
 
     private PersistitStoreIndexManager indexManager;
+    
+    private PersistitStoreSchemaManager schemaManager;
 
     // vstore components
     private final DecisionEngine scanDecider;
@@ -186,6 +191,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
         this.tableManager = new PersistitStoreTableManager(this);
         this.indexManager = new PersistitStoreIndexManager(this);
+        this.schemaManager = new PersistitStoreSchemaManager(this);
 
         this.scanDecider = DecisionEngine.createDecisionEngine(config);
         deltaThreshold = new Integer(config.property("cserver.delta_threshold",
@@ -292,18 +298,19 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         }
     }
 
-    private static void ensureDirectoryExists(String path, boolean alreadyTriedCreatingDirectory)
-        throws StoreException
-    {
+    private static void ensureDirectoryExists(String path,
+            boolean alreadyTriedCreatingDirectory) throws StoreException {
         File dir = new File(path);
         if (dir.exists()) {
             if (!dir.isDirectory()) {
-                throw new StoreException(-1, String.format("%s exists but is not a directory", dir));
+                throw new StoreException(-1, String.format(
+                        "%s exists but is not a directory", dir));
             }
         } else {
             if (alreadyTriedCreatingDirectory) {
-                throw new StoreException
-                    (-1, String.format("Unable to create directory %s. Permissions problem?", dir));
+                throw new StoreException(-1, String.format(
+                        "Unable to create directory %s. Permissions problem?",
+                        dir));
             } else {
                 dir.mkdirs();
                 ensureDirectoryExists(path, true);
@@ -351,6 +358,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         if (exchange != null) {
             db.releaseExchange(exchange);
         }
+    }
+
+    public Exchange getExchange(final String treeName)
+            throws PersistitException {
+        return db.getExchange(VOLUME_NAME, treeName, true).clear();
     }
 
     /**
@@ -611,183 +623,73 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     public boolean isVerbose() {
         return verbose;
     }
+    
+    public void setExperimental(final String x) {
+        experimental = x == null ? "" : x;
+    }
+    
+    public String getExperimental() {
+        return experimental;
+    }
+    
+    public boolean isExperimentalSchema() {
+        return experimental.contains(EXPERIMENTAL_SCHEMA_FLAG);
+    }
 
     public boolean isCoveringIndexSupportEnabled() {
         return coverEnabled;
+    }
+    
+    private boolean protectedTable(final int tableId) {
+        return (tableId >= 100000 && tableId < 100100 && isExperimentalSchema());
     }
 
     @Override
     public int createTable(final String ddl) {
         Transaction transaction = db.getTransaction();
-        Exchange ex = null;
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        final String canonical = DDLSource.canonicalStatement(ddl);
-        final SchemaDef.UserTableDef tableDef;
         try {
-            tableDef = new DDLSource().parseCreateTable(canonical);
-        } catch (Exception e1) {
-            System.err.println("Failed to parse: " + canonical);
-            System.err.println(e1.getMessage());
-            return OK;
-        }
-        try {
-            for (;;) {
-                try {
-                    ex = db.getExchange(VOLUME_NAME, SCHEMA_TREE_NAME, true);
-                    transaction.begin();
-                    final String schemaName = tableDef.getSchemaName();
-                    final String tableName = tableDef.getTableName();
-
-                    if (ex.clear().append(BY_NAME).append(schemaName).append(
-                            tableName).append(Key.AFTER).previous()) {
-                        final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                        ex.clear().append(BY_ID).append(tableId).fetch();
-                        final String previousValue = ex.getValue().getString();
-                        if (canonical.equals(previousValue)) {
-                            transaction.commit(forceToDisk);
-                            return OK;
-                        }
-                    }
-
-                    final int tableId;
-                    if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
-                        tableId = ex.getKey().indexTo(1).decodeInt() + 1;
-                    } else {
-                        tableId = 1;
-                    }
-                    ex.getValue().put(canonical);
-                    ex.clear().append(BY_ID).append(tableId).store();
-                    ex.getValue().putNull();
-                    ex.clear().append(BY_NAME).append(schemaName).append(
-                            tableName).append(tableId).store();
-                    transaction.commit(forceToDisk);
-                    return OK;
-                } catch (RollbackException re) {
-                    if (--retries < 0) {
-                        throw new TransactionFailedException();
-                    }
-                } finally {
-                    transaction.end();
+            transaction.run(new TransactionRunnable() {
+                @Override
+                public void runTransaction() {
+                    schemaManager.createTable(ddl);
                 }
-            }
-
-//        } catch (StoreException e) {
-//            if (verbose && LOG.isInfoEnabled()) {
-//                LOG.info("createTable error " + e.getResult(), e);
-//            }
-//            return e.getResult();
-        } catch (Throwable t) {
-            LOG.error("createTable failed", t);
-            return ERR;
-        } finally {
-            releaseExchange(ex);
-        }
-    }
-    
-    public String getSchema() throws Exception {
-        Transaction transaction = db.getTransaction();
-        Exchange ex1 = null;
-        Exchange ex2 = null;
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        try {
-            ex1 = db.getExchange(VOLUME_NAME, SCHEMA_TREE_NAME, true);
-            ex2 = db.getExchange(VOLUME_NAME, SCHEMA_TREE_NAME, true);
-            ex1.clear().append(BY_NAME);
-            final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
-                
-            for (;;) {
-                try {
-                    transaction.begin();
-                    final StringBuilder sb = new StringBuilder();
-                    ex1.clear();
-                    while (ex1.next(keyFilter)) {
-                        // Traverse to the largest tableId (most recent)
-                        if (!ex1.to(Key.AFTER).previous()) {
-                            continue;
-                        }
-                        final int tableId = ex1.getKey().indexTo(-1).decodeInt();
-                        ex2.clear().append(BY_ID).append(tableId).fetch();
-                        if (!ex2.getValue().isDefined()) {
-                            System.err.println("No table definition for " + ex1.getKey());
-                        }
-                        sb.append("CREATE TABLE ");
-                        sb.append(ex2.getValue().getString());
-                        sb.append(CServerUtil.NEW_LINE);
-                    }
-                    transaction.commit(forceToDisk);
-                    return sb.toString();
-                } catch (RollbackException re) {
-                    if (--retries < 0) {
-                        throw new TransactionFailedException();
-                    }
-                } finally {
-                    transaction.end();
-                }
-            }
-
-
-        } catch (Throwable t) {
-            LOG.error("createTable failed", t);
-            return null;
-        } finally {
-            releaseExchange(ex1);
-            releaseExchange(ex2);
-        }
-        
-    }
-    
-    /**
-     * Removes the create table statement(s) for the specified schema/table
-     * @param schemaName
-     * @param tableName
-     * @throws Exception
-     */
-    private int dropSchemaTable(final String schemaName, final String tableName) {
-        Transaction transaction = db.getTransaction();
-        Exchange ex1 = null;
-        Exchange ex2 = null;
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        try {
-            ex1 = db.getExchange(VOLUME_NAME, SCHEMA_TREE_NAME, true);
-            ex2 = db.getExchange(VOLUME_NAME, SCHEMA_TREE_NAME, true);
-            ex1.clear().append(BY_NAME).append(schemaName).append(tableName);
-            final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
-                
-            for (;;) {
-                try {
-                    transaction.begin();
-                    ex1.clear();
-                    while (ex1.next(keyFilter)) {
-                        final int tableId = ex1.getKey().indexTo(-1).decodeInt();
-                        ex2.clear().append(BY_ID).append(tableId).remove();
-                        ex1.remove();
-                    }
-                    transaction.commit(forceToDisk);
-                    return OK;
-                } catch (RollbackException re) {
-                    if (--retries < 0) {
-                        throw new TransactionFailedException();
-                    }
-                } finally {
-                    transaction.end();
-                }
-            }
-
+            });
         } catch (Exception e) {
-            LOG.error("dropSchemaTable(" + schemaName + "." + tableName + ") failed", e);
+            LOG.error("Failure while installing " + ddl, e);
             return ERR;
-        } finally {
-            releaseExchange(ex1);
-            releaseExchange(ex2);
         }
+        return OK;
     }
 
+    public List<CreateTableStruct> getSchema() throws Exception {
+        Transaction transaction = db.getTransaction();
+        final List<CreateTableStruct> result = new ArrayList<CreateTableStruct>();
+        transaction.run(new TransactionRunnable() {
 
+            @Override
+            public void runTransaction() throws PersistitException,
+                    RollbackException {
+                result.clear();
+                schemaManager.populateSchema(result);
+            }
+        });
+        return result;
+    }
+    
+    public long getSchemaGeneration() {
+        return schemaManager.getCurrentSchemaGeneration();
+    }
 
     @Override
     public int writeRow(final RowData rowData) {
-        WRITE_ROW_TAP.in();
         final int rowDefId = rowData.getRowDefId();
+        
+        // TODO - remove this once the schema fix is done
+        if (protectedTable(rowDefId)) {
+            return OK;
+        }
+        
+        WRITE_ROW_TAP.in();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Transaction transaction = null;
         Exchange hEx = null;
@@ -968,6 +870,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     @Override
     public int deleteRow(final RowData rowData) throws Exception {
         final int rowDefId = rowData.getRowDefId();
+        
+        // TODO - remove this once the schema fix is done
+        if (protectedTable(rowDefId)) {
+            return OK;
+        }
+        
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Transaction transaction = null;
         Exchange hEx = null;
@@ -1073,6 +981,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     @Override
     public int updateRow(final RowData oldRowData, final RowData newRowData) {
         final int rowDefId = oldRowData.getRowDefId();
+        
+        // TODO - remove this once the schema fix is done
+        if (protectedTable(rowDefId)) {
+            return OK;
+        }
+        
         if (newRowData.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException(
                     "RowData values have different rowDefId values: ("
@@ -1201,6 +1115,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
      */
     @Override
     public int truncateTable(final int rowDefId) throws Exception {
+        
+        // TODO - remove this once the schema fix is done
+        if (protectedTable(rowDefId)) {
+            return OK;
+        }
+        
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Transaction transaction = null;
 
@@ -1281,20 +1201,28 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
      */
     @Override
     public int dropTable(final int rowDefId) throws Exception {
+        
+        // TODO - remove this once the schema fix is done
+        if (protectedTable(rowDefId)) {
+            return OK;
+        }
+        
+
         RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         if (rowDef.isGroupTable()) {
             // Never actually drop a group table
             return OK;
         }
         try {
-            final int status = dropSchemaTable(rowDef.getSchemaName(), rowDef.getTableName());
-            if ( status != OK) {
-                return status;
-            }
             final Transaction transaction = db.getTransaction();
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
+                final int status = schemaManager.dropCreateTable(rowDef.getSchemaName(),
+                        rowDef.getTableName());
+                if (status != OK) {
+                    return status;
+                }
                 try {
                     final TableStatus ts = tableManager
                             .getTableStatus(rowDefId);
@@ -1321,8 +1249,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                         }
                     }
                     if (deleteGroup) {
-                        final int gstatus = dropSchemaTable(rowDef.getSchemaName(), rowDef.getTableName());
-                        if ( gstatus != OK) {
+                        final int gstatus = schemaManager.dropCreateTable(groupRowDef
+                                .getSchemaName(), groupRowDef.getTableName());
+                        if (gstatus != OK) {
                             return gstatus;
                         }
                         tableManager.getTableStatus(groupRowDef.getRowDefId())
@@ -1336,8 +1265,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                                         indexDef);
                                 iEx.removeTree();
                                 releaseExchange(iEx);
-                                indexManager.deleteIndexAnalysis(indexDef);
                             }
+                            indexManager.deleteIndexAnalysis(indexDef);
                         }
                         //
                         // remove the htable tree
@@ -1373,7 +1302,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             return ERR;
         }
     }
-    
+
     @Override
     public int dropSchema(final String schemaName) throws Exception {
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {

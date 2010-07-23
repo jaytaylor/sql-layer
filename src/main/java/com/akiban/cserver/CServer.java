@@ -19,6 +19,7 @@ import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISPrinter;
@@ -48,6 +49,7 @@ public class CServer implements CServerConstants {
 
     private static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
 
+    private static final int GROUP_TABLE_ID_OFFSET = 1000000000;
     /**
      * Config property name and default for the port on which the CServer will
      * listen for requests.
@@ -67,8 +69,8 @@ public class CServer implements CServerConstants {
      */
 
     private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose|false";
-
-    private static final String DATAPATH_PROPERTY_NAME = "cserver.datapath";
+    
+    private static final String EXPERIMENTAL_PROPERTY_NAME = "cserver.experimental|"; 
 
     /**
      * Name of this chunkserver. Must match one of the entries in
@@ -84,7 +86,7 @@ public class CServer implements CServerConstants {
 
     private final RowDefCache rowDefCache;
     private final CServerConfig config;
-    private final PersistitStore hstore;
+    private final PersistitStore store;
     private final String cserverPort;
     private AkibaInformationSchema ais0;
     private AkibaInformationSchema ais;
@@ -93,11 +95,11 @@ public class CServer implements CServerConstants {
     private Map<Integer, Thread> threadMap;
     private boolean leadCServer;
     private AISDistributor aisDistributor;
-    private boolean experimentalSchema;
 
     private volatile int maxCaptureCount = DEFAULT_MAX_CAPTURE_COUNT;
     private volatile boolean enableMessageCapture;
     private List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
+    private long lastSchemaGeneration = -1;
 
     /**
      * Construct a chunk server. If <tt>loadConfig</tt> is false then use default unit
@@ -121,7 +123,7 @@ public class CServer implements CServerConstants {
             config = CServerConfig.unitTestConfig();
         }
 
-        hstore = new PersistitStore(config, rowDefCache);
+        store = new PersistitStore(config, rowDefCache);
         threadMap = new TreeMap<Integer, Thread>();
     }
 
@@ -138,10 +140,11 @@ public class CServer implements CServerConstants {
                 CSERVER_PORT, new ChannelNotifier());
         ais0 = primordialAIS();
         rowDefCache.setAIS(ais0);
-        hstore.startUp();
-        hstore.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
+        store.startUp();
+        store.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
                 .equalsIgnoreCase("true"));
-        hstore.setOrdinals();
+        store.setExperimental(config.property(EXPERIMENTAL_PROPERTY_NAME));
+        store.setOrdinals();
         acquireAIS();
         if (config.usingAdmin()) {
             Admin admin = Admin.only();
@@ -173,7 +176,7 @@ public class CServer implements CServerConstants {
         for (final Thread thread : copy) {
             thread.interrupt();
         }
-        hstore.shutDown();
+        store.shutDown();
         NetworkHandlerFactory.closeNetwork();
         Tap.unregisterMXBean();
     }
@@ -217,15 +220,15 @@ public class CServer implements CServerConstants {
         }
     }
 
-    public Store getStore() {
-        return hstore;
+    public PersistitStore getStore() {
+        return store;
     }
 
     public class CServerContext implements ExecutionContext,
             AISExecutionContext, CServerShutdownExecutionContext {
 
         public Store getStore() {
-            return hstore;
+            return store;
         }
 
         public AkibaInformationSchema ais() {
@@ -260,7 +263,7 @@ public class CServer implements CServerConstants {
 
         public void installAIS(AkibaInformationSchema ais) throws Exception {
             LOG.info("Installing AIS");
-            CServerAisTarget target = new CServerAisTarget(hstore);
+            CServerAisTarget target = new CServerAisTarget(store);
             new Writer(target).save(ais);
             CServer.this.ais = ais;
             CServer.this.installAIS();
@@ -327,7 +330,7 @@ public class CServer implements CServerConstants {
                         }
                     }
 
-                    if (hstore.isVerbose() && LOG.isInfoEnabled()) {
+                    if (store.isVerbose() && LOG.isInfoEnabled()) {
                         LOG
                                 .info("Executing "
                                         + (message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
@@ -367,6 +370,22 @@ public class CServer implements CServerConstants {
             }
         }
     }
+    
+    public static class CreateTableStruct {
+        final int tableId;
+        final String schemaName;
+        final String tableName;
+        final String ddl;
+        
+        public CreateTableStruct(int tableId, String schemaName, String tableName, String ddl) {
+            this.tableId = tableId;
+            this.schemaName = schemaName;
+            this.tableName = tableName;
+            this.ddl = ddl;
+        }
+    }
+
+
 
     public RowDefCache getRowDefCache() {
         return rowDefCache;
@@ -383,20 +402,44 @@ public class CServer implements CServerConstants {
      * @throws Exception
      */
     public synchronized void acquireAIS() throws Exception {
-        if (experimentalSchema) {
-            final String schema = hstore.getSchema();
-            if (LOG.isInfoEnabled()) {
-                LOG.info("Acquiring AIS from schema: " + CServerUtil.NEW_LINE
-                        + schema);
+        if (store.isExperimentalSchema()) {
+            final long generation = store.getSchemaGeneration();
+            if (generation == lastSchemaGeneration) {
+                return;
             }
-            this.ais = new DDLSource().buildAISFromString(schema, ais0);
-            new Writer(new CServerAisTarget(hstore)).save(ais);
+            final List<CreateTableStruct> schema = store.getSchema();
+            final StringBuilder sb = new StringBuilder();
+            for (final CreateTableStruct tableStruct : schema) {
+                sb.append("CREATE TABLE " + tableStruct.ddl + CServerUtil.NEW_LINE);
+            }
+            final String schemaText = sb.toString();
+            if (getStore().isVerbose() && LOG.isInfoEnabled()) {
+                LOG.info("Acquiring AIS from schema: " + CServerUtil.NEW_LINE
+                        + schemaText);
+            }
+            this.ais = new DDLSource().buildAISFromString(schemaText, ais0);
+            
+            for (final CreateTableStruct tableStruct : schema) {
+                final UserTable table = ais.getUserTable(tableStruct.schemaName, tableStruct.tableName);
+                if (table != null) {
+                    table.setTableId(tableStruct.tableId);
+                    if (table.getParentJoin() == null) {
+                        final GroupTable groupTable = table.getGroup().getGroupTable();
+                        if (groupTable != null) {
+                            groupTable.setTableId(tableStruct.tableId + GROUP_TABLE_ID_OFFSET);
+                        }
+                    }
+                }
+            }
+            installAIS();
+            new Writer(new CServerAisTarget(store)).save(ais);
+            lastSchemaGeneration = generation; 
         } else {
-            final Source source = new CServerAisSource(hstore);
+            final Source source = new CServerAisSource(store);
             this.ais = new Reader(source)
                     .load(new AkibaInformationSchema(ais0));
+            installAIS();
         }
-        installAIS();
     }
 
     boolean isLeader() {
@@ -410,7 +453,7 @@ public class CServer implements CServerConstants {
         }
         rowDefCache.clear();
         rowDefCache.setAIS(ais);
-        hstore.setOrdinals();
+        store.setOrdinals();
         if (config.usingAdmin()) {
             if (isLeader()) {
                 assert aisDistributor != null;
@@ -585,9 +628,5 @@ public class CServer implements CServerConstants {
         synchronized (capturedMessageList) {
             return new ArrayList<CapturedMessage>(capturedMessageList);
         }
-    }
-
-    public void setExperimentalSchema(final boolean enabled) {
-        experimentalSchema = enabled;
     }
 }
