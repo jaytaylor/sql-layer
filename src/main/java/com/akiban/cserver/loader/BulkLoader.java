@@ -21,13 +21,21 @@ public class BulkLoader extends Thread
     @Override
     public void run()
     {
+        // Configure database access
         DB db = null;
         try {
             db = dbHost == null ? null : new DB(dbHost, dbPort, dbUser, dbPassword);
         } catch (Exception e) {
-            logger.error("Unable to initialize DB object", e);
+            logger.error("Unable to create DB object", e);
             termination = e;
         }
+        // Create database for intermediates
+        try {
+            prepareWorkArea(db);
+        } catch (Exception e) {
+            logger.error("Unable to prepare work area", e);
+        }
+        // Create tracker for logging (to log file and database)
         try {
             tracker = new Tracker(db, artifactsSchema);
         } catch (Exception e) {
@@ -36,7 +44,6 @@ public class BulkLoader extends Thread
         }
         if (db != null && tracker != null) {
             try {
-                prepareWorkArea(db);
                 tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
                              dbUser, dbHost, dbPort, groups, resume, cleanup);
                 if (taskGeneratorActions == null) {
