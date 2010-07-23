@@ -26,10 +26,16 @@ public class BulkLoader extends Thread
             db = dbHost == null ? null : new DB(dbHost, dbPort, dbUser, dbPassword);
         } catch (Exception e) {
             logger.error("Unable to initialize DB object", e);
+            termination = e;
         }
-        if (db != null) {
+        try {
+            tracker = new Tracker(db, artifactsSchema);
+        } catch (Exception e) {
+            logger.error("Unable to create Tracker", e);
+            termination = e;
+        }
+        if (db != null && tracker != null) {
             try {
-                tracker = new Tracker(db, artifactsSchema);
                 prepareWorkArea(db);
                 tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
                              dbUser, dbHost, dbPort, groups, resume, cleanup);
