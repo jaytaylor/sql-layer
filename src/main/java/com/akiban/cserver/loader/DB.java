@@ -6,9 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.akiban.util.Command;
 import org.apache.commons.logging.Log;
 import org.apache.log4j.Level;
+
+import com.akiban.util.Command;
 
 public class DB
 {

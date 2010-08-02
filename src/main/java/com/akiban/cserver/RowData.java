@@ -3,9 +3,6 @@ package com.akiban.cserver;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
-import java.util.List;
-
-import com.akiban.cserver.store.FieldArray;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -314,46 +311,6 @@ public class RowData {
                         offset, ((int) (offsetWidth >>> 32)));
                 position++;
                 offset += ((int) (offsetWidth >>> 32));
-            }
-        }
-
-        CServerUtil.putChar(bytes, offset, SIGNATURE_B);
-        offset += 6;
-        final int length = offset - rowStart;
-        CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
-        CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
-        rowEnd = offset;
-    }
-
-    // XXX the nullMapOffset business is horrendous; please fix me.
-    public void mergeFields(final RowDef rowDef, List<FieldArray> fields,
-            BitSet nullMap, int nullMapOffset) throws IOException {
-        assert nullMap != null;
-        final int fieldCount = rowDef.getFieldCount();
-        int offset = rowStart;
-
-        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
-
-        offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
-
-        // If the row is a projection, then the field array list is less than
-        // the field count. To account for this situation the field
-        // variable iterates over the columns and the position variable
-        // iterates over the field array list -- James
-        for (int groupOffset = nullMapOffset, field = 0, position = 0; field < fieldCount; groupOffset++, field++) {
-
-            if (!nullMap.get(groupOffset)) {
-                
-                //System.out.println("table "+rowDef.getTableName()+"field count = "
-                //        +fieldCount+" position = "+position+" offset = "+offset);
-                
-                assert rowDef.getFieldDef(field).isFixedSize() == true;
-                int fieldSize = fields.get(position).getNextFieldSize();
-                fields.get(position).copyNextField(bytes, offset);
-                position++;
-                offset += fieldSize;
             }
         }
 

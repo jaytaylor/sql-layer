@@ -1,5 +1,13 @@
 package com.akiban.cserver;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.admin.Admin;
 import com.akiban.admin.config.ChunkserverNetworkConfig;
 import com.akiban.admin.config.ClusterConfig;
@@ -11,13 +19,6 @@ import com.akiban.message.AkibaConnectionImpl;
 import com.akiban.message.ErrorResponse;
 import com.akiban.message.Response;
 import com.akiban.network.NetworkHandlerFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 class AISDistributor
 {

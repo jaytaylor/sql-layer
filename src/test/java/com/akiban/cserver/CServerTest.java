@@ -6,10 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
 import org.junit.After;
@@ -28,7 +24,6 @@ import com.akiban.cserver.message.GetTableStatisticsRequest;
 import com.akiban.cserver.message.GetTableStatisticsResponse;
 import com.akiban.cserver.message.WriteRowRequest;
 import com.akiban.cserver.message.WriteRowResponse;
-import com.akiban.cserver.store.PersistitStore;
 import com.akiban.message.AkibaConnection;
 import com.akiban.message.AkibaConnectionImpl;
 import com.akiban.message.Message;

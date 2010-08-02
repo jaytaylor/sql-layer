@@ -3,8 +3,6 @@ package com.akiban.cserver.store;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,8 +28,6 @@ import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.RowType;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.CServer.CreateTableStruct;
-import com.akiban.cserver.decider.Decider;
-import com.akiban.cserver.decider.DecisionEngine;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
@@ -47,7 +43,7 @@ import com.persistit.exception.TransactionFailedException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class PersistitStore implements CServerConstants, MySQLErrorConstants,
-        Store, VStore {
+        Store {
 
     final static int INITIAL_BUFFER_SIZE = 1024;
 
@@ -142,15 +138,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     
     private PersistitStoreSchemaManager schemaManager;
 
-    // vstore components
-    private final DecisionEngine scanDecider;
-    private VBulkLoader vBulkLoader;
-    private VMeta vmeta;
-    private String vmetaFileName;
-    private DeltaMonitor deltaMonitor;
-    private final boolean deltaMonitorActivated;
-    private final int deltaThreshold;
-
     private boolean forceToDisk = false; // default to "group commit"
 
     private List<CommittedUpdateListener> updateListeners = Collections
@@ -161,29 +148,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     //
     private Map<Thread, Map<Integer, RowCollector>> sessionRowCollectorMap = new ConcurrentHashMap<Thread, Map<Integer, RowCollector>>();
 
-    private void configureVStore(String path) throws FileNotFoundException,
-            IOException {
-        File pathFile = new File(path);
-        if (pathFile.exists()) {
-            File directory = new File(path + "/vstore");
-            if (!directory.exists()) {
-                if (!directory.mkdir()) {
-                    LOG.warn("Cannot create vstore directory");
-                }
-            }
-            vmetaFileName = path + "/vstore/.vmeta";
-            File vmetaFile = new File(vmetaFileName);
-            if (vmetaFile.exists()) {
-                this.vmeta = new VMeta(vmetaFile);
-            } else {
-                // LOG.info("VMeta not created");
-                vmeta = null;
-            }
-        } else {
-            // LOG.info("Path directory invalid: "+path);
-        }
-    }
-
     public PersistitStore(final CServerConfig config, final RowDefCache cache)
             throws Exception {
         this.rowDefCache = cache;
@@ -192,50 +156,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         this.tableManager = new PersistitStoreTableManager(this);
         this.indexManager = new PersistitStoreIndexManager(this);
         this.schemaManager = new PersistitStoreSchemaManager(this);
-
-        this.scanDecider = DecisionEngine.createDecisionEngine(config);
-        deltaThreshold = new Integer(config.property("cserver.delta_threshold",
-                "1048576")).intValue();
-        deltaMonitor = new DeltaMonitor(this);
-        if (config.property("cserver.delta_store", "off").equals("on")) {
-            deltaMonitorActivated = true;
-            this.addCommittedUpdateListener(this.deltaMonitor);
-        } else {
-            deltaMonitorActivated = false;
-        }
-        configureVStore(getDataPath());
     }
 
     public String getDataPath() {
         return config.property(P_DATAPATH, DEFAULT_DATAPATH);
-    }
-
-    public boolean isDeltaMonitorActivated() {
-        return deltaMonitorActivated;
-    }
-
-    public int getDeltaThreshold() {
-        return deltaThreshold;
-    }
-
-    public VBulkLoader getVStore() {
-        return vBulkLoader;
-    }
-
-    public VMeta getVMeta() {
-        return vmeta;
-    }
-
-    public void setVMeta(VMeta meta) {
-        vmeta = meta;
-    }
-
-    public DecisionEngine getDecisionEngine() {
-        return scanDecider;
-    }
-
-    public DeltaMonitor getDeltaMonitor() {
-        return deltaMonitor;
     }
 
     public synchronized void startUp() throws Exception {
@@ -293,8 +217,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
             coverEnabled = "true".equalsIgnoreCase(config.property(
                     "cserver.cover", "true"));
-
-            configureVStore(path);
         }
     }
 
@@ -798,24 +720,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         }
 
         try {
-            // XXX - At this time we only expect an empty database to be bulk
-            // loaded. Some additional functionality is required to
-            // bulk load an existing database, hence the assert below.
-            assert vmeta == null;
-            if (vBulkLoader == null) {
-                vBulkLoader = new VBulkLoader(this, getDataPath());
-            }
-            vBulkLoader.writeRowForBulkLoad(hEx, rowDef, rowData, ordinals,
-                    fieldDefs, hKeyValues);
-        } catch (StoreException e) {
-            e.printStackTrace();
-            LOG.error("VStore.writeRowForBulkLoad failed");
-        } catch (Throwable t) {
-            t.printStackTrace();
-            LOG.error("VStore.writeRowForBulkLoad failed");
-        }
-
-        try {
             constructHKey(hEx, rowDef, ordinals, fieldDefs, hKeyValues);
             final int start = rowData.getInnerStart();
             final int size = rowData.getInnerSize();
@@ -840,17 +744,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             t.printStackTrace();
             return ERR;
         }
-    }
-
-    public void syncColumns() throws Exception {
-        if (vBulkLoader == null) {
-            return;
-        }
-
-        vBulkLoader.constructColumnDescriptors();
-        // System.out.println("Sync columns");
-        vmeta = new VMeta(new File(vmetaFileName));
-        vBulkLoader = null;
     }
 
     @Override
@@ -1415,25 +1308,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
                     scanFlags);
 
-            Decider.RowCollectorType et = scanDecider.makeDecision(request,
-                    rowDef);
-            RowCollector rc = null;
-            if (et == Decider.RowCollectorType.PersistitRowCollector) {
-                // System.out.println("------------ creating scanRowsRequest RowCollector -------------");
-                rc = new PersistitStoreRowCollector(this, scanFlags, start,
+            RowCollector rc = new PersistitStoreRowCollector(this, scanFlags, start,
                         end, columnBitMap, rowDef, indexId);
-            } else {
-                // System.out.println("------------ creating scanRowsRequest VCOLLECTOR -------------");
-                // assert vmeta != null;
-                // assert false;
-                deltaMonitor.readLock();
-                // System.out
-                // .println("------------ creating scanRowsRequest VCOLLECTOR (holding readLock) -------------");
-                rc = new VCollector(vmeta, deltaMonitor, rowDefCache, rowDefId,
-                        columnBitMap);
-                deltaMonitor.releaseReadLock();
-                // throw new Error("Exactly what do you think you're doing?");
-            }
             if (rc.hasMore()) {
                 putCurrentRowCollector(rowDefId, rc);
             }

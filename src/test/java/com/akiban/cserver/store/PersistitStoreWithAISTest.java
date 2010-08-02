@@ -1,6 +1,5 @@
 package com.akiban.cserver.store;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +12,6 @@ import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
-import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;

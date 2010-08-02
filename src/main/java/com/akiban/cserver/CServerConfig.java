@@ -9,10 +9,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import com.akiban.admin.Admin;
-import com.akiban.admin.AdminKey;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.akiban.admin.Admin;
+import com.akiban.admin.AdminKey;
 
 /**
  * Reads the configuration file(s) to gather up

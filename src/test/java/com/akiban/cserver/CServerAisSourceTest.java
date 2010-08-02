@@ -1,6 +1,5 @@
 package com.akiban.cserver;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 
 import junit.framework.TestCase;

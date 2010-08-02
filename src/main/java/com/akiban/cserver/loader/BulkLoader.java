@@ -7,12 +7,13 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 public class BulkLoader extends Thread
 {
@@ -58,7 +59,6 @@ public class BulkLoader extends Thread
                     dataGrouper.run(tableTasksMap);
                 }
                 new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tableTasksMap));
-                persistitStore.syncColumns();
                 if (cleanup) {
                     deleteWorkArea(db);
                 }
