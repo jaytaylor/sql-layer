@@ -114,7 +114,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         //
         // Temporary setup for testing Persistit 2.1
         //
-        PERSISTIT_PROPERTIES.put("logpath", "${datapath}/log");
+        PERSISTIT_PROPERTIES.put("journalpath", "${datapath}/akiban_journal");
         PERSISTIT_PROPERTIES.put("logsize", "1G");
     }
 
