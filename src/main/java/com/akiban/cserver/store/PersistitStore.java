@@ -567,13 +567,13 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     @Override
-    public int createTable(final String ddl) {
+    public int createTable(final String schemaName, final String ddl) {
         Transaction transaction = db.getTransaction();
         try {
             transaction.run(new TransactionRunnable() {
                 @Override
                 public void runTransaction() {
-                    schemaManager.createTable(ddl);
+                    schemaManager.createTable(schemaName, ddl);
                 }
             });
         } catch (Exception e) {

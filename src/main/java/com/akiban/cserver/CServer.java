@@ -256,9 +256,9 @@ public class CServer implements CServerConstants {
             if (LOG.isInfoEnabled()) {
                 LOG.info("CServer stopping due to ShutdownRequest");
             }
-            stop();
             ShutdownResponse response = new ShutdownResponse();
             connection.send(response);
+            stop();
         }
 
         public void installAIS(AkibaInformationSchema ais) throws Exception {

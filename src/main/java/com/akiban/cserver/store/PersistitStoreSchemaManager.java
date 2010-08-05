@@ -80,9 +80,9 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         }
     }
 
-    int createTable(final String ddl) {
+    int createTable(final String useSchemaName, final String ddl) {
         Exchange ex = null;
-        final String canonical = DDLSource.canonicalStatement(ddl);
+        String canonical = DDLSource.canonicalStatement(ddl);
         final SchemaDef.UserTableDef tableDef;
         try {
             tableDef = new DDLSource().parseCreateTable(canonical);
@@ -98,7 +98,11 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         try {
             ex = store.getExchange(SCHEMA_TREE_NAME);
 
-            final String schemaName = tableDef.getSchemaName();
+            String schemaName = tableDef.getSchemaName();
+            if (schemaName == null) {
+                schemaName = useSchemaName;
+                canonical = '`' + useSchemaName + "`." + canonical;
+            }
             final String tableName = tableDef.getTableName();
 
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
