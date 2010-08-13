@@ -17,10 +17,14 @@ public class MXBeanManager
         if (registered) {
             return;
         }
-        
-        ObjectName mxbeanName = new ObjectName(ManageMXBean.MANAGE_BEAN_NAME);
+
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+
+        ObjectName mxbeanName = new ObjectName(ManageMXBean.MANAGE_BEAN_NAME);
         mbs.registerMBean(new ManageMXBeanImpl(cserver, config), mxbeanName);
+
+        ObjectName schemaMxbeanName = new ObjectName(SchemaMXBean.SCHEMA_BEAN_NAME);
+        mbs.registerMBean(new SchemaMXBeanImpl(cserver), schemaMxbeanName);
         
         registered = true;
     }
@@ -30,10 +34,15 @@ public class MXBeanManager
         if (!registered) {
             return;
         }
-        
-        ObjectName mxbeanName = new ObjectName(ManageMXBean.MANAGE_BEAN_NAME);
+
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+
+        ObjectName mxbeanName = new ObjectName(ManageMXBean.MANAGE_BEAN_NAME);
         mbs.unregisterMBean(mxbeanName);
+
+        ObjectName schemaMxbeanName = new ObjectName(SchemaMXBean.SCHEMA_BEAN_NAME);
+        mbs.unregisterMBean(schemaMxbeanName);
+
         registered = false;
     }
 }

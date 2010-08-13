@@ -383,9 +383,19 @@ public class CServer implements CServerConstants {
             this.tableName = tableName;
             this.ddl = ddl;
         }
+
+        public String getSchemaName() {
+            return schemaName;
+        }
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public String getDdl() {
+            return ddl;
+        }
     }
-
-
 
     public RowDefCache getRowDefCache() {
         return rowDefCache;
@@ -486,6 +496,10 @@ public class CServer implements CServerConstants {
         }
         ais0 = (new DDLSource()).buildAISFromString(sb.toString());
         return ais0;
+    }
+
+    public AkibaInformationSchema getAisCopy() {
+        return new AkibaInformationSchema(ais);
     }
 
     /**
