@@ -156,23 +156,6 @@ public class CServerConfig {
     }
 
     /**
-     * Get the value of a property with optional default value. The default
-     * value is specified with a delimiter, as in "cserver.port|8080". There is
-     * subtle difference between "cserver.port" and "cserver.port|": the first
-     * form returns null if there is no property named "cserver.port". The
-     * second form returns an empty string.
-     * 
-     * @param key
-     *            Key name and optional default value
-     * @return The value
-     */
-    public String property(final String key) {
-        String[] pieces = key.split("\\|");
-        return properties.getProperty(pieces[0], pieces.length > 1 ? pieces[1]
-                : null);
-    }
-
-    /**
      * Get the value of property with optional default value.
      * 
      * @param key

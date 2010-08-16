@@ -91,19 +91,19 @@ public class PersistitStoreSchemaManager implements CServerConstants {
             System.err.println(e1.getMessage());
             return ERR;
         }
-        if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getSchemaName())) {
+        if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
             return OK;
         }
-        schemaGeneration.incrementAndGet();
+
         try {
             ex = store.getExchange(SCHEMA_TREE_NAME);
 
-            String schemaName = tableDef.getSchemaName();
+            String schemaName = tableDef.getCName().getSchema();
             if (schemaName == null) {
                 schemaName = useSchemaName;
                 canonical = '`' + useSchemaName + "`." + canonical;
             }
-            final String tableName = tableDef.getTableName();
+            final String tableName = tableDef.getCName().getName();
 
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
@@ -114,7 +114,7 @@ public class PersistitStoreSchemaManager implements CServerConstants {
                     return OK;
                 }
             }
-
+            
             final int tableId;
             if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
                 tableId = ex.getKey().indexTo(1).decodeInt() + 1;
@@ -126,6 +126,9 @@ public class PersistitStoreSchemaManager implements CServerConstants {
             ex.getValue().putNull();
             ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(tableId).store();
+
+            schemaGeneration.incrementAndGet();
+            
             return OK;
 
             // } catch (StoreException e) {

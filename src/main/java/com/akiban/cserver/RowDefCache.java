@@ -1,6 +1,7 @@
 package com.akiban.cserver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,6 +34,8 @@ public class RowDefCache implements CServerConstants {
 
     private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
 
+    private int hashCode;
+
     /**
      * Look up and return a RowDef for a supplied rowDefId value.
      * 
@@ -63,6 +66,7 @@ public class RowDefCache implements CServerConstants {
     public synchronized void clear() {
         cacheMap.clear();
         nameMap.clear();
+        hashCode = 0;
     }
 
     /**
@@ -85,15 +89,14 @@ public class RowDefCache implements CServerConstants {
         if (LOG.isDebugEnabled()) {
             LOG.debug(toString());
         }
-
+        hashCode = cacheMap.hashCode();
     }
 
     private FieldDef fieldDef(final Column column) {
-        return new FieldDef(column.getName(), column.getType(), 
-                column.getMaxStorageSize().intValue(),
-                column.getPrefixSize().intValue(), 
-                column.getTypeParameter1(),
-                column.getTypeParameter2());
+        return new FieldDef(column.getName(), column.getType(), column
+                .getMaxStorageSize().intValue(), column.getPrefixSize()
+                .intValue(), column.getTypeParameter1(), column
+                .getTypeParameter2());
     }
 
     private RowDef createUserTableRowDef(final AkibaInformationSchema ais,
@@ -367,5 +370,16 @@ public class RowDefCache implements CServerConstants {
     void analyze(final RowDef rowDef) {
         rowDef.computeRowDefType(this);
         rowDef.computeFieldAssociations(this);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        final RowDefCache cache = (RowDefCache) o;
+        return cacheMap.equals(cache.cacheMap);
+    }
+
+    @Override
+    public int hashCode() {
+        return hashCode;
     }
 }

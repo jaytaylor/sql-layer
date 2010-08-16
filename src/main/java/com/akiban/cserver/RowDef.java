@@ -1,6 +1,7 @@
 package com.akiban.cserver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -112,7 +113,6 @@ public class RowDef {
      * method to assist in looking up a field's offset and length.
      */
     private final byte[][] varLenFieldMap;
-
     /**
      * Factory method used for convenience in tests
      * 
@@ -646,5 +646,30 @@ public class RowDef {
             return this;
         }
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        final RowDef def = (RowDef) o;
+        return rowDefId == def.rowDefId
+                && CServerUtil.equals(tableName, def.tableName)
+                && CServerUtil.equals(treeName, def.treeName)
+                && CServerUtil.equals(schemaName, def.schemaName)
+                && Arrays.deepEquals(fieldDefs, def.fieldDefs)
+                && Arrays.deepEquals(indexDefs, def.indexDefs)
+                && ordinal == def.ordinal
+                && Arrays.equals(pkFields, def.pkFields)
+                && Arrays.equals(parentJoinFields, def.parentJoinFields);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return rowDefId ^ CServerUtil.hashCode(tableName)
+                ^ CServerUtil.hashCode(treeName)
+                ^ CServerUtil.hashCode(schemaName) ^ Arrays.hashCode(fieldDefs)
+                ^ Arrays.hashCode(indexDefs) ^ Arrays.hashCode(pkFields)
+                ^ Arrays.hashCode(parentJoinFields);
+    }
+
 
 }

@@ -55,7 +55,9 @@ public class CServer implements CServerConstants {
      * listen for requests.
      */
     // TODO: Why would it ever be anything other than localhost?
-    private static final String P_CSERVER_HOST = "cserver.host|localhost";
+    // PDB: because the machine may have more than one NIC and localhost is
+    // bound to only one of them.
+    // private static final String P_CSERVER_HOST = "cserver.host";
 
     /**
      * Port on which the CServer will listen for requests.
@@ -64,13 +66,20 @@ public class CServer implements CServerConstants {
             "cserver.port", DEFAULT_CSERVER_PORT_STRING);
 
     /**
+     * Interface on which this cserver instance will listen.
+     * TODO - allow multiple NICs
+     */
+    public static final String CSERVER_HOST = System.getProperty(
+            "cserver.host", "localhost");
+
+    /**
      * Config property name and default for setting of the verbose flag. When
      * true, many CServer methods log verbosely at INFO level.
      */
 
-    private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose|false";
-    
-    private static final String EXPERIMENTAL_PROPERTY_NAME = "cserver.experimental|"; 
+    private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
+
+    private static final String EXPERIMENTAL_PROPERTY_NAME = "cserver.experimental";
 
     /**
      * Name of this chunkserver. Must match one of the entries in
@@ -102,8 +111,9 @@ public class CServer implements CServerConstants {
     private long lastSchemaGeneration = -1;
 
     /**
-     * Construct a chunk server. If <tt>loadConfig</tt> is false then use default unit
-     * test properties.
+     * Construct a chunk server. If <tt>loadConfig</tt> is false then use
+     * default unit test properties.
+     * 
      * @param loadConfig
      * @throws Exception
      */
@@ -136,14 +146,14 @@ public class CServer implements CServerConstants {
         MessageRegistry.only().registerModule("com.akiban.cserver");
         MessageRegistry.only().registerModule("com.akiban.ais");
         MessageRegistry.only().registerModule("com.akiban.message");
-        NetworkHandlerFactory.initializeNetwork("localhost", // property(P_CSERVER_HOST),
-                CSERVER_PORT, new ChannelNotifier());
+        NetworkHandlerFactory.initializeNetwork(CSERVER_HOST, CSERVER_PORT,
+                new ChannelNotifier());
         ais0 = primordialAIS();
         rowDefCache.setAIS(ais0);
         store.startUp();
         store.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
                 .equalsIgnoreCase("true"));
-        store.setExperimental(config.property(EXPERIMENTAL_PROPERTY_NAME));
+        store.setExperimental(config.property(EXPERIMENTAL_PROPERTY_NAME, ""));
         store.setOrdinals();
         acquireAIS();
         if (config.usingAdmin()) {
@@ -370,30 +380,35 @@ public class CServer implements CServerConstants {
             }
         }
     }
-    
+
     public static class CreateTableStruct {
         final int tableId;
         final String schemaName;
         final String tableName;
         final String ddl;
-        
-        public CreateTableStruct(int tableId, String schemaName, String tableName, String ddl) {
+
+        public CreateTableStruct(int tableId, String schemaName,
+                String tableName, String ddl) {
             this.tableId = tableId;
             this.schemaName = schemaName;
             this.tableName = tableName;
             this.ddl = ddl;
         }
 
+        public String getDdl() {
+            return ddl;
+        }
+        
         public String getSchemaName() {
             return schemaName;
         }
-
+        
         public String getTableName() {
             return tableName;
         }
-
-        public String getDdl() {
-            return ddl;
+        
+        public int getTableId() {
+            return tableId;
         }
     }
 
@@ -420,7 +435,8 @@ public class CServer implements CServerConstants {
             final List<CreateTableStruct> schema = store.getSchema();
             final StringBuilder sb = new StringBuilder();
             for (final CreateTableStruct tableStruct : schema) {
-                sb.append("CREATE TABLE " + tableStruct.ddl + CServerUtil.NEW_LINE);
+                sb.append("CREATE TABLE " + tableStruct.ddl
+                        + CServerUtil.NEW_LINE);
             }
             final String schemaText = sb.toString();
             if (getStore().isVerbose() && LOG.isInfoEnabled()) {
@@ -428,22 +444,25 @@ public class CServer implements CServerConstants {
                         + schemaText);
             }
             this.ais = new DDLSource().buildAISFromString(schemaText, ais0);
-            
+
             for (final CreateTableStruct tableStruct : schema) {
-                final UserTable table = ais.getUserTable(tableStruct.schemaName, tableStruct.tableName);
+                final UserTable table = ais.getUserTable(
+                        tableStruct.schemaName, tableStruct.tableName);
                 if (table != null) {
                     table.setTableId(tableStruct.tableId);
                     if (table.getParentJoin() == null) {
-                        final GroupTable groupTable = table.getGroup().getGroupTable();
+                        final GroupTable groupTable = table.getGroup()
+                                .getGroupTable();
                         if (groupTable != null) {
-                            groupTable.setTableId(tableStruct.tableId + GROUP_TABLE_ID_OFFSET);
+                            groupTable.setTableId(tableStruct.tableId
+                                    + GROUP_TABLE_ID_OFFSET);
                         }
                     }
                 }
             }
             installAIS();
             new Writer(new CServerAisTarget(store)).save(ais);
-            lastSchemaGeneration = generation; 
+            lastSchemaGeneration = generation;
         } else {
             final Source source = new CServerAisSource(store);
             this.ais = new Reader(source)
@@ -544,10 +563,6 @@ public class CServer implements CServerConstants {
          * return result; } }); com.thimbleware.jmemcached.Main.main(new
          * String[0]);
          */
-    }
-
-    public String property(final String key) {
-        return config.property(key);
     }
 
     public String property(final String key, final String dflt) {

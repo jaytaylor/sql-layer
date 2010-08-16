@@ -19,9 +19,9 @@ public class FieldDef {
     private RowDef rowDef;
 
     private Long typeParameter1;
-    
+
     private Long typeParameter2;
-    
+
     public FieldDef(final String name, final Type type) {
         this(name, type, (int) (type.maxSizeBytes().longValue()));
     }
@@ -29,14 +29,14 @@ public class FieldDef {
     public FieldDef(final String name, final Type type, final int maxStorageSize) {
         this(name, type, maxStorageSize, 0, null, null);
     }
-    
+
     public FieldDef(final String name, final Type type,
             final int maxStorageSize, final int prefixSize) {
         this(name, type, maxStorageSize, prefixSize, null, null);
     }
-    
+
     public FieldDef(final String name, final Type type,
-            final int maxStorageSize, final int prefixSize, 
+            final int maxStorageSize, final int prefixSize,
             final Long typeParameter1, final Long typeParameter2) {
         this.columnName = name;
         this.type = type;
@@ -86,11 +86,11 @@ public class FieldDef {
     public Long getTypeParameter1() {
         return typeParameter1;
     }
-    
+
     public Long getTypeParameter2() {
         return typeParameter2;
     }
-    
+
     public int getFieldIndex() {
         return fieldIndex;
     }
@@ -103,4 +103,22 @@ public class FieldDef {
     public String toString() {
         return columnName + "(" + type + "(" + getMaxStorageSize() + "))";
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        FieldDef def = (FieldDef) o;
+        return type == def.type && columnName == def.columnName
+                && encoding == def.encoding && fieldIndex == def.fieldIndex
+                && CServerUtil.equals(typeParameter1, def.typeParameter1)
+                && CServerUtil.equals(typeParameter2, def.typeParameter2);
+    }
+
+    @Override
+    public int hashCode() {
+        return type.hashCode() ^ columnName.hashCode() ^ encoding.hashCode()
+                ^ fieldIndex ^ CServerUtil.hashCode(typeParameter1)
+                ^ CServerUtil.hashCode(typeParameter2);
+    }
+
+
 }

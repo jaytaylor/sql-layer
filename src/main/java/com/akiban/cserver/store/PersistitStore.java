@@ -178,7 +178,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             db.setProperty("datapath", path);
 
             final boolean isUnitTest = "true".equals(config
-                    .property(FIXED_ALLOCATION_PROPERTY_NAME));
+                    .property(FIXED_ALLOCATION_PROPERTY_NAME, "false"));
             ensureDirectoryExists(path, false);
 
             if (!isUnitTest) {

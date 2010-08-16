@@ -420,4 +420,12 @@ public class CServerUtil {
         }
         return max;
     }
+    
+    public static boolean equals(final Object a, final Object b) {
+        return a == null ? b == null : a.equals(b);
+    }
+    
+    public static int hashCode(final Object o) {
+        return o == null ? Integer.MIN_VALUE : o.hashCode();
+    }
 }

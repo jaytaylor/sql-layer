@@ -1,6 +1,7 @@
 package com.akiban.cserver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -361,4 +362,19 @@ public class IndexDef {
         hkeyFields = i2hList.toArray(new I2H[i2hList.size()]);
         indexKeyFields = h2iList.toArray(new H2I[h2iList.size()]);
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        final IndexDef def = (IndexDef) o;
+        return name.equals(def.name) && treeName.equals(def.treeName)
+                && id == def.id && Arrays.equals(fields, def.fields)
+                && primary == def.primary && unique == def.unique;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode() ^ treeName.hashCode() ^ id
+                ^ Arrays.hashCode(fields);
+    }
+
 }
