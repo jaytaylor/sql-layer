@@ -156,10 +156,10 @@ public class CServer implements CServerConstants {
         store.setExperimental(config.property(EXPERIMENTAL_PROPERTY_NAME, ""));
         store.setOrdinals();
         acquireAIS();
-        if (config.usingAdmin()) {
+        if (false) {
+            // TODO: Use this when we support multiple chunkservers
             Admin admin = Admin.only();
-            leadCServer = admin.clusterConfig().leadChunkserver().name()
-                    .equals(CSERVER_NAME);
+            leadCServer = admin.clusterConfig().leadChunkserver().name().equals(CSERVER_NAME);
             admin.markChunkserverUp(CSERVER_NAME);
             if (isLeader()) {
                 aisDistributor = new AISDistributor(this);
@@ -174,7 +174,8 @@ public class CServer implements CServerConstants {
 
     public void stop() throws Exception {
         stopped = true;
-        if (config.usingAdmin()) {
+        if (false) {
+            // TODO: Use this when we support multiple chunkservers
             Admin.only().markChunkserverDown(CSERVER_NAME);
         }
         final List<Thread> copy;
@@ -427,6 +428,7 @@ public class CServer implements CServerConstants {
      * @throws Exception
      */
     public synchronized void acquireAIS() throws Exception {
+        LOG.warn(String.format("Acquiring AIS, experimental: %s", store.isExperimentalSchema()));
         if (store.isExperimentalSchema()) {
             final long generation = store.getSchemaGeneration();
             if (generation == lastSchemaGeneration) {
@@ -469,6 +471,7 @@ public class CServer implements CServerConstants {
                     .load(new AkibaInformationSchema(ais0));
             installAIS();
         }
+        LOG.warn("Acquired AIS");
     }
 
     boolean isLeader() {
@@ -483,7 +486,8 @@ public class CServer implements CServerConstants {
         rowDefCache.clear();
         rowDefCache.setAIS(ais);
         store.setOrdinals();
-        if (config.usingAdmin()) {
+        if (false) {
+            // TODO: Use this when we support multiple chunkservers
             if (isLeader()) {
                 assert aisDistributor != null;
                 aisDistributor.distribute(ais);
