@@ -91,10 +91,6 @@ public class CServerTest implements CServerConstants {
     public void tearDown() throws Exception {
     }
 
-
-    // Currently it seems we can't run two tests in one class
-    // with our NetworkHandler, so this one is removed.
-    //
     @Test
     public void testWriteRowResponse() throws Exception {
         final WriteRowRequest request = createWriteRowRequest();
@@ -112,6 +108,7 @@ public class CServerTest implements CServerConstants {
         
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
         response = connection.sendAndReceive(request);
+        assertTrue(response instanceof GetAutoIncrementValueResponse);
         assertEquals(-1, ((GetAutoIncrementValueResponse) response).getValue());
 
         request = createWriteRowRequest();
@@ -120,6 +117,7 @@ public class CServerTest implements CServerConstants {
 
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
         response = connection.sendAndReceive(request);
+        assertTrue(response instanceof GetAutoIncrementValueResponse);
         assertEquals(1, ((GetAutoIncrementValueResponse) response).getValue());
 
         displayCapturedMessages();

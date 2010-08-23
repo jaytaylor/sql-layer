@@ -66,8 +66,8 @@ public class CServer implements CServerConstants {
             "cserver.port", DEFAULT_CSERVER_PORT_STRING);
 
     /**
-     * Interface on which this cserver instance will listen.
-     * TODO - allow multiple NICs
+     * Interface on which this cserver instance will listen. TODO - allow
+     * multiple NICs
      */
     public static final String CSERVER_HOST = System.getProperty(
             "cserver.host", "localhost");
@@ -99,7 +99,6 @@ public class CServer implements CServerConstants {
     private final String cserverPort;
     private AkibaInformationSchema ais0;
     private AkibaInformationSchema ais;
-    private volatile boolean open;
     private volatile boolean stopped;
     private Map<Integer, Thread> threadMap;
     private boolean leadCServer;
@@ -138,6 +137,7 @@ public class CServer implements CServerConstants {
     }
 
     public void start() throws Exception {
+        boolean open = false;
         LOG.warn(String.format("Starting chunkserver %s on port %s",
                 CSERVER_NAME, CSERVER_PORT));
         Tap.registerMXBean();
@@ -146,30 +146,41 @@ public class CServer implements CServerConstants {
         MessageRegistry.only().registerModule("com.akiban.cserver");
         MessageRegistry.only().registerModule("com.akiban.ais");
         MessageRegistry.only().registerModule("com.akiban.message");
-        NetworkHandlerFactory.initializeNetwork(CSERVER_HOST, CSERVER_PORT,
-                new ChannelNotifier());
         ais0 = primordialAIS();
         rowDefCache.setAIS(ais0);
         store.startUp();
-        store.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
-                .equalsIgnoreCase("true"));
-        store.setExperimental(config.property(EXPERIMENTAL_PROPERTY_NAME, ""));
-        store.setOrdinals();
-        acquireAIS();
-        if (false) {
-            // TODO: Use this when we support multiple chunkservers
-            Admin admin = Admin.only();
-            leadCServer = admin.clusterConfig().leadChunkserver().name().equals(CSERVER_NAME);
-            admin.markChunkserverUp(CSERVER_NAME);
-            if (isLeader()) {
-                aisDistributor = new AISDistributor(this);
+        try {
+            store.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
+                    .equalsIgnoreCase("true"));
+            store.setExperimental(config.property(EXPERIMENTAL_PROPERTY_NAME,
+                    ""));
+            store.setOrdinals();
+            acquireAIS();
+            if (false) {
+                // TODO: Use this when we support multiple chunkservers
+                Admin admin = Admin.only();
+                leadCServer = admin.clusterConfig().leadChunkserver().name()
+                        .equals(CSERVER_NAME);
+                admin.markChunkserverUp(CSERVER_NAME);
+                if (isLeader()) {
+                    aisDistributor = new AISDistributor(this);
+                }
             }
-        } else {
-            leadCServer = true;
+            NetworkHandlerFactory.initializeNetwork(CSERVER_HOST, CSERVER_PORT,
+                    new ChannelNotifier());
+            open = true;
+        } finally {
+            if (!open) {
+                try {
+                    store.shutDown();
+                } catch (Exception e) {
+                    // Not interesting -- we want to see the Exception
+                    // that caused the startup failure.
+                }
+            }
         }
         LOG.warn(String.format("Started chunkserver %s on port %s, lead = %s",
                 CSERVER_NAME, CSERVER_PORT, isLeader()));
-        open = true;
     }
 
     public void stop() throws Exception {
@@ -187,9 +198,12 @@ public class CServer implements CServerConstants {
         for (final Thread thread : copy) {
             thread.interrupt();
         }
-        store.shutDown();
-        NetworkHandlerFactory.closeNetwork();
-        Tap.unregisterMXBean();
+        try {
+            NetworkHandlerFactory.closeNetwork();
+        } finally {
+            Tap.unregisterMXBean();
+            store.shutDown();
+        }
     }
 
     public String port() {
@@ -311,15 +325,6 @@ public class CServer implements CServerConstants {
                         LOG.trace("Serving message " + message);
                     }
 
-                    while (!open) {
-                        LOG.warn("Waiting for startup complete.");
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ie) {
-
-                        }
-                    }
-
                     CSERVER_EXEC.in();
 
                     if (enableMessageCapture) {
@@ -399,15 +404,15 @@ public class CServer implements CServerConstants {
         public String getDdl() {
             return ddl;
         }
-        
+
         public String getSchemaName() {
             return schemaName;
         }
-        
+
         public String getTableName() {
             return tableName;
         }
-        
+
         public int getTableId() {
             return tableId;
         }
@@ -428,7 +433,8 @@ public class CServer implements CServerConstants {
      * @throws Exception
      */
     public synchronized void acquireAIS() throws Exception {
-        LOG.warn(String.format("Acquiring AIS, experimental: %s", store.isExperimentalSchema()));
+        LOG.warn(String.format("Acquiring AIS, experimental: %s", store
+                .isExperimentalSchema()));
         if (store.isExperimentalSchema()) {
             final long generation = store.getSchemaGeneration();
             if (generation == lastSchemaGeneration) {

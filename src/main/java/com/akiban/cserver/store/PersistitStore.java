@@ -104,7 +104,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                         + "xtensionSize:1K,maximumSize:10G");
         PERSISTIT_PROPERTIES.put("volume.2",
                 "${datapath}/akiban_txn.v0,create,pageSize:8K,initialSize:1M,e"
-                        + "xtensionSize:1M,maximumSize:10G");
+                        + "xtensionSize:1M,maximumSize:10G,transient");
         PERSISTIT_PROPERTIES.put("volume.3", "${datapath}/" + VOLUME_NAME
                 + ".v01,create,pageSize:8k,"
                 + "initialSize:5M,extensionSize:5M,maximumSize:100G");
