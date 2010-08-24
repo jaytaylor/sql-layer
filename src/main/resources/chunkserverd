@@ -35,7 +35,22 @@ debugport=9091
 jar=akiban-cserver-1.0-SNAPSHOT-jar-with-dependencies.jar
 
 prog="nohup java"
-args="-Xnoagent -XX:+HeapDumpOnOutOfMemoryError -Dlog4j.configuration=${confdir}/config/log4j.properties -Dmysql.install.dir=${mysqldir} -Dakiban.admin=${confdir}  -Dcom.persistit.showgui=false  -Xmx512m -jar  ${progdir}/${jar}"
+defaultmemory="512"
+
+# chunkserver needs 2/3 of the memory on the machine
+memorykb=$(grep MemTotal /proc/meminfo | sed "s/MemTotal:\s*\([0-9]*\)\s.*/\1/g")
+if [ $? -eq 0 ]; then
+	if [ ! $(echo "${memorykb}" | grep -E "^[0-9]+$") ]; then
+		memory=${defaultmemory}
+	else
+		memorymb=$(( ${memorykb} / 1024 ))
+		memorycs=$(( ${memorymb} * 2 / 3 ))
+	fi
+fi
+
+memory=${memorycs:-${defaultmemory}}
+
+args="-Xnoagent -XX:+HeapDumpOnOutOfMemoryError -Dlog4j.configuration=${confdir}/config/log4j.properties -Dmysql.install.dir=${mysqldir} -Dakiban.admin=${confdir}  -Dcom.persistit.showgui=false  -Xmx${memory}M -jar  ${progdir}/${jar}"
 
 # if -Dcom.persistit.showui=true, set display variable
 #export DISPLAY=172.16.20.116:0.0
@@ -86,6 +101,7 @@ fi
 
 start() {
 	RETVAL=0
+	echo "INFO: $name will use $memory MB"
 	for conffile in ${confdir}/config/chunkserver*.properties
 	do
 		jmx="-Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=$jmxport"
