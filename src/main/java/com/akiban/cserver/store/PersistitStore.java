@@ -253,6 +253,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             tableManager = null;
             indexManager.shutDown();
             indexManager = null;
+            db.shutdownGUI();
             db.close();
             db = null;
             sessionRowCollectorMap.clear();

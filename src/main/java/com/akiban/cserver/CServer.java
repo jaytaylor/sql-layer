@@ -39,6 +39,8 @@ import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 import com.akiban.util.Tap;
+import com.persistit.LogBase;
+import com.persistit.exception.PersistitException;
 
 /**
  * @author peter
@@ -108,6 +110,7 @@ public class CServer implements CServerConstants {
     private volatile boolean enableMessageCapture;
     private List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
     private long lastSchemaGeneration = -1;
+    private volatile Thread _shutdownHook;
 
     /**
      * Construct a chunk server. If <tt>loadConfig</tt> is false then use
@@ -181,10 +184,27 @@ public class CServer implements CServerConstants {
         }
         LOG.warn(String.format("Started chunkserver %s on port %s, lead = %s",
                 CSERVER_NAME, CSERVER_PORT, isLeader()));
+        _shutdownHook = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    stop();
+                } catch (Exception e) {
+
+                }
+            }
+        }, "ShutdownHook");
+
+        Runtime.getRuntime().addShutdownHook(_shutdownHook);
     }
 
     public void stop() throws Exception {
         stopped = true;
+        final Thread hook = _shutdownHook;
+        _shutdownHook = null;
+        if (hook != null) {
+            Runtime.getRuntime().removeShutdownHook(hook);
+        }
+        
         if (false) {
             // TODO: Use this when we support multiple chunkservers
             Admin.only().markChunkserverDown(CSERVER_NAME);
