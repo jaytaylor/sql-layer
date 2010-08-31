@@ -95,22 +95,24 @@ begin
                 , y_$column.name
 #end
             );
+            -- advanceXOnMatch: $advanceXOnMatch
+            -- advanceYOnMatch: $advanceYOnMatch
 #if ($advanceXOnMatch)
             fetch x into
 #foreach ($column in $xTableColumns)
                 #comma_separator()x_$column.name
 #end
             ;
-#end
             set x_more = more;
+#end
 #if ($advanceYOnMatch)
             fetch y into
 #foreach ($column in $yTableColumns)
                 #comma_separator()y_$column.name
 #end
             ;
-#end
             set y_more = more;
+#end
         elseif c > 0 then
             fetch y into
 #foreach ($column in $yTableColumns)

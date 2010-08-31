@@ -27,7 +27,6 @@ public class PersistitAdapter
         this.store = store;
         UserTable leafTable = task.table();
         int nKeySegments = leafTable.getDepth() + 1;
-        logger.info(String.format("Leaf table %s, key segments: %s", leafTable, nKeySegments));
         // Traverse group from leaf table to root. Gather FieldDefs, ordinals and other data needed to construct
         // hkeys later. Accumulate FieldDefs in a stack since we're discovering them backwards, and we don't know
         // how many there will be.
@@ -48,14 +47,9 @@ public class PersistitAdapter
             Join join = table.getParentJoin();
             List<Column> uniqueKeyColumns = new ArrayList<Column>(table.getPrimaryKey().getColumns());
             if (join != null) {
-                logger.info(String.format("    join: %s", join));
-                logger.info(String.format("    join parent PK: %s", join.getParent().getPrimaryKey().getColumns()));
                 List<Column> childJoinColumns = Task.columnsInChild(join.getParent().getPrimaryKey().getColumns(), join);
-                logger.info(String.format("    child join columns: %s", childJoinColumns));
                 uniqueKeyColumns.removeAll(childJoinColumns);
             }
-            logger.info(String.format("    table: %s, depth: %s, uniqueKeyColumns: %s",
-                                      table, depth, uniqueKeyColumns));
             // Save FieldDefs. Push them in reverse order so they pop in the right order.
             for (int i = uniqueKeyColumns.size() - 1; i >= 0; i--) {
                 fieldDefStack.push(rowDef.getFieldDef(rowDef.getPkFields()[i]));
@@ -114,8 +108,6 @@ public class PersistitAdapter
         store.updateTableStats(leafRowDef, rowCount);
         store.releaseExchange(exchange);
     }
-
-    private static final Log logger = LogFactory.getLog(Tracker.class);
 
     private static final int ROW_DATA_BUFFER_SIZE = 1 << 16; // 64k
 
