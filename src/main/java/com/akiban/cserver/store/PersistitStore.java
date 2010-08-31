@@ -1800,6 +1800,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     .getTree().getName(), elapsed / 1000000000));
         }
     }
+    
+    public boolean isDeferIndexes() {
+        return deferIndexes;
+    }
 
     public void setDeferIndexes(final boolean defer) {
         deferIndexes = defer;

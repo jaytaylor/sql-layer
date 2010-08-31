@@ -49,6 +49,11 @@ class ManageMXBeanImpl implements ManageMXBean {
                 .getInteger("com.sun.management.jmxremote.port", 0);
         return jmxPort;
     }
+    
+    @Override
+    public boolean isVerboseLoggingEnabled() {
+        return cserver.getStore().isVerbose();
+    }
 
     @Override
     public void disableVerboseLogging() {
@@ -90,7 +95,12 @@ class ManageMXBeanImpl implements ManageMXBean {
     public void clearCapturedMessages() {
         cserver.clearCapturedMessages();
     }
-    
+
+    @Override
+    public boolean isDeferIndexesEnabled() {
+        return cserver.getStore().isDeferIndexes();
+    }
+
     @Override
     public void setDeferIndexes(final boolean defer) {
         ((PersistitStore) cserver.getStore()).setDeferIndexes(defer);

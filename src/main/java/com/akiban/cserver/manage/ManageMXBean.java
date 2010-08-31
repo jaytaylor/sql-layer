@@ -12,6 +12,8 @@ public interface ManageMXBean
     
     int getJmxPort();
     
+    boolean isVerboseLoggingEnabled();
+    
     void enableVerboseLogging();
     
     void disableVerboseLogging();
@@ -25,6 +27,8 @@ public interface ManageMXBean
     void clearCapturedMessages();
     
     void setMaxCapturedMessageCount(final int count);
+    
+    boolean isDeferIndexesEnabled();
     
     void setDeferIndexes(final boolean defer);
     
