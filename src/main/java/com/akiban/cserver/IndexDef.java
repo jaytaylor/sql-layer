@@ -195,16 +195,17 @@ public class IndexDef {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder(name);
-        sb.append("[");
+        StringBuilder sb = new StringBuilder();
+        sb.append(rowDef.getTableName());
+        sb.append(":");
+        sb.append(name);
+        sb.append("(");
         for (int i = 0; i < fields.length; i++) {
             sb.append(i == 0 ? "" : ",");
-            sb.append(fields[i]);
+            sb.append(rowDef.getFieldDef(fields[i]).getName());
         }
-        sb.append("]->");
+        sb.append(")->");
         sb.append(treeName);
-        sb.append(":");
-        sb.append(rowDef.getTableName());
         if (hkeyEquivalent) {
             sb.append("=hkey");
         }

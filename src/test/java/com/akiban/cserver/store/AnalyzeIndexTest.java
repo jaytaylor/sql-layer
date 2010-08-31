@@ -1,8 +1,8 @@
 package com.akiban.cserver.store;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.akiban.cserver.IndexDef;
@@ -10,13 +10,6 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
 
 public class AnalyzeIndexTest extends AbstractScanBase {
-
-    // TODO - temporary hack - remove when head always wants the
-    // histograms.
-    @BeforeClass
-    public static void setUp() {
-        PersistitStoreIndexManager.enableHistograms = true;
-    }
 
     @Test
     public void testAnalyzeAllIndexes() throws Exception {
@@ -81,4 +74,23 @@ public class AnalyzeIndexTest extends AbstractScanBase {
         }
         assertEquals(32, histogram.getHistogramSamples().size());
     }
+    
+// This test breaks the build - need to populate and then drop a different table.
+//    @Test
+//    public void testDropTable() throws Exception {
+//        final RowDef rowDef = groupRowDef("_akiba_srt");
+//        store.analyzeTable(rowDef.getRowDefId());
+//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
+//            store.analyzeTable(userRowDef.getRowDefId());
+//        }
+//        final TableStatistics ts1 = new TableStatistics(rowDef.getRowDefId());
+//        store.getIndexManager().populateTableStatistics(ts1);
+//        assertTrue(!ts1.getHistogramList().isEmpty());
+//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
+//            store.dropTable(userRowDef.getRowDefId());
+//        }
+//        final TableStatistics ts2 = new TableStatistics(rowDef.getRowDefId());
+//        store.getIndexManager().populateTableStatistics(ts2);
+//        assertTrue(ts2.getHistogramList().isEmpty());
+//    }
 }

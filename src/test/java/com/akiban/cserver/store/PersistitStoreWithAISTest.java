@@ -1,5 +1,7 @@
 package com.akiban.cserver.store;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +19,9 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.util.ByteBufferFactory;
+import com.persistit.Exchange;
 import com.persistit.KeyState;
+import com.persistit.Tree;
 import com.persistit.Volume;
 
 public class PersistitStoreWithAISTest extends TestCase implements
@@ -398,13 +402,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
         result = store.dropTable(td.defX.getRowDefId());
         assertEquals(OK, result);
 
-        assertNull(volume.getTree(td.defCOI.getTreeName(), false));
-        assertNull(volume.getTree(td.defO.getPkTreeName(), false));
-        assertNull(volume.getTree(td.defI.getPkTreeName(), false));
-        assertNull(volume.getTree(td.defX.getPkTreeName(), false));
-        assertNull(volume.getTree(td.defA.getPkTreeName(), false));
+        assertTrue(isGone(td.defCOI.getTreeName()));
+        assertTrue(isGone(td.defO.getPkTreeName()));
+        assertTrue(isGone(td.defI.getPkTreeName()));
+        assertTrue(isGone(td.defX.getPkTreeName()));
+        assertTrue(isGone(td.defA.getPkTreeName()));
     }
-    
+
     public void testDropSchema() throws Exception {
         //
         Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
@@ -412,9 +416,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
             final TestData td = new TestData(10, 10, 10, 10);
             td.insertTestRows();
             store.dropSchema(SCHEMA);
-            assertNull(volume.getTree(td.defCOI.getTreeName(), false));
-            assertNull(volume.getTree(td.defO.getPkTreeName(), false));
-            assertNull(volume.getTree(td.defI.getPkTreeName(), false));
+            assertTrue(isGone(td.defCOI.getTreeName()));
+            assertTrue(isGone(td.defO.getPkTreeName()));
+            assertTrue(isGone(td.defI.getPkTreeName()));
         }
     }
 
@@ -431,14 +435,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
             assertEquals(OK, store.dropTable(td.defA.getRowDefId()));
             assertEquals(OK, store.dropTable(td.defX.getRowDefId()));
             assertEquals(OK, store.dropSchema(SCHEMA));
-            
-            assertNull(volume.getTree(td.defCOI.getTreeName(), false));
-            assertNull(volume.getTree(td.defO.getPkTreeName(), false));
-            assertNull(volume.getTree(td.defI.getPkTreeName(), false));
-            
+
+            assertTrue(isGone(td.defCOI.getTreeName()));
+            assertTrue(isGone(td.defO.getPkTreeName()));
+            assertTrue(isGone(td.defI.getPkTreeName()));
+
         }
     }
-
 
     public void testUniqueIndexes() throws Exception {
         final TestData td = new TestData(5, 5, 5, 5);
@@ -685,6 +688,52 @@ public class PersistitStoreWithAISTest extends TestCase implements
         assertEquals(125, counts.get(td.defI.getRowDefId()).intValue());
         assertEquals(312313625, counts.get(td.defX.getRowDefId()).intValue());
 
+    }
+
+    public void testRebuildIndex() throws Exception {
+        final TestData td = new TestData(3, 3, 3, 3);
+        td.insertTestRows();
+        final StringWriter a, b, c;
+        dumpIndexes(new PrintWriter(a = new StringWriter()));
+        store.deleteIndexes("");
+        dumpIndexes(new PrintWriter(b = new StringWriter()));
+        store.buildIndexes("");
+        dumpIndexes(new PrintWriter(c = new StringWriter()));
+        assertTrue(!a.toString().equals(b.toString()));
+        assertEquals(a.toString(), c.toString());
+    }
+
+    private void dumpIndexes(final PrintWriter pw) throws Exception {
+        for (final RowDef rowDef : rowDefCache.getRowDefs()) {
+            pw.println(rowDef);
+            for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+                pw.println(indexDef);
+                dumpIndex(indexDef, pw);
+            }
+        }
+        pw.flush();
+
+    }
+
+    private void dumpIndex(final IndexDef indexDef, final PrintWriter pw)
+            throws Exception {
+        final Exchange ex = store.getExchange(indexDef.getRowDef(), indexDef);
+        ex.clear();
+        while (ex.next(true)) {
+            pw.println(ex.getKey());
+        }
+        pw.flush();
+    }
+    
+    private boolean isGone(final String treeName) throws Exception {
+        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
+        final Tree tree = volume.getTree(treeName, false);
+        if (tree == null) {
+            return true;
+        }
+        final Exchange exchange = store.getExchange(treeName);
+        exchange.clear();
+        return !exchange.hasChildren();
     }
 
 }

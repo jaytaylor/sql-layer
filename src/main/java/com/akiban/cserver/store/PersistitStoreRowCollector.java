@@ -493,7 +493,6 @@ public class PersistitStoreRowCollector implements RowCollector,
         }
 
         while (true) {
-
             //
             // Flush any available pending rows. A row on in the pendingRowData
             // array is available only if the leaf level of the array has been
@@ -763,5 +762,15 @@ public class PersistitStoreRowCollector implements RowCollector,
     
     public long getId() {
         return id;
+    }
+    
+    // Used by indexer
+    Exchange getHExchange() {
+        return hEx;
+    }
+    
+    // Used by indexer
+    KeyFilter getHFilter() {
+        return hFilter;
     }
 }

@@ -90,7 +90,22 @@ class ManageMXBeanImpl implements ManageMXBean {
     public void clearCapturedMessages() {
         cserver.clearCapturedMessages();
     }
-
+    
+    @Override
+    public void setDeferIndexes(final boolean defer) {
+        ((PersistitStore) cserver.getStore()).setDeferIndexes(defer);
+    }
+    
+    @Override
+    public void buildIndexes(final String arg) {
+        ((PersistitStore) cserver.getStore()).buildIndexes(arg);
+    }
+    
+    @Override
+    public void deleteIndexes(final String arg) {
+        ((PersistitStore) cserver.getStore()).deleteIndexes(arg);
+    }
+    
     // TODO - temporary
     @Override
     public String copyBackPages() {
@@ -101,6 +116,8 @@ class ManageMXBeanImpl implements ManageMXBean {
         }
         return "done";
     }
+    
+    
     
 
 }

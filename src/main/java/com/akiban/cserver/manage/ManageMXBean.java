@@ -26,6 +26,12 @@ public interface ManageMXBean
     
     void setMaxCapturedMessageCount(final int count);
     
+    void setDeferIndexes(final boolean defer);
+    
+    void buildIndexes(final String arg);
+    
+    void deleteIndexes(final String arg);
+    
     // TODO - temporary
     String copyBackPages();
     

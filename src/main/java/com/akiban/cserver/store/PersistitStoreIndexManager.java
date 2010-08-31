@@ -95,7 +95,6 @@ public class PersistitStoreIndexManager {
             @Override
             public void runTransaction() throws PersistitException,
                     RollbackException {
-
                 RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
                 rowData.createRow(indexAnalysisRowDef, new Object[] {
                         indexDef.getRowDef().getRowDefId(), indexDef.getId() });
@@ -113,6 +112,7 @@ public class PersistitStoreIndexManager {
                     throw new RuntimeException(e);
                 }
             }
+
         });
     }
 

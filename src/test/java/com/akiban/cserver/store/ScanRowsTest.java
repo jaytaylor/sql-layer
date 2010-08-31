@@ -10,11 +10,16 @@ import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_EXCLUSIVE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
+
 import org.junit.Test;
 
 import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
+import com.persistit.Exchange;
 
 public class ScanRowsTest extends AbstractScanBase {
 
@@ -75,6 +80,40 @@ public class ScanRowsTest extends AbstractScanBase {
             assertEquals(115, scanAllRows("aaaa with aaaa.aaaa1 in [100,200]",
                     start, end, bitMap, findIndexId(rowDef, userRowDef, 1)));
         }
+
+        {
+            final RowDef userRowDef = userRowDef("aaaa");
+            int col = findFieldIndex(rowDef, "aa$aa1");
+            int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
+            Object[] startValue = new Object[fc];
+            Object[] endValue = new Object[fc];
+            startValue[col] = 1;
+            endValue[col] = 5;
+            start.createRow(rowDef, startValue);
+            end.createRow(rowDef, endValue);
+            bitMap = bitsToRoot(userRowDef, rowDef);
+            assertEquals(556, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
+                    end, bitMap, indexId));
+        }
+        
+        store.deleteIndexes("");
+        
+        {
+            final RowDef userRowDef = userRowDef("aaaa");
+            int col = findFieldIndex(rowDef, "aa$aa1");
+            int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
+            Object[] startValue = new Object[fc];
+            Object[] endValue = new Object[fc];
+            startValue[col] = 1;
+            endValue[col] = 5;
+            start.createRow(rowDef, startValue);
+            end.createRow(rowDef, endValue);
+            bitMap = bitsToRoot(userRowDef, rowDef);
+            assertEquals(0, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
+                    end, bitMap, indexId));
+        }
+        
+        store.buildIndexes("");
 
         {
             final RowDef userRowDef = userRowDef("aaaa");
@@ -244,5 +283,4 @@ public class ScanRowsTest extends AbstractScanBase {
             }
         }
     }
-
 }
