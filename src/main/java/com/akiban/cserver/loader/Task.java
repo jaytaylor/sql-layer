@@ -51,8 +51,7 @@ public abstract class Task
     // parentColumns are columns in join.parent. Return the corresponding
     // columns in join.child. If a column is
     // not present in join.parent, it is dropped.
-    public static List<Column> columnsInChild(List<Column> parentColumns,
-                                              Join join)
+    public static List<Column> columnsInChild(List<Column> parentColumns, Join join)
     {
         List<Column> childColumns = new ArrayList<Column>();
         for (Column parentColumn : parentColumns) {
@@ -109,8 +108,9 @@ public abstract class Task
     // complete hkey.
     protected static List<Column> hKeyColumns(UserTable table)
     {
-        return table.getParentJoin() == null ? table.getPrimaryKey()
-                .getColumns() : hKeyColumns(table.getParentJoin());
+        return table.getParentJoin() == null
+               ? table.getPrimaryKey().getColumns()
+               : hKeyColumns(table.getParentJoin());
     }
 
     protected static String commaSeparatedColumnNames(List<Column> columns)
@@ -158,13 +158,12 @@ public abstract class Task
     protected static String quote(TableName tableName)
     {
         return quote(tableName.getSchemaName()) + '.'
-                + quote(tableName.getTableName());
+               + quote(tableName.getTableName());
     }
 
     protected TableName sourceTableName(TableName targetTableName)
     {
-        return new TableName(loader.sourceSchema(targetTableName
-                .getSchemaName()), targetTableName.getTableName());
+        return new TableName(loader.sourceSchema(targetTableName.getSchemaName()), targetTableName.getTableName());
     }
 
     protected static String quote(String s)
@@ -177,7 +176,7 @@ public abstract class Task
         UserTable joinParent = join.getParent();
         List<Column> parentHKeyColumns = joinParent.getParentJoin() == null ? joinParent
                 .getPrimaryKey().getColumns()
-                : hKeyColumns(joinParent.getParentJoin());
+                                                                            : hKeyColumns(joinParent.getParentJoin());
         // if hkey column in parent has no counterpart in child, it is dropped
         // by columnsInChild.
         List<Column> hKeyColumns = columnsInChild(parentHKeyColumns, join);

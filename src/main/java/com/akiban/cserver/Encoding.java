@@ -380,8 +380,9 @@ public enum Encoding {
             if (mask != 0)
                 ++fromOff;
 
-            int intCnt = from.indexOf('.');
-            int fracCnt = from.length() - intCnt - 1;
+            int signSize = mask == 0 ? 0 : 1;
+            int intCnt = from.indexOf('.') - signSize;
+            int fracCnt = from.length() - intCnt - 1 - signSize;
             
             if(intCnt == -1)
             {

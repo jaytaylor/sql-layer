@@ -9,12 +9,16 @@ public class TableTasks
     public void saveTasks(DB.Connection connection) throws SQLException
     {
         for (Task task : tasks()) {
-            connection.new Update(TEMPLATE_SAVE_TASK, task.artifactTableName()
-                    .getSchemaName(), task.type(), task.table().getName()
-                    .getSchemaName(), task.table().getName().getTableName(),
-                    task.table().getDepth(), task.artifactTableName()
-                            .getSchemaName(), task.artifactTableName()
-                            .getTableName(), task.sql()).execute();
+            connection.new Update(TEMPLATE_SAVE_TASK, 
+                                  task.artifactTableName().getSchemaName(),
+                                  task.type(),
+                                  task.table().getName().getSchemaName(),
+                                  task.table().getName().getTableName(),
+                                  task.table().getDepth(),
+                                  task.artifactTableName().getSchemaName(),
+                                  task.artifactTableName().getTableName(),
+                                  task.sql()
+            ).execute();
         }
     }
 
@@ -64,12 +68,12 @@ public class TableTasks
     }
 
     private static final String TEMPLATE_SAVE_TASK = "insert into %s.task("
-            + "    task_type, " + "    state, " + "    user_table_schema, "
-            + "    user_table_table, " + "    user_table_depth, "
-            + "    artifact_schema, " + "    artifact_table, " + "    command "
-            + ") values(" + "    '%s'," + "    'waiting'," + "    '%s',"
-            + "    '%s'," + "    '%s'," + "    '%s'," + "    '%s',"
-            + "    '%s'" + ")";
+                                                     + "    task_type, " + "    state, " + "    user_table_schema, "
+                                                     + "    user_table_table, " + "    user_table_depth, "
+                                                     + "    artifact_schema, " + "    artifact_table, " + "    command "
+                                                     + ") values(" + "    '%s'," + "    'waiting'," + "    '%s',"
+                                                     + "    '%s'," + "    '%s'," + "    '%s'," + "    '%s',"
+                                                     + "    '%s'" + ")";
 
     private GenerateFinalTask generateFinal;
     private GenerateParentTask generateParent;

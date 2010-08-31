@@ -74,8 +74,8 @@ public class Tracker
             long nowNsec = System.nanoTime();
             try {
                 connection.new Update(TEMPLATE_LOG_PROGRESS, schema,
-                        ((double) (nowNsec - lastEventTimeNsec)) / ONE_BILLION,
-                        message).execute();
+                                      ((double) (nowNsec - lastEventTimeNsec)) / ONE_BILLION,
+                                      message).execute();
             } catch (SQLException e) {
                 logger.error(String.format(
                         "Unable to record event in %s.progress: %s", schema,
@@ -88,13 +88,13 @@ public class Tracker
     private static final Log logger = LogFactory.getLog(Tracker.class);
     private static final int ONE_BILLION = 1000 * 1000 * 1000;
     private static final String TEMPLATE_CREATE_PROGRESS_TABLE = "create table %s.progress("
-            + "    event_id int auto_increment, "
-            + "    time timestamp not null, "
-            + "    event_time_sec double not null, "
-            + "    message varchar(500), " + "    primary key(event_id)" + ")";
+                                                                 + "    event_id int auto_increment, "
+                                                                 + "    time timestamp not null, "
+                                                                 + "    event_time_sec double not null, "
+                                                                 + "    message varchar(500), " + "    primary key(event_id)" + ")";
     private static final String TEMPLATE_LOG_PROGRESS = "insert into %s.progress(time, event_time_sec, message) values (now(), %s, '%s')";
     private static final String TEMPLATE_RECENT_EVENTS = "select event_id, time, event_time_sec, message "
-            + "from %s.progress " + "where event_id > %s";
+                                                         + "from %s.progress " + "where event_id > %s";
 
     private final String schema;
     private final DB.Connection connection;

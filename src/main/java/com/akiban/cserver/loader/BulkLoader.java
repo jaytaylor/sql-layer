@@ -74,8 +74,10 @@ public class BulkLoader extends Thread
     // BulkLoader interface
 
     // For testing
-    BulkLoader(AkibaInformationSchema ais, String group,
-               String artifactsSchema, TaskGenerator.Actions actions)
+    BulkLoader(AkibaInformationSchema ais,
+               String group,
+               String artifactsSchema,
+               TaskGenerator.Actions actions)
             throws ClassNotFoundException, SQLException
     {
         this.ais = ais;
@@ -98,8 +100,16 @@ public class BulkLoader extends Thread
             throws ClassNotFoundException, SQLException, InProgressException
     {
         if (inProgress == null) {
-            inProgress = new BulkLoader(store, ais, groups, artifactsSchema,
-                                        sourceSchemas, dbHost, dbPort, dbUser, dbPassword, resume,
+            inProgress = new BulkLoader(store,
+                                        ais,
+                                        groups,
+                                        artifactsSchema,
+                                        sourceSchemas,
+                                        dbHost,
+                                        dbPort,
+                                        dbUser,
+                                        dbPassword,
+                                        resume,
                                         cleanup);
             inProgress.start();
         } else {

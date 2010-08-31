@@ -21,10 +21,10 @@ public class GenerateChildTask extends Task
         // Get the child columns of the join connecting child table to parent,
         // in the same order as the parent's
         // primary key columns.
-        final Join join = table.getParentJoin();
-        for (Column parentPKColumn : join.getParent().getPrimaryKey()
+        Join parentJoin = table.getParentJoin();
+        for (Column parentPKColumn : parentJoin.getParent().getPrimaryKey()
                 .getColumns()) {
-            Column childFKColumn = join.getMatchingChild(parentPKColumn);
+            Column childFKColumn = parentJoin.getMatchingChild(parentPKColumn);
             if (childFKColumn == null) {
                 throw new BulkLoader.InternalError(parentPKColumn.toString());
             }
@@ -41,14 +41,13 @@ public class GenerateChildTask extends Task
             }
         }
         sql(String.format(SQL_TEMPLATE, quote(artifactTableName()),
-                commaSeparatedColumnDeclarations(columns()),
-                commaSeparatedColumnNames(columns()),
-                quote(sourceTableName(table.getName())),
-                commaSeparatedColumnNames(fkColumns)));
+                          commaSeparatedColumnDeclarations(columns()),
+                          commaSeparatedColumnNames(columns()),
+                          quote(sourceTableName(table.getName())),
+                          commaSeparatedColumnNames(fkColumns)));
     }
 
-    private static final String SQL_TEMPLATE = "create table %s(%s) "
-            + "select %s " + "from %s " + "order by %s";
+    private static final String SQL_TEMPLATE = "create table %s(%s) select %s from %s order by %s";
 
     protected final List<Column> fkColumns = new ArrayList<Column>();
 }

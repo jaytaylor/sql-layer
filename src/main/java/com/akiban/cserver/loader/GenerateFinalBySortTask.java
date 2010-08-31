@@ -17,10 +17,10 @@ public class GenerateFinalBySortTask extends GenerateFinalTask
         hKey(hKeyColumns(table));
         order(hKey());
         sql(String.format(SQL_TEMPLATE, quote(artifactTableName()),
-                commaSeparatedColumnDeclarations(table.getColumns()),
-                commaSeparatedColumnNames(table.getColumns()),
-                quote(sourceTableName(table.getName())),
-                commaSeparatedColumnNames(hKey())));
+                          commaSeparatedColumnDeclarations(table.getColumns()),
+                          commaSeparatedColumnNames(table.getColumns()),
+                          quote(sourceTableName(table.getName())),
+                          commaSeparatedColumnNames(hKey())));
         hKeyColumnPositions = new int[hKey().size()];
         int p = 0;
         for (Column column : hKey()) {
@@ -45,5 +45,5 @@ public class GenerateFinalBySortTask extends GenerateFinalTask
     }
 
     private static final String SQL_TEMPLATE = "create table %s(%s) "
-            + "select %s " + "from %s " + "order by %s";
+                                               + "select %s " + "from %s " + "order by %s";
 }

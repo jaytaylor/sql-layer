@@ -47,10 +47,8 @@ public class PersistitLoader
     private void load(final GenerateFinalTask task, DB.Connection connection)
             throws Exception
     {
-        tracker.info(String.format("Loading persistit for %s", task
-                .artifactTableName()));
-        final PersistitAdapter persistitAdapter = new PersistitAdapter(store,
-                task);
+        tracker.info(String.format("Loading persistit for %s", task.artifactTableName()));
+        final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task);
         connection.new Query(SQL_TEMPLATE, task.artifactTableName())
         {
             @Override

@@ -41,26 +41,26 @@ public class DB
     public void spawn(String sql, Log logger)
     {
         Command command =
-            dbPassword == null
-            ? Command.logOutput(logger,
-                                Level.INFO,
-                                String.format("%s/bin/mysql", mysqlInstallDir()),
-                                "-h",
-                                dbHost,
-                                "-P",
-                                Integer.toString(dbPort),
-                                "-u",
-                                dbUser)
-            : Command.logOutput(logger,
-                                Level.INFO,
-                                String.format("%s/bin/mysql", mysqlInstallDir()),
-                                "-h",
-                                dbHost,
-                                "-P",
-                                Integer.toString(dbPort),
-                                "-u",
-                                dbUser,
-                                "-p" + dbPassword);
+                dbPassword == null
+                ? Command.logOutput(logger,
+                                    Level.INFO,
+                                    String.format("%s/bin/mysql", mysqlInstallDir()),
+                                    "-h",
+                                    dbHost,
+                                    "-P",
+                                    Integer.toString(dbPort),
+                                    "-u",
+                                    dbUser)
+                : Command.logOutput(logger,
+                                    Level.INFO,
+                                    String.format("%s/bin/mysql", mysqlInstallDir()),
+                                    "-h",
+                                    dbHost,
+                                    "-P",
+                                    Integer.toString(dbPort),
+                                    "-u",
+                                    dbUser,
+                                    "-p" + dbPassword);
         try {
             int status = command.run(sql);
             if (status != 0) {

@@ -59,12 +59,12 @@ public class TaskGenerator
         List<Column> childHKeyColumns = Task.columnsInChild(hKeyColumns, join);
         UserTable childTable = join.getChild();
         if (hKeyColumns.size() > 0
-                && childHKeyColumns.size() == hKeyColumns.size()) {
+            && childHKeyColumns.size() == hKeyColumns.size()) {
             // Every hkey column in the parent has a counterpart in the child
             // via the join. So the child table
             // has a complete hkey.
             actions.generateTasksForTableContainingHKeyColumns(loader,
-                    childTable, tasks);
+                                                               childTable, tasks);
             for (Join childJoin : childTable.getChildJoins()) {
                 // Extend childHKeyColumns with child key columns not already
                 // present
@@ -81,7 +81,7 @@ public class TaskGenerator
             }
         } else {
             actions.generateTasksForTableNotContainingHKeyColumns(loader, join,
-                    tasks);
+                                                                  tasks);
             childHKeyColumns.clear(); // Indicates that child tables (and
             // descendents) don't have a complete
             // hkey.

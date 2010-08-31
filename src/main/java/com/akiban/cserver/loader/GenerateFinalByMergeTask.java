@@ -20,12 +20,11 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
     }
 
     /*
-     * We are computing T$final for table T. finalArtifact identifies T, called
-     * originalTable in the code. hKeyTask is the task that computes T$parent,
-     * which has all hkey columns of T.
-     * 
-     * E.g., for the COI example, computing I: - I(iid, oid, ...) -
-     * I$parent(cid, oid, iid) - I$final(iid, oid, ..., cid)
+     * We are computing T$final for table T by doing a merge of x and y where:
+      *  E.g., for the COI example, computing I:
+     * - x: I(iid, oid, ...)
+     * - y: I$parent(cid, oid, iid)
+     * - result: I$final(iid, oid, ..., cid)
      * 
      * In I$parent, cid and oid are the Column objects from the O table. But in
      * I, oid is of course from the I table. So in computing the columns for
@@ -33,8 +32,10 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
      * that I$final already has an oid column.
      */
 
-    public GenerateFinalByMergeTask(BulkLoader loader, UserTable table,
-                                    GenerateParentTask parentTask, AkibaInformationSchema ais)
+    public GenerateFinalByMergeTask(BulkLoader loader,
+                                    UserTable table,
+                                    GenerateParentTask parentTask,
+                                    AkibaInformationSchema ais)
             throws Exception
     {
         super(loader, table);
@@ -88,13 +89,9 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
             }
             columnPositions[p++] = columnPosition;
         }
-        // Join the original table (e.g. item) and the hkey table (e.g.
-        // item$parent) to form the final table,
-        // (e.g. item$final). This is done using the join template which joins
-        // (x, y) -> output.
-        // Output columns are formed by taking all the columns of x and the
-        // columns of y which have no
-        // counterpart in x.
+        // Join the original table (e.g. item) and the parent table (e.g. item$parent) to form the final table,
+        // (e.g. item$final). This is done using the join template which joins (x, y) -> output. Output columns are
+        // formed by taking all the columns of x and the columns of y which have no counterpart in x.
         String procedureName = String.format("%s$merge_final", table.getName()
                 .getTableName());
         AISTextGenerator generator = new AISTextGenerator(ais);
@@ -108,7 +105,8 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
         context.put("yJoinColumns", parentTask.pkColumns());
         context.put("yOnlyColumns", hKeyColumnsNotInOriginalTable);
         context.put("outputTableName", artifactTableName());
-        context.put("multipleYPerX", false);
+        context.put("advanceXOnMatch", true); // because X is a PK
+        context.put("advanceYOnMatch", true); // because Y is a PK too
         context.put("orderBy", true);
         sql(generator.generate(context, "merge_join.vm"));
     }

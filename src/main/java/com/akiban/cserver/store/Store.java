@@ -37,8 +37,8 @@ public interface Store {
     int writeRow(final RowData rowData) throws Exception;
 
     int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData, final int[] ordinals,
-            final FieldDef[][] fieldDefs, final Object[][] hKey)
+            final RowData rowData, final int[] ordinals, final int[] nKeyColumns,
+            final FieldDef[] fieldDefs, final Object[] hKey)
             throws Exception;
 
     void updateTableStats(final RowDef rowDef, long rowCount)

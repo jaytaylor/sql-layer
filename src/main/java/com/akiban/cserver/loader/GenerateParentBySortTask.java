@@ -18,11 +18,11 @@ public class GenerateParentBySortTask extends GenerateParentTask
         pkColumns(table.getPrimaryKey().getColumns());
         order(pkColumns());
         sql(String.format(SQL_TEMPLATE, quote(artifactTableName()),
-                commaSeparatedColumnDeclarations(hKey()),
-                commaSeparatedColumnNames(hKey()), quote(sourceTableName(table
+                          commaSeparatedColumnDeclarations(hKey()),
+                          commaSeparatedColumnNames(hKey()), quote(sourceTableName(table
                         .getName())), commaSeparatedColumnNames(order())));
     }
 
     private static final String SQL_TEMPLATE = "create table %s(%s) "
-            + "select %s " + "from %s " + "order by %s";
+                                               + "select %s " + "from %s " + "order by %s";
 }

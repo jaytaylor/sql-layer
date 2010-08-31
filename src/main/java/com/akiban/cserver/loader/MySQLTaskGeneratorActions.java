@@ -20,7 +20,7 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
             throw new BulkLoader.InternalError(table.toString());
         }
         GenerateFinalBySortTask task = new GenerateFinalBySortTask(loader,
-                table);
+                                                                   table);
         tableTasks.generateFinal(task);
         tasks.put(table, tableTasks);
     }
@@ -35,7 +35,7 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
         TableTasks parentTasks = tableTasks(tasks, parent);
         if (parentTasks.generateParent() == null) {
             parentTasks.generateParent(new GenerateParentBySortTask(loader,
-                    parent));
+                                                                    parent));
         }
         // Generate child's $child
         UserTable child = join.getChild();
@@ -46,18 +46,18 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
         // Generate child's $parent
         if (childTasks.generateParent() == null) {
             childTasks.generateParent(new GenerateParentByMergeTask(loader,
-                    child, parentTasks.generateParent(), childTasks
+                                                                    child, parentTasks.generateParent(), childTasks
                             .generateChild(), ais));
         }
         // Generate parent's $final
         if (parentTasks.generateFinal() == null) {
             parentTasks.generateFinal(new GenerateFinalByMergeTask(loader,
-                    parent, parentTasks.generateParent(), ais));
+                                                                   parent, parentTasks.generateParent(), ais));
         }
         // Generate child's $final
         if (childTasks.generateFinal() == null) {
             childTasks.generateFinal(new GenerateFinalByMergeTask(loader,
-                    child, childTasks.generateParent(), ais));
+                                                                  child, childTasks.generateParent(), ais));
         }
     }
 

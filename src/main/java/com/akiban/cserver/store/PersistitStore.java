@@ -372,16 +372,16 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     void constructHKey(final Exchange hEx, final RowDef rowDef,
-            final int[] ordinals, final FieldDef[][] fieldDefs,
-            final Object[][] hKeyValues) throws Exception {
+            final int[] ordinals, final int[] nKeyColumns, final FieldDef[] fieldDefs,
+            final Object[] hKeyValues) throws Exception {
         final Key hkey = hEx.getKey();
         hkey.clear();
-        for (int i = 0; i < hKeyValues.length; i++) {
+        int k = 0;
+        for (int i = 0; i < ordinals.length; i++) {
             hkey.append(ordinals[i]);
-            Object[] tableHKeyValues = hKeyValues[i];
-            FieldDef[] tableFieldDefs = fieldDefs[i];
-            for (int j = 0; j < tableHKeyValues.length; j++) {
-                appendKeyField(hkey, tableFieldDefs[j], tableHKeyValues[j]);
+            for (int j = 0; j < nKeyColumns[i]; j++) {
+                appendKeyField(hkey, fieldDefs[k], hKeyValues[k]);
+                k++;
             }
         }
     }
@@ -754,15 +754,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     @Override
     public int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData, final int[] ordinals,
-            final FieldDef[][] fieldDefs, final Object[][] hKeyValues)
+            final RowData rowData, final int[] ordinals, final int[] nKeyColumns,
+            final FieldDef[] fieldDefs, final Object[] hKeyValues)
             throws Exception {
         if (verbose && LOG.isInfoEnabled()) {
             LOG.info("BulkLoad writeRow: " + rowData.toString(rowDefCache));
         }
 
         try {
-            constructHKey(hEx, rowDef, ordinals, fieldDefs, hKeyValues);
+            constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs, hKeyValues);
             final int start = rowData.getInnerStart();
             final int size = rowData.getInnerSize();
             hEx.getValue().ensureFit(size);
@@ -771,6 +771,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             hEx.getValue().setEncodedSize(size);
             // Store the h-row
             hEx.store();
+/* Populate the indexes after the table has been loaded. Each index requires its own ordering.
             for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                 //
                 // Insert the index keys (except for the case of a
@@ -779,6 +780,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 if (!deferIndexes && !indexDef.isHKeyEquivalent())
                     insertIntoIndex(indexDef, rowData, hEx.getKey());
             }
+*/
             return OK;
         } catch (StoreException e) {
             return e.getResult();
