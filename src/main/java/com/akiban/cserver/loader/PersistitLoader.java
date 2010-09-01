@@ -66,7 +66,7 @@ public class PersistitLoader
     }
 
     private static final String SQL_TEMPLATE = "select * from %s";
-    private static final int LOG_INTERVAL = 1000;
+    private static final int LOG_INTERVAL = 10000;
 
     private final DB db;
     private final PersistitStore store;

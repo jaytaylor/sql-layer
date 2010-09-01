@@ -33,6 +33,11 @@ begin
     declare x_more bool default true;
     declare y_more bool default true;
     declare c int;
+    declare log_interval int default 10000;
+    declare log_interval_count int;
+    declare log_last_time timestamp;
+    declare t timestamp;
+    declare msg varchar(200);
 
     declare x cursor for
     select
@@ -78,6 +83,8 @@ begin
     ;
     set y_more = more;
 
+    set log_interval_count = 0;
+    set log_last_time = sysdate();
     while x_more and y_more do
         select if((#foreach ($column in $xJoinColumns)#comma_separator()x_$column.name#end) =
                   (#foreach ($column in $yJoinColumns)#comma_separator()y_$column.name#end),
@@ -95,8 +102,6 @@ begin
                 , y_$column.name
 #end
             );
-            -- advanceXOnMatch: $advanceXOnMatch
-            -- advanceYOnMatch: $advanceYOnMatch
 #if ($advanceXOnMatch)
             fetch x into
 #foreach ($column in $xTableColumns)
@@ -127,6 +132,13 @@ begin
 #end
             ;
             set x_more = more;
+        end if;
+        set log_interval_count = log_interval_count + 1;
+        if log_interval_count % log_interval = 0 then
+            set t = sysdate();
+            insert into progress(time, event_time_sec, message)
+            values(t, t - log_last_time, log_interval_count);
+            set log_last_time = t;
         end if;
     end while;
 
