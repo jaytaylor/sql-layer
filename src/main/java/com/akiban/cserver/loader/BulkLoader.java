@@ -1,19 +1,14 @@
 package com.akiban.cserver.loader;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.sql.SQLException;
+import java.util.*;
 
 public class BulkLoader extends Thread
 {
@@ -31,10 +26,12 @@ public class BulkLoader extends Thread
             termination = e;
         }
         // Create database for intermediates
-        try {
-            prepareWorkArea(db);
-        } catch (Exception e) {
-            logger.error("Unable to prepare work area", e);
+        if (!resume) {
+            try {
+                prepareWorkArea(db);
+            } catch (Exception e) {
+                logger.error("Unable to prepare work area", e);
+            }
         }
         // Create tracker for logging (to log file and database)
         try {
@@ -214,8 +211,7 @@ public class BulkLoader extends Thread
                                    artifactsSchema).execute();
                 connection.new DDL(TEMPLATE_CREATE_BULK_LOAD_SCHEMA,
                                    artifactsSchema).execute();
-                connection.new DDL(TEMPLATE_CREATE_TASKS_TABLE, artifactsSchema)
-                        .execute();
+                connection.new DDL(TEMPLATE_CREATE_TASKS_TABLE, artifactsSchema).execute();
             } finally {
                 connection.close();
             }

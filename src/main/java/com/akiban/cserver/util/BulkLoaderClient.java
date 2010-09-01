@@ -34,11 +34,24 @@ public class BulkLoaderClient {
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {
-            Request request = resume ? BulkLoadRequest.resume(dbHost, dbPort,
-                    dbUser, dbPassword, groups, artifactsSchema, sourceSchemas,
-                    cleanup) : BulkLoadRequest
-                    .start(dbHost, dbPort, dbUser, dbPassword, groups,
-                            artifactsSchema, sourceSchemas, cleanup);
+            Request request =
+                    resume
+                    ? BulkLoadRequest.resume(dbHost,
+                                             dbPort,
+                                             dbUser,
+                                             dbPassword,
+                                             groups,
+                                             artifactsSchema,
+                                             sourceSchemas,
+                                             cleanup)
+                    : BulkLoadRequest.start(dbHost,
+                                            dbPort,
+                                            dbUser,
+                                            dbPassword,
+                                            groups,
+                                            artifactsSchema,
+                                            sourceSchemas,
+                                            cleanup);
             BulkLoadResponse response;
             BulkLoadResponse badEnding = null;
             do {
