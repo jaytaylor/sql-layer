@@ -1,11 +1,11 @@
 package com.akiban.cserver.loader;
 
-import java.sql.ResultSet;
-import java.util.List;
-
 import com.akiban.cserver.store.PersistitStore;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
+
+import java.sql.ResultSet;
+import java.util.List;
 
 public class PersistitLoader
 {
@@ -24,19 +24,15 @@ public class PersistitLoader
         DB.Connection connection = db.new Connection();
         try {
             // TODO: Merge inputs from final tasks by hkey. This would require a
-            // connection per table.
+            // TODO: connection per table.
             for (GenerateFinalTask task : finalTasks) {
                 load(task, connection);
             }
-            transaction.commit(true);
         } catch (PersistitException e) {
             try {
                 transaction.rollback();
             } catch (PersistitException rollbackException) {
-                tracker
-                        .error(
-                                "Caught exception while rolling back following earlier failure",
-                                rollbackException);
+                tracker.error("Caught exception while rolling back following earlier failure", rollbackException);
             }
             throw e;
         } finally {
@@ -55,18 +51,26 @@ public class PersistitLoader
             protected void handleRow(ResultSet resultSet) throws Exception
             {
                 persistitAdapter.handleRow(resultSet);
-                if ((++count % LOG_INTERVAL) == 0) {
+                count++;
+                if (count % LOG_INTERVAL == 0) {
                     tracker.info("%s: %s", task.artifactTableName(), count);
+                }
+                if (count % COMMIT_INTERVAL == 0) {
+                    transaction.commit();
+                    tracker.info("%s commit: %s", task.artifactTableName(), count);
                 }
             }
 
             private int count = 0;
         }.execute();
+        transaction.commit();
+        tracker.info("%s final commit", task.artifactTableName());
         persistitAdapter.close();
     }
 
     private static final String SQL_TEMPLATE = "select * from %s";
-    private static final int LOG_INTERVAL = 10000;
+    private static final int LOG_INTERVAL = 10 * 1000;
+    private static final int COMMIT_INTERVAL = 1000 * 1000;
 
     private final DB db;
     private final PersistitStore store;
