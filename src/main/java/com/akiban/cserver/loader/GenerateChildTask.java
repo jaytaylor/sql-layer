@@ -21,22 +21,22 @@ public class GenerateChildTask extends Task
         // Get the child columns of the join connecting child table to parent,
         // in the same order as the parent's
         // primary key columns.
+        this.table = table;
         Join parentJoin = table.getParentJoin();
-        for (Column parentPKColumn : parentJoin.getParent().getPrimaryKey()
-                .getColumns()) {
+        for (Column parentPKColumn : parentJoin.getParent().getPrimaryKey().getColumns()) {
             Column childFKColumn = parentJoin.getMatchingChild(parentPKColumn);
             if (childFKColumn == null) {
                 throw new BulkLoader.InternalError(parentPKColumn.toString());
             }
-            fkColumns.add(childFKColumn);
+            this.fkColumns.add(childFKColumn);
         }
         // The columns of the $child table are joinColumns and PK columns not
         // already included in joinColumns.
-        addColumns(fkColumns);
+        addColumns(this.fkColumns);
         // Order by fk columns
-        order(fkColumns);
+        order(this.fkColumns);
         for (Column pkColumn : table.getPrimaryKey().getColumns()) {
-            if (!fkColumns.contains(pkColumn)) {
+            if (!this.fkColumns.contains(pkColumn)) {
                 addColumn(pkColumn);
             }
         }
@@ -44,10 +44,15 @@ public class GenerateChildTask extends Task
                           commaSeparatedColumnDeclarations(columns()),
                           commaSeparatedColumnNames(columns()),
                           quote(sourceTableName(table.getName())),
-                          commaSeparatedColumnNames(fkColumns)));
+                          commaSeparatedColumnNames(this.fkColumns)));
+        loader.tracker().info("%s %s columns: %s", artifactTableName(), type(), columns());
+        loader.tracker().info("%s %s hkey: %s", artifactTableName(), type(), hKey());
+        loader.tracker().info("%s %s fkColumns: %s", artifactTableName(), type(), this.fkColumns);
+        loader.tracker().info("%s %s order: %s", artifactTableName(), type(), order());
     }
 
     private static final String SQL_TEMPLATE = "create table %s(%s) select %s from %s order by %s";
 
+    protected final UserTable table;
     protected final List<Column> fkColumns = new ArrayList<Column>();
 }

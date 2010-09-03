@@ -8,6 +8,8 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class Task
 {

@@ -11,11 +11,8 @@ use `$outputTableName.schemaName` ~~
 drop table if exists #quote_table_name($outputTableName) ~~
 
 create table #quote_table_name($outputTableName)(
-#foreach ($column in $xTableColumns)
+#foreach ($column in $outputTableColumns)
     #comma_separator()$column.name $column.typeDescription
-#end
-#foreach ($column in $yOnlyColumns)
-    , $column.name $column.typeDescription
 #end
 ) ~~
 

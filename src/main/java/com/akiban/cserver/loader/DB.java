@@ -1,15 +1,14 @@
 package com.akiban.cserver.loader;
 
+import com.akiban.util.Command;
+import org.apache.commons.logging.Log;
+import org.apache.log4j.Level;
+
 import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import org.apache.commons.logging.Log;
-import org.apache.log4j.Level;
-
-import com.akiban.util.Command;
 
 public class DB
 {
@@ -118,9 +117,7 @@ public class DB
                 // setFetchSize(MIN_VALUE) so that result set is streamed.
                 // Otherwise, the driver will try to pull the entire result set
                 // into memory.
-                Statement stmt = connection
-                        .createStatement(ResultSet.TYPE_FORWARD_ONLY,
-                                         ResultSet.CONCUR_READ_ONLY);
+                Statement stmt = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
                 try {
                     stmt.setFetchSize(Integer.MIN_VALUE);
                     ResultSet resultSet = stmt.executeQuery(sql);

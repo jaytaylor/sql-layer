@@ -757,9 +757,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             final RowData rowData, final int[] ordinals, final int[] nKeyColumns,
             final FieldDef[] fieldDefs, final Object[] hKeyValues)
             throws Exception {
+/*
         if (verbose && LOG.isInfoEnabled()) {
             LOG.info("BulkLoad writeRow: " + rowData.toString(rowDefCache));
         }
+*/
 
         try {
             constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs, hKeyValues);
@@ -783,8 +785,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 */
             return OK;
         } catch (StoreException e) {
+            LOG.warn("Caught exception while writing row " + rowData.toString(rowDefCache) + ": ", e);
             return e.getResult();
         } catch (Throwable t) {
+            LOG.warn("Caught exception while writing row " + rowData.toString(rowDefCache) + ": ", t);
             t.printStackTrace();
             return ERR;
         }

@@ -1,13 +1,5 @@
 package com.akiban.cserver.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
 import com.akiban.cserver.message.BulkLoadResponse;
@@ -19,13 +11,23 @@ import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-public class BulkLoaderClient {
-    public static void main(String[] args) throws Exception {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class BulkLoaderClient
+{
+    public static void main(String[] args) throws Exception
+    {
         new BulkLoaderClient(args).run();
     }
 
-    private void run() throws Exception {
+    private void run() throws Exception
+    {
         startNetwork();
         AkibaNetworkHandler networkHandler = NetworkHandlerFactory.getHandler(
                 cserverHost, Integer.toString(cserverPort), null);
@@ -62,19 +64,22 @@ public class BulkLoaderClient {
                     }
                     Thread.sleep(10000);
                     List<Event> events = response.events();
-                    int nEvents = events.size();
-                    request = new BulkLoadStatusRequest(nEvents == 0 ? -1
-                            : events.get(nEvents - 1).eventId());
+                    request = new BulkLoadStatusRequest(lastEventId);
                 }
             } while (badEnding == null && !response.isIdle());
             if (badEnding == null) {
-                request = BulkLoadRequest.done(dbHost, dbPort, dbUser,
-                        dbPassword, groups, artifactsSchema, sourceSchemas,
-                        cleanup);
+                request = BulkLoadRequest.done(dbHost,
+                                               dbPort,
+                                               dbUser,
+                                               dbPassword,
+                                               groups,
+                                               artifactsSchema,
+                                               sourceSchemas,
+                                               cleanup);
                 runRequest(request);
             } else {
                 logger.error(String.format("Bulk load terminated by %s: %s",
-                        response.exceptionClassName(), response
+                                           response.exceptionClassName(), response
                                 .exceptionMessage()));
                 exitCode = response.exitCode();
             }
@@ -92,22 +97,27 @@ public class BulkLoaderClient {
         }
     }
 
-    private BulkLoadResponse runRequest(Request request) throws Exception {
+    private BulkLoadResponse runRequest(Request request) throws Exception
+    {
         logger.info(String.format("About to send request %s", request));
-        BulkLoadResponse response = (BulkLoadResponse) connection
-                .sendAndReceive(request);
+        BulkLoadResponse response = (BulkLoadResponse) connection.sendAndReceive(request);
         logger.info(String.format("Received response %s", response));
         List<Event> events = response.events();
+        Event lastEvent = null;
         if (events != null) {
             for (Event event : events) {
-                logger.info(String.format("%s (%s sec): %s", event.eventId(),
-                        event.timeSec(), event.message()));
+                logger.info(String.format("%s (%s sec): %s", event.eventId(), event.timeSec(), event.message()));
+                lastEvent = event;
+            }
+            if (lastEvent != null) {
+                lastEventId = lastEvent.eventId();
             }
         }
         return response;
     }
 
-    private BulkLoaderClient(String[] args) throws Exception {
+    private BulkLoaderClient(String[] args) throws Exception
+    {
         int a = 0;
         try {
             while (a < args.length) {
@@ -188,7 +198,8 @@ public class BulkLoaderClient {
         return notifier;
     }
 
-    private static void usage(Exception e) throws Exception {
+    private static void usage(Exception e) throws Exception
+    {
         for (String line : USAGE) {
             System.err.println(line);
         }
@@ -200,8 +211,8 @@ public class BulkLoaderClient {
 
     private static final String[] USAGE = {
             "aload --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ "
-                    + "--cserver CSERVER_HOST:CSERVER_PORT "
-                    + "--temp TEMP_SCHEMA (--source TARGET_SCHEMA:SOURCE_SCHEMA)* [--resume] [--nocleanup]",
+            + "--cserver CSERVER_HOST:CSERVER_PORT "
+            + "--temp TEMP_SCHEMA (--source TARGET_SCHEMA:SOURCE_SCHEMA)* [--resume] [--nocleanup]",
             "",
             "Copies data from a MySQL database into a chunkserver. Data is transformed in the MySQL database, before it ",
             "is written to the chunkserver. ",
@@ -221,7 +232,7 @@ public class BulkLoaderClient {
             "is resumed. If --resume is not specified, then any state from a previous load, saved in TEMP_SCHEMA, is lost.",
             "",
             "If --nocleanup is specified, then the TEMP_SCHEMA is not deleted when the load completes.",
-            "" };
+            ""};
 
     private static final Log logger = LogFactory.getLog(BulkLoaderClient.class);
     private static final String LOCALHOST = "localhost";
@@ -241,16 +252,20 @@ public class BulkLoaderClient {
     private String dbPassword;
     private final Map<String, String> sourceSchemas = new HashMap<String, String>();
     private final List<String> groups = new ArrayList<String>();
+    private int lastEventId = -1;
 
     // Inner classes
 
-    public class ChannelNotifier implements CommEventNotifier {
+    public class ChannelNotifier implements CommEventNotifier
+    {
         @Override
-        public void onConnect(AkibaNetworkHandler handler) {
+        public void onConnect(AkibaNetworkHandler handler)
+        {
         }
 
         @Override
-        public void onDisconnect(AkibaNetworkHandler handler) {
+        public void onDisconnect(AkibaNetworkHandler handler)
+        {
             handler.disconnectWorker();
         }
     }

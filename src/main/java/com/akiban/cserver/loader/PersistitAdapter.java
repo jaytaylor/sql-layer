@@ -8,10 +8,7 @@ import java.util.Stack;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.FieldDef;
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.*;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.StoreException;
 import com.persistit.Exchange;
@@ -25,6 +22,7 @@ public class PersistitAdapter
             throws PersistitException
     {
         this.store = store;
+        this.task = task;
         UserTable leafTable = task.table();
         int nKeySegments = leafTable.getDepth() + 1;
         // Traverse group from leaf table to root. Gather FieldDefs, ordinals and other data needed to construct
@@ -77,6 +75,7 @@ public class PersistitAdapter
         dbRow = new Object[leafTable.getColumns().size()];
         rowData = new RowData(new byte[ROW_DATA_BUFFER_SIZE]);
         exchange = store.getExchange(leafRowDef, null);
+        logState();
     }
 
     public void handleRow(ResultSet resultSet) throws Exception
@@ -100,7 +99,10 @@ public class PersistitAdapter
             i++;
         }
         // Insert row
-        store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, nKeyColumns, fieldDefs, hKey);
+        int status = store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, nKeyColumns, fieldDefs, hKey);
+        if (status != CServerConstants.OK) {
+            logger.error(String.format("Error inserting row for %s", task.artifactTableName()));
+        }
     }
 
     public void close() throws StoreException, PersistitException
@@ -109,9 +111,38 @@ public class PersistitAdapter
         store.releaseExchange(exchange);
     }
 
+    private void logState()
+    {
+        StringBuilder ordinalBuffers = new StringBuilder();
+        StringBuilder nKeyColumnsBuffer = new StringBuilder();
+        StringBuilder fieldDefsBuffer = new StringBuilder();
+        ordinalBuffers.append('[');
+        nKeyColumnsBuffer.append('[');
+        fieldDefsBuffer.append('[');
+        int n = ordinals.length;
+        for (int i = 0; i < n; i++) {
+            if (i > 0) {
+                ordinalBuffers.append(", ");
+                nKeyColumnsBuffer.append(", ");
+                fieldDefsBuffer.append(", ");
+            }
+            ordinalBuffers.append(ordinals[i]);
+            nKeyColumnsBuffer.append(nKeyColumns[i]);
+            fieldDefsBuffer.append(fieldDefs[i].toString());
+        }
+        ordinalBuffers.append(']');
+        nKeyColumnsBuffer.append(']');
+        fieldDefsBuffer.append(']');
+        logger.info(String.format("ordinals: %s", ordinalBuffers.toString()));
+        logger.info(String.format("nKeyColumns: %s", nKeyColumnsBuffer.toString()));
+        logger.info(String.format("fieldDefsBuffer: %s", fieldDefsBuffer.toString()));
+    }
+
+    private static final Log logger = LogFactory.getLog(PersistitAdapter.class);
     private static final int ROW_DATA_BUFFER_SIZE = 1 << 16; // 64k
 
     private final PersistitStore store;
+    private final GenerateFinalTask task;
     private final RowDef leafRowDef;
     private final FieldDef[] fieldDefs;
     // The hkey consists of ordinals and key column values. ordinal[i] is followed by nKeyColumns[i] key column values.

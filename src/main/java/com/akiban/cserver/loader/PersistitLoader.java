@@ -28,7 +28,9 @@ public class PersistitLoader
             for (GenerateFinalTask task : finalTasks) {
                 load(task, connection);
             }
+            transaction.commit();
         } catch (PersistitException e) {
+            tracker.error("Caught exception while loading persistit", e);
             try {
                 transaction.rollback();
             } catch (PersistitException rollbackException) {
@@ -55,22 +57,15 @@ public class PersistitLoader
                 if (count % LOG_INTERVAL == 0) {
                     tracker.info("%s: %s", task.artifactTableName(), count);
                 }
-                if (count % COMMIT_INTERVAL == 0) {
-                    transaction.commit();
-                    tracker.info("%s commit: %s", task.artifactTableName(), count);
-                }
             }
 
             private int count = 0;
         }.execute();
-        transaction.commit();
-        tracker.info("%s final commit", task.artifactTableName());
         persistitAdapter.close();
     }
 
     private static final String SQL_TEMPLATE = "select * from %s";
     private static final int LOG_INTERVAL = 10 * 1000;
-    private static final int COMMIT_INTERVAL = 1000 * 1000;
 
     private final DB db;
     private final PersistitStore store;

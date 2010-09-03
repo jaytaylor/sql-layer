@@ -21,6 +21,10 @@ public class GenerateParentBySortTask extends GenerateParentTask
                           commaSeparatedColumnDeclarations(hKey()),
                           commaSeparatedColumnNames(hKey()), quote(sourceTableName(table
                         .getName())), commaSeparatedColumnNames(order())));
+        loader.tracker().info("%s %s columns: %s", artifactTableName(), type(), columns());
+        loader.tracker().info("%s %s hkey: %s", artifactTableName(), type(), hKey());
+        loader.tracker().info("%s %s pkColumns: %s", artifactTableName(), type(), pkColumns());
+        loader.tracker().info("%s %s order: %s", artifactTableName(), type(), order());
     }
 
     private static final String SQL_TEMPLATE = "create table %s(%s) "

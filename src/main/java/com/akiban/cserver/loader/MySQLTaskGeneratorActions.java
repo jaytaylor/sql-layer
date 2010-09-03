@@ -1,10 +1,10 @@
 package com.akiban.cserver.loader;
 
-import java.util.IdentityHashMap;
-
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
+
+import java.util.IdentityHashMap;
 
 public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
 {
@@ -12,15 +12,15 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
 
     @Override
     public void generateTasksForTableContainingHKeyColumns(BulkLoader loader,
-                                                           UserTable table, IdentityHashMap<UserTable, TableTasks> tasks)
+                                                           UserTable table,
+                                                           IdentityHashMap<UserTable, TableTasks> tasks)
     {
         TableTasks tableTasks = tableTasks(tasks, table);
         if (tableTasks.generateParent() != null) {
             // Shouldn't discover the need for this task twice
             throw new BulkLoader.InternalError(table.toString());
         }
-        GenerateFinalBySortTask task = new GenerateFinalBySortTask(loader,
-                                                                   table);
+        GenerateFinalBySortTask task = new GenerateFinalBySortTask(loader, table);
         tableTasks.generateFinal(task);
         tasks.put(table, tableTasks);
     }
@@ -34,8 +34,7 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
         UserTable parent = join.getParent();
         TableTasks parentTasks = tableTasks(tasks, parent);
         if (parentTasks.generateParent() == null) {
-            parentTasks.generateParent(new GenerateParentBySortTask(loader,
-                                                                    parent));
+            parentTasks.generateParent(new GenerateParentBySortTask(loader, parent));
         }
         // Generate child's $child
         UserTable child = join.getChild();
@@ -46,18 +45,24 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
         // Generate child's $parent
         if (childTasks.generateParent() == null) {
             childTasks.generateParent(new GenerateParentByMergeTask(loader,
-                                                                    child, parentTasks.generateParent(), childTasks
-                            .generateChild(), ais));
+                                                                    child,
+                                                                    parentTasks.generateParent(),
+                                                                    childTasks.generateChild(),
+                                                                    ais));
         }
         // Generate parent's $final
         if (parentTasks.generateFinal() == null) {
             parentTasks.generateFinal(new GenerateFinalByMergeTask(loader,
-                                                                   parent, parentTasks.generateParent(), ais));
+                                                                   parent,
+                                                                   parentTasks.generateParent(),
+                                                                   ais));
         }
         // Generate child's $final
         if (childTasks.generateFinal() == null) {
             childTasks.generateFinal(new GenerateFinalByMergeTask(loader,
-                                                                  child, childTasks.generateParent(), ais));
+                                                                  child,
+                                                                  childTasks.generateParent(),
+                                                                  ais));
         }
     }
 

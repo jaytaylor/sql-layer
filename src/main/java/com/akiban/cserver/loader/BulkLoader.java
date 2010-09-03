@@ -232,6 +232,13 @@ public class BulkLoader extends Thread
         }
     }
 
+    // For use by this package
+
+    Tracker tracker()
+    {
+        return tracker;
+    }
+
     // State
 
     private static final Log logger = LogFactory.getLog(Tracker.class);

@@ -28,7 +28,7 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
      * 
      * In I$parent, cid and oid are the Column objects from the O table. But in
      * I, oid is of course from the I table. So in computing the columns for
-     * I$final, we need to map the O.oid column to I.iid to recognize the fact
+     * I$final, we need to map the O.oid column to I.oid to recognize the fact
      * that I$final already has an oid column.
      */
 
@@ -49,8 +49,7 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
             if (columns().contains(hKeyColumn)) {
                 hKey.add(hKeyColumn);
             } else {
-                Column hKeyColumnInOriginalTable = join
-                        .getMatchingChild(hKeyColumn);
+                Column hKeyColumnInOriginalTable = join.getMatchingChild(hKeyColumn);
                 if (hKeyColumnInOriginalTable == null) {
                     hKey.add(hKeyColumn);
                     hKeyColumnsNotInOriginalTable.add(hKeyColumn);
@@ -58,8 +57,7 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
                     hKey.add(hKeyColumnInOriginalTable);
                 } else {
                     hKey.add(hKeyColumnInOriginalTable);
-                    hKeyColumnsNotInOriginalTable
-                            .add(hKeyColumnInOriginalTable);
+                    hKeyColumnsNotInOriginalTable.add(hKeyColumnInOriginalTable);
                 }
             }
         }
@@ -76,10 +74,8 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
             }
             hKeyColumnPositions[p++] = hKeyColumnPosition;
         }
-        // Compute original table's column positions. Original table columns
-        // were added to columns,
-        // so it's just the first elements of columns. But verify just to be
-        // safe.
+        // Compute original table's column positions. Original table columns were added to columns,
+        // so it's just the first elements of columns. But verify just to be safe.
         columnPositions = new int[table.getColumns().size()];
         p = 0;
         for (Column column : table.getColumns()) {
@@ -105,9 +101,17 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
         context.put("yJoinColumns", parentTask.pkColumns());
         context.put("yOnlyColumns", hKeyColumnsNotInOriginalTable);
         context.put("outputTableName", artifactTableName());
+        context.put("outputTableColumns", columns());
         context.put("advanceXOnMatch", true); // because X is a PK
         context.put("advanceYOnMatch", true); // because Y is a PK too
         context.put("orderBy", true);
         sql(generator.generate(context, "merge_join.vm"));
+        loader.tracker().info("%s %s columns: %s", artifactTableName(), type(), columns());
+        loader.tracker().info("%s %s hkey: %s", artifactTableName(), type(), hKey());
+        loader.tracker().info("%s %s order: %s", artifactTableName(), type(), order());
+        loader.tracker().info("%s %s columnPositions: %s",
+                              artifactTableName(), type(), toString(columnPositions));
+        loader.tracker().info("%s %s hKeyColumnPositions: %s",
+                              artifactTableName(), type(), toString(hKeyColumnPositions));
     }
 }
