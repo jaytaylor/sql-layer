@@ -690,6 +690,23 @@ public class PersistitStoreWithAISTest extends TestCase implements
 
     }
 
+    public void testDeferIndex() throws Exception {
+        final TestData td = new TestData(3, 3, 0, 0);
+        store.setDeferIndexes(true);
+        td.insertTestRows();
+        final StringWriter a, b, c, d;
+        dumpIndexes(new PrintWriter(a = new StringWriter()));
+        store.flushIndexes();
+        dumpIndexes(new PrintWriter(b = new StringWriter()));
+        store.deleteIndexes("");
+        dumpIndexes(new PrintWriter(c = new StringWriter()));
+        store.rebuildIndexes("");
+        dumpIndexes(new PrintWriter(d = new StringWriter()));
+        assertTrue(!a.toString().equals(b.toString()));
+        assertEquals(a.toString(), c.toString());
+        assertEquals(b.toString(), d.toString());
+    }
+
     public void testRebuildIndex() throws Exception {
         final TestData td = new TestData(3, 3, 3, 3);
         td.insertTestRows();
@@ -697,7 +714,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         dumpIndexes(new PrintWriter(a = new StringWriter()));
         store.deleteIndexes("");
         dumpIndexes(new PrintWriter(b = new StringWriter()));
-        store.buildIndexes("");
+        store.rebuildIndexes("");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
         assertTrue(!a.toString().equals(b.toString()));
         assertEquals(a.toString(), c.toString());

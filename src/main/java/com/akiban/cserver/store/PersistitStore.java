@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,7 +69,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     private static final String AKIBAN_SPECIAL_DEFER_INDEXES_FLAG = "deferIndexes";
 
-    private static final String AKIBAN_SPECIAL_BUILD_INDEXES_FLAG = "buildIndexes";
+    private static final String AKIBAN_SPECIAL_FLUSH_INDEXES_FLAG = "flushIndexes";
+
+    private static final String AKIBAN_SPECIAL_REBUILD_INDEXES_FLAG = "rebuildIndexes";
 
     private static final String AKIBAN_SPECIAL_DELETE_INDEXES_FLAG = "deleteIndexes";
 
@@ -169,6 +172,12 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     // clear all state in the shutDown() method.
     //
     private Map<Thread, Map<Integer, RowCollector>> sessionRowCollectorMap = new ConcurrentHashMap<Thread, Map<Integer, RowCollector>>();
+
+    private final Map<String, SortedSet<KeyState>> deferredIndexKeys = new HashMap<String, SortedSet<KeyState>>();
+
+    private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
+
+    private final ThreadLocal<Map<String, List<Exchange>>> exchangeMapThreadLocal = new ThreadLocal<Map<String, List<Exchange>>>();
 
     public PersistitStore(final CServerConfig config, final RowDefCache cache)
             throws Exception {
@@ -296,18 +305,42 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         } else {
             treeName = indexDef.getTreeName();
         }
-        return db.getExchange(VOLUME_NAME, treeName, true).clear();
+        return getExchange(treeName);
     }
 
     public void releaseExchange(final Exchange exchange) {
         if (exchange != null) {
-            db.releaseExchange(exchange);
+            Map<String, List<Exchange>> exchangeMap = getExchangeMap();
+            String treeName = exchange.getTree().getName();
+            List<Exchange> list = exchangeMap.get(treeName);
+            if (list == null) {
+                list = new ArrayList<Exchange>();
+                exchangeMap.put(treeName, list);
+            }
+            list.add(exchange);
         }
     }
 
     public Exchange getExchange(final String treeName)
             throws PersistitException {
-        return db.getExchange(VOLUME_NAME, treeName, true).clear();
+        Exchange ex;
+        Map<String, List<Exchange>> exchangeMap = getExchangeMap();
+        List<Exchange> list = exchangeMap.get(treeName);
+        if (list == null || list.isEmpty()) {
+            ex = db.getExchange(VOLUME_NAME, treeName, true).clear();
+        } else {
+            ex = list.remove(list.size() - 1);
+        }
+        return ex;
+    }
+
+    private Map<String, List<Exchange>> getExchangeMap() {
+        Map<String, List<Exchange>> exchangeMap = exchangeMapThreadLocal.get();
+        if (exchangeMap == null) {
+            exchangeMap = new HashMap<String, List<Exchange>>();
+            exchangeMapThreadLocal.set(exchangeMap);
+        }
+        return exchangeMap;
     }
 
     /**
@@ -372,8 +405,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     void constructHKey(final Exchange hEx, final RowDef rowDef,
-            final int[] ordinals, final int[] nKeyColumns, final FieldDef[] fieldDefs,
-            final Object[] hKeyValues) throws Exception {
+            final int[] ordinals, final int[] nKeyColumns,
+            final FieldDef[] fieldDefs, final Object[] hKeyValues)
+            throws Exception {
         final Key hkey = hEx.getKey();
         hkey.clear();
         int k = 0;
@@ -593,11 +627,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     public int createTable(final String schemaName, final String ddl) {
         if (AKIBAN_SPECIAL_SCHEMA_FLAG.equals(schemaName)) {
             deferIndexes = ddl.contains(AKIBAN_SPECIAL_DEFER_INDEXES_FLAG);
+            if (ddl.contains(AKIBAN_SPECIAL_FLUSH_INDEXES_FLAG)) {
+                flushIndexes();
+            }
             if (ddl.contains(AKIBAN_SPECIAL_DELETE_INDEXES_FLAG)) {
                 deleteIndexes(ddl);
             }
-            if (ddl.contains(AKIBAN_SPECIAL_BUILD_INDEXES_FLAG)) {
-                buildIndexes(ddl);
+            if (ddl.contains(AKIBAN_SPECIAL_REBUILD_INDEXES_FLAG)) {
+                rebuildIndexes(ddl);
             }
             return OK;
         }
@@ -710,8 +747,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                         // Insert the index keys (except for the case of a
                         // root table's PK index.)
                         //
-                        if (!deferIndexes && !indexDef.isHKeyEquivalent())
-                            insertIntoIndex(indexDef, rowData, hEx.getKey());
+                        if (!indexDef.isHKeyEquivalent())
+                            insertIntoIndex(indexDef, rowData, hEx.getKey(),
+                                    deferIndexes);
                     }
 
                     TX_COMMIT_TAP.in();
@@ -727,7 +765,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                             }
                         }, forceToDisk);
                     }
-                    return OK;
+                    break;
                 } catch (RollbackException re) {
                     TX_RETRY_TAP.out();
                     if (--retries < 0) {
@@ -738,6 +776,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     transaction.end();
                 }
             }
+            if (deferredIndexKeyLimit <= 0) {
+                putAllDeferredIndexKeys();
+            }
+            return OK;
         } catch (StoreException e) {
             if (verbose && LOG.isInfoEnabled()) {
                 LOG.info("writeRow error " + e.getResult());
@@ -754,9 +796,10 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     @Override
     public int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData, final int[] ordinals, final int[] nKeyColumns,
-            final FieldDef[] fieldDefs, final Object[] hKeyValues)
-            throws Exception {
+            final RowData rowData, final int[] ordinals,
+            final int[] nKeyColumns, final FieldDef[] fieldDefs,
+            final Object[] hKeyValues) throws Exception {
+/*
 /*
         if (verbose && LOG.isInfoEnabled()) {
             LOG.info("BulkLoad writeRow: " + rowData.toString(rowDefCache));
@@ -764,7 +807,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 */
 
         try {
-            constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs, hKeyValues);
+            constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs,
+                    hKeyValues);
             final int start = rowData.getInnerStart();
             final int size = rowData.getInnerSize();
             hEx.getValue().ensureFit(size);
@@ -773,16 +817,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             hEx.getValue().setEncodedSize(size);
             // Store the h-row
             hEx.store();
-/* Populate the indexes after the table has been loaded. Each index requires its own ordering.
-            for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                //
-                // Insert the index keys (except for the case of a
-                // root table's PK index.)
-                //
-                if (!deferIndexes && !indexDef.isHKeyEquivalent())
-                    insertIntoIndex(indexDef, rowData, hEx.getKey());
-            }
-*/
+            /*
+             * Populate the indexes after the table has been loaded. Each index
+             * requires its own ordering. for (final IndexDef indexDef :
+             * rowDef.getIndexDefs()) { // // Insert the index keys (except for
+             * the case of a // root table's PK index.) // if (!deferIndexes &&
+             * !indexDef.isHKeyEquivalent()) insertIntoIndex(indexDef, rowData,
+             * hEx.getKey()); }
+             */
             return OK;
         } catch (StoreException e) {
             LOG.warn("Caught exception while writing row " + rowData.toString(rowDefCache) + ": ", e);
@@ -1562,7 +1604,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     // ---------------------------------
     void insertIntoIndex(final IndexDef indexDef, final RowData rowData,
-            final Key hkey) throws Exception {
+            final Key hkey, final boolean deferIndexes) throws Exception {
         final Exchange iEx = getExchange(indexDef.getRowDef(), indexDef);
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
         final Key key = iEx.getKey();
@@ -1577,7 +1619,33 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             key.setEncodedSize(saveSize);
         }
         iEx.getValue().clear();
-        iEx.store();
+        if (deferIndexes) {
+            synchronized (deferredIndexKeys) {
+                final String treeName = iEx.getTree().getName();
+                SortedSet<KeyState> keySet = deferredIndexKeys.get(treeName);
+                if (keySet == null) {
+                    keySet = new TreeSet<KeyState>();
+                    deferredIndexKeys.put(treeName, keySet);
+                }
+                final KeyState ks = new KeyState(iEx.getKey());
+                keySet.add(ks);
+                deferredIndexKeyLimit -= (ks.getBytes().length + KEY_STATE_SIZE_OVERHEAD);
+            }
+        } else {
+            iEx.store();
+        }
+    }
+
+    void putAllDeferredIndexKeys() throws PersistitException {
+        synchronized (deferredIndexKeys) {
+            for (final Map.Entry<String, SortedSet<KeyState>> entry : deferredIndexKeys
+                    .entrySet()) {
+                final Exchange iEx = getExchange(entry.getKey());
+                buildIndexAddKeys(entry.getValue(), iEx);
+                entry.getValue().clear();
+            }
+            deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
+        }
     }
 
     void updateIndex(final IndexDef indexDef, final RowDef rowDef,
@@ -1596,8 +1664,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             oldExchange.remove();
             newExchange.store();
 
-            db.releaseExchange(newExchange);
-            db.releaseExchange(oldExchange);
+            releaseExchange(newExchange);
+            releaseExchange(oldExchange);
         }
     }
 
@@ -1606,7 +1674,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         final Exchange iEx = getExchange(rowDef, indexDef);
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
         iEx.remove();
-        db.releaseExchange(iEx);
+        releaseExchange(iEx);
     }
 
     boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
@@ -1695,35 +1763,84 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         updateListeners.remove(listener);
     }
 
-    // Hackery to allow bulk building of indexes
+    public void rebuildIndexes(final String ddl) {
+        flushIndexes();
 
-    public void buildIndexes(final String ddl) {
+        final Set<RowDef> rowDefs = new HashSet<RowDef>();
+        final Set<RowDef> groupRowDefs = new HashSet<RowDef>();
+
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
             if (!rowDef.isGroupTable()) {
                 for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                     if (isIndexSelected(indexDef, ddl)) {
-                        try {
-                            final Exchange iEx = getExchange(rowDef, indexDef);
-                            if (!iEx.hasChildren()) {
-                                if (LOG.isInfoEnabled()) {
-                                    LOG.info("Started building index "
-                                            + indexDef.getName() + " in tree "
-                                            + indexDef.getTreeName() + " for "
-                                            + rowDef.getTableName());
-                                }
-                                buildIndex(rowDef, indexDef);
-                                if (LOG.isInfoEnabled()) {
-                                    LOG.info("Finished building index "
-                                            + indexDef.getName());
-                                }
-                            }
-                        } catch (Exception e) {
-                            LOG.error("Exception while trying "
-                                    + "to rebuild indexes", e);
+                        rowDefs.add(rowDef);
+                        final RowDef group = rowDefCache.getRowDef(rowDef
+                                .getGroupRowDefId());
+                        if (group != null) {
+                            groupRowDefs.add(group);
                         }
                     }
                 }
             }
+        }
+        for (final RowDef rowDef : groupRowDefs) {
+            final RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
+            rowData.createRow(rowDef, new Object[0]);
+
+            final byte[] columnBitMap = new byte[(rowDef.getFieldCount() + 7) / 8];
+            for (final RowDef user : rowDef.getUserTableRowDefs()) {
+                if (rowDefs.contains(user)) {
+                    for (int bit = 0; bit < user.getFieldCount(); bit++) {
+                        final int c = bit + user.getColumnOffset();
+                        columnBitMap[c / 8] |= (1 << (c % 8));
+                    }
+                }
+            }
+            int indexKeyCount = 0;
+            try {
+                final PersistitStoreRowCollector rc = (PersistitStoreRowCollector) newRowCollector(
+                        rowDef.getRowDefId(), 0, 0, rowData, rowData,
+                        columnBitMap);
+                // final KeyFilter hFilter = rc.getHFilter();
+                final Exchange hEx = rc.getHExchange();
+
+                hEx.getKey().clear();
+                // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
+                while (hEx.next(true)) {
+                    expandRowData(hEx, 0, rowData);
+                    final int tableId = rowData.getRowDefId();
+                    final RowDef userRowDef = rowDefCache.getRowDef(tableId);
+                    if (rowDefs.contains(userRowDef)) {
+                        for (final IndexDef indexDef : userRowDef
+                                .getIndexDefs()) {
+                            if (isIndexSelected(indexDef, ddl)) {
+                                insertIntoIndex(indexDef, rowData,
+                                        hEx.getKey(), true);
+                                indexKeyCount++;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LOG.error("Exception while trying to index group table "
+                        + rowDef.getSchemaName() + "." + rowDef.getTableName(),
+                        e);
+            }
+            flushIndexes();
+            if (LOG.isInfoEnabled()) {
+                LOG.info("Inserted " + indexKeyCount
+                        + " index keys into group " + rowDef.getSchemaName()
+                        + "." + rowDef.getTableName());
+            }
+        }
+    }
+
+    public void flushIndexes() {
+        try {
+            putAllDeferredIndexKeys();
+        } catch (Exception e) {
+            LOG.error("Exception while trying "
+                    + " to flush deferred index keys", e);
         }
     }
 
@@ -1755,43 +1872,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                         .contains("index="));
     }
 
-    private void buildIndex(final RowDef rowDef, final IndexDef indexDef)
-            throws Exception {
-        final RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
-        rowData.createRow(rowDef, new Object[0]);
-        final byte[] columnBitMap = new byte[(rowDef.getFieldCount() + 7) / 8];
-        for (int i = 0; i < rowDef.getFieldCount(); i++) {
-            columnBitMap[i / 8] |= (1 << (i * 8));
-        }
-        final PersistitStoreRowCollector rc = (PersistitStoreRowCollector) newRowCollector(
-                rowDef.getRowDefId(), indexDef.getId(), 0, rowData, rowData,
-                columnBitMap);
-        final KeyFilter hFilter = rc.getHFilter().limit(
-                rc.getHFilter().getMaximumDepth(),
-                rc.getHFilter().getMaximumDepth());
-        final Exchange hEx = rc.getHExchange();
-        final Exchange iEx = getExchange(rowDef, indexDef);
-        iEx.getValue().clear();
-        iEx.getKey().clear();
-        hEx.getKey().clear();
-        SortedSet<KeyState> keys = new TreeSet<KeyState>();
-        long limit = MAX_INDEX_TRANCHE_SIZE;
-        while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
-            expandRowData(hEx, rowDef.getRowDefId(), rowData);
-            constructIndexKey(iEx.getKey(), rowData, indexDef, hEx.getKey());
-            KeyState keyState = new KeyState(iEx.getKey());
-            keys.add(keyState);
-            limit -= (keyState.getBytes().length + KEY_STATE_SIZE_OVERHEAD);
-            if (limit <= 0) {
-                buildIndexAddKeys(keys, iEx);
-                limit = MAX_INDEX_TRANCHE_SIZE;
-                keys = new TreeSet<KeyState>(); // faster than .clear()?
-            }
-        }
-
-        buildIndexAddKeys(keys, iEx);
-    }
-
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,
             final Exchange iEx) throws PersistitException {
         final long start = System.nanoTime();
@@ -1806,7 +1886,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     .getTree().getName(), elapsed / 1000000000));
         }
     }
-    
+
     public boolean isDeferIndexes() {
         return deferIndexes;
     }

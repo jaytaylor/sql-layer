@@ -94,7 +94,7 @@ public class PersistitStoreTableManager {
                 }
             }
         } finally {
-            store.getDb().releaseExchange(exchange);
+            store.releaseExchange(exchange);
         }
     }
 
@@ -123,7 +123,7 @@ public class PersistitStoreTableManager {
                 }
             }
         } finally {
-            store.getDb().releaseExchange(exchange);
+            store.releaseExchange(exchange);
         }
     }
 
@@ -144,7 +144,7 @@ public class PersistitStoreTableManager {
                 }
             }
         } finally {
-            store.getDb().releaseExchange(exchange);
+            store.releaseExchange(exchange);
         }
     }
 
@@ -154,7 +154,7 @@ public class PersistitStoreTableManager {
         try {
             loadStatus(exchange, tableStatus);
         } finally {
-            store.getDb().releaseExchange(exchange);
+            store.releaseExchange(exchange);
         }
     }
 
@@ -164,7 +164,7 @@ public class PersistitStoreTableManager {
         try {
             saveStatus(exchange, tableStatus);
         } finally {
-            store.getDb().releaseExchange(exchange);
+            store.releaseExchange(exchange);
         }
     }
 
@@ -176,7 +176,7 @@ public class PersistitStoreTableManager {
             exchange.remove();
             statusMap.remove(tableStatus.getRowDefId());
         } finally {
-            store.getDb().releaseExchange(exchange);
+            store.releaseExchange(exchange);
         }
     }
 
@@ -187,7 +187,7 @@ public class PersistitStoreTableManager {
             exchange.remove();
             statusMap.remove(rowDefId);
         } finally {
-            store.getDb().releaseExchange(exchange);
+            store.releaseExchange(exchange);
         }
     }
 
@@ -209,8 +209,7 @@ public class PersistitStoreTableManager {
     }
 
     private Exchange statusExchange() throws PersistitException {
-        return store.getDb().getExchange(PersistitStore.VOLUME_NAME,
-                STATUS_TREE_NAME, true);
+        return store.getExchange(STATUS_TREE_NAME);
     }
 
     static long now() {

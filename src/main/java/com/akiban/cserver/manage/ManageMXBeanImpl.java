@@ -108,7 +108,7 @@ class ManageMXBeanImpl implements ManageMXBean {
     
     @Override
     public void buildIndexes(final String arg) {
-        ((PersistitStore) cserver.getStore()).buildIndexes(arg);
+        ((PersistitStore) cserver.getStore()).rebuildIndexes(arg);
     }
     
     @Override
