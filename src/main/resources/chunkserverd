@@ -23,7 +23,7 @@ mysqldir=MYSQL.INSTALL.DIR
 
 name=chunkserverd
 progdir="${rootdir}/usr/local/chunkserver"
-confdir=${rootdir}/etc/akiban/
+confdir=${rootdir}/etc/akiban
 logdir=${rootdir}/var/log
 piddir=${rootdir}/var/run
 
@@ -50,7 +50,7 @@ fi
 
 memory=${memorycs:-${defaultmemory}}
 
-args="-Xnoagent -XX:+HeapDumpOnOutOfMemoryError -Dlog4j.configuration=${confdir}/config/log4j.properties -Dmysql.install.dir=${mysqldir} -Dakiban.admin=${confdir}  -Dcom.persistit.showgui=false  -Xmx${memory}M -jar  ${progdir}/${jar}"
+args="-Xnoagent -XX:+HeapDumpOnOutOfMemoryError -Dlog4j.configuration=file:///${confdir}/config/log4j.properties -Dmysql.install.dir=${mysqldir} -Dakiban.admin=${confdir}  -Dcom.persistit.showgui=false  -Xmx${memory}M -jar  ${progdir}/${jar}"
 
 # if -Dcom.persistit.showui=true, set display variable
 #export DISPLAY=172.16.20.116:0.0
