@@ -63,8 +63,7 @@ public class Tracker
         this.connection = db == null ? null : db.new Connection();
         this.schema = schema;
         if (this.connection != null) {
-            this.connection.new DDL(TEMPLATE_CREATE_PROGRESS_TABLE, schema)
-                    .execute();
+            this.connection.new DDL(TEMPLATE_CREATE_PROGRESS_TABLE, schema).execute();
         }
     }
 
@@ -87,7 +86,7 @@ public class Tracker
 
     private static final Log logger = LogFactory.getLog(Tracker.class);
     private static final int ONE_BILLION = 1000 * 1000 * 1000;
-    private static final String TEMPLATE_CREATE_PROGRESS_TABLE = "create table %s.progress("
+    private static final String TEMPLATE_CREATE_PROGRESS_TABLE = "create table if not exists %s.progress("
                                                                  + "    event_id int auto_increment, "
                                                                  + "    time timestamp not null, "
                                                                  + "    event_time_sec double not null, "
