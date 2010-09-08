@@ -1766,14 +1766,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     public void rebuildIndexes(final String ddl) {
         flushIndexes();
 
-        final Set<RowDef> rowDefs = new HashSet<RowDef>();
+        final Set<RowDef> userRowDefs = new HashSet<RowDef>();
         final Set<RowDef> groupRowDefs = new HashSet<RowDef>();
 
+        // Find the groups containing indexes selected for rebuild.
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
             if (!rowDef.isGroupTable()) {
                 for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                     if (isIndexSelected(indexDef, ddl)) {
-                        rowDefs.add(rowDef);
+                        userRowDefs.add(rowDef);
                         final RowDef group = rowDefCache.getRowDef(rowDef
                                 .getGroupRowDefId());
                         if (group != null) {
@@ -1783,13 +1784,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 }
             }
         }
+
         for (final RowDef rowDef : groupRowDefs) {
             final RowData rowData = new RowData(new byte[MAX_ROW_SIZE]);
             rowData.createRow(rowDef, new Object[0]);
 
             final byte[] columnBitMap = new byte[(rowDef.getFieldCount() + 7) / 8];
+            // Project onto all columns of selected user tables
             for (final RowDef user : rowDef.getUserTableRowDefs()) {
-                if (rowDefs.contains(user)) {
+                if (userRowDefs.contains(user)) {
                     for (int bit = 0; bit < user.getFieldCount(); bit++) {
                         final int c = bit + user.getColumnOffset();
                         columnBitMap[c / 8] |= (1 << (c % 8));
@@ -1810,7 +1813,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     expandRowData(hEx, 0, rowData);
                     final int tableId = rowData.getRowDefId();
                     final RowDef userRowDef = rowDefCache.getRowDef(tableId);
-                    if (rowDefs.contains(userRowDef)) {
+                    if (userRowDefs.contains(userRowDef)) {
                         for (final IndexDef indexDef : userRowDef
                                 .getIndexDefs()) {
                             if (isIndexSelected(indexDef, ddl)) {
@@ -1818,6 +1821,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                                         hEx.getKey(), true);
                                 indexKeyCount++;
                             }
+                        }
+                        if (deferredIndexKeyLimit <= 0) {
+                            putAllDeferredIndexKeys();
                         }
                     }
                 }
