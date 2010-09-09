@@ -700,7 +700,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         dumpIndexes(new PrintWriter(b = new StringWriter()));
         store.deleteIndexes("");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
-        store.rebuildIndexes("");
+        store.buildIndexes("");
         dumpIndexes(new PrintWriter(d = new StringWriter()));
         assertTrue(!a.toString().equals(b.toString()));
         assertEquals(a.toString(), c.toString());
@@ -714,7 +714,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         dumpIndexes(new PrintWriter(a = new StringWriter()));
         store.deleteIndexes("");
         dumpIndexes(new PrintWriter(b = new StringWriter()));
-        store.rebuildIndexes("");
+        store.buildIndexes("");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
         assertTrue(!a.toString().equals(b.toString()));
         assertEquals(a.toString(), c.toString());

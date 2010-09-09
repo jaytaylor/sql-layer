@@ -207,16 +207,11 @@ public class RowDefCache implements CServerConstants {
                 // IndexDef that has no fields.
                 continue;
             }
-            final List<Integer> indexColumnList = new ArrayList<Integer>(1);
+            int[] indexFields = new int[indexColumns.size()];
             for (final IndexColumn indexColumn : indexColumns) {
-                final int position = indexColumn.getColumn().getPosition();
-                indexColumnList.add(position);
-            }
-
-            int columnIndex = 0;
-            int[] indexFields = new int[indexColumnList.size()];
-            for (final Integer position : indexColumnList) {
-                indexFields[columnIndex++] = position;
+                final int positionInRow = indexColumn.getColumn().getPosition();
+                final int positionInIndex = indexColumn.getPosition();
+                indexFields[positionInIndex] = positionInRow;
             }
 
             final String treeName = groupTableName + "$$" + index.getIndexId();
@@ -296,16 +291,12 @@ public class RowDefCache implements CServerConstants {
                 // artificial IndeDef that has no fields.
                 continue;
             }
-            final List<Integer> indexColumnList = new ArrayList<Integer>(1);
-            for (final IndexColumn indexColumn : indexColumns) {
-                final int position = indexColumn.getColumn().getPosition();
-                indexColumnList.add(position);
-            }
 
-            int columnIndex = 0;
-            int[] indexFields = new int[indexColumnList.size()];
-            for (final Integer position : indexColumnList) {
-                indexFields[columnIndex++] = position;
+            int[] indexFields = new int[indexColumns.size()];
+            for (final IndexColumn indexColumn : indexColumns) {
+                final int positionInRow = indexColumn.getColumn().getPosition();
+                final int positionInIndex = indexColumn.getPosition();
+                indexFields[positionInIndex] = positionInRow;
             }
 
             final String treeName = groupTableName + "$$" + index.getIndexId();

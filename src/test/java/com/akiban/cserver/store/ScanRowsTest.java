@@ -113,7 +113,7 @@ public class ScanRowsTest extends AbstractScanBase {
                     end, bitMap, indexId));
         }
         
-        store.rebuildIndexes("");
+        store.buildIndexes("");
 
         {
             final RowDef userRowDef = userRowDef("aaaa");

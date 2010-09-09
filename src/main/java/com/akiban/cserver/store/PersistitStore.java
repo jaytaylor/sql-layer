@@ -35,7 +35,6 @@ import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
@@ -71,7 +70,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     private static final String AKIBAN_SPECIAL_FLUSH_INDEXES_FLAG = "flushIndexes";
 
-    private static final String AKIBAN_SPECIAL_REBUILD_INDEXES_FLAG = "rebuildIndexes";
+    private static final String AKIBAN_SPECIAL_BUILD_INDEXES_FLAG = "buildIndexes";
 
     private static final String AKIBAN_SPECIAL_DELETE_INDEXES_FLAG = "deleteIndexes";
 
@@ -633,8 +632,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             if (ddl.contains(AKIBAN_SPECIAL_DELETE_INDEXES_FLAG)) {
                 deleteIndexes(ddl);
             }
-            if (ddl.contains(AKIBAN_SPECIAL_REBUILD_INDEXES_FLAG)) {
-                rebuildIndexes(ddl);
+            if (ddl.contains(AKIBAN_SPECIAL_BUILD_INDEXES_FLAG)) {
+                buildIndexes(ddl);
             }
             return OK;
         }
@@ -1763,7 +1762,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         updateListeners.remove(listener);
     }
 
-    public void rebuildIndexes(final String ddl) {
+    public void buildIndexes(final String ddl) {
         flushIndexes();
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();

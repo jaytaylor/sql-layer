@@ -141,7 +141,7 @@ public class PersistitStoreIndexManager {
             for (int depth = 1; depth < i2hFields.length; depth++) {
                 terms[depth] = KeyFilter.ALL;
             }
-            keyFilter = new KeyFilter(terms, terms.length, terms.length);
+            keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
 
         } else {
             probeEx = store.getExchange(indexDef.getRowDef(), indexDef);
@@ -155,6 +155,12 @@ public class PersistitStoreIndexManager {
         int treeLevel = Math.max(0, probeEx.getTree().getDepth()
                 - STARTING_TREE_DEPTH);
         while (treeLevel >= 0) {
+            if (treeLevel == 0 && keyFilter != null) {
+                // At leave leaf level of an htable - here we limit the
+                // keyFilter depth to count only keys that match exactly.
+                keyFilter = keyFilter.limit(keyFilter.getMinimumDepth(),
+                        keyFilter.getMinimumDepth());
+            }
             keyHistogram = probeEx.computeHistogram(startKey, endKey,
                     sampleSize, keyDepth, keyFilter, treeLevel);
             if (keyHistogram.getKeyCount() > sampleSize

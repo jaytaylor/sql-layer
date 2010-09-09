@@ -124,3 +124,6 @@ create table ab(
     ab4 varchar(64) not null,
     primary key(ab1)
 ) engine = akibadb;
+
+
+    
