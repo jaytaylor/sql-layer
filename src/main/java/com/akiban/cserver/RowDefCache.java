@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.akiban.ais.model.PrimaryKey;
+import com.akiban.cserver.util.RowDefNotFoundException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -42,7 +44,7 @@ public class RowDefCache implements CServerConstants {
      * @param rowDefId
      * @return the corresponding RowDef
      */
-    public synchronized RowDef getRowDef(final int rowDefId) {
+    public synchronized RowDef getRowDef(final int rowDefId) throws RowDefNotFoundException {
         RowDef rowDef = cacheMap.get(Integer.valueOf(rowDefId));
         if (rowDef == null) {
             rowDef = lookUpRowDef(rowDefId);
@@ -55,12 +57,26 @@ public class RowDefCache implements CServerConstants {
         return new ArrayList<RowDef>(cacheMap.values());
     }
 
-    public synchronized RowDef getRowDef(final String tableName) {
+    public synchronized RowDef getRowDef(final String tableName) throws RowDefNotFoundException {
         final Integer key = nameMap.get(tableName);
         if (key == null) {
             return null;
         }
         return getRowDef(key.intValue());
+    }
+
+    /**
+     * Given a schema and table name, gets a string that uniquely identifies a table. This string can then be
+     * passed to {@link #getRowDef(String)}.
+     * @param schema the schema
+     * @param table the table name
+     * @return a unique form
+     */
+    public static String nameOf(String schema, String table) {
+        // TODO: this is NOT guaranteed to work. Needs fixing. For now, I'm just refactoring it out.
+        return schema == null
+               ? table
+               : schema + "." + table;
     }
 
     public synchronized void clear() {
@@ -85,7 +101,6 @@ public class RowDefCache implements CServerConstants {
         }
 
         analyzeAll();
-
         if (LOG.isDebugEnabled()) {
             LOG.debug(toString());
         }
@@ -141,16 +156,16 @@ public class RowDefCache implements CServerConstants {
         // that don't have matching
         // columns in the parent.
         int[] pkFields = null;
-        for (final Index index : table.getIndexes()) {
-            if (!index.isPrimaryKey()) {
-                continue;
-            }
+        final PrimaryKey primaryKey = table.getPrimaryKey();
+        if (primaryKey != null) {
+            Index pkIndex = primaryKey.getIndex();
+            assert pkIndex != null : primaryKey;
             if (pkFields != null) {
                 throw new IllegalStateException(
                         "Can't handle two PK indexes on "
                                 + table.getName().getTableName());
             }
-            final List<IndexColumn> indexColumns = index.getColumns();
+            final List<IndexColumn> indexColumns = pkIndex.getColumns();
             final List<Integer> pkFieldList = new ArrayList<Integer>(1);
             for (final IndexColumn indexColumn : indexColumns) {
                 final int position = indexColumn.getColumn().getPosition();
@@ -317,8 +332,8 @@ public class RowDefCache implements CServerConstants {
         return rowDef;
     }
 
-    RowDef lookUpRowDef(final int rowDefId) {
-        return null;
+    RowDef lookUpRowDef(final int rowDefId) throws RowDefNotFoundException {
+        throw new RowDefNotFoundException(rowDefId);
     }
 
     /**
@@ -329,9 +344,7 @@ public class RowDefCache implements CServerConstants {
      */
     public synchronized void putRowDef(final RowDef rowDef) {
         final Integer key = Integer.valueOf(rowDef.getRowDefId());
-        final String name = rowDef.getSchemaName() == null ? rowDef
-                .getTableName() : rowDef.getSchemaName() + "."
-                + rowDef.getTableName();
+        final String name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
         if (cacheMap.containsKey(key) || nameMap.containsKey(name)) {
             throw new IllegalStateException("RowDef " + rowDef
                     + " already exists");
@@ -352,13 +365,13 @@ public class RowDefCache implements CServerConstants {
         return sb.toString();
     }
 
-    public void analyzeAll() {
+    public void analyzeAll() throws RowDefNotFoundException {
         for (final RowDef rowDef : cacheMap.values()) {
             analyze(rowDef);
         }
     }
 
-    void analyze(final RowDef rowDef) {
+    void analyze(final RowDef rowDef) throws RowDefNotFoundException {
         rowDef.computeRowDefType(this);
         rowDef.computeFieldAssociations(this);
     }

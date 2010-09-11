@@ -28,6 +28,7 @@ class RowDataDisplayFilter implements DisplayFilter {
         if (exchange.getTree().getVolume().getPath().contains("_data")
                 && !exchange.getTree().getName().contains("_status_")
                 && !exchange.getTree().getName().contains("_schema_")
+                && !exchange.getTree().getName().contains("_properties_")
                 && !exchange.getTree().getName().contains("$$")) {
             final Value value = exchange.getValue();
             final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;

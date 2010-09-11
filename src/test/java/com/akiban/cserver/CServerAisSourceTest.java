@@ -28,7 +28,7 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
                 new RowDefCache());
         store.startUp();
         store.setVerbose(true);
-        store.getRowDefCache().setAIS(new CServer(false).primordialAIS());
+        store.getRowDefCache().setAIS(new CServer(false).createEmptyAIS());
         this.ais = new DDLSource().buildAIS(DDL_FILE_NAME);
     }
 

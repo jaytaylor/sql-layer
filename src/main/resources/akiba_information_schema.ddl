@@ -1,17 +1,3 @@
-/*
-schema akiba_information_schema baseid=100000;
-
-group groups {table groups};
-group tables {table tables};
-group columns {table columns};
-group joins {table joins};
-group join_columns {table join_columns};
-group indexes {table indexes};
-group index_columns {table index_columns};
-group types {table types};
-group index_analysis {table index_analysis}; 
-*/
-
 create table groups(
     group_name varchar(64),
     primary key(group_name)
@@ -48,7 +34,7 @@ create table columns (
 ) engine = akibadb;
 
 create table joins(
-    join_name               varchar(800),
+    join_name               varchar(767),
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
     child_schema_name       varchar(64),
@@ -61,7 +47,7 @@ create table joins(
 ) engine = akibadb;
 
 create table join_columns(
-    join_name               varchar(800),
+    join_name               varchar(767),
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
     parent_column_name      varchar(64),

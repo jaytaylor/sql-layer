@@ -1,26 +1,36 @@
 package com.akiban.cserver;
 
-import java.io.DataInputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.TableName;
+import com.akiban.cserver.manage.SchemaManager;
+import com.akiban.util.MySqlStatementSplitter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.admin.Admin;
 import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.message.AISExecutionContext;
 import com.akiban.ais.message.AISRequest;
 import com.akiban.ais.message.AISResponse;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Source;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISPrinter;
 import com.akiban.cserver.manage.MXBeanManager;
@@ -39,8 +49,6 @@ import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 import com.akiban.util.Tap;
-import com.persistit.LogBase;
-import com.persistit.exception.PersistitException;
 
 /**
  * @author peter
@@ -68,8 +76,8 @@ public class CServer implements CServerConstants {
             "cserver.port", DEFAULT_CSERVER_PORT_STRING);
 
     /**
-     * Interface on which this cserver instance will listen. TODO - allow
-     * multiple NICs
+     * Interface on which this cserver instance will listen.
+     * TODO - allow multiple NICs
      */
     public static final String CSERVER_HOST = System.getProperty(
             "cserver.host", "localhost");
@@ -95,27 +103,31 @@ public class CServer implements CServerConstants {
 
     private static int DEFAULT_MAX_CAPTURE_COUNT = 10;
 
+    private final static List<String> aisSchemaDdls = readAisDdls();
+    private final static List<CreateTableStruct> aisSchemaStructs = readAisSchemaDdls(aisSchemaDdls);
     private final RowDefCache rowDefCache;
     private final CServerConfig config;
     private final PersistitStore store;
     private final String cserverPort;
-    private AkibaInformationSchema ais0;
     private AkibaInformationSchema ais;
     private volatile boolean stopped;
     private Map<Integer, Thread> threadMap;
     private boolean leadCServer;
     private AISDistributor aisDistributor;
+    private volatile boolean networkStarted;
 
     private volatile int maxCaptureCount = DEFAULT_MAX_CAPTURE_COUNT;
     private volatile boolean enableMessageCapture;
     private List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
-    private long lastSchemaGeneration = -1;
+    private static final int AIS_BASE_TABLE_IDS = 10000;
+
+    private final ExecutorService messageExecutionService = Executors.newCachedThreadPool();
     private volatile Thread _shutdownHook;
 
     /**
      * Construct a chunk server. If <tt>loadConfig</tt> is false then use
      * default unit test properties.
-     * 
+     *
      * @param loadConfig
      * @throws Exception
      */
@@ -140,47 +152,39 @@ public class CServer implements CServerConstants {
     }
 
     public void start() throws Exception {
-        boolean open = false;
+        start(true);
+    }
+
+    public void start(boolean startNetwork) throws Exception {
         LOG.warn(String.format("Starting chunkserver %s on port %s",
                 CSERVER_NAME, CSERVER_PORT));
         Tap.registerMXBean();
         MXBeanManager.registerMXBean(this, config);
-        MessageRegistry.initialize();
-        MessageRegistry.only().registerModule("com.akiban.cserver");
-        MessageRegistry.only().registerModule("com.akiban.ais");
-        MessageRegistry.only().registerModule("com.akiban.message");
-        ais0 = primordialAIS();
-        rowDefCache.setAIS(ais0);
-        store.startUp();
-        try {
-            store.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
-                    .equalsIgnoreCase("true"));
-            store.setExperimental(config.property(EXPERIMENTAL_PROPERTY_NAME,
-                    ""));
-            store.setOrdinals();
-            acquireAIS();
-            if (false) {
-                // TODO: Use this when we support multiple chunkservers
-                Admin admin = Admin.only();
-                leadCServer = admin.clusterConfig().leadChunkserver().name()
-                        .equals(CSERVER_NAME);
-                admin.markChunkserverUp(CSERVER_NAME);
-                if (isLeader()) {
-                    aisDistributor = new AISDistributor(this);
-                }
-            }
+        if (startNetwork) {
+            MessageRegistry.initialize();
+            MessageRegistry.only().registerModule("com.akiban.cserver");
+            MessageRegistry.only().registerModule("com.akiban.ais");
+            MessageRegistry.only().registerModule("com.akiban.message");
             NetworkHandlerFactory.initializeNetwork(CSERVER_HOST, CSERVER_PORT,
                     new ChannelNotifier());
-            open = true;
-        } finally {
-            if (!open) {
-                try {
-                    store.shutDown();
-                } catch (Exception e) {
-                    // Not interesting -- we want to see the Exception
-                    // that caused the startup failure.
-                }
+            networkStarted = true;
+        }
+        store.startUp();
+        store.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
+                .equalsIgnoreCase("true"));
+        store.setOrdinals();
+        acquireAIS();
+        if (false) {
+            Admin admin = Admin.only();
+
+            leadCServer = admin.clusterConfig().leadChunkserver().name()
+                    .equals(CSERVER_NAME);
+            admin.markChunkserverUp(CSERVER_NAME);
+            if (isLeader()) {
+                aisDistributor = new AISDistributor(this);
             }
+        } else {
+            leadCServer = true;
         }
         LOG.warn(String.format("Started chunkserver %s on port %s, lead = %s",
                 CSERVER_NAME, CSERVER_PORT, isLeader()));
@@ -204,7 +208,7 @@ public class CServer implements CServerConstants {
         if (hook != null) {
             Runtime.getRuntime().removeShutdownHook(hook);
         }
-        
+
         if (false) {
             // TODO: Use this when we support multiple chunkservers
             Admin.only().markChunkserverDown(CSERVER_NAME);
@@ -219,8 +223,11 @@ public class CServer implements CServerConstants {
             thread.interrupt();
         }
         try {
-            NetworkHandlerFactory.closeNetwork();
+            if (networkStarted) {
+                NetworkHandlerFactory.closeNetwork();
+            }
         } finally {
+            MXBeanManager.unregisterMXBean();
             Tap.unregisterMXBean();
             store.shutDown();
         }
@@ -276,14 +283,13 @@ public class CServer implements CServerConstants {
             return store;
         }
 
-        public AkibaInformationSchema ais() {
-            return ais;
+        public SchemaManager getSchemaManager() {
+            return MXBeanManager.getSchemaManager();
         }
 
         @Override
         public void executeRequest(AkibaConnection connection,
                 AISRequest request) throws Exception {
-            acquireAIS();
             AISResponse aisResponse = new AISResponse(ais);
             connection.send(aisResponse);
         }
@@ -318,9 +324,9 @@ public class CServer implements CServerConstants {
 
     /**
      * A Runnable that reads Network messages, acts on them and returns results.
-     * 
+     *
      * @author peter
-     * 
+     *
      */
     private class CServerRunnable implements Runnable {
 
@@ -374,7 +380,24 @@ public class CServer implements CServerConstants {
                                                 : message.toString()));
                     }
 
-                    message.execute(connection, context);
+                    final Message executeMessage = message;
+                    Future<Exception> executionFuture = messageExecutionService.submit(new Callable<Exception>() {
+                        @Override
+                        public Exception call() {
+                            try {
+                                executeMessage.execute(connection, context);
+                            } catch (Exception e) {
+                                return e;
+                            } catch (Throwable t) {
+                                return new RuntimeException(t);
+                            }
+                            return null;
+                        }
+                    });
+                    Exception thrown = executionFuture.get();
+                    if ( thrown != null ) {
+                        throw thrown;
+                    }
 
                     if (capturedMessage != null) {
                         endTime = System.nanoTime() / 1000;
@@ -436,6 +459,11 @@ public class CServer implements CServerConstants {
         public int getTableId() {
             return tableId;
         }
+
+        @Override
+        public String toString() {
+            return "CreateTableStruct[" + tableId + ": " + TableName.create(schemaName, tableName) + ']';
+        }
     }
 
     public RowDefCache getRowDefCache() {
@@ -443,61 +471,71 @@ public class CServer implements CServerConstants {
     }
 
     /**
+     * Intended for testing. Creates a new AIS with only the a_i_s tables as its user tables.
+     * @return a new AIS instance
+     * @throws Exception if there's a problem
+     */
+    public AkibaInformationSchema createEmptyAIS() throws Exception {
+        return createFreshAIS(new ArrayList<CreateTableStruct>());
+    }
+
+    /**
+     * Creates a fresh AIS, using as its source the default AIS schema DDLs as well as any stored schemata.
+     * @param schema the stored schema to add to the default AIS schema.
+     * @return a new AIS
+     * @throws Exception if there's a problem
+     */
+    private AkibaInformationSchema createFreshAIS(final List<CreateTableStruct> schema) throws Exception {
+        schema.addAll(0, aisSchemaStructs);
+
+        assert !schema.isEmpty() : "schema list is empty";
+        final StringBuilder sb = new StringBuilder();
+        for (final CreateTableStruct tableStruct : schema) {
+            sb.append("CREATE TABLE " + tableStruct.ddl
+                    + CServerUtil.NEW_LINE);
+        }
+        final String schemaText = sb.toString();
+        if (getStore().isVerbose() && LOG.isInfoEnabled()) {
+            LOG.info("Acquiring AIS from schema: " + CServerUtil.NEW_LINE
+                    + schemaText);
+        }
+
+        AkibaInformationSchema ret = new DDLSource().buildAISFromString(schemaText);
+        for (final CreateTableStruct tableStruct : schema) {
+            final UserTable table = ret.getUserTable(tableStruct.schemaName, tableStruct.tableName);
+            assert table != null : tableStruct + " in " + schema;
+            assert table.getGroup() != null
+                    : "table " + table + " has no group; should be in a single-table group at least";
+            table.setTableId(tableStruct.tableId);
+            if (table.getParentJoin() == null) {
+                final GroupTable groupTable = table.getGroup().getGroupTable();
+                if (groupTable != null) {
+                    groupTable.setTableId(tableStruct.tableId
+                            + GROUP_TABLE_ID_OFFSET);
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
      * Acquire an AkibaInformationSchema from MySQL and install it into the
      * local RowDefCache.
-     * 
+     *
      * This method always refreshes the locally cached AkibaInformationSchema to
      * support schema modifications at the MySQL head.
-     * 
+     *
      * @return an AkibaInformationSchema
      * @throws Exception
      */
     public synchronized void acquireAIS() throws Exception {
-        LOG.warn(String.format("Acquiring AIS, experimental: %s", store
-                .isExperimentalSchema()));
-        if (store.isExperimentalSchema()) {
-            final long generation = store.getSchemaGeneration();
-            if (generation == lastSchemaGeneration) {
-                return;
-            }
-            final List<CreateTableStruct> schema = store.getSchema();
-            final StringBuilder sb = new StringBuilder();
-            for (final CreateTableStruct tableStruct : schema) {
-                sb.append("CREATE TABLE " + tableStruct.ddl
-                        + CServerUtil.NEW_LINE);
-            }
-            final String schemaText = sb.toString();
-            if (getStore().isVerbose() && LOG.isInfoEnabled()) {
-                LOG.info("Acquiring AIS from schema: " + CServerUtil.NEW_LINE
-                        + schemaText);
-            }
-            this.ais = new DDLSource().buildAISFromString(schemaText, ais0);
-
-            for (final CreateTableStruct tableStruct : schema) {
-                final UserTable table = ais.getUserTable(
-                        tableStruct.schemaName, tableStruct.tableName);
-                if (table != null) {
-                    table.setTableId(tableStruct.tableId);
-                    if (table.getParentJoin() == null) {
-                        final GroupTable groupTable = table.getGroup()
-                                .getGroupTable();
-                        if (groupTable != null) {
-                            groupTable.setTableId(tableStruct.tableId
-                                    + GROUP_TABLE_ID_OFFSET);
-                        }
-                    }
-                }
-            }
-            installAIS();
-            new Writer(new CServerAisTarget(store)).save(ais);
-            lastSchemaGeneration = generation;
-        } else {
-            final Source source = new CServerAisSource(store);
-            this.ais = new Reader(source)
-                    .load(new AkibaInformationSchema(ais0));
-            installAIS();
+        if (!store.isExperimentalSchema()) {
+            throw new UnsupportedOperationException("non-experimental mode is deprecated.");
         }
-        LOG.warn("Acquired AIS");
+
+        this.ais = createFreshAIS( store.getSchema() );
+        installAIS();
+        new Writer(new CServerAisTarget(store)).save(ais);
     }
 
     boolean isLeader() {
@@ -521,34 +559,83 @@ public class CServer implements CServerConstants {
         }
     }
 
-    /**
-     * Loads the built-in primordial table definitions for the
-     * akiba_information_schema tables.
-     * 
-     * @throws Exception
-     */
-    public AkibaInformationSchema primordialAIS() throws Exception {
-        if (ais0 != null) {
-            return ais0;
-        }
-        final DataInputStream stream = new DataInputStream(getClass()
-                .getClassLoader().getResourceAsStream(AIS_DDL_NAME));
-        // TODO: ugly, but gets the job done
-        final StringBuilder sb = new StringBuilder();
-        for (;;) {
-            final String line = stream.readLine();
-            if (line == null) {
-                break;
+    private static List<CreateTableStruct> readAisSchemaDdls(List<String> ddls) {
+        final Pattern regex = Pattern.compile("create table (\\w+)", Pattern.CASE_INSENSITIVE);
+        List<CreateTableStruct> tmp = new ArrayList<CreateTableStruct>();
+        int tableId = AIS_BASE_TABLE_IDS;
+        for (String ddl : ddls) {
+            Matcher matcher = regex.matcher(ddl);
+            if (!matcher.find()) {
+                throw new RuntimeException("couldn't match regex for: " + ddl);
             }
-            sb.append(line);
-            sb.append("\n");
+            String hackedDdl = "`akiba_information_schema`." + matcher.group(1) + ddl.substring(matcher.end());
+            CreateTableStruct struct = new CreateTableStruct(tableId++,
+                    "akiba_information_schema", matcher.group(1), hackedDdl);
+            tmp.add(struct);
         }
-        ais0 = (new DDLSource()).buildAISFromString(sb.toString());
-        return ais0;
+        return Collections.unmodifiableList(tmp);
     }
 
+    private static List<String> readAisDdls() {
+        final List<String> ret = new ArrayList<String>();
+        final BufferedReader reader = new BufferedReader(new InputStreamReader( CServer.class
+                .getClassLoader().getResourceAsStream(AIS_DDL_NAME)));
+        for (String ddl : (new MySqlStatementSplitter(reader))) {
+            ret.add(ddl);
+        }
+        return Collections.unmodifiableList(ret);
+    }
+
+    /**
+     * Returns an unmodifiable list of AIS DDLs.
+     * @return
+     */
+    public static List<String> getAisDdls() {
+        return aisSchemaDdls;
+    }
+
+    /**
+     * Do not invoke this. It should only be invoked by a SchemaManager class. Any other usage will throw an assertion
+     * if -enableassertions is on.
+     * @return a copy of the currently installed AIS, minus all a_i_s.* tables and their associated group tables.
+     */
     public AkibaInformationSchema getAisCopy() {
-        return new AkibaInformationSchema(ais);
+        assert getAisCopyCallerIsOkay();
+        AkibaInformationSchema ret = new AkibaInformationSchema(ais);
+        List<TableName> uTablesToRemove = new ArrayList<TableName>();
+        for (Map.Entry<TableName,UserTable> entries : ret.getUserTables().entrySet()) {
+            TableName tableName = entries.getKey();
+            if (tableName.getSchemaName().equals("akiba_information_schema")
+                    || tableName.getSchemaName().equals("akiba_objects")) {
+                uTablesToRemove.add(tableName);
+                UserTable uTable = entries.getValue();
+                Group group = uTable.getGroup();
+                if (group != null) {
+                    ret.getGroups().remove(group.getName());
+                    ret.getGroupTables().remove(group.getGroupTable().getName());
+                }
+            }
+        }
+        for (TableName removeMe : uTablesToRemove) {
+            ret.getUserTables().remove(removeMe);
+        }
+        return ret;
+    }
+
+    /**
+     * Asserts that the caller of getAisCopy()
+     * @return <tt>true</tt>, always; if there's an error, this method will raise the assertion.
+     */
+    private static boolean getAisCopyCallerIsOkay() {
+        StackTraceElement callerStack = Thread.currentThread().getStackTrace()[3];
+        final Class<?> callerClass;
+        try {
+            callerClass = Class.forName(callerStack.getClassName());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("couldn't load class " + callerStack.getClassName(), e);
+        }
+        assert SchemaManager.class.isAssignableFrom(callerClass) : "invalid calling class " + callerClass;
+        return true;
     }
 
     /**
@@ -571,25 +658,25 @@ public class CServer implements CServerConstants {
          * ( new
          * com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.Callback
          * () { public byte[] get(byte[] key) { byte[] result = null;
-         * 
+         *
          * String request = new String(key); String[] tokens =
          * request.split(":"); if (tokens.length == 4) { String schema =
          * tokens[0]; String table = tokens[1]; String colkey = tokens[2];
          * String colval = tokens[3];
-         * 
+         *
          * try { List<RowData> list = null; //list =
          * server.store.fetchRows(schema, table, colkey, colval, colval,
          * "order"); list = server.store.fetchRows(schema, table, colkey,
          * colval, colval, null);
-         * 
+         *
          * StringBuilder builder = new StringBuilder(); for (RowData data: list)
          * { builder.append(data.toString(server.getRowDefCache()) + "\n");
          * //builder.append(data.toString()); }
-         * 
+         *
          * result = builder.toString().getBytes(); } catch (Exception e) {
          * result = new String("read error: " + e.getMessage()).getBytes(); } }
          * else { result = new String("invalid key: " + request).getBytes(); }
-         * 
+         *
          * return result; } }); com.thimbleware.jmemcached.Main.main(new
          * String[0]);
          */
@@ -601,7 +688,7 @@ public class CServer implements CServerConstants {
 
     /**
      * For unit tests
-     * 
+     *
      * @param key
      * @param value
      */

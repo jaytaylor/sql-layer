@@ -41,7 +41,7 @@ public class CServerAisTarget extends Target {
             throw new IllegalStateException(
                     "Missing table definition for AIS table " + name);
         }
-        store.dropTable(rowDef.getGroupRowDefId());
+        store.dropTable(rowDef.getRowDefId());
     }
 
     @Override

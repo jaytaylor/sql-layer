@@ -1,5 +1,7 @@
 package com.akiban.cserver;
 
+import com.akiban.cserver.util.RowDefNotFoundException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -590,7 +592,7 @@ public class RowDef {
         }
     }
 
-    void computeRowDefType(final RowDefCache rowDefCache) {
+    void computeRowDefType(final RowDefCache rowDefCache) throws RowDefNotFoundException {
         if (userTableRowDefs != null) {
             rowType = RowType.GROUP;
         } else if (parentRowDefId == 0) {
@@ -606,7 +608,7 @@ public class RowDef {
         }
     }
 
-    void computeFieldAssociations(final RowDefCache rowDefCache) {
+    void computeFieldAssociations(final RowDefCache rowDefCache) throws RowDefNotFoundException {
         for (final IndexDef indexDef : indexDefs) {
             final List<RowDef> path = new ArrayList<RowDef>();
             RowDef def = leafUserRowDef(indexDef.getFields());

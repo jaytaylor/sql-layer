@@ -8,6 +8,8 @@ import java.lang.management.ManagementFactory;
 
 import javax.management.ObjectName;
 
+import com.akiban.cserver.manage.MXBeanManager;
+import com.akiban.cserver.message.DMLRequest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -94,6 +96,7 @@ public class CServerTest implements CServerConstants {
     @Test
     public void testWriteRowResponse() throws Exception {
         final WriteRowRequest request = createWriteRowRequest();
+        setAisGeneration(request);
         final WriteRowResponse response = (WriteRowResponse) connection
                 .sendAndReceive(request);
         assertEquals(1, response.getResultCode());
@@ -101,21 +104,25 @@ public class CServerTest implements CServerConstants {
 
     @Test
     public void testGetAutoIncrementRequestResponse() throws Exception {
-        Message request;
+        DMLRequest request;
         Message response;
 
         startMessageCapture();
         
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
+        setAisGeneration(request);
+
         response = connection.sendAndReceive(request);
         assertTrue(response instanceof GetAutoIncrementValueResponse);
         assertEquals(-1, ((GetAutoIncrementValueResponse) response).getValue());
 
         request = createWriteRowRequest();
+        setAisGeneration(request);
         response = connection.sendAndReceive(request);
         assertEquals(OK, ((WriteRowResponse) response).getResultCode());
 
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
+        setAisGeneration(request);
         response = connection.sendAndReceive(request);
         assertTrue(response instanceof GetAutoIncrementValueResponse);
         assertEquals(1, ((GetAutoIncrementValueResponse) response).getValue());
@@ -126,14 +133,16 @@ public class CServerTest implements CServerConstants {
 
     @Test
     public void testGetTableStatisticsRequestResponse() throws Exception {
-        Message request;
+        DMLRequest request;
         Message response;
 
         request = createWriteRowRequest();
-        response = (WriteRowResponse) connection.sendAndReceive(request);
+        setAisGeneration(request);
+        response = connection.sendAndReceive(request);
         assertEquals(1, ((WriteRowResponse) response).getResultCode());
 
         request = new GetTableStatisticsRequest(ROW_DEF.getRowDefId(), (byte) 0);
+        setAisGeneration(request);
         response = connection.sendAndReceive(request);
 
         GetTableStatisticsResponse gtsr = (GetTableStatisticsResponse) response;
@@ -158,6 +167,14 @@ public class CServerTest implements CServerConstants {
                 .buildAIS(DDL_FILE_NAME);
         final CServer cserver = new CServer(false);
         cserver.getRowDefCache().setAIS(ais);
+    }
+
+    private void setAisGeneration(DMLRequest request) {
+        try {
+            request.setAisGeneration(MXBeanManager.getSchemaManager().getSchemaGenerationID());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private WriteRowRequest createWriteRowRequest() {

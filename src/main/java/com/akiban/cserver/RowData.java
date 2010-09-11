@@ -1,5 +1,7 @@
 package com.akiban.cserver;
 
+import com.akiban.cserver.util.RowDefNotFoundException;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
@@ -407,8 +409,20 @@ public class RowData {
 
     public String toString(final RowDefCache cache) {
         final StringBuilder sb = new StringBuilder();
-        final RowDef rowDef = cache != null ? cache.getRowDef(getRowDefId())
-                : null;
+        final RowDef rowDef;
+        if (cache == null) {
+            rowDef = null;
+        }
+        else {
+            RowDef tmp;
+            try {
+                tmp = cache.getRowDef(getRowDefId());
+            }
+            catch ( RowDefNotFoundException e) {
+                tmp = null;
+            }
+            rowDef = tmp;
+        }
         try {
             if (rowDef == null) {
                 sb.append("RowData?(rowDefId=");

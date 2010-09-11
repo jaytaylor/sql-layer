@@ -11,6 +11,7 @@ import com.akiban.cserver.CServerConfig;
 public class MXBeanManager
 {
     private static boolean registered;
+    private static SchemaManager schemaManager = null;
     
     public synchronized static void registerMXBean(CServer cserver, CServerConfig config) throws Exception
     {
@@ -24,7 +25,9 @@ public class MXBeanManager
         mbs.registerMBean(new ManageMXBeanImpl(cserver, config), mxbeanName);
 
         ObjectName schemaMxbeanName = new ObjectName(SchemaMXBean.SCHEMA_BEAN_NAME);
-        mbs.registerMBean(new SchemaMXBeanImpl(cserver), schemaMxbeanName);
+        schemaManager = new SchemaMXBeanImpl(cserver);
+//        StandardMBean schemaStdMBean = new StandardMBean(schemaManager, SchemaMXBean.class);
+        mbs.registerMBean(schemaManager, schemaMxbeanName);
         
         registered = true;
     }
@@ -44,5 +47,10 @@ public class MXBeanManager
         mbs.unregisterMBean(schemaMxbeanName);
 
         registered = false;
+    }
+
+    public synchronized static SchemaManager getSchemaManager()
+    {
+        return schemaManager;
     }
 }

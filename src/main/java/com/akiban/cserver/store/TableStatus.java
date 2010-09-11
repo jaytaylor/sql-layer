@@ -44,14 +44,28 @@ public class TableStatus implements Serializable {
 
     private long lastDeleteTime;
 
-    private long generation;
-
     private long lastFlushed;
 
     private boolean dirty;
 
+    public void reset() {
+        ordinal = 0;
+        isDeleted = false;
+        isAutoIncrement = false;
+        autoIncrementValue = 0;
+        rowCount = 0;
+        creationTime = 0;
+        lastWriteTime = 0;
+        lastReadTime = 0;
+        lastUpdateTime = 0;
+        lastDeleteTime = 0;
+        lastFlushed = 0;
+        dirty = false;
+    }
+
     public TableStatus(final int rowDefId) {
         this.rowDefId = rowDefId;
+        reset();
     }
 
     public synchronized int getRowDefId() {

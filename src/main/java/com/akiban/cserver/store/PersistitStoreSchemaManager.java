@@ -1,8 +1,15 @@
 package com.akiban.cserver.store;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -29,15 +36,53 @@ public class PersistitStoreSchemaManager implements CServerConstants {
     private final static String BY_NAME = "byName";
 
     private final PersistitStore store;
-    
-    private final AtomicLong schemaGeneration = new AtomicLong();
+
+    private final Set<ColumnName> knownColumns = new HashSet<ColumnName>(100);
+
+    private static class ColumnName {
+        private final String tableName;
+        private final String columnName;
+
+        private ColumnName(String tableName, String columnName) {
+            assert tableName != null : "null tablename";
+            assert columnName != null : "null columnName";
+            this.tableName = tableName;
+            this.columnName = columnName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ColumnName that = (ColumnName) o;
+            if (!columnName.equals(that.columnName)) {
+                return false;
+            }
+            if (!tableName.equals(that.tableName)) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tableName.hashCode();
+            result = 31 * result + columnName.hashCode();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("(%s,%s)", tableName, columnName);
+        }
+    }
 
     public PersistitStoreSchemaManager(final PersistitStore store) {
         this.store = store;
-    }
-
-    long getCurrentSchemaGeneration() {
-        return schemaGeneration.get();
     }
     
     void populateSchema(final List<CreateTableStruct> result) throws PersistitException {
@@ -80,7 +125,40 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         }
     }
 
-    int createTable(final String useSchemaName, final String ddl) {
+    private boolean checkForDuplicateColumns(SchemaDef.UserTableDef tableDef) {
+        Set<ColumnName> tmp = new HashSet<ColumnName>(knownColumns);
+        for (SchemaDef.ColumnDef cDef : tableDef.getColumns()) {
+            ColumnName cName = new ColumnName(tableDef.getCName().getName(), cDef.getName());
+            if (!tmp.add(cName)) {
+                System.err.println("table/column pair already exists: " + cName);
+                System.err.println("abandoning createTable");
+                return false;
+            }
+        }
+        knownColumns.addAll(tmp);
+        assert knownColumns.size() == tmp.size()
+                : String.format("union not of equal size: %s after adding %s", knownColumns, tmp);
+        return true;
+    }
+
+    public void forgetTableColumns(String tableName) {
+        Iterator<ColumnName> iter = knownColumns.iterator();
+        while (iter.hasNext()) {
+            if (tableName.equals(iter.next().tableName)) {
+                iter.remove();
+            }
+        }
+    }
+
+    /**
+     * Attempts to create a table.
+     * @param useSchemaName the table's schema name
+     * @param ddl the table's raw DDL
+     * @param outTableId will be set to the table's ID, but only if this method succeeds
+     * @param rowDefCache the existing RowDefCache. Used to validate parent columns.
+     * @return CServerConstants.OK iff everything worked
+     */
+    int createTable(final String useSchemaName, final String ddl, AtomicReference<Integer> outTableId, RowDefCache rowDefCache) {
         Exchange ex = null;
         String canonical = DDLSource.canonicalStatement(ddl);
         final SchemaDef.UserTableDef tableDef;
@@ -93,6 +171,45 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         }
         if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
             return OK;
+        }
+
+        SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
+        if (parentJoin != null) {
+            if (AKIBA_INFORMATION_SCHEMA.equals(parentJoin.getParentSchema())
+                    || "akiba_objects".equals(parentJoin.getParentSchema())) {
+                return ERR;
+            }
+            String parentSchema = parentJoin.getParentSchema();
+            if (parentSchema == null) {
+                parentSchema = (tableDef.getCName().getSchema() == null)
+                        ? useSchemaName
+                        : tableDef.getCName().getSchema();
+            }
+            final String parentName = RowDefCache.nameOf(
+                    parentJoin.getParentSchema(useSchemaName),
+                    parentJoin.getParentTable());
+            final RowDef parentDef = rowDefCache.getRowDef(parentName);
+            if (parentDef == null) {
+                LOG.warn("parent table not found: " + parentName);
+                return ERR;
+            }
+            IndexDef parentPK = parentDef.getPKIndexDef();
+            List<String> parentPKColumns = new ArrayList<String>(parentPK.getFields().length);
+            for (int fieldIndex : parentPK.getFields()) {
+                parentPKColumns.add( parentDef.getFieldDef(fieldIndex).getName() );
+            }
+            if (!parentPKColumns.equals( parentJoin.getParentColumns() )) {
+                LOG.warn(String.format("column mismatch: %s%s references %s%s",
+                        tableDef.getCName(), parentJoin.getParentColumns(), parentName, parentPKColumns));
+                return ERR;
+            }
+        }
+
+        // TODO: For now, we can't handle situations in which a tablename+columnname already exist
+        //    This is because group table columns are qualified only by (uTable,uTableCol) so there
+        //    is a collision if we have (s1, tbl, col) and (s2, tbl, col)
+        if (!checkForDuplicateColumns(tableDef)) {
+            return ERR;
         }
 
         try {
@@ -108,6 +225,7 @@ public class PersistitStoreSchemaManager implements CServerConstants {
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
                 final int tableId = ex.getKey().indexTo(-1).decodeInt();
+                outTableId.set(tableId);
                 ex.clear().append(BY_ID).append(tableId).fetch();
                 final String previousValue = ex.getValue().getString();
                 if (canonical.equals(previousValue)) {
@@ -121,13 +239,12 @@ public class PersistitStoreSchemaManager implements CServerConstants {
             } else {
                 tableId = 1;
             }
+            outTableId.set(tableId);
             ex.getValue().put(canonical);
             ex.clear().append(BY_ID).append(tableId).store();
             ex.getValue().putNull();
             ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(tableId).store();
-
-            schemaGeneration.incrementAndGet();
             
             return OK;
 
@@ -157,7 +274,6 @@ public class PersistitStoreSchemaManager implements CServerConstants {
             return OK;
         }
         
-        schemaGeneration.incrementAndGet();
         Exchange ex1 = null;
         Exchange ex2 = null;
         try {

@@ -1,5 +1,6 @@
 package com.akiban.cserver.store;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.akiban.cserver.FieldDef;
@@ -67,7 +68,28 @@ public interface Store {
 
     TableStatistics getTableStatistics(final int tableId) throws Exception;
 
+    /**
+     * Drops a single table, identified by ID.
+     *
+     * This is a no-op if the rowDefID corresponds to a group table.
+     * @param rowDefId the ID of the table to drop
+     * @return the result of the drop; OK or an error.
+     * @throws Exception if the rowDef couldn't be looked up, or if the transaction failed
+     */
     int dropTable(final int rowDefId) throws Exception;
+
+    /**
+     * Drops several tables as a single transaction. Each table's drop is handled equivalently to
+     * {@link #dropTable(int)}, but if any fail, the transaction is rolled back and the failed drop's status
+     * is returned.
+     *
+     * The given Collection, and all of its elements, must be non-null. Any null values will result in a NPE
+     * being thrown and the transaction atomically failing.
+     * @param rowDefIds the list of rowDefs to return. This list will not be modified.
+     * @return the result of the drop; OK or the first error
+     * @throws Exception see {@linkplain #dropTable(int)}
+     */
+    int dropTables(final Collection<Integer> rowDefIds) throws Exception;
 
     int truncateTable(final int rowDefId) throws Exception;
 

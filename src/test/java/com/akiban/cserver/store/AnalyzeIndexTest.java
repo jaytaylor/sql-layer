@@ -60,7 +60,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
 
     @Test
     public void testGroupTableStatistics() throws Exception {
-        final RowDef rowDef = groupRowDef("_akiba_srt");
+        final RowDef rowDef = groupRowDef("_akiba_a");
         store.analyzeTable(rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
         store.getIndexManager().populateTableStatistics(ts);

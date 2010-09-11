@@ -30,7 +30,7 @@ public abstract class AbstractScanBase implements CServerConstants {
 
     protected final static String SCHEMA = "scan_rows_test";
 
-    protected final static String GROUP_SCHEMA = "_akiban_scan_rows_test";
+    protected final static String GROUP_SCHEMA = "akiba_objects";
 
     protected final static boolean VERBOSE = false;
 
@@ -47,10 +47,9 @@ public abstract class AbstractScanBase implements CServerConstants {
 
         rowDefCache = new RowDefCache();
         store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
-        final AkibaInformationSchema ais0 = new CServer(false).primordialAIS();
+        final AkibaInformationSchema ais0 = new CServer(false).createEmptyAIS();
         rowDefCache.setAIS(ais0);
-        final AkibaInformationSchema ais = new DDLSource()
-                .buildAIS(DDL_FILE_NAME);
+        final AkibaInformationSchema ais = new DDLSource().buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);
         for (UserTable table : ais.getUserTables().values()) {
             tableMap.put(table.getName().getSchemaName() + "."

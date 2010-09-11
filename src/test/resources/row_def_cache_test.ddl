@@ -1,15 +1,4 @@
-
-/*
-schema row_def_cache_test baseid=100 groupschema _akiban_scan_rows_test;
-
-
-group bgroup {
-   table b {
-     table bb (bb0, bb2, bb1, bb3)
-   }
-};
-
-*/
+use `row_def_cache_test`;
 
 create table b(
     b0 int,
@@ -28,7 +17,6 @@ create table bb(
     bb3 int,
     bb4 int,
     bb5 int,
-    primary key (bb0, bb5, bb3, bb2, bb4)
+    primary key (bb0, bb5, bb3, bb2, bb4),
+CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`bb0`,`bb2`,`bb1`,`bb3`) REFERENCES `b` (`b3`,`b2`,`b4`,`b1`)
 ) engine = akibadb;
-
-    
