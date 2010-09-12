@@ -116,6 +116,11 @@ class ManageMXBeanImpl implements ManageMXBean {
         ((PersistitStore) cserver.getStore()).deleteIndexes(arg);
     }
     
+    @Override
+    public void flushIndexes() {
+        ((PersistitStore) cserver.getStore()).flushIndexes();
+    }
+    
     // TODO - temporary
     @Override
     public String copyBackPages() {

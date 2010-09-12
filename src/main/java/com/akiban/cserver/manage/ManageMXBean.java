@@ -36,6 +36,8 @@ public interface ManageMXBean
     
     void deleteIndexes(final String arg);
     
+    void flushIndexes();
+    
     // TODO - temporary
     String copyBackPages();
     
