@@ -50,9 +50,10 @@ public abstract class Task
         return sql;
     }
 
-    // parentColumns are columns in join.parent. Return the corresponding
-    // columns in join.child. If a column is
-    // not present in join.parent, it is dropped.
+    // parentColumns are columns that may be present in
+    // join.parent. Return the corresponding columns in join.child. If
+    // a column is not present in join.parent, it is not represented
+    // in the output.
     public static List<Column> columnsInChild(List<Column> parentColumns, Join join)
     {
         List<Column> childColumns = new ArrayList<Column>();

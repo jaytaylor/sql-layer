@@ -48,22 +48,29 @@ public class PersistitLoader
             throws Exception
     {
         tracker.info(String.format("Loading persistit for %s", task.artifactTableName()));
-        final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task);
-        connection.new Query(SQL_TEMPLATE, task.artifactTableName())
-        {
-            @Override
-            protected void handleRow(ResultSet resultSet) throws Exception
+        boolean deferIndexes = store.isDeferIndexes();
+        store.setDeferIndexes(true);
+        try {
+            final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task);
+            connection.new Query(SQL_TEMPLATE, task.artifactTableName())
             {
-                persistitAdapter.handleRow(resultSet);
-                count++;
-                if (count % LOG_INTERVAL == 0) {
-                    tracker.info("%s: %s", task.artifactTableName(), count);
+                @Override
+                protected void handleRow(ResultSet resultSet) throws Exception
+                {
+                    persistitAdapter.handleRow(resultSet);
+                    count++;
+                    if (count % LOG_INTERVAL == 0) {
+                        tracker.info("%s: %s", task.artifactTableName(), count);
+                    }
                 }
-            }
 
-            private int count = 0;
-        }.execute();
-        persistitAdapter.close();
+                private int count = 0;
+            }.execute();
+            persistitAdapter.close();
+        } finally {
+            store.flushIndexes();
+            store.setDeferIndexes(deferIndexes);
+        }
     }
 
     private static final String SQL_TEMPLATE = "select * from %s";

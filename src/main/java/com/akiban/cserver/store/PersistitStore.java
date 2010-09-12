@@ -812,31 +812,30 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             final int[] nKeyColumns, final FieldDef[] fieldDefs,
             final Object[] hKeyValues) throws Exception {
 /*
-/*
         if (verbose && LOG.isInfoEnabled()) {
             LOG.info("BulkLoad writeRow: " + rowData.toString(rowDefCache));
         }
 */
 
         try {
-            constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs,
-                    hKeyValues);
+            constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs, hKeyValues);
             final int start = rowData.getInnerStart();
             final int size = rowData.getInnerSize();
             hEx.getValue().ensureFit(size);
-            System.arraycopy(rowData.getBytes(), start, hEx.getValue()
-                    .getEncodedBytes(), 0, size);
+            System.arraycopy(rowData.getBytes(), start, hEx.getValue().getEncodedBytes(), 0, size);
             hEx.getValue().setEncodedSize(size);
             // Store the h-row
             hEx.store();
-            /*
-             * Populate the indexes after the table has been loaded. Each index
-             * requires its own ordering. for (final IndexDef indexDef :
-             * rowDef.getIndexDefs()) { // // Insert the index keys (except for
-             * the case of a // root table's PK index.) // if (!deferIndexes &&
-             * !indexDef.isHKeyEquivalent()) insertIntoIndex(indexDef, rowData,
-             * hEx.getKey()); }
-             */
+            for (final IndexDef indexDef : rowDef.getIndexDefs()) {
+                // Insert the index keys (except for the case of a
+                // root table's PK index.)
+                if (!indexDef.isHKeyEquivalent()) {
+                    insertIntoIndex(indexDef, rowData, hEx.getKey(), deferIndexes);
+                }
+            }
+            if (deferredIndexKeyLimit <= 0) {
+                putAllDeferredIndexKeys();
+            }
             return OK;
         } catch (StoreException e) {
             LOG.warn("Caught exception while writing row " + rowData.toString(rowDefCache) + ": ", e);
