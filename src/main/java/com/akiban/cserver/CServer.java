@@ -121,7 +121,6 @@ public class CServer implements CServerConstants {
     private List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
     private static final int AIS_BASE_TABLE_IDS = 10000;
 
-    private final ExecutorService messageExecutionService = Executors.newCachedThreadPool();
     private volatile Thread _shutdownHook;
 
     /**
@@ -380,24 +379,7 @@ public class CServer implements CServerConstants {
                                                 : message.toString()));
                     }
 
-                    final Message executeMessage = message;
-                    Future<Exception> executionFuture = messageExecutionService.submit(new Callable<Exception>() {
-                        @Override
-                        public Exception call() {
-                            try {
-                                executeMessage.execute(connection, context);
-                            } catch (Exception e) {
-                                return e;
-                            } catch (Throwable t) {
-                                return new RuntimeException(t);
-                            }
-                            return null;
-                        }
-                    });
-                    Exception thrown = executionFuture.get();
-                    if ( thrown != null ) {
-                        throw thrown;
-                    }
+                    message.execute(connection, context);
 
                     if (capturedMessage != null) {
                         endTime = System.nanoTime() / 1000;
