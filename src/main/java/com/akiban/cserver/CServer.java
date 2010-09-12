@@ -9,10 +9,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -111,14 +107,14 @@ public class CServer implements CServerConstants {
     private final String cserverPort;
     private AkibaInformationSchema ais;
     private volatile boolean stopped;
-    private Map<Integer, Thread> threadMap;
+    private final Map<Integer, Thread> threadMap;
     private boolean leadCServer;
     private AISDistributor aisDistributor;
     private volatile boolean networkStarted;
 
     private volatile int maxCaptureCount = DEFAULT_MAX_CAPTURE_COUNT;
     private volatile boolean enableMessageCapture;
-    private List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
+    private final List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
     private static final int AIS_BASE_TABLE_IDS = 10000;
 
     private volatile Thread _shutdownHook;
@@ -473,8 +469,7 @@ public class CServer implements CServerConstants {
         assert !schema.isEmpty() : "schema list is empty";
         final StringBuilder sb = new StringBuilder();
         for (final CreateTableStruct tableStruct : schema) {
-            sb.append("CREATE TABLE " + tableStruct.ddl
-                    + CServerUtil.NEW_LINE);
+            sb.append("CREATE TABLE ").append(tableStruct.ddl).append(CServerUtil.NEW_LINE);
         }
         final String schemaText = sb.toString();
         if (getStore().isVerbose() && LOG.isInfoEnabled()) {
