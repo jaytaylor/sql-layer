@@ -16,4 +16,9 @@ public final class SchemaId implements Serializable {
     public void incrementGeneration() {
         ++generation;
     }
+
+    @Override
+    public String toString() {
+        return Integer.toString(generation);
+    }
 }

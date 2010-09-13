@@ -11,6 +11,7 @@ import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowDef;
+import com.akiban.cserver.store.SchemaId;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -25,7 +26,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SchemaMXBeanImpl implements SchemaManager
 {
@@ -87,9 +87,9 @@ public class SchemaMXBeanImpl implements SchemaManager
     }
 
     @Override
-    public int getSchemaGenerationID() throws Exception
+    public SchemaId getSchemaID() throws Exception
     {
-        return cserver.getStore().getPropertiesManager().getSchemaId().getGeneration();
+        return cserver.getStore().getPropertiesManager().getSchemaId();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.akiban.cserver.manage;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.cserver.store.SchemaId;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,7 @@ public interface SchemaMXBean
      * Gets the schema's generation ID. Each revision of the schema has a unique ID.
      * @return the current schema revision's ID
      */
-    int getSchemaGenerationID() throws Exception;
+    SchemaId getSchemaID() throws Exception;
 
     void forceSchemaGenerationUpdate() throws Exception;
 

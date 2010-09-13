@@ -171,7 +171,7 @@ public class CServerTest implements CServerConstants {
 
     private void setAisGeneration(DMLRequest request) {
         try {
-            request.setAisGeneration(MXBeanManager.getSchemaManager().getSchemaGenerationID());
+            request.setAisGeneration(MXBeanManager.getSchemaManager().getSchemaID().getGeneration());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
