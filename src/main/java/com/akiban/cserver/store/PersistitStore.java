@@ -826,6 +826,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             hEx.getValue().setEncodedSize(size);
             // Store the h-row
             hEx.store();
+/*
             for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                 // Insert the index keys (except for the case of a
                 // root table's PK index.)
@@ -836,6 +837,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             if (deferredIndexKeyLimit <= 0) {
                 putAllDeferredIndexKeys();
             }
+*/
             return OK;
         } catch (StoreException e) {
             LOG.warn("Caught exception while writing row " + rowData.toString(rowDefCache) + ": ", e);
