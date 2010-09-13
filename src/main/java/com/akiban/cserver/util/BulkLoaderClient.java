@@ -29,31 +29,35 @@ public class BulkLoaderClient
     private void run() throws Exception
     {
         startNetwork();
-        AkibaNetworkHandler networkHandler = NetworkHandlerFactory.getHandler(
-                cserverHost, Integer.toString(cserverPort), null);
+        AkibaNetworkHandler networkHandler = NetworkHandlerFactory.getHandler
+                (cserverHost, Integer.toString(cserverPort), null);
         logger.info(String.format("Got network handler %s", networkHandler));
         connection = AkibaConnectionImpl.createConnection(networkHandler);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {
-            Request request =
-                    resume
-                    ? BulkLoadRequest.resume(dbHost,
-                                             dbPort,
-                                             dbUser,
-                                             dbPassword,
-                                             groups,
-                                             artifactsSchema,
-                                             sourceSchemas,
-                                             cleanup)
-                    : BulkLoadRequest.start(dbHost,
-                                            dbPort,
-                                            dbUser,
-                                            dbPassword,
-                                            groups,
-                                            artifactsSchema,
-                                            sourceSchemas,
-                                            cleanup);
+            Request request;
+            if (monitor) {
+                request = new BulkLoadStatusRequest(lastEventId);
+            } else if (resume) {
+                request = BulkLoadRequest.resume(dbHost,
+                                                 dbPort,
+                                                 dbUser,
+                                                 dbPassword,
+                                                 groups,
+                                                 artifactsSchema,
+                                                 sourceSchemas,
+                                                 cleanup);
+            } else {
+                request = BulkLoadRequest.start(dbHost,
+                                                dbPort,
+                                                dbUser,
+                                                dbPassword,
+                                                groups,
+                                                artifactsSchema,
+                                                sourceSchemas,
+                                                cleanup);
+            }
             BulkLoadResponse response;
             BulkLoadResponse badEnding = null;
             do {
@@ -67,21 +71,23 @@ public class BulkLoaderClient
                     request = new BulkLoadStatusRequest(lastEventId);
                 }
             } while (badEnding == null && !response.isIdle());
-            if (badEnding == null) {
-                request = BulkLoadRequest.done(dbHost,
-                                               dbPort,
-                                               dbUser,
-                                               dbPassword,
-                                               groups,
-                                               artifactsSchema,
-                                               sourceSchemas,
-                                               cleanup);
-                runRequest(request);
-            } else {
-                logger.error(String.format("Bulk load terminated by %s: %s",
-                                           response.exceptionClassName(), response
-                                .exceptionMessage()));
-                exitCode = response.exitCode();
+            if (!monitor) {
+                if (badEnding == null) {
+                    request = BulkLoadRequest.done(dbHost,
+                                                   dbPort,
+                                                   dbUser,
+                                                   dbPassword,
+                                                   groups,
+                                                   artifactsSchema,
+                                                   sourceSchemas,
+                                                   cleanup);
+                    runRequest(request);
+                } else {
+                    logger.error(String.format("Bulk load terminated by %s: %s",
+                                               response.exceptionClassName(), response
+                                    .exceptionMessage()));
+                    exitCode = response.exitCode();
+                }
             }
         } catch (Exception e) {
             logger.error("Caught exception", e);
@@ -124,6 +130,8 @@ public class BulkLoaderClient
                 String flag = args[a++];
                 if (flag.equals("--resume")) {
                     resume = true;
+                } else if (flag.equals("--monitor")) {
+                    monitor = true;
                 } else if (flag.equals("--cleanup")) {
                     cleanup = true;
                 } else if (flag.equals("--temp")) {
@@ -171,29 +179,48 @@ public class BulkLoaderClient
         } catch (Exception e) {
             usage(e);
         }
-        if (dbHost == null || dbUser == null || groups.isEmpty()) {
+        if (cserverHost == null) {
             usage(null);
         }
-        logger.info(String.format("mysql: %s:%s", dbHost, dbPort));
-        logger.info(String.format("user: %s", dbUser));
-        logger.info(String.format("password: %s", dbPassword));
-        logger.info(String.format("groups: %s", groups));
+        if (!monitor && (dbHost == null || dbUser == null || groups.isEmpty())) {
+            usage(null);
+        }
         logger.info(String.format("cserver: %s:%s", cserverHost, cserverPort));
-        logger.info(String.format("temp: %s", artifactsSchema));
-        logger.info(String.format("sources: %s", sourceSchemas));
-        logger.info(String.format("resume: %s", resume));
-        logger.info(String.format("cleanup: %s", cleanup));
+        logger.info(String.format("monitor: %s", monitor));
+        if (!monitor) {
+            logger.info(String.format("resume: %s", resume));
+            logger.info(String.format("cleanup: %s", cleanup));
+            logger.info(String.format("mysql: %s:%s", dbHost, dbPort));
+            logger.info(String.format("user: %s", dbUser));
+            logger.info(String.format("password: %s", dbPassword));
+            logger.info(String.format("groups: %s", groups));
+            logger.info(String.format("temp: %s", artifactsSchema));
+            logger.info(String.format("sources: %s", sourceSchemas));
+        }
     }
 
-    private ChannelNotifier startNetwork()
+    private ChannelNotifier startNetwork() throws Exception
     {
         MessageRegistry.reset();
         MessageRegistry.initialize();
         MessageRegistry.only().registerModule("com.akiban.cserver.message");
         MessageRegistry.only().registerModule("com.akiban.message");
         ChannelNotifier notifier = new ChannelNotifier();
-        NetworkHandlerFactory.initializeNetwork(LOCALHOST, Integer
-                .toString(BULK_LOADER_CLIENT_LISTENER_PORT), notifier);
+        // Why oh why does every user of initializeNetwork have to listen? This program doesn't have to listen.
+        // Try a few ports before giving up. This allows for monitoring of a bulk load by some other instance
+        // of BulkLoaderClient that's already using BULK_LOADER_CLIENT_LISTENER_PORT.
+        int dummyListenerPort = BULK_LOADER_CLIENT_LISTENER_PORT;
+        boolean ok = false;
+        do {
+            try {
+                NetworkHandlerFactory.initializeNetwork(LOCALHOST, Integer.toString(dummyListenerPort), notifier);
+                ok = true;
+            } catch (Exception e) {
+                if (++dummyListenerPort == BULK_LOADER_CLIENT_LISTENER_PORT + 20) {
+                    throw e;
+                }
+            }
+        } while(!ok);
         logger.info("Network started");
         return notifier;
     }
@@ -210,9 +237,8 @@ public class BulkLoaderClient
     }
 
     private static final String[] USAGE = {
-            "aload --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ "
-            + "--cserver CSERVER_HOST:CSERVER_PORT "
-            + "--temp TEMP_SCHEMA (--source TARGET_SCHEMA:SOURCE_SCHEMA)* [--resume] [--nocleanup]",
+            "aload [--resume] [--nocleanup] --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ --cserver CSERVER_HOST:CSERVER_PORT --temp TEMP_SCHEMA (--source TARGET_SCHEMA:SOURCE_SCHEMA)*",
+            "aload [--monitor] --cserver CSERVER_HOST:CSERVER_PORT",
             "",
             "Copies data from a MySQL database into a chunkserver. Data is transformed in the MySQL database, before it ",
             "is written to the chunkserver. ",
@@ -232,6 +258,9 @@ public class BulkLoaderClient
             "is resumed. If --resume is not specified, then any state from a previous load, saved in TEMP_SCHEMA, is lost.",
             "",
             "If --nocleanup is specified, then the TEMP_SCHEMA is not deleted when the load completes.",
+            "",
+            "If --monitor is specified, then a bulk load is neither started nor resumed. Instead, an ongoing bulk load",
+            "is monitored.",
             ""};
 
     private static final Log logger = LogFactory.getLog(BulkLoaderClient.class);
@@ -243,6 +272,7 @@ public class BulkLoaderClient
     private AkibaConnection connection;
     private String cserverHost;
     private int cserverPort;
+    private boolean monitor = false;
     private boolean resume = false;
     private boolean cleanup = false;
     private String artifactsSchema;
