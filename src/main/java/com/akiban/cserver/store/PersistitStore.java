@@ -1896,11 +1896,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     private boolean isIndexSelected(final IndexDef indexDef, final String ddl) {
         return !indexDef.isHKeyEquivalent()
-                && (ddl.contains("table=("
-                        + indexDef.getRowDef().getTableName() + ")") || !ddl
-                        .contains("table="))
-                && (ddl.contains("index=(" + indexDef.getName() + ")") || !ddl
-                        .contains("index="));
+                && (ddl.contains("table=(" + indexDef.getRowDef().getTableName() + ")") || !ddl.contains("table="))
+                && (ddl.contains("index=(" + indexDef.getName() + ")") || !ddl.contains("index="));
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,
