@@ -18,7 +18,7 @@ public class BulkLoader extends Thread
     public void run()
     {
         // Configure database access
-        DB db = null;
+        db = null;
         try {
             db = dbHost == null ? null : new DB(dbHost, dbPort, dbUser, dbPassword);
         } catch (Exception e) {
@@ -56,9 +56,6 @@ public class BulkLoader extends Thread
                     dataGrouper.run(tableTasksMap);
                 }
                 new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tableTasksMap));
-                if (cleanup) {
-                    deleteWorkArea(db);
-                }
                 tracker.info("Loading complete");
                 termination = new OKException();
             } catch (Exception e) {
@@ -115,8 +112,9 @@ public class BulkLoader extends Thread
         return inProgress;
     }
 
-    public static synchronized void done()
+    public static synchronized void done() throws SQLException
     {
+        inProgress.cleanup();
         inProgress = null;
     }
 
@@ -146,7 +144,7 @@ public class BulkLoader extends Thread
         this.persistitStore = (PersistitStore) store;
         this.ais = ais;
         this.groups = groups;
-        this.artifactsSchema = artifactsSchema;
+        this.artifactsSchema = artifactsSchema == null ? generateArtifactSchemaName() : artifactsSchema;
         this.sourceSchemas = sourceSchemas;
         this.dbHost = dbHost;
         this.dbUser = dbUser;
@@ -218,7 +216,15 @@ public class BulkLoader extends Thread
         }
     }
 
-    public void deleteWorkArea(DB db) throws SQLException
+    private void cleanup() throws SQLException
+    {
+        if (cleanup) {
+            deleteWorkArea(db);
+        }
+    }
+
+
+    private void deleteWorkArea(DB db) throws SQLException
     {
         if (db != null) {
             DB.Connection connection = db.new Connection();
@@ -237,6 +243,11 @@ public class BulkLoader extends Thread
     Tracker tracker()
     {
         return tracker;
+    }
+
+    private static String generateArtifactSchemaName()
+    {
+        return String.format("BL_%1$tY_%1$tm_%1$td_%1$tH_%1$tM_%1$tS", Calendar.getInstance());
     }
 
     // State
@@ -275,6 +286,7 @@ public class BulkLoader extends Thread
     private int dbPort;
     private String dbUser;
     private String dbPassword;
+    private DB db;
     private String artifactsSchema;
     private List<String> groups;
     private Map<String, String> sourceSchemas;

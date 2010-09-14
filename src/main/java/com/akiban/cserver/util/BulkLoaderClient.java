@@ -237,7 +237,7 @@ public class BulkLoaderClient
     }
 
     private static final String[] USAGE = {
-            "aload [--resume] [--nocleanup] --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ --cserver CSERVER_HOST:CSERVER_PORT --temp TEMP_SCHEMA (--source TARGET_SCHEMA:SOURCE_SCHEMA)*",
+            "aload [--resume] [--nocleanup] --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ --cserver CSERVER_HOST:CSERVER_PORT [--temp TEMP_SCHEMA] (--source TARGET_SCHEMA:SOURCE_SCHEMA)*",
             "aload [--monitor] --cserver CSERVER_HOST:CSERVER_PORT",
             "",
             "Copies data from a MySQL database into a chunkserver. Data is transformed in the MySQL database, before it ",
@@ -258,6 +258,8 @@ public class BulkLoaderClient
             "is resumed. If --resume is not specified, then any state from a previous load, saved in TEMP_SCHEMA, is lost.",
             "",
             "If --nocleanup is specified, then the TEMP_SCHEMA is not deleted when the load completes.",
+            "",
+            "If TEMP_SCHEMA is not specified, then a schema name will be generated.",
             "",
             "If --monitor is specified, then a bulk load is neither started nor resumed. Instead, an ongoing bulk load",
             "is monitored.",
