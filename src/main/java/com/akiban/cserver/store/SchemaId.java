@@ -18,7 +18,24 @@ public final class SchemaId implements Serializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SchemaId schemaId = (SchemaId) o;
+        return generation == schemaId.generation;
+    }
+
+    @Override
+    public int hashCode() {
+        return generation;
+    }
+
+    @Override
     public String toString() {
-        return Integer.toString(generation);
+        return String.format("SchemaId[%d]", generation);
     }
 }
