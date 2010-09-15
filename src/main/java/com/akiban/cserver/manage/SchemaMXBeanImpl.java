@@ -3,6 +3,7 @@ package com.akiban.cserver.manage;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitor;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
@@ -165,8 +166,8 @@ public class SchemaMXBeanImpl implements SchemaManager
             private boolean shouldDrop;
 
             @Override
-            public void visitGroup(String groupName, TableName rootTable) {
-                shouldDrop = groupsToDrop.contains(groupName);
+            public void visitGroup(Group group, TableName rootTable) {
+                shouldDrop = groupsToDrop.contains(group.getGroupName());
                 if (shouldDrop) {
                     dropTable(rootTable);
                 }
@@ -242,9 +243,9 @@ public class SchemaMXBeanImpl implements SchemaManager
             private final List<String> groups = new ArrayList<String>();
 
             @Override
-            public void visitGroup(String groupName, TableName rootTable) {
+            public void visitGroup(Group group, TableName rootTable) {
                 if (rootTable.getSchemaName().equalsIgnoreCase("akiba_information_schema")) {
-                    groups.add(groupName);
+                    groups.add(group.getGroupName());
                 }
             }
 
