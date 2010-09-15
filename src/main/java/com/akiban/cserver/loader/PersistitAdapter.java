@@ -124,10 +124,15 @@ public class PersistitAdapter
             if (i > 0) {
                 ordinalBuffers.append(", ");
                 nKeyColumnsBuffer.append(", ");
-                fieldDefsBuffer.append(", ");
             }
             ordinalBuffers.append(ordinals[i]);
             nKeyColumnsBuffer.append(nKeyColumns[i]);
+        }
+        n = fieldDefs.length;
+        for (int i = 0; i < n; i++) {
+            if (i > 0) {
+                fieldDefsBuffer.append(", ");
+            }
             fieldDefsBuffer.append(fieldDefs[i].toString());
         }
         ordinalBuffers.append(']');
