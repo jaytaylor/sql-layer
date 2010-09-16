@@ -52,21 +52,21 @@ public class PersistitLoader
         store.setDeferIndexes(true);
         try {
             final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task);
+            final int[] count = new int[0];
             connection.new Query(SQL_TEMPLATE, task.artifactTableName())
             {
                 @Override
                 protected void handleRow(ResultSet resultSet) throws Exception
                 {
                     persistitAdapter.handleRow(resultSet);
-                    count++;
-                    if (count % LOG_INTERVAL == 0) {
-                        tracker.info("%s: %s", task.artifactTableName(), count);
+                    count[0]++;
+                    if (count[0] % LOG_INTERVAL == 0) {
+                        tracker.info("%s: %s", task.artifactTableName(), count[0]);
                     }
                 }
-
-                private int count = 0;
             }.execute();
             persistitAdapter.close();
+            tracker.info(String.format("Loaded persistit for %s: %s rows", task.artifactTableName(), count[0]));
         } finally {
             store.flushIndexes();
             store.setDeferIndexes(deferIndexes);
