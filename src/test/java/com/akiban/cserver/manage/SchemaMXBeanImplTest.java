@@ -78,6 +78,11 @@ public final class SchemaMXBeanImplTest {
     }
 
     @Test
+    public void tableWithoutPK() throws Exception {
+        createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE one (id int) engine=akibadb;");
+    }
+
+    @Test
     public void testSelfReferencingTable() throws Exception {
         createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE one (id int, self_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb;");

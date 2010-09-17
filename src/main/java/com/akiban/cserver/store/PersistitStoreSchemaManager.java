@@ -172,6 +172,9 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
             return OK;
         }
+        if (tableDef.getPrimaryKey().size() == 0) {
+            return ERR;
+        }
 
         SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
         if (parentJoin != null) {
