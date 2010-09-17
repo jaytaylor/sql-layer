@@ -62,13 +62,13 @@ public class BulkLoaderClient
             BulkLoadResponse badEnding = null;
             do {
                 response = runRequest(request);
-                if (!response.isIdle()) {
-                    if (response.terminatedByException()) {
-                        badEnding = response;
+                if (response.terminatedByException()) {
+                    badEnding = response;
+                } else {
+                    if (!response.isIdle()) {
+                        Thread.sleep(TIME_BETWEEN_REQUESTS_MSEC);
+                        request = new BulkLoadStatusRequest(lastEventId);
                     }
-                    Thread.sleep(10000);
-                    List<Event> events = response.events();
-                    request = new BulkLoadStatusRequest(lastEventId);
                 }
             } while (badEnding == null && !response.isIdle());
             if (!monitor) {
@@ -84,8 +84,7 @@ public class BulkLoaderClient
                     runRequest(request);
                 } else {
                     logger.error(String.format("Bulk load terminated by %s: %s",
-                                               response.exceptionClassName(), response
-                                    .exceptionMessage()));
+                                               response.exceptionClassName(), response.exceptionMessage()));
                     exitCode = response.exitCode();
                 }
             }
@@ -270,6 +269,7 @@ public class BulkLoaderClient
     private static final int DEFAULT_MYSQL_PORT = 3306;
     // Networking layer requires a listening port
     private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999;
+    private static final int TIME_BETWEEN_REQUESTS_MSEC = 10 * 1000; // 10 sec
 
     private AkibaConnection connection;
     private String cserverHost;

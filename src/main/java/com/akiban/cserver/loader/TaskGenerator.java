@@ -1,8 +1,6 @@
 package com.akiban.cserver.loader;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,10 +28,18 @@ public class TaskGenerator
     public IdentityHashMap<UserTable, TableTasks> generateTasks()
             throws Exception
     {
-        for (Group group : loader.ais().getGroups().values()) {
-            if (loader.groups().contains(group.getName())) {
-                generateTasks(group);
-            }
+        Map<String, Group> aisGroups = loader.ais().getGroups();
+        Set<String> aisGroupNames = aisGroups.keySet();
+        List<String> loadGroupNames = new ArrayList<String>(loader.groups());
+        if (!(aisGroupNames.containsAll(loadGroupNames))) {
+            loadGroupNames.removeAll(aisGroupNames);
+            throw new RuntimeException
+                    (String.format("These groups are not present in the target schema: %s", loadGroupNames));
+        }
+        for (String groupName : loadGroupNames) {
+            Group group = aisGroups.get(groupName);
+            assert group != null;
+            generateTasks(group);
         }
         return tasks;
     }
@@ -91,8 +97,7 @@ public class TaskGenerator
         }
     }
 
-    private static final Log logger = LogFactory.getLog(TaskGenerator.class
-            .getName());
+    private static final Log logger = LogFactory.getLog(TaskGenerator.class.getName());
 
     private final BulkLoader loader;
     private final Actions actions;
@@ -101,10 +106,12 @@ public class TaskGenerator
     public interface Actions
     {
         void generateTasksForTableContainingHKeyColumns(BulkLoader loader,
-                                                        UserTable table, IdentityHashMap<UserTable, TableTasks> tasks);
+                                                        UserTable table,
+                                                        IdentityHashMap<UserTable, TableTasks> tasks);
 
         void generateTasksForTableNotContainingHKeyColumns(BulkLoader loader,
-                                                           Join join, IdentityHashMap<UserTable, TableTasks> tasks)
+                                                           Join join,
+                                                           IdentityHashMap<UserTable, TableTasks> tasks)
                 throws Exception;
     }
 }

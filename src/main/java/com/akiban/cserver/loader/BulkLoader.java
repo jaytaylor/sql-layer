@@ -75,7 +75,7 @@ public class BulkLoader extends Thread
             throws ClassNotFoundException, SQLException
     {
         this.ais = ais;
-        this.groups = Arrays.asList(group);
+        this.groups = Collections.unmodifiableList(Arrays.asList(group));
         this.artifactsSchema = artifactsSchema;
         this.taskGeneratorActions = actions;
     }
@@ -143,7 +143,7 @@ public class BulkLoader extends Thread
     {
         this.persistitStore = (PersistitStore) store;
         this.ais = ais;
-        this.groups = groups;
+        this.groups = Collections.unmodifiableList(groups);
         this.artifactsSchema = artifactsSchema == null ? generateArtifactSchemaName() : artifactsSchema;
         this.sourceSchemas = sourceSchemas;
         this.dbHost = dbHost;

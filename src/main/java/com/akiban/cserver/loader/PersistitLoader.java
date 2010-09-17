@@ -52,7 +52,7 @@ public class PersistitLoader
         store.setDeferIndexes(true);
         try {
             final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task);
-            final int[] count = new int[0];
+            final int[] count = new int[1];
             connection.new Query(SQL_TEMPLATE, task.artifactTableName())
             {
                 @Override
