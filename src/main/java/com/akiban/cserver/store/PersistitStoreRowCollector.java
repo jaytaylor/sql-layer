@@ -28,11 +28,11 @@ public class PersistitStoreRowCollector implements RowCollector,
             .getName());
 
     private static final Tap SCAN_NEXT_ROW_TAP = Tap.add("read: next_row");
-    
+
     private static final AtomicLong counter = new AtomicLong();
 
     private long id;
-    
+
     private final PersistitStore store;
 
     private final byte[] columnBitMap;
@@ -82,13 +82,13 @@ public class PersistitStoreRowCollector implements RowCollector,
     private I2R[] coveringFields;
 
     private int deliveredRows;
-    
+
     private int almostDeliveredRows;
 
     private int deliveredBuffers;
 
     private long deliveredBytes;
-    
+
     private int repeatedRows;
 
     /**
@@ -341,8 +341,9 @@ public class PersistitStoreRowCollector implements RowCollector,
      * @param fieldIndex
      * @return
      */
-    private KeyFilter.Term computeKeyFilterTerm(final Key key, final RowDef rowDef,
-            final RowData start, final RowData end, final int fieldIndex) {
+    private KeyFilter.Term computeKeyFilterTerm(final Key key,
+            final RowDef rowDef, final RowData start, final RowData end,
+            final int fieldIndex) {
         if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
             return KeyFilter.ALL;
         }
@@ -354,9 +355,7 @@ public class PersistitStoreRowCollector implements RowCollector,
             key.clear();
             key.reset();
             if (lowLoc != 0) {
-                store
-                        .appendKeyField(key, rowDef.getFieldDef(fieldIndex),
-                                start);
+                store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), start);
             } else {
                 key.append(Key.BEFORE);
                 key.setEncodedSize(key.getEncodedSize() + 1);
@@ -498,10 +497,10 @@ public class PersistitStoreRowCollector implements RowCollector,
             // array is available only if the leaf level of the array has been
             // populated.
             //
-            if (pendingFromLevel < pendingToLevel
-                    && pendingToLevel == pendingRowData.length) {
+            if (morePending()) {
 
-                if (deliverRow(pendingRowData[pendingFromLevel], payload, pendingFromLevel + 1 == pendingRowData.length)) {
+                if (deliverRow(pendingRowData[pendingFromLevel], payload,
+                        pendingFromLevel + 1 == pendingRowData.length)) {
                     pendingFromLevel++;
                     if (isSingleRowMode() && pendingFromLevel == pendingToLevel) {
                         more = false;
@@ -547,7 +546,7 @@ public class PersistitStoreRowCollector implements RowCollector,
                 // tree traversal location differs from that of the previously
                 // prepared row at a key segment left of the ancestor row's key
                 // depth.
-                //			
+                //
                 for (int level = 0; level < projectedRowDefs.length; level++) {
                     final RowDef rowDef = projectedRowDefs[level];
                     if (rowDef.getHKeyDepth() > depth) {
@@ -562,8 +561,8 @@ public class PersistitStoreRowCollector implements RowCollector,
                         final int keySize = hKey.getEncodedSize();
                         hKey.setEncodedSize(hKey.getIndex());
                         hEx.fetch();
-                        prepareRow(hEx, level, rowDef.getRowDefId(), rowDef
-                                .getColumnOffset());
+                        prepareRow(hEx, level, rowDef.getRowDefId(),
+                                rowDef.getColumnOffset());
                         hKey.setEncodedSize(keySize);
 
                         if (level < pendingFromLevel) {
@@ -616,9 +615,9 @@ public class PersistitStoreRowCollector implements RowCollector,
 
                     for (int level = projectedRowDefs.length; --level >= 0;) {
                         if (depth == projectedRowDefs[level].getHKeyDepth()) {
-                            prepareRow(hEx, level, projectedRowDefs[level]
-                                    .getRowDefId(), projectedRowDefs[level]
-                                    .getColumnOffset());
+                            prepareRow(hEx, level,
+                                    projectedRowDefs[level].getRowDefId(),
+                                    projectedRowDefs[level].getColumnOffset());
                             hKey.copyTo(lastKey);
                             if (level < pendingFromLevel) {
                                 pendingFromLevel = level;
@@ -664,12 +663,12 @@ public class PersistitStoreRowCollector implements RowCollector,
         rowData.createRow(rowDef, values);
     }
 
-    boolean deliverRow(final RowData rowData, final ByteBuffer payload, final boolean isLeaf)
-            throws IOException {
+    boolean deliverRow(final RowData rowData, final ByteBuffer payload,
+            final boolean isLeaf) throws IOException {
         if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
             final int position = payload.position();
-            payload.put(rowData.getBytes(), rowData.getRowStart(), rowData
-                    .getRowSize());
+            payload.put(rowData.getBytes(), rowData.getRowStart(),
+                    rowData.getRowSize());
             almostDeliveredRows++;
             if (isLeaf) {
                 payload.mark();
@@ -683,7 +682,8 @@ public class PersistitStoreRowCollector implements RowCollector,
             return true;
         } else {
             // ScanRowsMoreRequest: deliver a full hierarchy.
-            repeatedRows += pendingFromLevel - (almostDeliveredRows - deliveredRows);
+            repeatedRows += pendingFromLevel
+                    - (almostDeliveredRows - deliveredRows);
             pendingFromLevel = 0;
             // Trim off any non-leaf rows at end of buffer
             payload.reset();
@@ -716,9 +716,14 @@ public class PersistitStoreRowCollector implements RowCollector,
         return (scanFlags & SCAN_FLAGS_DEEP) != 0;
     }
 
+    boolean morePending() {
+        return pendingFromLevel < pendingToLevel
+                && pendingToLevel == pendingRowData.length;
+    }
+
     @Override
     public boolean hasMore() {
-        if (!more && pendingFromLevel >= pendingToLevel) {
+        if (!more && !morePending()) {
             close();
             store.removeCurrentRowCollector(rowDefId);
             if (store.isVerbose() && LOG.isInfoEnabled()) {
@@ -751,24 +756,24 @@ public class PersistitStoreRowCollector implements RowCollector,
     public int getDeliveredBuffers() {
         return deliveredBuffers;
     }
-    
+
     public long getDeliveredBytes() {
         return deliveredBytes;
     }
-    
+
     public int getRepeatedRows() {
         return repeatedRows;
     }
-    
+
     public long getId() {
         return id;
     }
-    
+
     // Used by indexer
     Exchange getHExchange() {
         return hEx;
     }
-    
+
     // Used by indexer
     KeyFilter getHFilter() {
         return hFilter;

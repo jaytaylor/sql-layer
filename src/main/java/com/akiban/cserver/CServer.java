@@ -72,8 +72,8 @@ public class CServer implements CServerConstants {
             "cserver.port", DEFAULT_CSERVER_PORT_STRING);
 
     /**
-     * Interface on which this cserver instance will listen.
-     * TODO - allow multiple NICs
+     * Interface on which this cserver instance will listen. TODO - allow
+     * multiple NICs
      */
     public static final String CSERVER_HOST = System.getProperty(
             "cserver.host", "localhost");
@@ -122,7 +122,7 @@ public class CServer implements CServerConstants {
     /**
      * Construct a chunk server. If <tt>loadConfig</tt> is false then use
      * default unit test properties.
-     *
+     * 
      * @param loadConfig
      * @throws Exception
      */
@@ -160,9 +160,6 @@ public class CServer implements CServerConstants {
             MessageRegistry.only().registerModule("com.akiban.cserver");
             MessageRegistry.only().registerModule("com.akiban.ais");
             MessageRegistry.only().registerModule("com.akiban.message");
-            NetworkHandlerFactory.initializeNetwork(CSERVER_HOST, CSERVER_PORT,
-                    new ChannelNotifier());
-            networkStarted = true;
         }
         store.startUp();
         store.setVerbose(config.property(VERBOSE_PROPERTY_NAME, "false")
@@ -194,6 +191,12 @@ public class CServer implements CServerConstants {
         }, "ShutdownHook");
 
         Runtime.getRuntime().addShutdownHook(_shutdownHook);
+
+        if (startNetwork) {
+            NetworkHandlerFactory.initializeNetwork(CSERVER_HOST, CSERVER_PORT,
+                    new ChannelNotifier());
+            networkStarted = true;
+        }
     }
 
     public void stop() throws Exception {
@@ -217,14 +220,13 @@ public class CServer implements CServerConstants {
         for (final Thread thread : copy) {
             thread.interrupt();
         }
-        try {
-            if (networkStarted) {
-                NetworkHandlerFactory.closeNetwork();
-            }
-        } finally {
-            MXBeanManager.unregisterMXBean();
-            Tap.unregisterMXBean();
-            store.shutDown();
+
+        MXBeanManager.unregisterMXBean();
+        Tap.unregisterMXBean();
+        store.shutDown();
+
+        if (networkStarted) {
+            NetworkHandlerFactory.closeNetwork();
         }
     }
 
@@ -319,9 +321,9 @@ public class CServer implements CServerConstants {
 
     /**
      * A Runnable that reads Network messages, acts on them and returns results.
-     *
+     * 
      * @author peter
-     *
+     * 
      */
     private class CServerRunnable implements Runnable {
 
@@ -368,14 +370,17 @@ public class CServer implements CServerConstants {
                     }
 
                     if (store.isVerbose() && LOG.isInfoEnabled()) {
-                        LOG
-                                .info("Executing "
-                                        + (message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
-                                                .toString(rowDefCache)
-                                                : message.toString()));
+                        LOG.info("Executing "
+                                + (message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
+                                        .toString(rowDefCache) : message
+                                        .toString()));
                     }
-
-                    message.execute(connection, context);
+                    if (stopped) {
+                        connection.send(new ErrorResponse(
+                                "CServer is shutting down"));
+                    } else {
+                        message.execute(connection, context);
+                    }
 
                     if (capturedMessage != null) {
                         endTime = System.nanoTime() / 1000;
@@ -440,7 +445,8 @@ public class CServer implements CServerConstants {
 
         @Override
         public String toString() {
-            return "CreateTableStruct[" + tableId + ": " + TableName.create(schemaName, tableName) + ']';
+            return "CreateTableStruct[" + tableId + ": "
+                    + TableName.create(schemaName, tableName) + ']';
         }
     }
 
@@ -449,27 +455,36 @@ public class CServer implements CServerConstants {
     }
 
     /**
-     * Intended for testing. Creates a new AIS with only the a_i_s tables as its user tables.
+     * Intended for testing. Creates a new AIS with only the a_i_s tables as its
+     * user tables.
+     * 
      * @return a new AIS instance
-     * @throws Exception if there's a problem
+     * @throws Exception
+     *             if there's a problem
      */
     public AkibaInformationSchema createEmptyAIS() throws Exception {
         return createFreshAIS(new ArrayList<CreateTableStruct>());
     }
 
     /**
-     * Creates a fresh AIS, using as its source the default AIS schema DDLs as well as any stored schemata.
-     * @param schema the stored schema to add to the default AIS schema.
+     * Creates a fresh AIS, using as its source the default AIS schema DDLs as
+     * well as any stored schemata.
+     * 
+     * @param schema
+     *            the stored schema to add to the default AIS schema.
      * @return a new AIS
-     * @throws Exception if there's a problem
+     * @throws Exception
+     *             if there's a problem
      */
-    private AkibaInformationSchema createFreshAIS(final List<CreateTableStruct> schema) throws Exception {
+    private AkibaInformationSchema createFreshAIS(
+            final List<CreateTableStruct> schema) throws Exception {
         schema.addAll(0, aisSchemaStructs);
 
         assert !schema.isEmpty() : "schema list is empty";
         final StringBuilder sb = new StringBuilder();
         for (final CreateTableStruct tableStruct : schema) {
-            sb.append("CREATE TABLE ").append(tableStruct.ddl).append(CServerUtil.NEW_LINE);
+            sb.append("CREATE TABLE ").append(tableStruct.ddl)
+                    .append(CServerUtil.NEW_LINE);
         }
         final String schemaText = sb.toString();
         if (getStore().isVerbose() && LOG.isInfoEnabled()) {
@@ -477,12 +492,15 @@ public class CServer implements CServerConstants {
                     + schemaText);
         }
 
-        AkibaInformationSchema ret = new DDLSource().buildAISFromString(schemaText);
+        AkibaInformationSchema ret = new DDLSource()
+                .buildAISFromString(schemaText);
         for (final CreateTableStruct tableStruct : schema) {
-            final UserTable table = ret.getUserTable(tableStruct.schemaName, tableStruct.tableName);
+            final UserTable table = ret.getUserTable(tableStruct.schemaName,
+                    tableStruct.tableName);
             assert table != null : tableStruct + " in " + schema;
-            assert table.getGroup() != null
-                    : "table " + table + " has no group; should be in a single-table group at least";
+            assert table.getGroup() != null : "table "
+                    + table
+                    + " has no group; should be in a single-table group at least";
             table.setTableId(tableStruct.tableId);
             if (table.getParentJoin() == null) {
                 final GroupTable groupTable = table.getGroup().getGroupTable();
@@ -498,19 +516,20 @@ public class CServer implements CServerConstants {
     /**
      * Acquire an AkibaInformationSchema from MySQL and install it into the
      * local RowDefCache.
-     *
+     * 
      * This method always refreshes the locally cached AkibaInformationSchema to
      * support schema modifications at the MySQL head.
-     *
+     * 
      * @return an AkibaInformationSchema
      * @throws Exception
      */
     public synchronized void acquireAIS() throws Exception {
         if (!store.isExperimentalSchema()) {
-            throw new UnsupportedOperationException("non-experimental mode is deprecated.");
+            throw new UnsupportedOperationException(
+                    "non-experimental mode is deprecated.");
         }
 
-        this.ais = createFreshAIS( store.getSchema() );
+        this.ais = createFreshAIS(store.getSchema());
         installAIS();
         new Writer(new CServerAisTarget(store)).save(ais);
     }
@@ -537,7 +556,8 @@ public class CServer implements CServerConstants {
     }
 
     private static List<CreateTableStruct> readAisSchemaDdls(List<String> ddls) {
-        final Pattern regex = Pattern.compile("create table (\\w+)", Pattern.CASE_INSENSITIVE);
+        final Pattern regex = Pattern.compile("create table (\\w+)",
+                Pattern.CASE_INSENSITIVE);
         List<CreateTableStruct> tmp = new ArrayList<CreateTableStruct>();
         int tableId = AIS_BASE_TABLE_IDS;
         for (String ddl : ddls) {
@@ -545,7 +565,8 @@ public class CServer implements CServerConstants {
             if (!matcher.find()) {
                 throw new RuntimeException("couldn't match regex for: " + ddl);
             }
-            String hackedDdl = "`akiba_information_schema`." + matcher.group(1) + ddl.substring(matcher.end());
+            String hackedDdl = "`akiba_information_schema`." + matcher.group(1)
+                    + ddl.substring(matcher.end());
             CreateTableStruct struct = new CreateTableStruct(tableId++,
                     "akiba_information_schema", matcher.group(1), hackedDdl);
             tmp.add(struct);
@@ -555,8 +576,9 @@ public class CServer implements CServerConstants {
 
     private static List<String> readAisDdls() {
         final List<String> ret = new ArrayList<String>();
-        final BufferedReader reader = new BufferedReader(new InputStreamReader( CServer.class
-                .getClassLoader().getResourceAsStream(AIS_DDL_NAME)));
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(
+                CServer.class.getClassLoader()
+                        .getResourceAsStream(AIS_DDL_NAME)));
         for (String ddl : (new MySqlStatementSplitter(reader))) {
             ret.add(ddl);
         }
@@ -565,6 +587,7 @@ public class CServer implements CServerConstants {
 
     /**
      * Returns an unmodifiable list of AIS DDLs.
+     * 
      * @return
      */
     public static List<String> getAisDdls() {
@@ -572,15 +595,18 @@ public class CServer implements CServerConstants {
     }
 
     /**
-     * Do not invoke this. It should only be invoked by a SchemaManager class. Any other usage will throw an assertion
-     * if -enableassertions is on.
-     * @return a copy of the currently installed AIS, minus all a_i_s.* tables and their associated group tables.
+     * Do not invoke this. It should only be invoked by a SchemaManager class.
+     * Any other usage will throw an assertion if -enableassertions is on.
+     * 
+     * @return a copy of the currently installed AIS, minus all a_i_s.* tables
+     *         and their associated group tables.
      */
     public AkibaInformationSchema getAisCopy() {
         assert getAisCopyCallerIsOkay();
         AkibaInformationSchema ret = new AkibaInformationSchema(ais);
         List<TableName> uTablesToRemove = new ArrayList<TableName>();
-        for (Map.Entry<TableName,UserTable> entries : ret.getUserTables().entrySet()) {
+        for (Map.Entry<TableName, UserTable> entries : ret.getUserTables()
+                .entrySet()) {
             TableName tableName = entries.getKey();
             if (tableName.getSchemaName().equals("akiba_information_schema")
                     || tableName.getSchemaName().equals("akiba_objects")) {
@@ -589,7 +615,8 @@ public class CServer implements CServerConstants {
                 Group group = uTable.getGroup();
                 if (group != null) {
                     ret.getGroups().remove(group.getName());
-                    ret.getGroupTables().remove(group.getGroupTable().getName());
+                    ret.getGroupTables()
+                            .remove(group.getGroupTable().getName());
                 }
             }
         }
@@ -601,7 +628,9 @@ public class CServer implements CServerConstants {
 
     /**
      * Asserts that the caller of getAisCopy()
-     * @return <tt>true</tt>, always; if there's an error, this method will raise the assertion.
+     * 
+     * @return <tt>true</tt>, always; if there's an error, this method will
+     *         raise the assertion.
      */
     private static boolean getAisCopyCallerIsOkay() {
         StackTraceElement callerStack = Thread.currentThread().getStackTrace()[3];
@@ -609,9 +638,11 @@ public class CServer implements CServerConstants {
         try {
             callerClass = Class.forName(callerStack.getClassName());
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("couldn't load class " + callerStack.getClassName(), e);
+            throw new RuntimeException("couldn't load class "
+                    + callerStack.getClassName(), e);
         }
-        assert SchemaManager.class.isAssignableFrom(callerClass) : "invalid calling class " + callerClass;
+        assert SchemaManager.class.isAssignableFrom(callerClass) : "invalid calling class "
+                + callerClass;
         return true;
     }
 
@@ -631,29 +662,29 @@ public class CServer implements CServerConstants {
         // HAZEL: MySQL Conference Demo 4/2010: MySQL/Drizzle/Memcache to Chunk
         // Server
         /*
-         * com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.registerCallback
-         * ( new
+         * com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.
+         * registerCallback ( new
          * com.thimbleware.jmemcached.protocol.MemcachedCommandHandler.Callback
          * () { public byte[] get(byte[] key) { byte[] result = null;
-         *
+         * 
          * String request = new String(key); String[] tokens =
          * request.split(":"); if (tokens.length == 4) { String schema =
          * tokens[0]; String table = tokens[1]; String colkey = tokens[2];
          * String colval = tokens[3];
-         *
+         * 
          * try { List<RowData> list = null; //list =
          * server.store.fetchRows(schema, table, colkey, colval, colval,
          * "order"); list = server.store.fetchRows(schema, table, colkey,
          * colval, colval, null);
-         *
+         * 
          * StringBuilder builder = new StringBuilder(); for (RowData data: list)
          * { builder.append(data.toString(server.getRowDefCache()) + "\n");
          * //builder.append(data.toString()); }
-         *
+         * 
          * result = builder.toString().getBytes(); } catch (Exception e) {
          * result = new String("read error: " + e.getMessage()).getBytes(); } }
          * else { result = new String("invalid key: " + request).getBytes(); }
-         *
+         * 
          * return result; } }); com.thimbleware.jmemcached.Main.main(new
          * String[0]);
          */
@@ -665,7 +696,7 @@ public class CServer implements CServerConstants {
 
     /**
      * For unit tests
-     *
+     * 
      * @param key
      * @param value
      */
@@ -718,15 +749,13 @@ public class CServer implements CServerConstants {
 
         public String toString(final RowDefCache rowDefCache) {
             return String
-                    .format(
-                            TO_STRING_FORMAT,
+                    .format(TO_STRING_FORMAT,
                             threadName,
                             SDF.format(new Date(eventTime)),
                             elapsed,
                             gap,
                             message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
-                                    .toString(rowDefCache)
-                                    : message.toString());
+                                    .toString(rowDefCache) : message.toString());
         }
     }
 
