@@ -13,13 +13,9 @@ public class CreateTableTest extends TestCase implements CServerConstants {
 
     private final static String CREATE_TABLE_STATEMENT1 = "CREATE TABLE `coitest_1m`.`foo1` ("
             + "`a` int(11) DEFAULT NULL,"
-            + "`b` int(11) DEFAULT NULL"
+            + "`b` int(11) DEFAULT NULL,"
+            + "PRIMARY KEY (a)"
             + ") ENGINE=AKIBADB;";
-
-    private final static String CREATE_TABLE_STATEMENT2 = "CREATE TABLE `coitest_1m`.`foo1` ("
-            + "`a1` int(11) DEFAULT NULL,"
-            + "`b1` int(11) DEFAULT NULL,"
-            + "`c` int(11) DEFAULT NULL" + ") ENGINE=AKIBADB;";
 
     private PersistitStore store;
 
