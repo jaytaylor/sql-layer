@@ -99,6 +99,7 @@ create table aac(
     aac2 int not null,
     aac3 int not null,
     aac4 varchar(64) not null,
+    primary key(aac1),
 CONSTRAINT `__akiban_fk_7` FOREIGN KEY `__akiban_fk_7` (`aa1`) REFERENCES `aa` (`aa1`)
 ) engine = akibadb;
 

@@ -188,15 +188,6 @@ public class RowDefCache implements CServerConstants {
             }
         }
 
-        // Handle unusual case in which table does not specify a primary
-        // key by simply adding every column.
-        if (pkFields == null || pkFields.length == 0) {
-            pkFields = new int[fieldDefs.length];
-            for (int fieldIndex = 0; fieldIndex < pkFields.length; fieldIndex++) {
-                pkFields[fieldIndex] = fieldIndex;
-            }
-        }
-
         // root table
         UserTable root = table;
         while (root.getParentJoin() != null) {

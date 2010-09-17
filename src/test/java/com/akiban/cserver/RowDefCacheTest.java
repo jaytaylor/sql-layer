@@ -1,10 +1,14 @@
 package com.akiban.cserver;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,15 +33,15 @@ public class RowDefCacheTest {
 
     protected static RowDefCache rowDefCache;
 
-    @BeforeClass
-    public static void setUpSuite() throws Exception {
+    @Before
+    public void setUp() throws Exception {
 
         rowDefCache = new RowDefCache();
         store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
     }
 
-    @AfterClass
-    public static void tearDownSuite() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         store.shutDown();
         store = null;
         rowDefCache = null;
@@ -51,10 +55,35 @@ public class RowDefCacheTest {
         final RowDef b = rowDefCache.getRowDef(SCHEMA + ".b");
         final RowDef bb = rowDefCache.getRowDef(SCHEMA + ".bb");
 
-        assertTrue(Arrays.equals(new int[] { 3, 2, 4, 1 }, b.getPkFields()));
-        assertTrue(Arrays.equals(new int[] {}, b.getParentJoinFields()));
-        assertTrue(Arrays.equals(new int[] { 5, 4 }, bb.getPkFields()));
-        assertTrue(Arrays.equals(new int[] { 0, 2, 1, 3 }, bb
-                .getParentJoinFields()));
+        assertArrayEquals(new int[] { 3, 2, 4, 1 }, b.getPkFields());
+        assertArrayEquals(new int[] {}, b.getParentJoinFields());
+        assertArrayEquals(new int[] { 5, 4 }, bb.getPkFields());
+        assertArrayEquals(new int[] { 0, 2, 1, 3 }, bb
+                .getParentJoinFields());
+    }
+
+    @Test
+    public void childDoesNotContributeToHKey() throws Exception {
+        final String ddl =
+                "use `" + SCHEMA +"`;\n" +
+                "create table parent (\n" +
+                "   id int,\n" +
+                "   primary key(id)\n" +
+                ") engine = akibadb;\n" +
+                "create table zebra (\n" +
+                "   id int,\n" +
+                "   primary key(id),\n" +
+                "   constraint `__akiban_fk0` foreign key `akibafk` (id) references parent(id)\n" +
+                ") engine = akibadb;";
+
+        final AkibaInformationSchema ais = new DDLSource().buildAISFromString(ddl);
+        rowDefCache.setAIS(ais);
+        final RowDef parent = rowDefCache.getRowDef(SCHEMA + ".parent");
+        final RowDef zebra = rowDefCache.getRowDef(SCHEMA + ".zebra");
+
+        assertArrayEquals("parent PKs", new int[]{0}, parent.getPkFields());
+        assertArrayEquals("parent joins", new int[] {}, parent.getParentJoinFields());
+        assertArrayEquals("zebra PKs", new int[]{}, zebra.getPkFields());
+        assertArrayEquals("zebra joins", new int[] {0}, zebra.getParentJoinFields());
     }
 }
