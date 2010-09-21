@@ -88,8 +88,7 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
         // Join the original table (e.g. item) and the parent table (e.g. item$parent) to form the final table,
         // (e.g. item$final). This is done using the join template which joins (x, y) -> output. Output columns are
         // formed by taking all the columns of x and the columns of y which have no counterpart in x.
-        String procedureName = String.format("%s$merge_final", table.getName()
-                .getTableName());
+        String procedureName = String.format("%s$merge_final", table.getName().getTableName());
         AISTextGenerator generator = new AISTextGenerator(ais);
         VelocityContext context = new VelocityContext();
         context.put("procedureName", procedureName);

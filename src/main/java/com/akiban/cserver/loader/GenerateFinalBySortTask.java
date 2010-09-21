@@ -53,6 +53,5 @@ public class GenerateFinalBySortTask extends GenerateFinalTask
                               artifactTableName(), type(), toString(hKeyColumnPositions));
     }
 
-    private static final String SQL_TEMPLATE = "create table %s(%s) "
-                                               + "select %s " + "from %s " + "order by %s";
+    private static final String SQL_TEMPLATE = "create table %s(%s) select %s from %s order by %s";
 }

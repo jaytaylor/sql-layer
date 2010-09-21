@@ -1,12 +1,12 @@
 package com.akiban.cserver.loader;
 
+import com.akiban.ais.model.UserTable;
+import com.akiban.util.Command;
+
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.IdentityHashMap;
-
-import com.akiban.ais.model.UserTable;
-import com.akiban.util.Command;
 
 public class DataGrouper
 {
@@ -94,8 +94,7 @@ public class DataGrouper
         connection.new Query(taskQueryTemplate, artifactsSchema)
         {
             @Override
-            protected void handleRow(ResultSet resultSet) throws SQLException,
-                                                                 Command.Exception, IOException
+            protected void handleRow(ResultSet resultSet) throws SQLException, Command.Exception, IOException
             {
                 // Need a separate connection for updates because the first
                 // connection (running the tasks query),
@@ -106,14 +105,12 @@ public class DataGrouper
                     int taskId = resultSet.getInt(1);
                     tracker.info("Starting task %s", taskId);
                     String command = resultSet.getString(2);
-                    updateConnection.new Update(TEMPLATE_MARK_STARTED,
-                                                artifactsSchema, taskId).execute();
+                    updateConnection.new Update(TEMPLATE_MARK_STARTED, artifactsSchema, taskId).execute();
                     long start = System.nanoTime();
                     db.spawn(command, tracker.logger());
                     long stop = System.nanoTime();
                     double timeSec = ((double) (stop - start)) / ONE_BILLION;
-                    updateConnection.new Update(TEMPLATE_MARK_COMPLETED,
-                                                artifactsSchema, timeSec, taskId).execute();
+                    updateConnection.new Update(TEMPLATE_MARK_COMPLETED, artifactsSchema, timeSec, taskId).execute();
                     tracker.info("Finished task %s", taskId);
                 } finally {
                     updateConnection.close();
