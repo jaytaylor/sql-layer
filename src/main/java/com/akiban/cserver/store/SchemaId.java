@@ -3,6 +3,9 @@ package com.akiban.cserver.store;
 import java.io.Serializable;
 
 public final class SchemaId implements Serializable {
+
+    private static final long serialVersionUID = -4442021857040031759L;
+    
     private int generation;
 
     public SchemaId(int generation) {
