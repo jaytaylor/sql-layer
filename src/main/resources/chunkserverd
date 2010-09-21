@@ -116,7 +116,7 @@ start() {
         	echo $"Starting $name with ${file}"
 	        $prog $config $jmx $persistitrmi $debug $args  1>${logdir}/${file/%properties/log} 2>&1 </dev/null & PID=$!
 	        RETVAL=$?
-        	[ $((RETVAL = RETVAL + 0)) ] && touch /var/lock/subsys/$name && echo $PID>${piddir}/${file/%properties/pid} && echo "[Started with pid: ${PID}]"
+        	[ $((RETVAL = RETVAL + 0)) ] && touch ${rootdir}/var/lock/subsys/$name && echo $PID>${piddir}/${file/%properties/pid} && echo "[Started with pid: ${PID}]"
 	done
 	return $RETVAL
 }
@@ -134,7 +134,7 @@ stop() {
 				if [ -f ${pidfile} ];then
 					(kill  ${pid}  && echo "[Stopping process with pid ${pid}]" ) || (echo "Process ${pid} is not running" && rm -f ${pidfile} )
 					KILL=$?
-					[ $((RETKILL = RETKILL + KILL)) ] && rm -f /var/lock/subsys/$name && wait_for_pid ${pid} && rm -f ${pidfile}
+					[ $((RETKILL = RETKILL + KILL)) ] && rm -f ${rootdir}/var/lock/subsys/$name && wait_for_pid ${pid} && rm -f ${pidfile}
 				fi
 			else
 				echo "ERROR: No pid found ${pidfile}. removing file" 
