@@ -110,7 +110,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     private final static int MAX_ROW_SIZE = 5000000;
 
-    private final static int MAX_INDEX_TRANCHE_SIZE = 200 * MEGA;
+    private final static int MAX_INDEX_TRANCHE_SIZE = 10 * MEGA;
 
     private final static int KEY_STATE_SIZE_OVERHEAD = 50;
 
@@ -1659,6 +1659,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         } else {
             iEx.store();
         }
+        releaseExchange(iEx);
     }
 
     void putAllDeferredIndexKeys() throws PersistitException {
@@ -1896,8 +1897,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     private boolean isIndexSelected(final IndexDef indexDef, final String ddl) {
         return !indexDef.isHKeyEquivalent()
-                && (ddl.contains("table=(" + indexDef.getRowDef().getTableName() + ")") || !ddl.contains("table="))
-                && (ddl.contains("index=(" + indexDef.getName() + ")") || !ddl.contains("index="));
+                && (!ddl.contains("table=") || ddl.contains("table=(" + indexDef.getRowDef().getTableName() + ")"))
+                && (!ddl.contains("index=") || ddl.contains("index=(" + indexDef.getName() + ")"));
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,

@@ -391,6 +391,21 @@ public class RowDef {
             return (start + offset) | ((long) (end - start) << 32);
         }
     }
+    
+    public String explain(final RowData rowData) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("rowStart=" + rowData.getRowStart() + " rowEnd=" + rowData.getRowEnd() + " rowSize=" + rowData.getRowSize());
+        for (int i= 0 ; i < fieldDefs.length; i++) {
+            sb.append(CServerUtil.NEW_LINE);
+            sb.append(i + ": " + fieldDefs[i] + "  ");
+            final long fieldLocation = fieldLocation(rowData, i);
+            final int offset = (int)fieldLocation;
+            final int width = (int)(fieldLocation >>> 32);
+            sb.append(" offset=" + offset + " width=" + width + "==>");
+            sb.append(CServerUtil.hex(rowData.getBytes(), offset, width));
+        }
+        return sb.toString();
+    }
 
     public RowType getRowType() {
         return rowType;

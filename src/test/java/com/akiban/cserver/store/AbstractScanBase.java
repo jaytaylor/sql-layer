@@ -49,7 +49,8 @@ public abstract class AbstractScanBase implements CServerConstants {
         store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
         final AkibaInformationSchema ais0 = new CServer(false).createEmptyAIS();
         rowDefCache.setAIS(ais0);
-        final AkibaInformationSchema ais = new DDLSource().buildAIS(DDL_FILE_NAME);
+        final AkibaInformationSchema ais = new DDLSource()
+                .buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);
         for (UserTable table : ais.getUserTables().values()) {
             tableMap.put(table.getName().getSchemaName() + "."
@@ -111,13 +112,13 @@ public abstract class AbstractScanBase implements CServerConstants {
             System.out.println("Test " + test);
         }
         while (rc.hasMore()) {
-            final ByteBuffer payload = ByteBufferFactory.allocate(65536);
+            final ByteBuffer payload = ByteBufferFactory.allocate(256);
             while (rc.collectNextRow(payload))
                 ;
             payload.flip();
             for (int p = payload.position(); p < payload.limit();) {
-                RowData rowData = new RowData(payload.array(), payload
-                        .position(), payload.limit());
+                RowData rowData = new RowData(payload.array(),
+                        payload.position(), payload.limit());
                 rowData.prepareRow(p);
                 scanCount++;
                 result.add(rowData);
@@ -132,7 +133,7 @@ public abstract class AbstractScanBase implements CServerConstants {
         if (VERBOSE) {
             System.out.println();
         }
-        return scanCount - (int)rc.getRepeatedRows();
+        return scanCount - (int) rc.getRepeatedRows();
     }
 
     protected int findIndexId(final RowDef groupRowDef,
@@ -150,7 +151,7 @@ public abstract class AbstractScanBase implements CServerConstants {
 
     protected int findIndexId(final RowDef rowDef, final String name) {
         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-            if (indexDef.getName().equals(name)) {
+            if (indexDef.getName().startsWith(name)) {
                 return indexDef.getId();
             }
         }

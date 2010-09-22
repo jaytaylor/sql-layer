@@ -16,8 +16,8 @@ public enum Encoding {
         @Override
         public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
                 int offset) {
-            return objectToInt(dest, offset, value, fieldDef
-                    .getMaxStorageSize(), false);
+            return objectToInt(dest, offset, value,
+                    fieldDef.getMaxStorageSize(), false);
         }
 
         @Override
@@ -85,8 +85,8 @@ public enum Encoding {
         @Override
         public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
                 int offset) {
-            return objectToInt(dest, offset, value, fieldDef
-                    .getMaxStorageSize(), true);
+            return objectToInt(dest, offset, value,
+                    fieldDef.getMaxStorageSize(), true);
         }
 
         @Override
@@ -280,20 +280,16 @@ public enum Encoding {
             if (len == 1) {
                 val = buf[off];
             } else if (len == 2) {
-                val = (buf[off + 0] << 8) | 
-                      (buf[off + 1] & 0xFF);
+                val = (buf[off + 0] << 8) | (buf[off + 1] & 0xFF);
             } else if (len == 3) {
-                val = (buf[off + 0] << 16) | 
-                     ((buf[off + 1] & 0xFF) << 8) |
-                      (buf[off + 2] & 0xFF);
+                val = (buf[off + 0] << 16) | ((buf[off + 1] & 0xFF) << 8)
+                        | (buf[off + 2] & 0xFF);
 
                 if ((buf[off] & 128) != 0)
                     val |= (255 << 24);
             } else if (len == 4) {
-                val = (buf[off + 0] << 24) | 
-                     ((buf[off + 1] & 0xFF) << 16) |
-                     ((buf[off + 2] & 0xFF) << 8) | 
-                      (buf[off + 3] & 0xFF);
+                val = (buf[off + 0] << 24) | ((buf[off + 1] & 0xFF) << 16)
+                        | ((buf[off + 2] & 0xFF) << 8) | (buf[off + 3] & 0xFF);
             }
 
             return val;
@@ -329,7 +325,7 @@ public enum Encoding {
                 buf[offset + 0] = (byte) (val >> 24);
             }
         }
-        
+
         private int calcBinSize(int digits) {
             int full = digits / DECIMAL_DIGIT_PER;
             int partial = digits % DECIMAL_DIGIT_PER;
@@ -355,7 +351,7 @@ public enum Encoding {
         public void toKey(FieldDef fieldDef, Object value, Key key) {
             key.append(value);
         }
-        
+
         @Override
         public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
                 int offset) {
@@ -370,8 +366,8 @@ public enum Encoding {
             } else if (value == null) {
                 from = new String();
             } else {
-                throw new IllegalArgumentException(value +
-                        " must be a Number or a String");
+                throw new IllegalArgumentException(value
+                        + " must be a Number or a String");
             }
 
             final int mask = (from.charAt(0) == '-') ? -1 : 0;
@@ -383,13 +379,12 @@ public enum Encoding {
             int signSize = mask == 0 ? 0 : 1;
             int intCnt = from.indexOf('.') - signSize;
             int fracCnt = from.length() - intCnt - 1 - signSize;
-            
-            if(intCnt == -1)
-            {
+
+            if (intCnt == -1) {
                 intCnt = from.length();
                 fracCnt = 0;
             }
-            
+
             final int intFull = intCnt / DECIMAL_DIGIT_PER;
             final int intPart = intCnt % DECIMAL_DIGIT_PER;
             final int fracFull = fracCnt / DECIMAL_DIGIT_PER;
@@ -558,7 +553,7 @@ public enum Encoding {
         @Override
         public boolean validate(Type type) {
             return type.fixedSize() && type.nTypeParameters() == 2;
-        } 
+        }
     },
     U_DECIMAL {
 
@@ -838,8 +833,10 @@ public enum Encoding {
         private int dateAsInt(Date date) {
             // This formula is specified here:
             // http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html
-            return ((date.getYear() + 1900) * 32 * 16) + (date.getMonth() * 32)
-                    + date.getDate();
+            // Note, the Date#getMonth() method returns a 0-based month, whereas
+            // MySQL is 1-based.
+            return ((date.getYear() + 1900) * 32 * 16)
+                    + ((date.getMonth() + 1) * 32) + date.getDate();
         }
     },
     TIME {
@@ -923,10 +920,11 @@ public enum Encoding {
         }
 
         private int timeAsInt(Date date) {
-            // This formula is specified here:
-            // http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html
-            return date.getDate() * 24 * 3600 + date.getHours() * 3600
-                    + date.getMinutes() * 60 + date.getSeconds();
+            // Note: reverse engineered; this does not match documentation
+            // at
+            // http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+            return date.getDate() * 1000000 + date.getHours() * 10000
+                    + date.getMinutes() * 100 + date.getSeconds();
         }
     },
     DATETIME {
@@ -1018,7 +1016,7 @@ public enum Encoding {
             // This formula is based on Peter's reverse engineering of mysql
             // packed data.
             return ((date.getYear() + 1900) * LONG_1_E10)
-                    + (date.getMonth() * LONG_1_E8)
+                    + ((date.getMonth() + 1) * LONG_1_E8)
                     + (date.getDate() * LONG_1_E6)
                     + (date.getHours() * LONG_1_E4)
                     + (date.getMinutes() * LONG_100) + (date.getSeconds());
@@ -1115,20 +1113,20 @@ public enum Encoding {
                 try {
                     final Date date = getDateFormat(SDF_YEAR).parse(
                             (String) value);
-                    v = (date.getYear() - 1900);
+                    v = (date.getYear());
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
                 }
             } else if (value instanceof Date) {
                 final Date date = (Date) value;
-                v = (date.getYear() - 1900);
+                v = (date.getYear());
             } else if (value instanceof Long) {
                 v = ((Long) value).intValue();
             } else {
                 throw new IllegalArgumentException(
                         "Requires a String or a Date");
             }
-            return putUInt(dest, offset, v, 3);
+            return putUInt(dest, offset, v, 1);
         }
 
         @Override
@@ -1150,7 +1148,7 @@ public enum Encoding {
             if (value == null) {
                 key.append(null);
             } else {
-                key.append(((Date) value).getYear() - 1900);
+                key.append(((Date) value).getYear());
             }
         }
 
@@ -1534,11 +1532,12 @@ public enum Encoding {
     }
 
     //
-    // DECIMAL related defines as specified at: 
+    // DECIMAL related defines as specified at:
     // http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html
     // In short, up to 9 digits get packed into a 4 bytes.
     //
     private static final int DECIMAL_TYPE_SIZE = 4;
     private static final int DECIMAL_DIGIT_PER = 9;
-    private static final int DECIMAL_BYTE_DIGITS[] = {0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
+    private static final int DECIMAL_BYTE_DIGITS[] = { 0, 1, 1, 2, 2, 3, 3, 4,
+            4, 4 };
 }

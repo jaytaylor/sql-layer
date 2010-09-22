@@ -10,16 +10,11 @@ import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_EXCLUSIVE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.FileWriter;
-import java.io.PrintWriter;
-
 import org.junit.Test;
 
 import com.akiban.cserver.CServerUtil;
-import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.persistit.Exchange;
 
 public class ScanRowsTest extends AbstractScanBase {
 
@@ -84,7 +79,7 @@ public class ScanRowsTest extends AbstractScanBase {
         {
             final RowDef userRowDef = userRowDef("aaaa");
             int col = findFieldIndex(rowDef, "aa$aa1");
-            int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
+            int indexId = userRowDef("aa").getPKIndexDef().getId();
             Object[] startValue = new Object[fc];
             Object[] endValue = new Object[fc];
             startValue[col] = 1;
@@ -101,7 +96,7 @@ public class ScanRowsTest extends AbstractScanBase {
         {
             final RowDef userRowDef = userRowDef("aaaa");
             int col = findFieldIndex(rowDef, "aa$aa1");
-            int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
+            int indexId = userRowDef("aa").getPKIndexDef().getId();
             Object[] startValue = new Object[fc];
             Object[] endValue = new Object[fc];
             startValue[col] = 1;
@@ -118,7 +113,7 @@ public class ScanRowsTest extends AbstractScanBase {
         {
             final RowDef userRowDef = userRowDef("aaaa");
             int col = findFieldIndex(rowDef, "aa$aa1");
-            int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
+            int indexId = userRowDef("aa").getPKIndexDef().getId();
             Object[] startValue = new Object[fc];
             Object[] endValue = new Object[fc];
             startValue[col] = 1;
@@ -233,6 +228,26 @@ public class ScanRowsTest extends AbstractScanBase {
                 .getRowDefId(), SCAN_FLAGS_START_AT_EDGE
                 | SCAN_FLAGS_END_AT_EDGE, null, null, columnBitMap, indexId);
         assertTrue(count > 0);
+    }
+    
+    @Test
+    public void testBug234() throws Exception {
+        final RowDef rowDef = groupRowDef("_akiba_a");
+        final int fc = rowDef.getFieldCount();
+        final RowData start = new RowData(new byte[256]);
+        final RowData end = new RowData(new byte[256]);
+        byte[] bitMap;
+
+        {
+            // Just the root table rows
+            final RowDef userRowDef = userRowDef("aaaa");
+            start.createRow(rowDef, new Object[fc]);
+            end.createRow(rowDef, new Object[fc]);
+            bitMap = bitsToRoot(userRowDef, rowDef);
+            scanAllRows("bug234", start, end, bitMap, 0);
+            final RowData rowData = result.get(result.size()-1);
+            assertEquals(rowData.getRowDefId(), userRowDef.getRowDefId());
+        }
     }
 
     @Override

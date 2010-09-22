@@ -62,7 +62,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -94,7 +94,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -103,8 +103,8 @@ public final class SchemaMXBeanImplTest {
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
                 "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
-                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_10(`two$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
@@ -113,7 +113,7 @@ public final class SchemaMXBeanImplTest {
         manager.dropTable(SCHEMA, "one");
         assertTables("user tables",
                 "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_9(`two$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -128,7 +128,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -137,8 +137,8 @@ public final class SchemaMXBeanImplTest {
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
                 "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
-                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_10(`two$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
@@ -153,7 +153,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -165,7 +165,7 @@ public final class SchemaMXBeanImplTest {
                 "CREATE TABLE %s.two (id int, one_id int, PRIMARY KEY (id), " +
                         "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int, `two$id` int, `two$one_id` int ,  "
-                   +"INDEX _akiba_one$PK_10(`two$id`), INDEX _akiba_one$PK_9(`one$id`), INDEX two$__akiban_fk_a(`two$one_id`)) engine = akibadb",
+                   +"INDEX _akiba_one$PK_1(`one$id`), INDEX _akiba_one$PK_2(`two$id`), INDEX two$__akiban_fk_a(`two$one_id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
@@ -190,7 +190,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -200,7 +200,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -214,7 +214,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -224,7 +224,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -241,7 +241,7 @@ public final class SchemaMXBeanImplTest {
         createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -250,7 +250,7 @@ public final class SchemaMXBeanImplTest {
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_objects._akiba_one (`one$id`) ) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -264,7 +264,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -276,7 +276,7 @@ public final class SchemaMXBeanImplTest {
                 "CREATE TABLE %s.two (id int, one_id int, PRIMARY KEY (id), " +
                         "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int, `two$id` int, `two$one_id` int ,  "
-                   +"INDEX _akiba_one$PK_10(`two$id`), INDEX _akiba_one$PK_9(`one$id`), INDEX two$__akiban_fk_0(`two$one_id`)) engine = akibadb",
+                   +"INDEX _akiba_one$PK_1(`one$id`), INDEX _akiba_one$PK_2(`two$id`), INDEX two$__akiban_fk_0(`two$one_id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
@@ -310,7 +310,7 @@ public final class SchemaMXBeanImplTest {
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_9(`one$id`)) engine = akibadb",
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -331,7 +331,7 @@ public final class SchemaMXBeanImplTest {
         // we don't allow two tables s1.foo and s2.foo to have any identical columns
         // But we do want to allow same-name tables in different schemas if they don't share any columns
         List<String> expectedDDLs = Collections.unmodifiableList(Arrays.asList(
-                "create table `akiba_objects`.`_akiba_one`(`one$idFoo` int ,  INDEX _akiba_one$PK_9(`one$idFoo`)) engine = akibadb",
+                "create table `akiba_objects`.`_akiba_one`(`one$idFoo` int ,  INDEX _akiba_one$PK_1(`one$idFoo`)) engine = akibadb",
                 "create database if not exists `s1`",
                 "use `s1`",
                 "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb"));
@@ -342,7 +342,7 @@ public final class SchemaMXBeanImplTest {
         assertDDLS(expectedDDLs.toArray(new String[expectedDDLs.size()]));
 
         List<String> expectedDDLs2 = new ArrayList<String>(expectedDDLs);
-        expectedDDLs2.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_10(`one$id`)) engine = akibadb");
+        expectedDDLs2.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine = akibadb");
         expectedDDLs2.add("create database if not exists `s2`");
         expectedDDLs2.add("use `s2`");
         expectedDDLs2.add("CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibadb");
@@ -362,7 +362,7 @@ public final class SchemaMXBeanImplTest {
 
         manager.dropTable("s2", "one");
         List<String> expectedDDLs3 = new ArrayList<String>(expectedDDLs);
-        expectedDDLs3.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_10(`one$id`)) engine = akibadb");
+        expectedDDLs3.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine = akibadb");
         expectedDDLs3.add("create database if not exists `s3`");
         expectedDDLs3.add("use `s3`");
         expectedDDLs3.add("CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibadb");
