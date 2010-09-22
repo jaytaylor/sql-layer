@@ -84,7 +84,7 @@ public class ScanRowsTest extends AbstractScanBase {
         {
             final RowDef userRowDef = userRowDef("aaaa");
             int col = findFieldIndex(rowDef, "aa$aa1");
-            int indexId = findIndexId(rowDef, rowDef.getTableName() + "$PK_" + userRowDef.getRowDefId());
+            int indexId = findIndexId(rowDef, rowDef.getTableName() + "$aa_PK");
             Object[] startValue = new Object[fc];
             Object[] endValue = new Object[fc];
             startValue[col] = 1;
