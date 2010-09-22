@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Types;
 import com.persistit.Key;
 
 public enum Encoding {
@@ -1209,7 +1210,7 @@ public enum Encoding {
 
         @Override
         public boolean validate(Type type) {
-            throw new UnsupportedOperationException();
+            return type == Types.BIT;
         }
     };
 
