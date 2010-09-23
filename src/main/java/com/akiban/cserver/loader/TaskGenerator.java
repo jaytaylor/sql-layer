@@ -64,33 +64,25 @@ public class TaskGenerator
     {
         List<Column> childHKeyColumns = Task.columnsInChild(hKeyColumns, join);
         UserTable childTable = join.getChild();
-        if (hKeyColumns.size() > 0
-            && childHKeyColumns.size() == hKeyColumns.size()) {
+        if (hKeyColumns.size() > 0 && childHKeyColumns.size() == hKeyColumns.size()) {
             // Every hkey column in the parent has a counterpart in the child
             // via the join. So the child table
             // has a complete hkey.
-            actions.generateTasksForTableContainingHKeyColumns(loader,
-                                                               childTable, tasks);
+            actions.generateTasksForTableContainingHKeyColumns(loader, childTable, tasks);
             for (Join childJoin : childTable.getChildJoins()) {
-                // Extend childHKeyColumns with child key columns not already
-                // present
-                List<Column> extendedChildHKeyColumns = new ArrayList<Column>(
-                        childHKeyColumns);
+                // Extend childHKeyColumns with child key columns not already present
+                List<Column> extendedChildHKeyColumns = new ArrayList<Column>(childHKeyColumns);
                 for (JoinColumn childJoinColumn : childJoin.getJoinColumns()) {
                     Column childJoinColumnParent = childJoinColumn.getParent();
-                    if (!extendedChildHKeyColumns
-                            .contains(childJoinColumnParent)) {
+                    if (!extendedChildHKeyColumns.contains(childJoinColumnParent)) {
                         extendedChildHKeyColumns.add(childJoinColumnParent);
                     }
                 }
                 generateTasks(extendedChildHKeyColumns, childJoin);
             }
         } else {
-            actions.generateTasksForTableNotContainingHKeyColumns(loader, join,
-                                                                  tasks);
-            childHKeyColumns.clear(); // Indicates that child tables (and
-            // descendents) don't have a complete
-            // hkey.
+            actions.generateTasksForTableNotContainingHKeyColumns(loader, join, tasks);
+            childHKeyColumns.clear(); // Indicates that child tables (and descendents) don't have a complete hkey.
             for (Join childJoin : childTable.getChildJoins()) {
                 generateTasks(childHKeyColumns, childJoin);
             }
