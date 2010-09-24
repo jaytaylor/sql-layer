@@ -112,7 +112,7 @@ public abstract class AbstractScanBase implements CServerConstants {
             System.out.println("Test " + test);
         }
         while (rc.hasMore()) {
-            final ByteBuffer payload = ByteBufferFactory.allocate(256);
+            final ByteBuffer payload = ByteBufferFactory.allocate(65536);
             while (rc.collectNextRow(payload))
                 ;
             payload.flip();

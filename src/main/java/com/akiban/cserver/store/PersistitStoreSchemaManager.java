@@ -130,8 +130,10 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         for (SchemaDef.ColumnDef cDef : tableDef.getColumns()) {
             ColumnName cName = new ColumnName(tableDef.getCName().getName(), cDef.getName());
             if (!tmp.add(cName)) {
-                System.err.println("table/column pair already exists: " + cName);
-                System.err.println("abandoning createTable");
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("table/column pair already exists: " + 
+                            cName + " -- abandoning createTable");
+                }
                 return false;
             }
         }
@@ -165,8 +167,10 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         try {
             tableDef = new DDLSource().parseCreateTable(canonical);
         } catch (Exception e1) {
-            System.err.println("Failed to parse: " + canonical);
-            System.err.println(e1.getMessage());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Failed to parse: " + canonical + 
+                        " -- " + e1.getMessage());
+            }
             return ERR;
         }
         if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {

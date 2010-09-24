@@ -10,6 +10,8 @@ import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_EXCLUSIVE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.ByteBuffer;
+
 import org.junit.Test;
 
 import com.akiban.cserver.CServerUtil;
@@ -40,8 +42,10 @@ public class ScanRowsTest extends AbstractScanBase {
             start.createRow(rowDef, new Object[fc]);
             end.createRow(rowDef, new Object[fc]);
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(11110, scanAllRows("all aaaa", start, end, bitMap,
-                    findIndexId(rowDef, userRowDef, 1)));
+            assertEquals(
+                    11110,
+                    scanAllRows("all aaaa", start, end, bitMap,
+                            findIndexId(rowDef, userRowDef, 1)));
         }
 
         {
@@ -56,8 +60,10 @@ public class ScanRowsTest extends AbstractScanBase {
             start.createRow(rowDef, startValue);
             end.createRow(rowDef, endValue);
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(5, scanAllRows("aaaa with aaaa.aaaa1 in [1,2]", start,
-                    end, bitMap, findIndexId(rowDef, userRowDef, 1)));
+            assertEquals(
+                    5,
+                    scanAllRows("aaaa with aaaa.aaaa1 in [1,2]", start, end,
+                            bitMap, findIndexId(rowDef, userRowDef, 1)));
         }
 
         {
@@ -72,8 +78,10 @@ public class ScanRowsTest extends AbstractScanBase {
             start.createRow(rowDef, startValue);
             end.createRow(rowDef, endValue);
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(115, scanAllRows("aaaa with aaaa.aaaa1 in [100,200]",
-                    start, end, bitMap, findIndexId(rowDef, userRowDef, 1)));
+            assertEquals(
+                    115,
+                    scanAllRows("aaaa with aaaa.aaaa1 in [100,200]", start,
+                            end, bitMap, findIndexId(rowDef, userRowDef, 1)));
         }
 
         {
@@ -87,12 +95,14 @@ public class ScanRowsTest extends AbstractScanBase {
             start.createRow(rowDef, startValue);
             end.createRow(rowDef, endValue);
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(556, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
-                    end, bitMap, indexId));
+            assertEquals(
+                    556,
+                    scanAllRows("aaaa with aa.aa1 in [1,5]", start, end,
+                            bitMap, indexId));
         }
-        
+
         store.deleteIndexes("");
-        
+
         {
             final RowDef userRowDef = userRowDef("aaaa");
             int col = findFieldIndex(rowDef, "aa$aa1");
@@ -104,10 +114,12 @@ public class ScanRowsTest extends AbstractScanBase {
             start.createRow(rowDef, startValue);
             end.createRow(rowDef, endValue);
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(0, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
-                    end, bitMap, indexId));
+            assertEquals(
+                    0,
+                    scanAllRows("aaaa with aa.aa1 in [1,5]", start, end,
+                            bitMap, indexId));
         }
-        
+
         store.buildIndexes("");
 
         {
@@ -121,8 +133,10 @@ public class ScanRowsTest extends AbstractScanBase {
             start.createRow(rowDef, startValue);
             end.createRow(rowDef, endValue);
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(556, scanAllRows("aaaa with aa.aa1 in [1,5]", start,
-                    end, bitMap, indexId));
+            assertEquals(
+                    556,
+                    scanAllRows("aaaa with aa.aa1 in [1,5]", start, end,
+                            bitMap, indexId));
         }
     }
 
@@ -137,48 +151,69 @@ public class ScanRowsTest extends AbstractScanBase {
         {
             final RowDef userRowDef = userRowDef("a");
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
-                    SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE, null,
-                    null, bitMap, 0));
-            assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
-                    SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
-                            | SCAN_FLAGS_START_EXCLUSIVE
-                            | SCAN_FLAGS_END_EXCLUSIVE, null, null, bitMap, 0));
-            assertEquals(1, scanAllRows("all a", userRowDef.getRowDefId(),
-                    SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
-                            | SCAN_FLAGS_START_EXCLUSIVE
-                            | SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_SINGLE_ROW,
-                    null, null, bitMap, 0));
-            assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
-                    SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
-                            | SCAN_FLAGS_START_EXCLUSIVE
-                            | SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_DESCENDING,
-                    null, null, bitMap, 0));
+            assertEquals(
+                    10,
+                    scanAllRows("all a", userRowDef.getRowDefId(),
+                            SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE,
+                            null, null, bitMap, 0));
+            assertEquals(
+                    10,
+                    scanAllRows("all a", userRowDef.getRowDefId(),
+                            SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+                                    | SCAN_FLAGS_START_EXCLUSIVE
+                                    | SCAN_FLAGS_END_EXCLUSIVE, null, null,
+                            bitMap, 0));
+            assertEquals(
+                    1,
+                    scanAllRows("all a", userRowDef.getRowDefId(),
+                            SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+                                    | SCAN_FLAGS_START_EXCLUSIVE
+                                    | SCAN_FLAGS_END_EXCLUSIVE
+                                    | SCAN_FLAGS_SINGLE_ROW, null, null,
+                            bitMap, 0));
+            assertEquals(
+                    10,
+                    scanAllRows("all a", userRowDef.getRowDefId(),
+                            SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+                                    | SCAN_FLAGS_START_EXCLUSIVE
+                                    | SCAN_FLAGS_END_EXCLUSIVE
+                                    | SCAN_FLAGS_DESCENDING, null, null,
+                            bitMap, 0));
             final RowData nullRow = new RowData(new byte[256]);
             nullRow.createRow(userRowDef, new Object[0]);
-            assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
-                    SCAN_FLAGS_START_AT_EDGE 
-                            | SCAN_FLAGS_START_EXCLUSIVE
-                            | SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_DESCENDING,
-                    null, nullRow, bitMap, 0));
-            assertEquals(10, scanAllRows("all a", userRowDef.getRowDefId(),
-                    SCAN_FLAGS_END_AT_EDGE 
-                            | SCAN_FLAGS_START_EXCLUSIVE
-                            | SCAN_FLAGS_END_EXCLUSIVE | SCAN_FLAGS_DESCENDING,
-                    nullRow, null, bitMap, 0));
-            
+            assertEquals(
+                    10,
+                    scanAllRows("all a", userRowDef.getRowDefId(),
+                            SCAN_FLAGS_START_AT_EDGE
+                                    | SCAN_FLAGS_START_EXCLUSIVE
+                                    | SCAN_FLAGS_END_EXCLUSIVE
+                                    | SCAN_FLAGS_DESCENDING, null, nullRow,
+                            bitMap, 0));
+            assertEquals(
+                    10,
+                    scanAllRows("all a", userRowDef.getRowDefId(),
+                            SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE
+                                    | SCAN_FLAGS_END_EXCLUSIVE
+                                    | SCAN_FLAGS_DESCENDING, nullRow, null,
+                            bitMap, 0));
+
         }
 
         {
             final RowDef userRowDef = userRowDef("aaaa");
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(11110, scanAllRows("all aaaa", rowDef.getRowDefId(),
-                    SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE, null,
-                    null, bitMap, findIndexId(rowDef, userRowDef, 1)));
-            assertEquals(4, scanAllRows("all aaaa", rowDef.getRowDefId(),
-                    SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
-                            | SCAN_FLAGS_SINGLE_ROW, null, null, bitMap,
-                    findIndexId(rowDef, userRowDef, 1)));
+            assertEquals(
+                    11110,
+                    scanAllRows("all aaaa", rowDef.getRowDefId(),
+                            SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE,
+                            null, null, bitMap,
+                            findIndexId(rowDef, userRowDef, 1)));
+            assertEquals(
+                    4,
+                    scanAllRows("all aaaa", rowDef.getRowDefId(),
+                            SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_END_AT_EDGE
+                                    | SCAN_FLAGS_SINGLE_ROW, null, null,
+                            bitMap, findIndexId(rowDef, userRowDef, 1)));
         }
         {
             final RowDef userRowDef = userRowDef("aa");
@@ -191,29 +226,45 @@ public class ScanRowsTest extends AbstractScanBase {
             start.createRow(rowDef, startValue);
             end.createRow(rowDef, endValue);
             bitMap = bitsToRoot(userRowDef, rowDef);
-            assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-                    rowDef.getRowDefId(), 0, start, end, bitMap, indexId));
-            assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-                    rowDef.getRowDefId(), SCAN_FLAGS_START_EXCLUSIVE, start,
-                    end, bitMap, indexId));
-            assertEquals(13, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-                    rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE, start, end,
-                    bitMap, indexId));
-            assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-                    rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE
-                            | SCAN_FLAGS_SINGLE_ROW, start, end, bitMap,
-                    indexId));
-            assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-                    rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW
-                            | SCAN_FLAGS_DESCENDING, start, end, bitMap,
-                    indexId));
-            assertEquals(2, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-                    rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW
-                            | SCAN_FLAGS_DESCENDING | SCAN_FLAGS_PREFIX, start,
-                    end, bitMap, indexId));
-            assertEquals(26, scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
-                    rowDef.getRowDefId(), SCAN_FLAGS_PREFIX, start, end,
-                    bitMap, indexId));
+            assertEquals(
+                    13,
+                    scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+                            rowDef.getRowDefId(), 0, start, end, bitMap,
+                            indexId));
+            assertEquals(
+                    13,
+                    scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+                            rowDef.getRowDefId(), SCAN_FLAGS_START_EXCLUSIVE,
+                            start, end, bitMap, indexId));
+            assertEquals(
+                    13,
+                    scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+                            rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE,
+                            start, end, bitMap, indexId));
+            assertEquals(
+                    2,
+                    scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+                            rowDef.getRowDefId(), SCAN_FLAGS_END_EXCLUSIVE
+                                    | SCAN_FLAGS_SINGLE_ROW, start, end,
+                            bitMap, indexId));
+            assertEquals(
+                    2,
+                    scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+                            rowDef.getRowDefId(), SCAN_FLAGS_SINGLE_ROW
+                                    | SCAN_FLAGS_DESCENDING, start, end,
+                            bitMap, indexId));
+            assertEquals(
+                    2,
+                    scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+                            rowDef.getRowDefId(),
+                            SCAN_FLAGS_SINGLE_ROW | SCAN_FLAGS_DESCENDING
+                                    | SCAN_FLAGS_PREFIX, start, end, bitMap,
+                            indexId));
+            assertEquals(
+                    26,
+                    scanAllRows("aa with aa.aa4 in [\"1\", \"2\"]",
+                            rowDef.getRowDefId(), SCAN_FLAGS_PREFIX, start,
+                            end, bitMap, indexId));
         }
     }
 
@@ -224,30 +275,43 @@ public class ScanRowsTest extends AbstractScanBase {
         final byte[] columnBitMap = new byte[1];
         columnBitMap[0] |= 1 << findFieldIndex(rowDef, "aaab1");
         columnBitMap[0] |= 1 << findFieldIndex(rowDef, "aaab3");
-        final int count = scanAllRows("Covering index aaab3aaab1", rowDef
-                .getRowDefId(), SCAN_FLAGS_START_AT_EDGE
-                | SCAN_FLAGS_END_AT_EDGE, null, null, columnBitMap, indexId);
+        final int count = scanAllRows("Covering index aaab3aaab1",
+                rowDef.getRowDefId(), SCAN_FLAGS_START_AT_EDGE
+                        | SCAN_FLAGS_END_AT_EDGE, null, null, columnBitMap,
+                indexId);
         assertTrue(count > 0);
     }
-    
+
     @Test
     public void testBug234() throws Exception {
+        // Populates the a, aa and aaa tables, but inserts no
+        // aaaa rows.
         final RowDef rowDef = groupRowDef("_akiba_a");
+        final RowDef userRowDef = userRowDef("aaaa");
+        int col = findFieldIndex(rowDef, "aaaa$aaaa1");
+
         final int fc = rowDef.getFieldCount();
         final RowData start = new RowData(new byte[256]);
         final RowData end = new RowData(new byte[256]);
-        byte[] bitMap;
+        byte[] bitMap = bitsToRoot(userRowDef, rowDef);
+        Object[] startValue = new Object[fc];
+        Object[] endValue = new Object[fc];
+        startValue[col] = -3000;
+        endValue[col] = -2000;
+        start.createRow(rowDef, startValue);
+        end.createRow(rowDef, endValue);
+        
+        bitMap = bitsToRoot(userRowDef, rowDef);
 
-        {
-            // Just the root table rows
-            final RowDef userRowDef = userRowDef("aaaa");
-            start.createRow(rowDef, new Object[fc]);
-            end.createRow(rowDef, new Object[fc]);
-            bitMap = bitsToRoot(userRowDef, rowDef);
-            scanAllRows("bug234", start, end, bitMap, 0);
-            final RowData rowData = result.get(result.size()-1);
-            assertEquals(rowData.getRowDefId(), userRowDef.getRowDefId());
-        }
+        final RowCollector rc = store.newRowCollector(start.getRowDefId(), 0,
+                0, start, end, bitMap);
+        final ByteBuffer payload = ByteBuffer.allocate(65536);
+        // Since there are no aaaa rows, we should get no results
+        assertTrue(rc.collectNextRow(payload) == false);
+        // Bug 234 was caused by the rc.hasMore() returning true
+        // despite there being no aaaa rows left. Therefore
+        // this assertion failed.
+        assertTrue(rc.hasMore() == false);
     }
 
     @Override
@@ -284,8 +348,8 @@ public class ScanRowsTest extends AbstractScanBase {
         long time = System.nanoTime();
         long iterations = 0;
         for (;;) {
-            assertEquals(10, scanAllRows("one aaaa", start, end, bitMap,
-                    indexId));
+            assertEquals(10,
+                    scanAllRows("one aaaa", start, end, bitMap, indexId));
             iterations++;
             if (iterations % 100 == 0) {
                 long newtime = System.nanoTime();
