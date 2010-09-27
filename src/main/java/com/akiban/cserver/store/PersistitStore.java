@@ -114,7 +114,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     private final static int KEY_STATE_SIZE_OVERHEAD = 50;
 
-    private final static long MEMORY_RESERVATION = 16 * MEGA;
+    private final static long MEMORY_RESERVATION = 64 * MEGA;
 
     private final static float PERSISTIT_ALLOCATION_FRACTION = 0.5f;
 
@@ -148,8 +148,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     private boolean verbose = false;
 
     private final String experimental = "schema";
-
-    private boolean coverEnabled = false;
 
     private boolean deferIndexes = false;
 
@@ -253,11 +251,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
             tableManager.startUp();
             propertiesManager.startUp();
-
-            // TODO - temporary for testing
-
-            coverEnabled = "true".equalsIgnoreCase(config.property(
-                    "cserver.cover", "true"));
         }
     }
 
@@ -556,7 +549,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     public PersistitStorePropertiesManager getPropertiesManager() {
         return errorIfNull("properties manager", propertiesManager);
     }
-
+    
     public void setOrdinals() throws Exception {
         for (final RowDef groupRowDef : rowDefCache.getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
@@ -630,10 +623,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     public boolean isExperimentalSchema() {
         return experimental.contains(EXPERIMENTAL_SCHEMA_FLAG);
-    }
-
-    public boolean isCoveringIndexSupportEnabled() {
-        return coverEnabled;
     }
 
     @Override
@@ -1777,6 +1766,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         CServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
                 rowDataSize);
         rowData.prepareRow(0);
+    }
+    
+    @Override
+    public SchemaId getSchemaId() {
+        return propertiesManager.getSchemaId();
     }
 
     @Override

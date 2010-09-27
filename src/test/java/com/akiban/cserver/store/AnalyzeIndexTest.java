@@ -1,11 +1,12 @@
 package com.akiban.cserver.store;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
 import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
 
@@ -73,6 +74,21 @@ public class AnalyzeIndexTest extends AbstractScanBase {
             }
         }
         assertEquals(32, histogram.getHistogramSamples().size());
+    }
+    
+    @Test
+    public void testBug253() throws Exception {
+        final RowDef rowDef = userRowDef("bug253");
+        final RowData rowData = new RowData(new byte[256]);
+        rowData.createRow(rowDef, new Object[]{1, "blog"});
+        store.writeRow(rowData);
+        rowData.createRow(rowDef, new Object[]{1, "book"});
+        store.writeRow(rowData);
+        try {
+        store.analyzeTable(rowDef.getRowDefId());
+        } catch (NumberFormatException nfe) {
+            fail("Bug 253 strikes again!");
+        }
     }
     
 // This test breaks the build - need to populate and then drop a different table.

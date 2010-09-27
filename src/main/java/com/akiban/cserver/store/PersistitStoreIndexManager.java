@@ -8,6 +8,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.IndexDef.I2H;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
@@ -17,10 +18,10 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.KeyHistogram;
+import com.persistit.KeyHistogram.KeyCount;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.TransactionRunnable;
-import com.persistit.KeyHistogram.KeyCount;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 
@@ -52,11 +53,6 @@ public class PersistitStoreIndexManager {
     private final static int INDEX_LEVEL_MULTIPLIER = 200;
 
     private final static int SAMPLE_SIZE_MULTIPLIER = 32;
-
-    // TODO - remove this once the ASE can handle returned
-    // histograms without crashing. This is a temporary hack
-    // for unit testing.
-    static boolean enableHistograms = true;
 
     private final PersistitStore store;
 
@@ -173,8 +169,9 @@ public class PersistitStoreIndexManager {
         if (LOG.isInfoEnabled()) {
             LOG.info(String.format("Analyzed index %s in table %s: %,d keys "
                     + "at keyDepth/treeLevel %d/%d", indexDef.getName(),
-                    indexDef.getRowDef().getTableName(), keyHistogram
-                            .getKeyCount(), keyDepth, Math.max(0, treeLevel)));
+                    indexDef.getRowDef().getTableName(),
+                    keyHistogram.getKeyCount(), keyDepth,
+                    Math.max(0, treeLevel)));
         }
 
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
@@ -223,14 +220,24 @@ public class PersistitStoreIndexManager {
                     key.setEncodedSize(bytes.length);
                     key.indexTo(0);
                     int remainingSegments = key.getDepth();
-                    for (final int field : indexDef.getFields()) {
-                        if (--remainingSegments >= 0) {
-                            indexValues[field] = key.decode();
-                        } else {
-                            indexValues[field] = null;
+
+                    if (indexDef.isHKeyEquivalent()) {
+                        for (final I2H i2h : indexDef.getHkeyFields()) {
+                            final Object keySegmentValue = --remainingSegments >= 0 ? key
+                                    .decode() : null;
+                            if (!i2h.isOrdinalType()) {
+                                indexValues[i2h.getFieldIndex()] = keySegmentValue;
+                            }
+                        }
+                    } else {
+                        for (final int field : indexDef.getFields()) {
+                            if (--remainingSegments >= 0) {
+                                indexValues[field] = key.decode();
+                            } else {
+                                indexValues[field] = null;
+                            }
                         }
                     }
-
                     // Limit the toString() output to index fields
                     key.setEncodedSize(key.getIndex());
 
@@ -239,15 +246,16 @@ public class PersistitStoreIndexManager {
                     final byte[] indexRowBytes = new byte[indexRowData
                             .getRowSize()];
 
-                    System.arraycopy(indexRowData.getBytes(), indexRowData
-                            .getRowStart(), indexRowBytes, 0, indexRowData
-                            .getRowSize());
+                    System.arraycopy(indexRowData.getBytes(),
+                            indexRowData.getRowStart(), indexRowBytes, 0,
+                            indexRowData.getRowSize());
 
-                    rowData.createRow(indexAnalysisRowDef, new Object[] {
-                            indexDef.getRowDef().getRowDefId(),
-                            indexDef.getId(), now, ++itemNumber,
-                            key.toString(), indexRowBytes,
-                            keyCount.getCount() * multiplier });
+                    rowData.createRow(
+                            indexAnalysisRowDef,
+                            new Object[] { indexDef.getRowDef().getRowDefId(),
+                                    indexDef.getId(), now, ++itemNumber,
+                                    key.toString(), indexRowBytes,
+                                    keyCount.getCount() * multiplier });
 
                     store.writeRow(rowData);
                 }
@@ -257,9 +265,9 @@ public class PersistitStoreIndexManager {
                 indexRowData.createRow(indexDef.getRowDef(), new Object[0]);
                 final byte[] indexRowBytes = new byte[indexRowData.getRowSize()];
 
-                System.arraycopy(indexRowData.getBytes(), indexRowData
-                        .getRowStart(), indexRowBytes, 0, indexRowData
-                        .getRowSize());
+                System.arraycopy(indexRowData.getBytes(),
+                        indexRowData.getRowStart(), indexRowBytes, 0,
+                        indexRowData.getRowSize());
 
                 rowData.createRow(indexAnalysisRowDef, new Object[] {
                         indexDef.getRowDef().getRowDefId(), indexDef.getId(),
@@ -289,14 +297,13 @@ public class PersistitStoreIndexManager {
                     .getRowDef(ANALYSIS_TABLE_NAME);
             final Exchange exchange = store.getExchange(indexAnalysisRowDef,
                     null);
-            exchange.clear().append(indexAnalysisRowDef.getOrdinal()).append(
-                    (long) tableId).append((long) indexDef.getId()).append(
-                    Key.BEFORE);
+            exchange.clear().append(indexAnalysisRowDef.getOrdinal())
+                    .append((long) tableId).append((long) indexDef.getId())
+                    .append(Key.BEFORE);
             List<RowData> rows = new ArrayList<RowData>();
             while (exchange.next()) {
                 final RowData rowData = new RowData(new byte[exchange
-                        .getValue().getEncodedSize()
-                        + RowData.ENVELOPE_SIZE]);
+                        .getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
                 store.expandRowData(exchange,
                         indexAnalysisRowDef.getRowDefId(), rowData);
                 rows.add(rowData);
@@ -316,14 +323,13 @@ public class PersistitStoreIndexManager {
                 final RowData indexRowData = new RowData(
                         new byte[(int) (rowDataLocation >>> 32) - prefix]);
                 System.arraycopy(rowData.getBytes(), (int) rowDataLocation
-                        + prefix, indexRowData.getBytes(), 0, indexRowData
-                        .getBufferLength());
+                        + prefix, indexRowData.getBytes(), 0,
+                        indexRowData.getBufferLength());
                 indexRowData.prepareRow(0);
                 histogram
                         .addSample(new HistogramSample(indexRowData, rowCount));
             }
-            // TODO - remove the enableHistograms flag when Tom is ready
-            if (enableHistograms && !histogram.getHistogramSamples().isEmpty()) {
+            if (!histogram.getHistogramSamples().isEmpty()) {
                 tableStatistics.addHistogram(histogram);
             }
         }

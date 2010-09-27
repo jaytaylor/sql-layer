@@ -53,8 +53,10 @@ public abstract class AbstractScanBase implements CServerConstants {
                 .buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);
         for (UserTable table : ais.getUserTables().values()) {
-            tableMap.put(table.getName().getSchemaName() + "."
-                    + table.getName().getTableName(), table);
+            if (table.getName().getTableName().startsWith("a")) {
+                tableMap.put(table.getName().getSchemaName() + "."
+                        + table.getName().getTableName(), table);
+            }
         }
         store.startUp();
         store.setOrdinals();

@@ -28,6 +28,8 @@ public class PersistitStoreRowCollector implements RowCollector,
             .getName());
 
     private static final Tap SCAN_NEXT_ROW_TAP = Tap.add("read: next_row");
+    
+    private static final int MAX_SHORT_RECORD = 4096;
 
     private static final AtomicLong counter = new AtomicLong();
 
@@ -162,10 +164,9 @@ public class PersistitStoreRowCollector implements RowCollector,
                     }
                     this.iEx = store.getExchange(rowDef, indexDef);
                     this.iFilter = computeIFilter(indexDef, rowDef, start, end);
-                    if (store.isCoveringIndexSupportEnabled()) {
-                        coveringFields = computeCoveringIndexFields(rowDef,
-                                def, columnBitMap);
-                    }
+                    coveringFields = computeCoveringIndexFields(rowDef, def,
+                            columnBitMap);
+                    
                     if (store.isVerbose() && LOG.isInfoEnabled()) {
                         LOG.info("Select using index " + indexDef + " filter="
                                 + iFilter
@@ -586,8 +587,9 @@ public class PersistitStoreRowCollector implements RowCollector,
                 // Traverse
                 //
                 final boolean found = hEx.traverse(direction, hFilter,
-                        Integer.MAX_VALUE);
+                        MAX_SHORT_RECORD);
                 direction = isAscending() ? Key.GT : Key.LT;
+                
                 if (!found
                         || hKey.firstUniqueByteIndex(lastKey) < indexPinnedKeySize) {
                     if (indexDef == null) {
@@ -602,6 +604,10 @@ public class PersistitStoreRowCollector implements RowCollector,
                     continue;
                 }
                 final int depth = hKey.getDepth();
+                if (hEx.getValue().getEncodedSize() >= MAX_SHORT_RECORD) {
+                    // Get the rest of the value
+                    hEx.fetch();
+                }
                 if (isDeepMode()
                         && depth > projectedRowDefs[projectedRowDefs.length - 1]
                                 .getHKeyDepth()) {
@@ -612,7 +618,6 @@ public class PersistitStoreRowCollector implements RowCollector,
                     }
                     pendingToLevel = level + 1;
                 } else {
-
                     for (int level = projectedRowDefs.length; --level >= 0;) {
                         if (depth == projectedRowDefs[level].getHKeyDepth()) {
                             prepareRow(hEx, level,

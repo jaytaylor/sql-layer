@@ -16,6 +16,8 @@ public final class PersistitStorePropertiesManager {
     private final static String SCHEMA_ID = "schema.id";
 
     private final PersistitStore store;
+    
+    private SchemaId liveSchemaId = null;
 
     private final static ValueCoder SCHEMA_ID_VALUE_CODER = new ValueCoder() {
         @Override
@@ -36,35 +38,31 @@ public final class PersistitStorePropertiesManager {
         this.store = store;
     }
 
-    public void startUp() {
+    public void startUp() throws PersistitException {
         store.getDb().getCoderManager().registerValueCoder(SchemaId.class, SCHEMA_ID_VALUE_CODER);
-    }
-
-    private static SchemaId schemaIdFromExchange(Exchange ex) throws PersistitException {
-        ex.clear().append(SCHEMA_ID).fetch();
-        return ex.getValue().isDefined()
-               ? (SchemaId) ex.getValue().get()
-               : new SchemaId(0);
-    }
-
-    public SchemaId getSchemaId() throws PersistitException {
         Exchange ex = store.getExchange(PROPERTIES_TREE_NAME);
-        try {
-            return schemaIdFromExchange(ex);
-        } finally {
-            store.releaseExchange(ex);
+        ex.clear().append(SCHEMA_ID).fetch();
+        int schemaGeneration = 0;
+        if (ex.getValue().isDefined()){
+            schemaGeneration = ((SchemaId)ex.getValue().get()).getGeneration();
         }
+        liveSchemaId = new SchemaId(schemaGeneration);
     }
 
+    public SchemaId getSchemaId() {
+        return liveSchemaId;
+    }
+    
     public void incrementSchemaId() throws PersistitException {
         Transaction transaction = store.getDb().getTransaction();
+        //TODO - make this transactionally correct
         transaction.run(new TransactionRunnable(){
             @Override
             public void runTransaction() throws PersistitException, RollbackException {
                 Exchange ex = store.getExchange(PROPERTIES_TREE_NAME);
-                SchemaId schemaId = schemaIdFromExchange(ex);
-                schemaId.incrementGeneration();
-                ex.getValue().put(schemaId);
+                ex.clear().append(SCHEMA_ID).fetch();
+                liveSchemaId.incrementGeneration();
+                ex.getValue().put(liveSchemaId);
                 ex.store();
             }
         });

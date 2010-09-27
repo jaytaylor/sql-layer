@@ -112,3 +112,11 @@ create table ab(
     primary key(ab1),
 CONSTRAINT `__akiban_fk_8` FOREIGN KEY `__akiban_fk_8` (`a1`) REFERENCES `a` (`a1`)
 ) engine = akibadb;
+
+create table bug253(
+    vid int,
+    type varchar(255),
+    primary key (type, vid),
+    key (vid)
+) engine = akibadb;
+

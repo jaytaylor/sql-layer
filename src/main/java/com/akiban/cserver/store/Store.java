@@ -199,4 +199,5 @@ public interface Store {
      */
     void removeCommittedUpdateListener(final CommittedUpdateListener listener);
 
+    SchemaId getSchemaId();
 }

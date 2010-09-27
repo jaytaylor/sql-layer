@@ -245,7 +245,7 @@ public class IndexDef {
         // Determine whether the fields in the index correspond exactly to the
         // fields in the h-table key for some table in the group. If so then
         // there is no need for a separate index. We mark it "hkeyEquivalent"
-        // which prevents elements being field in an index tree and prevents
+        // which prevents elements being filed in an index tree and prevents
         // SELECT from selecting on this index. Note that SELECT can filter on
         // fields in the hkey, so there's no loss of filtering ability.
         //
