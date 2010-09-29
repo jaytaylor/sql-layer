@@ -37,15 +37,19 @@ jar=akiban-cserver-1.0-SNAPSHOT-jar-with-dependencies.jar
 prog="nohup java"
 defaultmemory="512"
 
-# chunkserver needs 2/3 of the memory on the machine
-memorykb=$(grep MemTotal /proc/meminfo | sed "s/MemTotal:\s*\([0-9]*\)\s.*/\1/g")
-if [ $? -eq 0 ]; then
-	if [ ! $(echo "${memorykb}" | grep -E "^[0-9]+$") ]; then
-		memory=${defaultmemory}
-	else
-		memorymb=$(( ${memorykb} / 1024 ))
-		memorycs=$(( ${memorymb} * 2 / 3 ))
+if [ -z "${cserver_jvm_xmx}"  ]; then 
+	# chunkserver needs 2/3 of the memory on the machine
+	memorykb=$(grep MemTotal /proc/meminfo | sed "s/MemTotal:\s*\([0-9]*\)\s.*/\1/g")
+	if [ $? -eq 0 ]; then
+		if [ ! $(echo "${memorykb}" | grep -E "^[0-9]+$") ]; then
+			memory=${defaultmemory}
+		else
+			memorymb=$(( ${memorykb} / 1024 ))
+			memorycs=$(( ${memorymb} * 2 / 3 ))
+		fi
 	fi
+else
+	memorycs=${cserver_jvm_xmx}
 fi
 
 memory=${memorycs:-${defaultmemory}}
@@ -69,6 +73,7 @@ do
             sleep 2
         fi
 done
+echo ""
 }
 
 
