@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowDef;
@@ -152,6 +153,7 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         }
     }
 
+    final static Pattern UTF8_PATTERN = Pattern.compile("CHARACTER\\s+SET\\s*[=\\s]\\s*UTF8", Pattern.CASE_INSENSITIVE);
     /**
      * Attempts to create a table.
      * @param useSchemaName the table's schema name
@@ -162,21 +164,26 @@ public class PersistitStoreSchemaManager implements CServerConstants {
      */
     int createTable(final String useSchemaName, final String ddl, AtomicReference<Integer> outTableId, RowDefCache rowDefCache) {
         Exchange ex = null;
+        // Hacky way to avoid UTF-8
+        if (UTF8_PATTERN.matcher(ddl).find()) {
+            LOG.warn("Detected UTF8 table, which is unsupported: " + ddl);
+            return ERR;
+        }
+
         String canonical = DDLSource.canonicalStatement(ddl);
         final SchemaDef.UserTableDef tableDef;
         try {
             tableDef = new DDLSource().parseCreateTable(canonical);
         } catch (Exception e1) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Failed to parse: " + canonical + 
-                        " -- " + e1.getMessage());
-            }
+            LOG.warn("Failed to parse: " + canonical + " -- " + e1.getMessage());
             return ERR;
         }
         if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
-            return OK;
+            LOG.warn("can't create table in " + AKIBA_INFORMATION_SCHEMA + " schema: " + ddl);
+            return ERR;
         }
         if (tableDef.getPrimaryKey().size() == 0) {
+            LOG.warn("table has no primary key: " + ddl);
             return ERR;
         }
 
@@ -184,6 +191,7 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         if (parentJoin != null) {
             if (AKIBA_INFORMATION_SCHEMA.equals(parentJoin.getParentSchema())
                     || "akiba_objects".equals(parentJoin.getParentSchema())) {
+                LOG.warn("can't create table whose parent is in " + AKIBA_INFORMATION_SCHEMA + ": " + ddl);
                 return ERR;
             }
             String parentSchema = parentJoin.getParentSchema();
@@ -216,6 +224,8 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         //    This is because group table columns are qualified only by (uTable,uTableCol) so there
         //    is a collision if we have (s1, tbl, col) and (s2, tbl, col)
         if (!checkForDuplicateColumns(tableDef)) {
+            LOG.warn("table.column duplication: " + ddl);
+            LOG.warn("\tknown columns: " + knownColumns);
             return ERR;
         }
 

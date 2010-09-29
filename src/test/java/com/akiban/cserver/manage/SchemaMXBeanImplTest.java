@@ -56,6 +56,14 @@ public final class SchemaMXBeanImplTest {
     }
 
     @Test
+    public void testUtf8Table() throws Exception {
+        createTable(CServerConstants.ERR, SCHEMA,
+                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set UTF8) engine = akibadb");
+        createTable(CServerConstants.ERR, SCHEMA,
+                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set utf8) engine = akibadb");
+    }
+
+    @Test
     public void testAddDropOneTable() throws Exception {
 
         createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
