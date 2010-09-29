@@ -30,8 +30,6 @@ public interface Store {
 
     void setVerbose(final boolean verbose);
 
-    RowCollector getCurrentRowCollector(final int tableId);
-
     int createTable(final String schemaName, final String createTableStatement)
             throws Exception;
 
@@ -54,15 +52,54 @@ public interface Store {
 
     /**
      * @param scanRowsRequest
-     * @return
+     * @return  The RowCollector that will generated the requested
+     * rows
      */
     RowCollector newRowCollector(ScanRowsRequest scanRowsRequest)
             throws Exception;
 
+    /**
+     * Version of newRowCollector used in tests and a couple of sites
+     * local to cserver. Eliminates having to serialize a ScanRowsRequestt
+     * to convey these parameters.
+     * @param rowDefId
+     * @param indexId
+     * @param scanFlags
+     * @param start
+     * @param end
+     * @param columnBitMap
+     * @return
+     * @throws Exception
+     */
     RowCollector newRowCollector(final int rowDefId, final int indexId,
             final int scanFlags, final RowData start, final RowData end,
             final byte[] columnBitMap) throws Exception;
 
+    /**
+     * Get the previously saved RowCollector for the specified tableId.
+     * Used in processing the ScanRowsMoreRequest message.
+     * @param tableId
+     * @return
+     * @throws StoreException
+     */
+    RowCollector getSavedRowCollector(final int tableId) throws StoreException;
+
+    /**
+     * Push a RowCollector onto a stack so that it can subsequently be
+     * referenced by getSavedRowCollector.
+     * @param rc
+     * @throws StoreException
+     */
+    void addSavedRowCollector(final RowCollector rc) throws StoreException;
+    
+    /***
+     * Remove a previously saved RowCollector.  Must the the most
+     * recently added RowCollector for a table.
+     * @param rc
+     * @throws StoreException
+     */
+    void removeSavedRowCollector(final RowCollector rc) throws StoreException;
+    
     long getRowCount(final boolean exact, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception;
 

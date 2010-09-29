@@ -727,10 +727,8 @@ public class PersistitStoreRowCollector implements RowCollector,
     }
 
     @Override
-    public boolean hasMore() {
+    public boolean hasMore() throws StoreException {
         if (!more && !morePending()) {
-            close();
-            store.removeCurrentRowCollector(rowDefId);
             if (store.isVerbose() && LOG.isInfoEnabled()) {
                 LOG.info(String.format("RowCollector %d delivered %,d rows in "
                         + "%,d buffers / %,d bytes", id, deliveredRows,
@@ -768,6 +766,10 @@ public class PersistitStoreRowCollector implements RowCollector,
 
     public int getRepeatedRows() {
         return repeatedRows;
+    }
+    
+    public int getTableId() {
+        return rowDefId;
     }
 
     public long getId() {

@@ -34,6 +34,8 @@ public interface RowCollector {
     
     public long getDeliveredBytes();
     
+    public int getTableId();
+    
     public long getId();
 
 }
