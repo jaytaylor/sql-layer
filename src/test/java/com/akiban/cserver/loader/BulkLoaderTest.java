@@ -55,14 +55,12 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "oi", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload",
-                                               actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
-        Assert.assertEquals(Arrays.asList(ais
-                .getUserTable("schema", "customer"), ais.getUserTable("schema",
-                                                                      "order")), actions.hKey);
-        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "item")
-                .getParentJoin()), actions.noHKey);
+        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
+                                          ais.getUserTable("schema", "order")),
+                            actions.hKey);
+        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "item").getParentJoin()), actions.noHKey);
     }
 
     public void testCOIWithCascadingKeys() throws Exception
@@ -100,12 +98,12 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "oi", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload",
-                                               actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
-        Assert.assertEquals(Arrays.asList(ais
-                .getUserTable("schema", "customer"), ais.getUserTable("schema",
-                                                                      "order"), ais.getUserTable("schema", "item")), actions.hKey);
+        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
+                                          ais.getUserTable("schema", "order"),
+                                          ais.getUserTable("schema", "item")),
+                            actions.hKey);
         Assert.assertTrue(actions.noHKey.isEmpty());
     }
 
@@ -137,14 +135,11 @@ public class BulkLoaderTest extends TestCase
         builder.index("schema", "address", "address_pk", true, "PRIMARY");
         builder.indexColumn("schema", "address", "address_pk", "aid", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "cid", "schema",
-                            "order", "cid");
+        builder.joinColumns("co", "schema", "customer", "cid", "schema", "order", "cid");
         builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "oid", "schema", "order",
-                            "oid");
+        builder.joinColumns("oi", "schema", "order", "oid", "schema", "order", "oid");
         builder.joinTables("ca", "schema", "customer", "schema", "address");
-        builder.joinColumns("ca", "schema", "customer", "cid", "schema",
-                            "address", "cid");
+        builder.joinColumns("ca", "schema", "customer", "cid", "schema", "address", "cid");
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coia");
         builder.addJoinToGroup("group", "co", 0);
@@ -152,14 +147,13 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "ca", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload",
-                                               actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
-        Assert.assertEquals(Arrays.asList(ais
-                .getUserTable("schema", "customer"), ais.getUserTable("schema",
-                                                                      "order"), ais.getUserTable("schema", "address")), actions.hKey);
-        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "item")
-                .getParentJoin()), actions.noHKey);
+        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
+                                          ais.getUserTable("schema", "order"),
+                                          ais.getUserTable("schema", "address")),
+                            actions.hKey);
+        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "item").getParentJoin()), actions.noHKey);
     }
 
     public void testCOIX() throws Exception
@@ -190,15 +184,11 @@ public class BulkLoaderTest extends TestCase
         builder.index("schema", "x", "x_pk", true, "PRIMARY");
         builder.indexColumn("schema", "x", "x_pk", "xid", 0, true, null);
         builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "cid", "schema",
-                            "order", "cid");
+        builder.joinColumns("co", "schema", "customer", "cid", "schema", "order", "cid");
         builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "oid", "schema", "order",
-                            "oid");
+        builder.joinColumns("oi", "schema", "order", "oid", "schema", "order", "oid");
         builder.joinTables("ix", "schema", "item", "schema", "x");
-        builder
-                .joinColumns("ix", "schema", "item", "iid", "schema", "x",
-                             "iid");
+        builder.joinColumns("ix", "schema", "item", "iid", "schema", "x", "iid");
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coi");
         builder.addJoinToGroup("group", "co", 0);
@@ -206,15 +196,14 @@ public class BulkLoaderTest extends TestCase
         builder.addJoinToGroup("group", "ix", 0);
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         TestActions actions = new TestActions();
-        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload",
-                                               actions);
+        BulkLoader bulkLoader = new BulkLoader(ais, "group", "bulkload", actions);
         bulkLoader.run();
-        Assert.assertEquals(Arrays.asList(ais
-                .getUserTable("schema", "customer"), ais.getUserTable("schema",
-                                                                      "order")), actions.hKey);
-        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "item")
-                .getParentJoin(), ais.getUserTable("schema", "x")
-                .getParentJoin()), actions.noHKey);
+        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "customer"),
+                                          ais.getUserTable("schema", "order")),
+                            actions.hKey);
+        Assert.assertEquals(Arrays.asList(ais.getUserTable("schema", "item").getParentJoin(),
+                                          ais.getUserTable("schema", "x").getParentJoin()),
+                            actions.noHKey);
     }
 
     private static class TestActions implements TaskGenerator.Actions

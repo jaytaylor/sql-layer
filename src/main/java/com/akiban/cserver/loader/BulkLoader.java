@@ -40,15 +40,15 @@ public class BulkLoader extends Thread
             logger.error("Unable to create Tracker", e);
             termination = e;
         }
-        if (db != null && tracker != null) {
-            try {
+        try {
+            if (taskGeneratorActions == null) {
+                taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
+            }
+            IdentityHashMap<UserTable, TableTasks> tableTasksMap =
+                    new TaskGenerator(this, taskGeneratorActions).generateTasks();
+            if (db != null && tracker != null) {
                 tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
                              dbUser, dbHost, dbPort, groups, resume, cleanup);
-                if (taskGeneratorActions == null) {
-                    taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
-                }
-                IdentityHashMap<UserTable, TableTasks> tableTasksMap =
-                        new TaskGenerator(this, taskGeneratorActions).generateTasks();
                 DataGrouper dataGrouper = new DataGrouper(db, artifactsSchema, tracker);
                 if (resume) {
                     dataGrouper.resume();
@@ -58,10 +58,10 @@ public class BulkLoader extends Thread
                 new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tableTasksMap));
                 tracker.info("Loading complete");
                 termination = new OKException();
-            } catch (Exception e) {
-                tracker.error("Bulk load terminated with exception", e);
-                termination = e;
             }
+        } catch (Exception e) {
+            tracker.error("Bulk load terminated with exception", e);
+            termination = e;
         }
     }
 
