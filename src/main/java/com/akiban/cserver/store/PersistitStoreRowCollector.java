@@ -147,7 +147,7 @@ public class PersistitStoreRowCollector implements RowCollector,
             this.more = false;
         } else {
             this.pendingRowData = new RowData[this.projectedRowDefs.length];
-            this.hEx = store.getExchange(rowDef, null);
+            this.hEx = store.getExchange(rowDef, null).append(Key.BEFORE);
             this.hFilter = computeHFilter(rowDef, start, end);
             this.lastKey = new Key(hEx.getKey());
 
@@ -162,7 +162,7 @@ public class PersistitStoreRowCollector implements RowCollector,
                         prefixModeIndexField = rowDef.getColumnOffset()
                                 + def.getFields()[def.getFields().length - 1];
                     }
-                    this.iEx = store.getExchange(rowDef, indexDef);
+                    this.iEx = store.getExchange(rowDef, indexDef).append(Key.BEFORE);
                     this.iFilter = computeIFilter(indexDef, rowDef, start, end);
                     coveringFields = computeCoveringIndexFields(rowDef, def,
                             columnBitMap);

@@ -333,10 +333,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         Map<String, List<Exchange>> exchangeMap = getExchangeMap();
         List<Exchange> list = exchangeMap.get(treeName);
         if (list == null || list.isEmpty()) {
-            ex = db.getExchange(VOLUME_NAME, treeName, true).clear();
+            ex = db.getExchange(VOLUME_NAME, treeName, true);
         } else {
             ex = list.remove(list.size() - 1);
         }
+        ex.clear();
         return ex;
     }
 
