@@ -106,6 +106,13 @@ fi
 
 start() {
 	RETVAL=0
+	
+	check_status
+	if [ $? -eq 0 ]; then
+        	 echo "ERROR: Cannot start chunkserver, its already running"
+	         exit 1
+ 	fi
+
 	echo "INFO: $name will use $memory MB"
 	for conffile in ${confdir}/config/chunkserver*.properties
 	do
@@ -155,6 +162,32 @@ stop() {
 	return $RETVAL
 }
 
+check_status()
+{
+	for pidfile in ${piddir}/chunkserver*.pid
+	do
+		if [ -f ${pidfile} ]; then
+			pid=$(cat ${pidfile})
+			echo "Chunkserver is running with pid $pid" 
+			return 0
+		fi
+	done
+
+	echo "Chunkserver is not running"
+	return 3
+}
+
+status()
+{
+	#return with exit code 3 if running, similar to mysqld
+	check_status
+	ret=$?
+	if [ $ret -ne 0 ]; then
+		exit 3
+	fi
+}
+
+
 # See how we were called.
 case "$1" in
   start)
@@ -163,12 +196,15 @@ case "$1" in
   stop)
 	stop
 	;;
+  status)
+	status
+	;;
   restart)
 	stop
 	start
 	;;
   *)
-	echo $"Usage: $name {start|stop|restart}"
+	echo $"Usage: $name {start|stop|restart|status}"
 	exit 1
 esac
 
