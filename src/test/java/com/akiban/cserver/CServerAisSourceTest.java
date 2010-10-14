@@ -13,6 +13,7 @@ import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
+import org.junit.Ignore;
 
 public class CServerAisSourceTest extends TestCase implements CServerConstants {
 

@@ -9,11 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.akiban.cserver.InvalidOperationException;
+import com.persistit.exception.PersistitException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.IndexDef;
-import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.util.Tap;
@@ -21,8 +22,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 
-public class PersistitStoreRowCollector implements RowCollector,
-        MySQLErrorConstants {
+public class PersistitStoreRowCollector implements RowCollector {
 
     static final Log LOG = LogFactory.getLog(PersistitStoreRowCollector.class
             .getName());
@@ -124,7 +124,7 @@ public class PersistitStoreRowCollector implements RowCollector,
 
     PersistitStoreRowCollector(PersistitStore store, final int scanFlags,
             final RowData start, final RowData end, final byte[] columnBitMap,
-            RowDef rowDef, final int indexId) throws Exception {
+            RowDef rowDef, final int indexId) throws PersistitException {
         this.id = counter.incrementAndGet();
         this.store = store;
         this.columnBitMap = columnBitMap;
@@ -270,8 +270,7 @@ public class PersistitStoreRowCollector implements RowCollector,
      * @return
      * @throws Exception
      */
-    KeyFilter computeHFilter(final RowDef rowDef, final RowData start,
-            final RowData end) throws Exception {
+    KeyFilter computeHFilter(final RowDef rowDef, final RowData start, final RowData end) {
         final RowDef leafRowDef = projectedRowDefs[projectedRowDefs.length - 1];
         final KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef
                 .getHKeyDepth()];
@@ -727,7 +726,7 @@ public class PersistitStoreRowCollector implements RowCollector,
     }
 
     @Override
-    public boolean hasMore() throws StoreException {
+    public boolean hasMore() {
         if (!more && !morePending()) {
             if (store.isVerbose() && LOG.isInfoEnabled()) {
                 LOG.info(String.format("RowCollector %d delivered %,d rows in "

@@ -3,6 +3,7 @@ package com.akiban.cserver.store;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +19,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -27,7 +30,6 @@ import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.IndexDef;
-import com.akiban.cserver.MySQLErrorConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
@@ -47,7 +49,7 @@ import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
-public class PersistitStore implements CServerConstants, MySQLErrorConstants,
+public class PersistitStore implements CServerConstants,
         Store {
 
     final static int INITIAL_BUFFER_SIZE = 1024;
@@ -254,19 +256,22 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         }
     }
 
+    /**
+     * Makes sure the given directory exists, optionally trying to create it.
+     * @param path the directory to check for or create
+     * @param alreadyTriedCreatingDirectory whether we've already tried to create the directory
+     * @throws FileNotFoundException if the given path exists but is not a directory, or can't be created
+     */
     private static void ensureDirectoryExists(String path,
-            boolean alreadyTriedCreatingDirectory) throws StoreException {
+            boolean alreadyTriedCreatingDirectory) throws FileNotFoundException {
         File dir = new File(path);
         if (dir.exists()) {
             if (!dir.isDirectory()) {
-                throw new StoreException(-1, String.format(
-                        "%s exists but is not a directory", dir));
+                throw new FileNotFoundException(String.format("%s exists but is not a directory", dir));
             }
         } else {
             if (alreadyTriedCreatingDirectory) {
-                throw new StoreException(-1, String.format(
-                        "Unable to create directory %s. Permissions problem?",
-                        dir));
+                throw new FileNotFoundException(String.format("Unable to create directory %s. Permissions problem?", dir));
             } else {
                 dir.mkdirs();
                 ensureDirectoryExists(path, true);
@@ -359,11 +364,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
      * 
      * @param hEx
      * @param rowData
-     * @throws StoreException
      * @throws PersistitException
+     * @throws InvalidOperationException
      */
     void constructHKey(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData) throws PersistitException, StoreException {
+            final RowData rowData) throws PersistitException, InvalidOperationException {
         final Key hkey = hEx.getKey();
         hkey.clear();
         switch (rowDef.getRowType()) {
@@ -382,8 +387,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             hkey.append(parentRowDef.getOrdinal());
             appendKeyFields(hkey, rowDef, rowData, rowDef.getParentJoinFields());
             if (!hEx.isValueDefined()) {
-                throw new StoreException(HA_ERR_NO_REFERENCED_ROW,
-                        hkey.toString());
+                throw new InvalidOperationException(ErrorCode.NO_REFERENCED_ROW, hkey.toString());
             }
             hkey.append(rowDef.getOrdinal());
             appendKeyFields(hkey, rowDef, rowData, rowDef.getPkFields());
@@ -397,8 +401,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     parentRowDef.getPKIndexDef());
             constructParentPKIndexKey(iEx.getKey(), rowDef, rowData);
             if (!iEx.hasChildren()) {
-                throw new StoreException(HA_ERR_NO_REFERENCED_ROW, iEx.getKey()
-                        .toString());
+                throw new InvalidOperationException(ErrorCode.NO_REFERENCED_ROW, iEx.getKey().toString());
             }
             boolean next = iEx.next(true);
             assert next;
@@ -626,8 +629,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         return experimental.contains(EXPERIMENTAL_SCHEMA_FLAG);
     }
 
+    /**
+     * Tries to create the table
+     * @param schemaName the table's schema
+     * @param ddl the table's ddl
+     * @throws InvalidOperationException if the table is invalid
+     */
     @Override
-    public int createTable(final String schemaName, final String ddl) {
+    public void createTable(final String schemaName, final String ddl)
+            throws PersistitException, InvalidOperationException {
         if (AKIBAN_SPECIAL_SCHEMA_FLAG.equals(schemaName)) {
             deferIndexes = ddl.contains(AKIBAN_SPECIAL_DEFER_INDEXES_FLAG);
             if (ddl.contains(AKIBAN_SPECIAL_FLUSH_INDEXES_FLAG)) {
@@ -639,7 +649,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             if (ddl.contains(AKIBAN_SPECIAL_BUILD_INDEXES_FLAG)) {
                 buildIndexes(ddl);
             }
-            return OK;
+            return;
         }
         Transaction transaction = db.getTransaction();
         try {
@@ -648,10 +658,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             transaction.run(new TransactionRunnable() {
                 @Override
                 public void runTransaction() {
-                    final int result = schemaManager.createTable(schemaName,
-                            ddl, tableId, rowDefCache);
-                    if (result != OK) {
-                        throw new RollbackException("error " + result);
+                    try {
+                        schemaManager.createTable(schemaName, ddl, tableId, rowDefCache);
+                    }
+                    catch (Exception e) {
+                        throw new RollbackException(e);
                     }
                 }
             });
@@ -659,11 +670,14 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             if (tableIdInteger != null) {
                 tableManager.getTableStatus(tableIdInteger).reset();
             }
-        } catch (Exception e) {
-            LOG.error("Failure while installing " + ddl, e);
-            return ERR;
         }
-        return OK;
+        catch (RollbackException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof InvalidOperationException) {
+                throw (InvalidOperationException) cause;
+            }
+            throw e;
+        }
     }
 
     public List<CreateTableStruct> getSchema() throws Exception {
@@ -681,8 +695,21 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         return result;
     }
 
+    private TableStatus checkTableStatus(int rowDefId) throws PersistitException, InvalidOperationException {
+        TableStatus ts = tableManager.getTableStatus(rowDefId);
+        if (ts.isDeleted()) {
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, "Table is deleted: %d", rowDefId);
+        }
+        return ts;
+    }
+
+    /**
+     * WRites a row
+     * @param rowData the row data
+     * @throws InvalidOperationException if the given table is unknown or deleted; or if there's a duplicate key error
+     */
     @Override
-    public int writeRow(final RowData rowData) {
+    public void writeRow(final RowData rowData) throws InvalidOperationException, PersistitException {
         final int rowDefId = rowData.getRowDefId();
 
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
@@ -704,12 +731,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = tableManager
-                            .getTableStatus(rowDefId);
-                    if (ts.isDeleted()) {
-                        throw new StoreException(HA_ERR_NO_SUCH_TABLE,
-                                "Deleted table " + rowDefId);
-                    }
+                    final TableStatus ts = checkTableStatus(rowDefId);
 
                     //
                     // Does the heavy lifting of looking up the full hkey in
@@ -718,8 +740,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     constructHKey(hEx, rowDef, rowData);
 
                     if (hEx.isValueDefined()) {
-                        throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
-                                "Non-unique key " + hEx.getKey());
+                        throw new InvalidOperationException(ErrorCode.DUPLICATE_KEY, "Non-unique key: %s", hEx.getKey());
                     }
 
                     final int start = rowData.getInnerStart();
@@ -783,15 +804,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             if (deferredIndexKeyLimit <= 0) {
                 putAllDeferredIndexKeys();
             }
-            return OK;
-        } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG.info("writeRow error " + e.getResult());
-            }
-            return e.getResult();
-        } catch (Throwable t) {
-            LOG.error("writeRow failed", t);
-            return ERR;
+            return;
         } finally {
             releaseExchange(hEx);
             WRITE_ROW_TAP.out();
@@ -799,7 +812,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     @Override
-    public int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
+    public void writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
             final RowData rowData, final int[] ordinals,
             final int[] nKeyColumns, final FieldDef[] fieldDefs,
             final Object[] hKeyValues) throws Exception {
@@ -808,75 +821,51 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
          * + rowData.toString(rowDefCache)); }
          */
 
-        try {
-            constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs,
-                    hKeyValues);
-            final int start = rowData.getInnerStart();
-            final int size = rowData.getInnerSize();
-            hEx.getValue().ensureFit(size);
-            System.arraycopy(rowData.getBytes(), start, hEx.getValue()
-                    .getEncodedBytes(), 0, size);
-            hEx.getValue().setEncodedSize(size);
-            // Store the h-row
-            hEx.store();
-            /*
-             * for (final IndexDef indexDef : rowDef.getIndexDefs()) { // Insert
-             * the index keys (except for the case of a // root table's PK
-             * index.) if (!indexDef.isHKeyEquivalent()) {
-             * insertIntoIndex(indexDef, rowData, hEx.getKey(), deferIndexes); }
-             * } if (deferredIndexKeyLimit <= 0) { putAllDeferredIndexKeys(); }
-             */
-            return OK;
-        } catch (StoreException e) {
-            LOG.warn(
-                    "Caught exception while writing row "
-                            + rowData.toString(rowDefCache) + ": ", e);
-            return e.getResult();
-        } catch (Throwable t) {
-            LOG.warn(
-                    "Caught exception while writing row "
-                            + rowData.toString(rowDefCache) + ": ", t);
-            t.printStackTrace();
-            return ERR;
-        }
+        constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs,
+                hKeyValues);
+        final int start = rowData.getInnerStart();
+        final int size = rowData.getInnerSize();
+        hEx.getValue().ensureFit(size);
+        System.arraycopy(rowData.getBytes(), start, hEx.getValue()
+                .getEncodedBytes(), 0, size);
+        hEx.getValue().setEncodedSize(size);
+        // Store the h-row
+        hEx.store();
+        /*
+         * for (final IndexDef indexDef : rowDef.getIndexDefs()) { // Insert
+         * the index keys (except for the case of a // root table's PK
+         * index.) if (!indexDef.isHKeyEquivalent()) {
+         * insertIntoIndex(indexDef, rowData, hEx.getKey(), deferIndexes); }
+         * } if (deferredIndexKeyLimit <= 0) { putAllDeferredIndexKeys(); }
+         */
+        return;
     }
 
     @Override
-    public void updateTableStats(RowDef rowDef, long rowCount)
-            throws PersistitException, StoreException {
-        int rowDefId = rowDef.getRowDefId();
-        TableStatus tableStatus = tableManager.getTableStatus(rowDefId);
-        if (tableStatus.isDeleted()) {
-            throw new StoreException(HA_ERR_NO_SUCH_TABLE, String.format(
-                    "Deleted table %s", rowDefId));
-        }
+    public void updateTableStats(RowDef rowDef, long rowCount) throws InvalidOperationException, PersistitException {
+        final int rowDefId = rowDef.getRowDefId();
+        TableStatus tableStatus = checkTableStatus(rowDefId);
         tableStatus.setRowCount(rowCount);
         tableStatus.updated();
         tableManager.saveStatus(tableStatus);
     }
 
     @Override
-    public int deleteRow(final RowData rowData) throws Exception {
+    public void deleteRow(final RowData rowData) throws InvalidOperationException, PersistitException {
         final int rowDefId = rowData.getRowDefId();
 
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        Transaction transaction = null;
         Exchange hEx = null;
-        ;
+
         try {
             hEx = getExchange(rowDef, null);
 
-            transaction = db.getTransaction();
+            final Transaction transaction = db.getTransaction();
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = tableManager
-                            .getTableStatus(rowDefId);
-                    if (ts.isDeleted()) {
-                        throw new StoreException(HA_ERR_NO_SUCH_TABLE,
-                                "Deleted table " + rowDefId);
-                    }
+                    final TableStatus ts = checkTableStatus(rowDefId);
 
                     constructHKey(hEx, rowDef, rowData);
                     hEx.fetch();
@@ -884,8 +873,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     // Verify that the row exists
                     //
                     if (!hEx.getValue().isDefined()) {
-                        throw new StoreException(HA_ERR_RECORD_DELETED,
-                                "Missing record at key " + hEx.getKey());
+                        throw new InvalidOperationException(ErrorCode.NO_SUCH_RECORD,
+                                "Missing record at key: %s", hEx.getKey());
                     }
                     //
                     // Verify that the row hasn't changed. Note: at some point
@@ -912,8 +901,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     // cascade to child rows.
                     //
                     if (hEx.hasChildren()) {
-                        throw new StoreException(HA_ERR_ROW_IS_REFERENCED,
-                                "Can't cascade DELETE: " + hEx.getKey());
+                        throw new InvalidOperationException(ErrorCode.FK_CONSTRAINT_VIOLATION,
+                                "Can't cascade DELETE: %s", hEx.getKey());
 
                     }
 
@@ -939,7 +928,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                             }
                         }, forceToDisk);
                     }
-                    return OK;
+                    return;
                 } catch (RollbackException re) {
                     if (--retries < 0) {
                         throw new TransactionFailedException();
@@ -948,21 +937,13 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     transaction.end();
                 }
             }
-        } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG.info("deleteRow error " + e.getResult(), e);
-            }
-            return e.getResult();
-        } catch (Throwable t) {
-            LOG.error("deleteRow failed: ", t);
-            return ERR;
         } finally {
             releaseExchange(hEx);
         }
     }
 
     @Override
-    public int updateRow(final RowData oldRowData, final RowData newRowData) {
+    public void updateRow(final RowData oldRowData, final RowData newRowData) throws InvalidOperationException, PersistitException {
         final int rowDefId = oldRowData.getRowDefId();
 
         if (newRowData.getRowDefId() != rowDefId) {
@@ -971,32 +952,23 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                             + rowDefId + "," + newRowData.getRowDefId() + ")");
         }
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        Transaction transaction = null;
         Exchange hEx = null;
         try {
             hEx = getExchange(rowDef, null);
-            transaction = db.getTransaction();
+            final Transaction transaction = db.getTransaction();
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = tableManager
-                            .getTableStatus(rowDefId);
-                    if (ts.isDeleted()) {
-                        throw new StoreException(HA_ERR_NO_SUCH_TABLE,
-                                "Deleted table " + rowDefId);
-                    }
+                    final TableStatus ts = checkTableStatus(rowDefId);
                     constructHKey(hEx, rowDef, oldRowData);
                     hEx.fetch();
                     //
                     // Verify that the row exists
                     //
                     if (!hEx.getValue().isDefined()) {
-                        throw new StoreException(HA_ERR_RECORD_DELETED,
-                                "Missing record at key " + hEx.getKey());
+                        throw new InvalidOperationException(ErrorCode.NO_SUCH_RECORD, "Missing record at key: %s", hEx.getKey());
                     }
-
-                    int status = OK;
                     //
                     // Verify that it hasn't changed. Note: at some point we
                     // may want to optimize the protocol to send only PK and FK
@@ -1023,14 +995,11 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef
                             .getPKIndexDef().getFields())) {
                         if (hEx.hasChildren()) {
-                            throw new StoreException(HA_ERR_ROW_IS_REFERENCED,
-                                    "Can't cascade UPDATE on PK field: "
-                                            + hEx.getKey());
+                            throw new InvalidOperationException(ErrorCode.FK_CONSTRAINT_VIOLATION,
+                                    "Can't cascade UPDATE on PK field: %s", hEx.getKey());
                         }
-                        status = deleteRow(oldRowData);
-                        if (status == OK) {
-                            status = writeRow(newRowData);
-                        }
+                        deleteRow(oldRowData);
+                        writeRow(newRowData);
                     } else {
                         final int start = newRowData.getInnerStart();
                         final int size = newRowData.getInnerSize();
@@ -1065,7 +1034,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                             }
                         }, forceToDisk);
                     }
-                    return status;
+                    return;
                 } catch (RollbackException re) {
                     if (--retries < 0) {
                         throw new TransactionFailedException();
@@ -1074,14 +1043,6 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                     transaction.end();
                 }
             }
-        } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG.info("updateRow error " + e.getResult(), e);
-            }
-            return e.getResult();
-        } catch (Throwable t) {
-            LOG.error("updateRow failed: ", t);
-            return ERR;
         } finally {
             releaseExchange(hEx);
         }
@@ -1092,93 +1053,77 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
      * group.
      */
     @Override
-    public int truncateTable(final int rowDefId) throws Exception {
+    public void truncateTable(final int rowDefId) throws PersistitException, InvalidOperationException {
 
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Transaction transaction = null;
 
         RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
                 .getRowDef(rowDef.getGroupRowDefId());
-        try {
-            transaction = db.getTransaction();
-            int retries = MAX_TRANSACTION_RETRY_COUNT;
-            for (;;) {
 
-                transaction.begin();
+        transaction = db.getTransaction();
+        int retries = MAX_TRANSACTION_RETRY_COUNT;
+        for (;;) {
 
-                try {
-                    final TableStatus ts = tableManager
-                            .getTableStatus(rowDefId);
-                    if (ts.isDeleted()) {
-                        throw new StoreException(HA_ERR_NO_SUCH_TABLE,
-                                "Deleted table " + rowDefId);
+            transaction.begin();
+
+            try {
+                final TableStatus ts = checkTableStatus(rowDefId);
+                //
+                // Remove the index trees
+                //
+                for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
+                    if (!indexDef.isHKeyEquivalent()) {
+                        final Exchange iEx = getExchange(groupRowDef,
+                                indexDef);
+                        iEx.removeAll();
+                        releaseExchange(iEx);
                     }
-                    //
-                    // Remove the index trees
-                    //
-                    for (final IndexDef indexDef : groupRowDef.getIndexDefs()) {
-                        if (!indexDef.isHKeyEquivalent()) {
-                            final Exchange iEx = getExchange(groupRowDef,
-                                    indexDef);
-                            iEx.removeAll();
-                            releaseExchange(iEx);
-                        }
+                    indexManager.deleteIndexAnalysis(indexDef);
+                }
+                for (final RowDef userRowDef : groupRowDef
+                        .getUserTableRowDefs()) {
+                    for (final IndexDef indexDef : userRowDef
+                            .getIndexDefs()) {
                         indexManager.deleteIndexAnalysis(indexDef);
                     }
-                    for (final RowDef userRowDef : groupRowDef
-                            .getUserTableRowDefs()) {
-                        for (final IndexDef indexDef : userRowDef
-                                .getIndexDefs()) {
-                            indexManager.deleteIndexAnalysis(indexDef);
-                        }
-                    }
-                    //
-                    // remove the htable tree
-                    //
-                    final Exchange hEx = getExchange(groupRowDef, null);
-                    hEx.removeAll();
-                    releaseExchange(hEx);
-                    for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
-                        final int childId = groupRowDef.getUserTableRowDefs()[i]
-                                .getRowDefId();
-                        final TableStatus ts1 = tableManager
-                                .getTableStatus(childId);
-                        ts1.setRowCount(Long.MIN_VALUE);
-                        ts1.deleted();
-                    }
-                    final TableStatus ts0 = tableManager
-                            .getTableStatus(groupRowDef.getRowDefId());
-                    ts0.setRowCount(0);
-                    ts0.deleted();
-
-                    transaction.commit(forceToDisk);
-                    return OK;
-
-                } catch (RollbackException re) {
-                    if (--retries < 0) {
-                        throw new TransactionFailedException();
-                    }
-                } finally {
-                    transaction.end();
                 }
+                //
+                // remove the htable tree
+                //
+                final Exchange hEx = getExchange(groupRowDef, null);
+                hEx.removeAll();
+                releaseExchange(hEx);
+                for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
+                    final int childId = groupRowDef.getUserTableRowDefs()[i]
+                            .getRowDefId();
+                    final TableStatus ts1 = tableManager
+                            .getTableStatus(childId);
+                    ts1.setRowCount(Long.MIN_VALUE);
+                    ts1.deleted();
+                }
+                final TableStatus ts0 = tableManager
+                        .getTableStatus(groupRowDef.getRowDefId());
+                ts0.setRowCount(0);
+                ts0.deleted();
+
+                transaction.commit(forceToDisk);
+                return;
+            } catch (RollbackException re) {
+                if (--retries < 0) {
+                    throw new TransactionFailedException();
+                }
+            } finally {
+                transaction.end();
             }
-        } catch (StoreException e) {
-            if (/** verbose && **/
-            LOG.isInfoEnabled()) {
-                LOG.info("truncateTable error " + e.getResult(), e);
-            }
-            return e.getResult();
-        } catch (Throwable t) {
-            LOG.error("trucateTable failed: ", t);
-            return ERR;
         }
     }
 
     @Override
-    public int dropTable(int rowDefId) throws Exception {
+    public void dropTable(int rowDefId) throws InvalidOperationException, PersistitException {
         List<Integer> list = new ArrayList<Integer>();
         list.add(rowDefId);
-        return dropTables(list);
+        dropTables(list);
     }
 
     /**
@@ -1186,7 +1131,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
      * table data from within a group. clients.
      */
     @Override
-    public int dropTables(final Collection<Integer> rowDefIds) throws Exception {
+    public void dropTables(final Collection<Integer> rowDefIds) throws InvalidOperationException, PersistitException {
         List<Integer> myRowDefIds = new ArrayList(rowDefIds);
         // Never drop group tables
         for (Iterator<Integer> iter = myRowDefIds.iterator(); iter.hasNext();) {
@@ -1197,119 +1142,107 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             }
         }
         if (myRowDefIds.isEmpty()) {
-            return OK;
+            return;
         }
 
-        try {
-            final Transaction transaction = db.getTransaction();
-            int retries = MAX_TRANSACTION_RETRY_COUNT;
-            final List<String> tablesToForget = new ArrayList<String>();
-            for (;;) {
-                transaction.begin();
-                try {
-                    tablesToForget.clear();
-                    for (final int rowDefId : myRowDefIds) {
-                        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-                        final int status = schemaManager.dropCreateTable(
-                                rowDef.getSchemaName(), rowDef.getTableName());
-                        if (status != OK) {
-                            return status;
+        final Transaction transaction = db.getTransaction();
+        int retries = MAX_TRANSACTION_RETRY_COUNT;
+        final List<String> tablesToForget = new ArrayList<String>();
+        for (;;) {
+            transaction.begin();
+            try {
+                tablesToForget.clear();
+                for (final int rowDefId : myRowDefIds) {
+                    final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+                    schemaManager.dropCreateTable(rowDef.getSchemaName(), rowDef.getTableName());
+                    tablesToForget.add(rowDef.getTableName());
+                    final TableStatus ts = tableManager
+                            .getTableStatus(rowDefId);
+                    // if (ts.isDeleted()) {
+                    // throw new StoreException(HA_ERR_NO_SUCH_TABLE,
+                    // "Table "
+                    // + rowDef.getTableName() + " has been deleted");
+                    // }
+                    boolean deleteGroup = true;
+                    ts.setDeleted(true);
+                    tableManager.saveStatus(ts);
+                    final RowDef groupRowDef;
+                    if (rowDef.isGroupTable()) {
+                        groupRowDef = rowDef;
+                    } else {
+                        groupRowDef = getRowDefCache().getRowDef(
+                                rowDef.getGroupRowDefId());
+                        for (int i = 0; deleteGroup
+                                && i < groupRowDef.getUserTableRowDefs().length; i++) {
+                            final int childId = groupRowDef
+                                    .getUserTableRowDefs()[i].getRowDefId();
+                            final TableStatus childStatus = tableManager
+                                    .getTableStatus(childId);
+                            deleteGroup &= childStatus.isDeleted();
                         }
-                        tablesToForget.add(rowDef.getTableName());
-                        final TableStatus ts = tableManager
-                                .getTableStatus(rowDefId);
-                        // if (ts.isDeleted()) {
-                        // throw new StoreException(HA_ERR_NO_SUCH_TABLE,
-                        // "Table "
-                        // + rowDef.getTableName() + " has been deleted");
-                        // }
-                        boolean deleteGroup = true;
-                        ts.setDeleted(true);
-                        tableManager.saveStatus(ts);
-                        final RowDef groupRowDef;
-                        if (rowDef.isGroupTable()) {
-                            groupRowDef = rowDef;
-                        } else {
-                            groupRowDef = getRowDefCache().getRowDef(
-                                    rowDef.getGroupRowDefId());
-                            for (int i = 0; deleteGroup
-                                    && i < groupRowDef.getUserTableRowDefs().length; i++) {
-                                final int childId = groupRowDef
-                                        .getUserTableRowDefs()[i].getRowDefId();
-                                final TableStatus childStatus = tableManager
-                                        .getTableStatus(childId);
-                                deleteGroup &= childStatus.isDeleted();
+                    }
+                    if (deleteGroup) {
+                        schemaManager.dropCreateTable(
+                                groupRowDef.getSchemaName(),
+                                groupRowDef.getTableName());
+                        tableManager.getTableStatus(
+                                groupRowDef.getRowDefId()).setDeleted(true);
+                        // IOException
+                        // Remove the index trees
+                        //
+                        for (final IndexDef indexDef : groupRowDef
+                                .getIndexDefs()) {
+                            if (!indexDef.isHKeyEquivalent()) {
+                                final Exchange iEx = getExchange(
+                                        groupRowDef, indexDef);
+                                iEx.removeAll();
+                                releaseExchange(iEx);
                             }
+                            indexManager.deleteIndexAnalysis(indexDef);
                         }
-                        if (deleteGroup) {
-                            final int gstatus = schemaManager.dropCreateTable(
-                                    groupRowDef.getSchemaName(),
-                                    groupRowDef.getTableName());
-                            if (gstatus != OK) {
-                                return gstatus;
-                            }
-                            tableManager.getTableStatus(
-                                    groupRowDef.getRowDefId()).setDeleted(true);
-                            // IOException
-                            // Remove the index trees
-                            //
-                            for (final IndexDef indexDef : groupRowDef
+                        for (final RowDef userRowDef : groupRowDef
+                                .getUserTableRowDefs()) {
+                            for (final IndexDef indexDef : userRowDef
                                     .getIndexDefs()) {
-                                if (!indexDef.isHKeyEquivalent()) {
-                                    final Exchange iEx = getExchange(
-                                            groupRowDef, indexDef);
-                                    iEx.removeAll();
-                                    releaseExchange(iEx);
-                                }
                                 indexManager.deleteIndexAnalysis(indexDef);
                             }
-                            for (final RowDef userRowDef : groupRowDef
-                                    .getUserTableRowDefs()) {
-                                for (final IndexDef indexDef : userRowDef
-                                        .getIndexDefs()) {
-                                    indexManager.deleteIndexAnalysis(indexDef);
-                                }
-                            }
-                            //
-                            // remove the htable tree
-                            //
-                            final Exchange hEx = getExchange(groupRowDef, null);
-                            hEx.removeAll();
-                            releaseExchange(hEx);
-
-                            for (int i = 0; i < groupRowDef
-                                    .getUserTableRowDefs().length; i++) {
-                                final int childId = groupRowDef
-                                        .getUserTableRowDefs()[i].getRowDefId();
-                                tableManager.deleteStatus(childId);
-                            }
-                            tableManager
-                                    .deleteStatus(groupRowDef.getRowDefId());
                         }
-                    }
+                        //
+                        // remove the htable tree
+                        //
+                        final Exchange hEx = getExchange(groupRowDef, null);
+                        hEx.removeAll();
+                        releaseExchange(hEx);
 
-                    transaction.commit(forceToDisk);
-                    for (String tableToForget : tablesToForget) {
-                        schemaManager.forgetTableColumns(tableToForget);
+                        for (int i = 0; i < groupRowDef
+                                .getUserTableRowDefs().length; i++) {
+                            final int childId = groupRowDef
+                                    .getUserTableRowDefs()[i].getRowDefId();
+                            tableManager.deleteStatus(childId);
+                        }
+                        tableManager
+                                .deleteStatus(groupRowDef.getRowDefId());
                     }
-                    return OK;
-                } catch (RollbackException e) {
-                    if (--retries < 0) {
-                        throw new TransactionFailedException();
-                    }
-                } finally {
-                    transaction.end();
                 }
+
+                transaction.commit(forceToDisk);
+                for (String tableToForget : tablesToForget) {
+                    schemaManager.forgetTableColumns(tableToForget);
+                }
+                return;
+            } catch (RollbackException e) {
+                if (--retries < 0) {
+                    throw new TransactionFailedException();
+                }
+            } finally {
+                transaction.end();
             }
-            // } catch (StoreException e) {
-            // if (verbose &&LOG.isInfoEnabled()) {
-            // LOG.info("dropTable error " + e.getResult(), e);
-            // }
-            // return e.getResult();
-        } catch (Throwable t) {
-            LOG.error("dropTable failed: ", t);
-            return ERR;
         }
+        // } catch (StoreException e) {
+        // if (verbose &&LOG.isInfoEnabled()) {
+        // LOG.info("dropTable error " + e.getResult(), e);
+        // }
+        // return e.getResult();
     }
 
     /**
@@ -1321,18 +1254,18 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
      * @return <tt>OK</tt>, in the current implementation
      */
     @Override
-    public int dropSchema(final String schemaName) {
-        return OK;
-        // for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
-        // if (rowDef.getSchemaName().equals(schemaName)) {
-        // dropTable(rowDef.getRowDefId());
-        // }
-        // }
-        // return OK;
+    public void dropSchema(final String schemaName) throws InvalidOperationException, PersistitException {
+        List<Integer> dropRowDefIds = new ArrayList<Integer>();
+        for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
+            if (rowDef.getSchemaName().equals(schemaName)) {
+                dropRowDefIds.add(rowDef.getRowDefId());
+            }
+        }
+        dropTables(dropRowDefIds);
     }
 
     @Override
-    public long getAutoIncrementValue(final int rowDefId) throws Exception {
+    public long getAutoIncrementValue(final int rowDefId) throws InvalidOperationException, PersistitException {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         final Exchange exchange;
         final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
@@ -1369,22 +1302,21 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     @Override
-    public RowCollector getSavedRowCollector(final int tableId) throws StoreException {
+    public RowCollector getSavedRowCollector(final int tableId) throws InvalidOperationException {
         final List<RowCollector> list = collectorsForTableId(tableId);
         if (list.isEmpty()) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("Nested RowCollector on tableId=" + tableId
                         + " depth=" + (list.size() + 1));
             }
-            throw new StoreException(122, "Nested RowCollector on tableId=" + tableId
-                    + " depth=" + (list.size() + 1));
+            throw new InvalidOperationException(ErrorCode.CURSOR_IS_FINISHED,
+                    "No RowCollector for tableId=%d (depth=%d)", tableId, list.size() + 1);
         }
         return list.get(list.size() - 1);
     }
 
     @Override
-    public void addSavedRowCollector(final RowCollector rc)
-            throws StoreException {
+    public void addSavedRowCollector(final RowCollector rc) {
         final Integer tableId = rc.getTableId();
         final List<RowCollector> list = collectorsForTableId(tableId);
         if (!list.isEmpty()) {
@@ -1404,15 +1336,15 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     @Override
-    public void removeSavedRowCollector(final RowCollector rc) throws StoreException {
+    public void removeSavedRowCollector(final RowCollector rc) throws InvalidOperationException {
         final Integer tableId = rc.getTableId();
         final List<RowCollector> list = collectorsForTableId(tableId);
         if (list.isEmpty()) {
-            throw new StoreException(122, "Attempt to remove RowCollector from empty list");
+            throw new InvalidOperationException(ErrorCode.INTERNAL_ERROR, "Attempt to remove RowCollector from empty list");
         }
         final RowCollector removed = list.remove(list.size() - 1);
         if (removed != rc) {
-            throw new StoreException(122, "Attempt to remove the wrong RowCollector");
+            throw new InvalidOperationException(ErrorCode.INTERNAL_ERROR, "Attempt to remove the wrong RowCollector");
         }
     }
 
@@ -1431,14 +1363,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     public final RowDef checkRequest(int rowDefId, RowData start, RowData end,
-            int indexId, int scanFlags) throws Exception {
-        final TableStatus ts = tableManager.getTableStatus(rowDefId);
-
-        if (ts.isDeleted()) {
-            throw new StoreException(HA_ERR_NO_SUCH_TABLE, "Table "
-                    + getRowDefCache().getRowDef(rowDefId).getTableName()
-                    + " has been deleted");
-        }
+            int indexId, int scanFlags) throws InvalidOperationException, PersistitException {
+        final TableStatus ts = checkTableStatus(rowDefId);
 
         if (start != null && start.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException(
@@ -1452,10 +1378,8 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         return rowDefCache.getRowDef(rowDefId);
     }
 
-    public RowCollector newRowCollector(ScanRowsRequest request)
-            throws Exception {
-
-        try {
+    public RowCollector newRowCollector(ScanRowsRequest request) throws InvalidOperationException, PersistitException
+    {
             NEW_COLLECTOR_TAP.in();
 
             int rowDefId = request.getTableId();
@@ -1466,38 +1390,26 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             byte[] columnBitMap = request.getColumnBitMap();
             final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
                     scanFlags);
-
             RowCollector rc = new PersistitStoreRowCollector(this, scanFlags,
                     start, end, columnBitMap, rowDef, indexId);
             NEW_COLLECTOR_TAP.out();
             return rc;
-        } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG.info("updateRow error " + e.getResult(), e);
-            }
-            throw e;
-        }
     }
 
     @Override
     public RowCollector newRowCollector(final int rowDefId, int indexId,
             final int scanFlags, RowData start, RowData end, byte[] columnBitMap)
-            throws Exception {
-        try {
-            NEW_COLLECTOR_TAP.in();
-            final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
-                    scanFlags);
-            final RowCollector rc = new PersistitStoreRowCollector(this,
-                    scanFlags, start, end, columnBitMap, rowDef, indexId);
+            throws InvalidOperationException, PersistitException {
+        
+        NEW_COLLECTOR_TAP.in();
+        final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
+                scanFlags);
 
-            NEW_COLLECTOR_TAP.out();
-            return rc;
-        } catch (StoreException e) {
-            if (verbose && LOG.isInfoEnabled()) {
-                LOG.info("updateRow error " + e.getResult(), e);
-            }
-            throw e;
-        }
+        final RowCollector rc = new PersistitStoreRowCollector(this,
+                scanFlags, start, end, columnBitMap, rowDef, indexId);
+
+        NEW_COLLECTOR_TAP.out();
+        return rc;
     }
 
     @Override
@@ -1551,8 +1463,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         final String compoundName = schemaName + "." + tableName;
         final RowDef rowDef = rowDefCache.getRowDef(compoundName);
         if (rowDef == null) {
-            throw new StoreException(HA_ERR_NO_REFERENCED_ROW, "Unknown table "
-                    + compoundName);
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, compoundName);
         }
 
         final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
@@ -1567,8 +1478,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             }
         }
         if (fieldDef == null) {
-            throw new StoreException(HA_ERR_NO_REFERENCED_ROW,
-                    "Unknown column " + columnName + " in " + compoundName);
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_COLUMN, columnName + " in " + compoundName);
         }
 
         IndexDef indexDef = null;
@@ -1582,9 +1492,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
         }
 
         if (indexDef == null) {
-            throw new StoreException(HA_ERR_NO_REFERENCED_ROW,
-                    "No available index on column " + columnName + " in "
-                            + compoundName);
+            throw new InvalidOperationException(ErrorCode.NO_INDEX, "on column " + columnName + " in " + compoundName);
         }
 
         boolean deepMode = false;
@@ -1603,8 +1511,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             }
 
         if (leafRowDef == null) {
-            throw new StoreException(HA_ERR_NO_REFERENCED_ROW,
-                    "No table named " + leafTableName + " in group");
+            throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE, leafTableName + " in group");
         }
 
         final Object[] startValues = new Object[groupRowDef.getFieldCount()];
@@ -1652,7 +1559,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     // ---------------------------------
     void insertIntoIndex(final IndexDef indexDef, final RowData rowData,
-            final Key hkey, final boolean deferIndexes) throws Exception {
+            final Key hkey, final boolean deferIndexes) throws InvalidOperationException, PersistitException {
         final Exchange iEx = getExchange(indexDef.getRowDef(), indexDef);
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
         final Key key = iEx.getKey();
@@ -1661,8 +1568,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
             int saveSize = key.getEncodedSize();
             key.setDepth(indexDef.getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
-                throw new StoreException(HA_ERR_FOUND_DUPP_KEY,
-                        "Non-unique index key: " + key.toString());
+                throw new InvalidOperationException(ErrorCode.DUPLICATE_KEY, "Non-unique index key: %s", key);
             }
             key.setEncodedSize(saveSize);
         }
@@ -1699,7 +1605,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
     void updateIndex(final IndexDef indexDef, final RowDef rowDef,
             final RowData oldRowData, final RowData newRowData, final Key hkey)
-            throws Exception {
+            throws PersistitException {
 
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
             final Exchange oldExchange = getExchange(rowDef, indexDef);
@@ -1719,7 +1625,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     void deleteIndex(final IndexDef indexDef, final RowDef rowDef,
-            final RowData rowData, final Key hkey) throws Exception {
+            final RowData rowData, final Key hkey) throws PersistitException {
         final Exchange iEx = getExchange(rowDef, indexDef);
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
         iEx.remove();
@@ -1754,7 +1660,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
     }
 
     void expandRowData(final Exchange exchange, final int expectedRowDefId,
-            final RowData rowData) throws StoreException {
+            final RowData rowData) throws InvalidOperationException { // TODO this needs to be a more specific exception
         final int size = exchange.getValue().getEncodedSize();
         final int rowDataSize = size + RowData.ENVELOPE_SIZE;
         final byte[] valueBytes = exchange.getValue().getEncodedBytes();
@@ -1766,8 +1672,7 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
                 LOG.error("Value at " + exchange.getKey()
                         + " is not a valid row - skipping");
             }
-            throw new StoreException(HA_ERR_INTERNAL_ERROR,
-                    "Corrupt RowData at " + exchange.getKey());
+            throw new InvalidOperationException(ErrorCode.INTERNAL_CORRUPTION, "Corrupt RowData at " + exchange.getKey());
         }
 
         final int rowDefId = CServerUtil.getInt(valueBytes,
@@ -1775,10 +1680,9 @@ public class PersistitStore implements CServerConstants, MySQLErrorConstants,
 
         if (rowDefId != expectedRowDefId && expectedRowDefId != 0) {
             //
-            // Add code to here to evolve data to required expectedRowDefId
+            // TODO: Add code to here to evolve data to required expectedRowDefId
             //
-            throw new StoreException(HA_ERR_INTERNAL_ERROR,
-                    "Unable to convert rowDefId " + rowDefId
+            throw new InvalidOperationException(ErrorCode.MULTIGENERATIONAL_TABLE, "Unable to convert rowDefId " + rowDefId
                             + " to expected rowDefId " + expectedRowDefId);
         }
         if (rowDataSize > rowDataBytes.length) {

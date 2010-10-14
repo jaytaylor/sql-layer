@@ -8,9 +8,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.message.ErrorCode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -161,13 +164,13 @@ public class PersistitStoreSchemaManager implements CServerConstants {
      * @param outTableId will be set to the table's ID, but only if this method succeeds
      * @param rowDefCache the existing RowDefCache. Used to validate parent columns.
      * @return CServerConstants.OK iff everything worked
+     * @throws InvalidOperationException if the table isn't valid (or can't be parsed)
      */
-    int createTable(final String useSchemaName, final String ddl, AtomicReference<Integer> outTableId, RowDefCache rowDefCache) {
+    void createTable(final String useSchemaName, final String ddl, AtomicReference<Integer> outTableId, RowDefCache rowDefCache) throws InvalidOperationException, PersistitException {
         Exchange ex = null;
         // Hacky way to avoid UTF-8
         if (UTF8_PATTERN.matcher(ddl).find()) {
-            LOG.warn("Detected UTF8 table, which is unsupported: " + ddl);
-            return ERR;
+            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_CHARSET, "[%s] UTF8: %s", useSchemaName, ddl);
         }
 
         String canonical = DDLSource.canonicalStatement(ddl);
@@ -175,24 +178,20 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         try {
             tableDef = new DDLSource().parseCreateTable(canonical);
         } catch (Exception e1) {
-            LOG.warn("Failed to parse: " + canonical + " -- " + e1.getMessage());
-            return ERR;
+            throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION, "[%s] %s: %s", useSchemaName, e1.getMessage(), canonical);
         }
-        if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
-            LOG.warn("can't create table in " + AKIBA_INFORMATION_SCHEMA + " schema: " + ddl);
-            return ERR;
+        if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema()) || "akiba_objects".equals(tableDef.getCName().getSchema())) {
+            throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE, "[%s] %s is protected: %s", useSchemaName, AKIBA_INFORMATION_SCHEMA, ddl);
         }
         if (tableDef.getPrimaryKey().size() == 0) {
-            LOG.warn("table has no primary key: " + ddl);
-            return ERR;
+            throw new InvalidOperationException(ErrorCode.NO_PRIMARY_KEY, "[%s] %s", useSchemaName, ddl);
         }
 
         SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
         if (parentJoin != null) {
             if (AKIBA_INFORMATION_SCHEMA.equals(parentJoin.getParentSchema())
                     || "akiba_objects".equals(parentJoin.getParentSchema())) {
-                LOG.warn("can't create table whose parent is in " + AKIBA_INFORMATION_SCHEMA + ": " + ddl);
-                return ERR;
+                throw new InvalidOperationException(ErrorCode.JOIN_TO_PROTECTED_TABLE, "[%s] to %s.*: %s", useSchemaName, parentJoin.getParentSchema(), ddl);
             }
             String parentSchema = parentJoin.getParentSchema();
             if (parentSchema == null) {
@@ -205,8 +204,7 @@ public class PersistitStoreSchemaManager implements CServerConstants {
                     parentJoin.getParentTable());
             final RowDef parentDef = rowDefCache.getRowDef(parentName);
             if (parentDef == null) {
-                LOG.warn("parent table not found: " + parentName);
-                return ERR;
+                throw new InvalidOperationException(ErrorCode.JOIN_TO_UNKNOWN_TABLE, "[%s] to %s: %s", useSchemaName, parentName, ddl);
             }
             IndexDef parentPK = parentDef.getPKIndexDef();
             List<String> parentPKColumns = new ArrayList<String>(parentPK.getFields().length);
@@ -214,9 +212,10 @@ public class PersistitStoreSchemaManager implements CServerConstants {
                 parentPKColumns.add( parentDef.getFieldDef(fieldIndex).getName() );
             }
             if (!parentPKColumns.equals( parentJoin.getParentColumns() )) {
-                LOG.warn(String.format("column mismatch: %s%s references %s%s",
-                        tableDef.getCName(), parentJoin.getParentColumns(), parentName, parentPKColumns));
-                return ERR;
+                throw new InvalidOperationException(ErrorCode.JOIN_TO_WRONG_COLUMNS, "[%s] %s%s references %s%s: %s",
+                        useSchemaName,
+                        tableDef.getCName(), parentJoin.getParentColumns(), parentName, parentPKColumns,
+                        ddl);
             }
         }
 
@@ -224,9 +223,8 @@ public class PersistitStoreSchemaManager implements CServerConstants {
         //    This is because group table columns are qualified only by (uTable,uTableCol) so there
         //    is a collision if we have (s1, tbl, col) and (s2, tbl, col)
         if (!checkForDuplicateColumns(tableDef)) {
-            LOG.warn("table.column duplication: " + ddl);
-            LOG.warn("\tknown columns: " + knownColumns);
-            return ERR;
+            throw new InvalidOperationException(ErrorCode.DUPLICATE_COLUMN_NAMES,
+                    "[%s] knownColumns=%s  ddl=%s", useSchemaName, knownColumns, ddl);
         }
 
         try {
@@ -246,7 +244,7 @@ public class PersistitStoreSchemaManager implements CServerConstants {
                 ex.clear().append(BY_ID).append(tableId).fetch();
                 final String previousValue = ex.getValue().getString();
                 if (canonical.equals(previousValue)) {
-                    return OK;
+                    return;
                 }
             }
             
@@ -263,16 +261,13 @@ public class PersistitStoreSchemaManager implements CServerConstants {
             ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(tableId).store();
             
-            return OK;
+            return;
 
             // } catch (StoreException e) {
             // if (verbose && LOG.isInfoEnabled()) {
             // LOG.info("createTable error " + e.getResult(), e);
             // }
             // return e.getResult();
-        } catch (Exception t) {
-            LOG.error("createTable failed", t);
-            return ERR;
         } finally {
             store.releaseExchange(ex);
         }
@@ -281,14 +276,14 @@ public class PersistitStoreSchemaManager implements CServerConstants {
     /**
      * Removes the create table statement(s) for the specified schema/table
      * 
-     * @param schemaName
-     * @param tableName
-     * @throws Exception
+     * @param schemaName the table's schema
+     * @param tableName the table's name
+     * @throws InvalidOperationException if the table is protected
      */
-    int dropCreateTable(final String schemaName, final String tableName) {
+    void dropCreateTable(final String schemaName, final String tableName) throws PersistitException {
         
-        if (AKIBA_INFORMATION_SCHEMA.equals(schemaName)) {
-            return OK;
+        if (AKIBA_INFORMATION_SCHEMA.equals(schemaName) || "akiba_objects".equals(schemaName)) {
+            return;
         }
         
         Exchange ex1 = null;
@@ -305,12 +300,9 @@ public class PersistitStoreSchemaManager implements CServerConstants {
                 ex2.clear().append(BY_ID).append(tableId).remove();
                 ex1.remove();
             }
-            return OK;
-
-        } catch (Exception e) {
-            LOG.error("dropSchemaTable(" + schemaName + "." + tableName
-                    + ") failed", e);
-            return ERR;
+        } catch (PersistitException e) {
+            LOG.error(TableName.create(schemaName, tableName).toString(), e);
+            throw e;
         } finally {
             if (ex1 != null) {
                 store.releaseExchange(ex1);

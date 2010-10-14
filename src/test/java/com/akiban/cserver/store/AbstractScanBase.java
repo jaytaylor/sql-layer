@@ -83,7 +83,12 @@ public abstract class AbstractScanBase implements CServerConstants {
             for (int i = 0; i < k; i++) {
                 rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8,
                         i + "X" });
-                assertEquals(name, OK, store.writeRow(rowData));
+                try {
+                    store.writeRow(rowData);
+                }
+                catch (Throwable t) {
+                    throw new Exception(t);
+                }
             }
         }
     }

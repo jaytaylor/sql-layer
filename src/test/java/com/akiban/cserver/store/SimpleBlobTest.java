@@ -50,7 +50,7 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
             int csize = (int)Math.pow(10, i);
             rowData.createRow(rowDef, new Object[]{i, bigString(bsize), bigString(csize)});
             expected[i] = rowData.toString(rowDefCache);
-            assertEquals( OK, store.writeRow(rowData));
+            store.writeRow(rowData);
         }
         
         final RowCollector rc = store.newRowCollector(rowDef.getRowDefId(), 0, 0, null, null, new byte[]{7});

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.akiban.message.ErrorResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -16,7 +17,6 @@ import com.akiban.ais.util.AISPrinter;
 import com.akiban.cserver.message.InstallAISRequest;
 import com.akiban.message.AkibaConnection;
 import com.akiban.message.AkibaConnectionImpl;
-import com.akiban.message.ErrorResponse;
 import com.akiban.message.Response;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -60,7 +60,7 @@ class AISDistributor
                 LOG.debug(AISPrinter.toString(ais));
                 Response response = (Response) connection.sendAndReceive(request);
                 if (response.errorResponse()) {
-                    LOG.error(String.format("AIS transmission failed: %s", ((ErrorResponse)response).message()));
+                    LOG.error(String.format("AIS transmission failed: %s", ((ErrorResponse)response).getMessage()));
                 } else {
                     LOG.info(String.format("AIS successfully installed on %s", chunkserverName));
                 }

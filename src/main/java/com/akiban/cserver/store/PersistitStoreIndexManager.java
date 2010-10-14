@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.akiban.cserver.InvalidOperationException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -77,7 +78,7 @@ public class PersistitStoreIndexManager {
         }
     }
 
-    public void deleteIndexAnalysis(final IndexDef indexDef) throws Exception {
+    public void deleteIndexAnalysis(final IndexDef indexDef) throws PersistitException {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
         if (indexAnalysisRowDef == null) {
@@ -113,7 +114,7 @@ public class PersistitStoreIndexManager {
     }
 
     public void analyzeIndex(final IndexDef indexDef, final int sampleSize)
-            throws Exception {
+            throws InvalidOperationException, PersistitException {
 
         final Exchange probeEx;
         final Key startKey;
@@ -189,94 +190,112 @@ public class PersistitStoreIndexManager {
         final Object[] indexValues = new Object[indexDef.getRowDef()
                 .getFieldCount()];
 
-        transaction.run(new TransactionRunnable() {
+        try {
+            transaction.run(new TransactionRunnable() {
 
-            @Override
-            public void runTransaction() throws PersistitException,
-                    RollbackException {
+                @Override
+                public void runTransaction() throws PersistitException,
+                        RollbackException {
 
-                rowData.createRow(indexAnalysisRowDef, new Object[] {
-                        indexDef.getRowDef().getRowDefId(), indexDef.getId(),
-                        now, 0, "", null, 0 });
-                //
-                // Remove previous analysis
-                //
-                try {
-                    store.constructHKey(analysisEx, indexAnalysisRowDef,
-                            rowData);
-                    analysisEx.getKey().cut();
-                    analysisEx.remove(Key.GT);
-                } catch (PersistitException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                    rowData.createRow(indexAnalysisRowDef, new Object[] {
+                            indexDef.getRowDef().getRowDefId(), indexDef.getId(),
+                            now, 0, "", null, 0 });
+                    //
+                    // Remove previous analysis
+                    //
+                    try {
+                        store.constructHKey(analysisEx, indexAnalysisRowDef,
+                                rowData);
+                        analysisEx.getKey().cut();
+                        analysisEx.remove(Key.GT);
+                    } catch (PersistitException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
 
-                int itemNumber = 0;
-                for (final KeyCount keyCount : keyHistogram0.getSamples()) {
-                    final byte[] bytes = keyCount.getBytes();
-                    System.arraycopy(bytes, 0, key.getEncodedBytes(), 0,
-                            bytes.length);
-                    key.setEncodedSize(bytes.length);
-                    key.indexTo(0);
-                    int remainingSegments = key.getDepth();
+                    int itemNumber = 0;
+                    for (final KeyCount keyCount : keyHistogram0.getSamples()) {
+                        final byte[] bytes = keyCount.getBytes();
+                        System.arraycopy(bytes, 0, key.getEncodedBytes(), 0,
+                                bytes.length);
+                        key.setEncodedSize(bytes.length);
+                        key.indexTo(0);
+                        int remainingSegments = key.getDepth();
 
-                    if (indexDef.isHKeyEquivalent()) {
-                        for (final I2H i2h : indexDef.getHkeyFields()) {
-                            final Object keySegmentValue = --remainingSegments >= 0 ? key
-                                    .decode() : null;
-                            if (!i2h.isOrdinalType()) {
-                                indexValues[i2h.getFieldIndex()] = keySegmentValue;
+                        if (indexDef.isHKeyEquivalent()) {
+                            for (final I2H i2h : indexDef.getHkeyFields()) {
+                                final Object keySegmentValue = --remainingSegments >= 0 ? key
+                                        .decode() : null;
+                                if (!i2h.isOrdinalType()) {
+                                    indexValues[i2h.getFieldIndex()] = keySegmentValue;
+                                }
+                            }
+                        } else {
+                            for (final int field : indexDef.getFields()) {
+                                if (--remainingSegments >= 0) {
+                                    indexValues[field] = key.decode();
+                                } else {
+                                    indexValues[field] = null;
+                                }
                             }
                         }
-                    } else {
-                        for (final int field : indexDef.getFields()) {
-                            if (--remainingSegments >= 0) {
-                                indexValues[field] = key.decode();
-                            } else {
-                                indexValues[field] = null;
-                            }
+                        // Limit the toString() output to index fields
+                        key.setEncodedSize(key.getIndex());
+
+                        indexRowData.createRow(indexDef.getRowDef(), indexValues);
+
+                        final byte[] indexRowBytes = new byte[indexRowData
+                                .getRowSize()];
+
+                        System.arraycopy(indexRowData.getBytes(),
+                                indexRowData.getRowStart(), indexRowBytes, 0,
+                                indexRowData.getRowSize());
+
+                        rowData.createRow(
+                                indexAnalysisRowDef,
+                                new Object[] { indexDef.getRowDef().getRowDefId(),
+                                        indexDef.getId(), now, ++itemNumber,
+                                        key.toString(), indexRowBytes,
+                                        keyCount.getCount() * multiplier });
+                        try {
+                            store.writeRow(rowData);
+                        }
+                        catch (InvalidOperationException e) {
+                            throw new RollbackException(e);
                         }
                     }
-                    // Limit the toString() output to index fields
-                    key.setEncodedSize(key.getIndex());
-
-                    indexRowData.createRow(indexDef.getRowDef(), indexValues);
-
-                    final byte[] indexRowBytes = new byte[indexRowData
-                            .getRowSize()];
+                    //
+                    // Add artificial end row containing all nulls.
+                    //
+                    indexRowData.createRow(indexDef.getRowDef(), new Object[0]);
+                    final byte[] indexRowBytes = new byte[indexRowData.getRowSize()];
 
                     System.arraycopy(indexRowData.getBytes(),
                             indexRowData.getRowStart(), indexRowBytes, 0,
                             indexRowData.getRowSize());
 
-                    rowData.createRow(
-                            indexAnalysisRowDef,
-                            new Object[] { indexDef.getRowDef().getRowDefId(),
-                                    indexDef.getId(), now, ++itemNumber,
-                                    key.toString(), indexRowBytes,
-                                    keyCount.getCount() * multiplier });
+                    rowData.createRow(indexAnalysisRowDef, new Object[] {
+                            indexDef.getRowDef().getRowDefId(), indexDef.getId(),
+                            now, ++itemNumber, key.toString(), indexRowBytes,
+                            keyHistogram0.getKeyCount() * multiplier });
 
-                    store.writeRow(rowData);
+                    try {
+                        store.writeRow(rowData);
+                    }
+                    catch (InvalidOperationException e) {
+                        throw new RollbackException(e);
+                    }
                 }
-                //
-                // Add artificial end row containing all nulls.
-                //
-                indexRowData.createRow(indexDef.getRowDef(), new Object[0]);
-                final byte[] indexRowBytes = new byte[indexRowData.getRowSize()];
-
-                System.arraycopy(indexRowData.getBytes(),
-                        indexRowData.getRowStart(), indexRowBytes, 0,
-                        indexRowData.getRowSize());
-
-                rowData.createRow(indexAnalysisRowDef, new Object[] {
-                        indexDef.getRowDef().getRowDefId(), indexDef.getId(),
-                        now, ++itemNumber, key.toString(), indexRowBytes,
-                        keyHistogram0.getKeyCount() * multiplier });
-
-                store.writeRow(rowData);
+            }, 10, 100, false);
+        }
+        catch (RollbackException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof InvalidOperationException) {
+                throw (InvalidOperationException)cause;
             }
-        }, 10, 100, false);
+            throw e;
+        }
     }
 
     public void populateTableStatistics(final TableStatistics tableStatistics)

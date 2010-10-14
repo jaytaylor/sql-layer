@@ -14,7 +14,7 @@
 # config: /usr/local/chunkserver/conf/chunkserver.properties
 
 # Source function library.
-. /etc/rc.d/init.d/functions
+#. /etc/rc.d/init.d/functions
 
 rootdir=CSERVER.INSTALL.DIR
 mysqldir=MYSQL.INSTALL.DIR

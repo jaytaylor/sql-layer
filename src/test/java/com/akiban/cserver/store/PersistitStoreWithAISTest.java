@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.akiban.cserver.util.RowDefNotFoundException;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
@@ -90,24 +91,24 @@ public class PersistitStoreWithAISTest extends TestCase implements
                 cid = c;
                 rowC.reset(0, 256);
                 rowC.createRow(defC, new Object[] { cid, "Customer_" + cid });
-                assertEquals(OK, store.writeRow(rowC));
+                store.writeRow(rowC);
                 for (int o = 0; ++o <= ordersPerCustomer;) {
                     oid = cid * 1000 + o;
                     rowO.reset(0, 256);
                     rowO.createRow(defO, new Object[] { oid, cid, 12345 });
-                    assertEquals(OK, store.writeRow(rowO));
+                    store.writeRow(rowO);
                     for (int i = 0; ++i <= itemsPerOrder;) {
                         iid = oid * 1000 + i;
                         rowI.reset(0, 256);
                         rowI.createRow(defI, new Object[] { oid, iid, 123456,
                                 654321 });
-                        assertEquals(OK, store.writeRow(rowI));
+                        store.writeRow(rowI);
                         for (int x = 0; ++x <= componentsPerItem;) {
                             xid = iid * 1000 + x;
                             rowX.reset(0, 256);
                             rowX.createRow(defX, new Object[] { iid, xid, c,
                                     ++unique, "Description_" + unique });
-                            assertEquals(OK, store.writeRow(rowX));
+                            store.writeRow(rowX);
                         }
                     }
                 }
@@ -115,7 +116,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
                     rowA.reset(0, 256);
                     rowA.createRow(defA, new Object[] { c, a, "addr1_" + c,
                             "addr2_" + c, "addr3_" + c });
-                    assertEquals(OK, store.writeRow(rowA));
+                    store.writeRow(rowA);
                 }
             }
             elapsed = System.nanoTime() - elapsed;
@@ -368,39 +369,32 @@ public class PersistitStoreWithAISTest extends TestCase implements
         assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
-        int result;
 
-        result = store.dropTable(td.defO.getRowDefId());
-        assertEquals(OK, result);
+        store.dropTable(td.defO.getRowDefId());
         assertTrue(store.getTableManager()
                 .getTableStatus(td.defO.getRowDefId()).isDeleted());
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
 
-        result = store.dropTable(td.defI.getRowDefId());
-        assertEquals(OK, result);
+        store.dropTable(td.defI.getRowDefId());
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
         assertTrue(store.getTableManager()
                 .getTableStatus(td.defI.getRowDefId()).isDeleted());
 
-        result = store.dropTable(td.defA.getRowDefId());
-        assertEquals(OK, result);
+        store.dropTable(td.defA.getRowDefId());
         assertNotNull(volume.getTree(td.defA.getPkTreeName(), false));
         assertTrue(store.getTableManager()
                 .getTableStatus(td.defA.getRowDefId()).isDeleted());
 
-        result = store.dropTable(td.defC.getRowDefId());
-        assertEquals(OK, result);
+        store.dropTable(td.defC.getRowDefId());
         assertTrue(store.getTableManager()
                 .getTableStatus(td.defC.getRowDefId()).isDeleted());
 
-        result = store.dropTable(td.defO.getRowDefId());
-        assertEquals(OK, result);
+        store.dropTable(td.defO.getRowDefId());
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertTrue(store.getTableManager()
                 .getTableStatus(td.defO.getRowDefId()).isDeleted());
 
-        result = store.dropTable(td.defX.getRowDefId());
-        assertEquals(OK, result);
+        store.dropTable(td.defX.getRowDefId());
 
         assertTrue(isGone(td.defCOI.getTreeName()));
         assertTrue(isGone(td.defO.getPkTreeName()));
@@ -428,13 +422,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
         for (int loop = 0; loop < 20; loop++) {
             final TestData td = new TestData(10, 10, 10, 10);
             td.insertTestRows();
-            assertEquals(OK, store.dropTable(td.defI.getRowDefId()));
-            assertEquals(OK, store.dropTable(td.defO.getRowDefId()));
-            assertEquals(OK, store.dropTable(td.defC.getRowDefId()));
-            assertEquals(OK, store.dropTable(td.defCOI.getRowDefId()));
-            assertEquals(OK, store.dropTable(td.defA.getRowDefId()));
-            assertEquals(OK, store.dropTable(td.defX.getRowDefId()));
-            assertEquals(OK, store.dropSchema(SCHEMA));
+            store.dropTable(td.defI.getRowDefId());
+            store.dropTable(td.defO.getRowDefId());
+            store.dropTable(td.defC.getRowDefId());
+            store.dropTable(td.defCOI.getRowDefId());
+            store.dropTable(td.defA.getRowDefId());
+            store.dropTable(td.defX.getRowDefId());
+            store.dropSchema(SCHEMA);
 
             assertTrue(isGone(td.defCOI.getTreeName()));
             assertTrue(isGone(td.defO.getPkTreeName()));
@@ -448,13 +442,17 @@ public class PersistitStoreWithAISTest extends TestCase implements
         td.insertTestRows();
         td.rowX.createRow(td.defX, new Object[] { 1002003, 23890345, 123, 44,
                 "test1" });
-        int result;
-        result = store.writeRow(td.rowX);
-        assertEquals(HA_ERR_FOUND_DUPP_KEY, result);
+        ErrorCode actual = null;
+        try {
+            store.writeRow(td.rowX);
+        }
+        catch (InvalidOperationException e) {
+            actual = e.getCode();
+        }
+        assertEquals(ErrorCode.DUPLICATE_KEY, actual);
         td.rowX.createRow(td.defX, new Object[] { 1002003, 23890345, 123,
                 44444, "test2" });
-        result = store.writeRow(td.rowX);
-        assertEquals(OK, result);
+        store.writeRow(td.rowX);
     }
 
     public void testUpdateRows() throws Exception {
@@ -481,7 +479,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         RowData newRowData = new RowData(new byte[256]);
         newRowData.createRow(td.defX, new Object[] { iid, xid, 4, 424242,
                 "Description_424242" });
-        assertEquals(OK, store.updateRow(oldRowData, newRowData));
+        store.updateRow(oldRowData, newRowData);
 
         rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
@@ -500,7 +498,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         newRowData.createRow(td.defX, new Object[] { iid, -xid, 4, 545454,
                 "Description_545454" });
 
-        assertEquals(OK, store.updateRow(updateRowData, newRowData));
+        store.updateRow(updateRowData, newRowData);
 
         rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, updateRowData, updateRowData,
@@ -531,28 +529,43 @@ public class PersistitStoreWithAISTest extends TestCase implements
         td.count = 0;
         final RowVisitor visitor = new RowVisitor() {
             public void visit(final int depth) throws Exception {
-                switch (depth) {
-                case 0:
-                    // TODO - for now we can't do cascading DELETE so we
-                    // expect an error
-                    assertNotSame(OK, store.deleteRow(td.rowC));
-                    break;
-                case 1:
-                    // TODO - for now we can't do cascading DELETE so we
-                    // expect an error
-                    assertNotSame(OK, store.deleteRow(td.rowO));
-                    break;
-                case 2:
-                    // TODO - for now we can't do cascading DELETE so we
-                    // expect an error
-                    assertNotSame(OK, store.deleteRow(td.rowI));
-                    break;
-                case 3:
-                    if (td.xid % 2 == 0) {
-                        assertEquals(OK, store.deleteRow(td.rowX));
-                        td.count++;
+                ErrorCode expectedError = null;
+                ErrorCode actualError = null;
+                try {
+                    switch (depth) {
+                    case 0:
+                        // TODO - for now we can't do cascading DELETE so we
+                        // expect an error
+                        expectedError = ErrorCode.FK_CONSTRAINT_VIOLATION;
+                        store.deleteRow(td.rowC);
+                        break;
+                    case 1:
+                        // TODO - for now we can't do cascading DELETE so we
+                        // expect an error
+                        expectedError = ErrorCode.FK_CONSTRAINT_VIOLATION;
+                        store.deleteRow(td.rowO);
+                        break;
+                    case 2:
+                        // TODO - for now we can't do cascading DELETE so we
+                        // expect an error
+                        expectedError = ErrorCode.FK_CONSTRAINT_VIOLATION;
+                        store.deleteRow(td.rowI);
+                        break;
+                    case 3:
+                        expectedError = null;
+                        if (td.xid % 2 == 0) {
+                            store.deleteRow(td.rowX);
+                            td.count++;
+                        }
+                        break;
+                    default:
+                        throw new Exception("depth = " + depth);
                     }
                 }
+                catch (InvalidOperationException e) {
+                    actualError = e.getCode();
+                }
+                assertEquals("at depth " + depth, expectedError, actualError);
             }
         };
         td.visitTestRows(visitor);
@@ -675,9 +688,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
             for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
                 rowData.prepareRow(p);
                 if (scanCount++ % 2 == 0) {
-                    assertEquals(OK, store.deleteRow(rowData));
+                    store.deleteRow(rowData);
                 } else {
-                    assertEquals(OK, store.updateRow(rowData, rowData));
+                    store.updateRow(rowData, rowData);
                 }
                 p = rowData.getRowEnd();
             }

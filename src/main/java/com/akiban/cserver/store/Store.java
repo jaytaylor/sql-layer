@@ -4,13 +4,13 @@ import java.util.Collection;
 import java.util.List;
 
 import com.akiban.cserver.FieldDef;
+import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -30,22 +30,21 @@ public interface Store {
 
     void setVerbose(final boolean verbose);
 
-    int createTable(final String schemaName, final String createTableStatement)
+    void createTable(final String schemaName, final String createTableStatement)
             throws Exception;
 
-    int writeRow(final RowData rowData) throws Exception;
+    void writeRow(final RowData rowData) throws Exception;
 
-    int writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
+    void writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
             final RowData rowData, final int[] ordinals, final int[] nKeyColumns,
             final FieldDef[] fieldDefs, final Object[] hKey)
             throws Exception;
 
-    void updateTableStats(final RowDef rowDef, long rowCount)
-            throws PersistitException, StoreException;
+    void updateTableStats(final RowDef rowDef, long rowCount) throws Exception;
 
-    int deleteRow(final RowData rowData) throws Exception;
+    void deleteRow(final RowData rowData) throws Exception;
 
-    int updateRow(final RowData oldRowData, final RowData newRowData)
+    void updateRow(final RowData oldRowData, final RowData newRowData)
             throws Exception;
 
     long getAutoIncrementValue(final int rowDefId) throws Exception;
@@ -55,8 +54,7 @@ public interface Store {
      * @return  The RowCollector that will generated the requested
      * rows
      */
-    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest)
-            throws Exception;
+    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest) throws Exception;
 
     /**
      * Version of newRowCollector used in tests and a couple of sites
@@ -80,25 +78,22 @@ public interface Store {
      * Used in processing the ScanRowsMoreRequest message.
      * @param tableId
      * @return
-     * @throws StoreException
      */
-    RowCollector getSavedRowCollector(final int tableId) throws StoreException;
+    RowCollector getSavedRowCollector(final int tableId) throws InvalidOperationException;
 
     /**
      * Push a RowCollector onto a stack so that it can subsequently be
      * referenced by getSavedRowCollector.
      * @param rc
-     * @throws StoreException
      */
-    void addSavedRowCollector(final RowCollector rc) throws StoreException;
+    void addSavedRowCollector(final RowCollector rc);
     
     /***
      * Remove a previously saved RowCollector.  Must the the most
      * recently added RowCollector for a table.
      * @param rc
-     * @throws StoreException
      */
-    void removeSavedRowCollector(final RowCollector rc) throws StoreException;
+    void removeSavedRowCollector(final RowCollector rc) throws InvalidOperationException;
     
     long getRowCount(final boolean exact, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception;
@@ -113,7 +108,7 @@ public interface Store {
      * @return the result of the drop; OK or an error.
      * @throws Exception if the rowDef couldn't be looked up, or if the transaction failed
      */
-    int dropTable(final int rowDefId) throws Exception;
+    void dropTable(final int rowDefId) throws Exception;
 
     /**
      * Drops several tables as a single transaction. Each table's drop is handled equivalently to
@@ -126,11 +121,11 @@ public interface Store {
      * @return the result of the drop; OK or the first error
      * @throws Exception see {@linkplain #dropTable(int)}
      */
-    int dropTables(final Collection<Integer> rowDefIds) throws Exception;
+    void dropTables(final Collection<Integer> rowDefIds) throws Exception;
 
-    int truncateTable(final int rowDefId) throws Exception;
+    void truncateTable(final int rowDefId) throws Exception;
 
-    int dropSchema(final String schemaName) throws Exception;
+    void dropSchema(final String schemaName) throws Exception;
 
     void setOrdinals() throws Exception;
 

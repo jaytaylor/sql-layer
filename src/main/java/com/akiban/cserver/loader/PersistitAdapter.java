@@ -10,7 +10,6 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.*;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.StoreException;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import org.apache.commons.logging.Log;
@@ -99,13 +98,10 @@ public class PersistitAdapter
             i++;
         }
         // Insert row
-        int status = store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, nKeyColumns, fieldDefs, hKey);
-        if (status != CServerConstants.OK) {
-            logger.error(String.format("Error inserting row for %s", task.artifactTableName()));
-        }
+        store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, nKeyColumns, fieldDefs, hKey);
     }
 
-    public void close() throws StoreException, PersistitException
+    public void close() throws InvalidOperationException, PersistitException
     {
         store.updateTableStats(leafRowDef, rowCount);
         store.releaseExchange(exchange);

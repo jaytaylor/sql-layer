@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.manage.SchemaManager;
+import com.akiban.message.AkibaSendConnection;
+import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -285,14 +287,14 @@ public class CServer implements CServerConstants {
         }
 
         @Override
-        public void executeRequest(AkibaConnection connection,
+        public void executeRequest(AkibaSendConnection connection,
                 AISRequest request) throws Exception {
             AISResponse aisResponse = new AISResponse(ais);
             connection.send(aisResponse);
         }
 
         @Override
-        public void executeResponse(AkibaConnection connection,
+        public void executeResponse(AkibaSendConnection connection,
                 AISResponse response) throws Exception {
             CServer.this.ais = response.ais();
             CServer.this.installAIS();
@@ -335,6 +337,27 @@ public class CServer implements CServerConstants {
             this.connection = connection;
         }
 
+        Message executeMessage(Message request) {
+            if (stopped) {
+                return new ErrorResponse(ErrorCode.SERVER_SHUTDOWN, "Server is shutting down");
+            }
+
+            final SingleSendBuffer sendBuffer = new SingleSendBuffer();
+            try {
+                request.execute(sendBuffer, context);
+            }
+            catch (InvalidOperationException e) {
+                sendBuffer.send(new ErrorResponse(e.getCode(), e.getMessage()));
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(String.format("Message type %s generated an error", request.getClass()), e);
+                }
+            }
+            catch (Throwable t) {
+                sendBuffer.send(new ErrorResponse(t));
+            }
+            return sendBuffer.getMessage();
+        }
+
         public void run() {
 
             Message message = null;
@@ -375,12 +398,8 @@ public class CServer implements CServerConstants {
                                         .toString(rowDefCache) : message
                                         .toString()));
                     }
-                    if (stopped) {
-                        connection.send(new ErrorResponse(
-                                "CServer is shutting down"));
-                    } else {
-                        message.execute(connection, context);
-                    }
+                    Message response = executeMessage(message);
+                    connection.send(response);
 
                     if (capturedMessage != null) {
                         endTime = System.nanoTime() / 1000;
@@ -395,7 +414,8 @@ public class CServer implements CServerConstants {
                                 + (stopped ? " stopped" : " interrupted"));
                     }
                     break;
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     if (LOG.isErrorEnabled()) {
                         LOG.error("Unexpected error on " + message, e);
                     }

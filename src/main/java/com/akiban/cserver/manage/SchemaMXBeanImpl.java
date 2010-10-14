@@ -104,21 +104,17 @@ public class SchemaMXBeanImpl implements SchemaManager
     }
 
     @Override
-    public int createTable(String schemaName, String DDL) throws Exception
+    public void createTable(String schemaName, String DDL) throws Exception
     {
-        if (schemaName.equals("akiba_information_schema") || schemaName.equals("akiba_objects")) {
-            return 0;
-        }
-        int ret = cserver.getStore().createTable(schemaName, DDL);
+        cserver.getStore().createTable(schemaName, DDL);
         cserver.getStore().getPropertiesManager().incrementSchemaId();
         cserver.acquireAIS();
-        return ret;
     }
 
     @Override
-    public int dropTable(String schema, String tableName) throws Exception
+    public void dropTable(String schema, String tableName) throws Exception
     {
-        return dropGroups(Arrays.asList(TableName.create(schema, tableName)));
+        dropGroups(Arrays.asList(TableName.create(schema, tableName)));
     }
 
     /**
@@ -128,21 +124,18 @@ public class SchemaMXBeanImpl implements SchemaManager
      * @throws Exception
      */
     @Override
-    public int dropAllTables() throws Exception {
+    public void dropAllTables() throws Exception {
         try {
             final Collection<Integer> dropTables = getTablesToRefIds().values();
-            final int result = cserver.getStore().dropTables(dropTables);
-            if (result == CServerConstants.OK) {
-                cserver.getStore().getPropertiesManager().incrementSchemaId();
-            }
-            return result;
+            cserver.getStore().dropTables(dropTables);
+            cserver.getStore().getPropertiesManager().incrementSchemaId();
         }
         finally {
             cserver.acquireAIS();
         }
     }
 
-    private int dropGroups(Collection<TableName> containingTables) throws Exception {
+    private void dropGroups(Collection<TableName> containingTables) throws Exception {
         for (TableName containingTable : containingTables) {
             if (containingTable.getSchemaName().equals("akiba_objects") || containingTable.getSchemaName().equals("akiba_information_schema")) {
                 throw new Exception("cannot drop tables in schema " + containingTable.getSchemaName());
@@ -158,7 +151,7 @@ public class SchemaMXBeanImpl implements SchemaManager
             }
         }
         if (groupsToDrop.isEmpty()) {
-            return CServerConstants.OK;
+            return;
         }
 
         GroupingVisitor<List<Integer>> visitor = new GroupingVisitorStub<List<Integer>>(){
@@ -197,11 +190,8 @@ public class SchemaMXBeanImpl implements SchemaManager
 
         List<Integer> dropTables = grouping.traverse(visitor);
         try {
-            int ret = cserver.getStore().dropTables(dropTables);
-            if (ret == CServerConstants.OK) {
-                cserver.getStore().getPropertiesManager().incrementSchemaId();
-            }
-            return ret;
+            cserver.getStore().dropTables(dropTables);
+            cserver.getStore().getPropertiesManager().incrementSchemaId();
         }
         finally {
             cserver.acquireAIS();
@@ -221,9 +211,9 @@ public class SchemaMXBeanImpl implements SchemaManager
     }
 
     @Override
-    public int dropSchema(String schemaName) throws Exception
+    public void dropSchema(String schemaName) throws Exception
     {
-        return cserver.getStore().dropSchema(schemaName);
+        cserver.getStore().dropSchema(schemaName);
     }
 
     public String getGrouping() throws Exception {

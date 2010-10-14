@@ -47,7 +47,7 @@ public class TableStatisticsMessageTest {
 
         final ByteBuffer payload = ByteBuffer.allocate(65536);
         final GetTableStatisticsResponse message = new GetTableStatisticsResponse(
-                123, 100, ts);
+                123, ts);
 
         message.write(payload);
         payload.flip();

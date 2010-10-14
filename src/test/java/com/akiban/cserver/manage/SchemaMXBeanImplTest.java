@@ -5,7 +5,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
 import org.junit.After;
 import org.junit.Before;
@@ -50,23 +51,33 @@ public final class SchemaMXBeanImplTest {
         }
     }
 
-    private void createTable(int expectedResult, String schema, String ddl) throws Exception {
-        int result = manager.createTable(schema, ddl);
-        assertEquals("createTable return value", expectedResult, result);
+    private void createTable(ErrorCode expectedCode, String schema, String ddl) throws Exception {
+        ErrorCode actualCode  = null;
+        try {
+            manager.createTable(schema, ddl);
+        }
+        catch (InvalidOperationException e) {
+            actualCode = e.getCode();
+        }
+        assertEquals("createTable return value", expectedCode, actualCode);
+    }
+    
+    private void createTable(String schema, String ddl) throws Exception {
+        manager.createTable(schema, ddl);
     }
 
     @Test
     public void testUtf8Table() throws Exception {
-        createTable(CServerConstants.ERR, SCHEMA,
+        createTable(ErrorCode.UNSUPPORTED_CHARSET, SCHEMA,
                 "CREATE TABLE myvarchartest(id int key, name varchar(32) character set UTF8) engine = akibadb");
-        createTable(CServerConstants.ERR, SCHEMA,
+        createTable(ErrorCode.UNSUPPORTED_CHARSET, SCHEMA,
                 "CREATE TABLE myvarchartest(id int key, name varchar(32) character set utf8) engine = akibadb");
     }
 
     @Test
     public void testAddDropOneTable() throws Exception {
 
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -87,18 +98,18 @@ public final class SchemaMXBeanImplTest {
 
     @Test
     public void tableWithoutPK() throws Exception {
-        createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE one (id int) engine=akibadb;");
+        createTable(ErrorCode.NO_PRIMARY_KEY, SCHEMA, "CREATE TABLE one (id int) engine=akibadb;");
     }
 
     @Test
     public void testSelfReferencingTable() throws Exception {
-        createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE one (id int, self_id int, PRIMARY KEY (id), " +
+        createTable(ErrorCode.JOIN_TO_UNKNOWN_TABLE, SCHEMA, "CREATE TABLE one (id int, self_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
     }
 
     @Test
     public void testAddDropTwoTablesTwoGroups() throws Exception {
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -107,7 +118,7 @@ public final class SchemaMXBeanImplTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
                 "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -132,7 +143,7 @@ public final class SchemaMXBeanImplTest {
     @Test
     public void testDropAllTables() throws Exception{
 
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -141,7 +152,7 @@ public final class SchemaMXBeanImplTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
                 "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -152,12 +163,12 @@ public final class SchemaMXBeanImplTest {
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
                 "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        assertEquals("drop tables request", CServerConstants.OK, manager.dropAllTables());
+        manager.dropAllTables();
     }
 
     @Test
     public void testAddDropTwoTablesOneGroupDropRoot() throws Exception {
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -166,7 +177,7 @@ public final class SchemaMXBeanImplTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
+        createTable(SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
@@ -194,16 +205,15 @@ public final class SchemaMXBeanImplTest {
 
     @Test
     public void addChildToNonExistentParent() throws Exception{
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
-        assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
+        createTable(ErrorCode.JOIN_TO_UNKNOWN_TABLE, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES zebra (id) ) engine=akibadb;");
 
         assertTables("user tables",
@@ -218,20 +228,18 @@ public final class SchemaMXBeanImplTest {
 
     @Test
     public void addChildToNonExistentColumns() throws Exception{
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
-        assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
+        createTable(ErrorCode.JOIN_TO_WRONG_COLUMNS, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (invalid_id) ) engine=akibadb;");
 
-        assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
@@ -242,11 +250,11 @@ public final class SchemaMXBeanImplTest {
 
     @Test
     public void addChildToProtectedTable() throws Exception {
-        createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE one (id int, one_id int, PRIMARY KEY (id), " +
+        createTable(ErrorCode.JOIN_TO_PROTECTED_TABLE, SCHEMA, "CREATE TABLE one (id int, one_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_information_schema.tables (table_id) ) engine=akibadb;");
 
 
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
@@ -254,7 +262,7 @@ public final class SchemaMXBeanImplTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        createTable(CServerConstants.ERR, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
+        createTable(ErrorCode.JOIN_TO_PROTECTED_TABLE, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_objects._akiba_one (`one$id`) ) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -268,7 +276,7 @@ public final class SchemaMXBeanImplTest {
 
     @Test
     public void testAddDropTwoTablesOneGroupDropChild() throws Exception {
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -277,7 +285,7 @@ public final class SchemaMXBeanImplTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
+        createTable(SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
@@ -310,11 +318,9 @@ public final class SchemaMXBeanImplTest {
 
     @Test
     public void dropNonExistentTable() throws Exception {
-        int response;
-        response = manager.dropTable("this_schema_does_not", "exist");
-        assertEquals("response code", CServerConstants.OK, response);
+        manager.dropTable("this_schema_does_not", "exist");
         
-        createTable(CServerConstants.OK, SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
 
         assertTables("user tables",
                 "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
@@ -323,15 +329,11 @@ public final class SchemaMXBeanImplTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
 
-        response = manager.dropTable(SCHEMA, "one");
-        assertEquals("response code", CServerConstants.OK, response);
-        response = manager.dropTable(SCHEMA, "one");
-        assertEquals("response code", CServerConstants.OK, response);
+        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(SCHEMA, "one");
 
-        response = manager.dropTable("this_schema_never_existed", "it_really_didnt");
-        assertEquals("response code", CServerConstants.OK, response);
-        response = manager.dropTable("this_schema_never_existed", "it_really_didnt");
-        assertEquals("response code", CServerConstants.OK, response);
+        manager.dropTable("this_schema_never_existed", "it_really_didnt");
+        manager.dropTable("this_schema_never_existed", "it_really_didnt");
     }
 
     @Test
@@ -344,7 +346,7 @@ public final class SchemaMXBeanImplTest {
                 "use `s1`",
                 "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb"));
 
-        createTable(CServerConstants.OK, "s1", "CREATE TABLE one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;");
+        createTable("s1", "CREATE TABLE one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;");
         assertDDLS(expectedDDLs.toArray(new String[expectedDDLs.size()]));
@@ -354,14 +356,14 @@ public final class SchemaMXBeanImplTest {
         expectedDDLs2.add("create database if not exists `s2`");
         expectedDDLs2.add("use `s2`");
         expectedDDLs2.add("CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibadb");
-        createTable(CServerConstants.OK, "s2", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable("s2", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;",
                 "CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertDDLS(expectedDDLs2.toArray(new String[expectedDDLs.size()]));
 
         // No changes when trying to add a table like s2.one
-        createTable(CServerConstants.ERR, "s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(ErrorCode.DUPLICATE_COLUMN_NAMES, "s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
         manager.getAisCopy();
         assertTables("user tables",
                 "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;",
@@ -374,7 +376,7 @@ public final class SchemaMXBeanImplTest {
         expectedDDLs3.add("create database if not exists `s3`");
         expectedDDLs3.add("use `s3`");
         expectedDDLs3.add("CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibadb");
-        createTable(CServerConstants.OK, "s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable("s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
         assertTables("user tables",
                 "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;",
                 "CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibadb;");

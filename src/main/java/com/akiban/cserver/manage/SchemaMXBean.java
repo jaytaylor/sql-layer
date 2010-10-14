@@ -44,7 +44,7 @@ public interface SchemaMXBean
      * @return the new table's ID
      * @throws Exception if there was a problem in creating the table
      */
-    int createTable(String schemaName, String DDL) throws Exception;
+    void createTable(String schemaName, String DDL) throws Exception;
 
     /**
      * Drops a table by name.
@@ -53,9 +53,9 @@ public interface SchemaMXBean
      * @return I have no idea what this returns
      * @throws Exception if the table wasn't found
      */
-    int dropTable(String schema, String tableName) throws Exception;
+    void dropTable(String schema, String tableName) throws Exception;
 
-    int dropAllTables() throws Exception;
+    void dropAllTables() throws Exception;
     
     /**
      * Drops a schema and all of its tables.
@@ -63,7 +63,7 @@ public interface SchemaMXBean
      * @return I have no idea what this returns // TODO
      * @throws Exception if there was a problem in dropping the schema
      */
-    int dropSchema(String schemaName) throws Exception;
+    void dropSchema(String schemaName) throws Exception;
 
     /**
      * Gets the current schema's grouping description.

@@ -37,7 +37,7 @@ public class CreateTableTest extends TestCase implements CServerConstants {
     }
 
     public void testCreateTable() throws Exception {
-        assertEquals("result", CServerConstants.OK, store.createTable("foo", CREATE_TABLE_STATEMENT1));
+        store.createTable("foo", CREATE_TABLE_STATEMENT1);
         final Exchange ex = store.getDb().getExchange(
                 PersistitStore.VOLUME_NAME, PersistitStore.SCHEMA_TREE_NAME,
                 false);

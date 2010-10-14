@@ -94,12 +94,11 @@ public class CServerTest implements CServerConstants {
     }
 
     @Test
-    public void testWriteRowResponse() throws Exception {
+    public void  qtestWriteRowResponse() throws Exception {
         final WriteRowRequest request = createWriteRowRequest();
         setAisGeneration(request);
-        final WriteRowResponse response = (WriteRowResponse) connection
-                .sendAndReceive(request);
-        assertEquals(1, response.getResultCode());
+        final Message response = connection.sendAndReceive(request);
+        assertEquals("message type", WriteRowResponse.class, response.getClass());
     }
 
     @Test
@@ -119,7 +118,7 @@ public class CServerTest implements CServerConstants {
         request = createWriteRowRequest();
         setAisGeneration(request);
         response = connection.sendAndReceive(request);
-        assertEquals(OK, ((WriteRowResponse) response).getResultCode());
+        assertEquals("response type", WriteRowResponse.class, response.getClass());
 
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
         setAisGeneration(request);
@@ -139,7 +138,7 @@ public class CServerTest implements CServerConstants {
         request = createWriteRowRequest();
         setAisGeneration(request);
         response = connection.sendAndReceive(request);
-        assertEquals(1, ((WriteRowResponse) response).getResultCode());
+        assertEquals("message type", WriteRowResponse.class, response.getClass());
 
         request = new GetTableStatisticsRequest(ROW_DEF.getRowDefId(), (byte) 0);
         setAisGeneration(request);
