@@ -5,19 +5,36 @@ import com.akiban.cserver.service.Service;
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public final class JmxRegistryServiceImpl implements JmxRegistryService, Service {
+public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service {
     private static final String FORMATTER = "com.akiban:type=%s";
     private static final String FORMATTER_CONFLICT = "com.akiban:type=%s_%d";
 
     private boolean started = false;
-    private final Set<ObjectName> beanNames = new HashSet<ObjectName>();
     private final Map<JmxManageable,ObjectName> serviceToName = new HashMap<JmxManageable, ObjectName>();
+    private final Map<ObjectName,JmxManageable> nameToService = new HashMap<ObjectName,JmxManageable>();
 
     private final Object INTERNAL_LOCK = new Object();
+
+    private void addService(ObjectName objectName, JmxManageable service) {
+        assert Thread.holdsLock(INTERNAL_LOCK) : "this method must be called from a synchronized block";
+
+        ObjectName oldName = serviceToName.put(service, objectName);
+        JmxManageable oldService = nameToService.put(objectName, service);
+        assert oldName == null : String.format("(%s) %s bumped %s", objectName, service, oldName);
+        assert oldService == null : String.format("(%s) %s bumped %s", service, objectName, oldService);
+    }
+
+    private void removeService(ObjectName objectName) {
+        assert Thread.holdsLock(INTERNAL_LOCK) : "this method must be called from a synchronized block";
+
+        JmxManageable removedService = nameToService.remove(objectName);
+        assert removedService != null : "removed a null JmxManageble";
+        ObjectName removedName = serviceToName.remove(removedService);
+        assert removedName.equals(objectName) : String.format("%s != %s", removedName, objectName);
+    }
 
     @Override
     public void register(JmxManageable service) {
@@ -30,22 +47,15 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, Service
             if (serviceToName.containsKey(service)) {
                 throw new JmxRegistrationException("Already registered instance of " + service.getClass());
             }
-            objectName = getObjectName(serviceName, beanNames);
-            boolean addWorked = beanNames.add(objectName);
-            ObjectName oldName = serviceToName.put(service, objectName);
-            assert addWorked : objectName;
-            assert oldName == null : String.format("service %s %s objectName %s bumped out %s",
-                    service.getClass(), service, objectName, oldName);
+            objectName = getObjectName(serviceName, nameToService.keySet());
+            addService(objectName, service);
 
             if (started) {
                 try {
                     getMBeanServer().registerMBean(service.getJmxObject(), objectName);
                 }
                 catch (Exception e) {
-                    boolean removeWorked = beanNames.remove(objectName);
-                    ObjectName removedName = serviceToName.remove(service);
-                    assert removeWorked : objectName;
-                    assert removedName == objectName : String.format("%s != %s", removedName, objectName);
+                    removeService(objectName);
                     throw new JmxRegistrationException(e);
                 }
             }
@@ -65,6 +75,8 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, Service
      * @return an ObjectName that is not in the given set.
      */
     private ObjectName getObjectName(String serviceName, Set<ObjectName> uniquenessSet) {
+        assert Thread.holdsLock(INTERNAL_LOCK) : "this method must be called from a synchronized block";
+
         ObjectName objectName;
         try {
             objectName = new ObjectName(String.format(FORMATTER, serviceName));
@@ -78,23 +90,15 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, Service
     }
 
     @Override
-    public void unregister(JmxManageable service) {
+    public void unregister(String objectNameString) {
         synchronized (INTERNAL_LOCK) {
-            final ObjectName registeredObject = serviceToName.get(service);
-
-            if (registeredObject == null) {
-                throw new JmxRegistrationException("Service not registered: " + service.getClass() + " " + service);
-            }
-
             try {
+                final ObjectName registeredObject = new ObjectName(String.format(FORMATTER, objectNameString));
                 getMBeanServer().unregisterMBean(registeredObject);
+                removeService(registeredObject);
             } catch (Exception e) {
                 throw new JmxRegistrationException(e);
             }
-            boolean removeWorked = beanNames.remove(registeredObject);
-            ObjectName removedName = serviceToName.remove(service);
-            assert removeWorked : registeredObject;
-            assert removedName != null : String.format("%s %s", registeredObject, service);
         }
     }
 
@@ -114,6 +118,7 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, Service
                     throw new JmxRegistrationException("for " + objectName, e);
                 }
             }
+            started = true;
         }
     }
 
@@ -124,7 +129,7 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, Service
             if (!started) {
                 return;
             }
-            for (ObjectName objectName : beanNames) {
+            for (ObjectName objectName : nameToService.keySet()) {
                 try {
                     mbs.unregisterMBean(objectName);
                 } catch (Exception e) {
@@ -133,5 +138,15 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, Service
             }
             started = false;
         }
+    }
+
+    @Override
+    public String getJmxObjectName() {
+        return "JmxManager";
+    }
+
+    @Override
+    public Object getJmxObject() {
+        return this;
     }
 }

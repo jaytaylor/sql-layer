@@ -1,6 +1,5 @@
 package com.akiban.cserver.service.jmx;
 
-public interface JmxRegistryService {
+public interface JmxRegistryService extends JmxRegistryServiceMXBean {
     void register(JmxManageable service);
-    void unregister(JmxManageable service);
 }

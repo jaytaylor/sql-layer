@@ -34,14 +34,13 @@ public class ServiceManager
         
         startAndPut(new ConfigurationServiceImpl(), CONFIGURATION);
         startAndPut(new NetworkServiceImpl(), NETWORK);
+        startAndPut(jmxRegistry, JMX);
 
         for (Service service : services.values()) {
             if (service instanceof JmxManageable) {
                 jmxRegistry.register( (JmxManageable) service );
-
             }
         }
-        startAndPut(jmxRegistry, JMX);
     }
 
     private void startAndPut(Service service, String name) {
