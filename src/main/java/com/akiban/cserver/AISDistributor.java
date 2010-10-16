@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.akiban.message.ErrorResponse;
+import com.akiban.message.AkibanConnection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -15,8 +16,7 @@ import com.akiban.admin.config.ClusterConfig;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.util.AISPrinter;
 import com.akiban.cserver.message.InstallAISRequest;
-import com.akiban.message.AkibaConnection;
-import com.akiban.message.AkibaConnectionImpl;
+import com.akiban.message.NettyAkibanConnectionImpl;
 import com.akiban.message.Response;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -36,7 +36,7 @@ class AISDistributor
                     String chunkserverAddress = chunkserver.address().host().getHostAddress();
                     int chunkserverPort = chunkserver.address().port();
                     LOG.info(String.format("Connecting to %s:%s", chunkserverAddress, chunkserverPort));
-                    AkibaConnection connection = AkibaConnectionImpl.createConnection
+                    AkibanConnection connection = NettyAkibanConnectionImpl.createConnection
                         (NetworkHandlerFactory.getHandler(chunkserverAddress,
                                                           Integer.toString(chunkserverPort),
                                                           null));
@@ -51,9 +51,9 @@ class AISDistributor
 
     public void distribute(AkibaInformationSchema ais) throws Exception
     {
-        for (Map.Entry<String, AkibaConnection> entry : cserverToConnection.entrySet()) {
+        for (Map.Entry<String, AkibanConnection> entry : cserverToConnection.entrySet()) {
             String chunkserverName = entry.getKey();
-            AkibaConnection connection = entry.getValue();
+            AkibanConnection connection = entry.getValue();
             InstallAISRequest request = new InstallAISRequest(ais);
             try {
                 LOG.info(String.format("Sending AIS to %s", chunkserverName));
@@ -73,5 +73,5 @@ class AISDistributor
 
     private static final Log LOG = LogFactory.getLog(AISDistributor.class.getName());
 
-    private final Map<String, AkibaConnection> cserverToConnection = new HashMap<String, AkibaConnection>();
+    private final Map<String, AkibanConnection> cserverToConnection = new HashMap<String, AkibanConnection>();
 }

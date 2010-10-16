@@ -39,8 +39,7 @@ class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public int getNetworkPort() {
-        String value = cserver.port();
-        return Integer.parseInt(value);
+        return cserver.port();
     }
 
     @Override
@@ -63,37 +62,6 @@ class ManageMXBeanImpl implements ManageMXBean {
     @Override
     public void enableVerboseLogging() {
         cserver.getStore().setVerbose(true);
-    }
-
-    @Override
-    public void displayCapturedMessages() {
-        System.out.println();
-        System.out.println("---->");
-        final List<CapturedMessage> messages = cserver.getCapturedMessageList();
-        for (final CapturedMessage message : messages) {
-            System.out.println(message.toString(cserver.getRowDefCache()));
-        }
-        System.out.println("<----");
-    }
-
-    @Override
-    public void setMaxCapturedMessageCount(int count) {
-        cserver.setMaxCapturedMessageCound(count);
-    }
-
-    @Override
-    public void startMessageCapture() {
-        cserver.setMessageCaptureEnabled(true);
-    }
-
-    @Override
-    public void stopMessageCapture() {
-        cserver.setMessageCaptureEnabled(false);
-    }
-
-    @Override
-    public void clearCapturedMessages() {
-        cserver.clearCapturedMessages();
     }
 
     @Override

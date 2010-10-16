@@ -8,15 +8,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.manage.SchemaManager;
-import com.akiban.message.AkibaSendConnection;
-import com.akiban.message.ErrorCode;
+import com.akiban.message.*;
 import com.akiban.util.MySqlStatementSplitter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,15 +35,6 @@ import com.akiban.cserver.message.ShutdownResponse;
 import com.akiban.cserver.message.ToStringWithRowDefCache;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
-import com.akiban.message.AkibaConnection;
-import com.akiban.message.AkibaConnectionImpl;
-import com.akiban.message.ErrorResponse;
-import com.akiban.message.ExecutionContext;
-import com.akiban.message.Message;
-import com.akiban.message.MessageRegistry;
-import com.akiban.network.AkibaNetworkHandler;
-import com.akiban.network.CommEventNotifier;
-import com.akiban.network.NetworkHandlerFactory;
 import com.akiban.util.Tap;
 
 /**
@@ -61,24 +50,22 @@ public class CServer implements CServerConstants {
     /**
      * Config property name and default for the port on which the CServer will
      * listen for requests.
-     */
-    // TODO: Why would it ever be anything other than localhost?
-    // PDB: because the machine may have more than one NIC and localhost is
-    // bound to only one of them.
-    // private static final String P_CSERVER_HOST = "cserver.host";
 
     /**
      * Port on which the CServer will listen for requests.
      */
-    public static final String CSERVER_PORT = System.getProperty(
-            "cserver.port", DEFAULT_CSERVER_PORT_STRING);
+    public static final int CSERVER_PORT =
+            Integer.parseInt(System.getProperty("cserver.port", DEFAULT_CSERVER_PORT_STRING));
 
     /**
      * Interface on which this cserver instance will listen. TODO - allow
      * multiple NICs
      */
-    public static final String CSERVER_HOST = System.getProperty(
-            "cserver.host", "localhost");
+    // TODO: Why would it ever be anything other than localhost?
+    // PDB: because the machine may have more than one NIC and localhost is
+    // bound to only one of them.
+    public static final String CSERVER_HOST = 
+            System.getProperty("cserver.host", DEFAULT_CSERVER_HOST_STRING);
 
     /**
      * Config property name and default for setting of the verbose flag. When
@@ -87,7 +74,7 @@ public class CServer implements CServerConstants {
 
     private static final String VERBOSE_PROPERTY_NAME = "cserver.verbose";
 
-    private static final String EXPERIMENTAL_PROPERTY_NAME = "cserver.experimental";
+    private static final boolean USE_NETTY = Boolean.parseBoolean(System.getProperty("usenetty", "false"));
 
     /**
      * Name of this chunkserver. Must match one of the entries in
@@ -99,24 +86,19 @@ public class CServer implements CServerConstants {
     private static Tap CSERVER_EXEC = Tap.add(new Tap.PerThread("cserver",
             Tap.TimeStampLog.class));
 
-    private static int DEFAULT_MAX_CAPTURE_COUNT = 10;
-
     private final static List<String> aisSchemaDdls = readAisDdls();
     private final static List<CreateTableStruct> aisSchemaStructs = readAisSchemaDdls(aisSchemaDdls);
     private final RowDefCache rowDefCache;
     private final CServerConfig config;
     private final PersistitStore store;
-    private final String cserverPort;
+    private final int cserverPort;
+    private final ExecutionContext executionContext = new CServerContext();
+    private AbstractCServerRequestHandler requestHandler;
     private AkibaInformationSchema ais;
     private volatile boolean stopped;
-    private final Map<Integer, Thread> threadMap;
     private boolean leadCServer;
     private AISDistributor aisDistributor;
-    private volatile boolean networkStarted;
 
-    private volatile int maxCaptureCount = DEFAULT_MAX_CAPTURE_COUNT;
-    private volatile boolean enableMessageCapture;
-    private final List<CapturedMessage> capturedMessageList = new ArrayList<CapturedMessage>();
     private static final int AIS_BASE_TABLE_IDS = 10000;
 
     private volatile Thread _shutdownHook;
@@ -145,7 +127,6 @@ public class CServer implements CServerConstants {
         }
 
         store = new PersistitStore(config, rowDefCache);
-        threadMap = new TreeMap<Integer, Thread>();
     }
 
     public void start() throws Exception {
@@ -195,9 +176,10 @@ public class CServer implements CServerConstants {
         Runtime.getRuntime().addShutdownHook(_shutdownHook);
 
         if (startNetwork) {
-            NetworkHandlerFactory.initializeNetwork(CSERVER_HOST, CSERVER_PORT,
-                    new ChannelNotifier());
-            networkStarted = true;
+            requestHandler =
+                    USE_NETTY
+                    ? CServerRequestHandler_Netty.start(this, CSERVER_HOST, CSERVER_PORT)
+                    : CServerRequestHandler.start(this, CSERVER_HOST, CSERVER_PORT);
         }
     }
 
@@ -208,67 +190,24 @@ public class CServer implements CServerConstants {
         if (hook != null) {
             Runtime.getRuntime().removeShutdownHook(hook);
         }
-
+        if (requestHandler != null) {
+            requestHandler.stop();
+        } // else: testing - chunkserver started without network
         if (false) {
             // TODO: Use this when we support multiple chunkservers
             Admin.only().markChunkserverDown(CSERVER_NAME);
         }
-        final List<Thread> copy;
-        synchronized (threadMap) {
-            copy = new ArrayList<Thread>(threadMap.values());
-        }
-        // for now I think this is the only way to make these threads
-        // bail from their reads.
-        for (final Thread thread : copy) {
-            thread.interrupt();
-        }
-
         MXBeanManager.unregisterMXBean();
         Tap.unregisterMXBean();
         store.shutDown();
-
-        if (networkStarted) {
-            NetworkHandlerFactory.closeNetwork();
-        }
     }
 
-    public String port() {
+    public String host() {
+        return CSERVER_HOST;
+    }
+
+    public int port() {
         return cserverPort;
-    }
-
-    public class ChannelNotifier implements CommEventNotifier {
-
-        @Override
-        public void onConnect(AkibaNetworkHandler handler) {
-            if (LOG.isInfoEnabled()) {
-                LOG.info("Connection #" + handler.getId() + " created");
-            }
-            final String threadName = "CServer_" + handler.getId();
-            final Thread thread = new Thread(new CServerRunnable(
-                    AkibaConnectionImpl.createConnection(handler)), threadName);
-            thread.setDaemon(true);
-            thread.start();
-            synchronized (threadMap) {
-                threadMap.put(handler.getId(), thread);
-            }
-        }
-
-        @Override
-        public void onDisconnect(AkibaNetworkHandler handler) {
-            final Thread thread;
-            synchronized (threadMap) {
-                thread = threadMap.remove(handler.getId());
-            }
-            if (thread != null && thread.isAlive()) {
-                thread.interrupt();
-                if (LOG.isInfoEnabled()) {
-                    LOG.info("Connection #" + handler.getId() + " ended");
-                }
-            } else {
-                LOG.error("CServer thread for connection #" + handler.getId()
-                        + " was missing or dead");
-            }
-        }
     }
 
     public PersistitStore getStore() {
@@ -301,7 +240,7 @@ public class CServer implements CServerConstants {
         }
 
         @Override
-        public void executeRequest(AkibaConnection connection,
+        public void executeRequest(AkibanConnection connection,
                 ShutdownRequest request) throws Exception {
             if (LOG.isInfoEnabled()) {
                 LOG.info("CServer stopping due to ShutdownRequest");
@@ -321,6 +260,54 @@ public class CServer implements CServerConstants {
         }
     }
 
+    Runnable newRunnable(AkibanConnection connection)
+    {
+        return new CServerRunnable(connection);
+    }
+
+    ExecutionContext executionContext()
+    {
+        return executionContext;
+    }
+
+    Message executeMessage(Message request) {
+        if (stopped) {
+            return new ErrorResponse(ErrorCode.SERVER_SHUTDOWN, "Server is shutting down");
+        }
+
+        final SingleSendBuffer sendBuffer = new SingleSendBuffer();
+        try {
+            request.execute(sendBuffer, executionContext);
+        }
+        catch (InvalidOperationException e) {
+            sendBuffer.send(new ErrorResponse(e.getCode(), e.getMessage()));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("Message type %s generated an error", request.getClass()), e);
+            }
+        }
+        catch (Throwable t) {
+            sendBuffer.send(new ErrorResponse(t));
+        }
+        return sendBuffer.getMessage();
+    }
+
+    void executeRequest(ExecutionContext executionContext, AkibanConnection connection, Request request) throws Exception
+    {
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Serving message " + request);
+        }
+        CSERVER_EXEC.in();
+        if (store.isVerbose() && LOG.isInfoEnabled()) {
+            LOG.info(String.format("Executing %s",
+                                   request instanceof ToStringWithRowDefCache
+                                   ? ((ToStringWithRowDefCache) request).toString(rowDefCache)
+                                   : request.toString()));
+        }
+        Message response = executeMessage(request);
+        connection.send(response);
+        CSERVER_EXEC.out();
+    }
+    
     /**
      * A Runnable that reads Network messages, acts on them and returns results.
      * 
@@ -329,85 +316,18 @@ public class CServer implements CServerConstants {
      */
     private class CServerRunnable implements Runnable {
 
-        private final AkibaConnection connection;
+        private final AkibanConnection connection;
 
-        private final ExecutionContext context = new CServerContext();
-
-        public CServerRunnable(final AkibaConnection connection) {
+        public CServerRunnable(final AkibanConnection connection) {
             this.connection = connection;
         }
 
-        Message executeMessage(Message request) {
-            if (stopped) {
-                return new ErrorResponse(ErrorCode.SERVER_SHUTDOWN, "Server is shutting down");
-            }
-
-            final SingleSendBuffer sendBuffer = new SingleSendBuffer();
-            try {
-                request.execute(sendBuffer, context);
-            }
-            catch (InvalidOperationException e) {
-                sendBuffer.send(new ErrorResponse(e.getCode(), e.getMessage()));
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(String.format("Message type %s generated an error", request.getClass()), e);
-                }
-            }
-            catch (Throwable t) {
-                sendBuffer.send(new ErrorResponse(t));
-            }
-            return sendBuffer.getMessage();
-        }
-
         public void run() {
-
             Message message = null;
-            long startTime = 0;
-            long endTime = 0;
-            long gapTime = 0;
             while (!stopped) {
                 try {
                     message = connection.receive();
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("Serving message " + message);
-                    }
-
-                    CSERVER_EXEC.in();
-
-                    if (enableMessageCapture) {
-                        startTime = System.nanoTime() / 1000;
-                        gapTime = startTime - endTime;
-                    }
-
-                    CapturedMessage capturedMessage = null;
-
-                    if (enableMessageCapture) {
-                        synchronized (capturedMessageList) {
-                            if (capturedMessageList.isEmpty()) {
-                                gapTime = 0;
-                            }
-                            if (capturedMessageList.size() < maxCaptureCount) {
-                                capturedMessage = new CapturedMessage(message);
-                                capturedMessageList.add(capturedMessage);
-                            }
-                        }
-                    }
-
-                    if (store.isVerbose() && LOG.isInfoEnabled()) {
-                        LOG.info("Executing "
-                                + (message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
-                                        .toString(rowDefCache) : message
-                                        .toString()));
-                    }
-                    Message response = executeMessage(message);
-                    connection.send(response);
-
-                    if (capturedMessage != null) {
-                        endTime = System.nanoTime() / 1000;
-                        capturedMessage.finish(endTime - startTime, gapTime);
-                    }
-
-                    CSERVER_EXEC.out();
-
+                    executeRequest(executionContext, connection, (Request) message);
                 } catch (InterruptedException e) {
                     if (LOG.isInfoEnabled()) {
                         LOG.info("Thread " + Thread.currentThread().getName()
@@ -776,29 +696,6 @@ public class CServer implements CServerConstants {
                             gap,
                             message instanceof ToStringWithRowDefCache ? ((ToStringWithRowDefCache) message)
                                     .toString(rowDefCache) : message.toString());
-        }
-    }
-
-    public void setMessageCaptureEnabled(final boolean enabled) {
-        enableMessageCapture = enabled;
-        if (enabled) {
-            clearCapturedMessages();
-        }
-    }
-
-    public void setMaxCapturedMessageCound(final int max) {
-        maxCaptureCount = max;
-    }
-
-    public void clearCapturedMessages() {
-        synchronized (capturedMessageList) {
-            capturedMessageList.clear();
-        }
-    }
-
-    public List<CapturedMessage> getCapturedMessageList() {
-        synchronized (capturedMessageList) {
-            return new ArrayList<CapturedMessage>(capturedMessageList);
         }
     }
 }

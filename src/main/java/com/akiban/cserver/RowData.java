@@ -53,7 +53,7 @@ public class RowData {
     // Arbitrary sanity bound on maximum size
     // Needs to be about the same size as the smaller of:
     // com.akiban.network.AkibaCommPipelineFactory#MAX_PACKET_SIZE
-    // com.akiban.message.AkibaConnectionImpl#MAX_PACKET_SIZE
+    // com.akiban.message.NettyAkibanConnectionImpl#MAX_PACKET_SIZE
     // These two limit the network throughput message size.
     public final static int MAXIMUM_RECORD_LENGTH = 8 * 1024 * 1024;
 

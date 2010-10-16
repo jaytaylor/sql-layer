@@ -18,16 +18,6 @@ public interface ManageMXBean
     
     void disableVerboseLogging();
     
-    void startMessageCapture();
-    
-    void stopMessageCapture();
-    
-    void displayCapturedMessages();
-    
-    void clearCapturedMessages();
-    
-    void setMaxCapturedMessageCount(final int count);
-    
     boolean isDeferIndexesEnabled();
     
     void setDeferIndexes(final boolean defer);

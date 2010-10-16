@@ -4,8 +4,8 @@ import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
 import com.akiban.cserver.message.BulkLoadResponse;
 import com.akiban.cserver.message.BulkLoadStatusRequest;
-import com.akiban.message.AkibaConnection;
-import com.akiban.message.AkibaConnectionImpl;
+import com.akiban.message.AkibanConnection;
+import com.akiban.message.NettyAkibanConnectionImpl;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.Request;
 import com.akiban.network.AkibaNetworkHandler;
@@ -32,7 +32,7 @@ public class BulkLoaderClient
         AkibaNetworkHandler networkHandler = NetworkHandlerFactory.getHandler
                 (cserverHost, Integer.toString(cserverPort), null);
         logger.info(String.format("Got network handler %s", networkHandler));
-        connection = AkibaConnectionImpl.createConnection(networkHandler);
+        connection = NettyAkibanConnectionImpl.createConnection(networkHandler);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {
@@ -271,7 +271,7 @@ public class BulkLoaderClient
     private static final int BULK_LOADER_CLIENT_LISTENER_PORT = 9999;
     private static final int TIME_BETWEEN_REQUESTS_MSEC = 10 * 1000; // 10 sec
 
-    private AkibaConnection connection;
+    private AkibanConnection connection;
     private String cserverHost;
     private int cserverPort;
     private boolean monitor = false;

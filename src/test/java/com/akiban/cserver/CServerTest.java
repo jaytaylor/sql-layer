@@ -10,6 +10,7 @@ import javax.management.ObjectName;
 
 import com.akiban.cserver.manage.MXBeanManager;
 import com.akiban.cserver.message.DMLRequest;
+import com.akiban.message.*;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -26,10 +27,6 @@ import com.akiban.cserver.message.GetTableStatisticsRequest;
 import com.akiban.cserver.message.GetTableStatisticsResponse;
 import com.akiban.cserver.message.WriteRowRequest;
 import com.akiban.cserver.message.WriteRowResponse;
-import com.akiban.message.AkibaConnection;
-import com.akiban.message.AkibaConnectionImpl;
-import com.akiban.message.Message;
-import com.akiban.message.MessageRegistryBase;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -46,9 +43,7 @@ public class CServerTest implements CServerConstants {
                             new FieldDef("c", Types.INT) }, "test",
                     "group_table_test", new int[] { 0 });
 
-    private static AkibaNetworkHandler networkHandler;
-
-    private static AkibaConnection connection;
+    private static AkibanConnection connection;
 
     private static CServer cserver;
     
@@ -69,18 +64,13 @@ public class CServerTest implements CServerConstants {
 
         cserver.getRowDefCache().putRowDef(ROW_DEF);
 
-        networkHandler = NetworkHandlerFactory.getHandler("localhost", "5140",
-                null);
-        connection = AkibaConnectionImpl.createConnection(networkHandler);
+        connection = new AkibanConnectionImpl(cserver.host(), cserver.port());
         mxbeanName = new ObjectName(ManageMXBean.MANAGE_BEAN_NAME);
     }
 
     @AfterClass
     public static void tearDownSuite() throws Exception {
-        if (networkHandler != null) {
-            networkHandler.disconnectWorker();
-        }
-        NetworkHandlerFactory.closeNetwork();
+        connection.close();
         cserver.stop();
     }
 
@@ -106,8 +96,6 @@ public class CServerTest implements CServerConstants {
         DMLRequest request;
         Message response;
 
-        startMessageCapture();
-        
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
         setAisGeneration(request);
 
@@ -125,9 +113,6 @@ public class CServerTest implements CServerConstants {
         response = connection.sendAndReceive(request);
         assertTrue(response instanceof GetAutoIncrementValueResponse);
         assertEquals(1, ((GetAutoIncrementValueResponse) response).getValue());
-
-        displayCapturedMessages();
-        stopMessageCapture();
     }
 
     @Test
@@ -183,18 +168,4 @@ public class CServerTest implements CServerConstants {
         request.setRowData(rowData);
         return request;
     }
-
-    private void startMessageCapture() throws Exception {
-        ManagementFactory.getPlatformMBeanServer().invoke(mxbeanName, "startMessageCapture", new Object[0], new String[0]);
-    }
-
-    private void stopMessageCapture() throws Exception {
-        ManagementFactory.getPlatformMBeanServer().invoke(mxbeanName, "stopMessageCapture", new Object[0], new String[0]);
-    }
-    
-    private void displayCapturedMessages() throws Exception {
-        ManagementFactory.getPlatformMBeanServer().invoke(mxbeanName, "displayCapturedMessages", new Object[0], new String[0]);
-    }
-    
-    
 }
