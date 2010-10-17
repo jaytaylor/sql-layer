@@ -1,0 +1,769 @@
+package com.akiban.ais.modeltests;
+
+import junit.framework.Assert;
+import org.junit.Test;
+
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
+
+import java.util.List;
+
+public class AISBuilderTest
+{
+    @Test
+    public void testEmptyAIS()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.basicSchemaIsComplete();
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(0, ais.getUserTables().size());
+        Assert.assertEquals(0, ais.getGroupTables().size());
+        Assert.assertEquals(0, ais.getGroups().size());
+        Assert.assertEquals(0, ais.getJoins().size());
+    }
+
+    @Test
+    public void testSingleTableNoGroups()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.basicSchemaIsComplete();
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(1, ais.getUserTables().size());
+        Assert.assertEquals(0, ais.getGroupTables().size());
+        Assert.assertEquals(0, ais.getGroups().size());
+        Assert.assertEquals(0, ais.getJoins().size());
+    }
+
+    @Test
+    public void testSingleTableInGroup()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addTableToGroup("group", "schema", "customer");
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(1, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(0, ais.getJoins().size());
+        Group group = ais.getGroup("group");
+        GroupTable groupTable = group.getGroupTable();
+        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
+        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
+    }
+
+    @Test
+    public void testSingleTableInGroupLongColumnNames()
+    {
+        final String tableName = "customer";
+        final int EXTRA_CHARS = tableName.length() + 5;
+        final String columnOne;
+        final String columnTwo;
+        {
+            StringBuilder builder = new StringBuilder(tableName).append('$');
+            builder.append('1');
+            while (builder.length() < AISBuilder.MAX_COLUMN_NAME_LENGTH + EXTRA_CHARS)
+            {
+                builder.append('x');
+            }
+            builder.delete(0, builder.indexOf("$")+1);
+            Assert.assertEquals("sanity check", builder.charAt(0), '1');
+            columnOne = builder.toString();
+            builder.setCharAt(0, '2');
+            columnTwo = builder.toString();
+        }
+        
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", tableName, columnOne, 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", tableName, columnTwo, 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addTableToGroup("group", "schema", "customer");
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(1, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(0, ais.getJoins().size());
+        Group group = ais.getGroup("group");
+        GroupTable groupTable = group.getGroupTable();
+        
+        String groupCol1 = groupTable.getColumn(0).getName();
+        String groupCol2 = groupTable.getColumn(1).getName();
+        // test truncation:
+        // First column should be the last AISBuilder.MAX_COLUMN_NAME_LENGTH digits of columnOne (which should be all x's)
+        // Second column should be that, with the last two chars replaced with "$1"
+        Assert.assertEquals(groupCol1,
+                columnOne.substring(columnOne.length()-AISBuilder.MAX_COLUMN_NAME_LENGTH, columnOne.length())
+        );
+        for (int i=0, len=groupCol1.length(); i < len; ++i)
+        {
+            Assert.assertEquals('x', groupCol1.charAt(i));
+        }
+        Assert.assertEquals(groupCol2,
+                columnOne.substring(columnOne.length()-AISBuilder.MAX_COLUMN_NAME_LENGTH, columnOne.length()-2) + "$1"
+        );
+        Assert.assertFalse("equal names: " + groupCol1, groupCol1.equals(groupCol2));
+    }
+
+    @Test
+    public void testSingleJoinInGroup()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addJoinToGroup("group", "co", 0);
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(2, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(1, ais.getJoins().size());
+        Group group = ais.getGroup("group");
+        GroupTable groupTable = group.getGroupTable();
+        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
+        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
+    }
+
+    @Test
+    public void testTableAndThenSingleJoinInGroup()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addTableToGroup("group", "schema", "customer");
+        builder.addJoinToGroup("group", "co", 0);
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(2, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(1, ais.getJoins().size());
+        Group group = ais.getGroup("group");
+        GroupTable groupTable = group.getGroupTable();
+        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
+        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
+    }
+
+    @Test
+    public void testTwoJoinsInGroup()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "order", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.userTable("schema", "item");
+        builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        builder.joinTables("oi", "schema", "order", "schema", "item");
+        builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addJoinToGroup("group", "co", 0);
+        builder.addJoinToGroup("group", "oi", 0);
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(3, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(2, ais.getJoins().size());
+        Group group = ais.getGroup("group");
+        GroupTable groupTable = group.getGroupTable();
+        int c = 0;
+        Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
+    }
+
+    @Test
+    public void testTwoJoinsInGroupThenClearAndRetry()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "order", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.userTable("schema", "item");
+        builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        builder.joinTables("oi", "schema", "order", "schema", "item");
+        builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
+        builder.basicSchemaIsComplete();
+
+        // Step 1 -- group
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addJoinToGroup("group", "co", 0);
+        builder.addJoinToGroup("group", "oi", 0);
+        {
+            AkibaInformationSchema ais = builder.akibaInformationSchema();
+            Assert.assertEquals(3, ais.getUserTables().size());
+            Assert.assertEquals(1, ais.getGroupTables().size());
+            Assert.assertEquals(1, ais.getGroups().size());
+            Assert.assertEquals(2, ais.getJoins().size());
+            Group group = ais.getGroup("group");
+            GroupTable groupTable = group.getGroupTable();
+            int c = 0;
+            Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
+        }
+
+        // Step 2 -- clear
+        builder.clearGroupings();
+        {
+            AkibaInformationSchema ais = builder.akibaInformationSchema();
+            Assert.assertEquals(3, ais.getUserTables().size());
+            Assert.assertEquals(0, ais.getGroupTables().size());
+            Assert.assertEquals(0, ais.getGroups().size());
+            Assert.assertEquals(2, ais.getJoins().size());
+            Assert.assertNull( ais.getGroup("group") );
+        }
+
+        // Step 3 -- regroup with different name
+        builder.createGroup("group2", "groupschema", "coi");
+        builder.addJoinToGroup("group2", "co", 0);
+        builder.addJoinToGroup("group2", "oi", 0);
+        {
+            AkibaInformationSchema ais = builder.akibaInformationSchema();
+            Assert.assertEquals(3, ais.getUserTables().size());
+            Assert.assertEquals(1, ais.getGroupTables().size());
+            Assert.assertEquals(1, ais.getGroups().size());
+            Assert.assertEquals(2, ais.getJoins().size());
+            Group group = ais.getGroup("group2");
+            GroupTable groupTable = group.getGroupTable();
+            int c = 0;
+            Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
+            Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
+        }
+    }
+
+
+    @Test
+    public void testRemoval()
+    {
+        // Setup as in testTwoJoinsInGroup
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "order", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.userTable("schema", "item");
+        builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        builder.joinTables("oi", "schema", "order", "schema", "item");
+        builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addJoinToGroup("group", "co", 0);
+        builder.addJoinToGroup("group", "oi", 0);
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(3, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(2, ais.getJoins().size());
+        Group group = ais.getGroup("group");
+        GroupTable groupTable = group.getGroupTable();
+        int c = 0;
+        Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
+        // Remove customer/order join
+        builder.removeJoinFromGroup("group", "co");
+        Assert.assertEquals(3, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(2, ais.getJoins().size());
+        group = ais.getGroup("group");
+        groupTable = group.getGroupTable();
+        c = 0;
+        Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
+        Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
+        // Remove order/item join
+        builder.removeJoinFromGroup("group", "oi");
+        Assert.assertEquals(3, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(2, ais.getJoins().size());
+        group = ais.getGroup("group");
+        groupTable = group.getGroupTable();
+        Assert.assertEquals(0, groupTable.getColumns().size());        
+    }
+
+    @Test
+    public void testForwardReference()
+    {
+        AISBuilder builder = new AISBuilder();
+        // Create order
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        // Create join from order to customer
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        // Create customer
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addTableToGroup("group", "schema", "customer");
+        builder.addJoinToGroup("group", "co", 0);
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(2, ais.getUserTables().size());
+        Assert.assertEquals(1, ais.getGroupTables().size());
+        Assert.assertEquals(1, ais.getGroups().size());
+        Assert.assertEquals(1, ais.getJoins().size());
+        Group group = ais.getGroup("group");
+        GroupTable groupTable = group.getGroupTable();
+        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
+        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
+    }
+
+    @Test
+    public void testDeleteGroupWithOneTable()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addTableToGroup("group", "schema", "customer");
+        builder.removeTableFromGroup("group", "schema", "customer");
+        builder.deleteGroup("group");
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(1, ais.getUserTables().size());
+        Assert.assertEquals(0, ais.getGroupTables().size());
+        Assert.assertEquals(0, ais.getGroups().size());
+        Assert.assertEquals(0, ais.getJoins().size());
+    }
+
+    @Test
+    public void testDeleteGroupWithOneJoin()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "order", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "order", "pk", "order_id", 0, true, null);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addTableToGroup("group", "schema", "customer");
+        builder.addJoinToGroup("group", "co", 0);
+        builder.removeJoinFromGroup("group", "co");
+        builder.deleteGroup("group");
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(2, ais.getUserTables().size());
+        Assert.assertEquals(0, ais.getGroupTables().size());
+        Assert.assertEquals(0, ais.getGroups().size());
+        Assert.assertEquals(1, ais.getJoins().size());
+    }
+
+    @Test
+    public void testMoveTreeToEmptyGroup()
+    {
+        AISBuilder builder = new AISBuilder();
+        // Source group tables: a(b(c, d))
+        builder.userTable("s", "a");
+        builder.column("s", "a", "aid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "a", "pk", true, "PRIMARY");
+        builder.indexColumn("s", "a", "pk", "aid", 0, true, null);
+        builder.userTable("s", "b");
+        builder.column("s", "b", "bid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "b", "aid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "b", "pk", true, "PRIMARY");
+        builder.indexColumn("s", "b", "pk", "bid", 0, true, null);
+        builder.userTable("s", "c");
+        builder.column("s", "c", "cid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "c", "bid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.userTable("s", "d");
+        builder.column("s", "d", "did", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "d", "bid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("ab", "s", "a", "s", "b");
+        builder.joinColumns("ab", "s", "a", "aid", "s", "b", "aid");
+        builder.joinTables("bc", "s", "b", "s", "c");
+        builder.joinColumns("bc", "s", "b", "bid", "s", "c", "bid");
+        builder.joinTables("bd", "s", "b", "s", "d");
+        builder.joinColumns("bd", "s", "b", "bid", "s", "d", "bid");
+        // Source and target groups
+        builder.basicSchemaIsComplete();
+        builder.createGroup("source", "g", "source_table");
+        builder.addJoinToGroup("source", "ab", 0);
+        builder.addJoinToGroup("source", "bc", 0);
+        builder.addJoinToGroup("source", "bd", 0);
+        builder.createGroup("target", "g", "target_table");
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(4, ais.getUserTables().size());
+        Assert.assertEquals(2, ais.getGroupTables().size());
+        Assert.assertEquals(2, ais.getGroups().size());
+        Assert.assertEquals(3, ais.getJoins().size());
+        // Move b to target
+        builder.moveTreeToEmptyGroup("s", "b", "target");
+        UserTable a = ais.getUserTable("s", "a");
+        List<Join> aChildren = a.getChildJoins();
+        Assert.assertTrue(aChildren.isEmpty());
+        UserTable b = ais.getUserTable("s", "b");
+        Assert.assertSame(b, ais.getGroup("target").getGroupTable().getRoot());
+        int count = 0;
+        for (Join join : b.getChildJoins()) {
+            if (join.getChild() == ais.getUserTable("s", "c") ||
+                join.getChild() == ais.getUserTable("s", "d")) {
+                count++;
+            } else {
+                Assert.assertTrue(false);
+            }
+        }
+    }
+
+    @Test
+    public void testMoveTreeToNonEmptyGroup() throws Exception {
+        AISBuilder builder = new AISBuilder();
+        // Source group tables: a(b(c, d))
+        builder.userTable("s", "a");
+        builder.column("s", "a", "aid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "a", "pk", true, "PRIMARY");
+        builder.indexColumn("s", "a", "pk", "aid", 0, true, null);
+        builder.userTable("s", "b");
+        builder.column("s", "b", "bid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "b", "aid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "b", "pk", true, "PRIMARY");
+        builder.indexColumn("s", "b", "pk", "bid", 0, true, null);
+        builder.userTable("s", "c");
+        builder.column("s", "c", "cid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "c", "bid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.userTable("s", "d");
+        builder.column("s", "d", "did", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "d", "bid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("ab", "s", "a", "s", "b");
+        builder.joinColumns("ab", "s", "a", "aid", "s", "b", "aid");
+        builder.joinTables("bc", "s", "b", "s", "c");
+        builder.joinColumns("bc", "s", "b", "bid", "s", "c", "bid");
+        builder.joinTables("bd", "s", "b", "s", "d");
+        builder.joinColumns("bd", "s", "b", "bid", "s", "d", "bid");
+        // b has a candidate join to z
+        builder.joinTables("bz", "s", "z", "s", "b");
+        builder.joinColumns("bz", "s", "z", "zid", "s", "b", "bid");
+        // Target group tables: z
+        builder.userTable("s", "z");
+        builder.column("s", "z", "zid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "z", "pk", true, "PRIMARY");
+        builder.indexColumn("s", "z", "pk", "zid", 0, true, null);
+        // Source and target groups
+        builder.basicSchemaIsComplete();
+        builder.createGroup("source", "g", "source_table");
+        builder.addJoinToGroup("source", "ab", 0);
+        builder.addJoinToGroup("source", "bc", 0);
+        builder.addJoinToGroup("source", "bd", 0);
+        builder.createGroup("target", "g", "target_table");
+        builder.addTableToGroup("target", "s", "z");
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Assert.assertEquals(5, ais.getUserTables().size());
+        Assert.assertEquals(2, ais.getGroupTables().size());
+        Assert.assertEquals(2, ais.getGroups().size());
+        Assert.assertEquals(4, ais.getJoins().size());
+        // Move b to target
+        builder.moveTreeToGroup("s", "b", "target", "bz");
+        UserTable a = ais.getUserTable("s", "a");
+        List<Join> aChildren = a.getChildJoins();
+        Assert.assertTrue(aChildren.isEmpty());
+        UserTable z = ais.getUserTable("s", "z");
+        Assert.assertSame(z, ais.getGroup("target").getGroupTable().getRoot());
+        Assert.assertEquals(1, z.getChildJoins().size());
+        Join bz = z.getChildJoins().get(0);
+        UserTable b = ais.getUserTable("s", "b");
+        Assert.assertSame(b, bz.getChild());
+        int count = 0;
+        for (Join join : b.getChildJoins()) {
+            if (join.getChild() == ais.getUserTable("s", "c") ||
+                join.getChild() == ais.getUserTable("s", "d")) {
+                count++;
+            } else {
+                Assert.assertTrue(false);
+            }
+        }
+        // AISPrinter.print(ais);
+    }
+
+    @Test
+    public void testInitialAutoInc()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("s", "b");
+        builder.column("s", "b", "x", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "b", "y", 1, "int", 0L, 0L, false, true, null, null);
+        builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
+        builder.userTableInitialAutoIncrement("s", "b", 5L);
+        // Check autoinc state
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        UserTable table = ais.getUserTable("s", "b");
+        Assert.assertEquals(3, table.getColumns().size());
+        Assert.assertEquals(table.getColumn("y"), table.getAutoIncrementColumn());
+        Assert.assertEquals(null, table.getColumn("x").getInitialAutoIncrementValue());
+        Assert.assertEquals(5L, table.getColumn("y").getInitialAutoIncrementValue().longValue());
+        Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
+    }
+
+    @Test
+    public void testInitialAutoIncNoAutoInc()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("s", "b");
+        builder.column("s", "b", "x", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "b", "y", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
+        builder.userTableInitialAutoIncrement("s", "b", 5L);
+        // Check autoinc state
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        UserTable table = ais.getUserTable("s", "b");
+        Assert.assertEquals(3, table.getColumns().size());
+        Assert.assertEquals(null, table.getAutoIncrementColumn());
+        Assert.assertEquals(null, table.getColumn("x").getInitialAutoIncrementValue());
+        Assert.assertEquals(null, table.getColumn("y").getInitialAutoIncrementValue());
+        Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
+    }
+
+/*
+
+    @Test
+    public void testDDLGen()
+    {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "customer_pk", true, "primary key");
+        builder.indexColumn("schema", "customer", "customer_pk", "customer_id", 0, true, null);
+        builder.index("schema", "customer", "customer_name", false, "key");
+        builder.indexColumn("schema", "customer", "customer_name", "customer_name", 0, true, null);
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.userTable("schema", "item");
+        builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
+        builder.joinTables("oi", "schema", "order", "schema", "item");
+        builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "groupschema", "coi");
+        builder.addJoinToGroup("group", "co", 0);
+        builder.addJoinToGroup("group", "oi", 0);
+        builder.groupingIsComplete();
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        DDLGenerator ddlGenerator = new DDLGenerator();
+        print(ddlGenerator.dropAllGroupTables(ais));
+        print(ddlGenerator.createAllGroupTables(ais));
+    }
+*/
+
+    @Test
+    public void testCycles()
+    {
+        AISBuilder builder = new AISBuilder();
+        // q(k)
+        builder.userTable("s", "q");
+        builder.column("s", "q", "k", 0, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "q", "q_pk", true, "PRIMARY");
+        builder.indexColumn("s", "q", "q_pk", "k", 0, true, null);
+        // p(k, qk -> q(k))
+        builder.userTable("s", "p");
+        builder.column("s", "p", "k", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "p", "qk", 0, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "p", "p_pk", true, "PRIMARY");
+        builder.indexColumn("s", "p", "p_pk", "k", 0, true, null);
+        builder.joinTables("pq", "s", "q", "s", "p");
+        builder.joinColumns("pq", "s", "q", "k", "s", "p", "qk");
+        // t(k, p -> p(k), fk -> t(k))
+        builder.userTable("s", "t");
+        builder.column("s", "t", "k", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "t", "p", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "t", "fk", 2, "int", 0L, 0L, false, false, null, null);
+        builder.index("s", "t", "t_pk", true, "PRIMARY");
+        builder.indexColumn("s", "t", "t_pk", "k", 0, true, null);
+        builder.joinTables("tt", "s", "t", "s", "t");
+        builder.joinColumns("tt", "s", "t", "k", "s", "t", "fk");
+        builder.joinTables("tp", "s", "p", "s", "t");
+        builder.joinColumns("tp", "s", "p", "k", "s", "t", "p");
+        builder.basicSchemaIsComplete();
+        // group: p->q, t->p, t->t
+        builder.createGroup("group", "s", "g");
+        builder.addTableToGroup("group", "s", "q");
+        builder.addJoinToGroup("group", "pq", 0);
+        builder.addTableToGroup("group", "s", "p");
+        builder.addJoinToGroup("group", "tp", 0);
+        builder.addTableToGroup("group", "s", "t");
+        try {
+            builder.addJoinToGroup("group", "tt", 0);
+            Assert.assertTrue(false);
+        } catch (AISBuilder.GroupStructureException e) {
+            // expected
+        }
+        builder.groupingIsComplete();
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        Table userTable = ais.getTable("s", "t");
+        userTable.getColumns();
+        Table groupTable = ais.getTable("s", "g");
+        groupTable.getColumns();
+    }
+
+    @Test
+    public void testFunnyFKs()
+    {
+        AISBuilder builder = new AISBuilder();
+        // parent table
+        builder.userTable("s", "parent");
+        // parent columns
+        builder.column("s", "parent", "pk", 0, "int", 0L, 0L, false, false, null, null); // , null, nullPK
+        builder.column("s", "parent", "uk", 1, "int", 0L, 0L, false, false, null, null); // unique k, null, nulley
+        builder.column("s", "parent", "nk", 2, "int", 0L, 0L, false, false, null, null); // non-k, null, nulley
+        // parent indexes
+        builder.index("s", "parent", "pk", true, "PRIMARY");
+        builder.indexColumn("s", "parent", "pk", "pk", 0, true, null);
+        builder.index("s", "parent", "uk", true, "UNIQUE KEY");
+        builder.indexColumn("s", "parent", "uk", "uk", 0, true, null);
+        builder.index("s", "parent", "nk", true, "KEY");
+        builder.indexColumn("s", "parent", "nk", "nk", 0, true, null);
+        // child table
+        builder.userTable("s", "child");
+        // child columns
+        builder.column("s", "child", "ck", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "child", "fk_pk", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "child", "fk_uk", 2, "int", 0L, 0L, false, false, null, null);
+        builder.column("s", "child", "fk_nk", 3, "int", 0L, 0L, false, false, null, null);
+        // joins
+        builder.joinTables("pkjoin", "s", "parent", "s", "child");
+        builder.joinColumns("pkjoin", "s", "parent", "pk", "s", "child", "fk_pk");
+        builder.joinTables("ukjoin", "s", "parent", "s", "child");
+        builder.joinColumns("ukjoin", "s", "parent", "uk", "s", "child", "fk_uk");
+        builder.joinTables("nkjoin", "s", "parent", "s", "child");
+        builder.joinColumns("nkjoin", "s", "parent", "uk", "s", "child", "fk_nk");
+        // Create group
+        builder.basicSchemaIsComplete();
+        builder.createGroup("g", "s", "g");
+        // Add pk join to group
+        builder.addTableToGroup("g", "s", "parent");
+        builder.addJoinToGroup("g", "pkjoin", 0);
+/* Grouping validation has been disabled, so these tests will fail.
+        // Add uk join to group
+        builder.removeJoinFromGroup("g", "pkjoin");
+        try {
+            builder.addJoinToGroup("g", "ukjoin", 0);
+            Assert.assertTrue(false);
+        } catch (AISBuilder.UngroupableJoinException e) {
+            // expected
+        }
+        // Add nk join to group
+        try {
+            builder.addJoinToGroup("g", "nkjoin", 0);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            // expected
+        }
+*/
+        // Done
+        builder.groupingIsComplete();
+    }
+}

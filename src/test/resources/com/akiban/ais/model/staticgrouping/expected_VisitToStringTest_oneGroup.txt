@@ -1,0 +1,12 @@
+groupschema test_schema
+
+CREATE GROUP
+ROOT TABLE customers
+(
+    TABLE orders (cid) REFERENCES customers (id)
+    (
+        TABLE items (oid, oc2) REFERENCES orders (id, order_col_2),
+        TABLE shipments (o_id) REFERENCES orders (id)
+    ),
+    TABLE addresses (customer_id) REFERENCES customers (id)
+);

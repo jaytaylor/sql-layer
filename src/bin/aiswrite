@@ -1,0 +1,6 @@
+#!/bin/sh
+
+REPOSITORY=~/.m2/repository
+CLASSPATH=$REPOSITORY/com/akiban/akiban-ais/1.0.0/akiban-ais-1.0.0.jar:$REPOSITORY/mysql/mysql-connector-java/5.1.10/mysql-connector-java-5.1.10.jar
+
+java -cp $CLASSPATH com.akiban.ais.util.AISWriter $*

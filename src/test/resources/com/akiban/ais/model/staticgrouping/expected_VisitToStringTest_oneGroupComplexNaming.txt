@@ -1,0 +1,11 @@
+groupschema test_schema_whatever
+
+CREATE GROUP group_01
+ROOT TABLE test_schema.customers
+(
+    TABLE test_schema.`or``ders` (cid) REFERENCES test_schema.customers (id)
+    (
+        TABLE test_schema.items (oid, oc2) REFERENCES test_schema.`or``ders` (id, `order``col``2`)
+    ),
+    TABLE test_schema.addresses (customer_id) REFERENCES test_schema.customers (id)
+);

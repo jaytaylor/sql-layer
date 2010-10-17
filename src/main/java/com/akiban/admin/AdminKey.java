@@ -1,0 +1,43 @@
+package com.akiban.admin;
+
+public class AdminKey
+{
+    // Cluster configuration. Format:
+    // name: [*]host:port
+    // ...
+    // The names $admin and $mysql are reserved for configuring the addresses of the admin service and the mysql head.
+    // All other names are chunkserver names. * is used to denote the lead chunkserver. It must be specified for
+    // exactly one chunkserver, and never for $admin or $mysql.
+    public static final String CONFIG_CLUSTER = "/config/cluster.properties";
+
+    // Chunkserver properties. Format specified by chunkserver
+    public static final String CONFIG_CHUNKSERVER = "/config/chunkserver.properties";
+
+    // Logging properties. log4j format.
+    public static final String CONFIG_LOGGING = "/config/logging.properties";
+
+    public static final String STATE_BASE = "/state";
+    public static final String CONFIG_BASE = "/config";
+
+    // Chunkserver status. Format:
+    // state: up/down
+    // lead: true/false
+    public static final String STATE_CHUNKSERVER = "/state/%s.properties";
+
+    public static String[] REQUIRED_KEYS = new String[]{
+        CONFIG_CLUSTER,
+        CONFIG_CHUNKSERVER,
+        CONFIG_LOGGING
+    };
+
+    public static String[] CONFIG_KEYS = new String[]{
+        CONFIG_CLUSTER,
+        CONFIG_CHUNKSERVER,
+        CONFIG_LOGGING
+    };
+
+    public static String stateChunkserverName(String chunkserverName)
+    {
+        return String.format(STATE_CHUNKSERVER, chunkserverName);
+    }
+}

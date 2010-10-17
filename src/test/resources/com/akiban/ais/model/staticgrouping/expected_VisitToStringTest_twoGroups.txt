@@ -1,0 +1,16 @@
+groupschema test_schema
+
+CREATE GROUP group_01
+ROOT TABLE customers
+(
+    TABLE orders (cid) REFERENCES customers (id)
+    (
+        TABLE items (oid, oc2) REFERENCES orders (id, order_col_2)
+    )
+);
+
+CREATE GROUP group_beta
+ROOT TABLE addresses
+(
+    TABLE forwarding (current_address) REFERENCES addresses (id)
+);
