@@ -101,7 +101,6 @@
 	<!-- copy and replace above completely muck up permissions, 
 	you need to reset permission on file at the end -->
 	<chmod mode="755" file="${cserver.bindir}/bulkload.sh" /> 
-	<chmod mode="755" file="${cserver.bindir}/servicecli.sh" /> 
 	<chmod mode="744" file="${cserver.rundir}/chunkserverd" /> 
 
     </target>
