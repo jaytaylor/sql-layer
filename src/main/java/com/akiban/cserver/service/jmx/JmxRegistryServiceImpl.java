@@ -4,13 +4,10 @@ import com.akiban.cserver.service.Service;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service {
+public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service {
     private static final String FORMATTER = "com.akiban:type=%s";
-    private static final String FORMATTER_CONFLICT = "com.akiban:type=%s_%d";
 
     private boolean started = false;
     private final Map<JmxManageable,ObjectName> serviceToName = new HashMap<JmxManageable, ObjectName>();
@@ -38,7 +35,9 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxMana
 
     @Override
     public void register(JmxManageable service) {
-        String serviceName = service.getJmxObjectName();
+        final JmxObjectInfo info = service.getJmxObjectInfo();
+        validate(info);
+        String serviceName = info.getObjectName();
         if (!serviceName.matches("[\\w\\d]+")) {
             throw new JmxRegistrationException(service.getClass(), serviceName);
         }
@@ -52,7 +51,7 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxMana
 
             if (started) {
                 try {
-                    getMBeanServer().registerMBean(service.getJmxObject(), objectName);
+                    getMBeanServer().registerMBean(info.getInstance(), objectName);
                 }
                 catch (Exception e) {
                     removeService(objectName);
@@ -62,7 +61,7 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxMana
         }
     }
 
-    private MBeanServer getMBeanServer() {
+    protected MBeanServer getMBeanServer() {
         return ManagementFactory.getPlatformMBeanServer();
     }
 
@@ -80,8 +79,8 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxMana
         ObjectName objectName;
         try {
             objectName = new ObjectName(String.format(FORMATTER, serviceName));
-            for(int i=1; uniquenessSet.contains(objectName); ++i) {
-                objectName = new ObjectName(String.format(FORMATTER_CONFLICT, serviceName, i));
+            if (uniquenessSet.contains(objectName)) {
+                throw new JmxRegistrationException("Bean name conflict: " + serviceName);
             }
         } catch (MalformedObjectNameException e) {
             throw new JmxRegistrationException(e);
@@ -94,7 +93,9 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxMana
         synchronized (INTERNAL_LOCK) {
             try {
                 final ObjectName registeredObject = new ObjectName(String.format(FORMATTER, objectNameString));
-                getMBeanServer().unregisterMBean(registeredObject);
+                if (started) {
+                    getMBeanServer().unregisterMBean(registeredObject);
+                }
                 removeService(registeredObject);
             } catch (Exception e) {
                 throw new JmxRegistrationException(e);
@@ -113,7 +114,7 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxMana
                 final JmxManageable service = entry.getKey();
                 final ObjectName objectName = entry.getValue();
                 try {
-                    mbs.registerMBean(service.getJmxObject(), objectName);
+                    mbs.registerMBean(service.getJmxObjectInfo().getInstance(), objectName);
                 } catch (Exception e) {
                     throw new JmxRegistrationException("for " + objectName, e);
                 }
@@ -141,12 +142,51 @@ public final class JmxRegistryServiceImpl implements JmxRegistryService, JmxMana
     }
 
     @Override
-    public String getJmxObjectName() {
-        return "JmxManager";
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("JmxManager", this, JmxRegistryServiceMXBean.class);
     }
 
-    @Override
-    public Object getJmxObject() {
-        return this;
+    private static boolean isManagable(Class<?> theInterface) {
+        return theInterface.getSimpleName().endsWith("MXBean");
+    }
+
+    void validate(JmxObjectInfo objectInfo) {
+        Class<?> jmxInterface = objectInfo.getManagedInterface();
+        if (!isManagable(jmxInterface)) {
+            throw new JmxRegistrationException("Managed interface must end in \"MXBean\"");
+        }
+        if (!jmxInterface.isAssignableFrom(objectInfo.getInstance().getClass())) {
+            throw new JmxRegistrationException(String.format("%s is not assignable from %s",
+                    jmxInterface, objectInfo.getInstance().getClass()));
+        }
+        Set<Class<?>> objectInterfaces = getAllInterfaces(objectInfo.getInstance().getClass());
+        Iterator<Class<?>> interfacesIter = objectInterfaces.iterator();
+        while (interfacesIter.hasNext()) {
+            if (!isManagable(interfacesIter.next())) {
+                interfacesIter.remove();
+            }
+        }
+        if (objectInterfaces.size() != 1) {
+            throw new JmxRegistrationException("Need exactly one *MXBean interface. Found: " + objectInterfaces);
+        }
+    }
+
+    private static Set<Class<?>> getAllInterfaces(Class<?> root) {
+        Set<Class<?>> set = new HashSet<Class<?>>();
+        if (root.isInterface()) {
+            set.add(root);
+        }
+        getAllInterfaces(root.getInterfaces(), set);
+        return set;
+    }
+
+    private static void getAllInterfaces(Class<?>[] roots, Set<Class<?>> set) {
+        for (Class<?> root : roots) {
+            assert root.isInterface() : root;
+            if (!set.contains(root)) {
+                set.add(root);
+                getAllInterfaces(root.getInterfaces(), set);
+            }
+        }
     }
 }
