@@ -25,8 +25,10 @@ public interface ConfigurationService
     String getProperty(String module, String propertyName) throws PropertyNotDefinedException;
 
     /**
-     * Lists all known properties. The returned set should be unmodifiable.
-     * @return the unmodifiable set of all set properties.
+     * Gets a ModuleConfiguration for the specified module. This ModuleConfiguration represents a view
+     * of its ConfigurationService; if either is mutable, changes to the one should be reflected in the other.
+     * @param module the namespace to use
+     * @return a ModuleConfiguration backed by this ConfigurationService.
      */
-    Set<Property> getProperties();
+    ModuleConfiguration getModuleConfiguration(String module);
 }

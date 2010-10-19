@@ -47,6 +47,22 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     }
 
     @Override
+    public ModuleConfiguration getModuleConfiguration(String module) {
+        final String moduleString = module;
+        return new ModuleConfiguration() {
+            @Override
+            public String getProperty(String propertyName, String defaultValue) {
+                return ConfigurationServiceImpl.this.getProperty(moduleString, propertyName, defaultValue);
+            }
+
+            @Override
+            public String getProperty(String propertyName) throws PropertyNotDefinedException {
+                return ConfigurationServiceImpl.this.getProperty(moduleString, propertyName);
+            }
+        };
+    }
+
+    @Override
     public final void start() throws IOException, ServiceStartupException {
         synchronized(INTERNAL_LOCK) {
             if (properties == null) {
