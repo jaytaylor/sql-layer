@@ -10,7 +10,7 @@ import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceNotStartedException;
 import com.akiban.cserver.service.jmx.JmxManageable;
 
-public class ConfigurationServiceImpl implements ConfigurationService, ConfigurationServiceMXBean, JmxManageable, Service
+public class ConfigurationServiceImpl implements ConfigurationService, ConfigurationServiceMXBean, Service
 {
     private final static String DEFAULT_CONFIG_FILE = "configuration.properties";
     private final Set<Property> valuesSet;
@@ -179,13 +179,4 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return valuesAsSet;
     }
 
-    @Override
-    public String getJmxObjectName() {
-        return "Configuration";
-    }
-
-    @Override
-    public Object getJmxObject() {
-        return this;
-    }
 }
