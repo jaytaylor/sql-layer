@@ -1,75 +1,119 @@
 package com.akiban.cserver.service.config;
 
-public final class Property implements Comparable<Property> {
-    private final String module;
-    private final String name;
-    private final String defaultValue;
-    private volatile String value;
+import com.akiban.util.ArgumentValidation;
 
-    Property(String module, String name, String defaultValue) {
-        if (module == null) {
-            throw new IllegalArgumentException("namespace may not be null");
+public final class Property implements Comparable<Property> {
+
+    public static final class Key implements Comparable<Key> {
+        private final String module;
+        private final String name;
+
+        public Key(String module, String name) {
+            ArgumentValidation.notNull("module", module);
+            ArgumentValidation.notNull("property name", name);
+            this.module = module;
+            this.name = name;
         }
-        if (name== null) {
-            throw new IllegalArgumentException("name may not be null");
+
+        public String getModule() {
+            return module;
         }
-        if (defaultValue == null) {
-            throw new IllegalArgumentException("value may not be null");
+
+        public String getName() {
+            return name;
         }
-        this.module = module;
-        this.name = name;
-        this.defaultValue = defaultValue;
-        this.value = null;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Key that = (Key) o;
+
+            if (!module.equals(that.module)) return false;
+            return name.equals(that.name);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = module.hashCode();
+            result = 31 * result + name.hashCode();
+            return result;
+        }
+
+        @Override
+        public int compareTo(Key other) {
+            int comparison = this.module.compareTo(other.module);
+            if (comparison != 0) {
+                return comparison;
+            }
+            return this.name.compareTo(other.name);
+        }
+    }
+
+    public static Key parseKey(String fullName) {
+        ArgumentValidation.notNull("property name", fullName);
+        int dotAt = fullName.indexOf('.');
+        final String beforeDot;
+        final String afterDot;
+        if (dotAt < 0) {
+            beforeDot = "";
+            afterDot = fullName;
+        }
+        else {
+            beforeDot = fullName.substring(0, dotAt);
+            afterDot = fullName.substring(dotAt+1);
+        }
+        return new Key(beforeDot, afterDot);
+    }
+
+    private final Key key;
+    private final String value;
+
+    Property(Key key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    Property(String module, String name, String value) {
+        this.key = new Key(module, name);
+        this.value = value;
     }
 
     public String getModule() {
-        return module;
+        return key.getModule();
     }
 
     public String getName() {
-        return name;
-    }
-
-    public String getValueDefault() {
-        return defaultValue;
+        return key.getName();
     }
 
     public String getValue() {
-        final String localValue = value;
-        return localValue == null ? defaultValue : localValue;
+        return value;
+    }
+
+    public Key getKey() {
+        return key;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Property that = (Property) o;
-
-        if (!module.equals(that.module)) return false;
-        if (!name.equals(that.name)) return false;
-
-        return true;
+    public boolean equals(Object obj) {
+        return (obj instanceof Property) && key.equals(((Property)obj).key);
     }
 
     @Override
     public int hashCode() {
-        int result = module.hashCode();
-        result = 31 * result + name.hashCode();
-        return result;
+        return key.hashCode();
     }
 
     @Override
-    public int compareTo(Property other) {
-        int comparison = this.module.compareTo(other.module);
-        if (comparison != 0) {
-            return comparison;
-        }
-        return this.name.compareTo(other.name);
+    public int compareTo(Property o) {
+        return key.compareTo(o.key);
     }
 
     @Override
     public String toString() {
-        return String.format("Property[%s > %s = %s", module, name, defaultValue);
+        return String.format("Property[%s > %s = %s]", getModule(), getName(), value);
     }
 }

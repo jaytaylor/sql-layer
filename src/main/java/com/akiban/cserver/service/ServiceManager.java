@@ -44,7 +44,11 @@ public class ServiceManager
     }
 
     private void startAndPut(Service service, String name) {
-        service.start();
+        try {
+            service.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e); // TODO VERY HACKY JUST TO GET MY UNIT TEST TO COMPILE.
+        }
         services.put(name, service);
     }
     
