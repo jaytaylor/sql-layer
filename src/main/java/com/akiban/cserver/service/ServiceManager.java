@@ -7,6 +7,7 @@ import com.akiban.cserver.service.config.ConfigurationServiceImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
+import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
 
@@ -17,6 +18,7 @@ public class ServiceManager
     private static final String NETWORK = "network";
     private static final String CONFIGURATION = "configuration";
     private static final String JMX = "jmx";
+    private static final String LOGGING = "logging";
     
     public static ServiceManager get()
     {
@@ -31,7 +33,8 @@ public class ServiceManager
     public void startServices()
     {
         JmxRegistryServiceImpl jmxRegistry = new JmxRegistryServiceImpl();
-        
+
+        startAndPut(new LoggingServiceImpl(), LOGGING);
         startAndPut(new ConfigurationServiceImpl(), CONFIGURATION);
         startAndPut(new NetworkServiceImpl(), NETWORK);
         startAndPut(jmxRegistry, JMX);
