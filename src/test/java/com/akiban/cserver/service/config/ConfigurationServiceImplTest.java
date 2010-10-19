@@ -69,6 +69,20 @@ public final class ConfigurationServiceImplTest {
     }
 
     @Test
+    public void moduleConfigForDefinedField() throws ServiceStartupException, IOException {
+        ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
+        ModuleConfiguration moduleConfig = service.getModuleConfiguration("mod1");
+        service.start();
+        assertEquals("mod1, key1", "val1", moduleConfig.getProperty("key1", "foo"));
+    }
+
+    @Test(expected=ServiceNotStartedException.class)
+    public void moduleConfigUnstartedService() {
+        ConfigurationService service = new MockConfigService(new Property("mod1", "key1", "val1"));
+        service.getModuleConfiguration("mod1").getProperty("key1");
+    }
+
+    @Test
     public void getProperties() {
         ConfigurationServiceImpl service = createAndStart(
                 "mod1", "key1", "val1",
