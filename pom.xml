@@ -17,7 +17,14 @@
         	<enabled>false</enabled>
 	      </snapshots>
 	    </repository>
-	  </repositories>
+            <repository>
+                <id>repo</id>
+                <name>libs-snapshots-local</name>
+                <url>http://172.16.20.117:9999/artifactory/libs-snapshots-local</url>
+            </repository>
+      </repositories>
+
+
 
 	  <pluginRepositories>
 	    <pluginRepository>
