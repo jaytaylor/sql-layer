@@ -4,7 +4,7 @@ set -e
 
 TEAMCITY=${TEAMCITY:-0}
 PUBLISH=${PUBLISH:-0}
-rev=${rev:-1000}
+rev=${BUILD_VCS_NUMBER:-1000}
 
 rpm_env()
 {
