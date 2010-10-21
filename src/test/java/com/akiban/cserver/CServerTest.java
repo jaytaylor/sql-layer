@@ -4,31 +4,29 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.lang.management.ManagementFactory;
 
 import javax.management.ObjectName;
 
-import com.akiban.cserver.manage.MXBeanManager;
-import com.akiban.cserver.message.DMLRequest;
-import com.akiban.message.*;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Types;
 import com.akiban.cserver.manage.ManageMXBean;
+import com.akiban.cserver.message.DMLRequest;
 import com.akiban.cserver.message.GetAutoIncrementValueRequest;
 import com.akiban.cserver.message.GetAutoIncrementValueResponse;
 import com.akiban.cserver.message.GetTableStatisticsRequest;
 import com.akiban.cserver.message.GetTableStatisticsResponse;
 import com.akiban.cserver.message.WriteRowRequest;
 import com.akiban.cserver.message.WriteRowResponse;
-import com.akiban.network.AkibaNetworkHandler;
-import com.akiban.network.NetworkHandlerFactory;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.message.AkibanConnection;
+import com.akiban.message.AkibanConnectionImpl;
+import com.akiban.message.Message;
+import com.akiban.message.MessageRegistryBase;
 
 public class CServerTest implements CServerConstants {
 
@@ -45,38 +43,43 @@ public class CServerTest implements CServerConstants {
 
     private static AkibanConnection connection;
 
-    private static CServer cserver;
-    
-    private static ObjectName mxbeanName;
+    private static ServiceManagerImpl serviceManager;
 
+    private static ObjectName mxbeanName;
 
     @BeforeClass
     public static void setUpSuite() throws Exception {
         CServerUtil.cleanUpDirectory(DATA_PATH);
         MessageRegistryBase.reset();
-        cserver = new CServer(false);
-        cserver.setProperty("cserver.fixed", "true");
-        cserver.setProperty("cserver.datapath", DATA_PATH.getPath());
-        cserver.start();
+        serviceManager = new ServiceManagerImpl();
+        serviceManager.setupCServerConfigForUnitTests();
+        serviceManager.startServices();
         ROW_DEF.setRowType(RowType.ROOT);
         ROW_DEF.setGroupRowDefId(ROW_DEF.getRowDefId());
         ROW_DEF.setUserTableRowDefs(new RowDef[] { ROW_DEF });
 
-        cserver.getRowDefCache().putRowDef(ROW_DEF);
+        serviceManager.getCServer().getStore().getRowDefCache()
+                .putRowDef(ROW_DEF);
 
-        connection = new AkibanConnectionImpl(cserver.host(), cserver.port());
+        connection = new AkibanConnectionImpl(serviceManager.getCServer()
+                .host(), serviceManager.getCServer().port());
         mxbeanName = new ObjectName(ManageMXBean.MANAGE_BEAN_NAME);
     }
 
     @AfterClass
     public static void tearDownSuite() throws Exception {
-        connection.close();
-        cserver.stop();
+        try {
+            connection.close();
+        } finally {
+            serviceManager.stopServices();
+            serviceManager = null;
+        }
     }
 
     @Before
     public void setUp() throws Exception {
-        cserver.getStore().truncateTable(ROW_DEF.getRowDefId());
+        serviceManager.getCServer().getStore()
+                .truncateTable(ROW_DEF.getRowDefId());
     }
 
     @After
@@ -84,11 +87,12 @@ public class CServerTest implements CServerConstants {
     }
 
     @Test
-    public void  qtestWriteRowResponse() throws Exception {
+    public void qtestWriteRowResponse() throws Exception {
         final WriteRowRequest request = createWriteRowRequest();
         setAisGeneration(request);
         final Message response = connection.sendAndReceive(request);
-        assertEquals("message type", WriteRowResponse.class, response.getClass());
+        assertEquals("message type", WriteRowResponse.class,
+                response.getClass());
     }
 
     @Test
@@ -106,7 +110,8 @@ public class CServerTest implements CServerConstants {
         request = createWriteRowRequest();
         setAisGeneration(request);
         response = connection.sendAndReceive(request);
-        assertEquals("response type", WriteRowResponse.class, response.getClass());
+        assertEquals("response type", WriteRowResponse.class,
+                response.getClass());
 
         request = new GetAutoIncrementValueRequest(ROW_DEF.getRowDefId());
         setAisGeneration(request);
@@ -123,7 +128,8 @@ public class CServerTest implements CServerConstants {
         request = createWriteRowRequest();
         setAisGeneration(request);
         response = connection.sendAndReceive(request);
-        assertEquals("message type", WriteRowResponse.class, response.getClass());
+        assertEquals("message type", WriteRowResponse.class,
+                response.getClass());
 
         request = new GetTableStatisticsRequest(ROW_DEF.getRowDefId(), (byte) 0);
         setAisGeneration(request);
@@ -140,22 +146,10 @@ public class CServerTest implements CServerConstants {
         assertEquals(0, ts.getHistogramList().size());
     }
 
-    /**
-     * Make sure we can load the Drupal schema via DDLSource. Padraig
-     * encountered a problem with an incorrectly written schema file. Leaving
-     * this test here for now in case we need to test newer versions.
-     */
-    @Test
-    public void testDrupalSchema() throws Exception {
-        final AkibaInformationSchema ais = new DDLSource()
-                .buildAIS(DDL_FILE_NAME);
-        final CServer cserver = new CServer(false);
-        cserver.getRowDefCache().setAIS(ais);
-    }
-
     private void setAisGeneration(DMLRequest request) {
         try {
-            request.setAisGeneration(MXBeanManager.getSchemaManager().getSchemaID().getGeneration());
+            request.setAisGeneration(serviceManager.getCServer().getStore()
+                    .getSchemaManager().getSchemaID().getGeneration());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

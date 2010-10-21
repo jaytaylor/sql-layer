@@ -1,16 +1,7 @@
-package com.akiban.cserver.manage;
+package com.akiban.cserver.store;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.CServer;
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.message.ErrorCode;
-import com.akiban.util.Strings;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,21 +12,32 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static junit.framework.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public final class SchemaMXBeanImplTest {
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.message.ErrorCode;
+import com.akiban.util.Strings;
+
+public final class PersistitStoreSchemaManagerTest {
 
     private final static String SCHEMA = "my_schema";
     private final static Pattern REGEX = Pattern.compile("CREATE TABLE `(\\w+)`\\.(\\w+)");
 
-    private CServer cserver;
-    SchemaMXBeanImpl manager;
+    private PersistitStore store;
+    
+    PersistitStoreSchemaManager manager;
 
     @Before
     public void setUp() throws Exception {
-        cserver = new CServer(false);
-        cserver.start(false);
-        manager = (SchemaMXBeanImpl) MXBeanManager.getSchemaManager();
+        store = ServiceManagerImpl.getStoreForUnitTests();
+        manager = store.getSchemaManager();
     }
 
     @After
@@ -45,9 +47,7 @@ public final class SchemaMXBeanImplTest {
             assertTables("user tables");
             assertDDLS();
         } finally {
-            CServer old = cserver;
-            cserver = null;
-            old.stop();
+            store.stop();
         }
     }
 

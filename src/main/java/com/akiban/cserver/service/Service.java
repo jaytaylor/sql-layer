@@ -2,6 +2,8 @@ package com.akiban.cserver.service;
 
 public interface Service
 {
+
     void start() throws Exception;
-    void stop();
+    void stop() throws Exception;
+
 }

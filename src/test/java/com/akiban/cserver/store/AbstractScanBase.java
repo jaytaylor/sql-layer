@@ -1,7 +1,5 @@
 package com.akiban.cserver.store;
 
-import static org.junit.Assert.assertEquals;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,14 +12,13 @@ import org.junit.BeforeClass;
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.util.ByteBufferFactory;
 
 public abstract class AbstractScanBase implements CServerConstants {
@@ -44,10 +41,11 @@ public abstract class AbstractScanBase implements CServerConstants {
 
     @BeforeClass
     public static void setUpSuite() throws Exception {
-
-        rowDefCache = new RowDefCache();
-        store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
-        final AkibaInformationSchema ais0 = new CServer(false).createEmptyAIS();
+        store = ServiceManagerImpl.getStoreForUnitTests();
+        rowDefCache = store.getRowDefCache();
+        // initially empty
+        final AkibaInformationSchema ais0 = store.getAis();
+        
         rowDefCache.setAIS(ais0);
         final AkibaInformationSchema ais = new DDLSource()
                 .buildAIS(DDL_FILE_NAME);
@@ -58,14 +56,13 @@ public abstract class AbstractScanBase implements CServerConstants {
                         + table.getName().getTableName(), table);
             }
         }
-        store.startUp();
-        store.setOrdinals();
+        store.fixUpOrdinals();
         populateTables();
     }
 
     @AfterClass
     public static void tearDownSuite() throws Exception {
-        store.shutDown();
+        store.stop();
         store = null;
         rowDefCache = null;
         tableMap.clear();

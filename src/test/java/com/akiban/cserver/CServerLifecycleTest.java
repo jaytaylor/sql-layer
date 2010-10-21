@@ -1,19 +1,28 @@
 package com.akiban.cserver;
 
-import com.akiban.message.*;
-import com.akiban.server.RequestHandler;
-import com.akiban.util.Command;
+import java.io.IOException;
+
 import junit.framework.Assert;
-import org.junit.Before;
+
 import org.junit.Test;
 
-import java.io.IOException;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.message.AkibanConnection;
+import com.akiban.message.AkibanConnectionImpl;
+import com.akiban.message.ExecutionContext;
+import com.akiban.message.MessageRegistry;
+import com.akiban.message.MessageRegistryBase;
+import com.akiban.message.Request;
+import com.akiban.server.RequestHandler;
+import com.akiban.util.Command;
 
 public class CServerLifecycleTest
 {
     private static final int N = 5;
     private static final int N_REQUESTS = 10;
     private static final boolean USE_NETTY = Boolean.parseBoolean(System.getProperty("usenetty", "false"));
+    
+    private ServiceManagerImpl serviceManager;
 
     @Test
     public void testStartupShutdown() throws Exception
@@ -62,9 +71,11 @@ public class CServerLifecycleTest
     private CServer startChunkServer()
             throws Exception
     {
-        MessageRegistry.reset(); // In case a message registry is left over from a previous test in the same JVM. 
-        CServer cserver = new CServer(false);
-        cserver.start();
+        MessageRegistry.reset(); // In case a message registry is left over from a previous test in the same JVM.
+        serviceManager = new ServiceManagerImpl();
+        serviceManager.setupCServerConfigForUnitTests();
+        serviceManager.startServices();
+        CServer cserver = serviceManager.getCServer();
         Assert.assertTrue(listeningOnPort(cserver.port()));
         MessageRegistry.reset(); 
         initializeMessageRegistry();
@@ -74,7 +85,8 @@ public class CServerLifecycleTest
     private void stopChunkServer(CServer cserver)
             throws Exception
     {
-        cserver.stop();
+        serviceManager.stopServices();
+        serviceManager = null;
         Assert.assertTrue(!listeningOnPort(cserver.port()));
         MessageRegistry.reset();
     }

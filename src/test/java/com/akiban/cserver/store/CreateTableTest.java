@@ -3,9 +3,9 @@ package com.akiban.cserver.store;
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
-import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.ServiceManagerImpl;
 import com.persistit.Exchange;
 import com.persistit.Key;
 
@@ -23,15 +23,13 @@ public class CreateTableTest extends TestCase implements CServerConstants {
 
     @Override
     public void setUp() throws Exception {
-        rowDefCache = new RowDefCache();
-        store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
-        store.startUp();
-        store.setOrdinals();
+        store = ServiceManagerImpl.getStoreForUnitTests();
+        rowDefCache = store.getRowDefCache();
     }
 
     @Override
     public void tearDown() throws Exception {
-        store.shutDown();
+        store.stop();
         store = null;
         rowDefCache = null;
     }

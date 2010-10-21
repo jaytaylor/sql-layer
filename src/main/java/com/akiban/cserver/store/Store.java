@@ -3,13 +3,16 @@ package com.akiban.cserver.store;
 import java.util.Collection;
 import java.util.List;
 
+import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.message.ScanRowsRequest;
+import com.akiban.cserver.service.Service;
 import com.persistit.Exchange;
 
 /**
@@ -18,11 +21,7 @@ import com.persistit.Exchange;
  * @author peter
  * 
  */
-public interface Store {
-
-    void startUp() throws Exception;
-
-    void shutDown() throws Exception;
+public interface Store extends Service {
 
     RowDefCache getRowDefCache();
 
@@ -36,9 +35,9 @@ public interface Store {
     void writeRow(final RowData rowData) throws Exception;
 
     void writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData, final int[] ordinals, final int[] nKeyColumns,
-            final FieldDef[] fieldDefs, final Object[] hKey)
-            throws Exception;
+            final RowData rowData, final int[] ordinals,
+            final int[] nKeyColumns, final FieldDef[] fieldDefs,
+            final Object[] hKey) throws Exception;
 
     void updateTableStats(final RowDef rowDef, long rowCount) throws Exception;
 
@@ -51,15 +50,16 @@ public interface Store {
 
     /**
      * @param scanRowsRequest
-     * @return  The RowCollector that will generated the requested
-     * rows
+     * @return The RowCollector that will generated the requested rows
      */
-    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest) throws Exception;
+    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest)
+            throws Exception;
 
     /**
-     * Version of newRowCollector used in tests and a couple of sites
-     * local to cserver. Eliminates having to serialize a ScanRowsRequestt
-     * to convey these parameters.
+     * Version of newRowCollector used in tests and a couple of sites local to
+     * cserver. Eliminates having to serialize a ScanRowsRequestt to convey
+     * these parameters.
+     * 
      * @param rowDefId
      * @param indexId
      * @param scanFlags
@@ -74,27 +74,32 @@ public interface Store {
             final byte[] columnBitMap) throws Exception;
 
     /**
-     * Get the previously saved RowCollector for the specified tableId.
-     * Used in processing the ScanRowsMoreRequest message.
+     * Get the previously saved RowCollector for the specified tableId. Used in
+     * processing the ScanRowsMoreRequest message.
+     * 
      * @param tableId
      * @return
      */
-    RowCollector getSavedRowCollector(final int tableId) throws InvalidOperationException;
+    RowCollector getSavedRowCollector(final int tableId)
+            throws InvalidOperationException;
 
     /**
      * Push a RowCollector onto a stack so that it can subsequently be
      * referenced by getSavedRowCollector.
+     * 
      * @param rc
      */
     void addSavedRowCollector(final RowCollector rc);
-    
+
     /***
-     * Remove a previously saved RowCollector.  Must the the most
-     * recently added RowCollector for a table.
+     * Remove a previously saved RowCollector. Must the the most recently added
+     * RowCollector for a table.
+     * 
      * @param rc
      */
-    void removeSavedRowCollector(final RowCollector rc) throws InvalidOperationException;
-    
+    void removeSavedRowCollector(final RowCollector rc)
+            throws InvalidOperationException;
+
     long getRowCount(final boolean exact, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception;
 
@@ -102,24 +107,32 @@ public interface Store {
 
     /**
      * Drops a single table, identified by ID.
-     *
+     * 
      * This is a no-op if the rowDefID corresponds to a group table.
-     * @param rowDefId the ID of the table to drop
+     * 
+     * @param rowDefId
+     *            the ID of the table to drop
      * @return the result of the drop; OK or an error.
-     * @throws Exception if the rowDef couldn't be looked up, or if the transaction failed
+     * @throws Exception
+     *             if the rowDef couldn't be looked up, or if the transaction
+     *             failed
      */
     void dropTable(final int rowDefId) throws Exception;
 
     /**
-     * Drops several tables as a single transaction. Each table's drop is handled equivalently to
-     * {@link #dropTable(int)}, but if any fail, the transaction is rolled back and the failed drop's status
-     * is returned.
-     *
-     * The given Collection, and all of its elements, must be non-null. Any null values will result in a NPE
-     * being thrown and the transaction atomically failing.
-     * @param rowDefIds the list of rowDefs to return. This list will not be modified.
+     * Drops several tables as a single transaction. Each table's drop is
+     * handled equivalently to {@link #dropTable(int)}, but if any fail, the
+     * transaction is rolled back and the failed drop's status is returned.
+     * 
+     * The given Collection, and all of its elements, must be non-null. Any null
+     * values will result in a NPE being thrown and the transaction atomically
+     * failing.
+     * 
+     * @param rowDefIds
+     *            the list of rowDefs to return. This list will not be modified.
      * @return the result of the drop; OK or the first error
-     * @throws Exception see {@linkplain #dropTable(int)}
+     * @throws Exception
+     *             see {@linkplain #dropTable(int)}
      */
     void dropTables(final Collection<Integer> rowDefIds) throws Exception;
 
@@ -127,7 +140,7 @@ public interface Store {
 
     void dropSchema(final String schemaName) throws Exception;
 
-    void setOrdinals() throws Exception;
+    void fixUpOrdinals() throws Exception;
 
     /**
      * <p>
@@ -232,4 +245,14 @@ public interface Store {
     void removeCommittedUpdateListener(final CommittedUpdateListener listener);
 
     SchemaId getSchemaId();
+
+    AkibaInformationSchema getAis();
+
+    boolean isDeferIndexes();
+
+    void setDeferIndexes(final boolean b);
+
+    // TODO - temporary - we want this to be a separate service acquired
+    // from ServiceManager.
+    SchemaManager getSchemaManager();
 }

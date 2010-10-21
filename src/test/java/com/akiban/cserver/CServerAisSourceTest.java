@@ -11,31 +11,28 @@ import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
+import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.Store;
-import org.junit.Ignore;
+import com.akiban.cserver.store.PersistitStoreSchemaManager;
 
 public class CServerAisSourceTest extends TestCase implements CServerConstants {
 
     private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
 
-    private Store store;
+    private PersistitStore store;
 
     private AkibaInformationSchema ais;
 
     @Override
     public void setUp() throws Exception {
-        store = new PersistitStore(CServerConfig.unitTestConfig(),
-                new RowDefCache());
-        store.startUp();
-        store.setVerbose(true);
-        store.getRowDefCache().setAIS(new CServer(false).createEmptyAIS());
+        store = ServiceManagerImpl.getStoreForUnitTests();
+        store.getRowDefCache().setAIS(new PersistitStoreSchemaManager(store).createEmptyAIS());
         this.ais = new DDLSource().buildAIS(DDL_FILE_NAME);
     }
 
     @Override
     public void tearDown() throws Exception {
-        store.shutDown();
+        store.stop();
         store = null;
     }
 

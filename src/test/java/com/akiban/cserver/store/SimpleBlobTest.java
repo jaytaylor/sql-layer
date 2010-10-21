@@ -6,11 +6,11 @@ import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.ServiceManagerImpl;
 
 public class SimpleBlobTest extends TestCase implements CServerConstants {
 
@@ -27,16 +27,16 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
 
     @Override
     public void setUp() throws Exception {
-        rowDefCache = new RowDefCache();
-        store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
+        store = ServiceManagerImpl.getStoreForUnitTests();
+        rowDefCache = store.getRowDefCache();
         final AkibaInformationSchema ais = new DDLSource().buildAISFromString(CREATE_TABLE_STATEMENT1);
         rowDefCache.setAIS(ais);
-        store.startUp();
+        store.fixUpOrdinals();
     }
 
     @Override
     public void tearDown() throws Exception {
-        store.shutDown();
+        store.stop();
         store = null;
         rowDefCache = null;
     }

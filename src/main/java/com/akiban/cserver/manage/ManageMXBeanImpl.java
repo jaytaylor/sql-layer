@@ -1,10 +1,7 @@
 package com.akiban.cserver.manage;
 
-import java.util.List;
-
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CServerConfig;
-import com.akiban.cserver.CServer.CapturedMessage;
 import com.akiban.cserver.store.PersistitStore;
 
 class ManageMXBeanImpl implements ManageMXBean {

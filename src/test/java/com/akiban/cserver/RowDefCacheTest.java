@@ -29,23 +29,14 @@ public class RowDefCacheTest {
 
     protected final static String SCHEMA = "row_def_cache_test";
 
-    protected static PersistitStore store;
-
     protected static RowDefCache rowDefCache;
 
     @Before
     public void setUp() throws Exception {
 
         rowDefCache = new RowDefCache();
-        store = new PersistitStore(CServerConfig.unitTestConfig(), rowDefCache);
     }
 
-    @After
-    public void tearDown() throws Exception {
-        store.shutDown();
-        store = null;
-        rowDefCache = null;
-    }
 
     @Test
     public void testHKeyOrdering() throws Exception {
