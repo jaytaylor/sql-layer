@@ -155,10 +155,8 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
         if (!isManagable(jmxInterface)) {
             throw new JmxRegistrationException("Managed interface must end in \"MXBean\"");
         }
-        if (!jmxInterface.isAssignableFrom(objectInfo.getInstance().getClass())) {
-            throw new JmxRegistrationException(String.format("%s is not assignable from %s",
-                    jmxInterface, objectInfo.getInstance().getClass()));
-        }
+        assert jmxInterface.isAssignableFrom(objectInfo.getInstance().getClass())
+            : String.format("%s is not assignable from %s", jmxInterface, objectInfo.getInstance().getClass());
         Set<Class<?>> objectInterfaces = getAllInterfaces(objectInfo.getInstance().getClass());
         Iterator<Class<?>> interfacesIter = objectInterfaces.iterator();
         while (interfacesIter.hasNext()) {

@@ -10,7 +10,7 @@ public interface JmxManageable {
         private final String objectName;
         private final Class<?> jmxInterface;
 
-        public JmxObjectInfo(String objectName, Object instance, Class<?> jmxInterface) {
+        public <T> JmxObjectInfo(String objectName, T instance, Class<T> jmxInterface) {
             ArgumentValidation.notNull("JMX object instance", instance);
             ArgumentValidation.notNull("object name", objectName);
             ArgumentValidation.notNull("interfaces", jmxInterface);
