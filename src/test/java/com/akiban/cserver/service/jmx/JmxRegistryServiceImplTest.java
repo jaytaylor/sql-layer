@@ -189,19 +189,6 @@ public final class JmxRegistryServiceImplTest {
         service.register(new GoodService("Alpha"));
     }
 
-    @Test(expected=JmxRegistrationException.class)
-    public void objectDoesNotImplementInterface() {
-        class FalsePositive implements JmxManageable { // note, doesn't implement TestMXBean
-            @Override
-            public JmxObjectInfo getJmxObjectInfo() {
-                return new JmxObjectInfo("FalsePositive", this, TestMXBean.class);
-            }
-        }
-
-        MockedJmxRegistry service = new MockedJmxRegistry();
-        service.register(new FalsePositive());
-    }
-
     private void assertRegisteredServices(MockedJmxRegistry registry, String... actuals) {
         assertRegisteredServices(registry.getMBeanServer().getRegisteredObjectNames(), actuals);
     }
