@@ -213,21 +213,17 @@ public final class SessionServiceImplTest {
             }
         };
         final SessionServiceImpl service = new SessionServiceImpl(factory);
-        final CountDownLatch thread1FinishedLatch = new CountDownLatch(1);
         Thread thread1 = new Thread() {
             @Override
             public void run() {
                 service.createSession( new DummySessionHandle());
-                thread1FinishedLatch.countDown();
             }
         };
 
-        final CountDownLatch thread2FinishedLatch = new CountDownLatch(1);
         Thread thread2 = new Thread() {
             @Override
             public void run() {
                 service.createSession( new DummySessionHandle());
-                thread2FinishedLatch.countDown();
             }
         };
 
@@ -238,11 +234,11 @@ public final class SessionServiceImplTest {
         }
 
         thread2.start();
-        thread2FinishedLatch.await();
+        thread2.join();
         assertStats(service, 1, 0, 0);
 
         factoryMayContinueLatch.countDown();
-        thread1FinishedLatch.await();
+        thread1.join();
         assertStats(service, 2, 0, 0);
     }
 
