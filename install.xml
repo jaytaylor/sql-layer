@@ -1,4 +1,4 @@
-<project name="Project Helper" basedir="." default="install">
+<project name="Project Helper" basedir="." default="install-cserver">
 	<description>Set of ant tasks to install cserver service</description>
 
 	<property name="cserver.install.dir" location="../build/cserver" />
@@ -19,11 +19,11 @@
 	<property name="mysql.subsys"    		location="${mysql.install.dir}/var/lock/subsys" />
 	<property name="mysql.config"    	location="${mysql.install.dir}/etc/akiban/config" />
 
-    <target name="uninstall" >
+    <target name="uninstall-cserver" >
 	<delete dir="${cserver.install.dir}" verbose="true"/>
     </target>
 
-    <target name="install" >
+    <target name="install-cserver" >
 
 	<property name="cserver.prefix" value="${cserver.install.dir}" />
 	<fail unless="cserver.install.dir"    />

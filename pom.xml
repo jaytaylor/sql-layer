@@ -224,6 +224,26 @@
           </excludes>
         </configuration>
       </plugin>
+ 
+ <!-- install the cserver to ../build/cserver -->
+ <!--plugin>
+     <inherited>false</inherited>
+     <artifactId>maven-antrun-plugin</artifactId>
+     <executions>
+         <execution>
+             <id>install-cserver</id>
+             <phase>install</phase>
+             <goals>
+                 <goal>run</goal>
+             </goals>
+             <configuration>
+                 <tasks>
+                     <ant dir="." antfile="install.xml" target="install-cserver" />
+                 </tasks>
+             </configuration>
+         </execution>
+     </executions>
+ </plugin-->
 
 
     </plugins>

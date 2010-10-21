@@ -125,7 +125,10 @@ start() {
 
 		config="-Dcom.akiban.config=${conffile}"
 		file=`basename ${conffile}`
-        	echo $"Starting $name with ${file}"
+		echo ""
+        	echo "Starting $name with ${file}"
+	        echo "Command Line: $prog $config $jmx $persistitrmi $debug $args  1>${logdir}/${file/%properties/out} 2>&1 </dev/null"
+		echo ""
 	        $prog $config $jmx $persistitrmi $debug $args  1>${logdir}/${file/%properties/out} 2>&1 </dev/null & PID=$!
 	        RETVAL=$?
         	[ $((RETVAL = RETVAL + 0)) ] && touch ${rootdir}/var/lock/subsys/$name && echo $PID>${piddir}/${file/%properties/pid} && echo "[Started with pid: ${PID}]"
