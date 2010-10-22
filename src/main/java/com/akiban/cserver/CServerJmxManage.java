@@ -69,7 +69,7 @@ public class CServerJmxManage {
 	    }
 	
  	    Object retObj = mbsc.invoke(mbean, method, params,signature);
- 	    System.out.println ( "JMX call " + method + "(" + arrayToString(args, ",")+ ")" + " returned : " + retObj.toString());
+ 	    System.out.println ( "JMX call " + method + "(" + arrayToString(args, ",")+ ")" + " returned : " + retObj);
 	} catch (Exception e) {
 		e.printStackTrace();
 		System.exit(1);
