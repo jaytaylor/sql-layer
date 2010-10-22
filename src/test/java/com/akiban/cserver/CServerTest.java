@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import javax.management.ObjectName;
 
+import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -57,7 +58,7 @@ public class CServerTest implements CServerConstants {
         System.setProperties(testProperties);
         CServerUtil.cleanUpDirectory(DATA_PATH);
         MessageRegistryBase.reset();
-        serviceManager = new ServiceManagerImpl();
+        serviceManager = (ServiceManagerImpl) new DefaultServiceManagerFactory().serviceManager();
         serviceManager.setupCServerConfigForUnitTests();
         serviceManager.startServices();
         ROW_DEF.setRowType(RowType.ROOT);

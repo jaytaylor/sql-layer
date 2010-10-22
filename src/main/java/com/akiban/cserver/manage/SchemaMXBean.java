@@ -1,10 +1,10 @@
 package com.akiban.cserver.manage;
 
-import java.util.List;
-import java.util.Map;
-
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.store.SchemaId;
+
+import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("unused")
 public interface SchemaMXBean {

@@ -2,7 +2,9 @@ package com.akiban.cserver.service.jmx;
 
 import com.akiban.cserver.service.Service;
 
-import javax.management.*;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 

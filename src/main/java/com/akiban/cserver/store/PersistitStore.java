@@ -1,54 +1,26 @@
 package com.akiban.cserver.store;
 
-import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.CServerConfig;
-import com.akiban.cserver.CServerConstants;
-import com.akiban.cserver.CServerUtil;
-import com.akiban.cserver.FieldDef;
-import com.akiban.cserver.IndexDef;
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.RowType;
-import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.*;
 import com.akiban.cserver.message.ScanRowsRequest;
-import com.akiban.cserver.service.Service;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
-import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.KeyState;
-import com.persistit.Persistit;
-import com.persistit.Transaction;
+import com.persistit.*;
 import com.persistit.Transaction.CommitListener;
-import com.persistit.TransactionRunnable;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
 
 public class PersistitStore implements CServerConstants, Store {
 

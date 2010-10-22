@@ -20,9 +20,9 @@ public class ServerTest
     @Test
     public void testPortInUse() throws Exception
     {
-        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, null, new TestRequestHandler());
+        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, true, new TestRequestHandler());
         try {
-            Server.startServer(TEST, LOCALHOST, SERVER_PORT, null, new TestRequestHandler());
+            Server.startServer(TEST, LOCALHOST, SERVER_PORT, true, new TestRequestHandler());
             Assert.assertTrue(false);
         } catch (InterruptedException e) {
             Assert.assertTrue(false);
@@ -36,7 +36,7 @@ public class ServerTest
     @Test
     public void testOneMessage() throws Exception
     {
-        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, null, new TestRequestHandler());
+        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, true, new TestRequestHandler());
         AkibanConnection connection = new AkibanConnectionImpl(LOCALHOST, SERVER_PORT);
         final int REQUEST_ID = 12345;
         TestRequest request = new TestRequest(REQUEST_ID, 10, 10);
@@ -51,7 +51,7 @@ public class ServerTest
     public void testSeveralMessages() throws Exception
     {
         final int N = 100;
-        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, null, new TestRequestHandler());
+        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, true, new TestRequestHandler());
         AkibanConnection connection = new AkibanConnectionImpl(LOCALHOST, SERVER_PORT);
         for (int r = 0; r < N; r++) {
             TestRequest request = new TestRequest(r, 10, 10);
@@ -68,7 +68,7 @@ public class ServerTest
     {
         final int THREADS = 10;
         final int MESSAGES_PER_THREAD = 10;
-        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, null, new TestRequestHandler());
+        Server server = Server.startServer(TEST, LOCALHOST, SERVER_PORT, true, new TestRequestHandler());
         final List<Exception> exceptions = new ArrayList<Exception>();
         final List<Thread> threads = new ArrayList<Thread>();
         for (int t = 0; t < THREADS; t++) {
@@ -124,10 +124,10 @@ public class ServerTest
         }
     }
 
-    private static class TestRequestHandler implements RequestHandler
+    private static class TestRequestHandler extends RequestHandler
     {
         @Override
-        public void handleRequest(ExecutionContext executionContext, AkibanConnection connection, Request request)
+        public void handleRequest(AkibanConnection connection, Request request)
         {
             try {
                 request.execute(connection, null);

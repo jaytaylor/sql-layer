@@ -4,8 +4,20 @@ import com.akiban.message.AkibanConnection;
 import com.akiban.message.ExecutionContext;
 import com.akiban.message.Request;
 
-public interface RequestHandler
+public abstract class RequestHandler
 {
-    void handleRequest(ExecutionContext executionContext, AkibanConnection connection, Request request) throws Exception;
+    public abstract void handleRequest(AkibanConnection connection, Request request) throws Exception;
+
+    public final void executionContext(ExecutionContext executionContext)
+    {
+        this.executionContext = executionContext;
+    }
+
+    public final ExecutionContext executionContext()
+    {
+        return executionContext;
+    }
+
+    protected ExecutionContext executionContext;
 }
 

@@ -1,7 +1,5 @@
 package com.akiban.cserver.service.jmx;
 
-import javax.management.MalformedObjectNameException;
-
 public final class JmxRegistrationException extends RuntimeException {
     public JmxRegistrationException(String message) {
         super(message);

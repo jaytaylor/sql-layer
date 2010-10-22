@@ -1,30 +1,19 @@
 package com.akiban.cserver.store;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.*;
+import com.akiban.cserver.IndexDef.I2H;
+import com.akiban.cserver.TableStatistics.Histogram;
+import com.akiban.cserver.TableStatistics.HistogramSample;
+import com.persistit.*;
+import com.persistit.KeyHistogram.KeyCount;
+import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.cserver.IndexDef;
-import com.akiban.cserver.IndexDef.I2H;
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.TableStatistics;
-import com.akiban.cserver.TableStatistics.Histogram;
-import com.akiban.cserver.TableStatistics.HistogramSample;
-import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.KeyFilter;
-import com.persistit.KeyHistogram;
-import com.persistit.KeyHistogram.KeyCount;
-import com.persistit.Persistit;
-import com.persistit.Transaction;
-import com.persistit.TransactionRunnable;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class PersistitStoreIndexManager {
 

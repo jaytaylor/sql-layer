@@ -1,24 +1,14 @@
 package com.akiban.cserver;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import com.akiban.ais.model.PrimaryKey;
+import com.akiban.ais.model.*;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.UserTable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs

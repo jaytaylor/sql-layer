@@ -1,19 +1,18 @@
 package com.akiban.cserver.store;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.akiban.cserver.RowDef;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.encoding.ValueRenderer;
 import com.persistit.exception.PersistitException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manage tables in a PersistitStore. Maintain a map of rowDefId->TableStatus.

@@ -1,14 +1,14 @@
 package com.akiban.cserver.service.config;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-
 import com.akiban.admin.Admin;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceNotStartedException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.jmx.JmxManageable;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
 public class ConfigurationServiceImpl implements ConfigurationService, ConfigurationServiceMXBean, JmxManageable, Service
 {

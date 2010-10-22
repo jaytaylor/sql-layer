@@ -1,14 +1,13 @@
 package com.akiban.cserver.loader;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.velocity.VelocityContext;
-
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISTextGenerator;
+import org.apache.velocity.VelocityContext;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GenerateParentByMergeTask extends GenerateParentTask
 {

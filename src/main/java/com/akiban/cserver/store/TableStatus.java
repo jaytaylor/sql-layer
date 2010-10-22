@@ -1,13 +1,13 @@
 package com.akiban.cserver.store;
 
-import static com.akiban.cserver.store.PersistitStoreTableManager.now;
-
-import java.io.Serializable;
-
 import com.persistit.Value;
 import com.persistit.encoding.CoderContext;
 import com.persistit.encoding.ValueRenderer;
 import com.persistit.exception.ConversionException;
+
+import java.io.Serializable;
+
+import static com.akiban.cserver.store.PersistitStoreTableManager.now;
 
 /**
  * Structure denotes information about a table. Flushed to backing store

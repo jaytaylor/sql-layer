@@ -4,10 +4,7 @@ import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
 import com.akiban.cserver.message.BulkLoadResponse;
 import com.akiban.cserver.message.BulkLoadStatusRequest;
-import com.akiban.message.AkibanConnection;
-import com.akiban.message.NettyAkibanConnectionImpl;
-import com.akiban.message.MessageRegistry;
-import com.akiban.message.Request;
+import com.akiban.message.*;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
@@ -29,10 +26,7 @@ public class BulkLoaderClient
     private void run() throws Exception
     {
         startNetwork();
-        AkibaNetworkHandler networkHandler = NetworkHandlerFactory.getHandler
-                (cserverHost, Integer.toString(cserverPort), null);
-        logger.info(String.format("Got network handler %s", networkHandler));
-        connection = NettyAkibanConnectionImpl.createConnection(networkHandler);
+        connection = new AkibanConnectionImpl(cserverHost, cserverPort);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {
@@ -92,11 +86,8 @@ public class BulkLoaderClient
             logger.error("Caught exception", e);
             throw e;
         } finally {
-            logger.info("Closing network handler");
-            networkHandler.disconnectWorker();
-            logger.info("Closing network");
-            NetworkHandlerFactory.closeNetwork();
-            logger.info("Network closed");
+            logger.info("Closing cserver connection");
+            connection.close();
             logger.info(String.format("Exit code: %s", exitCode));
             System.exit(exitCode);
         }
@@ -105,20 +96,28 @@ public class BulkLoaderClient
     private BulkLoadResponse runRequest(Request request) throws Exception
     {
         logger.info(String.format("About to send request %s", request));
-        BulkLoadResponse response = (BulkLoadResponse) connection.sendAndReceive(request);
+        Response response = (Response) connection.sendAndReceive(request);
         logger.info(String.format("Received response %s", response));
-        List<Event> events = response.events();
-        Event lastEvent = null;
-        if (events != null) {
-            for (Event event : events) {
-                logger.info(String.format("%s (%s sec): %s", event.eventId(), event.timeSec(), event.message()));
-                lastEvent = event;
+        if (response instanceof ErrorResponse) {
+            ErrorResponse errorResponse = (ErrorResponse) response;
+            logger.info(errorResponse.message());
+            logger.info(errorResponse.remoteStack());
+            throw new RuntimeException(errorResponse.message());
+        } else {
+            BulkLoadResponse bulkLoadResponse = (BulkLoadResponse) response;
+            List<Event> events = bulkLoadResponse.events();
+            Event lastEvent = null;
+            if (events != null) {
+                for (Event event : events) {
+                    logger.info(String.format("%s (%s sec): %s", event.eventId(), event.timeSec(), event.message()));
+                    lastEvent = event;
+                }
+                if (lastEvent != null) {
+                    lastEventId = lastEvent.eventId();
+                }
             }
-            if (lastEvent != null) {
-                lastEventId = lastEvent.eventId();
-            }
+            return bulkLoadResponse;
         }
-        return response;
     }
 
     private BulkLoaderClient(String[] args) throws Exception

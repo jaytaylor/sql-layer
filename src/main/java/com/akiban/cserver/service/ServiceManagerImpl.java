@@ -1,11 +1,5 @@
 package com.akiban.cserver.service;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.service.config.ConfigurationServiceImpl;
@@ -15,7 +9,11 @@ import com.akiban.cserver.service.network.NetworkServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 
+import java.util.*;
+
 public class ServiceManagerImpl implements ServiceManager {
+    // TODO: Supply the factory externally.
+    private final ServiceManagerFactory factory;
     private Map<String, Service> services;
 
     private static final String NETWORK = "network";
@@ -26,7 +24,8 @@ public class ServiceManagerImpl implements ServiceManager {
 
     // PDB: temporarily this is public so that CServer.main and tests can
     // construct one
-    public ServiceManagerImpl() {
+    public ServiceManagerImpl(ServiceManagerFactory factory) {
+        this.factory = factory;
         services = new LinkedHashMap<String, Service>();
     }
 
@@ -43,10 +42,11 @@ public class ServiceManagerImpl implements ServiceManager {
     public void startServices() throws Exception {
         JmxRegistryServiceImpl jmxRegistry = new JmxRegistryServiceImpl();
 
-        startAndPut(new ConfigurationServiceImpl(), CONFIGURATION);
+        startAndPut(factory.configurationService(), CONFIGURATION);
+        // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
         startAndPut(createPersistitStore(), STORE);
-        startAndPut(new NetworkServiceImpl(), NETWORK);
-        startAndPut(new CServer(this), CSERVER);
+        startAndPut(factory.networkService(), NETWORK);
+        startAndPut(factory.chunkserverService(), CSERVER);
         startAndPut(jmxRegistry, JMX);
 
         for (Service service : services.values()) {
@@ -85,7 +85,8 @@ public class ServiceManagerImpl implements ServiceManager {
      *            ignored
      */
     public static void main(String[] ignored) throws Exception {
-        ServiceManagerImpl sm = new ServiceManagerImpl();
+        final DefaultServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
+        ServiceManager sm = serviceManagerFactory.serviceManager();
         sm.startServices();
         Object foo = new Object();
         synchronized (foo) {
@@ -124,12 +125,12 @@ public class ServiceManagerImpl implements ServiceManager {
         return store;
     }
 
-    // TODO - this is a temporary way for unit tests to get a configured
-    // PersistitStore.
+    // TODO - this is a temporary way for unit tests to get a configured PersistitStore.
     public static PersistitStore getStoreForUnitTests() throws Exception {
-        ServiceManagerImpl sm = new ServiceManagerImpl();
-        sm.setupCServerConfigForUnitTests();
-        final PersistitStore store = sm.createPersistitStore();
+        final DefaultServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
+        ServiceManager sm = serviceManagerFactory.serviceManager();
+        ((ServiceManagerImpl)sm).setupCServerConfigForUnitTests();
+        final PersistitStore store = ((ServiceManagerImpl)sm).createPersistitStore();
         store.start();
         return store;
     }

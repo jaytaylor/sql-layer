@@ -1,15 +1,15 @@
 package com.akiban.cserver;
 
-import java.nio.ByteBuffer;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Source;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.store.Store;
+
+import java.nio.ByteBuffer;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CServerAisSource extends Source {
 

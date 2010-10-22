@@ -1,12 +1,12 @@
 package com.akiban.cserver;
 
-import java.sql.SQLException;
-import java.util.Map;
-
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
 import com.akiban.cserver.store.Store;
+
+import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * Implements the Target interface. This class is intended only for unit tests.

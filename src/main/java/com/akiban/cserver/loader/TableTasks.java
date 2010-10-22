@@ -24,32 +24,35 @@ public class TableTasks
 
     public GenerateFinalTask generateFinal()
     {
-        return this.generateFinal;
+        return generateFinal;
     }
 
     public GenerateParentTask generateParent()
     {
-        return this.generateParent;
+        return generateParent;
     }
 
     public GenerateChildTask generateChild()
     {
-        return this.generateChild;
+        return generateChild;
     }
 
     public void generateFinal(GenerateFinalTask task)
     {
-        this.generateFinal = task;
+        assert generateFinal == null : generateFinal;
+        generateFinal = task;
     }
 
     public void generateParent(GenerateParentTask task)
     {
-        this.generateParent = task;
+        assert generateParent == null : generateParent;
+        generateParent = task;
     }
 
     public void generateChild(GenerateChildTask task)
     {
-        this.generateChild = task;
+        assert generateChild == null : generateChild;
+        generateChild = task;
     }
 
     private List<Task> tasks()

@@ -28,7 +28,7 @@ public class Server extends Thread
         try {
             while (state == State.RUNNING) {
                 Socket clientSocket = serverSocket.accept();
-                clientSocket.setTcpNoDelay(TCP_NO_DELAY);
+                clientSocket.setTcpNoDelay(tcpNoDelay);
                 startServicingClient(clientSocket);
             }
         } catch (SocketException e) {
@@ -45,10 +45,10 @@ public class Server extends Thread
     public static Server startServer(String label,
                                      String host,
                                      int port,
-                                     ExecutionContext executionContext,
+                                     boolean tcpNoDelay,
                                      RequestHandler requestHandler) throws InterruptedException, IOException
     {
-        Server server = new Server(label, host, port, executionContext, requestHandler);
+        Server server = new Server(label, host, port, tcpNoDelay, requestHandler);
         server.setName(String.format("Server:%s", port));
         server.setDaemon(true);
         server.start();
@@ -116,7 +116,7 @@ public class Server extends Thread
 
     private void startServicingClient(Socket clientSocket) throws IOException
     {
-        RequestRunner requestRunner = new RequestRunner(this, clientSocket, executionContext, requestHandler);
+        RequestRunner requestRunner = new RequestRunner(this, clientSocket, requestHandler);
         onConnect(requestRunner);
         threadPool.execute(requestRunner);
     }
@@ -146,11 +146,11 @@ public class Server extends Thread
     private Server(final String label,
                    String host,
                    int port,
-                   ExecutionContext executionContext,
+                   boolean tcpNoDelay,
                    RequestHandler requestHandler) throws IOException
     {
         this.serverSocket = new ServerSocket(port, MAX_PENDING_REQUESTS, Inet4Address.getByName(host));
-        this.executionContext = executionContext;
+        this.tcpNoDelay = tcpNoDelay;
         this.requestHandler = requestHandler;
         threadPool = Executors.newCachedThreadPool(
             new ThreadFactory()
@@ -172,13 +172,11 @@ public class Server extends Thread
     private static final int MAX_PENDING_REQUESTS = 100;
     private static final int WAIT_FOR_TERMINATION_SEC = 10;
     private static final AtomicInteger threadIdGenerator = new AtomicInteger(0);
-    private static final boolean TCP_NO_DELAY =
-        Boolean.parseBoolean(System.getProperty("com.akiban.server.tcpNoDelay", "true"));
 
     // Object state
 
     private final ServerSocket serverSocket;
-    private final ExecutionContext executionContext;
+    private final boolean tcpNoDelay;
     private final RequestHandler requestHandler;
     private final ExecutorService threadPool;
     private Exception termination;

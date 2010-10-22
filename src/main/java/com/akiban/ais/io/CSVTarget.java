@@ -6,7 +6,6 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Target;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Map;
 

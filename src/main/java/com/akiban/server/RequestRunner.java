@@ -26,7 +26,7 @@ class RequestRunner implements Runnable
                     if (LOG.isInfoEnabled()) {
                         LOG.info(String.format("About to execute %s", request));
                     }
-                    requestHandler.handleRequest(executionContext, connection, request);
+                    requestHandler.handleRequest(connection, request);
                     if (LOG.isInfoEnabled()) {
                         LOG.info(String.format("Finished execution of %s", request));
                     }
@@ -54,12 +54,10 @@ class RequestRunner implements Runnable
 
     public RequestRunner(Server server, 
                          Socket clientSocket,
-                         ExecutionContext executionContext,
                          RequestHandler requestHandler) throws IOException
     {
         this.server = server;
         this.connection = new AkibanConnectionImpl(clientSocket);
-        this.executionContext = executionContext;
         this.requestHandler = requestHandler;
     }
 
@@ -67,7 +65,6 @@ class RequestRunner implements Runnable
 
     private final Server server;
     private final AkibanConnection connection;
-    private final ExecutionContext executionContext;
     private final RequestHandler requestHandler;
     private Throwable termination;
 }

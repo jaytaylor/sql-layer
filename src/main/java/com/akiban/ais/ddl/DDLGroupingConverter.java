@@ -4,14 +4,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.util.MySqlStatementSplitter;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;

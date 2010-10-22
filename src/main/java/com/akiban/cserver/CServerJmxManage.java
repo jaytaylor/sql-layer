@@ -1,15 +1,10 @@
- package com.akiban.cserver; 
-  
-import javax.management.JMX;
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
-import java.io.*;
-import java.util.*;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeType;
+ package com.akiban.cserver;
+
+ import javax.management.MBeanServerConnection;
+ import javax.management.ObjectName;
+ import javax.management.remote.JMXConnector;
+ import javax.management.remote.JMXConnectorFactory;
+ import javax.management.remote.JMXServiceURL;
   
   
 public class CServerJmxManage {

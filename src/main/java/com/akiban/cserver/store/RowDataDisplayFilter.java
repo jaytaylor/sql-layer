@@ -6,8 +6,8 @@ package com.akiban.cserver.store;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.RowData;
 import com.persistit.Exchange;
-import com.persistit.Value;
 import com.persistit.Management.DisplayFilter;
+import com.persistit.Value;
 
 class RowDataDisplayFilter implements DisplayFilter {
 

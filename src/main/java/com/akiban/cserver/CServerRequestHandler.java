@@ -1,5 +1,6 @@
 package com.akiban.cserver;
 
+import com.akiban.ais.message.CServerContext;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.ExecutionContext;
 import com.akiban.message.Request;
@@ -7,18 +8,26 @@ import com.akiban.server.Server;
 
 import java.io.IOException;
 
-class CServerRequestHandler extends AbstractCServerRequestHandler
+public class CServerRequestHandler extends AbstractCServerRequestHandler
 {
     // RequestHandler interface
 
     @Override
-    public void handleRequest(ExecutionContext executionContext, AkibanConnection connection, Request request)
+    public void handleRequest(AkibanConnection connection, Request request)
             throws Exception
     {
-        chunkserver.executeRequest(executionContext, connection, request);
+        ((CServerContext)executionContext).executeRequest(connection, request);
     }
 
     // AbstractCServerRequestHandler interface
+
+
+    @Override
+    public void start() throws IOException, InterruptedException
+    {
+        LOG.info(String.format("Starting CServerRequestHandler"));
+        server = Server.startServer("CServer", host, port, tcpNoDelay, this);
+    }
 
     public synchronized void stop() throws IOException, InterruptedException
     {
@@ -28,23 +37,17 @@ class CServerRequestHandler extends AbstractCServerRequestHandler
 
     // CServerRequestHandler interface
 
-    public static AbstractCServerRequestHandler start(CServer chunkserver, String host, int port)
-            throws IOException, InterruptedException
+    public CServerRequestHandler(String host, int port, boolean tcpNoDelay)
     {
-        LOG.info(String.format("Starting CServerRequestHandler"));
-        return new CServerRequestHandler(chunkserver, host, port);
-    }
-
-    // For use by this class
-
-    private CServerRequestHandler(CServer chunkserver, String host, int port)
-            throws IOException, InterruptedException
-    {
-        super(chunkserver, host, port);
-        server = Server.startServer("CServer", host, port, chunkserver.executionContext(), this);
+        this.host = host;
+        this.port = port;
+        this.tcpNoDelay = tcpNoDelay;
     }
 
     // State
 
-    private final Server server;
+    private final String host;
+    private final int port;
+    private final boolean tcpNoDelay;
+    private Server server;
 }

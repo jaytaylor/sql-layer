@@ -1,15 +1,13 @@
 package com.akiban.cserver.loader;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class Task
 {

@@ -1,15 +1,15 @@
 package com.akiban.cserver;
 
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Types;
+import com.persistit.Key;
+
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Types;
-import com.persistit.Key;
 
 public enum Encoding {
     INT {

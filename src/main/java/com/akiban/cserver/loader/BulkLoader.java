@@ -114,8 +114,10 @@ public class BulkLoader extends Thread
 
     public static synchronized void done() throws SQLException
     {
-        inProgress.cleanup();
-        inProgress = null;
+        if (inProgress != null) {
+            inProgress.cleanup();
+            inProgress = null;
+        }
     }
 
     public static BulkLoader inProgress()

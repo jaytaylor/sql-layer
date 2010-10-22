@@ -1,7 +1,6 @@
 package com.akiban.cserver.loader;
 
 import com.akiban.cserver.store.PersistitStore;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
 import java.sql.ResultSet;

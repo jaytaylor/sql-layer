@@ -1,28 +1,5 @@
 package com.akiban.cserver.store;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.io.Writer;
@@ -30,31 +7,27 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.staticgrouping.Group;
-import com.akiban.ais.model.staticgrouping.Grouping;
-import com.akiban.ais.model.staticgrouping.GroupingVisitor;
-import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
-import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import com.akiban.ais.model.staticgrouping.*;
 import com.akiban.ais.util.AISPrinter;
 import com.akiban.ais.util.DDLGenerator;
-import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerAisTarget;
-import com.akiban.cserver.CServerConstants;
-import com.akiban.cserver.CServerUtil;
-import com.akiban.cserver.IndexDef;
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.*;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
-import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.KeyFilter;
-import com.persistit.Transaction;
-import com.persistit.TransactionRunnable;
+import com.persistit.*;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PersistitStoreSchemaManager implements CServerConstants,
         SchemaManager {

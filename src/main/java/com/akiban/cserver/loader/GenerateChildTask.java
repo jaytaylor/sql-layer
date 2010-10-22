@@ -1,11 +1,11 @@
 package com.akiban.cserver.loader;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GenerateChildTask extends Task
 {

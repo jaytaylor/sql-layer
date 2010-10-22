@@ -1,12 +1,9 @@
 package com.akiban.admin;
 
-import com.akiban.admin.state.ChunkserverState;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 

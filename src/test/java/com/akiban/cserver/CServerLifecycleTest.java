@@ -1,28 +1,23 @@
 package com.akiban.cserver;
 
-import java.io.IOException;
-import java.util.Properties;
-
-import junit.framework.Assert;
-
-import org.junit.Test;
-
+import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.AkibanConnectionImpl;
-import com.akiban.message.ExecutionContext;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.MessageRegistryBase;
-import com.akiban.message.Request;
-import com.akiban.server.RequestHandler;
 import com.akiban.util.Command;
+import junit.framework.Assert;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Properties;
 
 public class CServerLifecycleTest
 {
     private static final int N = 5;
     private static final int N_REQUESTS = 10;
-    private static final boolean USE_NETTY = Boolean.parseBoolean(System.getProperty("usenetty", "false"));
-    
+
     private ServiceManagerImpl serviceManager;
 
     @Test
@@ -37,43 +32,39 @@ public class CServerLifecycleTest
     @Test
     public void testShutdownWithClosedConnections() throws Exception
     {
-        if (!USE_NETTY) {
-            for (int i = 0; i < N; i++) {
-                CServer cserver = startChunkServer();
-                AkibanConnection connection = new AkibanConnectionImpl(LOCALHOST, cserver.port());
-                for (int r = 0; r < N_REQUESTS; r++) {
-                    TestRequest request = new TestRequest(r, 10, 10);
-                    TestResponse response = (TestResponse) connection.sendAndReceive(request);
-                    Assert.assertEquals(r, response.id());
-                }
-                connection.close();
-                stopChunkServer(cserver);
+        for (int i = 0; i < N; i++) {
+            CServer cserver = startChunkServer();
+            AkibanConnection connection = new AkibanConnectionImpl(LOCALHOST, cserver.port());
+            for (int r = 0; r < N_REQUESTS; r++) {
+                TestRequest request = new TestRequest(r, 10, 10);
+                TestResponse response = (TestResponse) connection.sendAndReceive(request);
+                Assert.assertEquals(r, response.id());
             }
+            connection.close();
+            stopChunkServer(cserver);
         }
     }
 
     @Test
     public void testShutdownWithOpenConnections() throws Exception
     {
-        if (!USE_NETTY) {
-            for (int i = 0; i < N; i++) {
-                CServer cserver = startChunkServer();
-                AkibanConnection connection = new AkibanConnectionImpl(LOCALHOST, cserver.port());
-                for (int r = 0; r < N_REQUESTS; r++) {
-                    TestRequest request = new TestRequest(r, 10, 10);
-                    TestResponse response = (TestResponse) connection.sendAndReceive(request);
-                    Assert.assertEquals(r, response.id());
-                }
-                stopChunkServer(cserver);
+        for (int i = 0; i < N; i++) {
+            CServer cserver = startChunkServer();
+            AkibanConnection connection = new AkibanConnectionImpl(LOCALHOST, cserver.port());
+            for (int r = 0; r < N_REQUESTS; r++) {
+                TestRequest request = new TestRequest(r, 10, 10);
+                TestResponse response = (TestResponse) connection.sendAndReceive(request);
+                Assert.assertEquals(r, response.id());
             }
+            stopChunkServer(cserver);
         }
     }
 
     private CServer startChunkServer()
-            throws Exception
+        throws Exception
     {
         MessageRegistry.reset(); // In case a message registry is left over from a previous test in the same JVM.
-        serviceManager = new ServiceManagerImpl();
+        serviceManager = (ServiceManagerImpl) new DefaultServiceManagerFactory().serviceManager();
         serviceManager.setupCServerConfigForUnitTests();
         final Properties originalProperties = System.getProperties();
         try {
@@ -86,13 +77,13 @@ public class CServerLifecycleTest
         }
         CServer cserver = serviceManager.getCServer();
         Assert.assertTrue(listeningOnPort(cserver.port()));
-        MessageRegistry.reset(); 
+        MessageRegistry.reset();
         initializeMessageRegistry();
         return cserver;
     }
 
     private void stopChunkServer(CServer cserver)
-            throws Exception
+        throws Exception
     {
         serviceManager.stopServices();
         serviceManager = null;
@@ -132,19 +123,6 @@ public class CServerLifecycleTest
             super(10);
             register(1, "com.akiban.cserver.TestRequest");
             register(2, "com.akiban.cserver.TestResponse");
-        }
-    }
-
-    private static class TestRequestHandler implements RequestHandler
-    {
-        @Override
-        public void handleRequest(ExecutionContext executionContext, AkibanConnection connection, Request request)
-        {
-            try {
-                request.execute(connection, null);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
 }

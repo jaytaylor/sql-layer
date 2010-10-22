@@ -2,7 +2,6 @@ package com.akiban.admin;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Map;
 import java.util.Properties;
 
 public class AdminValue
