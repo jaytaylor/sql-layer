@@ -13,6 +13,7 @@ public final class ConfigurationServiceImplTest {
 
     private static class MockConfigService extends ConfigurationServiceImpl {
         final private Property[] properties;
+        private final Set<Property.Key> mockRequiredKeys = new HashSet<Property.Key>();
 
         MockConfigService(Property... properties) {
             assertNotNull(properties);
@@ -20,12 +21,21 @@ public final class ConfigurationServiceImplTest {
         }
 
         @Override
-        protected Map<Property.Key, Property> internalLoadProperties() throws IOException, ServiceStartupException {
+        protected Map<Property.Key, Property> loadProperties() throws IOException, ServiceStartupException {
             Map<Property.Key,Property> ret = new HashMap<Property.Key, Property>(properties.length);
             for (Property property : properties) {
                 ret.put(property.getKey(), property);
             }
             return ret;
+        }
+
+        public void requireKey(String module, String name) {
+            mockRequiredKeys.add(new Property.Key(module, name) );
+        }
+
+        @Override
+        protected Set<Property.Key> getRequiredKeys() {
+            return Collections.unmodifiableSet(mockRequiredKeys);
         }
     }
 
@@ -122,7 +132,7 @@ public final class ConfigurationServiceImplTest {
         assertEquals("mod1, key1", null, actual);
 
         String actual2 = service.getProperty("mod1", "key1", "some default");
-        assertEquals("mod1, key1", null, actual);
+        assertEquals("mod1, key1", null, actual2);
     }
 
     @Test(expected=PropertyNotDefinedException.class)
@@ -149,6 +159,42 @@ public final class ConfigurationServiceImplTest {
         ConfigurationServiceImpl service = createAndStart("mod1", "key1", "val1");
         String actual = service.getProperty("mod2", "key1", "foobar2");
         assertEquals("mod2, key1", "foobar2", actual);
+    }
+
+    @Test(expected=ServiceStartupException.class)
+    public void requiredKeyNotSet() throws ServiceStartupException, IOException {
+        final MockConfigService service;
+        try {
+            service = new MockConfigService();
+            service.requireKey("a", "b");
+        } catch (Exception t) {
+            throw new RuntimeException(t);
+        }
+        service.start();
+    }
+
+    @Test
+    public void testStripRequiredProperties() {
+        final String normalKey = "one.two";
+        final String requiredKey = "REQUIRED.one";
+
+        final Properties props = new Properties();
+        props.setProperty(normalKey, "alpha");
+        props.setProperty(requiredKey,"two,three, four");
+        final Set<Property.Key> requiredKeys = new HashSet<Property.Key>();
+
+        ConfigurationServiceImpl.stripRequiredProperties(props, requiredKeys);
+
+        assertEquals("props.size()", 1, props.size());
+        assertEquals("props[one.two]", "alpha", props.getProperty(normalKey));
+        assertEquals("props[required.one]", null, props.getProperty(requiredKey));
+
+        final Set<Property.Key> expectedRequired = new HashSet<Property.Key>();
+        expectedRequired.add( new Property.Key("one", "two"));
+        expectedRequired.add( new Property.Key("one", "three"));
+        expectedRequired.add( new Property.Key("one", "four"));
+
+        assertEquals("requiredKeys", expectedRequired, requiredKeys);
     }
 
     @Test

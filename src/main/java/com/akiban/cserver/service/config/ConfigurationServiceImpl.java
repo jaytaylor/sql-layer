@@ -17,6 +17,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     /** Chunkserver properties. Format specified by chunkserver. */
     public static final String CONFIG_CHUNKSERVER = "/config/chunkserver.properties";
     private Map<Property.Key,Property> properties = null;
+    private final Set<Property.Key> requiredKeys = new HashSet<Property.Key>();
 
     private final Object INTERNAL_LOCK = new Object();
 
@@ -93,7 +94,24 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return new JmxObjectInfo("Configuration", this, ConfigurationServiceMXBean.class);
     }
 
-    protected Map<Property.Key, Property> internalLoadProperties() throws IOException, ServiceStartupException {
+    private Map<Property.Key, Property> internalLoadProperties() throws IOException, ServiceStartupException {
+        Map<Property.Key,  Property> ret = loadProperties();
+
+        Set<Property.Key> missingKeys = new HashSet<Property.Key>();
+        for (Property.Key required : getRequiredKeys()) {
+            if (!ret.containsKey(required)) {
+                missingKeys.add(required);
+            }
+        }
+        if (!missingKeys.isEmpty()) {
+            throw new ServiceStartupException(String.format("Required %s not set: %s",
+                    missingKeys.size() == 1 ? "property" : "properties", missingKeys));
+        }
+
+        return ret;
+    }
+
+    protected Map<Property.Key, Property> loadProperties() throws IOException, ServiceStartupException {
         Properties props = null;
         
         props = loadResourceProperties(props);
@@ -101,6 +119,10 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         props = loadAdminProperties(props);
 
         return propetiesToMap(props);
+    }
+
+    protected Set<Property.Key> getRequiredKeys() {
+        return requiredKeys;
     }
 
     private static Map<Property.Key, Property> propetiesToMap(Properties properties) {
@@ -117,7 +139,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return defaults == null ? new Properties() : new Properties(defaults);
     }
 
-    private static Properties loadResourceProperties(Properties defaults) throws IOException {
+    private Properties loadResourceProperties(Properties defaults) throws IOException {
         Properties resourceProps = chainProperties(defaults);
         InputStream resourceIs = ConfigurationServiceImpl.class.getResourceAsStream(CONFIG_DEFAULTS_RESOURCE);
         try {
@@ -125,7 +147,24 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         } finally {
             resourceIs.close();
         }
+        stripRequiredProperties(resourceProps, requiredKeys);
         return resourceProps;
+    }
+
+    static void stripRequiredProperties(Properties properties, Set<Property.Key> toSet) {
+        Set<String> requiredKeyStrings = new HashSet<String>();
+        for (String key : properties.stringPropertyNames()) {
+            if (key.startsWith("REQUIRED.")) {
+                requiredKeyStrings.add(key);
+                final String module = key.substring("REQUIRED.".length());
+                for (String name : properties.getProperty(key).split(",\\s*")) {
+                    toSet.add(new Property.Key(module, name));
+                }
+            }
+        }
+        for (String key : requiredKeyStrings) {
+            properties.remove(key);
+        }
     }
 
     private static Properties loadSystemProperties(Properties defaults) {

@@ -30,8 +30,7 @@ public final class Property implements Comparable<Property> {
 
             Key that = (Key) o;
 
-            if (!module.equals(that.module)) return false;
-            return name.equals(that.name);
+            return module.equals(that.module) && name.equals(that.name);
 
         }
 
@@ -49,6 +48,11 @@ public final class Property implements Comparable<Property> {
                 return comparison;
             }
             return this.name.compareTo(other.name);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Property.Key[%s, %s]", module, name);
         }
     }
 
