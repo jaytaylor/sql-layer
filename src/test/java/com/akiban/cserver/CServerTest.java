@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.util.Properties;
 
 import javax.management.ObjectName;
 
@@ -47,8 +48,13 @@ public class CServerTest implements CServerConstants {
 
     private static ObjectName mxbeanName;
 
+    private static final Properties originalSystemProperties = System.getProperties();
+
     @BeforeClass
     public static void setUpSuite() throws Exception {
+        Properties testProperties = new Properties(originalSystemProperties);
+        testProperties.setProperty("akiban.admin", "NONE");
+        System.setProperties(testProperties);
         CServerUtil.cleanUpDirectory(DATA_PATH);
         MessageRegistryBase.reset();
         serviceManager = new ServiceManagerImpl();
@@ -68,6 +74,7 @@ public class CServerTest implements CServerConstants {
 
     @AfterClass
     public static void tearDownSuite() throws Exception {
+        System.setProperties(originalSystemProperties);
         try {
             connection.close();
         } finally {
