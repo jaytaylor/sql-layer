@@ -111,7 +111,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return ret;
     }
 
-    protected Map<Property.Key, Property> loadProperties() throws IOException, ServiceStartupException {
+    protected Map<Property.Key, Property> loadProperties() throws IOException {
         Properties props = null;
         
         props = loadResourceProperties(props);
@@ -178,7 +178,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return loadedSystemProps;
     }
 
-    private static Properties loadAdminProperties(Properties defaults) throws IOException, ServiceStartupException {
+    private static Properties loadAdminProperties(Properties defaults) throws IOException {
         Properties adminProps = chainProperties(defaults);
         final String akibanAdmin = adminProps.getProperty(AKIBAN_ADMIN);
         if (akibanAdmin != null && akibanAdmin.length() > 0) {

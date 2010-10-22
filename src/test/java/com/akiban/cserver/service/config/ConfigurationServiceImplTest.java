@@ -21,7 +21,7 @@ public final class ConfigurationServiceImplTest {
         }
 
         @Override
-        protected Map<Property.Key, Property> loadProperties() throws IOException, ServiceStartupException {
+        protected Map<Property.Key, Property> loadProperties() throws IOException {
             Map<Property.Key,Property> ret = new HashMap<Property.Key, Property>(properties.length);
             for (Property property : properties) {
                 ret.put(property.getKey(), property);
