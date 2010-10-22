@@ -72,13 +72,13 @@ public class CServerLifecycleTest
     private CServer startChunkServer()
             throws Exception
     {
-        final Properties testProperties = new Properties(System.getProperties());
-        final Properties originalProperties = System.getProperties();
-        testProperties.setProperty("akiban.admin", "NONE");
         MessageRegistry.reset(); // In case a message registry is left over from a previous test in the same JVM.
         serviceManager = new ServiceManagerImpl();
         serviceManager.setupCServerConfigForUnitTests();
+        final Properties originalProperties = System.getProperties();
         try {
+            final Properties testProperties = new Properties(System.getProperties());
+            testProperties.setProperty("akiban.admin", "NONE");
             System.setProperties(testProperties);
             serviceManager.startServices();
         } finally {
