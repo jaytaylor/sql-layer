@@ -170,7 +170,18 @@ public final class ConfigurationServiceImplTest {
         } catch (Exception t) {
             throw new RuntimeException(t);
         }
-        service.start();
+        try {
+            service.start();
+        } catch (ServiceStartupException e) {
+            boolean thrown = false;
+            try {
+                service.getProperties();
+            } catch (ServiceNotStartedException e2) {
+                thrown = true;
+            }
+            assertTrue("expected ServiceNotStartedException", thrown);
+            throw e;
+        }
     }
 
     @Test
