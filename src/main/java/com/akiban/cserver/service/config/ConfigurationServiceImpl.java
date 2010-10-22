@@ -181,7 +181,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     private static Properties loadAdminProperties(Properties defaults) throws IOException {
         Properties adminProps = chainProperties(defaults);
         final String akibanAdmin = adminProps.getProperty(AKIBAN_ADMIN);
-        if (akibanAdmin != null && akibanAdmin.length() > 0) {
+        if (akibanAdmin != null && !"NONE".equals(akibanAdmin)) {
             final Admin admin = Admin.only();
             adminProps.putAll(admin.get(CONFIG_CHUNKSERVER).properties());
         }
