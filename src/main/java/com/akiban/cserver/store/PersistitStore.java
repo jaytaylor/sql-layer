@@ -3,6 +3,8 @@ package com.akiban.cserver.store;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.*;
 import com.akiban.cserver.message.ScanRowsRequest;
+import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.config.ModuleConfiguration;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
 import com.persistit.*;
@@ -29,9 +31,9 @@ public class PersistitStore implements CServerConstants, Store {
     private static final Log LOG = LogFactory.getLog(PersistitStore.class
             .getName());
 
-    private static final String P_DATAPATH = "cserver.datapath";
+    private static final String P_DATAPATH = "datapath";
 
-    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "cserver.fixed";
+    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "fixed";
 
     private static final String PERSISTIT_PROPERTY_PREFIX = "persistit.";
 
@@ -91,30 +93,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     private final static float PERSISTIT_ALLOCATION_FRACTION = 0.5f;
 
-    private final static Properties PERSISTIT_PROPERTIES = new Properties();
-
-    static {
-        PERSISTIT_PROPERTIES.put("logfile",
-                "${datapath}/persistit_${timestamp}.log");
-        PERSISTIT_PROPERTIES.put("buffer.count.8192", "1K");
-        PERSISTIT_PROPERTIES.put("volume.1",
-                "${datapath}/akiban_system.v0,create,pageSize:8K,initialSize:10K,e"
-                        + "xtensionSize:1K,maximumSize:10G");
-        PERSISTIT_PROPERTIES.put("volume.2",
-                "${datapath}/akiban_txn.v0,create,pageSize:8K,initialSize:1M,e"
-                        + "xtensionSize:1M,maximumSize:10G");
-        PERSISTIT_PROPERTIES.put("volume.3", "${datapath}/" + VOLUME_NAME
-                + ".v01,create,pageSize:8k,"
-                + "initialSize:5M,extensionSize:5M,maximumSize:100G");
-        PERSISTIT_PROPERTIES.put("sysvolume", "akiban_system");
-        PERSISTIT_PROPERTIES.put("txnvolume", "akiban_txn");
-        PERSISTIT_PROPERTIES.put("timeout", "60000");
-        //
-        // Temporary setup for testing Persistit 2.1
-        //
-        PERSISTIT_PROPERTIES.put("journalpath", "${datapath}/akiban_journal");
-        PERSISTIT_PROPERTIES.put("logsize", "1G");
-    }
+    private final Properties PERSISTIT_PROPERTIES;
 
     private static final String DEFAULT_DATAPATH = "/tmp/chunkserver_data";
 
@@ -124,7 +103,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     private boolean deferIndexes = false;
 
-    private CServerConfig config;
+    private final ModuleConfiguration config;
 
     private Persistit db;
 
@@ -155,13 +134,14 @@ public class PersistitStore implements CServerConstants, Store {
 
     private final ThreadLocal<Map<String, List<Exchange>>> exchangeMapThreadLocal = new ThreadLocal<Map<String, List<Exchange>>>();
 
-    public PersistitStore(final CServerConfig config) throws Exception {
+    public PersistitStore(final ConfigurationService config) throws Exception {
         this.rowDefCache = new RowDefCache();
-        this.config = config;
+        this.config = config.getModuleConfiguration("cserver");
+        this.PERSISTIT_PROPERTIES = config.getModuleConfiguration("persistit").getProperties();
     }
 
     public String getDataPath() {
-        return config.property(P_DATAPATH, DEFAULT_DATAPATH);
+        return config.getProperty(P_DATAPATH, DEFAULT_DATAPATH);
     }
 
     private synchronized void createManagers() {
@@ -183,7 +163,7 @@ public class PersistitStore implements CServerConstants, Store {
         final String path = getDataPath();
         db.setProperty("datapath", path);
 
-        final boolean isUnitTest = "true".equals(config.property(
+        final boolean isUnitTest = "true".equals(config.getProperty(
                 FIXED_ALLOCATION_PROPERTY_NAME, "false"));
         ensureDirectoryExists(path, false);
 

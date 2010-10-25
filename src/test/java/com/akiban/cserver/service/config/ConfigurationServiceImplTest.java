@@ -86,6 +86,24 @@ public final class ConfigurationServiceImplTest {
         assertEquals("mod1, key1", "val1", moduleConfig.getProperty("key1", "foo"));
     }
 
+    @Test
+    public void getModuleProperties() throws ServiceStartupException, IOException {
+        ConfigurationServiceImpl service = createAndStart(
+                "mod1", "key1", "val1",
+                "mod1", "key2", "val2",
+                "mod2", "key3", "val3");
+        ModuleConfiguration moduleConfig = service.getModuleConfiguration("mod1");
+        service.start();
+
+        Properties properties = moduleConfig.getProperties();
+
+        Properties expected = new Properties();
+        expected.setProperty("key1", "val1");
+        expected.setProperty("key2", "val2");
+
+        assertEquals("properties", expected, properties);
+    }
+
     @Test(expected=ServiceNotStartedException.class)
     public void moduleConfigUnstartedService() {
         ConfigurationService service = new MockConfigService(new Property("mod1", "key1", "val1"));

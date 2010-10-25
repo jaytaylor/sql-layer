@@ -159,7 +159,7 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
         }
         assert jmxInterface.isAssignableFrom(objectInfo.getInstance().getClass())
             : String.format("%s is not assignable from %s", jmxInterface, objectInfo.getInstance().getClass());
-        Set<Class<?>> objectInterfaces = getAllInterfaces(objectInfo.getInstance().getClass());
+        Set<Class<?>> objectInterfaces = getAllInterfaces(objectInfo.getInstance().getClass(), new HashSet<Class<?>>());
         Iterator<Class<?>> interfacesIter = objectInterfaces.iterator();
         while (interfacesIter.hasNext()) {
             if (!isManagable(interfacesIter.next())) {
@@ -167,16 +167,20 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
             }
         }
         if (objectInterfaces.size() != 1) {
-            throw new JmxRegistrationException("Need exactly one *MXBean interface. Found: " + objectInterfaces);
+            throw new JmxRegistrationException("Need exactly one *MXBean interface for "
+                    + objectInfo.getInstance().getClass() + ". Found: " + objectInterfaces);
         }
     }
 
-    private static Set<Class<?>> getAllInterfaces(Class<?> root) {
-        Set<Class<?>> set = new HashSet<Class<?>>();
+    private static Set<Class<?>> getAllInterfaces(Class<?> root, Set<Class<?>> set) {
         if (root.isInterface()) {
             set.add(root);
         }
         getAllInterfaces(root.getInterfaces(), set);
+        Class<?> rootSuper = root.getSuperclass();
+        if (rootSuper != null) {
+            getAllInterfaces(rootSuper, set);
+        }
         return set;
     }
 

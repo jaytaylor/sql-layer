@@ -2,6 +2,7 @@ package com.akiban.cserver.store;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
@@ -10,7 +11,6 @@ import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.service.ServiceManagerImpl;
 
 public class SimpleBlobTest extends TestCase implements CServerConstants {
 
@@ -27,7 +27,7 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
 
     @Override
     public void setUp() throws Exception {
-        store = ServiceManagerImpl.getStoreForUnitTests();
+        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
         rowDefCache = store.getRowDefCache();
         final AkibaInformationSchema ais = new DDLSource().buildAISFromString(CREATE_TABLE_STATEMENT1);
         rowDefCache.setAIS(ais);

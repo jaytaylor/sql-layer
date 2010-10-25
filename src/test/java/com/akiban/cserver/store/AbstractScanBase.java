@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -18,7 +19,6 @@ import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.util.ByteBufferFactory;
 
 public abstract class AbstractScanBase implements CServerConstants {
@@ -41,7 +41,7 @@ public abstract class AbstractScanBase implements CServerConstants {
 
     @BeforeClass
     public static void setUpSuite() throws Exception {
-        store = ServiceManagerImpl.getStoreForUnitTests();
+        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
         rowDefCache = store.getRowDefCache();
         // initially empty
         final AkibaInformationSchema ais0 = store.getAis();

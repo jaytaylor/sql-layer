@@ -1,11 +1,9 @@
 package com.akiban.cserver.service;
 
 import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerConfig;
-import com.akiban.cserver.service.config.ConfigurationServiceImpl;
+import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
-import com.akiban.cserver.service.network.NetworkServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 
@@ -44,7 +42,7 @@ public class ServiceManagerImpl implements ServiceManager {
 
         startAndPut(factory.configurationService(), CONFIGURATION);
         // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
-        startAndPut(createPersistitStore(), STORE);
+        startAndPut(new PersistitStore((ConfigurationService) getService(CONFIGURATION)), STORE);
         startAndPut(factory.networkService(), NETWORK);
         startAndPut(factory.chunkserverService(), CSERVER);
         startAndPut(jmxRegistry, JMX);
@@ -97,41 +95,5 @@ public class ServiceManagerImpl implements ServiceManager {
                 e.printStackTrace();
             }
         }
-    }
-
-    private CServerConfig config;
-
-    public CServerConfig getConfig() {
-        return config;
-    }
-
-    public void setupCServerConfig() throws Exception {
-        config = new CServerConfig();
-        config.load();
-        if (config.getException() != null) {
-            throw config.getException();
-        }
-    }
-
-    public void setupCServerConfigForUnitTests() throws Exception {
-        config = CServerConfig.unitTestConfig();
-    }
-
-    private PersistitStore createPersistitStore() throws Exception {
-        if (config == null) {
-            throw new IllegalStateException("No configuration");
-        }
-        PersistitStore store = new PersistitStore(config);
-        return store;
-    }
-
-    // TODO - this is a temporary way for unit tests to get a configured PersistitStore.
-    public static PersistitStore getStoreForUnitTests() throws Exception {
-        final DefaultServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
-        ServiceManager sm = serviceManagerFactory.serviceManager();
-        ((ServiceManagerImpl)sm).setupCServerConfigForUnitTests();
-        final PersistitStore store = ((ServiceManagerImpl)sm).createPersistitStore();
-        store.start();
-        return store;
     }
 }

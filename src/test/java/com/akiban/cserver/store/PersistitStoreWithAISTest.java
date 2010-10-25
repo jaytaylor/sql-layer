@@ -6,12 +6,11 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
@@ -22,15 +21,12 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.ByteBufferFactory;
 import com.persistit.Exchange;
 import com.persistit.KeyState;
-import com.persistit.TransactionRunnable;
 import com.persistit.Tree;
 import com.persistit.Volume;
-import com.persistit.exception.RollbackException;
 
 public class PersistitStoreWithAISTest extends TestCase implements
         CServerConstants {
@@ -194,7 +190,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 
     @Override
     public void setUp() throws Exception {
-        store = ServiceManagerImpl.getStoreForUnitTests();
+        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
         rowDefCache = store.getRowDefCache();
         final AkibaInformationSchema ais = new DDLSource()
                 .buildAIS(DDL_FILE_NAME);

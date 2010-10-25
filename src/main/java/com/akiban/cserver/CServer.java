@@ -12,7 +12,6 @@ import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerFactory;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.AkibanConnection;
@@ -174,7 +173,6 @@ public class CServer implements CServerConstants, CServerContext, Service, JmxMa
     public static void main(String[] args) throws Exception {
         final ServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
         final ServiceManager serviceManager = serviceManagerFactory.serviceManager();
-        ((ServiceManagerImpl)serviceManager).setupCServerConfig(); // TODO - temporary
         serviceManager.startServices();
     }
 }

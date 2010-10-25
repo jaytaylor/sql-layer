@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +22,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
 
@@ -36,8 +36,11 @@ public final class PersistitStoreSchemaManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        store = ServiceManagerImpl.getStoreForUnitTests();
+        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
         manager = store.getSchemaManager();
+        assertEquals("user tables in AIS", 0, manager.getAisCopy().getUserTables().size());
+        assertTables("user tables");
+        assertDDLS();
     }
 
     @After

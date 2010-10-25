@@ -2,6 +2,7 @@ package com.akiban.cserver;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
@@ -11,7 +12,6 @@ import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.PersistitStoreSchemaManager;
 
@@ -25,7 +25,7 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
 
     @Override
     public void setUp() throws Exception {
-        store = ServiceManagerImpl.getStoreForUnitTests();
+        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
         store.getRowDefCache().setAIS(new PersistitStoreSchemaManager(store).createEmptyAIS());
         this.ais = new DDLSource().buildAIS(DDL_FILE_NAME);
     }

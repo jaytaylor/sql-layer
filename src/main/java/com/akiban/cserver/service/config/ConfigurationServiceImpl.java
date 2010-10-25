@@ -60,6 +60,17 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
             public String getProperty(String propertyName) throws PropertyNotDefinedException {
                 return ConfigurationServiceImpl.this.getProperty(moduleString, propertyName);
             }
+
+            @Override
+            public Properties getProperties() {
+                Properties ret = new Properties();
+                for (Map.Entry<Property.Key, Property> entry : internalGetProperties().entrySet()) {
+                    if (moduleString.equals(entry.getKey().getModule())) {
+                        ret.setProperty(entry.getKey().getName(), entry.getValue().getValue());
+                    }
+                }
+                return ret;
+            }
         };
     }
 

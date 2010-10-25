@@ -1,5 +1,8 @@
 package com.akiban.cserver.service.config;
 
+import java.util.Map;
+import java.util.Properties;
+
 /**
  * A module-specific view of a ConfigurationService. If your class always gets properties from just one module,
  * this interface may be more convenient and concise to use.
@@ -21,4 +24,13 @@ public interface ModuleConfiguration {
      * @throws PropertyNotDefinedException
      */
     String getProperty(String propertyName) throws PropertyNotDefinedException;
+
+    /**
+     * Gets all of the properties for this module as a java.util.Properties object.
+     * @return a Properties where each key corresponds to a propertyName (without module name), and each
+     * value is its value.
+     */
+    Properties getProperties();
+
+
 }

@@ -75,7 +75,7 @@ public final class Property implements Comparable<Property> {
     private final Key key;
     private final String value;
 
-    Property(Key key, String value) {
+    public Property(Key key, String value) {
         this.key = key;
         this.value = value;
     }

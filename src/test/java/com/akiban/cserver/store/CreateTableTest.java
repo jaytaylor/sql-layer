@@ -1,11 +1,11 @@
 package com.akiban.cserver.store;
 
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.persistit.Exchange;
 import com.persistit.Key;
 
@@ -23,7 +23,7 @@ public class CreateTableTest extends TestCase implements CServerConstants {
 
     @Override
     public void setUp() throws Exception {
-        store = ServiceManagerImpl.getStoreForUnitTests();
+        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
         rowDefCache = store.getRowDefCache();
     }
 
