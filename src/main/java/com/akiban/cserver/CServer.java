@@ -1,19 +1,31 @@
 package com.akiban.cserver;
 
-import com.akiban.ais.message.CServerContext;
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.message.ToStringWithRowDefCache;
-import com.akiban.cserver.service.*;
-import com.akiban.cserver.store.Store;
-import com.akiban.message.*;
-import com.akiban.util.Tap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import com.akiban.ais.message.CServerContext;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.cserver.manage.ManageMXBean;
+import com.akiban.cserver.manage.ManageMXBeanImpl;
+import com.akiban.cserver.message.ToStringWithRowDefCache;
+import com.akiban.cserver.service.DefaultServiceManagerFactory;
+import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.ServiceManagerFactory;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.service.jmx.JmxManageable;
+import com.akiban.cserver.store.Store;
+import com.akiban.message.AkibanConnection;
+import com.akiban.message.ErrorCode;
+import com.akiban.message.ErrorResponse;
+import com.akiban.message.Message;
+import com.akiban.message.Request;
+import com.akiban.util.Tap;
 
 /**
  * @author peter
  */
-public class CServer implements CServerConstants, CServerContext, Service {
+public class CServer implements CServerConstants, CServerContext, Service, JmxManageable {
 
     private static final Log LOG = LogFactory.getLog(CServer.class.getName());
 
@@ -49,8 +61,6 @@ public class CServer implements CServerConstants, CServerContext, Service {
 
     private final ServiceManager serviceManager;
     
-    private CServerConfig config; // TODO - remove
-
     private final int cserverPort = CSERVER_PORT; // TODO - get from
                                                   // ConfigurationService
 
@@ -58,16 +68,17 @@ public class CServer implements CServerConstants, CServerContext, Service {
 
     private volatile Thread _shutdownHook;
     
+    private final JmxObjectInfo jmxObjectInfo;
+
     public CServer(final ServiceManager serviceManager) {
         this.serviceManager = serviceManager;
+        this.jmxObjectInfo = new JmxObjectInfo("CSERVER", new ManageMXBeanImpl(
+                this), ManageMXBean.class);
     }
+
 
     @Override
     public void start() throws Exception {
-        // TODO - remove static reference
-        Store store = serviceManager.getStore(); // TODO inject
-                                                           // service manager
-
         LOG.warn(String.format("Starting chunkserver %s on port %s",
                 CSERVER_NAME, CSERVER_PORT));
         Tap.registerMXBean();
@@ -110,6 +121,11 @@ public class CServer implements CServerConstants, CServerContext, Service {
     @Override
     public AkibaInformationSchema ais() {
         return getStore().getAis();
+    }
+    
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return jmxObjectInfo;
     }
 
     private Message executeMessage(Message request) {

@@ -1,17 +1,14 @@
 package com.akiban.cserver.manage;
 
 import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerConfig;
 import com.akiban.cserver.store.PersistitStore;
 
-class ManageMXBeanImpl implements ManageMXBean {
+public class ManageMXBeanImpl implements ManageMXBean {
 
     private final CServer cserver;
-    private final CServerConfig config;
 
-    protected ManageMXBeanImpl(final CServer cserver, final CServerConfig config) {
+    public ManageMXBeanImpl(final CServer cserver) {
         this.cserver = cserver;
-        this.config = config;
     }
 
     @Override
@@ -45,7 +42,7 @@ class ManageMXBeanImpl implements ManageMXBean {
                 .getInteger("com.sun.management.jmxremote.port", 0);
         return jmxPort;
     }
-    
+
     @Override
     public boolean isVerboseLoggingEnabled() {
         return cserver.getStore().isVerbose();
@@ -70,22 +67,22 @@ class ManageMXBeanImpl implements ManageMXBean {
     public void setDeferIndexes(final boolean defer) {
         ((PersistitStore) cserver.getStore()).setDeferIndexes(defer);
     }
-    
+
     @Override
     public void buildIndexes(final String arg) {
         ((PersistitStore) cserver.getStore()).buildIndexes(arg);
     }
-    
+
     @Override
     public void deleteIndexes(final String arg) {
         ((PersistitStore) cserver.getStore()).deleteIndexes(arg);
     }
-    
+
     @Override
     public void flushIndexes() {
         ((PersistitStore) cserver.getStore()).flushIndexes();
     }
-    
+
     // TODO - temporary
     @Override
     public String copyBackPages() {
@@ -96,8 +93,5 @@ class ManageMXBeanImpl implements ManageMXBean {
         }
         return "done";
     }
-    
-    
-    
 
 }

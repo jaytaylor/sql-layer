@@ -747,14 +747,15 @@ public class PersistitStoreWithAISTest extends TestCase implements
         assertEquals(a.toString(), c.toString());
     }
 
-    @Ignore
-    @Test
-    public void testBug283() throws Exception {
-        //
-        // Creates the index tables ahead of the h-table. This
-        // is contrived to affect the Transaction commit order.
-        // 
-        //
+    // Disabled pending Persistit commit
+    //
+//    @Test
+//    public void testBug283() throws Exception {
+//        //
+//        // Creates the index tables ahead of the h-table. This
+//        // is contrived to affect the Transaction commit order.
+//        // 
+//        //
 //        store.getDb().getTransaction().run(new TransactionRunnable() {
 //            public void runTransaction() throws RollbackException {
 //                for (int index = 1; index < 13; index++) {
@@ -844,9 +845,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
 //        thread2.join();
 //        // For some reason the @Ignore above isn't preventing this test from failing.
 //        // Am commenting out the assertTrue until but 283 is fixed.
-//        // assertTrue(!broken.get());
-
-    }
+//        assertTrue(!broken.get());
+//
+//    }
 
     private void dumpIndexes(final PrintWriter pw) throws Exception {
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
