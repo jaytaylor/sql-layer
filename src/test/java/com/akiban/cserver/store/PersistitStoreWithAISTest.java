@@ -749,105 +749,105 @@ public class PersistitStoreWithAISTest extends TestCase implements
 
     // Disabled pending Persistit commit
     //
-//    @Test
-//    public void testBug283() throws Exception {
-//        //
-//        // Creates the index tables ahead of the h-table. This
-//        // is contrived to affect the Transaction commit order.
-//        // 
-//        //
-//        store.getDb().getTransaction().run(new TransactionRunnable() {
-//            public void runTransaction() throws RollbackException {
-//                for (int index = 1; index < 13; index++) {
-//                    final String treeName = "_akiba_customer$$" + index;
-//                    try {
-//                        final Exchange exchange = store.getExchange(treeName);
-//                        exchange.to("testBug283").store();
-//                        store.releaseExchange(exchange);
-//                    } catch (Exception e) {
-//                        throw new RollbackException(e);
-//                    }
-//                }
-//            }
-//        });
-//        final TestData td = new TestData(1, 1, 1, 1);
-//        td.insertTestRows();
-//        final AtomicBoolean broken = new AtomicBoolean(false);
-//        final long expires = System.nanoTime() + 10000000000L; // 10 seconds
-//        final AtomicInteger lastInserted = new AtomicInteger();
-//        final AtomicInteger scanCount = new AtomicInteger();
-//        final Thread thread1 = new Thread(new Runnable() {
-//            public void run() {
-//                for (int xid = 1001001002; System.nanoTime() < expires
-//                        && !broken.get(); xid++) {
-//                    td.rowX.createRow(td.defX, new Object[] { 1001001, xid,
-//                            123, xid - 100100100, "part " + xid });
-//                    try {
-//                        store.writeRow(td.rowX);
-//                        lastInserted.set(xid);
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        broken.set(true);
-//                        break;
-//                    }
-//                }
-//            }
-//        }, "INSERTER");
-//
-//        final Thread thread2 = new Thread(new Runnable() {
-//            public void run() {
-//                final RowData start = new RowData(new byte[256]);
-//                final RowData end = new RowData(new byte[256]);
-//                final byte[] columnBitMap = new byte[] { (byte) 0xF };
-//                final ByteBuffer payload = ByteBufferFactory.allocate(100000);
-//                while (System.nanoTime() < expires && !broken.get()) {
-//                    int xid = lastInserted.get();
-//                    start.createRow(td.defX, new Object[] { 1001001, xid, null,
-//                            null });
-//                    end.createRow(td.defX, new Object[] { 1001001, xid + 10000,
-//                            null, null });
-//
-//                    final int indexId = td.defX.getPKIndexDef().getId();
-//
-//                    try {
-//                        final RowCollector rc = store.newRowCollector(
-//                                td.defX.getRowDefId(), indexId, 0, start, end,
-//                                columnBitMap);
-//                        while (rc.hasMore()) {
-//                            payload.clear();
-//                            while (rc.collectNextRow(payload))
-//                                ;
-//                            payload.flip();
-//                            RowData rowData = new RowData(payload.array(),
-//                                    payload.position(), payload.limit());
-//                            for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
-//                                rowData.prepareRow(p);
-//                                p = rowData.getRowEnd();
-//                                scanCount.incrementAndGet();
-//                            }
-//                        }
-//                        // } catch (InvalidOperationException ioe) {
-//                        // broken.set(true);
-//                        // break;
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        broken.set(true);
-//                        break;
-//                    }
-//
-//                }
-//            }
-//        }, "SCANNER");
-//
-//        thread1.start();
-//        thread2.start();
-//        thread1.join();
-//        thread2.join();
-//        // For some reason the @Ignore above isn't preventing this test from failing.
-//        // Am commenting out the assertTrue until but 283 is fixed.
-//        assertTrue(!broken.get());
-//
-//    }
+    @Test
+    public void testBug283() throws Exception {
+        //
+        // Creates the index tables ahead of the h-table. This
+        // is contrived to affect the Transaction commit order.
+        // 
+        //
+        store.getDb().getTransaction().run(new TransactionRunnable() {
+            public void runTransaction() throws RollbackException {
+                for (int index = 1; index < 13; index++) {
+                    final String treeName = "_akiba_customer$$" + index;
+                    try {
+                        final Exchange exchange = store.getExchange(treeName);
+                        exchange.to("testBug283").store();
+                        store.releaseExchange(exchange);
+                    } catch (Exception e) {
+                        throw new RollbackException(e);
+                    }
+                }
+            }
+        });
+        final TestData td = new TestData(1, 1, 1, 1);
+        td.insertTestRows();
+        final AtomicBoolean broken = new AtomicBoolean(false);
+        final long expires = System.nanoTime() + 10000000000L; // 10 seconds
+        final AtomicInteger lastInserted = new AtomicInteger();
+        final AtomicInteger scanCount = new AtomicInteger();
+        final Thread thread1 = new Thread(new Runnable() {
+            public void run() {
+                for (int xid = 1001001002; System.nanoTime() < expires
+                        && !broken.get(); xid++) {
+                    td.rowX.createRow(td.defX, new Object[] { 1001001, xid,
+                            123, xid - 100100100, "part " + xid });
+                    try {
+                        store.writeRow(td.rowX);
+                        lastInserted.set(xid);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        broken.set(true);
+                        break;
+                    }
+                }
+            }
+        }, "INSERTER");
+
+        final Thread thread2 = new Thread(new Runnable() {
+            public void run() {
+                final RowData start = new RowData(new byte[256]);
+                final RowData end = new RowData(new byte[256]);
+                final byte[] columnBitMap = new byte[] { (byte) 0xF };
+                final ByteBuffer payload = ByteBufferFactory.allocate(100000);
+                while (System.nanoTime() < expires && !broken.get()) {
+                    int xid = lastInserted.get();
+                    start.createRow(td.defX, new Object[] { 1001001, xid, null,
+                            null });
+                    end.createRow(td.defX, new Object[] { 1001001, xid + 10000,
+                            null, null });
+
+                    final int indexId = td.defX.getPKIndexDef().getId();
+
+                    try {
+                        final RowCollector rc = store.newRowCollector(
+                                td.defX.getRowDefId(), indexId, 0, start, end,
+                                columnBitMap);
+                        while (rc.hasMore()) {
+                            payload.clear();
+                            while (rc.collectNextRow(payload))
+                                ;
+                            payload.flip();
+                            RowData rowData = new RowData(payload.array(),
+                                    payload.position(), payload.limit());
+                            for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
+                                rowData.prepareRow(p);
+                                p = rowData.getRowEnd();
+                                scanCount.incrementAndGet();
+                            }
+                        }
+                        // } catch (InvalidOperationException ioe) {
+                        // broken.set(true);
+                        // break;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        broken.set(true);
+                        break;
+                    }
+
+                }
+            }
+        }, "SCANNER");
+
+        thread1.start();
+        thread2.start();
+        thread1.join();
+        thread2.join();
+        // For some reason the @Ignore above isn't preventing this test from failing.
+        // Am commenting out the assertTrue until but 283 is fixed.
+        assertTrue(!broken.get());
+
+    }
 
     private void dumpIndexes(final PrintWriter pw) throws Exception {
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
