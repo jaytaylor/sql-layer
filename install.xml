@@ -3,6 +3,8 @@
 
 	<property name="cserver.install.dir" location="../build/cserver" />
 	<property name="mysql.install.dir"   location="../build/mysql" />
+	<property name="system.config"       location="../config/default/config" />
+	<property name="system.resources"    location="src/main/resources" />
 
 	<property name="cserver.configdir"    	location="${cserver.install.dir}/etc/akiban" />
 	<property name="cserver.logsdir"      	location="${cserver.install.dir}/var/log" />
@@ -44,27 +46,27 @@
 	
 
 	<copy failonerror="true" overwrite="true"
-		file="${basedir}/src/main/resources/chunkserverd" 
+		file="${system.resources}/chunkserverd" 
 		todir="${cserver.rundir}" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${basedir}/src/main/resources/bulkload.sh"
+		file="${system.resources}/bulkload.sh"
 		todir="${cserver.bindir}" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${basedir}/src/main/resources/cluster.properties"
+		file="${system.config}/cluster.properties"
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${basedir}/src/main/resources/log4j.properties" 
+		file="${system.config}/log4j.properties" 
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${basedir}/src/main/resources/chunkserver.properties" 
+		file="${system.config}/chunkserver.properties" 
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${basedir}/src/main/resources/ais_object_model.xml" 
+		file="${system.config}/ais_object_model.xml" 
 		todir="${cserver.configdir}/config" />
 
 
