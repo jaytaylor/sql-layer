@@ -6,20 +6,20 @@ Group: Applications/storage-server
 URL: http://www.akiban.com
 License: GPLv2 with exceptions
 
-Source0: %{name}-%{version}.tar.gz
+Source0: cserver.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 Prereq: /sbin/ldconfig, /sbin/install-info, grep, fileutils
 #BuildRequires: ant >= 1.7,mvn >= 2.2.1, java >= 1.6.0.17
-BuildRequires: bash 
-Requires: bash
+BuildRequires: bash java > 1.6
+Requires: bash java >= 1.6.
 
 
 %description
 chunkserver
 
 %prep
-%setup -q
+%setup -q -n cserver
 
 %build
 mvn clean install -Dmaven.test.skip=true 
