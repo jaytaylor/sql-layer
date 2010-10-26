@@ -6,7 +6,7 @@ CREATE TABLE `access` (
   `type` varchar(255) NOT NULL DEFAULT '',
   `status` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`aid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `actions` (
@@ -16,13 +16,13 @@ CREATE TABLE `actions` (
   `parameters` varchar(512) NOT NULL,
   `description` varchar(255) NOT NULL DEFAULT '0',
   PRIMARY KEY (`aid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `actions_aid` (
   `aid` int(10) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`aid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `authmap` (
@@ -32,7 +32,7 @@ CREATE TABLE `authmap` (
   `module` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`aid`),
   UNIQUE KEY `authname` (`authname`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `batch` (
@@ -42,7 +42,7 @@ CREATE TABLE `batch` (
   `batch` varchar(512),
   PRIMARY KEY (`bid`),
   KEY `token` (`token`)
-) ENGINE=akibadb AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `blocks` (
@@ -62,7 +62,7 @@ CREATE TABLE `blocks` (
   PRIMARY KEY (`bid`),
   UNIQUE KEY `tmd` (`theme`,`module`,`delta`),
   KEY `list` (`theme`,`status`,`region`,`weight`,`module`)
-) ENGINE=akibadb AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `blocks_roles` (
@@ -71,7 +71,7 @@ CREATE TABLE `blocks_roles` (
   `rid` int(10) NOT NULL,
   PRIMARY KEY (`module`,`delta`,`rid`),
   KEY `rid` (`rid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `boxes` (
@@ -81,7 +81,7 @@ CREATE TABLE `boxes` (
   `format` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`bid`),
   UNIQUE KEY `info` (`info`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cache` (
@@ -93,7 +93,7 @@ CREATE TABLE `cache` (
   `serialized` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cache_block` (
@@ -105,7 +105,7 @@ CREATE TABLE `cache_block` (
   `serialized` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cache_filter` (
@@ -117,7 +117,7 @@ CREATE TABLE `cache_filter` (
   `serialized` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cache_form` (
@@ -129,7 +129,7 @@ CREATE TABLE `cache_form` (
   `serialized` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cache_menu` (
@@ -141,7 +141,7 @@ CREATE TABLE `cache_menu` (
   `serialized` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cache_page` (
@@ -153,7 +153,7 @@ CREATE TABLE `cache_page` (
   `serialized` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cache_update` (
@@ -165,7 +165,7 @@ CREATE TABLE `cache_update` (
   `serialized` smallint(6) NOT NULL DEFAULT '0',
   PRIMARY KEY (`cid`),
   KEY `expire` (`expire`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `comments` (
@@ -187,7 +187,7 @@ CREATE TABLE `comments` (
   KEY `pid` (`pid`),
   KEY `nid` (`nid`),
   KEY `status` (`status`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `files` (
@@ -203,7 +203,7 @@ CREATE TABLE `files` (
   KEY `uid` (`uid`),
   KEY `status` (`status`),
   KEY `timestamp` (`timestamp`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `filter_formats` (
@@ -213,7 +213,7 @@ CREATE TABLE `filter_formats` (
   `cache` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`format`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=akibadb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `filters` (
@@ -225,7 +225,7 @@ CREATE TABLE `filters` (
   PRIMARY KEY (`fid`),
   UNIQUE KEY `fmd` (`format`,`module`,`delta`),
   KEY `list` (`format`,`weight`,`module`,`delta`)
-) ENGINE=akibadb AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `flood` (
@@ -235,7 +235,7 @@ CREATE TABLE `flood` (
   `timestamp` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`fid`),
   KEY `allow` (`event`,`hostname`,`timestamp`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `history` (
@@ -244,7 +244,7 @@ CREATE TABLE `history` (
   `timestamp` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`uid`,`nid`),
   KEY `nid` (`nid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `menu_custom` (
@@ -252,7 +252,7 @@ CREATE TABLE `menu_custom` (
   `title` varchar(255) NOT NULL DEFAULT '',
   `description` varchar(512),
   PRIMARY KEY (`menu_name`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `menu_links` (
@@ -284,7 +284,7 @@ CREATE TABLE `menu_links` (
   PRIMARY KEY (`mlid`),
   KEY `menu_plid_expand_child` (`menu_name`,`plid`,`expanded`,`has_children`),
   KEY `menu_parents` (`menu_name`,`p1`,`p2`,`p3`,`p4`,`p5`,`p6`,`p7`,`p8`,`p9`)
-) ENGINE=akibadb AUTO_INCREMENT=114 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=114 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `menu_router` (
@@ -311,7 +311,7 @@ CREATE TABLE `menu_router` (
   PRIMARY KEY (`path`),
   KEY `fit` (`fit`),
   KEY `tab_parent` (`tab_parent`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `node` (
@@ -340,7 +340,7 @@ CREATE TABLE `node` (
   KEY `uid` (`uid`),
   KEY `tnid` (`tnid`),
   KEY `translate` (`translate`)
-) ENGINE=akibadb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `node_access` (
@@ -351,7 +351,7 @@ CREATE TABLE `node_access` (
   `grant_update` tinyint(3) NOT NULL DEFAULT '0',
   `grant_delete` tinyint(3) NOT NULL DEFAULT '0',
   PRIMARY KEY (`nid`,`gid`,`realm`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `node_comment_statistics` (
@@ -362,7 +362,7 @@ CREATE TABLE `node_comment_statistics` (
   `comment_count` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`nid`),
   KEY `node_comment_timestamp` (`last_comment_timestamp`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `node_counter` (
@@ -371,7 +371,7 @@ CREATE TABLE `node_counter` (
   `daycount` mediumint(8) NOT NULL DEFAULT '0',
   `timestamp` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`nid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `node_revisions` (
@@ -387,7 +387,7 @@ CREATE TABLE `node_revisions` (
   PRIMARY KEY (`vid`),
   KEY `nid` (`nid`),
   KEY `uid` (`uid`)
-) ENGINE=akibadb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `node_type` (
@@ -406,7 +406,7 @@ CREATE TABLE `node_type` (
   `locked` tinyint(4) NOT NULL DEFAULT '0',
   `orig_type` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`type`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `permission` (
@@ -416,7 +416,7 @@ CREATE TABLE `permission` (
   `tid` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`pid`),
   KEY `rid` (`rid`)
-) ENGINE=akibadb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `role` (
@@ -424,7 +424,7 @@ CREATE TABLE `role` (
   `name` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`rid`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=akibadb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `sessions` (
@@ -437,7 +437,7 @@ CREATE TABLE `sessions` (
   PRIMARY KEY (`sid`),
   KEY `timestamp` (`timestamp`),
   KEY `uid` (`uid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `system` (
@@ -452,7 +452,7 @@ CREATE TABLE `system` (
   `weight` int(11) NOT NULL DEFAULT '0',
   `info` varchar(512),
   PRIMARY KEY (`filename`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `term_data` (
@@ -464,7 +464,7 @@ CREATE TABLE `term_data` (
   PRIMARY KEY (`tid`),
   KEY `taxonomy_tree` (`vid`,`weight`,`name`),
   KEY `vid_name` (`vid`,`name`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `term_hierarchy` (
@@ -472,7 +472,7 @@ CREATE TABLE `term_hierarchy` (
   `parent` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`tid`,`parent`),
   KEY `parent` (`parent`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `term_node` (
@@ -482,7 +482,7 @@ CREATE TABLE `term_node` (
   PRIMARY KEY (`tid`,`vid`),
   KEY `vid` (`vid`),
   KEY `nid` (`nid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `term_relation` (
@@ -492,7 +492,7 @@ CREATE TABLE `term_relation` (
   PRIMARY KEY (`trid`),
   UNIQUE KEY `tid1_tid2` (`tid1`,`tid2`),
   KEY `tid2` (`tid2`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `term_synonym` (
@@ -502,7 +502,7 @@ CREATE TABLE `term_synonym` (
   PRIMARY KEY (`tsid`),
   KEY `tid` (`tid`),
   KEY `name_tid` (`name`,`tid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `url_alias` (
@@ -513,7 +513,7 @@ CREATE TABLE `url_alias` (
   PRIMARY KEY (`pid`),
   UNIQUE KEY `dst_language` (`dst`,`language`),
   KEY `src_language` (`src`,`language`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `users` (
@@ -541,7 +541,7 @@ CREATE TABLE `users` (
   KEY `access` (`access`),
   KEY `created` (`created`),
   KEY `mail` (`mail`)
-) ENGINE=akibadb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `users_roles` (
@@ -549,14 +549,14 @@ CREATE TABLE `users_roles` (
   `rid` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`uid`,`rid`),
   KEY `rid` (`rid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `variable` (
   `name` varchar(128) NOT NULL DEFAULT '',
   `value` varchar(255) NOT NULL,
   PRIMARY KEY (`name`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `vocabulary` (
@@ -573,7 +573,7 @@ CREATE TABLE `vocabulary` (
   `weight` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`vid`),
   KEY `list` (`weight`,`name`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `vocabulary_node_types` (
@@ -581,7 +581,7 @@ CREATE TABLE `vocabulary_node_types` (
   `type` varchar(32) NOT NULL DEFAULT '',
   PRIMARY KEY (`type`,`vid`),
   KEY `vid` (`vid`)
-) ENGINE=akibadb DEFAULT CHARSET=utf8;
+) ENGINE=akibandb DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `watchdog` (
@@ -598,6 +598,6 @@ CREATE TABLE `watchdog` (
   `timestamp` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`wid`),
   KEY `type` (`type`)
-) ENGINE=akibadb AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;
+) ENGINE=akibandb AUTO_INCREMENT=18 DEFAULT CHARSET=utf8;
 
 

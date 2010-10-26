@@ -18,7 +18,7 @@ create table customers
 	 key (customer_id),
      rand_id int,
 	 customer_info varchar(100)
-) engine=akibadb;
+) engine=akibandb;
 
 create table orders (
 	 order_id int not null auto_increment,
@@ -27,7 +27,7 @@ create table orders (
 	 customer_id int,
 	 key (customer_id),
 	 order_info varchar(200)
-) engine=akibadb;
+) engine=akibandb;
 
 create table items (
 	 item_id int not null auto_increment,
@@ -36,6 +36,6 @@ create table items (
 	 order_id int,
 	 key (order_id),
 	 item_info varchar(200)
-) engine=akibadb;
+) engine=akibandb;
 
 

@@ -21,7 +21,7 @@ use akiba_information_schema;
 create table groups(
     group_name        varchar(64) not null,
     primary key(group_name)
-) engine = akibadb;
+) engine=akibandb;
 
 
 -- Kinds of tables:
@@ -38,7 +38,7 @@ create table tables(
     migration_usage   int not null,
     primary key(schema_name, table_name),
     foreign key(group_name) references groups
-) engine = akibadb;
+) engine=akibandb;
 
 -- Column information, combining information copied from the mysql
 -- information schema and akiba information.
@@ -75,7 +75,7 @@ create table columns (
     foreign key(schema_name, table_name) references tables(schema_name, table_name),
     foreign key(group_schema_name, group_table_name, group_column_name)
         references columns(schema_name, table_name, column_name)
-) engine = akibadb;
+) engine=akibandb;
 
 
 -- join_name           --  for now size large until name convention is determined
@@ -95,7 +95,7 @@ create table joins(
     foreign key(group_name) references groups(group_name),
     foreign key(parent_schema_name, parent_table_name) references tables(schema_name, table_name),
     foreign key(child_schema_name, child_table_name) references tables(schema_name, table_name)
-) engine = akibadb;
+) engine=akibandb;
 
 -- join_name: for now size large until name convention is determined
 create table join_columns(
@@ -112,7 +112,7 @@ create table join_columns(
         references columns(schema_name, table_name, column_name),
     foreign key(child_schema_name, child_table_name, child_column_name)
         references columns(schema_name, table_name, column_name)
-) engine = akibadb;
+) engine=akibandb;
 
 -- Index information for each table. MySQL Information schema has their key information kept in two tables:
 -- INFORMATION_SCHEMA.TABLE_CONSTRAINTS and REFERENTIAL_CONSTRAINTS. The table_constraints match the MySQL key
@@ -126,7 +126,7 @@ create table indexes (
     is_unique        tinyint not null       COMMENT '1 = true, 0 = false',
     primary key(schema_name, table_name, index_name),
     foreign key(schema_name, table_name) references tables(schema_name, table_name)
-) engine = akibadb;
+) engine=akibandb;
 
 -- List of the columns within each index. The MySQL Information Schema keeps their copy of the information
 -- in the KEY_COLUMN_USAGE table. 
@@ -143,7 +143,7 @@ create table index_columns (
             references indexes(schema_name, table_name, index_name),
     foreign key(schema_name, table_name, column_name)
             references columns(schema_name, table_name, column_name)
-) engine = akibadb;
+) engine=akibandb;
 
 -- Information on mysql types.
 --  fixed_size          -- 1: fixed, 0: variable
@@ -152,7 +152,7 @@ create table types(
     parameters          int not null,
     fixed_size          tinyint not null, 
     max_size_bytes      bigint not null
-) engine = akibadb;
+) engine=akibandb;
 
 -- Index Histogram data computed by CServer when requested by
 -- ANALYZE TABLE. Column key_string is for human consumption
@@ -167,5 +167,5 @@ create table index_analysis(
     index_row_data      varbinary(4096),
     count               bigint,
     primary key(table_id, index_id, item_number)
-) engine = akibadb;
+) engine=akibandb;
 

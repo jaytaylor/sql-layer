@@ -60,12 +60,12 @@ public class RowDefCacheTest {
                 "create table parent (\n" +
                 "   id int,\n" +
                 "   primary key(id)\n" +
-                ") engine = akibadb;\n" +
+                ") engine = akibandb;\n" +
                 "create table zebra (\n" +
                 "   id int,\n" +
                 "   primary key(id),\n" +
                 "   constraint `__akiban_fk0` foreign key `akibafk` (id) references parent(id)\n" +
-                ") engine = akibadb;";
+                ") engine = akibandb;";
 
         final AkibaInformationSchema ais = new DDLSource().buildAISFromString(ddl);
         rowDefCache.setAIS(ais);

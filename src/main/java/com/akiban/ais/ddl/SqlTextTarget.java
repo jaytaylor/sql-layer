@@ -238,12 +238,12 @@ public class SqlTextTarget extends Target {
                 sb.append(')');
             }
         }
-        sb.append(") engine=akibadb;");
+        sb.append(") engine=akibandb;");
         return sb.toString();
 	}
 
 	private String getStorageEngine() {
-		String engine = System.getProperty("test.db.engine", "akibadb");
+		String engine = System.getProperty("test.db.engine", "akibandb");
 		System.out.println("Generating AIS with engine: " + engine);
 		return engine;
 	}

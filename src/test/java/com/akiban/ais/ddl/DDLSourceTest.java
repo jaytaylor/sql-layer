@@ -71,8 +71,8 @@ public class DDLSourceTest {
 
     @Test
     public void testOverloadedTableColumn() throws Exception {
-        String ddl = "CREATE TABLE `s1`.one (idOne int, PRIMARY KEY (idOne)) engine=akibadb;\n" +
-                    "CREATE TABLE `s2`.one (idTwo int, PRIMARY KEY (idTwo)) engine=akibadb;";
+        String ddl = "CREATE TABLE `s1`.one (idOne int, PRIMARY KEY (idOne)) engine=akibandb;\n" +
+                    "CREATE TABLE `s2`.one (idTwo int, PRIMARY KEY (idTwo)) engine=akibandb;";
 
         SchemaDef schemaDef = DDLSource.parseSchemaDef(ddl);
         assertEquals("user tables", 2, schemaDef.getUserTableMap().size());
@@ -132,7 +132,7 @@ public class DDLSourceTest {
     public void testAkibanFKUnnamedIndex() throws Exception{
         SchemaDef.UserTableDef tableDef = new DDLSource().parseCreateTable(
                 "two (id int, oid int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk` FOREIGN KEY (`oid`) REFERENCES zebra (id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk` FOREIGN KEY (`oid`) REFERENCES zebra (id) ) engine=akibandb;");
 
         assertEquals("schema", null, tableDef.getCName().getSchema());
         assertEquals("table", "two", tableDef.getCName().getName());
@@ -170,11 +170,11 @@ public class DDLSourceTest {
 
     private static SchemaDef.UserTableDef createTableFromInner(String ddl) throws Exception {
         SchemaDef.UserTableDef ret = new DDLSource().parseCreateTable(
-                "s.t (" + ddl + ") engine = akibadb;"
+                "s.t (" + ddl + ") engine=akibandb;"
         );
         assertEquals("schema", "s", ret.getCName().getSchema());
         assertEquals("table", "t", ret.getCName().getName());
-        assertEquals("engine", "akibadb", ret.engine);
+        assertEquals("engine", "akibandb", ret.engine);
         return ret;
     }
 
@@ -182,7 +182,7 @@ public class DDLSourceTest {
     public void testParseCreateTable() throws Exception{
         SchemaDef.UserTableDef tableDef = new DDLSource().parseCreateTable(
                 "two (id int, oid int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk` FOREIGN KEY `__akiban_index` (`oid`) REFERENCES zebra (id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk` FOREIGN KEY `__akiban_index` (`oid`) REFERENCES zebra (id) ) engine=akibandb;");
 
         assertEquals("schema", null, tableDef.getCName().getSchema());
         assertEquals("table", "two", tableDef.getCName().getName());
@@ -238,7 +238,7 @@ public class DDLSourceTest {
         assertEquals("columns size", 1, customer.columns.size());
         testColumn(0, customer, "id", "INT", null, null, true, null);
 
-        assertEquals("engine", "akibadb", customer.engine);
+        assertEquals("engine", "akibandb", customer.engine);
     }
 
     private static void testColumn(int which, SchemaDef.UserTableDef table,
@@ -356,13 +356,13 @@ public class DDLSourceTest {
      */
     private static SchemaDef parseCO(boolean includeConstraint, String constraintName, String indexName) throws Exception {
         StringBuilder ret = new StringBuilder();
-        ret.append("CREATE TABLE `schema`.`customer` (`id` INT, PRIMARY KEY (`id`)) engine=akibadb;\n");
+        ret.append("CREATE TABLE `schema`.`customer` (`id` INT, PRIMARY KEY (`id`)) engine=akibandb;\n");
 
         ret.append("CREATE TABLE `schema`.`order` (`id` INT, `cid` INT, PRIMARY KEY (`id`), ");
         ret.append("KEY `given_key` (`cid`), ");
         ret.append("CONSTRAINT `givenConstraint` FOREIGN KEY `givenFk` (`cid`) REFERENCES `customer` (`id`), ");
         ret.append(fk("customer", includeConstraint, constraintName, indexName, "parent:id", "child:cid"));
-        ret.append(") engine=akibadb;");
+        ret.append(") engine=akibandb;");
 
         return DDLSource.parseSchemaDef(ret.toString());
     }

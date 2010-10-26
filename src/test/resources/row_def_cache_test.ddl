@@ -8,7 +8,7 @@ create table b(
     b4 int,
     b5 int,
     primary key(b3, b2, b4, b1)
-) engine = akibadb;
+) engine = akibandb;
 
 create table bb(
     bb0 int,
@@ -19,4 +19,4 @@ create table bb(
     bb5 int,
     primary key (bb0, bb5, bb3, bb2, bb4),
 CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`bb0`,`bb2`,`bb1`,`bb3`) REFERENCES `b` (`b3`,`b2`,`b4`,`b1`)
-) engine = akibadb;
+) engine = akibandb;

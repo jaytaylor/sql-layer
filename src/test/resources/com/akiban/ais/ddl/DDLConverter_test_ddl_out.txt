@@ -20,7 +20,7 @@ create table customers
 	 key (customer_id),
      rand_id int,
 	 customer_info varchar(100)
-) engine=akibadb;
+) engine=akibandb;
 
 create table orders (
 	 order_id int not null auto_increment,
@@ -30,7 +30,7 @@ create table orders (
 	 key (customer_id),
 	 order_info varchar(200),
 CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`customer_id`) REFERENCES `customers` (`customer_id`)
-) engine=akibadb;
+) engine=akibandb;
 
 create table items (
 	 item_id int not null auto_increment,
@@ -40,4 +40,4 @@ create table items (
 	 key (order_id),
 	 item_info varchar(200),
 CONSTRAINT `__akiban_fk_1` FOREIGN KEY `__akiban_fk_1` (`order_id`) REFERENCES `orders` (`order_id`)
-) engine=akibadb;
+) engine=akibandb;

@@ -782,7 +782,7 @@ public class DDLSource extends Source {
             final CName userTableName) {
         final UserTableDef utDef = schemaDef.getUserTableMap().get(
                 userTableName);
-        if (utDef != null && "akibadb".equalsIgnoreCase(utDef.engine)
+        if (utDef != null && "akibandb".equalsIgnoreCase(utDef.engine)
                 && !tablesInGroups.contains(userTableName)) {
             IndexDef annotatedFK = getAkibanJoin(utDef);
             if (annotatedFK == null) {

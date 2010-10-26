@@ -15,7 +15,7 @@ public class CreateTableTest extends TestCase implements CServerConstants {
             + "`a` int(11) DEFAULT NULL,"
             + "`b` int(11) DEFAULT NULL,"
             + "PRIMARY KEY (a)"
-            + ") ENGINE=AKIBADB;";
+            + ") ENGINE=AKIBANDB;";
 
     private PersistitStore store;
 

@@ -7,7 +7,7 @@ create table a(
     a3 int not null,
     a4 varchar(64) not null,
     primary key(a1)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aa(
     a1 int not null,
@@ -20,7 +20,7 @@ create table aa(
     key (`aa2`, `aa1`),
     key str (aa4),
 CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`a1`) REFERENCES `a` (`a1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aaa(
     aa1 int not null,
@@ -33,7 +33,7 @@ create table aaa(
     key (`aaa2`),
     key (`aaa3`),
 CONSTRAINT `__akiban_fk_1` FOREIGN KEY `__akiban_fk_1` (`aa1`) REFERENCES `aa` (`aa1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aaaa(
     aaa1 int not null,
@@ -46,7 +46,7 @@ create table aaaa(
     key (`aaaa2`),
     key (`aaaa3`)    ,
 CONSTRAINT `__akiban_fk_2` FOREIGN KEY `__akiban_fk_2` (`aaa1`) REFERENCES `aaa` (`aaa1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aaaaa(
     aaaa1 int not null,
@@ -56,7 +56,7 @@ create table aaaaa(
     aaaaa4 varchar(64) not null,
     primary key(aaaaa1),
 CONSTRAINT `__akiban_fk_3` FOREIGN KEY `__akiban_fk_3` (`aaaa1`) REFERENCES `aaaa` (`aaaa1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aaaab(
     aaaa1 int not null,
@@ -66,7 +66,7 @@ create table aaaab(
     aaaab4 varchar(64) not null,
     primary key(aaaab1),
 CONSTRAINT `__akiban_fk_4` FOREIGN KEY `__akiban_fk_4` (`aaaa1`) REFERENCES `aaaa` (`aaaa1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aaab(
     aaa1 int not null,
@@ -81,7 +81,7 @@ create table aaab(
     key (`aaab1`, `aaab3`),
     key (`aaab2`, `aaab1`),
 CONSTRAINT `__akiban_fk_5` FOREIGN KEY `__akiban_fk_5` (`aaa1`) REFERENCES `aaa` (`aaa1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aab(
     aa1 int not null,
@@ -91,7 +91,7 @@ create table aab(
     aab4 varchar(64) not null,
     primary key(aab1),
 CONSTRAINT `__akiban_fk_6` FOREIGN KEY `__akiban_fk_6` (`aa1`) REFERENCES `aa` (`aa1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table aac(
     aa1 int not null,
@@ -101,7 +101,7 @@ create table aac(
     aac4 varchar(64) not null,
     primary key(aac1),
 CONSTRAINT `__akiban_fk_7` FOREIGN KEY `__akiban_fk_7` (`aa1`) REFERENCES `aa` (`aa1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table ab(
     a1 int not null,
@@ -111,12 +111,12 @@ create table ab(
     ab4 varchar(64) not null,
     primary key(ab1),
 CONSTRAINT `__akiban_fk_8` FOREIGN KEY `__akiban_fk_8` (`a1`) REFERENCES `a` (`a1`)
-) engine = akibadb;
+) engine = akibandb;
 
 create table bug253(
     vid int,
     type varchar(255),
     primary key (type, vid),
     key (vid)
-) engine = akibadb;
+) engine = akibandb;
 

@@ -63,9 +63,9 @@ public final class DDLViewerGUITest
     public void goodGrouping() throws Exception {
         DDLViewerGUI viewer = new DDLViewerGUI();
         final String SQL =
-                "CREATE TABLE customer (id int, PRIMARY KEY (id) ) engine = akibadb;\n" +
+                "CREATE TABLE customer (id int, PRIMARY KEY (id) ) engine=akibandb;\n" +
                 "CREATE TABLE order(id int, cid int, PRIMARY KEY (id)," +
-                "CONSTRAINT __akiban_fk0 FOREIGN KEY __akiban_fk0 (cid) REFERENCES customer(id) ) engine = akibadb;";
+                "CONSTRAINT __akiban_fk0 FOREIGN KEY __akiban_fk0 (cid) REFERENCES customer(id) ) engine=akibandb;";
         final String GROUPING =
                 "groupschema NONE\n" +
                 "\n" +

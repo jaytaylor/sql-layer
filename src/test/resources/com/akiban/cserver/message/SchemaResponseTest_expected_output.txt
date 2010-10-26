@@ -1,4 +1,4 @@
-create table `groupschema`.`coi`(`customer$customer_id` int, `customer$customer_name` varchar(64), `order$order_id` int, `order$customer_id` int, `order$order_date` int  ) engine = akibadb
+create table `groupschema`.`coi`(`customer$customer_id` int, `customer$customer_name` varchar(64), `order$order_id` int, `order$customer_id` int, `order$order_date` int  ) engine = akibandb
 create database if not exists `gs1`
 use `gs1`
 create table alpha ( this is dummy data. in real life, a real DDL would go here )

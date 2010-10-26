@@ -72,22 +72,22 @@ public final class PersistitStoreSchemaManagerTest {
     @Test
     public void testUtf8Table() throws Exception {
         createTable(ErrorCode.UNSUPPORTED_CHARSET, SCHEMA,
-                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set UTF8) engine = akibadb");
+                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set UTF8) engine=akibandb");
         createTable(ErrorCode.UNSUPPORTED_CHARSET, SCHEMA,
-                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set utf8) engine = akibadb");
+                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set utf8) engine=akibandb");
     }
 
     @Test
     public void testAddDropOneTable() throws Exception {
 
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         AkibaInformationSchema ais = manager.getAisCopy();
         assertEquals("ais size", 1, ais.getUserTables().size());
@@ -101,44 +101,44 @@ public final class PersistitStoreSchemaManagerTest {
 
     @Test
     public void tableWithoutPK() throws Exception {
-        createTable(ErrorCode.NO_PRIMARY_KEY, SCHEMA, "CREATE TABLE one (id int) engine=akibadb;");
+        createTable(ErrorCode.NO_PRIMARY_KEY, SCHEMA, "CREATE TABLE one (id int) engine=akibandb;");
     }
 
     @Test
     public void testSelfReferencingTable() throws Exception {
         createTable(ErrorCode.JOIN_TO_UNKNOWN_TABLE, SCHEMA, "CREATE TABLE one (id int, self_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
     }
 
     @Test
     public void testAddDropTwoTablesTwoGroups() throws Exception {
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        createTable(SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
-                "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
-                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
+                "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
+                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
-                "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
+                "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
 
         manager.dropTable(SCHEMA, "one");
         assertTables("user tables",
-                "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine = akibadb",
+                "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
         
         manager.dropTable(SCHEMA, "two");
     }
@@ -146,53 +146,53 @@ public final class PersistitStoreSchemaManagerTest {
     @Test
     public void testDropAllTables() throws Exception{
 
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        createTable(SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
-                "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
-                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
+                "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
+                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
-                "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
+                "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
 
         manager.dropAllTables();
     }
 
     @Test
     public void testAddDropTwoTablesOneGroupDropRoot() throws Exception {
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         createTable(SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
                 "CREATE TABLE %s.two (id int, one_id int, PRIMARY KEY (id), " +
-                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
+                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int, `two$id` int, `two$one_id` int ,  "
-                   +"INDEX _akiba_one$PK_1(`one$id`), INDEX _akiba_one$PK_2(`two$id`), INDEX two$__akiban_fk_a(`two$one_id`)) engine = akibadb",
+                   +"INDEX _akiba_one$PK_1(`one$id`), INDEX _akiba_one$PK_2(`two$id`), INDEX two$__akiban_fk_a(`two$one_id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
                 "CREATE TABLE `my_schema`.two (id int, one_id int, PRIMARY KEY (id), " +
-                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibadb");
+                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
         AkibaInformationSchema ais = manager.getAisCopy();
         assertEquals("ais size", 2, ais.getUserTables().size());
@@ -208,45 +208,45 @@ public final class PersistitStoreSchemaManagerTest {
 
     @Test
     public void addChildToNonExistentParent() throws Exception{
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
-        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         createTable(ErrorCode.JOIN_TO_UNKNOWN_TABLE, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES zebra (id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES zebra (id) ) engine=akibandb;");
 
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         manager.dropTable(SCHEMA, "one");
     }
 
     @Test
     public void addChildToNonExistentColumns() throws Exception{
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
-        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         createTable(ErrorCode.JOIN_TO_WRONG_COLUMNS, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (invalid_id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (invalid_id) ) engine=akibandb;");
 
-        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+        assertTables("user tables", "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         manager.dropTable(SCHEMA, "one");
     }
@@ -254,63 +254,63 @@ public final class PersistitStoreSchemaManagerTest {
     @Test
     public void addChildToProtectedTable() throws Exception {
         createTable(ErrorCode.JOIN_TO_PROTECTED_TABLE, SCHEMA, "CREATE TABLE one (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_information_schema.tables (table_id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_information_schema.tables (table_id) ) engine=akibandb;");
 
 
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         createTable(ErrorCode.JOIN_TO_PROTECTED_TABLE, SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_objects._akiba_one (`one$id`) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_objects._akiba_one (`one$id`) ) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         manager.dropTable(SCHEMA, "one");
     }
 
     @Test
     public void testAddDropTwoTablesOneGroupDropChild() throws Exception {
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         createTable(SCHEMA, "CREATE TABLE two (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
                 "CREATE TABLE %s.two (id int, one_id int, PRIMARY KEY (id), " +
-                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibadb;");
+                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
         assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int, `two$id` int, `two$one_id` int ,  "
-                   +"INDEX _akiba_one$PK_1(`one$id`), INDEX _akiba_one$PK_2(`two$id`), INDEX two$__akiban_fk_0(`two$one_id`)) engine = akibadb",
+                   +"INDEX _akiba_one$PK_1(`one$id`), INDEX _akiba_one$PK_2(`two$id`), INDEX two$__akiban_fk_0(`two$one_id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb",
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
                 "CREATE TABLE `my_schema`.two (id int, one_id int, PRIMARY KEY (id), " +
-                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibadb");
+                        "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
         manager.dropTable(SCHEMA, "two");
         // Commenting out the following as a fix to bug 188. We're now dropping whole groups at a time, instead of just
         // branches.
 //        assertTables("user tables",
-//                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-//        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$one_PK(`one$id`)) engine = akibadb",
+//                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+//        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$one_PK(`one$id`)) engine=akibandb",
 //                "create database if not exists `my_schema`",
 //                "use `my_schema`",
-//                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+//                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         // Commenting out the following as a fix to bug 188. We're now dropping whole groups at a time, instead of just
         // branches.
@@ -323,14 +323,14 @@ public final class PersistitStoreSchemaManagerTest {
     public void dropNonExistentTable() throws Exception {
         manager.dropTable("this_schema_does_not", "exist");
         
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibadb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine = akibadb",
+                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibadb");
+                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
         manager.dropTable(SCHEMA, "one");
         manager.dropTable(SCHEMA, "one");
@@ -344,45 +344,45 @@ public final class PersistitStoreSchemaManagerTest {
         // we don't allow two tables s1.foo and s2.foo to have any identical columns
         // But we do want to allow same-name tables in different schemas if they don't share any columns
         List<String> expectedDDLs = Collections.unmodifiableList(Arrays.asList(
-                "create table `akiba_objects`.`_akiba_one`(`one$idFoo` int ,  INDEX _akiba_one$PK_1(`one$idFoo`)) engine = akibadb",
+                "create table `akiba_objects`.`_akiba_one`(`one$idFoo` int ,  INDEX _akiba_one$PK_1(`one$idFoo`)) engine=akibandb",
                 "create database if not exists `s1`",
                 "use `s1`",
-                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb"));
+                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb"));
 
-        createTable("s1", "CREATE TABLE one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;");
+        createTable("s1", "CREATE TABLE one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;");
+                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;");
         assertDDLS(expectedDDLs.toArray(new String[expectedDDLs.size()]));
 
         List<String> expectedDDLs2 = new ArrayList<String>(expectedDDLs);
-        expectedDDLs2.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine = akibadb");
+        expectedDDLs2.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine=akibandb");
         expectedDDLs2.add("create database if not exists `s2`");
         expectedDDLs2.add("use `s2`");
-        expectedDDLs2.add("CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibadb");
-        createTable("s2", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        expectedDDLs2.add("CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb");
+        createTable("s2", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;",
-                "CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibadb;");
+                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;",
+                "CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS(expectedDDLs2.toArray(new String[expectedDDLs.size()]));
 
         // No changes when trying to add a table like s2.one
-        createTable(ErrorCode.DUPLICATE_COLUMN_NAMES, "s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        createTable(ErrorCode.DUPLICATE_COLUMN_NAMES, "s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
         manager.getAisCopy();
         assertTables("user tables",
-                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;",
-                "CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibadb;");
+                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;",
+                "CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS(expectedDDLs2.toArray(new String[expectedDDLs.size()]));
 
         manager.dropTable("s2", "one");
         List<String> expectedDDLs3 = new ArrayList<String>(expectedDDLs);
-        expectedDDLs3.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine = akibadb");
+        expectedDDLs3.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine=akibandb");
         expectedDDLs3.add("create database if not exists `s3`");
         expectedDDLs3.add("use `s3`");
-        expectedDDLs3.add("CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibadb");
-        createTable("s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibadb;");
+        expectedDDLs3.add("CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibandb");
+        createTable("s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertTables("user tables",
-                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibadb;",
-                "CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibadb;");
+                "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;",
+                "CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS(expectedDDLs3.toArray(new String[expectedDDLs.size()]));
 
         manager.dropTable("s3", "one");
@@ -406,15 +406,15 @@ public final class PersistitStoreSchemaManagerTest {
         List<String> expectedList = new ArrayList<String>();
         expectedList.add("create database if not exists `akiba_information_schema`");
         expectedList.add("use `akiba_information_schema`");
-        expectedList.add("create table groups(     group_name varchar(64),     primary key(group_name) ) engine = akibadb");
-        expectedList.add("create table tables(     schema_name       varchar(64),     table_name        varchar(64),     table_type        varchar(8),     table_id          int,     group_name        varchar(64),     source_types      int,     primary key(schema_name, table_name) ) engine = akibadb");
-        expectedList.add("create table columns (     schema_name         varchar(64),     table_name          varchar(64),     column_name         varchar(64),     position            int,      type                varchar(64),     type_param_1        bigint,     type_param_2        bigint,     nullable            tinyint,     initial_autoinc     bigint,     group_schema_name   varchar(64),     group_table_name    varchar(64),     group_column_name   varchar(64),     maximum_size		bigint,     prefix_size			int,     character_set       varchar(32),     collation           varchar(32),     primary key(schema_name, table_name, column_name) ) engine = akibadb");
-        expectedList.add("create table joins(     join_name               varchar(767),     parent_schema_name      varchar(64),     parent_table_name       varchar(64),     child_schema_name       varchar(64),     child_table_name        varchar(64),     group_name              varchar(64),     join_weight             int,     grouping_usage          int,     source_types            int,     primary key(join_name) ) engine = akibadb");
-        expectedList.add("create table join_columns(     join_name               varchar(767),     parent_schema_name      varchar(64),     parent_table_name       varchar(64),     parent_column_name      varchar(64),     child_schema_name       varchar(64),     child_table_name        varchar(64),     child_column_name       varchar(64),     primary key(join_name, parent_column_name, child_column_name) ) engine = akibadb");
-        expectedList.add("create table indexes (     schema_name      varchar(64),     table_name       varchar(64),     index_name       varchar(64),     index_id         int,     table_constraint varchar(64),     is_unique        tinyint,     primary key(schema_name, table_name, index_name) ) engine = akibadb");
-        expectedList.add("create table index_columns (     schema_name       varchar(64),     table_name        varchar(64),     index_name        varchar(64),     column_name       varchar(64),     ordinal_position  int,     is_ascending      tinyint,     indexed_length    int,     primary key(schema_name, table_name, index_name, column_name) ) engine = akibadb");
-        expectedList.add("create table types(     type_name           varchar(64),     parameters          int,     fixed_size          tinyint,     max_size_bytes      bigint,     primary key(type_name) ) engine = akibadb");
-        expectedList.add("create table index_analysis(     table_id            int,     index_id            int,     analysis_timestamp  timestamp,     item_number         int,     key_string          varchar(2048),     index_row_data      varbinary(4096),     count               bigint,     primary key(table_id, index_id, item_number) ) engine = akibadb");
+        expectedList.add("create table groups(     group_name varchar(64),     primary key(group_name) ) engine=akibandb");
+        expectedList.add("create table tables(     schema_name       varchar(64),     table_name        varchar(64),     table_type        varchar(8),     table_id          int,     group_name        varchar(64),     source_types      int,     primary key(schema_name, table_name) ) engine=akibandb");
+        expectedList.add("create table columns (     schema_name         varchar(64),     table_name          varchar(64),     column_name         varchar(64),     position            int,      type                varchar(64),     type_param_1        bigint,     type_param_2        bigint,     nullable            tinyint,     initial_autoinc     bigint,     group_schema_name   varchar(64),     group_table_name    varchar(64),     group_column_name   varchar(64),     maximum_size		bigint,     prefix_size			int,     character_set       varchar(32),     collation           varchar(32),     primary key(schema_name, table_name, column_name) ) engine=akibandb");
+        expectedList.add("create table joins(     join_name               varchar(767),     parent_schema_name      varchar(64),     parent_table_name       varchar(64),     child_schema_name       varchar(64),     child_table_name        varchar(64),     group_name              varchar(64),     join_weight             int,     grouping_usage          int,     source_types            int,     primary key(join_name) ) engine=akibandb");
+        expectedList.add("create table join_columns(     join_name               varchar(767),     parent_schema_name      varchar(64),     parent_table_name       varchar(64),     parent_column_name      varchar(64),     child_schema_name       varchar(64),     child_table_name        varchar(64),     child_column_name       varchar(64),     primary key(join_name, parent_column_name, child_column_name) ) engine=akibandb");
+        expectedList.add("create table indexes (     schema_name      varchar(64),     table_name       varchar(64),     index_name       varchar(64),     index_id         int,     table_constraint varchar(64),     is_unique        tinyint,     primary key(schema_name, table_name, index_name) ) engine=akibandb");
+        expectedList.add("create table index_columns (     schema_name       varchar(64),     table_name        varchar(64),     index_name        varchar(64),     column_name       varchar(64),     ordinal_position  int,     is_ascending      tinyint,     indexed_length    int,     primary key(schema_name, table_name, index_name, column_name) ) engine=akibandb");
+        expectedList.add("create table types(     type_name           varchar(64),     parameters          int,     fixed_size          tinyint,     max_size_bytes      bigint,     primary key(type_name) ) engine=akibandb");
+        expectedList.add("create table index_analysis(     table_id            int,     index_id            int,     analysis_timestamp  timestamp,     item_number         int,     key_string          varchar(2048),     index_row_data      varbinary(4096),     count               bigint,     primary key(table_id, index_id, item_number) ) engine=akibandb");
         expectedList.add("create schema if not exists `akiba_objects`");
 
         expectedList.addAll(Arrays.asList(expected));

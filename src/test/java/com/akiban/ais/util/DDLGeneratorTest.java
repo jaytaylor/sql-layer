@@ -22,7 +22,7 @@ public final class DDLGeneratorTest {
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",
-                "create table `akiba_objects`.`_group0`(`table$col` decimal(11, 3) unsigned  ) engine = akibadb",
+                "create table `akiba_objects`.`_group0`(`table$col` decimal(11, 3) unsigned  ) engine=akibandb",
                 generator.createTable(ais.getGroup("myGroup").getGroupTable()));
     }
 }

@@ -136,7 +136,7 @@ public class DDLGenerator
     // - column declarations
     // - comma, if there are index declarations
     // - index declarations
-    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s %s %s) engine = akibadb";
+    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s %s %s) engine=akibandb";
     // index declaration in create table statement. Template arguments:
     // - constraint (primary key, key, or unique)
     // - index name

@@ -19,7 +19,7 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
             + "`b` blob,"
             + "`c` blob,"
             + "PRIMARY KEY (a)"
-            + ") ENGINE=AKIBADB;";
+            + ") ENGINE=AKIBANDB;";
 
     private PersistitStore store;
 

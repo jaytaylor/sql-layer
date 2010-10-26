@@ -140,7 +140,7 @@ create table customer(
     customer_id int not null,
     customer_name varchar(100) not null,
     primary key(customer_id)
-) engine = akibadb;
+) engine=akibandb;
 
 create table `order`(
     order_id int not null,
@@ -148,7 +148,7 @@ create table `order`(
     order_date int not null,
     primary key(order_id),
     foreign key(customer_id) references customer
-) engine = akibadb;
+) engine=akibandb;
 
 create table item(
     order_id int not null,
@@ -157,7 +157,7 @@ create table item(
     unit_price int not null,
     primary key(order_id, part_id),
     foreign key(order_id) references `order`
-) engine = akibadb;
+) engine=akibandb;
 
 -- GROUP TABLES
 
@@ -171,5 +171,5 @@ create table coi(
     item$part_id int not null,
     item$quantity int not null,
     item$unit_price int not null
-) engine = akibadb;
+) engine=akibandb;
 

@@ -1,7 +1,7 @@
 create table groups(
     group_name varchar(64),
     primary key(group_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table tables(
     schema_name       varchar(64),
@@ -11,7 +11,7 @@ create table tables(
     group_name        varchar(64),
     source_types      int,
     primary key(schema_name, table_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table columns (
     schema_name         varchar(64),
@@ -31,7 +31,7 @@ create table columns (
     character_set       varchar(32),
     collation           varchar(32),
     primary key(schema_name, table_name, column_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table joins(
     join_name               varchar(767),
@@ -44,7 +44,7 @@ create table joins(
     grouping_usage          int,
     source_types            int,
     primary key(join_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table join_columns(
     join_name               varchar(767),
@@ -55,7 +55,7 @@ create table join_columns(
     child_table_name        varchar(64),
     child_column_name       varchar(64),
     primary key(join_name, parent_column_name, child_column_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table indexes (
     schema_name      varchar(64),
@@ -65,7 +65,7 @@ create table indexes (
     table_constraint varchar(64),
     is_unique        tinyint,
     primary key(schema_name, table_name, index_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table index_columns (
     schema_name       varchar(64),
@@ -76,7 +76,7 @@ create table index_columns (
     is_ascending      tinyint,
     indexed_length    int,
     primary key(schema_name, table_name, index_name, column_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table types(
     type_name           varchar(64),
@@ -84,7 +84,7 @@ create table types(
     fixed_size          tinyint,
     max_size_bytes      bigint,
     primary key(type_name)
-) engine = akibadb;
+) engine=akibandb;
 
 create table index_analysis(
     table_id            int,
@@ -95,6 +95,6 @@ create table index_analysis(
     index_row_data      varbinary(4096),
     count               bigint,
     primary key(table_id, index_id, item_number)
-) engine = akibadb;
+) engine=akibandb;
 
 
