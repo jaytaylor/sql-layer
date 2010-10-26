@@ -16,19 +16,19 @@ rpm_env()
 # prepare source tarballs for rpm build to consume
 tarball()
 {
-local name=cserver
-local randir=/tmp/${RANDOM}
-local cdir=${randir}/${name}
-rm -rf ${cdir} rpmbuild ../target
-mkdir -p ${cdir}
-cp -r ../*        ${cdir}
-cp -r ../../config        ${randir}
-find ${cdir} -name .svn | xargs rm -rf
-tar -C ${randir} -cvf ${name}.tar . 
-gzip ${name}.tar
-mkdir -p rpmbuild/{BUILD,SOURCES,SRPMS,RPMS,RPMS/noarch}
-mv ${name}.tar.gz rpmbuild/SOURCES
-cat chunkserver.spec        | sed "s/REVISION/${rev}/g" > chunkserver-${rev}.spec 
+	local name=cserver
+	local randir=/tmp/${RANDOM}
+	local cdir=${randir}/${name}
+	rm -rf ${cdir} rpmbuild ../target
+	mkdir -p ${cdir}
+	cp -r ../*        ${cdir}
+	cp -r ../../config        ${randir}
+	find ${cdir} -name .svn | xargs rm -rf
+	tar -C ${randir} -cf ${name}.tar . 
+	gzip ${name}.tar
+	mkdir -p rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
+	mv ${name}.tar.gz rpmbuild/SOURCES
+	cat chunkserver.spec        | sed "s/REVISION/${rev}/g" > chunkserver-${rev}.spec 
 }
 
 
