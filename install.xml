@@ -3,23 +3,20 @@
 
 	<property name="cserver.install.dir" location="../build/cserver" />
 	<property name="mysql.install.dir"   location="../build/mysql" />
-	<property name="system.config"       location="../config/default/config" />
-	<property name="system.resources"    location="src/main/resources" />
+	<property name="system.config"       location="../config/default" />
 
+
+
+
+
+
+	<property name="system.resources"    location="src/main/resources" />
 	<property name="cserver.configdir"    	location="${cserver.install.dir}/etc/akiban" />
 	<property name="cserver.logsdir"      	location="${cserver.install.dir}/var/log" />
 	<property name="cserver.bindir"      	location="${cserver.install.dir}/usr/local/chunkserver" />
 	<property name="cserver.datadir"      	location="${cserver.install.dir}/var/lib/chunkserver" />
 	<property name="cserver.rundir"    	location="${cserver.install.dir}/etc/init.d" />
 	<property name="cserver.piddir"    	location="${cserver.install.dir}/var/run/" />
-
-
-	<property name="mysql.data"    		location="${mysql.install.dir}/var/lib/mysql" />
-	<property name="mysql.init"    		location="${mysql.install.dir}/etc/init.d" />
-	<property name="mysql.run"    		location="${mysql.install.dir}/var/run" />
-	<property name="mysql.log"    		location="${mysql.install.dir}/var/log" />
-	<property name="mysql.subsys"    		location="${mysql.install.dir}/var/lock/subsys" />
-	<property name="mysql.config"    	location="${mysql.install.dir}/etc/akiban/config" />
 
     <target name="uninstall-cserver" >
 	<delete dir="${cserver.install.dir}" verbose="true"/>
@@ -54,19 +51,19 @@
 		todir="${cserver.bindir}" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${system.config}/cluster.properties"
+		file="${system.config}/config/cluster.properties"
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${system.config}/log4j.properties" 
+		file="${system.config}/config/log4j.properties" 
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${system.config}/chunkserver.properties" 
+		file="${system.config}/config/chunkserver.properties" 
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${system.config}/ais_object_model.xml" 
+		file="${system.config}/config/ais_object_model.xml" 
 		todir="${cserver.configdir}/config" />
 
 
