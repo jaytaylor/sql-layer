@@ -51,7 +51,7 @@ rm -rf ${RPM_BUILD_ROOT}
 /usr/local/chunkserver
 /var/log
 /var/run
-/usr/local/chunkserver/akiban-cserver-1.0-SNAPSHOT-jar-with-dependencies.jar
+/usr/local/chunkserver/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar
 /etc/akiban/config/ais_object_model.xml
 /etc/akiban/config/cluster.properties
 /etc/akiban/config/chunkserver.properties
