@@ -19,7 +19,7 @@ tarball()
 	local name=cserver
 	local randir=/tmp/${RANDOM}
 	local cdir=${randir}/${name}
-	rm -rf ${cdir} rpmbuild ../target
+	rm -rf ${cdir} rpmbuild ../target ${name}.tar.gz
 	mkdir -p ${cdir}
 	cp -r ../*        ${cdir}
 	cp -r ../../config        ${randir}
@@ -28,6 +28,7 @@ tarball()
 	gzip ${name}.tar
 	mkdir -p rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
 	mv ${name}.tar.gz rpmbuild/SOURCES
+	rm -rf ${randir}
 	cat chunkserver.spec        | sed "s/REVISION/${rev}/g" > chunkserver-${rev}.spec 
 }
 
