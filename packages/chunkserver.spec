@@ -1,5 +1,5 @@
 Name: chunkserver 
-Version: 5.4.3
+Version: 0.0.2
 Release: REVISION%{?dist}
 Summary: chunkserver
 Group: Applications/storage-server
