@@ -22,7 +22,7 @@ chunkserver
 %setup -q -n cserver
 
 %build
-mvn clean install -Dmaven.test.skip=true 
+mvn -B clean install -Dmaven.test.skip=true 
 
 %install
 
