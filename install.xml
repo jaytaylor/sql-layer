@@ -67,7 +67,7 @@
 		todir="${cserver.configdir}/config" />
 
 
-	<copy file="${basedir}/target/akiban-cserver-1.0-SNAPSHOT-jar-with-dependencies.jar" todir="${cserver.bindir}" failonerror="true" overwrite="true" />
+	<copy file="${basedir}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar" todir="${cserver.bindir}" failonerror="true" overwrite="true" />
 
 
 	<replace dir="${cserver.rundir}" value="${cserver.prefix}">
