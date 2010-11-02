@@ -279,6 +279,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
             }
         }
     }
+    
+    public String getEngine(){
+        return engine;
+    }
 
 
     // State
@@ -293,4 +297,5 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
+    protected String engine;
 }

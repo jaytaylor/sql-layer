@@ -194,6 +194,10 @@ public class UserTable extends Table
                 : "cannot change migration usage from INCOMPATIBLE to " + migrationUsage;
         this.migrationUsage = migrationUsage;
     }
+    
+    public void setEngine(String engine){
+        this.engine = engine;
+    }
 
     @SuppressWarnings("unused")
     private UserTable()
