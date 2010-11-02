@@ -27,7 +27,7 @@ mvn -B clean install -Dmaven.test.skip=true
 %install
 
 rm -rf ${RPM_BUILD_ROOT}
-ant -f install.xml -Dcserver.install.dir=${RPM_BUILD_ROOT} -Dmysql.install.dir=/usr -Dcserver.prefix="" 
+ant -f install.xml -Dcserver.install.dir=${RPM_BUILD_ROOT} -Dmysql.install.dir=/usr -Dcserver.prefix="" -Dsystem.config=../config/default
 
 
 %clean

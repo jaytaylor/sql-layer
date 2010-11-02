@@ -1,14 +1,30 @@
 <project name="Project Helper" basedir="." default="install-cserver">
 	<description>Set of ant tasks to install cserver service</description>
 
-	<property name="cserver.install.dir" location="../build/cserver" />
-	<property name="mysql.install.dir"   location="../build/mysql" />
-	<property name="system.config"       location="../config/default" />
+	<!--
+		Install cserver
+		Setup the directory tree for the cserver installation
+		
+		To run
+		ant -f install.xml -Dcserver.install.dir=../build/cserver \
+				   -Dmysql.install.dir=../build/mysql     \
+				   -Dsystem.config=../config/default
+	-->
 
 
+	<property name="cserver.prefix" value="${cserver.install.dir}" />
 
 
+	<fail unless="cserver.install.dir" message="-Dcserver.install.dir is required, add arg -Dcserver.install.dir=../build/cserver" />
+	<fail unless="mysql.install.dir"   message="-Dmysql.install.dir is required, add arg -Dmysql.install.dir=../build/mysql" />
+	<fail unless="system.config"       message="-Dsystem.config is required, add arg -Dsystem.config=../config/default" />
+	<fail unless="cserver.prefix"      />
 
+	<available file="${mysql.install.dir}" property="isMysqlInstall" />
+	<fail unless="isMysqlInstall" message="dir ${mysql.install.dir} does not exist" />
+
+	<available file="${system.config}" property="isSystemConfig" />
+	<fail unless="isSystemConfig" message="dir ${system.config} does not exist" />
 
 	<property name="system.resources"    location="src/main/resources" />
 	<property name="cserver.configdir"    	location="${cserver.install.dir}/etc/akiban" />
@@ -18,19 +34,32 @@
 	<property name="cserver.rundir"    	location="${cserver.install.dir}/etc/init.d" />
 	<property name="cserver.piddir"    	location="${cserver.install.dir}/var/run/" />
 
+
+	<echo level="info">
+------------------------------------------------------------------
+	system.resources   : "${system.resources}"
+	system.config      : "${system.config}"
+	cserver.install.dir: "${cserver.install.dir}"
+	cserver.prefix     : "${cserver.prefix}"
+	mysql.install.dir  : "${mysql.install.dir}"
+	cserver.configdir  : "${cserver.configdir}"
+	cserver.logsdir    : "${cserver.logsdir}"
+	cserver.bindir     : "${cserver.bindir}"
+	cserver.datadir    : "${cserver.datadir}"
+	cserver.rundir     : "${cserver.rundir}"
+	cserver.piddir     : "${cserver.piddir}"
+------------------------------------------------------------------
+	</echo>
+
+
+
     <target name="uninstall-cserver" >
 	<delete dir="${cserver.install.dir}" verbose="true"/>
     </target>
 
     <target name="install-cserver" >
 
-	<property name="cserver.prefix" value="${cserver.install.dir}" />
-	<fail unless="cserver.install.dir"    />
-	<fail unless="mysql.install.dir"      />
-	<fail unless="cserver.prefix"      />
 	
-	<echo level="info"> Installing cserver in "${cserver.install.dir}" using prefix "${cserver.prefix}" </echo>
-
 	<mkdir dir="${cserver.install.dir}" />	
 	<mkdir dir="${cserver.install.dir}/var/lock/subsys" />
 	<mkdir dir="${cserver.rundir}" />	
