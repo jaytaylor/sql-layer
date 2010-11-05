@@ -21,7 +21,7 @@ public class CServerJmxManage {
 	    if (url==null)   url = new JMXServiceURL(jmxurl);
 	    if (jmxc==null)  jmxc = JMXConnectorFactory.connect(url, null);
 	    if (mbsc==null)  mbsc = jmxc.getMBeanServerConnection();
-    	    if (mbean==null) mbean = new ObjectName("com.akiban:type=Manage");
+    	    if (mbean==null) mbean = new ObjectName("com.akiban:type=CSERVER");
 
     }
  
