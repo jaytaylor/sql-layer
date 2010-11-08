@@ -171,7 +171,13 @@ check_status()
 	do
 		if [ -f ${pidfile} ]; then
 			pid=$(cat ${pidfile})
-			echo "Chunkserver is running with pid $pid" 
+			echo "Chunkserver pid is $pid"
+			ps --pid ${pid}  1>/dev/null 2>&1
+			ret=$?
+			if [ ${ret} -ne 0 ]; then
+				echo "ERROR: process with $pid does not exist"
+				return 3
+			fi
 			return 0
 		fi
 	done
