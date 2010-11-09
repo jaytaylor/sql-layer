@@ -2,6 +2,7 @@ package com.akiban.cserver.service;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.schema.SchemaServiceImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
@@ -19,6 +20,7 @@ public class ServiceManagerImpl implements ServiceManager {
     private static final String JMX = "jmx";
     private static final String STORE = "store";
     private static final String CSERVER = "cserver";
+    private static final String SCHEMA = "schema";
 
     // PDB: temporarily this is public so that CServer.main and tests can
     // construct one
@@ -46,6 +48,7 @@ public class ServiceManagerImpl implements ServiceManager {
         startAndPut(factory.networkService(), NETWORK);
         startAndPut(factory.chunkserverService(), CSERVER);
         startAndPut(jmxRegistry, JMX);
+        startAndPut(new SchemaServiceImpl( getCServer().getStore().getSchemaManager() ), SCHEMA);
 
         for (Service service : services.values()) {
             if (service instanceof JmxManageable) {

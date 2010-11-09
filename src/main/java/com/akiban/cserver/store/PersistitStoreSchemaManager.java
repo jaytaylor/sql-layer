@@ -578,14 +578,12 @@ public class PersistitStoreSchemaManager implements CServerConstants,
     }
 
     /**
-     * Do not invoke this. It should only be invoked by a SchemaManager class.
-     * Any other usage will throw an assertion if -enableassertions is on.
-     * 
+     * Gets a copy of the AIS.
      * @return a copy of the currently installed AIS, minus all a_i_s.* tables
      *         and their associated group tables.
      */
     public AkibaInformationSchema getAisCopy() {
-        assert getAisCopyCallerIsOkay();
+        //assert getAisCopyCallerIsOkay();
         AkibaInformationSchema ret = new AkibaInformationSchema(ais);
         List<TableName> uTablesToRemove = new ArrayList<TableName>();
         for (Map.Entry<TableName, UserTable> entries : ret.getUserTables()
