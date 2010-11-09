@@ -13,7 +13,6 @@ import java.util.List;
 
 import static junit.framework.Assert.*;
 
-@Ignore
 public final class InMemoryRequestHandlerTest {
 
     private class TestMessageRegistry extends MessageRegistryBase

@@ -55,6 +55,7 @@ public class ServiceManagerImpl implements ServiceManager {
     }
 
     private void startAndPut(Service service, String name) throws Exception {
+        //System.out.println("Starting service: " + service.getClass()); // TODO change to loggin
         service.start();
         services.put(name, service);
     }
@@ -64,10 +65,24 @@ public class ServiceManagerImpl implements ServiceManager {
         for (Service service : services.values()) {
             stopServices.add(service);
         }
+        //System.out.println("Preparing to shut down services: " + stopServices); // TODO change to logging
         ListIterator<Service> reverseIter = stopServices
                 .listIterator(stopServices.size());
+        List<Exception> exceptions = new ArrayList<Exception>();
         while (reverseIter.hasPrevious()) {
-            reverseIter.previous().stop();
+            try {
+                Service service = reverseIter.previous();
+                //System.out.println("Shutting down service: " + service.getClass()); // TODO change to logging
+                service.stop();
+            } catch (Exception t) {
+                exceptions.add(t);
+            }
+        }
+        if (!exceptions.isEmpty()) {
+            if (exceptions.size() == 1) {
+                throw exceptions.get(0);
+            }
+            throw new Exception("Failure(s) while shutting down services: " + exceptions, exceptions.get(0));
         }
     }
 
