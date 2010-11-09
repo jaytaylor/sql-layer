@@ -102,6 +102,9 @@ public class InMemoryRequestHandler extends AbstractCServerRequestHandler {
                     Message request = connection.receive();
                     handleRequest(connection, ((Request)request));
                 }
+                catch (InterruptedException e) {
+                    break;
+                }
                 catch (Exception e) {
                     e.printStackTrace();
                     break;
