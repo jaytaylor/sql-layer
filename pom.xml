@@ -215,8 +215,6 @@
           </includes>
           <excludes>
             <exclude>**/AdminTest.java</exclude>
-            <exclude>**/HelloMessageTest.java</exclude>
-            <exclude>**/NetworkingTest.java</exclude>
             <exclude>**/ServerTest.java</exclude>
             <exclude>**/TestRequest.java</exclude>
             <exclude>**/TestResponse.java</exclude>
