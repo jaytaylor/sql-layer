@@ -3,6 +3,7 @@ package com.akiban.jni;
 import com.akiban.message.*;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -12,6 +13,7 @@ import java.util.List;
 
 import static junit.framework.Assert.*;
 
+@Ignore
 public final class InMemoryRequestHandlerTest {
 
     private class TestMessageRegistry extends MessageRegistryBase
