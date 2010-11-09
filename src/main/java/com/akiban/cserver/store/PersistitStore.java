@@ -198,6 +198,7 @@ public class PersistitStore implements CServerConstants, Store {
 
         createManagers();
         tableManager.startUp();
+        schemaManager.startUp();
         propertiesManager.startUp();
     }
 

@@ -60,6 +60,10 @@ public class PersistitStoreSchemaManager implements CServerConstants,
 
     private List<String> aisSchemaDdls;
 
+    public void startUp() throws Exception {
+        acquireAIS();
+    }
+
     private static class ColumnName {
         private final String tableName;
         private final String columnName;
