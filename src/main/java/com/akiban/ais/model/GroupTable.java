@@ -26,7 +26,7 @@ public class GroupTable extends Table
     public GroupTable(AkibaInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
-        engine = "AKIBADB";
+        engine = "AKIBANDB";
     }
 
     @Override

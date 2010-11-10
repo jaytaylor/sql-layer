@@ -362,7 +362,6 @@ public class AISBuilder
         checkFound(table, "moving tree", "table", concat(schemaName, tableName));
         
         // group
-        Group oldGroup = table.getGroup();
         Group group = ais.getGroup(groupName);
         checkFound(group, "moving tree", "group", groupName);
         
@@ -391,22 +390,10 @@ public class AISBuilder
         join.getSourceTypes().add(SourceType.USER);
         join.setGroupingUsage(GroupingUsage.ALWAYS);
 
-        /*
-         * If moving from within the same group we do not have to reset the join
-         * groups or do duplicate column and index updates
-         */
-        boolean sameGroup = oldGroup.getName().equalsIgnoreCase(group.getName());
+        // update group table columns and indexes for the affected groups
+        Group oldGroup = table.getGroup();
+        updateGroupTablesOnMove(oldGroup, group, children);
         
-        // Move everything below the join
-        if (!sameGroup) moveTree(children, group);
-        
-        // update columns in old and new groups
-        generateGroupTableColumns(oldGroup);
-        if (!sameGroup) generateGroupTableColumns(group);
-        
-        // update indexes in old and new groups
-        generateGroupTableIndexes(oldGroup);
-        if (!sameGroup) generateGroupTableIndexes(group);
     }
 
     public void moveTreeToEmptyGroup(String schemaName, String tableName, String groupName)
@@ -417,7 +404,6 @@ public class AISBuilder
         checkFound(table, "moving tree", "table", concat(schemaName, tableName));
         
         // group
-        Group oldGroup = table.getGroup();
         Group group = ais.getGroup(groupName);
         checkFound(group, "moving tree", "group", groupName);
 
@@ -435,23 +421,32 @@ public class AISBuilder
         List<Join> children = table.getChildJoins();
         table.setGroup(group);
         
+        // update group table columns and indexes for the affected groups
+        Group oldGroup = table.getGroup();
+        updateGroupTablesOnMove(oldGroup, group, children);
+    }
+    
+    private void updateGroupTablesOnMove(Group oldGroup, Group newGroup, List<Join> moveJoins){
+           
         /*
          * If moving from within the same group we do not have to reset the join
          * groups or do duplicate column and index updates
          */
-        boolean sameGroup = oldGroup.getName().equalsIgnoreCase(group.getName());
+        boolean sameGroup = false;
+        if (oldGroup != null)
+            sameGroup = oldGroup.getName().equalsIgnoreCase(newGroup.getName());
         
-        // Recurse from table, moving everything
-        if (!sameGroup) moveTree(children, group);
+        // Move everything below the join
+        if (!sameGroup) moveTree(moveJoins, newGroup);
         
         // update columns in old and new groups
-        generateGroupTableColumns(oldGroup);
-        if (!sameGroup) generateGroupTableColumns(group);
+        if (oldGroup != null) generateGroupTableColumns(oldGroup);
+        if (!sameGroup) generateGroupTableColumns(newGroup);
         
         // update indexes in old and new groups
-        generateGroupTableIndexes(oldGroup);
-        if (!sameGroup) generateGroupTableIndexes(group);
-
+        if (oldGroup != null) generateGroupTableIndexes(oldGroup);
+        if (!sameGroup) generateGroupTableIndexes(newGroup);
+        
     }
     
     private void generateGroupTableIndexes(Group group)
