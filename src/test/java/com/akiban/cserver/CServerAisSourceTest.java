@@ -26,7 +26,7 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
     @Override
     public void setUp() throws Exception {
         store = UnitTestServiceManagerFactory.getStoreForUnitTests();
-        store.getRowDefCache().setAIS(new PersistitStoreSchemaManager(store).createEmptyAIS());
+//        store.getRowDefCache().setAIS(new PersistitStoreSchemaManager(store).createEmptyAIS());
         this.ais = new DDLSource().buildAIS(DDL_FILE_NAME);
     }
 

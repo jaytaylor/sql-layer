@@ -18,8 +18,29 @@ public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFa
         protected Map<Property.Key, Property> loadProperties() throws IOException {
             Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>(super.loadProperties());
 
+            File cserverUnitDir = new File("/tmp/cserver-junit");
+            if (cserverUnitDir.exists()) {
+                if (!cserverUnitDir.isDirectory()) {
+                    throw new IOException(cserverUnitDir + " exists but isn't a directory");
+                }
+            }
+            else {
+                if (!cserverUnitDir.mkdir()) {
+                    throw new IOException("Couldn't create dir: " + cserverUnitDir);
+                }
+                cserverUnitDir.deleteOnExit();
+            }
+
+            File tmpFile = File.createTempFile("cserver-unitdata", "", cserverUnitDir);
+            if (!tmpFile.delete()) {
+                throw new IOException("Couldn't delete file: " + tmpFile);
+            }
+            if (!tmpFile.mkdir()) {
+                throw new IOException("Couldn't create dir: " + tmpFile);
+            }
+            tmpFile.deleteOnExit();
             Property.Key datapathKey = new Property.Key("cserver", "datapath");
-            ret.put(datapathKey, new Property(datapathKey, "/tmp/data"));
+            ret.put(datapathKey, new Property(datapathKey, tmpFile.getAbsolutePath()));
 
             Property.Key fixedKey = new Property.Key("cserver", "fixed");
             ret.put(fixedKey, new Property(fixedKey, "true"));
@@ -48,15 +69,15 @@ public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFa
         final ConfigurationServiceImpl stubConfig = new TestConfigService();
         stubConfig.start();
         final PersistitStore store = new PersistitStore(stubConfig) {
-//            @Override
-//            public void start() throws Exception {
-//                File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
-//                int contents = datadir.list().length;
-//                if (contents != 0) {
-//                    throw new Exception(String.format("%s is not empty: %s", datadir, Arrays.asList(datadir.list())));
-//                }
-//                super.start();
-//            }
+            @Override
+            public void start() throws Exception {
+                File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
+                int contents = datadir.list().length;
+                if (contents != 0) {
+                    throw new Exception(String.format("%s is not empty: %s", datadir, Arrays.asList(datadir.list())));
+                }
+                super.start();
+            }
 
             @Override
             public void stop() throws Exception {

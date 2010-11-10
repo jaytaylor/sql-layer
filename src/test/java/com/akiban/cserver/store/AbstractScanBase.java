@@ -46,7 +46,7 @@ public abstract class AbstractScanBase implements CServerConstants {
         // initially empty
         final AkibaInformationSchema ais0 = store.getAis();
         
-        rowDefCache.setAIS(ais0);
+//        rowDefCache.setAIS(ais0);
         final AkibaInformationSchema ais = new DDLSource()
                 .buildAIS(DDL_FILE_NAME);
         rowDefCache.setAIS(ais);
