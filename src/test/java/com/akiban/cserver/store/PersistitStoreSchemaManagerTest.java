@@ -111,6 +111,16 @@ public final class PersistitStoreSchemaManagerTest {
     }
 
     @Test
+    public void noEngineName() throws Exception {
+        createTable(SCHEMA, "CREATE TABLE zebra( id int key)");
+        assertDDLS("create table `akiba_objects`.`_akiba_zebra`(`zebra$id` int ,  INDEX _akiba_zebra$PK_1(`zebra$id`)) engine=akibandb",
+                "create database if not exists `my_schema`",
+                "use `my_schema`",
+                "CREATE TABLE `my_schema`.zebra( id int key)");
+        manager.dropTable(SCHEMA, "zebra");
+    }
+
+    @Test
     public void testAddDropTwoTablesTwoGroups() throws Exception {
         createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
