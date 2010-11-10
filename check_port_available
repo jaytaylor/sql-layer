@@ -1,0 +1,7 @@
+#!/bin/bash
+PORT=5140
+line=$(netstat -atn|grep LISTEN|grep $PORT)
+if [ "${line}" != '' ]; then
+    echo port $PORT is not available
+    exit 1
+fi

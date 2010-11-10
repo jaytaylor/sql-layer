@@ -147,6 +147,23 @@
 
 <build>
     <plugins>
+
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.1</version>
+            <configuration>
+                <executable>./check_port_available</executable>
+            </configuration>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>exec</goal>
+                    </goals>
+                    <phase>validate</phase>
+                </execution>
+            </executions>
+        </plugin>
       <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-compiler-plugin</artifactId>
