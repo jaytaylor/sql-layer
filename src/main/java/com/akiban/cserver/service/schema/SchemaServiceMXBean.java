@@ -9,4 +9,5 @@ public interface SchemaServiceMXBean {
     List<String> getDDLs() throws Exception;
     void forceGenerationUpdate() throws Exception;
     String[] getAisAsString() throws Exception;
+    void dropAllTables() throws Exception;
 }

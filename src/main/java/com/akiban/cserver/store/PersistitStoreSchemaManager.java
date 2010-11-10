@@ -862,16 +862,21 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         stripSemicolons(stringWriter.getBuffer());
         String asString = stringWriter.toString();
 
-        List<String> ret = new ArrayList<String>(aisSchemaDdls);
-        ListIterator<String> iter = ret.listIterator();
+        List<String> ret = new ArrayList<String>();
+        ret.add("set default_storage_engine = akibandb");
+        ret.add("create database if not exists `akiba_information_schema`");
+        ret.add("use `akiba_information_schema`");
+
+        final int schemaDdlsIndex = ret.size();
+        ret.addAll(aisSchemaDdls);
+        
+        ListIterator<String> iter = ret.listIterator(schemaDdlsIndex);
         while (iter.hasNext()) {
             final String full = iter.next();
             assert full.charAt(full.length() - 1) == ';' : full;
             final String noSemi = full.substring(0, full.length() - 1);
             iter.set(noSemi.replaceAll("\n", ""));
         }
-        ret.add(0, "use `akiba_information_schema`");
-        ret.add(0, "create database if not exists `akiba_information_schema`");
         ret.add("create schema if not exists `akiba_objects`");
 
         if (asString.length() > 0) {

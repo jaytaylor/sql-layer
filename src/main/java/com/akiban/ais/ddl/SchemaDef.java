@@ -380,7 +380,7 @@ public class SchemaDef {
         List<String> parentJoinColumns = new ArrayList<String>();
         List<IndexDef> indexes = new ArrayList<IndexDef>();
         UserTableDef parent;
-        String engine;
+        String engine = "akibandb";
         int id;
         private final List<IndexDefHandle> indexHandles = new ArrayList<IndexDefHandle>();
 

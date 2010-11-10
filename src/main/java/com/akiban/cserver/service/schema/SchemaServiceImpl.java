@@ -37,6 +37,11 @@ public final class SchemaServiceImpl implements SchemaService, JmxManageable, Se
     }
 
     @Override
+    public void dropAllTables() throws Exception {
+        manager.dropAllTables();
+    }
+
+    @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("Schema", this, SchemaServiceMXBean.class);
     }

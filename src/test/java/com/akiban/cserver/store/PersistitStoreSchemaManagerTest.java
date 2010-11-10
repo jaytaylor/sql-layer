@@ -404,6 +404,7 @@ public final class PersistitStoreSchemaManagerTest {
 
     private void assertDDLS(String... expected) throws Exception{
         List<String> expectedList = new ArrayList<String>();
+        expectedList.add("set default_storage_engine = akibandb");
         expectedList.add("create database if not exists `akiba_information_schema`");
         expectedList.add("use `akiba_information_schema`");
         expectedList.add("create table groups(     group_name varchar(64),     primary key(group_name) ) engine=akibandb");
