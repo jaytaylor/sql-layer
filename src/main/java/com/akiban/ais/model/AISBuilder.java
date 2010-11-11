@@ -362,6 +362,7 @@ public class AISBuilder
         checkFound(table, "moving tree", "table", concat(schemaName, tableName));
         
         // group
+        Group oldGroup = table.getGroup();
         Group group = ais.getGroup(groupName);
         checkFound(group, "moving tree", "group", groupName);
         
@@ -391,7 +392,6 @@ public class AISBuilder
         join.setGroupingUsage(GroupingUsage.ALWAYS);
 
         // update group table columns and indexes for the affected groups
-        Group oldGroup = table.getGroup();
         updateGroupTablesOnMove(oldGroup, group, children);
         
     }
@@ -404,6 +404,7 @@ public class AISBuilder
         checkFound(table, "moving tree", "table", concat(schemaName, tableName));
         
         // group
+        Group oldGroup = table.getGroup();
         Group group = ais.getGroup(groupName);
         checkFound(group, "moving tree", "group", groupName);
 
@@ -422,7 +423,6 @@ public class AISBuilder
         table.setGroup(group);
         
         // update group table columns and indexes for the affected groups
-        Group oldGroup = table.getGroup();
         updateGroupTablesOnMove(oldGroup, group, children);
     }
     
