@@ -103,11 +103,10 @@ public class ServerTest
 
     private void initializeNetwork()
     {
-        if (MessageRegistry.only() == null) {
-            new TestMessageRegistry();
-            MessageRegistry.only().registerModule("com.akiban.message");
-            MessageRegistry.only().registerModule("com.akiban.server");
-        }
+        MessageRegistryBase.reset();
+        new TestMessageRegistry();
+        MessageRegistry.only().registerModule("com.akiban.message");
+        MessageRegistry.only().registerModule("com.akiban.server");
     }
 
     private static final String TEST = "TEST";

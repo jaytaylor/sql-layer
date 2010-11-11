@@ -4,6 +4,7 @@ import com.akiban.admin.config.ClusterConfig;
 import org.junit.Test;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.AfterClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,9 +14,15 @@ public class AdminTest
     @Before
     public void setUp() throws Exception
     {
-        String akibanConfigDir = System.getProperty("akiban.config.dir");
-        File configDir = new File(akibanConfigDir, DEFAULT_CONFIG);
+        File configDir = new File(TEST_CONFIG_DIR, DEFAULT_CONFIG);
         System.setProperty(AKIBAN_ADMIN, configDir.getAbsolutePath());
+    }
+
+    @AfterClass
+    static public void tearDown() throws Exception
+    {
+        Admin.only().close();
+        System.clearProperty(AKIBAN_ADMIN);
     }
 
     @Test
@@ -56,4 +63,5 @@ public class AdminTest
 
     private static final String AKIBAN_ADMIN = "akiban.admin";
     private static final String DEFAULT_CONFIG = "default";
+    private static final String TEST_CONFIG_DIR = "src/test/resources/admin/";
 }
