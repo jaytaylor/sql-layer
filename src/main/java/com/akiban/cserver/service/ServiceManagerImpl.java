@@ -2,6 +2,7 @@ package com.akiban.cserver.service;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.schema.SchemaServiceImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
@@ -9,11 +10,14 @@ import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
-public class ServiceManagerImpl implements ServiceManager {
+public class ServiceManagerImpl implements ServiceManager, JmxManageable {
     // TODO: Supply the factory externally.
     private final ServiceManagerFactory factory;
     private Map<String, Service> services;
+
+    private final CountDownLatch blockerLatch = new CountDownLatch(1);
 
     private static final String NETWORK = "network";
     private static final String CONFIGURATION = "configuration";
@@ -40,27 +44,44 @@ public class ServiceManagerImpl implements ServiceManager {
     }
 
     public void startServices() throws Exception {
+
         JmxRegistryServiceImpl jmxRegistry = new JmxRegistryServiceImpl();
+        startAndPut(jmxRegistry, JMX, jmxRegistry);
+        startAndPut(factory.configurationService(), CONFIGURATION, jmxRegistry);
 
-        startAndPut(factory.configurationService(), CONFIGURATION);
+        jmxRegistry.register(this);
+        ConfigurationService configService = (ConfigurationService) getService(CONFIGURATION);
+        servicesDebugHooks(configService, jmxRegistry);
+
         // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
-        startAndPut(new PersistitStore((ConfigurationService) getService(CONFIGURATION)), STORE);
-        startAndPut(factory.networkService(), NETWORK);
-        startAndPut(factory.chunkserverService(), CSERVER);
-        startAndPut(jmxRegistry, JMX);
-        startAndPut(new SchemaServiceImpl( getCServer().getStore().getSchemaManager() ), SCHEMA);
+        startAndPut(new PersistitStore(configService), STORE, jmxRegistry);
+        startAndPut(factory.networkService(), NETWORK, jmxRegistry);
+        startAndPut(factory.chunkserverService(), CSERVER, jmxRegistry);
+        startAndPut(new SchemaServiceImpl( getCServer().getStore().getSchemaManager() ), SCHEMA, jmxRegistry);
+    }
 
-        for (Service service : services.values()) {
-            if (service instanceof JmxManageable) {
-                jmxRegistry.register((JmxManageable) service);
-            }
+    private void servicesDebugHooks(ConfigurationService configService, JmxRegistryServiceImpl jmxRegistry)
+    throws InterruptedException
+    {
+        if (configService.getProperty("services", "start_blocked", "false").equalsIgnoreCase("true")) {
+            System.out.println("BLOCKING BLOCKING BLOCKING BLOCKING BLOCKING");
+            System.out.println("  CServer is waiting for persmission to");
+            System.out.println("  proceed from JMX.");
+            System.out.println("BLOCKING BLOCKING BLOCKING BLOCKING BLOCKING");
+            blockerLatch.await();
+        }
+        else {
+            blockerLatch.countDown();
         }
     }
 
-    private void startAndPut(Service service, String name) throws Exception {
-        //System.out.println("Starting service: " + service.getClass()); // TODO change to loggin
+    private void startAndPut(Service service, String name, JmxRegistryService jmxRegistry) throws Exception {
+        //System.out.println("Starting service: " + service.getClass()); // TODO change to logging
         service.start();
         services.put(name, service);
+        if (service instanceof JmxManageable) {
+            jmxRegistry.register((JmxManageable) service);
+        }
     }
 
     public void stopServices() throws Exception {
@@ -91,6 +112,21 @@ public class ServiceManagerImpl implements ServiceManager {
 
     public Service getService(final String name) {
         return services.get(name);
+    }
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("Services", this, ServiceManagerMXBean.class);
+    }
+
+    @Override
+    public boolean isStartupBlocked() {
+        return blockerLatch.getCount() > 0;
+    }
+
+    @Override
+    public void resumeStartup() {
+        blockerLatch.countDown();
     }
 
     /**

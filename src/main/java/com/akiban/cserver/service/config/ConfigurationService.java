@@ -17,7 +17,7 @@ public interface ConfigurationService
      * Gets the specified property.
      * @param module the property's namespace
      * @param propertyName the property name
-     * @return the specified property's value, or defaultValue
+     * @return the specified property's value
      * @throws PropertyNotDefinedException if the given module and property are not defined.
      */
     String getProperty(String module, String propertyName) throws PropertyNotDefinedException;
