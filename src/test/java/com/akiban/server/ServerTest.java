@@ -3,6 +3,7 @@ package com.akiban.server;
 import com.akiban.message.*;
 import junit.framework.Assert;
 import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,7 +15,15 @@ public class ServerTest
     @Before
     public void setUp() throws Exception
     {
-        initializeNetwork();
+        new TestMessageRegistry();
+        MessageRegistry.only().registerModule("com.akiban.message");
+        MessageRegistry.only().registerModule("com.akiban.server");
+    }
+
+    @After
+    public void tearDown()
+    {
+        TestMessageRegistry.shutdown();
     }
 
     @Test
@@ -99,14 +108,6 @@ public class ServerTest
         Assert.assertTrue(exceptions.isEmpty());
         server.stopServer();
         Assert.assertTrue(server.stopped());
-    }
-
-    private void initializeNetwork()
-    {
-        MessageRegistryBase.reset();
-        new TestMessageRegistry();
-        MessageRegistry.only().registerModule("com.akiban.message");
-        MessageRegistry.only().registerModule("com.akiban.server");
     }
 
     private static final String TEST = "TEST";
