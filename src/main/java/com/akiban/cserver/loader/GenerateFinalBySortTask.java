@@ -15,7 +15,6 @@ public class GenerateFinalBySortTask extends GenerateFinalTask
     {
         super(loader, table);
         addColumns(table.getColumns());
-        hKey(hKeyColumns(table));
         order(hKey());
         sql(String.format(SQL_TEMPLATE,
                           quote(artifactTableName()),
@@ -23,17 +22,8 @@ public class GenerateFinalBySortTask extends GenerateFinalTask
                           commaSeparatedColumnNames(columns()),
                           quote(sourceTableName(table.getName())),
                           commaSeparatedColumnNames(hKey())));
-        hKeyColumnPositions = new int[hKey().size()];
-        int p = 0;
-        for (Column column : hKey()) {
-            int position = columns().indexOf(column);
-            if (position == -1) {
-                throw new BulkLoader.InternalError(column.toString());
-            }
-            hKeyColumnPositions[p++] = position;
-        }
         columnPositions = new int[columns().size()];
-        p = 0;
+        int p = 0;
         for (Column column : columns()) {
             int position = columns().indexOf(column);
             if (position == -1) {
@@ -50,7 +40,7 @@ public class GenerateFinalBySortTask extends GenerateFinalTask
         loader.tracker().info("%s %s columnPositions: %s",
                               artifactTableName(), type(), toString(columnPositions));
         loader.tracker().info("%s %s hKeyColumnPositions: %s",
-                              artifactTableName(), type(), toString(hKeyColumnPositions));
+                              artifactTableName(), type(), toString(hKeyColumnPositions()));
     }
 
     private static final String SQL_TEMPLATE = "create table %s(%s) select %s from %s order by %s";

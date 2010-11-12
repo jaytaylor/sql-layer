@@ -27,7 +27,7 @@ public class PersistitAdapter
         // Traverse group from leaf table to root. Gather FieldDefs, ordinals and other data needed to construct
         // hkeys later. Accumulate FieldDefs in a stack since we're discovering them backwards, and we don't know
         // how many there will be.
-        Stack<FieldDef> fieldDefStack = new Stack<FieldDef>();
+        Stack<FieldDef> hKeyFieldDefStack = new Stack<FieldDef>();
         ordinals = new int[nKeySegments];
         nKeyColumns = new int[nKeySegments];
         RowDefCache rowDefCache = store.getRowDefCache();
@@ -44,12 +44,12 @@ public class PersistitAdapter
             Join join = table.getParentJoin();
             List<Column> uniqueKeyColumns = new ArrayList<Column>(table.getPrimaryKey().getColumns());
             if (join != null) {
-                List<Column> childJoinColumns = Task.columnsInChild(join.getParent().getPrimaryKey().getColumns(), join);
+                List<Column> childJoinColumns = columnsInChild(join.getParent().getPrimaryKey().getColumns(), join);
                 uniqueKeyColumns.removeAll(childJoinColumns);
             }
             // Save FieldDefs. Push them in reverse order so they pop in the right order.
             for (int i = uniqueKeyColumns.size() - 1; i >= 0; i--) {
-                fieldDefStack.push(rowDef.getFieldDef(rowDef.getPkFields()[i]));
+                hKeyFieldDefStack.push(rowDef.getFieldDef(rowDef.getPkFields()[i]));
             }
             // Count hkey columns
             hKeyColumns += uniqueKeyColumns.size();
@@ -63,11 +63,12 @@ public class PersistitAdapter
                 rowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
             }
         }
+        assert hKeyFieldDefStack.size() == hKeyColumns : table;
         hKey = new Object[hKeyColumns];
-        fieldDefs = new FieldDef[fieldDefStack.size()];
+        hKeyFieldDefs = new FieldDef[hKeyColumns];
         int i = 0;
-        while (!fieldDefStack.empty()) {
-            fieldDefs[i++] = fieldDefStack.pop();
+        while (!hKeyFieldDefStack.empty()) {
+            hKeyFieldDefs[i++] = hKeyFieldDefStack.pop();
         }
         hKeyColumnPositions = task.hKeyColumnPositions();
         columnPositions = task.columnPositions();
@@ -98,13 +99,29 @@ public class PersistitAdapter
             i++;
         }
         // Insert row
-        store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, nKeyColumns, fieldDefs, hKey);
+        store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, nKeyColumns, hKeyFieldDefs, hKey);
     }
 
     public void close() throws InvalidOperationException, PersistitException
     {
         store.updateTableStats(leafRowDef, rowCount);
         store.releaseExchange(exchange);
+    }
+
+    // parentColumns are columns that may be present in
+    // join.parent. Return the corresponding columns in join.child. If
+    // a column is not present in join.parent, it is not represented
+    // in the output.
+    public static List<Column> columnsInChild(List<Column> parentColumns, Join join)
+    {
+        List<Column> childColumns = new ArrayList<Column>();
+        for (Column parentColumn : parentColumns) {
+            Column childColumn = join.getMatchingChild(parentColumn);
+            if (childColumn != null) {
+                childColumns.add(childColumn);
+            }
+        }
+        return childColumns;
     }
 
     private void logState()
@@ -124,12 +141,12 @@ public class PersistitAdapter
             ordinalBuffers.append(ordinals[i]);
             nKeyColumnsBuffer.append(nKeyColumns[i]);
         }
-        n = fieldDefs.length;
+        n = hKeyFieldDefs.length;
         for (int i = 0; i < n; i++) {
             if (i > 0) {
                 fieldDefsBuffer.append(", ");
             }
-            fieldDefsBuffer.append(fieldDefs[i].toString());
+            fieldDefsBuffer.append(hKeyFieldDefs[i].toString());
         }
         ordinalBuffers.append(']');
         nKeyColumnsBuffer.append(']');
@@ -145,7 +162,7 @@ public class PersistitAdapter
     private final PersistitStore store;
     private final GenerateFinalTask task;
     private final RowDef leafRowDef;
-    private final FieldDef[] fieldDefs;
+    private final FieldDef[] hKeyFieldDefs;
     // The hkey consists of ordinals and key column values. ordinal[i] is followed by nKeyColumns[i] key column values.
     private final int[] ordinals;
     private final int[] nKeyColumns;

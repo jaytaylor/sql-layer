@@ -450,6 +450,7 @@ public class RowDef {
         return parentRowDefId;
     }
 
+    // NOT the entire PK. Just the fields of the PK that do not participate in join with parent.
     public int[] getPkFields() {
         return pkFields;
     }

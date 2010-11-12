@@ -1,11 +1,23 @@
 package com.akiban.cserver.loader;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 
 public abstract class GenerateFinalTask extends Task
 {
     public final int[] hKeyColumnPositions()
     {
+        if (hKeyColumnPositions == null) {
+            hKeyColumnPositions = new int[hKey().size()];
+            int p = 0;
+            for (Column hKeyColumn : hKey()) {
+                int hKeyColumnPosition = columns().indexOf(hKeyColumn);
+                if (hKeyColumnPosition == -1) {
+                    throw new BulkLoader.InternalError(hKeyColumn.toString());
+                }
+                hKeyColumnPositions[p++] = hKeyColumnPosition;
+            }
+        }
         return hKeyColumnPositions;
     }
 
@@ -36,8 +48,8 @@ public abstract class GenerateFinalTask extends Task
         return buffer.toString();
     }
 
-    // Positions of hkey columns in the $final table
-    protected int[] hKeyColumnPositions;
     // Positions of columns from the original table in the $final table.
     protected int[] columnPositions;
+    // Positions of hkey columns in the $final table
+    private int[] hKeyColumnPositions;
 }

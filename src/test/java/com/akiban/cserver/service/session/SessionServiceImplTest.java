@@ -266,7 +266,8 @@ public final class SessionServiceImplTest {
         }
     }
 
-    private static class DummySession implements Session {
+    private static class DummySession implements Session
+    {
         @Override
         public <T> T get(String module, Object key) {
             throw new UnsupportedOperationException();
@@ -280,6 +281,12 @@ public final class SessionServiceImplTest {
         @Override
         public <T> T remove(String module, Object key) {
             throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public boolean isCanceled()
+        {
+            return false;
         }
     }
 }

@@ -1,14 +1,17 @@
 package com.akiban.cserver.service;
 
 import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerRequestHandler;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.config.ConfigurationServiceImpl;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
-import com.akiban.message.ExecutionContext;
 
 public class DefaultServiceManagerFactory implements ServiceManagerFactory
 {
+    private ServiceManager serviceManager;
+    private Service configurationService;
+    private Service networkService;
+    private Service chunkserverService;
+    
     @Override
     public ServiceManager serviceManager()
     {
@@ -39,10 +42,7 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     {
         if (networkService == null) {
             ConfigurationService config = (ConfigurationService) configurationService();
-            String host = config.getProperty("cserver", "host", "0.0.0.0");
-            int port = Integer.parseInt(config.getProperty("cserver", "port", "5140"));
-            boolean tcpNoDelay = Boolean.parseBoolean(config.getProperty("cserver", "tcp_no_delay", "true"));
-            networkService = new NetworkServiceImpl(new CServerRequestHandler(host, port, tcpNoDelay));
+            networkService = new NetworkServiceImpl(config);
         }
         return networkService;
     }
@@ -58,18 +58,11 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     @Override
     public Service chunkserverService()
     {
-        if (chunkserverService == null) {
+        if (chunkserverService == null)
+        {
             final CServer chunkserver = new CServer(serviceManager);
-            ((NetworkServiceImpl)networkService).executionContext(chunkserver);
             chunkserverService = chunkserver;
         }
         return chunkserverService;
     }
-
-    // Object state
-
-    private ServiceManager serviceManager;
-    private Service configurationService;
-    private Service networkService;
-    private Service chunkserverService;
 }

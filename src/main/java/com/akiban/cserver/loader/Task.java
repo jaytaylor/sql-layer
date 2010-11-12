@@ -1,7 +1,6 @@
 package com.akiban.cserver.loader;
 
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 
@@ -35,7 +34,7 @@ public abstract class Task
 
     public final List<Column> hKey()
     {
-        return hKey;
+        return table.allHKeyColumns();
     }
 
     public final List<Column> order()
@@ -48,22 +47,6 @@ public abstract class Task
         return sql;
     }
 
-    // parentColumns are columns that may be present in
-    // join.parent. Return the corresponding columns in join.child. If
-    // a column is not present in join.parent, it is not represented
-    // in the output.
-    public static List<Column> columnsInChild(List<Column> parentColumns, Join join)
-    {
-        List<Column> childColumns = new ArrayList<Column>();
-        for (Column parentColumn : parentColumns) {
-            Column childColumn = join.getMatchingChild(parentColumn);
-            if (childColumn != null) {
-                childColumns.add(childColumn);
-            }
-        }
-        return childColumns;
-    }
-
     protected void addColumns(List<Column> columns)
     {
         this.columns.addAll(columns);
@@ -72,15 +55,6 @@ public abstract class Task
     protected void addColumn(Column column)
     {
         this.columns.add(column);
-    }
-
-    protected void hKey(List<Column> hKey)
-    {
-        if (this.hKey == null) {
-            this.hKey = hKey;
-        } else {
-            throw new BulkLoader.InternalError(hKey.toString());
-        }
     }
 
     protected void order(List<Column> order)
@@ -102,16 +76,7 @@ public abstract class Task
         this.loader = loader;
         this.table = table;
         artifactTableName = new TableName(artifactsSchema(), String.format(
-                "%s%s", table.getName().getTableName(), artifactSuffix));
-    }
-
-    // Returns table columns that participate in the hkey. Result might not be a
-    // complete hkey.
-    protected static List<Column> hKeyColumns(UserTable table)
-    {
-        return table.getParentJoin() == null
-               ? table.getPrimaryKey().getColumns()
-               : hKeyColumns(table.getParentJoin());
+            "%s%s", table.getName().getTableName(), artifactSuffix));
     }
 
     protected static String commaSeparatedColumnNames(List<Column> columns)
@@ -130,7 +95,7 @@ public abstract class Task
     }
 
     protected static String commaSeparatedColumnDeclarations(
-            List<Column> columns)
+        List<Column> columns)
     {
         StringBuilder buffer = new StringBuilder();
         boolean first = true;
@@ -158,8 +123,7 @@ public abstract class Task
 
     protected static String quote(TableName tableName)
     {
-        return quote(tableName.getSchemaName()) + '.'
-               + quote(tableName.getTableName());
+        return quote(tableName.getSchemaName()) + '.' + quote(tableName.getTableName());
     }
 
     protected TableName sourceTableName(TableName targetTableName)
@@ -172,26 +136,6 @@ public abstract class Task
         return '`' + s + '`';
     }
 
-    private static List<Column> hKeyColumns(Join join)
-    {
-        UserTable joinParent = join.getParent();
-        List<Column> parentHKeyColumns = joinParent.getParentJoin() == null ? joinParent
-                .getPrimaryKey().getColumns()
-                                                                            : hKeyColumns(joinParent.getParentJoin());
-        // if hkey column in parent has no counterpart in child, it is dropped
-        // by columnsInChild.
-        List<Column> hKeyColumns = columnsInChild(parentHKeyColumns, join);
-        // Add primary key columns from child not already in childHKeyColumns
-        List<Column> childKey = join.getChild().getPrimaryKey().getColumns();
-        for (Column childKeyColumn : childKey) {
-            if (!hKeyColumns.contains(childKeyColumn)) {
-                hKeyColumns.add(childKeyColumn);
-            }
-        }
-        return hKeyColumns;
-    }
-
-    private List<Column> hKey;
     private final BulkLoader loader;
     private final UserTable table;
     private TableName artifactTableName;

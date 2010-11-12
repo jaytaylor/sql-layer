@@ -2,7 +2,10 @@ package com.akiban.cserver;
 
 import com.akiban.message.ErrorCode;
 
-public class InvalidOperationException extends Exception {
+public class InvalidOperationException extends Exception
+{
+    private static final long serialVersionUID = 1L;
+    
     private final ErrorCode code;
 
     public InvalidOperationException(ErrorCode code, String message) {

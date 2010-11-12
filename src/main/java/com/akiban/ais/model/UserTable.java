@@ -11,6 +11,7 @@ package com.akiban.ais.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class UserTable extends Table
@@ -150,7 +151,7 @@ public class UserTable extends Table
 
     public synchronized PrimaryKey getPrimaryKey()
     {
-        
+
         if (primaryKey == null) {
             // Find primary key index
             Index primaryKeyIndex = null;
@@ -178,6 +179,11 @@ public class UserTable extends Table
         return migrationUsage == MigrationUsage.AKIBAN_LOOKUP_TABLE;
     }
 
+    public Boolean isRoot()
+    {
+        return getGroup() == null || getParentJoin() == null;
+    }
+
     public void setLookupTable(Boolean isLookup)
     {
         setMigrationUsage(isLookup ? MigrationUsage.AKIBAN_LOOKUP_TABLE : MigrationUsage.AKIBAN_STANDARD);
@@ -191,12 +197,44 @@ public class UserTable extends Table
     public void setMigrationUsage(MigrationUsage migrationUsage)
     {
         assert (this.migrationUsage != MigrationUsage.INCOMPATIBLE || migrationUsage == MigrationUsage.INCOMPATIBLE)
-                : "cannot change migration usage from INCOMPATIBLE to " + migrationUsage;
+            : "cannot change migration usage from INCOMPATIBLE to " + migrationUsage;
         this.migrationUsage = migrationUsage;
     }
     
-    public void setEngine(String engine){
+    public void setEngine(String engine)
+    {
         this.engine = engine;
+    }
+
+    public List<Column> allHKeyColumns()
+    {
+        assert getGroup() != null;
+        assert getPrimaryKey() != null;
+        if (allHKeyColumns == null) {
+            computeHKeyColumns();
+        }
+        return allHKeyColumns;
+    }
+
+    public List<Column> localHKeyColumns()
+    {
+        assert getGroup() != null;
+        assert getPrimaryKey() != null;
+        if (localHKeyColumns == null) {
+            computeHKeyColumns();
+        }
+        return localHKeyColumns;
+    }
+
+    public boolean containsOwnHKey()
+    {
+        for (Column column : allHKeyColumns()) {
+            if (column.getTable() != this) {
+                return false;
+            }
+        }
+        assert localHKeyColumns().equals(allHKeyColumns());
+        return true;
     }
 
     @SuppressWarnings("unused")
@@ -205,10 +243,56 @@ public class UserTable extends Table
         // XXX: GWT requires empty constructor
     }
 
+    private void computeHKeyColumns()
+    {
+        if (isRoot()) {
+            List<Column> hkey = getPrimaryKey().getColumns();
+            localHKeyColumns = Collections.unmodifiableList(hkey);
+            allHKeyColumns = localHKeyColumns;
+        } else {
+            // Start with the parent's hkey
+            Join join = getParentJoin();
+            List<Column> parentHKey = parentTable().allHKeyColumns();
+            // Start forming this table's full by including all of the parent hkey columns, but replacing
+            // columns participating in the join (to this table) by columns from this table.
+            List<Column> hkey = new ArrayList<Column>();
+            for (Column parentHKeyColumn : parentHKey) {
+                Column hKeyColumn = join.getMatchingChild(parentHKeyColumn);
+                hkey.add(hKeyColumn == null ? parentHKeyColumn : hKeyColumn);
+            }
+            // This table's hkey also includes any PK columns not already included.
+            for (Column pkColumn : getPrimaryKey().getColumns()) {
+                if (!hkey.contains(pkColumn)) {
+                    hkey.add(pkColumn);
+                }
+            }
+            allHKeyColumns = Collections.unmodifiableList(new ArrayList<Column>(hkey));
+            // Local hkey columns is allHKey columns without columns from other tables
+            for (Iterator<Column> i = hkey.iterator(); i.hasNext();) {
+                Column hKeyColumn = i.next();
+                if (hKeyColumn.getUserTable() != this) {
+                    i.remove();
+                }
+            }
+            localHKeyColumns = Collections.unmodifiableList(new ArrayList<Column>(hkey));
+        }
+    }
+
+    private UserTable parentTable()
+    {
+        UserTable parentTable = null;
+        if (getParentJoin() != null) {
+            parentTable = getParentJoin().getParent();
+        }
+        return parentTable;
+    }
+
     // State
 
     private int size;
     private List<Join> candidateParentJoins = new ArrayList<Join>();
     private List<Join> candidateChildJoins = new ArrayList<Join>();
     private PrimaryKey primaryKey;
+    private transient List<Column> localHKeyColumns;
+    private transient List<Column> allHKeyColumns;
 }

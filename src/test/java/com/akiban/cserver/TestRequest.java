@@ -1,11 +1,10 @@
 package com.akiban.cserver;
 
+import java.nio.ByteBuffer;
+
 import com.akiban.message.AkibaSendConnection;
-import com.akiban.message.ExecutionContext;
 import com.akiban.message.Message;
 import com.akiban.message.Request;
-
-import java.nio.ByteBuffer;
 
 public class TestRequest extends Request
 {
@@ -69,7 +68,7 @@ public class TestRequest extends Request
     }
 
     @Override
-    public void execute(AkibaSendConnection connection, ExecutionContext context) throws Exception
+    public void execute(AkibaSendConnection connection) throws Exception
     {
         connection.send(new TestResponse(id, responseSize));
     }

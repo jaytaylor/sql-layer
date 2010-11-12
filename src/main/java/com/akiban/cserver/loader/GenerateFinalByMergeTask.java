@@ -2,7 +2,6 @@ package com.akiban.cserver.loader;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISTextGenerator;
 import org.apache.velocity.VelocityContext;
@@ -35,48 +34,24 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
                                     UserTable table,
                                     GenerateParentTask parentTask,
                                     AkibaInformationSchema ais)
-            throws Exception
+        throws Exception
     {
         super(loader, table);
         // Final table contains columns of original table and other columns from
         // parentTask that complete the hkey.
         addColumns(table.getColumns());
-        Join join = table.getParentJoin();
-        List<Column> hKey = new ArrayList<Column>();
         List<Column> hKeyColumnsNotInOriginalTable = new ArrayList<Column>();
-        for (Column hKeyColumn : parentTask.hKey()) {
-            if (columns().contains(hKeyColumn)) {
-                hKey.add(hKeyColumn);
-            } else {
-                Column hKeyColumnInOriginalTable = join.getMatchingChild(hKeyColumn);
-                if (hKeyColumnInOriginalTable == null) {
-                    hKey.add(hKeyColumn);
-                    hKeyColumnsNotInOriginalTable.add(hKeyColumn);
-                } else if (columns().contains(hKeyColumnInOriginalTable)) {
-                    hKey.add(hKeyColumnInOriginalTable);
-                } else {
-                    hKey.add(hKeyColumnInOriginalTable);
-                    hKeyColumnsNotInOriginalTable.add(hKeyColumnInOriginalTable);
-                }
+        for (Column hKeyColumn : table.allHKeyColumns()) {
+            if (hKeyColumn.getTable() != table) {
+                hKeyColumnsNotInOriginalTable.add(hKeyColumn);
             }
         }
         addColumns(hKeyColumnsNotInOriginalTable);
-        hKey(hKey);
-        order(hKey);
-        // Compute hkey column positions
-        hKeyColumnPositions = new int[hKey.size()];
-        int p = 0;
-        for (Column hKeyColumn : hKey) {
-            int hKeyColumnPosition = columns().indexOf(hKeyColumn);
-            if (hKeyColumnPosition == -1) {
-                throw new BulkLoader.InternalError(hKeyColumn.toString());
-            }
-            hKeyColumnPositions[p++] = hKeyColumnPosition;
-        }
+        order(hKey());
         // Compute original table's column positions. Original table columns were added to columns,
         // so it's just the first elements of columns. But verify just to be safe.
         columnPositions = new int[table.getColumns().size()];
-        p = 0;
+        int p = 0;
         for (Column column : table.getColumns()) {
             int columnPosition = columns().indexOf(column);
             if (columnPosition == -1) {
@@ -110,6 +85,6 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
         loader.tracker().info("%s %s columnPositions: %s",
                               artifactTableName(), type(), toString(columnPositions));
         loader.tracker().info("%s %s hKeyColumnPositions: %s",
-                              artifactTableName(), type(), toString(hKeyColumnPositions));
+                              artifactTableName(), type(), toString(hKeyColumnPositions()));
     }
 }

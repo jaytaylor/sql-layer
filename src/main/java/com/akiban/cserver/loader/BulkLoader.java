@@ -44,8 +44,7 @@ public class BulkLoader extends Thread
             if (taskGeneratorActions == null) {
                 taskGeneratorActions = new MySQLTaskGeneratorActions(ais);
             }
-            IdentityHashMap<UserTable, TableTasks> tableTasksMap =
-                    new TaskGenerator(this, taskGeneratorActions).generateTasks();
+            tasks = new TaskGenerator(this, taskGeneratorActions).generateTasks();
             if (db != null && tracker != null) {
                 tracker.info("Starting bulk load, source: %s@%s:%s, groups: %s, resume: %s, cleanup: %s",
                              dbUser, dbHost, dbPort, groups, resume, cleanup);
@@ -53,9 +52,9 @@ public class BulkLoader extends Thread
                 if (resume) {
                     dataGrouper.resume();
                 } else {
-                    dataGrouper.run(tableTasksMap);
+                    dataGrouper.run(tasks);
                 }
-                new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tableTasksMap));
+                new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tasks));
                 tracker.info("Loading complete");
                 termination = new OKException();
             }
@@ -74,10 +73,17 @@ public class BulkLoader extends Thread
                TaskGenerator.Actions actions)
             throws ClassNotFoundException, SQLException
     {
-        this.ais = ais;
-        this.groups = Collections.unmodifiableList(Arrays.asList(group));
-        this.artifactsSchema = artifactsSchema;
-        this.taskGeneratorActions = actions;
+        this(null,
+             ais,
+             Collections.unmodifiableList(Arrays.asList(group)),
+             artifactsSchema,
+             Collections.<String, String>emptyMap(),
+             null,
+             0,
+             null,
+             null,
+             false,
+             false);
     }
 
     public static synchronized BulkLoader start(Store store,
@@ -185,6 +191,12 @@ public class BulkLoader extends Thread
     AkibaInformationSchema ais()
     {
         return ais;
+    }
+
+    // For testing
+    IdentityHashMap<UserTable, TableTasks> tasks()
+    {
+        return tasks;
     }
 
     // For use by this class
@@ -297,6 +309,7 @@ public class BulkLoader extends Thread
     private TaskGenerator.Actions taskGeneratorActions;
     private Exception termination = null;
     private Tracker tracker;
+    private IdentityHashMap<UserTable, TableTasks> tasks;
 
     public static class RuntimeException extends java.lang.RuntimeException
     {

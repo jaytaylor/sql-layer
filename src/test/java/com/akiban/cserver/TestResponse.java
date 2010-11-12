@@ -1,11 +1,10 @@
 package com.akiban.cserver;
 
+import java.nio.ByteBuffer;
+
 import com.akiban.message.AkibaSendConnection;
-import com.akiban.message.ExecutionContext;
 import com.akiban.message.Message;
 import com.akiban.message.Response;
-
-import java.nio.ByteBuffer;
 
 public class TestResponse extends Response
 {
@@ -31,7 +30,7 @@ public class TestResponse extends Response
     }
 
     @Override
-    public void execute(AkibaSendConnection connection, ExecutionContext context) throws Exception
+    public void execute(AkibaSendConnection connection) throws Exception
     {
     }
 

@@ -2,6 +2,7 @@ package com.akiban.ais.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PrimaryKey implements Serializable
@@ -24,10 +25,11 @@ public class PrimaryKey implements Serializable
     public PrimaryKey(Index index)
     {
         this.index = index;
-        this.columns = new ArrayList<Column>();
+        List<Column> columns = new ArrayList<Column>();
         for (IndexColumn indexColumn : index.getColumns()) {
-            this.columns.add(indexColumn.getColumn());
+            columns.add(indexColumn.getColumn());
         }
+        this.columns = Collections.unmodifiableList(columns);
     }
 
     private Index index;

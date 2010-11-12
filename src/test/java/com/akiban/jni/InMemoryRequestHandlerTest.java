@@ -27,6 +27,7 @@ public final class InMemoryRequestHandlerTest {
 
     @Before
     public void setUp() {
+        MessageRegistryBase.reset();
         new TestMessageRegistry();
     }
 

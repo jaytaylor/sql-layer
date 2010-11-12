@@ -1,18 +1,17 @@
 package com.akiban.cserver.service.session;
 
-import com.akiban.cserver.service.DefaultServiceManagerFactory;
-import com.akiban.cserver.service.Service;
-import com.akiban.cserver.service.config.ConfigurationService;
-import com.akiban.cserver.service.config.ConfigurationServiceImpl;
-import com.akiban.cserver.service.config.Property;
-import com.akiban.cserver.store.PersistitStore;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory {
+import com.akiban.cserver.service.DefaultServiceManagerFactory;
+import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.config.ConfigurationServiceImpl;
+import com.akiban.cserver.service.config.Property;
+import com.akiban.cserver.store.PersistitStore;
 
+public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
+{
     private static class TestConfigService extends ConfigurationServiceImpl {
         @Override
         protected Map<Property.Key, Property> loadProperties() throws IOException {
@@ -65,10 +64,12 @@ public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFa
     }
 
     // TODO - this is a temporary way for unit tests to get a configured PersistitStore.
-    public static PersistitStore getStoreForUnitTests() throws Exception {
+    public static PersistitStore getStoreForUnitTests() throws Exception
+    {
         final ConfigurationServiceImpl stubConfig = new TestConfigService();
         stubConfig.start();
-        final PersistitStore store = new PersistitStore(stubConfig) {
+        final PersistitStore store = new PersistitStore(stubConfig)
+        {
             @Override
             public void start() throws Exception {
                 File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
@@ -79,15 +80,32 @@ public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFa
                 super.start();
             }
 
+
             @Override
-            public void stop() throws Exception {
+            public synchronized void stop() throws Exception
+            {
                 super.stop();
+
                 File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
                 stubConfig.stop();
-                for (File datafile : datadir.listFiles()) {
-                    if (!datafile.delete()) {
-                        throw new Exception("Failed to delete file: " + datafile);
+                Set<File> failedToDelete = new HashSet<File>();
+                for (File dataFile : datadir.listFiles())
+                {
+                    boolean fileDeleted = dataFile.delete();
+                    if (!fileDeleted)
+                    {
+                        failedToDelete.add(dataFile);
                     }
+                }
+                if (failedToDelete.isEmpty() == false)
+                {
+                    StringBuffer error = new StringBuffer();
+                    error.append("Failed to delete the following files: \n");
+                    for (File file : failedToDelete)
+                    {
+                        error.append(file.getAbsolutePath()).append("\n");
+                    }
+                    throw new Exception(error.toString());
                 }
 
             }

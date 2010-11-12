@@ -1,12 +1,11 @@
 package com.akiban.admin.message;
 
-import com.akiban.message.AkibaSendConnection;
-import com.akiban.message.ExecutionContext;
-import com.akiban.message.Request;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import com.akiban.message.AkibaSendConnection;
+import com.akiban.message.Request;
 
 public class AdminIntroductionRequest extends Request
 {
@@ -27,7 +26,7 @@ public class AdminIntroductionRequest extends Request
     }
 
     @Override
-    public void execute(AkibaSendConnection connection, ExecutionContext context) throws Exception
+    public void execute(AkibaSendConnection connection) throws Exception
     {
         // Executes in mysql head
     }

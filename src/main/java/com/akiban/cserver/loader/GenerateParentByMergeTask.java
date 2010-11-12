@@ -2,6 +2,7 @@ package com.akiban.cserver.loader;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISTextGenerator;
 import org.apache.velocity.VelocityContext;
@@ -37,15 +38,14 @@ public class GenerateParentByMergeTask extends GenerateParentTask
         addColumns(hKeyColumnsFromParent);
         // PK
         pkColumns(childTask.table().getPrimaryKey().getColumns());
-        // hkey is hkey of parent followed by pk columns of children not yet included
-        List<Column> hKeyColumns = new ArrayList<Column>(parentTask.hKey());
-        List<Column> parentHKeyColumnsInChild = columnsInChild(hKeyColumns, childTask.table.getParentJoin());
-        List<Column> hKeyColumnsFromChild = new ArrayList<Column>(childTask.table.getPrimaryKey().getColumns());
-        hKeyColumnsFromChild.removeAll(parentHKeyColumnsInChild);
-        hKeyColumns.addAll(hKeyColumnsFromChild);
-        hKey(hKeyColumns);
         // order
-        order(parentTask.order());
+        Join join = childTask.table.getParentJoin();
+        List<Column> orderColumns = new ArrayList<Column>();
+        for (Column parentOrderColumn : parentTask.order()) {
+            Column childOrderColumn = join.getMatchingChild(parentOrderColumn);
+            orderColumns.add(childOrderColumn == null ? parentOrderColumn : childOrderColumn);
+        }
+        order(orderColumns);
         // Join the parent table (e.g. order$parent) and the child table (e.g. item$child) to form the final table,
         // (e.g. item$parent). This is done using the join template which joins (x, y) -> output.
         // Output columns are formed by taking all the columns of x and the columns of y which have no

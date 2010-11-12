@@ -3,7 +3,8 @@ package com.akiban.cserver.manage;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.store.PersistitStore;
 
-public class ManageMXBeanImpl implements ManageMXBean {
+public class ManageMXBeanImpl implements ManageMXBean
+{
 
     private final CServer cserver;
 
@@ -45,53 +46,57 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public boolean isVerboseLoggingEnabled() {
-        return cserver.getStore().isVerbose();
+        return cserver.getServiceManager().getStore().isVerbose();
     }
 
     @Override
     public void disableVerboseLogging() {
-        cserver.getStore().setVerbose(false);
+        cserver.getServiceManager().getStore().setVerbose(false);
     }
 
     @Override
     public void enableVerboseLogging() {
-        cserver.getStore().setVerbose(true);
+        cserver.getServiceManager().getStore().setVerbose(true);
     }
 
     @Override
     public boolean isDeferIndexesEnabled() {
-        return cserver.getStore().isDeferIndexes();
+        return cserver.getServiceManager().getStore().isDeferIndexes();
     }
 
     @Override
     public void setDeferIndexes(final boolean defer) {
-        ((PersistitStore) cserver.getStore()).setDeferIndexes(defer);
+        getStore().setDeferIndexes(defer);
     }
 
     @Override
     public void buildIndexes(final String arg) {
-        ((PersistitStore) cserver.getStore()).buildIndexes(arg);
+        getStore().buildIndexes(arg);
     }
 
     @Override
     public void deleteIndexes(final String arg) {
-        ((PersistitStore) cserver.getStore()).deleteIndexes(arg);
+        getStore().deleteIndexes(arg);
     }
 
     @Override
     public void flushIndexes() {
-        ((PersistitStore) cserver.getStore()).flushIndexes();
+        getStore().flushIndexes();
     }
 
     // TODO - temporary
     @Override
     public String copyBackPages() {
         try {
-            ((PersistitStore) cserver.getStore()).getDb().copyBackPages();
+            getStore().getDb().copyBackPages();
         } catch (Exception e) {
             return e.toString();
         }
         return "done";
     }
 
+    private PersistitStore getStore()
+    {
+        return ((PersistitStore) cserver.getServiceManager().getStore());
+    }
 }

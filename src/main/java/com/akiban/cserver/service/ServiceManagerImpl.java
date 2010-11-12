@@ -11,8 +11,11 @@ import com.akiban.cserver.store.Store;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class ServiceManagerImpl implements ServiceManager, JmxManageable {
+public class ServiceManagerImpl implements ServiceManager, JmxManageable
+{
+    private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
     // TODO: Supply the factory externally.
     private final ServiceManagerFactory factory;
     private Map<String, Service> services;
@@ -26,11 +29,32 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable {
     private static final String CSERVER = "cserver";
     private static final String SCHEMA = "schema";
 
-    // PDB: temporarily this is public so that CServer.main and tests can
-    // construct one
-    public ServiceManagerImpl(ServiceManagerFactory factory) {
+    private ServiceManagerImpl()
+    {
+        this(new DefaultServiceManagerFactory());
+    }
+
+    public static void setServiceManager(ServiceManager newInstance)
+    {
+        if (newInstance == null) {
+            instance.set(null);
+        }
+        else if (!instance.compareAndSet(null, newInstance)) {
+            throw new RuntimeException("Tried to install a ServiceManager, but one was already set");
+        }
+    }
+    /**
+     * This constructor is made protected for unit testing.
+     */
+    protected ServiceManagerImpl(ServiceManagerFactory factory)
+    {
         this.factory = factory;
         services = new LinkedHashMap<String, Service>();
+    }
+
+    public static ServiceManager get()
+    {
+        return instance.get();
     }
 
     @Override
@@ -54,10 +78,12 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable {
         servicesDebugHooks(configService, jmxRegistry);
 
         // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
-        startAndPut(new PersistitStore(configService), STORE, jmxRegistry);
+        Store store = new PersistitStore(configService);
+        startAndPut(store, STORE, jmxRegistry);
         startAndPut(factory.networkService(), NETWORK, jmxRegistry);
         startAndPut(factory.chunkserverService(), CSERVER, jmxRegistry);
-        startAndPut(new SchemaServiceImpl( getCServer().getStore().getSchemaManager() ), SCHEMA, jmxRegistry);
+        startAndPut(new SchemaServiceImpl( store.getSchemaManager() ), SCHEMA, jmxRegistry);
+        setServiceManager(this);
     }
 
     private void servicesDebugHooks(ConfigurationService configService, JmxRegistryServiceImpl jmxRegistry)
@@ -85,6 +111,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable {
     }
 
     public void stopServices() throws Exception {
+        setServiceManager(null);
         List<Service> stopServices = new ArrayList<Service>(services.size());
         for (Service service : services.values()) {
             stopServices.add(service);

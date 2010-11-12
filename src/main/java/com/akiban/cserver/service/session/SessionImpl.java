@@ -5,7 +5,8 @@ import com.akiban.util.ArgumentValidation;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class SessionImpl implements Session {
+public final class SessionImpl implements Session
+{
 
     private final Map<Key,Object> map = new HashMap<Key,Object>();
 
@@ -27,7 +28,14 @@ public final class SessionImpl implements Session {
         return (T) map.remove(new Key(module, key));
     }
 
-    private static class Key {
+    @Override
+    public boolean isCanceled()
+    {
+        return false;
+    }
+    
+    private static class Key
+    {
         private final String module;
         private final Object key;
 

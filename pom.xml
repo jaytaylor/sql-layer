@@ -222,22 +222,22 @@
         </goals>
       </execution>
     </executions>
-    </plugin>
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
+      </plugin>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.6</version>
         <configuration>
-            <argLine>-Xmx512m -Xms128m -Dcserver.port=${cserver.port}</argLine>
-            <includes>
-                <include>**/*Test.java</include>
+	<argLine>-Xmx512m -Xms128m -Dcserver.port=${cserver.port}</argLine>
+          <includes>
+		<include>**/*Test.java</include>
                 <include>**/*Test?.java</include>
             </includes>
             <excludes>
                 <!-- None -->
             </excludes>
         </configuration>
-    </plugin>
+      </plugin>
     </plugins>
 </build>
 </project>

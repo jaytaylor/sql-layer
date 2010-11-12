@@ -377,7 +377,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     void constructHKey(final Exchange hEx, final RowDef rowDef,
             final int[] ordinals, final int[] nKeyColumns,
-            final FieldDef[] fieldDefs, final Object[] hKeyValues)
+            final FieldDef[] hKeyFieldDefs, final Object[] hKeyValues)
             throws Exception {
         final Key hkey = hEx.getKey();
         hkey.clear();
@@ -385,7 +385,7 @@ public class PersistitStore implements CServerConstants, Store {
         for (int i = 0; i < ordinals.length; i++) {
             hkey.append(ordinals[i]);
             for (int j = 0; j < nKeyColumns[i]; j++) {
-                appendKeyField(hkey, fieldDefs[k], hKeyValues[k]);
+                appendKeyField(hkey, hKeyFieldDefs[k], hKeyValues[k]);
                 k++;
             }
         }
@@ -776,14 +776,14 @@ public class PersistitStore implements CServerConstants, Store {
     @Override
     public void writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
             final RowData rowData, final int[] ordinals,
-            final int[] nKeyColumns, final FieldDef[] fieldDefs,
+            final int[] nKeyColumns, final FieldDef[] hKeyFieldDefs,
             final Object[] hKeyValues) throws Exception {
         /*
          * if (verbose && LOG.isInfoEnabled()) { LOG.info("BulkLoad writeRow: "
          * + rowData.toString(rowDefCache)); }
          */
 
-        constructHKey(hEx, rowDef, ordinals, nKeyColumns, fieldDefs, hKeyValues);
+        constructHKey(hEx, rowDef, ordinals, nKeyColumns, hKeyFieldDefs, hKeyValues);
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
         hEx.getValue().ensureFit(size);

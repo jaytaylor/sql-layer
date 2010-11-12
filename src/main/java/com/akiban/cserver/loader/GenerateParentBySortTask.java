@@ -13,7 +13,6 @@ public class GenerateParentBySortTask extends GenerateParentTask
     public GenerateParentBySortTask(BulkLoader loader, UserTable table)
     {
         super(loader, table);
-        hKey(hKeyColumns(table));
         addColumns(hKey());
         pkColumns(table.getPrimaryKey().getColumns());
         order(pkColumns());
