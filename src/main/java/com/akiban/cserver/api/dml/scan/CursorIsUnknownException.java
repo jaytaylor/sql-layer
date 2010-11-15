@@ -1,5 +1,6 @@
-package com.akiban.cserver.api.dml;
+package com.akiban.cserver.api.dml.scan;
 
+import com.akiban.cserver.api.dml.DMLException;
 import com.akiban.message.ErrorCode;
 
 public final class CursorIsUnknownException extends DMLException {

@@ -3,6 +3,10 @@ package com.akiban.cserver.api.dml;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.scan.CursorId;
+import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
+import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
+import com.akiban.cserver.api.dml.scan.ScanRequest;
 
 import java.util.Map;
 import java.util.Set;
@@ -106,13 +110,13 @@ public final class DMLClientAPI {
      * @param limit if non-negative, the maximum number of rows to scan
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
-     * @throws CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
+     * @throws com.akiban.cserver.api.dml.scan.CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
      * <tt>false</tt>
      * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
      * @throws RowOutputException if the given RowOutput threw an exception while writing a row
      */
     public boolean scanSome(CursorId cursorId, RowOutput output, int limit)
-    throws  CursorIsFinishedException,
+    throws CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException
     {

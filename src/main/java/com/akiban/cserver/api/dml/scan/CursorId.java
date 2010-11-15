@@ -1,4 +1,4 @@
-package com.akiban.cserver.api.dml;
+package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.api.common.ByteBufferWriter;
 import com.akiban.cserver.api.common.WrongByteAllocationException;
