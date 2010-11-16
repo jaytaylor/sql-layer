@@ -3,7 +3,11 @@ package com.akiban.cserver.api.ddl;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.message.ErrorCode;
 
-public class DDLException extends InvalidOperationException {
+public abstract class DDLException extends InvalidOperationException {
+    protected DDLException(InvalidOperationException cause) {
+        super(cause.getCode(), cause.getMessage(), cause);
+    }
+
     protected DDLException(ErrorCode code, String message) {
         super(code, message);
     }

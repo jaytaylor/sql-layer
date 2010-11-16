@@ -2,13 +2,46 @@ package com.akiban.cserver.api.ddl;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.NoSuchTableException;
+import com.akiban.cserver.manage.SchemaManager;
+import com.akiban.message.ErrorCode;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("unused")
 public final class DDLClientAPI {
+
+    private final SchemaManager schemaManager;
+    private final IdResolver resolver;
+
+    public DDLClientAPI(SchemaManager schemaManager) {
+        this.schemaManager = schemaManager;
+        this.resolver = new IdResolver(schemaManager);
+    }
+
+    /**
+     * Throws a specific DDLException based on the invalid operation exception specified
+     * @param e the cause
+     * @throws DDLException the specific exception
+     */
+    private static void rethrow(Exception e) throws InvalidOperationException {
+        if (! (e instanceof InvalidOperationException)) {
+            throw new InvalidOperationException(e);
+        }
+        final InvalidOperationException ioe = (InvalidOperationException)e;
+        switch (ioe.getCode()) {
+            // TODO FINISH THIS
+//            case PARSE_EXCEPTION:
+//                throw new ParseException(ioe);
+            default:
+                throw ioe;
+        }
+    }
 
     /**
      * Creates a table in a given schema with the given ddl.
@@ -39,10 +72,14 @@ public final class DDLClientAPI {
             JoinToUnknownTableException,
             JoinToWrongColumnsException,
             NoPrimaryKeyException,
-            DuplicateColumnNameException
-
+            DuplicateColumnNameException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        try {
+            schemaManager.createTable(schema, ddlText);
+        } catch (Exception e) {
+            rethrow(e);
+        }
     }
 
     /**
@@ -55,11 +92,25 @@ public final class DDLClientAPI {
      * @throws ForeignConstraintDDLException if dropping this table would create a foreign key violation
      * @return the set of tables that ended up being dropped because of this command
      */
-    public Set<TableName> dropTable(TableId tableId)
+    public void dropTable(TableId tableId)
     throws  ProtectedTableDDLException,
-            ForeignConstraintDDLException
+            ForeignConstraintDDLException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        final TableName tableName;
+        try {
+            tableName = tableId.getTableName(resolver);
+        }
+        catch (NoSuchTableException e) {
+            return;
+        }
+
+        try {
+            schemaManager.dropTable(tableName.getSchemaName(), tableName.getTableName());
+        }
+        catch (Exception e) {
+            rethrow(e);
+        }
     }
 
     /**
@@ -67,7 +118,7 @@ public final class DDLClientAPI {
      * @return a copy of the chunkserver's AIS
      */
     public AkibaInformationSchema getAIS() {
-        throw new UnsupportedOperationException();
+        return schemaManager.getAisCopy();
     }
 
     /**
@@ -78,14 +129,22 @@ public final class DDLClientAPI {
      * schemas.
      * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to the chunkserver's known tables
      */
-    public List<String> getDDLs() {
-        throw new UnsupportedOperationException();
+    public List<String> getDDLs() throws InvalidOperationException {
+        try {
+            return schemaManager.getDDLs();
+        } catch (Exception e) {
+            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
+        }
     }
 
     /**
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
      */
-    public void forceGenerationUpdate() {
-        throw new UnsupportedOperationException();
+    public void forceGenerationUpdate() throws InvalidOperationException {
+        try {
+            schemaManager.forceSchemaGenerationUpdate();
+        } catch (Exception e) {
+            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
+        }
     }
 }

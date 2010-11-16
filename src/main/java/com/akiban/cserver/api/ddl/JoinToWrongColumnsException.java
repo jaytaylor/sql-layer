@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class JoinToWrongColumnsException extends DDLException {
-    public JoinToWrongColumnsException(String message) {
-        super(ErrorCode.JOIN_TO_WRONG_COLUMNS, message);
+    public JoinToWrongColumnsException(InvalidOperationException e) {
+    super(e);
     }
 }

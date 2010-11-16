@@ -4,6 +4,10 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.message.ErrorCode;
 
 public class DMLException extends InvalidOperationException {
+    protected DMLException(InvalidOperationException cause) {
+        super(cause.getCode(), cause.getMessage(), cause);
+    }
+
     protected DMLException(ErrorCode code, String message) {
         super(code, message);
     }

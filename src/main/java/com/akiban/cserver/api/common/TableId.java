@@ -1,16 +1,19 @@
 package com.akiban.cserver.api.common;
 
+import com.akiban.ais.model.TableName;
+import com.akiban.cserver.api.dml.NoSuchTableException;
+import com.akiban.cserver.manage.SchemaManager;
+
 import java.nio.ByteBuffer;
 
 public final class TableId extends ByteBufferWriter {
+    private final int NO_TABLE_ID = Integer.MIN_VALUE;
     private final int tableId;
-
-    public TableId(String schema, String table) {
-        throw new UnsupportedOperationException();
-    }
+    private final TableName tableName;
 
     public TableId(int tableId) {
         this.tableId = tableId;
+        this.tableName = null;
     }
 
     /**
@@ -22,6 +25,12 @@ public final class TableId extends ByteBufferWriter {
     public TableId(ByteBuffer readFrom, int allocatedBytes) {
         WrongByteAllocationException.ifNotEqual(allocatedBytes, 4);
         tableId = readFrom.getInt();
+        this.tableName = null;
+    }
+
+    public TableId(String schemaName, String tableName) {
+        this.tableId = NO_TABLE_ID;
+        this.tableName = new TableName(schemaName, tableName);
     }
 
     @Override
@@ -29,8 +38,18 @@ public final class TableId extends ByteBufferWriter {
         output.putInt(tableId);
     }
 
-    public int getTableId() {
+    public int getTableId(IdResolver schemaManager) throws NoSuchTableException {
+        if (tableName != null) {
+            return schemaManager.tableId(tableName);
+        }
         return tableId;
+    }
+
+    public TableName getTableName(IdResolver resolver) throws NoSuchTableException {
+        if (tableName != null) {
+            return tableName;
+        }
+        return resolver.tableName(tableId);
     }
 
     @Override

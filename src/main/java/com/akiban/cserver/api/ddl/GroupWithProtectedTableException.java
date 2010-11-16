@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class GroupWithProtectedTableException extends DDLException {
-    public GroupWithProtectedTableException(String message) {
-        super(ErrorCode.JOIN_TO_PROTECTED_TABLE, message);
+    public GroupWithProtectedTableException(InvalidOperationException e) {
+    super(e);
     }
 }

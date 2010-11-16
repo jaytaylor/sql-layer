@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class DuplicateTableNameException extends DDLException {
-    public DuplicateTableNameException(String message) {
-        super(ErrorCode.DUPLICATE_TABLE, message);
+    public DuplicateTableNameException(InvalidOperationException e) {
+    super(e);
     }
 }

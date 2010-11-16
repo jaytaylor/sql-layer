@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class DuplicateColumnNameException extends DDLException {
-    public DuplicateColumnNameException(String message) {
-        super(ErrorCode.DUPLICATE_COLUMN_NAMES, message);
+    public DuplicateColumnNameException(InvalidOperationException e) {
+        super(e);
     }
 }

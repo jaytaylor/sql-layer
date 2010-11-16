@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.dml;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class UnsupportedReadException extends DMLException {
-    public UnsupportedReadException(String message) {
-        super(ErrorCode.UNSUPPORTED_READ, message);
+    public UnsupportedReadException(InvalidOperationException e) {
+    super(e);
     }
 }

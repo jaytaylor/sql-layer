@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.dml;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class UnsupportedModificationException extends DMLException {
-    public UnsupportedModificationException(String message) {
-        super(ErrorCode.UNSUPPORTED_MODIFICATION, message);
+    public UnsupportedModificationException(InvalidOperationException e) {
+    super(e);
     }
 }

@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class ForeignConstraintDDLException extends DDLException {
-    public ForeignConstraintDDLException(String message) {
-        super(ErrorCode.FK_CONSTRAINT_VIOLATION, message);
+    public ForeignConstraintDDLException(InvalidOperationException e) {
+        super(e);
     }
 }

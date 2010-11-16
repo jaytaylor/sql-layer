@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.dml;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class NoSuchRowException extends DMLException {
-    public NoSuchRowException(String message) {
-        super(ErrorCode.NO_SUCH_ROW, message);
+    public NoSuchRowException(InvalidOperationException e) {
+    super(e);
     }
 }

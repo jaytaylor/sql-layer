@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.dml;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class TableDefinitionMismatchException extends DMLException {
-    public TableDefinitionMismatchException(String message) {
-        super(ErrorCode.TABLEDEF_MISMATCH, message);
+    public TableDefinitionMismatchException(InvalidOperationException e) {
+    super(e);
     }
 }

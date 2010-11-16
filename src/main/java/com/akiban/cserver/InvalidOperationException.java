@@ -15,6 +15,17 @@ public class InvalidOperationException extends Exception
                 : code;
     }
 
+    public InvalidOperationException(Throwable cause) {
+        this(ErrorCode.UNKNOWN, "Unexpected exception", cause);
+    }
+
+    public InvalidOperationException(ErrorCode code, String message, Throwable cause) {
+        super(String.format("%s: %s", code.name(), message), cause);
+        this.code = code == null
+                ? ErrorCode.UNKNOWN
+                : code;
+    }
+
     public InvalidOperationException(ErrorCode code, String formatter, Object... args) {
         super(code.name() + ": " + String.format(formatter, args));
         this.code = code == null

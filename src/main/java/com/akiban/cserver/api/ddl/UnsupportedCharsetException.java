@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class UnsupportedCharsetException extends DDLException {
-    public UnsupportedCharsetException(String message) {
-        super(ErrorCode.UNSUPPORTED_CHARSET, message);
+    public UnsupportedCharsetException(InvalidOperationException e) {
+        super(e);
     }
 }

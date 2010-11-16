@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class ProtectedTableDDLException extends DDLException {
-    public ProtectedTableDDLException(String message) {
-        super(ErrorCode.PROTECTED_TABLE, message);
+    public ProtectedTableDDLException(InvalidOperationException e) {
+        super(e);
     }
 }

@@ -5,10 +5,6 @@ import java.nio.ByteBuffer;
 public final class ColumnId extends ByteBufferWriter {
     private final int columnId;
 
-    public ColumnId(TableId table, String column) {
-        throw new UnsupportedOperationException();
-    }
-
     public ColumnId(int columnId) {
         this.columnId = columnId;
     }

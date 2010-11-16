@@ -5,10 +5,6 @@ import java.nio.ByteBuffer;
 public final class IndexId extends ByteBufferWriter {
     private final int indexId;
 
-    public IndexId(String schema, String table, String indexName) {
-        throw new UnsupportedOperationException();
-    }
-
     public IndexId(int indexId) {
         this.indexId = indexId;
     }

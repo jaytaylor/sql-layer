@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.dml;
 
-import com.akiban.message.ErrorCode;
+import com.akiban.cserver.InvalidOperationException;
 
 public final class NoSuchColumnException extends DMLException {
-    public NoSuchColumnException(String message) {
-        super(ErrorCode.NO_SUCH_COLUMN, message);
+    public NoSuchColumnException(InvalidOperationException e) {
+    super(e);
     }
 }
