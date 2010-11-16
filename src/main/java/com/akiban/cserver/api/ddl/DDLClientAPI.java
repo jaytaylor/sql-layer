@@ -7,19 +7,36 @@ import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.NoSuchTableException;
 import com.akiban.cserver.manage.SchemaManager;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.store.SchemaId;
+import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings("unused")
 public final class DDLClientAPI {
+    
+    public static DDLClientAPI instance() {
+        ServiceManager serviceManager = ServiceManagerImpl.get();
+        if (serviceManager == null) {
+            throw new RuntimeException("ServiceManager was not installed");
+        }
+        Store store = serviceManager.getStore();
+        if (store == null) {
+            throw new RuntimeException("ServiceManager had no Store");
+        }
+        return new DDLClientAPI(store.getSchemaManager());
+    }
 
     private final SchemaManager schemaManager;
     private final IdResolver resolver;
 
     public DDLClientAPI(SchemaManager schemaManager) {
+        ArgumentValidation.notNull("schema manager", schemaManager);
         this.schemaManager = schemaManager;
         this.resolver = new IdResolver(schemaManager);
     }
@@ -90,7 +107,6 @@ public final class DDLClientAPI {
      * @throws NullPointerException if tableId is null
      * @throws ProtectedTableDDLException if the given table is protected
      * @throws ForeignConstraintDDLException if dropping this table would create a foreign key violation
-     * @return the set of tables that ended up being dropped because of this command
      */
     public void dropTable(TableId tableId)
     throws  ProtectedTableDDLException,
@@ -102,9 +118,9 @@ public final class DDLClientAPI {
             tableName = tableId.getTableName(resolver);
         }
         catch (NoSuchTableException e) {
-            return;
+            return; // dropping a nonexistent table is a no-op
         }
-
+        
         try {
             schemaManager.dropTable(tableName.getSchemaName(), tableName.getTableName());
         }
@@ -114,11 +130,25 @@ public final class DDLClientAPI {
     }
 
     /**
-     * Returns a copy of the chunkserver's AIS. The returned AIS is safe to modify.
-     * @return a copy of the chunkserver's AIS
+     * Drops a table if it exists, and possibly its children. Returns the names of all tables that ended up being
+     * dropped; this could be an empty set, if the given tableId doesn't correspond to a known table. If the returned
+     * Set is empty (tableId wasn't known), the Set is unmodifiable; otherwise, it is safe to edit.
+     * @param schemaName the schema to drop
+     * @throws NullPointerException if tableId is null
+     * @throws ProtectedTableDDLException if the given schema contains protected tables
+     * @throws ForeignConstraintDDLException if dropping this schema would create a foreign key violation
      */
-    public AkibaInformationSchema getAIS() {
-        return schemaManager.getAisCopy();
+    public void dropSchema(String schemaName)
+            throws  ProtectedTableDDLException,
+            ForeignConstraintDDLException,
+            InvalidOperationException
+    {
+        try {
+            schemaManager.dropSchema(schemaName);
+        }
+        catch (Exception e) {
+            rethrow(e);
+        }
     }
 
     /**
@@ -137,9 +167,18 @@ public final class DDLClientAPI {
         }
     }
 
+    public SchemaId getSchemaID() throws InvalidOperationException {
+        try {
+            return schemaManager.getSchemaID();
+        } catch (Exception e) {
+            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
+        }
+    }
+
     /**
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
      */
+    @SuppressWarnings("unused") // meant to be used from JMX
     public void forceGenerationUpdate() throws InvalidOperationException {
         try {
             schemaManager.forceSchemaGenerationUpdate();

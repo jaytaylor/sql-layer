@@ -18,8 +18,6 @@ public interface SchemaMXBean {
      */
     SchemaId getSchemaID() throws Exception;
 
-    String getSchema() throws Exception;
-
     void forceSchemaGenerationUpdate() throws Exception;
 
     /**

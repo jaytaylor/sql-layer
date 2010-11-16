@@ -409,16 +409,6 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         }
     }
 
-    public String getSchema() throws Exception {
-        final StringBuilder sb = new StringBuilder();
-        final List<String> ddls = getDDLs();
-        for (final String ddl: ddls) {
-            sb.append(ddl);
-            sb.append("\n");
-        }
-        return sb.toString();
-    }
-
     private List<CreateTableStruct> getSchemaStructs() throws Exception {
         Transaction transaction = store.getDb().getTransaction();
         final List<CreateTableStruct> result = new ArrayList<CreateTableStruct>();
