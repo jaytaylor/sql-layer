@@ -29,7 +29,7 @@ public class PrimaryKey implements Serializable
         for (IndexColumn indexColumn : index.getColumns()) {
             columns.add(indexColumn.getColumn());
         }
-        this.columns = Collections.unmodifiableList(columns);
+        this.columns = columns;
     }
 
     private Index index;
