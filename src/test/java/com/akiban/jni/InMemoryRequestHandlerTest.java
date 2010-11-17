@@ -33,7 +33,7 @@ public final class InMemoryRequestHandlerTest {
 
     @After
     public void tearDown() {
-        MessageRegistryBase.shutdown();
+        MessageRegistryBase.reset();
     }
 
     @Test
