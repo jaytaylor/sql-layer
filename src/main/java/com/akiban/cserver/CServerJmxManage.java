@@ -9,8 +9,11 @@
   
 public class CServerJmxManage {
   
- 
-    private static final String jmxurl = "service:jmx:rmi:///jndi/rmi://localhost:7071/jmxrmi";
+
+    public static int jmxport;
+    public static String jmxhost;
+    private static String jmxurl; 
+
     private static JMXServiceURL url 		;
     private static JMXConnector jmxc 		;
     private static MBeanServerConnection mbsc 	;
@@ -18,6 +21,11 @@ public class CServerJmxManage {
 
     public static void initJmx() throws Exception
     {
+    	    if (jmxport==0) jmxport=Integer.parseInt(System.getProperty("jmxport"));
+	    if (jmxhost==null) jmxhost= System.getProperty("jmxhost");
+	    System.out.println ( "Using jmxhost=" + jmxhost + ", Using jmxport=" + jmxport);
+    	    if (jmxurl==null) jmxurl = "service:jmx:rmi:///jndi/rmi://"+ jmxhost+":"+jmxport+"/jmxrmi";
+	    System.out.println ( "Using jmxurl=" + jmxurl);
 	    if (url==null)   url = new JMXServiceURL(jmxurl);
 	    if (jmxc==null)  jmxc = JMXConnectorFactory.connect(url, null);
 	    if (mbsc==null)  mbsc = jmxc.getMBeanServerConnection();
