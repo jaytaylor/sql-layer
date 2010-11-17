@@ -1,9 +1,8 @@
 package com.akiban.cserver.api.ddl;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.IdResolver;
+import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.NoSuchTableException;
 import com.akiban.cserver.manage.SchemaManager;
@@ -14,9 +13,7 @@ import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.ArgumentValidation;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 public final class DDLClientAPI {
     
@@ -33,12 +30,12 @@ public final class DDLClientAPI {
     }
 
     private final SchemaManager schemaManager;
-    private final IdResolver resolver;
+    private final IdResolverImpl resolver;
 
     public DDLClientAPI(SchemaManager schemaManager) {
         ArgumentValidation.notNull("schema manager", schemaManager);
         this.schemaManager = schemaManager;
-        this.resolver = new IdResolver(schemaManager);
+        this.resolver = new IdResolverImpl(schemaManager);
     }
 
     /**

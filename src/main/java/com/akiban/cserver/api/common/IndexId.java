@@ -25,7 +25,7 @@ public final class IndexId extends ByteBufferWriter {
         output.putInt(indexId);
     }
 
-    public int getIndexId() {
+    public int getIndexId(IdResolver resolver) {
         return indexId;
     }
 

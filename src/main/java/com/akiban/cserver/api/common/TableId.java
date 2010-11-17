@@ -2,7 +2,6 @@ package com.akiban.cserver.api.common;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.api.dml.NoSuchTableException;
-import com.akiban.cserver.manage.SchemaManager;
 
 import java.nio.ByteBuffer;
 
@@ -38,14 +37,14 @@ public final class TableId extends ByteBufferWriter {
         output.putInt(tableId);
     }
 
-    public int getTableId(IdResolver schemaManager) throws NoSuchTableException {
+    public int getTableId(IdResolverImpl schemaManager) throws NoSuchTableException {
         if (tableName != null) {
             return schemaManager.tableId(tableName);
         }
         return tableId;
     }
 
-    public TableName getTableName(IdResolver resolver) throws NoSuchTableException {
+    public TableName getTableName(IdResolverImpl resolver) throws NoSuchTableException {
         if (tableName != null) {
             return tableName;
         }

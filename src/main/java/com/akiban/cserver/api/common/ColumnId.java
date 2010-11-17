@@ -1,12 +1,15 @@
 package com.akiban.cserver.api.common;
 
+import com.akiban.util.ArgumentValidation;
+
 import java.nio.ByteBuffer;
 
 public final class ColumnId extends ByteBufferWriter {
-    private final int columnId;
+    private final int columnPosition;
 
-    public ColumnId(int columnId) {
-        this.columnId = columnId;
+    public ColumnId(int columnPosition) {
+        ArgumentValidation.isNotNegative("position", columnPosition);
+        this.columnPosition = columnPosition;
     }
 
     /**
@@ -17,16 +20,16 @@ public final class ColumnId extends ByteBufferWriter {
      */
     public ColumnId(ByteBuffer readFrom, int allocatedBytes) {
         WrongByteAllocationException.ifNotEqual(allocatedBytes, 4);
-        columnId = readFrom.getInt();
+        columnPosition = readFrom.getInt();
     }
 
     @Override
     protected void writeToBuffer(ByteBuffer output) throws Exception {
-        output.putInt(columnId);
+        output.putInt(columnPosition);
     }
 
-    public int getColumnId() {
-        return columnId;
+    public int getPosition(IdResolver resolver) {
+        return columnPosition;
     }
 
     @Override
@@ -36,12 +39,12 @@ public final class ColumnId extends ByteBufferWriter {
 
         ColumnId columnId1 = (ColumnId) o;
 
-        return columnId == columnId1.columnId;
+        return columnPosition == columnId1.columnPosition;
 
     }
 
     @Override
     public int hashCode() {
-        return columnId;
+        return columnPosition;
     }
 }
