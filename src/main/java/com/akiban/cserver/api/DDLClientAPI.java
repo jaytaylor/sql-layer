@@ -1,9 +1,10 @@
-package com.akiban.cserver.api.ddl;
+package com.akiban.cserver.api;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.ddl.*;
 import com.akiban.cserver.api.dml.NoSuchTableException;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.service.ServiceManager;
@@ -41,7 +42,7 @@ public final class DDLClientAPI {
     /**
      * Throws a specific DDLException based on the invalid operation exception specified
      * @param e the cause
-     * @throws DDLException the specific exception
+     * @throws com.akiban.cserver.api.ddl.DDLException the specific exception
      */
     private static void rethrow(Exception e) throws InvalidOperationException {
         if (! (e instanceof InvalidOperationException)) {
@@ -61,24 +62,24 @@ public final class DDLClientAPI {
      * Creates a table in a given schema with the given ddl.
      * @param schema may be null; if it is, and the schema must be provided in the DDL text
      * @param ddlText the DDL text: <tt>CREATE TABLE....</tt>
-     * @throws ParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
+     * @throws com.akiban.cserver.api.ddl.ParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
      *  or if there is some other parse error
-     * @throws UnsupportedCharsetException if the DDL mentions any unsupported charset
-     * @throws ProtectedTableDDLException if this would create a protected table, such as any table in the
+     * @throws com.akiban.cserver.api.ddl.UnsupportedCharsetException if the DDL mentions any unsupported charset
+     * @throws com.akiban.cserver.api.ddl.ProtectedTableDDLException if this would create a protected table, such as any table in the
      *  <tt>akiban_information_schema</tt> schema
-     * @throws DuplicateTableNameException if a table by this (schema,name) already exists
-     * @throws GroupWithProtectedTableException if the table's DDL would put it in the same group as a protected
+     * @throws com.akiban.cserver.api.ddl.DuplicateTableNameException if a table by this (schema,name) already exists
+     * @throws com.akiban.cserver.api.ddl.GroupWithProtectedTableException if the table's DDL would put it in the same group as a protected
      *  table, such as an <tt>akiban_information_schema</tt> table or a group table.
-     * @throws JoinToUnknownTableException if the DDL defines foreign keys referring an unknown table
-     * @throws JoinToWrongColumnsException if the DDL defines foreign keys referring to the wrong columns on the
+     * @throws com.akiban.cserver.api.ddl.JoinToUnknownTableException if the DDL defines foreign keys referring an unknown table
+     * @throws com.akiban.cserver.api.ddl.JoinToWrongColumnsException if the DDL defines foreign keys referring to the wrong columns on the
      *  parent table (such as columns with different types). In the case of a group join, this exception will
      * also be thrown if the parent FK columns are not exactly equal to the parent's PK columns.
-     * @throws NoPrimaryKeyException if the table does not have a PK defined
-     * @throws DuplicateColumnNameException if the table defines a (table_name, column_name) pair that already
+     * @throws com.akiban.cserver.api.ddl.NoPrimaryKeyException if the table does not have a PK defined
+     * @throws com.akiban.cserver.api.ddl.DuplicateColumnNameException if the table defines a (table_name, column_name) pair that already
      * exists
      */
     public void createTable(String schema, String ddlText)
-    throws  ParseException,
+    throws ParseException,
             UnsupportedCharsetException,
             ProtectedTableDDLException,
             DuplicateTableNameException,

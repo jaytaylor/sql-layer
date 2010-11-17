@@ -1,8 +1,9 @@
-package com.akiban.cserver.api.dml;
+package com.akiban.cserver.api;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.CursorId;
 import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
 import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
@@ -20,11 +21,11 @@ public final class DMLClientAPI {
      * @param tableId the table to count
      * @return the number of rows in the specified table
      * @throws NullPointerException if tableId is null
-     * @throws NoSuchTableException if the specified table is unknown
-     * @throws UnsupportedReadException if the specified table is a group table
+     * @throws com.akiban.cserver.api.dml.NoSuchTableException if the specified table is unknown
+     * @throws com.akiban.cserver.api.dml.UnsupportedReadException if the specified table is a group table
      */
     public int countRowsExactly(TableId tableId)
-    throws  NoSuchTableException,
+    throws NoSuchTableException,
             UnsupportedReadException
     {
         throw new UnsupportedOperationException();
@@ -74,8 +75,8 @@ public final class DMLClientAPI {
      * @return a handle to the newly created cursor.
      * @throws NullPointerException if the request is null
      * @throws NoSuchTableException if the request is for an unknown table
-     * @throws NoSuchColumnException if the request includes a column that isn't defined for the requested table
-     * @throws NoSuchIndexException if the request is on an index that isn't defined for the requested table
+     * @throws com.akiban.cserver.api.dml.NoSuchColumnException if the request includes a column that isn't defined for the requested table
+     * @throws com.akiban.cserver.api.dml.NoSuchIndexException if the request is on an index that isn't defined for the requested table
      *
      */
     public CursorId openCursor(ScanRequest request)
@@ -98,7 +99,7 @@ public final class DMLClientAPI {
      * fewer, if the table has fewer remaining rows. If al limit is provided and this method returns <tt>true</tt>,
      * exactly <tt>limit</tt> rows will have been scanned; if a limit is provided and this method returns
      * <tt>false</tt>, the number of rows is <tt.&lt;=limit</tt>. If this is the case and you need to know how many
-     * rows were actually scanned, using {@link RowOutput#getRowsCount()}.</p>
+     * rows were actually scanned, using {@link com.akiban.cserver.api.dml.RowOutput#getRowsCount()}.</p>
      *
      * <p>There is nothing special about a limit of 0; this method will scan no rows, and will return whether there
      * are more rows to be scanned. Any negative limit will be regarded as infinity; this method will scan
@@ -113,7 +114,7 @@ public final class DMLClientAPI {
      * @throws com.akiban.cserver.api.dml.scan.CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
      * <tt>false</tt>
      * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
-     * @throws RowOutputException if the given RowOutput threw an exception while writing a row
+     * @throws com.akiban.cserver.api.dml.RowOutputException if the given RowOutput threw an exception while writing a row
      */
     public boolean scanSome(CursorId cursorId, RowOutput output, int limit)
     throws CursorIsFinishedException,
