@@ -1,19 +1,14 @@
 package com.akiban.cserver.api.dml;
 
-import com.akiban.cserver.RowData;
+import com.akiban.cserver.api.dml.scan.NiceRow;
 
-public abstract class RowOutput {
+import java.nio.ByteBuffer;
 
-    private int count = 0;
+public interface RowOutput {
 
-    abstract protected void doWrite(RowData data) throws Exception;
+    ByteBuffer getOutputBuffer() throws RowOutputException;
 
-    final public void write(RowData data) throws Exception {
-        doWrite(data);
-        ++count;
-    }
+    void wroteRow();
 
-    final public int getRowsCount() {
-        return count;
-    }
+    int getRowsCount();
 }

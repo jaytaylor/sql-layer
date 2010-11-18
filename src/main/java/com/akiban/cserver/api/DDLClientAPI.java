@@ -2,7 +2,6 @@ package com.akiban.cserver.api;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.*;
 import com.akiban.cserver.api.dml.NoSuchTableException;
@@ -12,50 +11,17 @@ import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
-import com.akiban.util.ArgumentValidation;
 
 import java.util.List;
 
-public final class DDLClientAPI {
+public final class DDLClientAPI extends ClientAPIBase {
     
     public static DDLClientAPI instance() {
-        ServiceManager serviceManager = ServiceManagerImpl.get();
-        if (serviceManager == null) {
-            throw new RuntimeException("ServiceManager was not installed");
-        }
-        Store store = serviceManager.getStore();
-        if (store == null) {
-            throw new RuntimeException("ServiceManager had no Store");
-        }
-        return new DDLClientAPI(store.getSchemaManager());
+        return new DDLClientAPI(getDefaultStore());
     }
 
-    private final SchemaManager schemaManager;
-    private final IdResolverImpl resolver;
-
-    public DDLClientAPI(SchemaManager schemaManager) {
-        ArgumentValidation.notNull("schema manager", schemaManager);
-        this.schemaManager = schemaManager;
-        this.resolver = new IdResolverImpl(schemaManager);
-    }
-
-    /**
-     * Throws a specific DDLException based on the invalid operation exception specified
-     * @param e the cause
-     * @throws com.akiban.cserver.api.ddl.DDLException the specific exception
-     */
-    private static void rethrow(Exception e) throws InvalidOperationException {
-        if (! (e instanceof InvalidOperationException)) {
-            throw new InvalidOperationException(e);
-        }
-        final InvalidOperationException ioe = (InvalidOperationException)e;
-        switch (ioe.getCode()) {
-            // TODO FINISH THIS
-//            case PARSE_EXCEPTION:
-//                throw new ParseException(ioe);
-            default:
-                throw ioe;
-        }
+    public DDLClientAPI(Store store) {
+        super(store);
     }
 
     /**
@@ -91,7 +57,7 @@ public final class DDLClientAPI {
             InvalidOperationException
     {
         try {
-            schemaManager.createTable(schema, ddlText);
+            schemaManager().createTable(schema, ddlText);
         } catch (Exception e) {
             rethrow(e);
         }
@@ -113,14 +79,14 @@ public final class DDLClientAPI {
     {
         final TableName tableName;
         try {
-            tableName = tableId.getTableName(resolver);
+            tableName = tableId.getTableName(idResolver());
         }
         catch (NoSuchTableException e) {
             return; // dropping a nonexistent table is a no-op
         }
         
         try {
-            schemaManager.dropTable(tableName.getSchemaName(), tableName.getTableName());
+            schemaManager().dropTable(tableName.getSchemaName(), tableName.getTableName());
         }
         catch (Exception e) {
             rethrow(e);
@@ -142,7 +108,7 @@ public final class DDLClientAPI {
             InvalidOperationException
     {
         try {
-            schemaManager.dropSchema(schemaName);
+            schemaManager().dropSchema(schemaName);
         }
         catch (Exception e) {
             rethrow(e);
@@ -159,7 +125,7 @@ public final class DDLClientAPI {
      */
     public List<String> getDDLs() throws InvalidOperationException {
         try {
-            return schemaManager.getDDLs();
+            return schemaManager().getDDLs();
         } catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
         }
@@ -167,7 +133,7 @@ public final class DDLClientAPI {
 
     public SchemaId getSchemaID() throws InvalidOperationException {
         try {
-            return schemaManager.getSchemaID();
+            return schemaManager().getSchemaID();
         } catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
         }
@@ -179,7 +145,7 @@ public final class DDLClientAPI {
     @SuppressWarnings("unused") // meant to be used from JMX
     public void forceGenerationUpdate() throws InvalidOperationException {
         try {
-            schemaManager.forceSchemaGenerationUpdate();
+            schemaManager().forceSchemaGenerationUpdate();
         } catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
         }

@@ -1,34 +1,96 @@
 package com.akiban.cserver.api;
 
+import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
-import com.akiban.cserver.api.dml.scan.CursorId;
-import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
-import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
-import com.akiban.cserver.api.dml.scan.ScanRequest;
+import com.akiban.cserver.api.dml.scan.*;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.store.RowCollector;
+import com.akiban.cserver.store.Store;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
-public final class DMLClientAPI {
+public class DMLClientAPI extends ClientAPIBase {
+    private static final CursorGenerator DEFAULT_GENERATOR = new StaticCursorGenerator();
+    private static final String MODULE_NAME = DMLClientAPI.class.getCanonicalName();
+    private final Session session;
+    private final CursorGenerator cursorGenerator = DEFAULT_GENERATOR;
+
+    public static DMLClientAPI instance(Session session) {
+        return new DMLClientAPI(getDefaultStore(), session);
+    }
+
+    DMLClientAPI(String confirmation, Session session) {
+        super(confirmation);
+        this.session = session;
+    }
+
+    public DMLClientAPI(Store store, Session session) {
+        super(store);
+        this.session = session;
+    }
+
+    private static class StaticCursorGenerator implements CursorGenerator {
+        private static final AtomicLong counter = new AtomicLong();
+        @Override
+        public CursorId newUniqueCursor() {
+            return new CursorId(counter.incrementAndGet());
+        }
+    }
+
+    private class LegacyRangeStruct {
+        final RowData start;
+        final RowData end;
+        final byte[] columnBitMap;
+        final int tableId;
+
+        private LegacyRangeStruct(ScanRange fromRange) throws NoSuchTableException {
+            tableId = fromRange.getTableIdInt(idResolver());
+            RowDef rowDef = store().getRowDefCache().getRowDef(tableId);
+            start = fromRange.getPredicate().getStartRow().toRowData(rowDef, idResolver());
+            end = fromRange.getPredicate().getEndRow().toRowData(rowDef, idResolver());
+            columnBitMap = fromRange.getColumnSetBytes(idResolver());
+        }
+    }
+
+    private class LegacyScanStruct extends LegacyRangeStruct {
+        final private int indexId;
+        final int scanFlags;
+
+        private LegacyScanStruct(ScanRequest fromRequest) throws NoSuchTableException {
+            super(fromRequest);
+            indexId = fromRequest.getIndexIdInt(idResolver());
+            scanFlags = ScanFlag.toRowDataFormat( fromRequest.getPredicate().getScanFlags() );
+        }
+    }
 
     /**
      * Returns the exact number of rows in this table. This may take a while, as it could require a full
      * table scan. Group tables have an undefined row count, so this method will fail if the requested
      * table is a group table.
-     * @param tableId the table to count
+     * @param range the table, columns and range to count
      * @return the number of rows in the specified table
      * @throws NullPointerException if tableId is null
      * @throws com.akiban.cserver.api.dml.NoSuchTableException if the specified table is unknown
      * @throws com.akiban.cserver.api.dml.UnsupportedReadException if the specified table is a group table
      */
-    public int countRowsExactly(TableId tableId)
-    throws NoSuchTableException,
-            UnsupportedReadException
+    public long countRowsExactly(ScanRange range)
+            throws  NoSuchTableException,
+            UnsupportedReadException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        LegacyRangeStruct legacy = new LegacyRangeStruct(range);
+        try {
+            return store().getRowCount(true, legacy.start, legacy.end, legacy.columnBitMap);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     /**
@@ -41,17 +103,23 @@ public final class DMLClientAPI {
      * </ul>
      *
      * Group tables have an undefined row count, so this method will fail if the requested table is a group table.
-     * @param tableId the table to count
+     * @param range the table, columns and range to count
      * @return the number of rows in the specified table
      * @throws NullPointerException if tableId is null
      * @throws NoSuchTableException if the specified table is unknown
      * @throws UnsupportedReadException if the specified table is a group table
      */
-    public int countRowsApproximately(TableId tableId)
+    public long countRowsApproximately(ScanRange range)
             throws  NoSuchTableException,
-            UnsupportedReadException
+            UnsupportedReadException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        LegacyRangeStruct legacy = new LegacyRangeStruct(range);
+        try {
+            return store().getRowCount(false, legacy.start, legacy.end, legacy.columnBitMap);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     /**
@@ -63,8 +131,18 @@ public final class DMLClientAPI {
      * @throws NullPointerException if tableId is null
      * @throws NoSuchTableException if the specified table doesn't exist
      */
-    public TableStatistics getTableStatistics(TableId tableId, boolean updateFirst) throws NoSuchTableException {
-        throw new UnsupportedOperationException();
+    public TableStatistics getTableStatistics(TableId tableId, boolean updateFirst)
+            throws  NoSuchTableException,
+            InvalidOperationException
+    {
+        if (updateFirst) {
+            throw new UnsupportedOperationException("updating not yet implemented");
+        }
+        try {
+            return store().getTableStatistics( tableId.getTableId(idResolver()));
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     /**
@@ -80,11 +158,31 @@ public final class DMLClientAPI {
      *
      */
     public CursorId openCursor(ScanRequest request)
-    throws  NoSuchTableException,
+            throws  NoSuchTableException,
             NoSuchColumnException,
-            NoSuchIndexException
+            NoSuchIndexException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        try {
+            final RowCollector rc = getRowCollector(request);
+            final CursorId cursor = cursorGenerator.newUniqueCursor();
+            Object old = session.put(MODULE_NAME, cursor, new Cursor(rc));
+            assert old == null : old;
+            return cursor;
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    protected RowCollector getRowCollector(ScanRequest request) throws NoSuchTableException, InvalidOperationException {
+        ArgumentValidation.notNull("request", request);
+        LegacyScanStruct legacy = new LegacyScanStruct(request);
+        try {
+            return store().newRowCollector(legacy.tableId, legacy.indexId, legacy.scanFlags,
+                    legacy.start, legacy.end, legacy.columnBitMap);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     /**
@@ -98,30 +196,109 @@ public final class DMLClientAPI {
      * <p>If the specified limit is <tt>&gt;= 0</tt>, this method will scan no more than that limit; it may scan
      * fewer, if the table has fewer remaining rows. If al limit is provided and this method returns <tt>true</tt>,
      * exactly <tt>limit</tt> rows will have been scanned; if a limit is provided and this method returns
-     * <tt>false</tt>, the number of rows is <tt.&lt;=limit</tt>. If this is the case and you need to know how many
-     * rows were actually scanned, using {@link com.akiban.cserver.api.dml.RowOutput#getRowsCount()}.</p>
+     * <tt>false</tt>, the number of rows is <tt>&lt;=limit</tt>. If this is the case and you need to know how many
+     * rows were actually scanned, using {@link RowOutput#getRowsCount()}.</p>
      *
      * <p>There is nothing special about a limit of 0; this method will scan no rows, and will return whether there
-     * are more rows to be scanned. Any negative limit will be regarded as infinity; this method will scan
-     * all remaining rows in the table.</p>
+     * are more rows to be scanned. Note that passing a limit of 0 is essentially analogous to a "hasMore()" method.
+     * As such, the Cursor will assume you now know there are no rows to scan, and any subsequent invocation of this
+     * method will throw a CursorIsFinishedException -- even if that invocation uses a limit of 0. This is actually
+     * a specific case of the general rule: if this method ever returns false, the next invocation using the same
+     * cursor ID will throw a CursorIsFinishedException.</p>
+     *
+     * <p>The check for whether the cursor is finished is performed
+     * before any limit tests; so if a previous invocation of this method returned <tt>false</tt> and you invoke
+     * it on the same CursorId, even with a limit of 0, you will get a CursorIsFinishedException.</p>
+     *
+     * <p>Any negative limit will be regarded as infinity; this method will scan all remaining rows in the table.</p>
      *
      * <p>If the RowOutput throws an exception, it will be wrapped in a RowOutputException.</p>
+     *
+     * <p>If this method throws any exception, the cursor will be marked as finished.</p>
      * @param cursorId the cursor to scan
      * @param output the RowOutput to collect the given rows
      * @param limit if non-negative, the maximum number of rows to scan
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
-     * @throws com.akiban.cserver.api.dml.scan.CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
+     * @throws CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
      * <tt>false</tt>
      * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
-     * @throws com.akiban.cserver.api.dml.RowOutputException if the given RowOutput threw an exception while writing a row
+     * @throws RowOutputException if the given RowOutput threw an exception while writing a row
      */
     public boolean scanSome(CursorId cursorId, RowOutput output, int limit)
-    throws CursorIsFinishedException,
+            throws  CursorIsFinishedException,
             CursorIsUnknownException,
-            RowOutputException
+            RowOutputException,
+            InvalidOperationException
+
     {
-        throw new UnsupportedOperationException();
+        ArgumentValidation.notNull("cursor", cursorId);
+        ArgumentValidation.notNull("output", output);
+
+        final Cursor cursor = session.get(MODULE_NAME, cursorId);
+        if (cursor == null) {
+            throw new CursorIsUnknownException(cursorId);
+        }
+        return doScan(cursor, cursorId, output, limit);
+    }
+
+    /**
+     * Do the actual scan. Refactored out of scanSome for ease of unit testing.
+     * @param cursor the cursor itself; used to check status and get a row collector
+     * @param cursorId the cursor id; used only to report errors
+     * @param output the output; see {@link #scanSome(CursorId, RowOutput, int)}
+     * @param limit the limit, or negative value if none;  ee {@link #scanSome(CursorId, RowOutput, int)}
+     * @return whether more rows remain to be scanned; see {@link #scanSome(CursorId, RowOutput, int)}
+     * @throws CursorIsFinishedException see {@link #scanSome(CursorId, RowOutput, int)}
+     * @throws RowOutputException see {@link #scanSome(CursorId, RowOutput, int)}
+     * @throws InvalidOperationException see {@link #scanSome(CursorId, RowOutput, int)}
+     * @see #scanSome(CursorId, RowOutput, int)
+     */
+    protected static boolean doScan(Cursor cursor, CursorId cursorId, RowOutput output, int limit)
+            throws  CursorIsFinishedException,
+            RowOutputException,
+            InvalidOperationException
+    {
+        assert cursor != null;
+        assert cursorId != null;
+        assert output != null;
+
+        if (cursor.isFinished()) {
+            throw new CursorIsFinishedException(cursorId);
+        }
+
+        final RowCollector rc = cursor.getRowCollector();
+        try {
+            if (!rc.hasMore()) {
+                cursor.setFinished();
+                if (cursor.isScanning()) {
+                    throw new CursorIsFinishedException(cursorId);
+                }
+                return false;
+            }
+            if (cursor.isScanning() && !(rc.hasMore())) {
+                cursor.setFinished();
+            }
+            cursor.setScanning();
+            boolean limitReached = (limit == 0);
+            while ( (!limitReached) && rc.collectNextRow(output.getOutputBuffer()) ) {
+                output.wroteRow();
+                if (limit > 0) {
+                    limitReached = (--limit) == 0;
+                }
+            }
+            if (!limitReached) {
+                output.wroteRow();
+            }
+            final boolean hasMore = rc.hasMore();
+            if (!hasMore) {
+                cursor.setFinished();
+            }
+            return limitReached || hasMore;
+        } catch (Exception e) {
+            cursor.setFinished();
+            throw rethrow(e);
+        }
     }
 
     /**
@@ -130,8 +307,12 @@ public final class DMLClientAPI {
      * @throws NullPointerException if the cursor is null
      * @throws CursorIsUnknownException if the given cursor is unknown or has already been closed
      */
-    public void closeCursor(CursorId cursorId) {
-        throw new UnsupportedOperationException();
+    public void closeCursor(CursorId cursorId) throws CursorIsUnknownException {
+        ArgumentValidation.notNull("cursor ID", cursorId);
+        final Cursor cursor = session.remove(MODULE_NAME, cursorId);
+        if (cursor == null) {
+            throw new CursorIsUnknownException(cursorId);
+        }
     }
 
     /**
@@ -143,7 +324,8 @@ public final class DMLClientAPI {
      * @return the set of open (but possibly finished) cursors
      */
     public Set<CursorId> getCursors() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("need to revisit whether we need this; "
+                + "it may require modifications to Session to make this easy");
     }
 
     /**
@@ -162,26 +344,26 @@ public final class DMLClientAPI {
      * @throws UnsupportedModificationException if the table can't be modified (e.g., if it's a group table or
      * <tt>akiban_information_schema</tt> table)
      */
-    public Long writeRow(TableId tableId, RowData row)
-    throws  NoSuchTableException,
+    public Long writeRow(TableId tableId, NiceRow row)
+            throws  NoSuchTableException,
             UnsupportedModificationException,
             TableDefinitionMismatchException,
-            DuplicateKeyException
+            DuplicateKeyException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        final RowData rowData = niceRowToRowData(tableId, row);
+        try {
+            store().writeRow(rowData);
+            return null;
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     /**
-     * <p>Deletes a row, possibly cascading the deletion to its children rows. This method returns a map whose keys
-     * are all affected tables, and whose values are the number of rows in that table that were deleted.</p>
-     *
-     * <p>For instance, if you have a COI schema and delete <tt>customer_id=3</tt>, which has two orders, each of
-     * which has three items, the returned map will be: <tt>{ customers : 1,  orders : 2,  items : 6}</tt>. If this
-     * method returns without exception, the returned map is guaranteed to contain at least one entry, whose key
-     * is equal to the tableId you pass in and whose value is <tt>1</tt></p>
+     * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
      * @param tableId the table to delete from
      * @param row the row to delete
-     * @return a map of affected tables, as described above
      * @throws NullPointerException if either the given table ID or row are null
      * @throws NoSuchTableException if the specified table is unknown
      * @throws UnsupportedModificationException if the specified table can't be modified (e.g., if it's a group table or
@@ -189,26 +371,32 @@ public final class DMLClientAPI {
      * @throws ForeignKeyConstraintDMLException if the deletion was blocked by at least one child table
      * @throws NoSuchRowException if the specified row doesn't exist
      */
-    public Map<TableId,Integer> deleteRow(TableId tableId, RowData row)
-    throws  NoSuchTableException,
+    public void deleteRow(TableId tableId, NiceRow row)
+            throws  NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
-            NoSuchRowException
+            NoSuchRowException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        final RowData rowData = niceRowToRowData(tableId, row);
+        try {
+            store().deleteRow(rowData);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    private RowData niceRowToRowData(TableId tableId, NiceRow row) throws NoSuchTableException {
+        final RowDef rowDef = store().getRowDefCache().getRowDef(tableId.getTableId(idResolver()));
+        final RowData rowData = row.toRowData(rowDef, idResolver());
+        return rowData;
     }
 
     /**
-     * <p>Updates a row, possibly cascading updates to its PK to children rows. This method returns a Map similar to
-     * {@linkplain #deleteRow(TableId, RowData)}. In the example mentioned in that method, instead of deleting
-     * <tt>customer_id=3</tt>, we would be updating its value to, say, <tt>4</tt>.</p>
-     *
-     * <p>If the update doesn't change the row's PKs, the resultant Map will contain exactly one entry, whose
-     * key equals the given tableId.</p>
+     * <p>Updates a row, possibly cascading updates to its PK to children rows.</p>
      * @param tableId the table to update
      * @param oldRow the row to update
      * @param newRow the row's new values
-     * @return a map of affected tables, as described above and in {@link #deleteRow(TableId, RowData)}
      * @throws NullPointerException if any of the arguments are <tt>null</tt>
      * @throws DuplicateKeyException if the update would create a duplicate of a unique column
      * @throws TableDefinitionMismatchException if either (or both) RowData objects don't match the specification
@@ -219,20 +407,30 @@ public final class DMLClientAPI {
      * @throws ForeignKeyConstraintDMLException if the update was blocked by at least one child table
      * @throws NoSuchRowException
      */
-    public Map<TableId,Integer> updateRow(TableId tableId, RowData oldRow, RowData newRow)
-    throws  NoSuchTableException,
+    public void updateRow(TableId tableId, NiceRow oldRow, NiceRow newRow)
+            throws  NoSuchTableException,
             DuplicateKeyException,
             TableDefinitionMismatchException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
-            NoSuchRowException
+            NoSuchRowException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        final RowData oldData = niceRowToRowData(tableId, oldRow);
+        final RowData newData = niceRowToRowData(tableId, newRow);
+
+        try {
+            store().updateRow(oldData, newData);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     /**
-     * Truncates the given table, possibly cascading the truncate to child tables. This method returns a Map similar to
-     * {@linkplain #deleteRow(TableId, RowData)}, except that the entry for <tt>tableId</tt> may be greater than 1.
+     * Truncates the given table, possibly cascading the truncate to child tables.
+     *
+     * <p><strong>NOTE: IGNORE THE FOLLOWING. IT ISN'T VERIFIED, ALMOST DEFINITELY NOT TRUE, ETC. IT'S FOR
+     * FUTURE POSSIBILITIES ONLY</strong></p>
      *
      * <p>Because truncating is intended to be fast, this method will simply truncate all child tables whose
      * relationship is CASCADE; it will not delete rows in those tables based on their existence in the parent table.
@@ -245,11 +443,16 @@ public final class DMLClientAPI {
      * <tt>akiban_information_schema</tt> table)
      * @throws ForeignKeyConstraintDMLException if the truncate was blocked by at least one child table
      */
-    public Map<TableId,Integer> truncateTable(TableId tableId)
-    throws NoSuchTableException,
+    public void truncateTable(TableId tableId)
+            throws NoSuchTableException,
             UnsupportedModificationException,
-            ForeignKeyConstraintDMLException
+            ForeignKeyConstraintDMLException,
+            InvalidOperationException
     {
-        throw new UnsupportedOperationException();
+        try {
+            store().truncateTable(tableId.getTableId(idResolver()) );
+        } catch (Exception e) {
+            rethrow(e);
+        }
     }
 }
