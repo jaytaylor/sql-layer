@@ -1,5 +1,6 @@
 package com.akiban.cserver.api;
 
+import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
@@ -113,6 +114,14 @@ public final class DDLClientAPI extends ClientAPIBase {
         catch (Exception e) {
             rethrow(e);
         }
+    }
+
+    /**
+     * Gets the AIS from the Store.
+     * @return returns the store's AIS.
+     */
+    public AkibaInformationSchema getAIS() {
+        return store().getAis();
     }
 
     /**

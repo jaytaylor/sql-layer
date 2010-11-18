@@ -2,7 +2,6 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
-import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.NoSuchTableException;
 
@@ -27,7 +26,7 @@ public class ScanRange {
         return ColumnSet.packToLegacy(columns, resolver);
     }
 
-    public int getTableIdInt(IdResolverImpl resolver) throws NoSuchTableException {
+    public int getTableIdInt(IdResolver resolver) throws NoSuchTableException {
         return tableId.getTableId(resolver);
     }
 }

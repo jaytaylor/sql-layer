@@ -1,17 +1,23 @@
 package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.api.common.ByteBufferWriter;
+import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.common.WrongByteAllocationException;
+import com.akiban.util.ArgumentValidation;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class CursorId extends ByteBufferWriter {
+    private final int SIZE_ON_BUFFER = Long.SIZE / 8 + Integer.SIZE / 8;
 
+    private final int tableId;
     private final long cursorId;
 
-    public CursorId(long id) {
-        this.cursorId = id;
+    public CursorId(long cursorId, int tableId) {
+        ArgumentValidation.notNull("tableID", tableId);
+        this.cursorId = cursorId;
+        this.tableId = tableId;
     }
 
     /**
@@ -21,17 +27,19 @@ public final class CursorId extends ByteBufferWriter {
      * @throws java.nio.BufferUnderflowException if thrown from reading the buffer
      */
     public CursorId(ByteBuffer readFrom, int allocatedBytes) {
-        WrongByteAllocationException.ifNotEqual(allocatedBytes, Long.SIZE/8);
-        cursorId = readFrom.getInt();
+        WrongByteAllocationException.ifNotEqual(allocatedBytes, SIZE_ON_BUFFER);
+        cursorId = readFrom.getLong();
+        tableId = readFrom.getInt();
     }
 
     @Override
     protected void writeToBuffer(ByteBuffer output) throws Exception {
         output.putLong(cursorId);
+        output.putInt(tableId);
     }
 
-    public long getCursorId() {
-        return cursorId;
+    public int getTableId() {
+        return tableId;
     }
 
     @Override

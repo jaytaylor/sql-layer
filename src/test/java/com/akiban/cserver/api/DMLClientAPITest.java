@@ -20,10 +20,12 @@ import static junit.framework.Assert.*;
 public final class DMLClientAPITest {
     private static class StringRowCollector implements RowCollector {
         private final List<String> strings;
+        private final int tableId;
         private boolean open;
         private int deliveredRows;
 
-        public StringRowCollector(String... strings) {
+        public StringRowCollector(int tableId, String... strings) {
+            this.tableId = tableId;
             this.strings = new ArrayList<String>(Arrays.asList(strings));
             open = true;
         }
@@ -82,7 +84,7 @@ public final class DMLClientAPITest {
 
         @Override
         public int getTableId() {
-            throw new UnsupportedOperationException();
+            return tableId;
         }
 
         @Override
@@ -140,11 +142,12 @@ public final class DMLClientAPITest {
         final CursorId cursorId;
 
         TestingStruct(String... strings) {
+            final int TABLE_ID = 3;
             stringsArray = strings;
-            collector = new StringRowCollector(strings);
+            collector = new StringRowCollector(TABLE_ID, strings);
             output = new StringRowOutput();
             cursor = new Cursor(collector);
-            cursorId = new CursorId(5);
+            cursorId = new CursorId(5, TABLE_ID);
         }
     }
 
@@ -153,7 +156,7 @@ public final class DMLClientAPITest {
 
         private TestDML(Session session, String... rowsToCollect) {
             super("DEBUG", session);
-            collector = new StringRowCollector(rowsToCollect);
+            collector = new StringRowCollector(1, rowsToCollect);
         }
 
         @Override
@@ -234,7 +237,7 @@ public final class DMLClientAPITest {
         TestDML testDML = new TestDML(session, "Hi there poohbear".split(" "));
 
         final StringRowOutput output = new StringRowOutput();
-        final CursorId cursorId = testDML.openCursor(null);
+        final CursorId cursorId = testDML.openCursor((ScanRequest)null);
 
         assertTrue("expected more", testDML.scanSome(cursorId, output, 0));
         assertEquals("rows collected", 0, output.getRowsCount());
@@ -261,7 +264,7 @@ public final class DMLClientAPITest {
     @Test
     public void testTheTestClasses() {
         final String[] stringsArray = new String[] {"Hello", "world", "how are you"};
-        StringRowCollector rc = new StringRowCollector(stringsArray);
+        StringRowCollector rc = new StringRowCollector(4, stringsArray);
         StringRowOutput output = new StringRowOutput();
 
         while (rc.collectNextRow(output.getOutputBuffer())) {

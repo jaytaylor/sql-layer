@@ -4,6 +4,7 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.*;
@@ -12,19 +13,14 @@ import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.store.Store;
 import com.akiban.util.ArgumentValidation;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DMLClientAPI extends ClientAPIBase {
-    private static final CursorGenerator DEFAULT_GENERATOR = new StaticCursorGenerator();
-    private static final String MODULE_NAME = DMLClientAPI.class.getCanonicalName();
     private final Session session;
-    private final CursorGenerator cursorGenerator = DEFAULT_GENERATOR;
 
-    public static DMLClientAPI instance(Session session) {
-        return new DMLClientAPI(getDefaultStore(), session);
-    }
+    private static final String MODULE_NAME = DMLClientAPI.class.getCanonicalName();
+    private static final AtomicLong cursorsCount = new AtomicLong();
 
     DMLClientAPI(String confirmation, Session session) {
         super(confirmation);
@@ -36,36 +32,74 @@ public class DMLClientAPI extends ClientAPIBase {
         this.session = session;
     }
 
-    private static class StaticCursorGenerator implements CursorGenerator {
-        private static final AtomicLong counter = new AtomicLong();
-        @Override
-        public CursorId newUniqueCursor() {
-            return new CursorId(counter.incrementAndGet());
+
+    public long getAutoIncrementValue(TableId tableId) throws NoSuchTableException, InvalidOperationException {
+        final int tableIdInt = tableId.getTableId(idResolver());
+        try {
+            return store().getAutoIncrementValue(tableIdInt);
+        } catch (Exception e) {
+            throw rethrow(e);
         }
     }
 
-    private class LegacyRangeStruct {
+    private static Integer matchRowDatas(RowData one, RowData two) throws TableDefinitionMismatchException {
+        if (one == null) {
+            return (two == null) ? null : two.getRowDefId();
+        }
+        if (two == null) {
+            return one.getRowDefId();
+        }
+        if (one.getRowDefId() == two.getRowDefId()) {
+            return one.getRowDefId();
+        }
+        throw new TableDefinitionMismatchException("Mismatched table ids: %d != %d",
+                one.getRowDefId(), two.getRowDefId());
+    }
+
+    public static class LegacyScanRange {
         final RowData start;
         final RowData end;
         final byte[] columnBitMap;
         final int tableId;
 
-        private LegacyRangeStruct(ScanRange fromRange) throws NoSuchTableException {
-            tableId = fromRange.getTableIdInt(idResolver());
-            RowDef rowDef = store().getRowDefCache().getRowDef(tableId);
-            start = fromRange.getPredicate().getStartRow().toRowData(rowDef, idResolver());
-            end = fromRange.getPredicate().getEndRow().toRowData(rowDef, idResolver());
-            columnBitMap = fromRange.getColumnSetBytes(idResolver());
+        public LegacyScanRange(Integer tableId, RowData start, RowData end, byte[] columnBitMap)
+        throws TableDefinitionMismatchException
+        {
+            Integer rowsTableId = matchRowDatas(start, end);
+            if ( (rowsTableId != null) && (tableId != null) && (!rowsTableId.equals(tableId)) ) {
+                throw new TableDefinitionMismatchException(String.format(
+                        "ID<%d> from RowData didn't match given ID <%d>", rowsTableId, tableId));
+            }
+            this.tableId = tableId;
+            this.start = start;
+            this.end = end;
+            this.columnBitMap = columnBitMap;
+        }
+
+        private LegacyScanRange(Store store, IdResolver idResolver, ScanRange fromRange) throws NoSuchTableException {
+            tableId = fromRange.getTableIdInt(idResolver);
+            RowDef rowDef = store.getRowDefCache().getRowDef(tableId);
+            start = fromRange.getPredicate().getStartRow().toRowData(rowDef, idResolver);
+            end = fromRange.getPredicate().getEndRow().toRowData(rowDef, idResolver);
+            columnBitMap = fromRange.getColumnSetBytes(idResolver);
         }
     }
 
-    private class LegacyScanStruct extends LegacyRangeStruct {
+    public static class LegacyScanRequest extends LegacyScanRange {
         final private int indexId;
         final int scanFlags;
 
-        private LegacyScanStruct(ScanRequest fromRequest) throws NoSuchTableException {
-            super(fromRequest);
-            indexId = fromRequest.getIndexIdInt(idResolver());
+        public LegacyScanRequest(int tableId, RowData start, RowData end, byte[] columnBitMap, int indexId, int scanFlags)
+        throws TableDefinitionMismatchException
+        {
+            super(tableId, start, end, columnBitMap);
+            this.indexId = indexId;
+            this.scanFlags = scanFlags;
+        }
+
+        private LegacyScanRequest(Store store, IdResolver idResolver, ScanRequest fromRequest) throws NoSuchTableException {
+            super(store, idResolver, fromRequest);
+            indexId = fromRequest.getIndexIdInt(idResolver);
             scanFlags = ScanFlag.toRowDataFormat( fromRequest.getPredicate().getScanFlags() );
         }
     }
@@ -81,13 +115,33 @@ public class DMLClientAPI extends ClientAPIBase {
      * @throws com.akiban.cserver.api.dml.UnsupportedReadException if the specified table is a group table
      */
     public long countRowsExactly(ScanRange range)
+    throws  NoSuchTableException,
+            UnsupportedReadException,
+            InvalidOperationException
+    {
+        LegacyScanRange legacy = new LegacyScanRange(store(), idResolver(), range);
+        return countRowsExactly(legacy);
+    }
+
+    /**
+     * Returns the exact number of rows in this table. This may take a while, as it could require a full
+     * table scan. Group tables have an undefined row count, so this method will fail if the requested
+     * table is a group table.
+     * @param range the table, columns and range to count
+     * @return the number of rows in the specified table
+     * @throws NullPointerException if tableId is null
+     * @throws com.akiban.cserver.api.dml.NoSuchTableException if the specified table is unknown
+     * @throws com.akiban.cserver.api.dml.UnsupportedReadException if the specified table is a group table
+     * @deprecated use {@link #countRowsExactly(ScanRange)}
+     */
+    @Deprecated
+    public long countRowsExactly(LegacyScanRange range)
             throws  NoSuchTableException,
             UnsupportedReadException,
             InvalidOperationException
     {
-        LegacyRangeStruct legacy = new LegacyRangeStruct(range);
         try {
-            return store().getRowCount(true, legacy.start, legacy.end, legacy.columnBitMap);
+            return store().getRowCount(true, range.start, range.end, range.columnBitMap);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -114,9 +168,35 @@ public class DMLClientAPI extends ClientAPIBase {
             UnsupportedReadException,
             InvalidOperationException
     {
-        LegacyRangeStruct legacy = new LegacyRangeStruct(range);
+        LegacyScanRange legacy = new LegacyScanRange(store(), idResolver(), range);
+        return countRowsApproximately(legacy);
+    }
+
+    /**
+     * Returns the approximate number of rows in this table. This estimate may be <em>very</em> approximate. All
+     * that is required is that the returned number be:
+     * <ul>
+     *  <li>0 iff the table has no rows</li>
+     *  <li>1 iff the table has exactly one row</li>
+     *  <li>&gt;= 2 iff the table has two or more rows</li>
+     * </ul>
+     *
+     * Group tables have an undefined row count, so this method will fail if the requested table is a group table.
+     * @param range the table, columns and range to count
+     * @return the number of rows in the specified table
+     * @throws NullPointerException if tableId is null
+     * @throws NoSuchTableException if the specified table is unknown
+     * @throws UnsupportedReadException if the specified table is a group table
+     * @deprecated use {@link #countRowsApproximately(ScanRange)}
+     */
+    @Deprecated
+    public long countRowsApproximately(LegacyScanRange range)
+            throws  NoSuchTableException,
+            UnsupportedReadException,
+            InvalidOperationException
+    {
         try {
-            return store().getRowCount(false, legacy.start, legacy.end, legacy.columnBitMap);
+            return store().getRowCount(false, range.start, range.end, range.columnBitMap);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -135,11 +215,12 @@ public class DMLClientAPI extends ClientAPIBase {
             throws  NoSuchTableException,
             InvalidOperationException
     {
-        if (updateFirst) {
-            throw new UnsupportedOperationException("updating not yet implemented");
-        }
+        final int tableIdInt = tableId.getTableId(idResolver());
         try {
-            return store().getTableStatistics( tableId.getTableId(idResolver()));
+            if (updateFirst) {
+                store().analyzeTable(tableIdInt);
+            }
+            return store().getTableStatistics(tableIdInt);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -163,20 +244,49 @@ public class DMLClientAPI extends ClientAPIBase {
             NoSuchIndexException,
             InvalidOperationException
     {
-        try {
-            final RowCollector rc = getRowCollector(request);
-            final CursorId cursor = cursorGenerator.newUniqueCursor();
-            Object old = session.put(MODULE_NAME, cursor, new Cursor(rc));
-            assert old == null : old;
-            return cursor;
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        return openCursorForCollector( getRowCollector(request) );
+    }
+
+    /**
+     * Opens a new cursor for scanning a table. This cursor will be stored in the current session, and a handle
+     * to it will be returned for use in subsequent cursor-related methods. When you're finished with the cursor,
+     * make sure to close it.
+     * @param request the request specifications
+     * @return a handle to the newly created cursor.
+     * @throws NullPointerException if the request is null
+     * @throws NoSuchTableException if the request is for an unknown table
+     * @throws com.akiban.cserver.api.dml.NoSuchColumnException if the request includes a column that isn't defined for the requested table
+     * @throws com.akiban.cserver.api.dml.NoSuchIndexException if the request is on an index that isn't defined for the requested table
+     * @deprecated use {@link #openCursor(ScanRequest)}
+     */
+    @Deprecated
+    public CursorId openCursor(LegacyScanRequest request)
+            throws  NoSuchTableException,
+            NoSuchColumnException,
+            NoSuchIndexException,
+            InvalidOperationException
+    {
+        return openCursorForCollector( getRowCollector(request) );
+    }
+
+    private CursorId openCursorForCollector(RowCollector rc) throws InvalidOperationException {
+        final CursorId cursor = newUniqueCursor(rc.getTableId());
+        Object old = session.put(MODULE_NAME, cursor, new Cursor(rc));
+        assert old == null : old;
+        return cursor;
+    }
+
+    protected CursorId newUniqueCursor(int tableId) {
+        return new CursorId(cursorsCount.incrementAndGet(), tableId);
     }
 
     protected RowCollector getRowCollector(ScanRequest request) throws NoSuchTableException, InvalidOperationException {
         ArgumentValidation.notNull("request", request);
-        LegacyScanStruct legacy = new LegacyScanStruct(request);
+        LegacyScanRequest legacy = new LegacyScanRequest(store(), idResolver(), request);
+        return getRowCollector(legacy);
+    }
+
+    private RowCollector getRowCollector(LegacyScanRequest legacy) throws InvalidOperationException {
         try {
             return store().newRowCollector(legacy.tableId, legacy.indexId, legacy.scanFlags,
                     legacy.start, legacy.end, legacy.columnBitMap);
@@ -345,7 +455,7 @@ public class DMLClientAPI extends ClientAPIBase {
      * <tt>akiban_information_schema</tt> table)
      */
     public Long writeRow(TableId tableId, NiceRow row)
-            throws  NoSuchTableException,
+    throws  NoSuchTableException,
             UnsupportedModificationException,
             TableDefinitionMismatchException,
             DuplicateKeyException,
@@ -361,6 +471,24 @@ public class DMLClientAPI extends ClientAPIBase {
     }
 
     /**
+     * Writes a row
+     * @param rowData the wrote to write
+     * @return null
+     * @throws InvalidOperationException see {@linkplain #writeRow(TableId, NiceRow)}
+     * @deprecated use {@linkplain #writeRow(TableId, NiceRow)}
+     */
+    @Deprecated
+    public Long writeRow(RowData rowData) throws InvalidOperationException
+    {
+        try {
+            store().writeRow(rowData);
+            return null;
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+    
+    /**
      * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
      * @param tableId the table to delete from
      * @param row the row to delete
@@ -372,13 +500,30 @@ public class DMLClientAPI extends ClientAPIBase {
      * @throws NoSuchRowException if the specified row doesn't exist
      */
     public void deleteRow(TableId tableId, NiceRow row)
-            throws  NoSuchTableException,
+    throws  NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
             NoSuchRowException,
             InvalidOperationException
     {
         final RowData rowData = niceRowToRowData(tableId, row);
+        deleteRow(rowData);
+    }
+
+    /**
+     * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
+     * @param rowData the row to delete
+     * @throws NullPointerException if either the given table ID or row are null
+     * @throws NoSuchTableException if the specified table is unknown
+     * @throws UnsupportedModificationException if the specified table can't be modified (e.g., if it's a group table or
+     * <tt>akiban_information_schema</tt> table)
+     * @throws ForeignKeyConstraintDMLException if the deletion was blocked by at least one child table
+     * @throws NoSuchRowException if the specified row doesn't exist
+     * @deprecated use {@link #deleteRow(TableId, NiceRow)}
+     */
+    @Deprecated
+    public void deleteRow(RowData rowData) throws InvalidOperationException
+    {
         try {
             store().deleteRow(rowData);
         } catch (Exception e) {
@@ -419,6 +564,19 @@ public class DMLClientAPI extends ClientAPIBase {
         final RowData oldData = niceRowToRowData(tableId, oldRow);
         final RowData newData = niceRowToRowData(tableId, newRow);
 
+        updateRow(oldData, newData);
+    }
+
+    /**
+     * Updates a row
+     * @param oldData the old data
+     * @param newData the new data
+     * @throws InvalidOperationException if exception occurred
+     * @deprecated use {@link #updateRow(TableId, NiceRow, NiceRow)}
+     */
+    @Deprecated
+    public void updateRow(RowData oldData, RowData newData) throws InvalidOperationException {
+        matchRowDatas(oldData, newData);
         try {
             store().updateRow(oldData, newData);
         } catch (Exception e) {
