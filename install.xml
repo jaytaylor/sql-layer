@@ -14,11 +14,15 @@
 
 	<property name="cserver.prefix" value="${cserver.install.dir}" />
 
-
 	<fail unless="cserver.install.dir" message="-Dcserver.install.dir is required, add arg -Dcserver.install.dir=../build/cserver" />
+
+
+	<!-- convert a property to absolute location -->
+	<property name="cserver.install.path" location="${cserver.install.dir}" />
 	<fail unless="mysql.install.dir"   message="-Dmysql.install.dir is required, add arg -Dmysql.install.dir=../build/mysql" />
 	<fail unless="system.config"       message="-Dsystem.config is required, add arg -Dsystem.config=../config/default" />
 	<fail unless="cserver.prefix"      />
+
 
 	<available file="${mysql.install.dir}" property="isMysqlInstall" />
 	<fail unless="isMysqlInstall" message="dir ${mysql.install.dir} does not exist" />
@@ -27,27 +31,28 @@
 	<fail unless="isSystemConfig" message="dir ${system.config} does not exist" />
 
 	<property name="system.resources"    location="src/main/resources" />
-	<property name="cserver.configdir"    	location="${cserver.install.dir}/etc/akiban" />
-	<property name="cserver.logsdir"      	location="${cserver.install.dir}/var/log" />
-	<property name="cserver.bindir"      	location="${cserver.install.dir}/usr/local/chunkserver" />
-	<property name="cserver.datadir"      	location="${cserver.install.dir}/var/lib/chunkserver" />
-	<property name="cserver.rundir"    	location="${cserver.install.dir}/etc/init.d" />
-	<property name="cserver.piddir"    	location="${cserver.install.dir}/var/run/" />
+	<property name="cserver.configdir"    	location="${cserver.install.path}/etc/akiban" />
+	<property name="cserver.logsdir"      	location="${cserver.install.path}/var/log" />
+	<property name="cserver.bindir"      	location="${cserver.install.path}/usr/local/chunkserver" />
+	<property name="cserver.datadir"      	location="${cserver.install.path}/var/lib/chunkserver" />
+	<property name="cserver.rundir"    	location="${cserver.install.path}/etc/init.d" />
+	<property name="cserver.piddir"    	location="${cserver.install.path}/var/run/" />
 
 
 	<echo level="info">
 ------------------------------------------------------------------
-	system.resources   : "${system.resources}"
-	system.config      : "${system.config}"
-	cserver.install.dir: "${cserver.install.dir}"
-	cserver.prefix     : "${cserver.prefix}"
-	mysql.install.dir  : "${mysql.install.dir}"
-	cserver.configdir  : "${cserver.configdir}"
-	cserver.logsdir    : "${cserver.logsdir}"
-	cserver.bindir     : "${cserver.bindir}"
-	cserver.datadir    : "${cserver.datadir}"
-	cserver.rundir     : "${cserver.rundir}"
-	cserver.piddir     : "${cserver.piddir}"
+	system.resources    : "${system.resources}"
+	system.config       : "${system.config}"
+	cserver.install.dir : "${cserver.install.dir}"
+	cserver.install.path: "${cserver.install.path}"
+	cserver.prefix      : "${cserver.prefix}"
+	mysql.install.dir   : "${mysql.install.dir}"
+	cserver.configdir   : "${cserver.configdir}"
+	cserver.logsdir     : "${cserver.logsdir}"
+	cserver.bindir      : "${cserver.bindir}"
+	cserver.datadir     : "${cserver.datadir}"
+	cserver.rundir      : "${cserver.rundir}"
+	cserver.piddir      : "${cserver.piddir}"
 ------------------------------------------------------------------
 	</echo>
 
