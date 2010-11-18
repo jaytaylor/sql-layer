@@ -11,21 +11,22 @@
 				   -Dsystem.config=../config/default
 	-->
 
+	<!-- convert a property to absolute location -->
+	<property name="cserver.install.path" location="${cserver.install.dir}" />
+	<property name="mysql.install.path"   location="${mysql.install.dir}" />
 
-	<property name="cserver.prefix" value="${cserver.install.dir}" />
+	<property name="cserver.prefix" value="${cserver.install.path}" />
 
 	<fail unless="cserver.install.dir" message="-Dcserver.install.dir is required, add arg -Dcserver.install.dir=../build/cserver" />
 
 
-	<!-- convert a property to absolute location -->
-	<property name="cserver.install.path" location="${cserver.install.dir}" />
 	<fail unless="mysql.install.dir"   message="-Dmysql.install.dir is required, add arg -Dmysql.install.dir=../build/mysql" />
 	<fail unless="system.config"       message="-Dsystem.config is required, add arg -Dsystem.config=../config/default" />
 	<fail unless="cserver.prefix"      />
 
 
-	<available file="${mysql.install.dir}" property="isMysqlInstall" />
-	<fail unless="isMysqlInstall" message="dir ${mysql.install.dir} does not exist" />
+	<available file="${mysql.install.path}" property="isMysqlInstall" />
+	<fail unless="isMysqlInstall" message="dir ${mysql.install.path} does not exist" />
 
 	<available file="${system.config}" property="isSystemConfig" />
 	<fail unless="isSystemConfig" message="dir ${system.config} does not exist" />
@@ -47,6 +48,7 @@
 	cserver.install.path: "${cserver.install.path}"
 	cserver.prefix      : "${cserver.prefix}"
 	mysql.install.dir   : "${mysql.install.dir}"
+	mysql.install.path  : "${mysql.install.path}"
 	cserver.configdir   : "${cserver.configdir}"
 	cserver.logsdir     : "${cserver.logsdir}"
 	cserver.bindir      : "${cserver.bindir}"
@@ -108,7 +110,7 @@
 	  <include name="**/*"/>
 		  <replacetoken>CSERVER.INSTALL.DIR</replacetoken>
 	</replace>
-	<replace dir="${cserver.rundir}" value="${mysql.install.dir}">
+	<replace dir="${cserver.rundir}" value="${mysql.install.path}">
 	  <include name="**/*"/>
 		  <replacetoken>MYSQL.INSTALL.DIR</replacetoken>
 	</replace>
@@ -117,7 +119,7 @@
 	  <include name="**/*"/>
 		  <replacetoken>CSERVER.INSTALL.DIR</replacetoken>
 	</replace>
-	<replace dir="${cserver.configdir}" value="${mysql.install.dir}">
+	<replace dir="${cserver.configdir}" value="${mysql.install.path}">
 	  <include name="**/*"/>
 		  <replacetoken>MYSQL.INSTALL.DIR</replacetoken>
 	</replace>
@@ -126,7 +128,7 @@
 	  <include name="**/*.sh"/>
 		  <replacetoken>CSERVER.INSTALL.DIR</replacetoken>
 	</replace>
-	<replace dir="${cserver.bindir}" value="${mysql.install.dir}">
+	<replace dir="${cserver.bindir}" value="${mysql.install.path}">
 	  <include name="**/*.sh"/>
 		  <replacetoken>MYSQL.INSTALL.DIR</replacetoken>
 	</replace>
