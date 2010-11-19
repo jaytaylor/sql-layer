@@ -26,15 +26,15 @@ public class InMemoryRequestHandler extends RequestHandler
     public void handleRequest(AkibanConnection connection, Session session, Request request)
         throws Exception
     {
-        Message response = executeMessage(request);
+        Message response = executeMessage(request, session);
         connection.send(response);
     }
 
-    private Message executeMessage(Message request)
+    private Message executeMessage(Message request, Session session)
     {
         final SingleSendBuffer sendBuffer = new SingleSendBuffer();
         try {
-            request.execute(sendBuffer);
+            request.execute(sendBuffer, session);
         } catch (InvalidOperationException e) {
             sendBuffer.send(new ErrorResponse(e.getCode(), e.getMessage()));
         } catch (Throwable t) {

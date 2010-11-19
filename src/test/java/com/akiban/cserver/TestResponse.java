@@ -2,6 +2,7 @@ package com.akiban.cserver;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.cserver.service.session.Session;
 import com.akiban.message.AkibaSendConnection;
 import com.akiban.message.Message;
 import com.akiban.message.Response;
@@ -30,7 +31,7 @@ public class TestResponse extends Response
     }
 
     @Override
-    public void execute(AkibaSendConnection connection) throws Exception
+    public void execute(AkibaSendConnection connection, Session session) throws Exception
     {
     }
 
