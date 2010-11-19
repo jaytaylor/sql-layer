@@ -1,16 +1,19 @@
 package com.akiban.jni;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.jboss.netty.util.internal.ConcurrentHashMap;
+
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.service.network.RequestHandler;
 import com.akiban.cserver.service.network.SingleSendBuffer;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.ErrorResponse;
 import com.akiban.message.Message;
 import com.akiban.message.Request;
-import org.jboss.netty.util.internal.ConcurrentHashMap;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class InMemoryRequestHandler extends RequestHandler
 {
@@ -20,7 +23,7 @@ public class InMemoryRequestHandler extends RequestHandler
     // away.
 
     @Override
-    public void handleRequest(AkibanConnection connection, Request request)
+    public void handleRequest(AkibanConnection connection, Session session, Request request)
         throws Exception
     {
         Message response = executeMessage(request);
@@ -110,11 +113,13 @@ public class InMemoryRequestHandler extends RequestHandler
     private class ExecutionRunnable extends Thread
     {
         private final InMemoryAkibanConnection connection;
+        private final Session session;
 
         ExecutionRunnable()
         {
             super();
             this.connection = new InMemoryAkibanConnection();
+            this.session = new SessionImpl();
         }
 
         @Override
@@ -123,7 +128,7 @@ public class InMemoryRequestHandler extends RequestHandler
             while (true) {
                 try {
                     Message request = connection.receive();
-                    handleRequest(connection, ((Request) request));
+                    handleRequest(connection, session, ((Request) request));
                 }
                 catch (InterruptedException e) {
                     break;

@@ -35,7 +35,9 @@ package com.akiban.cserver.service.session;
  * }
  * </pre>
  */
-public interface SessionService {
+public interface SessionService
+{
+    public SessionHandle createSessionWithHandle() throws SessionException;
     public void createSession(SessionHandle sessionHandle) throws SessionException;
 
     public Session acquireSession(SessionHandle sessionHandle) throws SessionException;

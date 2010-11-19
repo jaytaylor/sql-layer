@@ -288,5 +288,11 @@ public final class SessionServiceImplTest {
         {
             return false;
         }
+        
+        @Override
+        public void close()
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 }

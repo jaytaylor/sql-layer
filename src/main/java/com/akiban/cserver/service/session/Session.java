@@ -1,6 +1,7 @@
 package com.akiban.cserver.service.session;
 
-public interface Session {
+public interface Session
+{
     <T> T get(String module, Object key);
     <T> T put(String module, Object key, T item);
     <T> T remove(String module, Object key);
@@ -15,4 +16,9 @@ public interface Session {
      * @return true if the session is canceled, false otherwise.
      */
     boolean isCanceled();
+    
+    /**
+     * Closes all the resources managed by this session.
+     */
+    void close();
 }

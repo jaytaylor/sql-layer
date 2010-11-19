@@ -9,7 +9,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public final class SessionServiceImpl implements SessionService, JmxManageable, Service {
+public final class SessionServiceImpl implements SessionService, JmxManageable, Service, SessionFactory
+{
     private final SessionFactory factory;
     private final Map<SessionHandle, Session> sessions = new HashMap<SessionHandle, Session>();
     private final Set<SessionHandle> usedSessionHandles = new HashSet<SessionHandle>();
@@ -17,6 +18,11 @@ public final class SessionServiceImpl implements SessionService, JmxManageable, 
 
     private int sessionsCreated = 0;
     private int sessionsClosed = 0;
+    
+    public SessionServiceImpl()
+    {
+        this.factory = this;
+    }
     
     public SessionServiceImpl(SessionFactory factory) {
         ArgumentValidation.notNull("SessionFactory", factory);
@@ -33,6 +39,14 @@ public final class SessionServiceImpl implements SessionService, JmxManageable, 
         // No-op
     }
 
+    @Override
+    public SessionHandle createSessionWithHandle()
+    {
+        SessionHandle handle = new DefaultSessionHandle();
+        createSession(handle);
+        return handle;
+    }
+    
     @Override
     public void createSession(SessionHandle sessionHandle) throws SessionException {
         ArgumentValidation.notNull("SessionHandle", sessionHandle);
@@ -129,4 +143,15 @@ public final class SessionServiceImpl implements SessionService, JmxManageable, 
             }
         }
     };
+
+    private static class DefaultSessionHandle implements SessionHandle
+    {
+        // Empty class to create concrete handles.
+    }
+
+    @Override
+    public Session createSession()
+    {
+        return new SessionImpl();
+    }
 }

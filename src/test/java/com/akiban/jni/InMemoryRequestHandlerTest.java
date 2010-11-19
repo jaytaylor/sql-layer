@@ -1,17 +1,26 @@
 package com.akiban.jni;
 
-import com.akiban.message.*;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertSame;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static junit.framework.Assert.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.akiban.cserver.service.session.Session;
+import com.akiban.message.AkibanConnection;
+import com.akiban.message.MessageRegistry;
+import com.akiban.message.MessageRegistryBase;
+import com.akiban.message.Request;
 
 public final class InMemoryRequestHandlerTest {
 
@@ -58,7 +67,8 @@ public final class InMemoryRequestHandlerTest {
         private final List<Throwable> exceptions = Collections.synchronizedList( new ArrayList<Throwable>() );
 
         @Override
-        public void handleRequest(AkibanConnection connection, Request request) throws Exception {
+        public void handleRequest(AkibanConnection connection, Session session, Request request) throws Exception
+        {
             try {
                 IntegerRequest intRequest = (IntegerRequest) request;
                 int payload = intRequest.getTheInt();

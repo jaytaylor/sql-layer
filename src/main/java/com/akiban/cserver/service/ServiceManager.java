@@ -1,6 +1,7 @@
 package com.akiban.cserver.service;
 
 import com.akiban.cserver.CServer;
+import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.store.Store;
 
 public interface ServiceManager extends ServiceManagerMXBean {
@@ -12,4 +13,6 @@ public interface ServiceManager extends ServiceManagerMXBean {
     CServer getCServer();
 
     Store getStore();
+    
+    SessionService getSessionService();
 }

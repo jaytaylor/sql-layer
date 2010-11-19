@@ -34,6 +34,13 @@ public final class SessionImpl implements Session
         return false;
     }
     
+    @Override
+    public void close()
+    {
+        // For now do nothing.
+        // Later, we'll close any "resource" that is added to the session.
+    }
+    
     private static class Key
     {
         private final String module;

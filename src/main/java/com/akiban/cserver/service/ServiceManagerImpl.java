@@ -4,6 +4,8 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.schema.SchemaServiceImpl;
+import com.akiban.cserver.service.session.SessionService;
+import com.akiban.cserver.service.session.SessionServiceImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
@@ -28,11 +30,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     private static final String STORE = "store";
     private static final String CSERVER = "cserver";
     private static final String SCHEMA = "schema";
-
-    private ServiceManagerImpl()
-    {
-        this(new DefaultServiceManagerFactory());
-    }
+    private static final String SESSION = "session";
 
     public static void setServiceManager(ServiceManager newInstance)
     {
@@ -42,6 +40,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         else if (!instance.compareAndSet(null, newInstance)) {
             throw new RuntimeException("Tried to install a ServiceManager, but one was already set");
         }
+    }
+
+    private ServiceManagerImpl()
+    {
+        this(new DefaultServiceManagerFactory());
     }
     /**
      * This constructor is made protected for unit testing.
@@ -67,6 +70,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         return (Store) getService(STORE);
     }
 
+    @Override
+    public SessionService getSessionService() {
+        return (SessionService) getService(SESSION);
+    }
+
     public void startServices() throws Exception {
 
         JmxRegistryServiceImpl jmxRegistry = new JmxRegistryServiceImpl();
@@ -78,6 +86,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         servicesDebugHooks(configService, jmxRegistry);
 
         // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
+        startAndPut(new SessionServiceImpl(), SESSION, jmxRegistry);
         Store store = new PersistitStore(configService);
         startAndPut(store, STORE, jmxRegistry);
         startAndPut(factory.networkService(), NETWORK, jmxRegistry);
