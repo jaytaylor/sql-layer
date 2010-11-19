@@ -2,6 +2,13 @@ package com.akiban.cserver.encoding;
 
 import com.akiban.ais.model.Type;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+@SuppressWarnings("unused")
 public final class EncoderFactory {
     private EncoderFactory() {
     }
@@ -23,35 +30,8 @@ public final class EncoderFactory {
     public static final YearEncoder YEAR = new YearEncoder();
     public static final UnsupportedTypeEncoder BIT = new UnsupportedTypeEncoder("BIT");
 
-    private enum Encodings {
-        INT (EncoderFactory.INT),
-        U_INT (EncoderFactory.U_INT),
-        FLOAT (EncoderFactory.FLOAT),
-        U_FLOAT (EncoderFactory.U_FLOAT),
-        DECIMAL (EncoderFactory.DECIMAL),
-        U_DECIMAL (EncoderFactory.U_DECIMAL),
-        VARCHAR (EncoderFactory.VARCHAR),
-        VARBINARY (EncoderFactory.VARBINARY),
-        BLOB (EncoderFactory.BLOB),
-        TEXT (EncoderFactory.TEXT),
-        DATE (EncoderFactory.DATE),
-        TIME (EncoderFactory.TIME),
-        DATETIME (EncoderFactory.DATETIME),
-        TIMESTAMP (EncoderFactory.TIMESTAMP),
-        YEAR (EncoderFactory.YEAR),
-        BIT (EncoderFactory.BIT),
-        ;
-
-        private final Encoding<?> encoding;
-
-        private Encodings(Encoding<?> encoding) {
-            this.encoding = encoding;
-        }
-
-        public Encoding<?> getEncoding() {
-            return encoding;
-        }
-    }
+    private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
+    private static Map<String,Encoding<?>> encodingMap = null;
 
     /**
      * Gets an encoding by name.
@@ -60,11 +40,32 @@ public final class EncoderFactory {
      * @throws EncodingException if no such encoding exists
      */
     private static Encoding<?> valueOf(String name) {
-        try {
-            return Encodings.valueOf(name).getEncoding();
-        } catch (IllegalArgumentException e) {
-            throw new EncodingException("No such encoding: " + name);
+        synchronized (ENCODING_MAP_LOCK) {
+            if (encodingMap == null) {
+                encodingMap = initializeEncodingMap();
+            }
+            final Encoding<?> encoding = encodingMap.get(name);
+            if (encoding == null) {
+                throw new EncodingException("Unknown encoding type: " + name);
+            }
+            return encoding;
         }
+    }
+
+    private static Map<String, Encoding<?>> initializeEncodingMap() {
+        final Map<String,Encoding<?>> tmp = new HashMap<String, Encoding<?>>();
+        for (Field field : EncoderFactory.class.getDeclaredFields()) {
+            final int m = field.getModifiers();
+            if (Modifier.isFinal(m) && Modifier.isStatic(m) && Modifier.isPublic(m) && Encoding.class.isAssignableFrom(field.getType())) {
+                try {
+                    Encoding<?> encoding = (Encoding) field.get(null);
+                    tmp.put(field.getName(), encoding);
+                } catch (IllegalAccessException e) {
+                    throw new EncodingException("While constructing encodings map; at " + field.getName(), e);
+                }
+            }
+        }
+        return Collections.unmodifiableMap(tmp);
     }
 
     /**
