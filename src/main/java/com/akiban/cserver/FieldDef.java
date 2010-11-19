@@ -1,6 +1,8 @@
 package com.akiban.cserver;
 
 import com.akiban.ais.model.Type;
+import com.akiban.cserver.encoding.EncoderFactory;
+import com.akiban.cserver.encoding.Encoding;
 
 public class FieldDef {
 
@@ -40,11 +42,7 @@ public class FieldDef {
             final Long typeParameter1, final Long typeParameter2) {
         this.columnName = name;
         this.type = type;
-        this.encoding = Encoding.valueOf(type.encoding());
-        if (!encoding.validate(type)) {
-            throw new IllegalArgumentException("Encoding " + encoding
-                    + " not valid for type " + type);
-        }
+        this.encoding = EncoderFactory.valueOf(type.encoding(), type);
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
         this.typeParameter1 = typeParameter1;

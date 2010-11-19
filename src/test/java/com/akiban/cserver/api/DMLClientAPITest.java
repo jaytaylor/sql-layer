@@ -3,6 +3,7 @@ package com.akiban.cserver.api;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.dml.RowOutput;
 import com.akiban.cserver.api.dml.scan.*;
+import com.akiban.cserver.encoding.DateTimeEncoder;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.RowCollector;

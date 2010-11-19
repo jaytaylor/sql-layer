@@ -3,6 +3,7 @@ package com.akiban.cserver.api.dml.scan;
 import com.akiban.cserver.*;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
+import com.akiban.cserver.encoding.Encoding;
 import com.akiban.util.ArgumentValidation;
 
 import java.nio.ByteBuffer;
@@ -49,7 +50,7 @@ public class NiceRow {
             final ColumnId index = entry.getKey();
             final Object obj = entry.getValue();
             final FieldDef fieldDef = rowDef.getFieldDef(index.getPosition(resolver));
-            final Encoding encoding = fieldDef.getEncoding();
+            final Encoding<?> encoding = fieldDef.getEncoding();
             bytesLength += encoding.widthFromObject(fieldDef, obj);
         }
 
