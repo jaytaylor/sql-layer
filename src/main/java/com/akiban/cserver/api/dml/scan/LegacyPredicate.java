@@ -43,7 +43,7 @@ public final class LegacyPredicate implements Predicate {
         }
 
         @Override
-        public RowData toRowData(RowDef rowDef, IdResolver ignored) {
+        public RowData toRowData(RowDef rowDef) {
             return rowData;
         }
 

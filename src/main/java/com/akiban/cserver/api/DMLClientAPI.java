@@ -13,6 +13,7 @@ import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.store.Store;
 import com.akiban.util.ArgumentValidation;
 
+import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -79,8 +80,8 @@ public class DMLClientAPI extends ClientAPIBase {
         private LegacyScanRange(Store store, IdResolver idResolver, ScanRange fromRange) throws NoSuchTableException {
             tableId = fromRange.getTableIdInt(idResolver);
             RowDef rowDef = store.getRowDefCache().getRowDef(tableId);
-            start = fromRange.getPredicate().getStartRow().toRowData(rowDef, idResolver);
-            end = fromRange.getPredicate().getEndRow().toRowData(rowDef, idResolver);
+            start = fromRange.getPredicate().getStartRow().toRowData(rowDef);
+            end = fromRange.getPredicate().getEndRow().toRowData(rowDef);
             columnBitMap = fromRange.getColumnSetBytes(idResolver);
         }
     }
@@ -307,7 +308,7 @@ public class DMLClientAPI extends ClientAPIBase {
      * fewer, if the table has fewer remaining rows. If al limit is provided and this method returns <tt>true</tt>,
      * exactly <tt>limit</tt> rows will have been scanned; if a limit is provided and this method returns
      * <tt>false</tt>, the number of rows is <tt>&lt;=limit</tt>. If this is the case and you need to know how many
-     * rows were actually scanned, using {@link RowOutput#getRowsCount()}.</p>
+     * rows were actually scanned, using {@link com.akiban.cserver.api.dml.scan.LegacyRowOutput#getRowsCount()}.</p>
      *
      * <p>There is nothing special about a limit of 0; this method will scan no rows, and will return whether there
      * are more rows to be scanned. Note that passing a limit of 0 is essentially analogous to a "hasMore()" method.
@@ -335,7 +336,7 @@ public class DMLClientAPI extends ClientAPIBase {
      * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
      * @throws RowOutputException if the given RowOutput threw an exception while writing a row
      */
-    public boolean scanSome(CursorId cursorId, RowOutput output, int limit)
+    public boolean scanSome(CursorId cursorId, LegacyRowOutput output, int limit)
             throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -356,15 +357,15 @@ public class DMLClientAPI extends ClientAPIBase {
      * Do the actual scan. Refactored out of scanSome for ease of unit testing.
      * @param cursor the cursor itself; used to check status and get a row collector
      * @param cursorId the cursor id; used only to report errors
-     * @param output the output; see {@link #scanSome(CursorId, RowOutput, int)}
-     * @param limit the limit, or negative value if none;  ee {@link #scanSome(CursorId, RowOutput, int)}
-     * @return whether more rows remain to be scanned; see {@link #scanSome(CursorId, RowOutput, int)}
-     * @throws CursorIsFinishedException see {@link #scanSome(CursorId, RowOutput, int)}
-     * @throws RowOutputException see {@link #scanSome(CursorId, RowOutput, int)}
-     * @throws InvalidOperationException see {@link #scanSome(CursorId, RowOutput, int)}
-     * @see #scanSome(CursorId, RowOutput, int)
+     * @param output the output; see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
+     * @param limit the limit, or negative value if none;  ee {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
+     * @return whether more rows remain to be scanned; see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
+     * @throws CursorIsFinishedException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
+     * @throws RowOutputException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
+     * @throws InvalidOperationException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
+     * @see #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)
      */
-    protected static boolean doScan(Cursor cursor, CursorId cursorId, RowOutput output, int limit)
+    protected static boolean doScan(Cursor cursor, CursorId cursorId, LegacyRowOutput output, int limit)
             throws  CursorIsFinishedException,
             RowOutputException,
             InvalidOperationException
@@ -388,23 +389,37 @@ public class DMLClientAPI extends ClientAPIBase {
             }
             if (cursor.isScanning() && !(rc.hasMore())) {
                 cursor.setFinished();
+                return false;
             }
             cursor.setScanning();
             boolean limitReached = (limit == 0);
-            while ( (!limitReached) && rc.collectNextRow(output.getOutputBuffer()) ) {
+            final ByteBuffer buffer = output.getOutputBuffer();
+            final int bufferInitialPos = buffer.position();
+            int bufferLastPos = bufferInitialPos;
+
+            boolean mayHaveMore = true;
+            while ( mayHaveMore && (!limitReached)) {
+                mayHaveMore = rc.collectNextRow(buffer);
+
+                final int bufferPos = buffer.position();
+                assert bufferPos >= bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
+                if (bufferPos == bufferLastPos) {
+                    // The previous iteration of rc.collectNextRow() said there'd be more, but there wasn't
+                    break;
+                }
+
                 output.wroteRow();
+                bufferLastPos = buffer.position(); // wroteRow() may have changed this, so we get it again
                 if (limit > 0) {
                     limitReached = (--limit) == 0;
                 }
             }
-            if (!limitReached) {
-                output.wroteRow();
-            }
+
             final boolean hasMore = rc.hasMore();
             if (!hasMore) {
                 cursor.setFinished();
             }
-            return limitReached || hasMore;
+            return hasMore;
         } catch (Exception e) {
             cursor.setFinished();
             throw rethrow(e);
@@ -426,7 +441,7 @@ public class DMLClientAPI extends ClientAPIBase {
     }
 
     /**
-     * <p>Returns all open cursors. It is not necessarily safe to call {@linkplain #scanSome(CursorId, RowOutput, int)}
+     * <p>Returns all open cursors. It is not necessarily safe to call {@linkplain #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
      * on all of these cursors, since some may have reached their end. But it is safe to close each of these cursors
      * (unless, of course, another thread closes them first).</p>
      *
@@ -533,8 +548,13 @@ public class DMLClientAPI extends ClientAPIBase {
 
     private RowData niceRowToRowData(TableId tableId, NiceRow row) throws NoSuchTableException {
         final RowDef rowDef = store().getRowDefCache().getRowDef(tableId.getTableId(idResolver()));
-        final RowData rowData = row.toRowData(rowDef, idResolver());
+        final RowData rowData = row.toRowData(rowDef);
         return rowData;
+    }
+
+    public NiceRow convertRowData(RowData rowData) {
+        final RowDef rowDef = store().getRowDefCache().getRowDef( rowData.getRowDefId() );
+        return NiceRow.fromRowData(rowData, rowDef);
     }
 
     /**

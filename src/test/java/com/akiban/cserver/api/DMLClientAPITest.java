@@ -1,9 +1,8 @@
 package com.akiban.cserver.api;
 
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.dml.RowOutput;
+import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
 import com.akiban.cserver.api.dml.scan.*;
-import com.akiban.cserver.encoding.DateTimeEncoder;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.RowCollector;
@@ -94,7 +93,7 @@ public final class DMLClientAPITest {
         }
     }
 
-    private static class StringRowOutput implements RowOutput {
+    private static class StringRowOutput implements LegacyRowOutput {
         private final ByteBuffer buffer;
 
         private StringRowOutput() {

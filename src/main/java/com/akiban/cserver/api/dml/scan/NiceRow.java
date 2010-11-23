@@ -2,18 +2,17 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.*;
 import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.encoding.Encoding;
 import com.akiban.util.ArgumentValidation;
 
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class NiceRow {
-    private final Map<ColumnId,Object> fields = new HashMap<ColumnId, Object>();
+    private final Map<ColumnId,Object> fields;
+
+    public NiceRow() {
+        fields = new TreeMap<ColumnId, Object>();
+    }
 
     public Object put(ColumnId index, Object object) {
         ArgumentValidation.notNull("column", index);
@@ -21,7 +20,7 @@ public class NiceRow {
     }
 
     public Object get(int index) {
-        return fields.get(index);
+        return fields.get(new ColumnId(index) );
     }
 
     /**
@@ -32,7 +31,30 @@ public class NiceRow {
         return Collections.unmodifiableMap(fields);
     }
 
-    public RowData toRowData(RowDef rowDef, IdResolver resolver) {
+    public static NiceRow fromRowData(RowData origData, RowDef rowDef) {
+        Set<ColumnId> activeColumns = new HashSet<ColumnId>();
+        for(int fieldIndex=0, fieldsCount=rowDef.getFieldCount(); fieldIndex < fieldsCount; ++fieldIndex) {
+            final long location = rowDef.fieldLocation(origData, fieldIndex);
+            if (location != 0) {
+                activeColumns.add( new ColumnId(fieldIndex) );
+            }
+        }
+
+        NiceRow retval = new NiceRow();
+        for (ColumnId column : activeColumns) {
+            final int pos = column.getPosition();
+            final FieldDef fieldDef = rowDef.getFieldDef(pos);
+            final Encoding encoding = fieldDef.getEncoding();
+            final Object value = encoding.toObject(fieldDef, origData);
+
+            Object old = retval.put(column, value);
+            assert old == null : String.format("put(%s, %s) --> %s", column, value, old);
+        }
+
+        return retval;
+    }
+
+    public RowData toRowData(RowDef rowDef) {
         final int fieldsOffset = 0
                 + 4 // record length
                 + 2 // signature byte 'AB'
@@ -46,17 +68,13 @@ public class NiceRow {
                 + 2 // signature byte 'BA'
                 + 4 // record length again
                 ;
-        for (Map.Entry<ColumnId,Object> entry : fields.entrySet()) {
-            final ColumnId index = entry.getKey();
-            final Object obj = entry.getValue();
-            final FieldDef fieldDef = rowDef.getFieldDef(index.getPosition(resolver));
-            final Encoding<?> encoding = fieldDef.getEncoding();
-            bytesLength += encoding.widthFromObject(fieldDef, obj);
+        for (int i=0, fieldCount=rowDef.getFieldCount(); i < fieldCount; ++i) {
+            bytesLength += rowDef.getFieldDef(i).getMaxStorageSize();
         }
 
         final Object[] objects = new Object[ rowDef.getFieldCount() ];
         for (Map.Entry<ColumnId,Object> entry : fields.entrySet()) {
-            objects[ entry.getKey().getPosition(resolver) ] = entry.getValue();
+            objects[ entry.getKey().getPosition() ] = entry.getValue();
         }
         final RowData retval = new RowData(new byte[bytesLength]);
         retval.createRow(rowDef, objects);
@@ -64,22 +82,19 @@ public class NiceRow {
         return retval;
     }
 
-    private void writeNullMap(ByteBuffer buffer, Set<Integer> integers) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        NiceRow niceRow = (NiceRow) o;
-
-        return fields.equals(niceRow.fields);
-    }
-
-    @Override
-    public int hashCode() {
-        return fields.hashCode();
+    public String toString() {
+        StringBuilder sb = new StringBuilder("NiceRow[ ");
+        int nextExpectedPos = 0;
+        for (Map.Entry<ColumnId,Object> entry : fields.entrySet()) {
+            final int pos = entry.getKey().getPosition();
+            if (pos != nextExpectedPos) {
+                sb.append("... ");
+            }
+            sb.append(entry.getKey().getPosition()).append("=(").append(entry.getValue()).append(") ");
+            nextExpectedPos = pos + 1;
+        }
+        sb.append(']');
+        return sb.toString();
     }
 }

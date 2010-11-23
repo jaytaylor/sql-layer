@@ -4,14 +4,13 @@ import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolverStub;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.*;
 
 public final class ColumnSetTest {
+
     @Test
     public void pack1Byte() throws Exception {
         Set<ColumnId> columns = new HashSet<ColumnId>();
@@ -49,6 +48,9 @@ public final class ColumnSetTest {
     private static void assertBytes(String expected, Set<ColumnId> actual) {
         final byte[] actualBytes =  ColumnSet.packToLegacy(actual, IdResolverStub.instance());
         assertEquals("bytes", expected, bytesToHex(actualBytes));
+
+        Set<ColumnId> unpacked = ColumnSet.unpackFromLegacy(actualBytes);
+        assertEquals("unpacked set", actual, unpacked);
     }
 
     @Test

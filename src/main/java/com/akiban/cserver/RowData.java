@@ -409,7 +409,6 @@ public class RowData {
     }
 
     public String toString(final RowDefCache cache) {
-        final StringBuilder sb = new StringBuilder();
         final RowDef rowDef;
         if (cache == null) {
             rowDef = null;
@@ -424,6 +423,11 @@ public class RowData {
             }
             rowDef = tmp;
         }
+        return toString(rowDef);
+    }
+
+    public String toString(final RowDef rowDef) {
+        final StringBuilder sb = new StringBuilder();
         try {
             if (rowDef == null) {
                 sb.append("RowData?(rowDefId=");

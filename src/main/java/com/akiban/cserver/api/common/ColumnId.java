@@ -4,7 +4,7 @@ import com.akiban.util.ArgumentValidation;
 
 import java.nio.ByteBuffer;
 
-public final class ColumnId extends ByteBufferWriter {
+public final class ColumnId extends ByteBufferWriter implements Comparable<ColumnId> {
     private final int columnPosition;
 
     public ColumnId(int columnPosition) {
@@ -28,7 +28,7 @@ public final class ColumnId extends ByteBufferWriter {
         output.putInt(columnPosition);
     }
 
-    public int getPosition(IdResolver resolver) {
+    public int getPosition() {
         return columnPosition;
     }
 
@@ -44,7 +44,17 @@ public final class ColumnId extends ByteBufferWriter {
     }
 
     @Override
+    public int compareTo(ColumnId o) {
+        return this.columnPosition - o.columnPosition;
+    }
+
+    @Override
     public int hashCode() {
         return columnPosition;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ColumnId<%d>", columnPosition);
     }
 }

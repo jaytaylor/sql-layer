@@ -2,12 +2,44 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
+import com.akiban.util.ArgumentValidation;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class ColumnSet {
+
+    public static int unpackByteFromLegacy(byte theByte, int byteNum, Set<ColumnId> out) {
+        int added = 0;
+        for(int relativePos=0; relativePos < 8; ++relativePos) {
+            if ( 0!= (theByte & (1 << relativePos))) {
+                if (out.add( new ColumnId( (byteNum*8) + relativePos) )) {
+                    ++added;
+                }
+            }
+        }
+        return added;
+    }
+
+    public static Set<ColumnId> unpackFromLegacy(byte[] columns) {
+        ArgumentValidation.notNull("columns", columns);
+        if (columns.length == 0) {
+            return Collections.emptySet();
+        }
+        Set<ColumnId> retval = new HashSet<ColumnId>();
+        for (int byteNum=0; byteNum < columns.length; ++byteNum) {
+            if (columns[byteNum] > 0) {
+                int added = unpackByteFromLegacy(columns[byteNum], byteNum, retval);
+                assert added > 0 : String.format("bytes[%d] added %d: %s", byteNum, added, retval);
+            }
+        }
+        return retval;
+    }
+
     /**
      * Packs these columns to the format expected by the legacy system, used by Messages. This is two bytes, with the
      * low-order byte corresponding to column 0, and a 1 or 0 for each column specifying whether that column should
@@ -25,7 +57,7 @@ public final class ColumnSet {
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         for (ColumnId column : columns) {
-            final int posAbsolute = column.getPosition(resolver);
+            final int posAbsolute = column.getPosition();
             final int byteNum = ((posAbsolute + 8) / 8) - 1;
             final int posRelative = posAbsolute - byteNum*8;
             assert (posRelative <= 7) && (posRelative >=0)

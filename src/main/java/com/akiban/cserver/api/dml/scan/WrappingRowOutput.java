@@ -1,11 +1,13 @@
-package com.akiban.cserver.api.dml;
+package com.akiban.cserver.api.dml.scan;
 
+import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
+import com.akiban.cserver.api.dml.scan.RowOutputException;
 import com.akiban.util.ArgumentValidation;
 
 import java.nio.ByteBuffer;
 
-public final class WrappingRowOutput implements RowOutput {
-    private final ByteBuffer wrapped;
+public class WrappingRowOutput implements LegacyRowOutput {
+    protected final ByteBuffer wrapped;
     private int rows;
 
     /**
@@ -19,17 +21,22 @@ public final class WrappingRowOutput implements RowOutput {
     }
 
     @Override
-    public ByteBuffer getOutputBuffer() throws RowOutputException {
+    final public ByteBuffer getOutputBuffer() throws RowOutputException {
         return wrapped;
     }
 
     @Override
-    public void wroteRow() {
+    final public void wroteRow() throws RowOutputException {
         ++rows;
+        postWroteRow();
+    }
+
+    protected void postWroteRow() throws RowOutputException {
+
     }
 
     @Override
-    public int getRowsCount() {
+    final public int getRowsCount() {
         return rows;
     }
 }

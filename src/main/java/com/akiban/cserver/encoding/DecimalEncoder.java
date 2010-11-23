@@ -311,7 +311,12 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     public BigDecimal toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
         StringBuilder sb = new StringBuilder();
         toString(fieldDef, rowData, sb, null);
-        return new BigDecimal(sb.toString());
+        final String string = sb.toString();
+        try {
+            return new BigDecimal(string);
+        } catch (NumberFormatException e) {
+            throw new EncodingException(string, e);
+        }
     }
 
     @Override
