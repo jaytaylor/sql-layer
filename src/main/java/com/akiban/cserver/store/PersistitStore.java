@@ -1,28 +1,56 @@
 package com.akiban.cserver.store;
 
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_END_AT_EDGE;
+import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_AT_EDGE;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.*;
+import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.FieldDef;
+import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.RowType;
+import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.config.ModuleConfiguration;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
-import com.persistit.*;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.KeyState;
+import com.persistit.Persistit;
+import com.persistit.Transaction;
 import com.persistit.Transaction.CommitListener;
+import com.persistit.TransactionRunnable;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
 
 public class PersistitStore implements CServerConstants, Store {
 
@@ -137,7 +165,8 @@ public class PersistitStore implements CServerConstants, Store {
     public PersistitStore(final ConfigurationService config) throws Exception {
         this.rowDefCache = new RowDefCache();
         this.config = config.getModuleConfiguration("cserver");
-        this.PERSISTIT_PROPERTIES = config.getModuleConfiguration("persistit").getProperties();
+        this.PERSISTIT_PROPERTIES = config.getModuleConfiguration("persistit")
+                .getProperties();
     }
 
     public String getDataPath() {
@@ -783,7 +812,8 @@ public class PersistitStore implements CServerConstants, Store {
          * + rowData.toString(rowDefCache)); }
          */
 
-        constructHKey(hEx, rowDef, ordinals, nKeyColumns, hKeyFieldDefs, hKeyValues);
+        constructHKey(hEx, rowDef, ordinals, nKeyColumns, hKeyFieldDefs,
+                hKeyValues);
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
         hEx.getValue().ensureFit(size);
@@ -1437,6 +1467,16 @@ public class PersistitStore implements CServerConstants, Store {
             final String tableName, final String columnName,
             final Object least, final Object greatest,
             final String leafTableName) throws Exception {
+        final ByteBuffer payload = ByteBuffer.allocate(65536);
+        return fetchRows(schemaName, tableName, columnName, least, greatest,
+                leafTableName, payload);
+    }
+
+    public List<RowData> fetchRows(final String schemaName,
+            final String tableName, final String columnName,
+            final Object least, final Object greatest,
+            final String leafTableName, final ByteBuffer payload)
+            throws Exception {
         final List<RowData> list = new ArrayList<RowData>();
         final String compoundName = schemaName + "." + tableName;
         final RowDef rowDef = rowDefCache.getRowDef(compoundName);
@@ -1496,14 +1536,27 @@ public class PersistitStore implements CServerConstants, Store {
                     leafTableName + " in group");
         }
 
-        final Object[] startValues = new Object[groupRowDef.getFieldCount()];
-        final Object[] endValues = new Object[groupRowDef.getFieldCount()];
-        startValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = least;
-        endValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = greatest;
-        final RowData start = new RowData(new byte[1024]);
-        final RowData end = new RowData(new byte[1024]);
-        start.createRow(groupRowDef, startValues);
-        end.createRow(groupRowDef, endValues);
+        RowData start = null;
+        RowData end = null;
+
+        int flags = deepMode ? SCAN_FLAGS_DEEP : 0;
+        if (least == null) {
+            flags |= SCAN_FLAGS_START_AT_EDGE;
+        } else {
+            final Object[] startValues = new Object[groupRowDef.getFieldCount()];
+            startValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = least;
+            start = new RowData(new byte[1024]);
+            start.createRow(groupRowDef, startValues);
+        }
+        
+        if (greatest == null) {
+            flags |= SCAN_FLAGS_END_AT_EDGE;
+        } else {
+            final Object[] endValues = new Object[groupRowDef.getFieldCount()];
+            endValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = greatest;
+            end = new RowData(new byte[1024]);
+            end.createRow(groupRowDef, endValues);
+        }
 
         final byte[] bitMap = new byte[(7 + groupRowDef.getFieldCount()) / 8];
         for (RowDef def = leafRowDef; def != null;) {
@@ -1520,10 +1573,10 @@ public class PersistitStore implements CServerConstants, Store {
         }
 
         final RowCollector rc = newRowCollector(groupRowDef.getRowDefId(),
-                indexDef.getId(), deepMode ? SCAN_FLAGS_DEEP : 0, start, end,
+                indexDef.getId(), flags, start, end,
                 bitMap);
         while (rc.hasMore()) {
-            final ByteBuffer payload = ByteBuffer.allocate(65536);
+            payload.clear();
             while (rc.collectNextRow(payload))
                 ;
             payload.flip();
@@ -1643,14 +1696,15 @@ public class PersistitStore implements CServerConstants, Store {
         return true;
     }
 
-    void expandRowData(final Exchange exchange, final int expectedRowDefId,
-            final RowData rowData) throws InvalidOperationException { // TODO
-                                                                      // this
-                                                                      // needs
-                                                                      // to be a
-                                                                      // more
-                                                                      // specific
-                                                                      // exception
+    public void expandRowData(final Exchange exchange,
+            final int expectedRowDefId, final RowData rowData)
+            throws InvalidOperationException { // TODO
+                                               // this
+                                               // needs
+                                               // to be a
+                                               // more
+                                               // specific
+                                               // exception
         final int size = exchange.getValue().getEncodedSize();
         final int rowDataSize = size + RowData.ENVELOPE_SIZE;
         final byte[] valueBytes = exchange.getValue().getEncodedBytes();

@@ -1,14 +1,20 @@
 package com.akiban.cserver.store;
 
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.List;
+
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.*;
+import com.akiban.cserver.FieldDef;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.Service;
 import com.persistit.Exchange;
-
-import java.util.Collection;
-import java.util.List;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -207,12 +213,43 @@ public interface Store extends Service {
      * @param leafTableName
      *            optional user table name specifying the leafmost table to
      *            retrieve from, e.g., "item" in the COI schema.
-     * @return
+     * @return List of RowData objects containing the result
      * @throws Exception
      */
     List<RowData> fetchRows(final String schemaName, final String tableName,
             final String columnName, final Object least, final Object greatest,
             final String leafTableName) throws Exception;
+
+    /**
+     * Similar to
+     * {@link #fetchRows(String, String, String, Object, Object, String)}. This
+     * method takes a supplied ByteBuffer rather than allocating one for row
+     * scanning.
+     * 
+     * @param schemaName
+     *            schema name
+     * @param tableName
+     *            table name - should be a user table, such as "Customer"
+     * @param columnName
+     *            column name on which index values are specified
+     * @param least
+     *            the low end of the retrieval range, inclusive for the column
+     *            specified by columnName.
+     * @param greatest
+     *            the high end of the retrieval range, inclusive, for the column
+     *            specified by columnName.
+     * @param leafTableName
+     *            optional user table name specifying the leafmost table to
+     *            retrieve from, e.g., "item" in the COI schema.
+     * @param payload
+     *            ByteBuffer to be used in collecting rows
+     * @return List of RowData objects containing the result
+     * @throws Exception
+     */
+    List<RowData> fetchRows(final String schemaName, final String tableName,
+            final String columnName, final Object least, final Object greatest,
+            final String leafTableName, final ByteBuffer payload)
+            throws Exception;
 
     /**
      * Analyze statistical information about a table. Specifically, construct
