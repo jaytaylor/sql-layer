@@ -243,7 +243,7 @@ public class SchemaDef {
             throw new SchemaDefException("AUTO_INCREMENT already defined: " + currentTable.autoIncrementColumn);
         }
         currentTable.autoIncrementColumn = currentColumn;
-        currentColumn.autoincrement = 1L;
+        currentColumn.autoincrement = 0L;
     }
 
     void autoIncrementInitialValue(final String value) {

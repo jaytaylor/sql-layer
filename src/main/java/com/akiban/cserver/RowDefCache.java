@@ -116,8 +116,7 @@ public class RowDefCache implements CServerConstants {
         for (final Column column : table.getColumns()) {
             final int fieldIndex = column.getPosition();
             fieldDefs[fieldIndex] = fieldDef(column);
-            if (column.getInitialAutoIncrementValue() != null
-                    && column.getInitialAutoIncrementValue() > 0) {
+            if (column.getInitialAutoIncrementValue() != null) {
                 autoIncrementField = fieldIndex;
             }
         }
