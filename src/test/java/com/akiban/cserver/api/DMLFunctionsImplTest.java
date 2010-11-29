@@ -14,10 +14,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static com.akiban.cserver.api.DMLClientAPI.doScan;
+import static com.akiban.cserver.api.DMLFunctionsImpl.doScan;
 import static junit.framework.Assert.*;
 
-public final class DMLClientAPITest {
+public final class DMLFunctionsImplTest {
     private static class StringRowCollector implements RowCollector {
         private final List<String> strings;
         private final int tableId;
@@ -151,7 +151,7 @@ public final class DMLClientAPITest {
         }
     }
 
-    private static class TestDML extends DMLClientAPI {
+    private static class TestDML extends DMLFunctionsImpl {
         private final StringRowCollector collector;
 
         private TestDML(Session session, String... rowsToCollect) {

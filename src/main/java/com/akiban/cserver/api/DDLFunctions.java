@@ -1,30 +1,14 @@
 package com.akiban.cserver.api;
 
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.*;
-import com.akiban.cserver.api.dml.NoSuchTableException;
-import com.akiban.cserver.manage.SchemaManager;
-import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.SchemaId;
-import com.akiban.cserver.store.Store;
-import com.akiban.message.ErrorCode;
 
 import java.util.List;
 
-public final class DDLClientAPI extends ClientAPIBase {
-    
-    public static DDLClientAPI instance() {
-        return new DDLClientAPI(getDefaultStore());
-    }
-
-    public DDLClientAPI(Store store) {
-        super(store);
-    }
-
+public interface DDLFunctions {
     /**
      * Creates a table in a given schema with the given ddl.
      * @param schema may be null; if it is, and the schema must be provided in the DDL text
@@ -45,7 +29,7 @@ public final class DDLClientAPI extends ClientAPIBase {
      * @throws com.akiban.cserver.api.ddl.DuplicateColumnNameException if the table defines a (table_name, column_name) pair that already
      * exists
      */
-    public void createTable(String schema, String ddlText)
+    void createTable(String schema, String ddlText)
     throws ParseException,
             UnsupportedCharsetException,
             ProtectedTableDDLException,
@@ -55,14 +39,7 @@ public final class DDLClientAPI extends ClientAPIBase {
             JoinToWrongColumnsException,
             NoPrimaryKeyException,
             DuplicateColumnNameException,
-            InvalidOperationException
-    {
-        try {
-            schemaManager().createTable(schema, ddlText);
-        } catch (Exception e) {
-            rethrow(e);
-        }
-    }
+            InvalidOperationException;
 
     /**
      * Drops a table if it exists, and possibly its children. Returns the names of all tables that ended up being
@@ -70,29 +47,13 @@ public final class DDLClientAPI extends ClientAPIBase {
      * Set is empty (tableId wasn't known), the Set is unmodifiable; otherwise, it is safe to edit.
      * @param tableId the table to drop
      * @throws NullPointerException if tableId is null
-     * @throws ProtectedTableDDLException if the given table is protected
-     * @throws ForeignConstraintDDLException if dropping this table would create a foreign key violation
+     * @throws com.akiban.cserver.api.ddl.ProtectedTableDDLException if the given table is protected
+     * @throws com.akiban.cserver.api.ddl.ForeignConstraintDDLException if dropping this table would create a foreign key violation
      */
-    public void dropTable(TableId tableId)
+    void dropTable(TableId tableId)
     throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
-            InvalidOperationException
-    {
-        final TableName tableName;
-        try {
-            tableName = tableId.getTableName(idResolver());
-        }
-        catch (NoSuchTableException e) {
-            return; // dropping a nonexistent table is a no-op
-        }
-        
-        try {
-            schemaManager().dropTable(tableName.getSchemaName(), tableName.getTableName());
-        }
-        catch (Exception e) {
-            rethrow(e);
-        }
-    }
+            InvalidOperationException;
 
     /**
      * Drops a table if it exists, and possibly its children. Returns the names of all tables that ended up being
@@ -100,29 +61,19 @@ public final class DDLClientAPI extends ClientAPIBase {
      * Set is empty (tableId wasn't known), the Set is unmodifiable; otherwise, it is safe to edit.
      * @param schemaName the schema to drop
      * @throws NullPointerException if tableId is null
-     * @throws ProtectedTableDDLException if the given schema contains protected tables
-     * @throws ForeignConstraintDDLException if dropping this schema would create a foreign key violation
+     * @throws com.akiban.cserver.api.ddl.ProtectedTableDDLException if the given schema contains protected tables
+     * @throws com.akiban.cserver.api.ddl.ForeignConstraintDDLException if dropping this schema would create a foreign key violation
      */
-    public void dropSchema(String schemaName)
+    void dropSchema(String schemaName)
             throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
-            InvalidOperationException
-    {
-        try {
-            schemaManager().dropSchema(schemaName);
-        }
-        catch (Exception e) {
-            rethrow(e);
-        }
-    }
+            InvalidOperationException;
 
     /**
      * Gets the AIS from the Store.
      * @return returns the store's AIS.
      */
-    public AkibaInformationSchema getAIS() {
-        return store().getAis();
-    }
+    AkibaInformationSchema getAIS();
 
     /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including group tables and tables in the
@@ -132,31 +83,13 @@ public final class DDLClientAPI extends ClientAPIBase {
      * schemas.
      * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to the chunkserver's known tables
      */
-    public List<String> getDDLs() throws InvalidOperationException {
-        try {
-            return schemaManager().getDDLs();
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
-        }
-    }
+    List<String> getDDLs() throws InvalidOperationException;
 
-    public SchemaId getSchemaID() throws InvalidOperationException {
-        try {
-            return schemaManager().getSchemaID();
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
-        }
-    }
+    SchemaId getSchemaID() throws InvalidOperationException;
 
     /**
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
      */
     @SuppressWarnings("unused") // meant to be used from JMX
-    public void forceGenerationUpdate() throws InvalidOperationException {
-        try {
-            schemaManager().forceSchemaGenerationUpdate();
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
-        }
-    }
+    void forceGenerationUpdate() throws InvalidOperationException;
 }
