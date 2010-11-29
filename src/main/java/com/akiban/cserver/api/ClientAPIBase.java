@@ -15,6 +15,7 @@ abstract class ClientAPIBase {
 
     /**
      * Use this only for debugging!
+     * @param confirmation should be "DEBUG"
      */
     ClientAPIBase(String confirmation) {
         if (!"DEBUG".equalsIgnoreCase(confirmation)) {
@@ -60,12 +61,12 @@ abstract class ClientAPIBase {
      * throw an exception, but it is listed as having a return value so that you can tell the compiler you're
      * throwing the result; this helps the compiler compute execution paths.
      * @param e the cause
-     * @throws com.akiban.cserver.api.ddl.DDLException the specific exception
+     * @throws GenericInvalidOperationException if the given exception isn't recognized
      * @return nothing; this method will always throw an InvalidOperationException
      */
-    static InvalidOperationException rethrow(Exception e) throws InvalidOperationException {
+    static GenericInvalidOperationException rethrow(Exception e) throws GenericInvalidOperationException {
         if (! (e instanceof InvalidOperationException)) {
-            throw new InvalidOperationException(e);
+            throw new GenericInvalidOperationException(e);
         }
         final InvalidOperationException ioe = (InvalidOperationException)e;
         switch (ioe.getCode()) {
@@ -73,7 +74,7 @@ abstract class ClientAPIBase {
 //            case PARSE_EXCEPTION:
 //                throw new ParseException(ioe);
             default:
-                throw ioe;
+                throw new GenericInvalidOperationException(ioe);
         }
     }
 }

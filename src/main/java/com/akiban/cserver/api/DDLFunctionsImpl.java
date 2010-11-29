@@ -33,7 +33,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
             JoinToWrongColumnsException,
             NoPrimaryKeyException,
             DuplicateColumnNameException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         try {
             schemaManager().createTable(schema, ddlText);
@@ -46,7 +46,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
     public void dropTable(TableId tableId)
     throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         final TableName tableName;
         try {
@@ -68,7 +68,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
     public void dropSchema(String schemaName)
             throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         try {
             schemaManager().dropSchema(schemaName);

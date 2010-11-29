@@ -1,11 +1,11 @@
 package com.akiban.cserver.api;
 
+import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
 import com.akiban.cserver.api.dml.scan.*;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.RowCollector;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;

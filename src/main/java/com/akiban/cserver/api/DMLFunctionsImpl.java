@@ -17,14 +17,15 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+@SuppressWarnings("deprecation")
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private final Session session;
 
     private static final String MODULE_NAME = DMLFunctionsImpl.class.getCanonicalName();
     private static final AtomicLong cursorsCount = new AtomicLong();
 
-    DMLFunctionsImpl(String confirmation, Session session) {
-        super(confirmation);
+    protected DMLFunctionsImpl(String debugConfirmation, Session session) {
+        super(debugConfirmation);
         this.session = session;
     }
 
@@ -33,9 +34,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         this.session = session;
     }
 
-
     @Override
-    public long getAutoIncrementValue(TableId tableId) throws NoSuchTableException, InvalidOperationException {
+    public long getAutoIncrementValue(TableId tableId) throws NoSuchTableException, GenericInvalidOperationException {
         final int tableIdInt = tableId.getTableId(idResolver());
         try {
             return store().getAutoIncrementValue(tableIdInt);
@@ -48,7 +48,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     public long countRowsExactly(ScanRange range)
     throws  NoSuchTableException,
             UnsupportedReadException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         LegacyScanRange legacy = new LegacyScanRangeImpl(store(), idResolver(), range);
         return countRowsExactly(legacy);
@@ -59,7 +59,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     public long countRowsExactly(LegacyScanRange range)
             throws  NoSuchTableException,
             UnsupportedReadException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         try {
             return store().getRowCount(true, range.getStart(), range.getEnd(), range.getColumnBitMap());
@@ -72,7 +72,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     public long countRowsApproximately(ScanRange range)
             throws  NoSuchTableException,
             UnsupportedReadException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         LegacyScanRange legacy = new LegacyScanRangeImpl(store(), idResolver(), range);
         return countRowsApproximately(legacy);
@@ -81,9 +81,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     @Override
     @Deprecated
     public long countRowsApproximately(LegacyScanRange range)
-            throws  NoSuchTableException,
+    throws  NoSuchTableException,
             UnsupportedReadException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         try {
             return store().getRowCount(false, range.getStart(), range.getEnd(), range.getColumnBitMap());
@@ -94,8 +94,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public TableStatistics getTableStatistics(TableId tableId, boolean updateFirst)
-            throws  NoSuchTableException,
-            InvalidOperationException
+    throws  NoSuchTableException,
+            GenericInvalidOperationException
     {
         final int tableIdInt = tableId.getTableId(idResolver());
         try {
@@ -110,10 +110,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public CursorId openCursor(ScanRequest request)
-            throws  NoSuchTableException,
+    throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         return openCursorForCollector( getRowCollector(request) );
     }
@@ -121,15 +121,15 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     @Override
     @Deprecated
     public CursorId openCursor(LegacyScanRequest request)
-            throws  NoSuchTableException,
+    throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         return openCursorForCollector( getRowCollector(request) );
     }
 
-    private CursorId openCursorForCollector(RowCollector rc) throws InvalidOperationException {
+    private CursorId openCursorForCollector(RowCollector rc) throws GenericInvalidOperationException {
         final CursorId cursor = newUniqueCursor(rc.getTableId());
         Object old = session.put(MODULE_NAME, cursor, new Cursor(rc));
         assert old == null : old;
@@ -140,13 +140,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         return new CursorId(cursorsCount.incrementAndGet(), tableId);
     }
 
-    protected RowCollector getRowCollector(ScanRequest request) throws NoSuchTableException, InvalidOperationException {
+    protected RowCollector getRowCollector(ScanRequest request) throws NoSuchTableException, GenericInvalidOperationException {
         ArgumentValidation.notNull("request", request);
         LegacyScanRequest legacy = new LegacyScanRequestImpl(store(), idResolver(), request);
         return getRowCollector(legacy);
     }
 
-    private RowCollector getRowCollector(LegacyScanRequest legacy) throws InvalidOperationException {
+    private RowCollector getRowCollector(LegacyScanRequest legacy) throws GenericInvalidOperationException {
         try {
             return store().newRowCollector(legacy.getTableId(), legacy.getIndexId(), legacy.getScanFlags(),
                     legacy.getStart(), legacy.getEnd(), legacy.getColumnBitMap());
@@ -157,10 +157,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public boolean scanSome(CursorId cursorId, LegacyRowOutput output, int limit)
-            throws  CursorIsFinishedException,
+    throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
-            InvalidOperationException
+            GenericInvalidOperationException
 
     {
         ArgumentValidation.notNull("cursor", cursorId);
@@ -182,13 +182,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
      * @return whether more rows remain to be scanned; see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
      * @throws CursorIsFinishedException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
      * @throws RowOutputException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
-     * @throws InvalidOperationException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
+     * @throws GenericInvalidOperationException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
      * @see #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)
      */
     protected static boolean doScan(Cursor cursor, CursorId cursorId, LegacyRowOutput output, int limit)
-            throws  CursorIsFinishedException,
+    throws  CursorIsFinishedException,
             RowOutputException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         assert cursor != null;
         assert cursorId != null;
@@ -214,8 +214,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             cursor.setScanning();
             boolean limitReached = (limit == 0);
             final ByteBuffer buffer = output.getOutputBuffer();
-            final int bufferInitialPos = buffer.position();
-            int bufferLastPos = bufferInitialPos;
+            int bufferLastPos = buffer.position();
 
             boolean mayHaveMore = true;
             while ( mayHaveMore && (!limitReached)) {
@@ -267,7 +266,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             UnsupportedModificationException,
             TableDefinitionMismatchException,
             DuplicateKeyException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         final RowData rowData = niceRowToRowData(tableId, row);
         try {
@@ -296,7 +295,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
             NoSuchRowException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         final RowData rowData = niceRowToRowData(tableId, row);
         deleteRow(rowData);
@@ -304,7 +303,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     @Deprecated
-    public void deleteRow(RowData rowData) throws InvalidOperationException
+    public void deleteRow(RowData rowData) throws GenericInvalidOperationException
     {
         try {
             store().deleteRow(rowData);
@@ -315,8 +314,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private RowData niceRowToRowData(TableId tableId, NiceRow row) throws NoSuchTableException {
         final RowDef rowDef = store().getRowDefCache().getRowDef(tableId.getTableId(idResolver()));
-        final RowData rowData = row.toRowData(rowDef);
-        return rowData;
+        return row.toRowData(rowDef);
     }
 
     @Override
@@ -327,13 +325,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public void updateRow(TableId tableId, NiceRow oldRow, NiceRow newRow)
-            throws  NoSuchTableException,
+    throws  NoSuchTableException,
             DuplicateKeyException,
             TableDefinitionMismatchException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
             NoSuchRowException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         final RowData oldData = niceRowToRowData(tableId, oldRow);
         final RowData newData = niceRowToRowData(tableId, newRow);
@@ -343,7 +341,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     @Deprecated
-    public void updateRow(RowData oldData, RowData newData) throws InvalidOperationException {
+    public void updateRow(RowData oldData, RowData newData)
+    throws  GenericInvalidOperationException,
+            TableDefinitionMismatchException
+    {
         matchRowDatas(oldData, newData);
         try {
             store().updateRow(oldData, newData);
@@ -354,10 +355,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public void truncateTable(TableId tableId)
-            throws NoSuchTableException,
+    throws NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
-            InvalidOperationException
+            GenericInvalidOperationException
     {
         try {
             store().truncateTable(tableId.getTableId(idResolver()) );
@@ -380,7 +381,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                 throw new TableDefinitionMismatchException(String.format(
                         "ID<%d> from RowData didn't match given ID <%d>", rowsTableId, tableId));
             }
-            this.tableId = tableId;
+            this.tableId = tableId == null ? -1 : tableId;
             this.start = start;
             this.end = end;
             this.columnBitMap = columnBitMap;
