@@ -19,8 +19,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.UserTable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -651,22 +652,25 @@ public class PersistitStore implements CServerConstants, Store {
         }
         Transaction transaction = db.getTransaction();
         try {
-            final AtomicReference<Integer> tableId = new AtomicReference<Integer>(
-                    null);
+            final CreateTableResult result = new CreateTableResult();
             transaction.run(new TransactionRunnable() {
                 @Override
                 public void runTransaction() {
                     try {
-                        schemaManager.createTable(schemaName, ddl, tableId,
-                                rowDefCache);
+                        schemaManager.createTable(schemaName, ddl, rowDefCache, result);
                     } catch (Exception e) {
                         throw new RollbackException(e);
                     }
                 }
             });
-            Integer tableIdInteger = tableId.get();
-            if (tableIdInteger != null) {
-                tableManager.getTableStatus(tableIdInteger).reset();
+            if (!result.wasSuccessful()) {
+                throw new InvalidOperationException(ErrorCode.UNKNOWN,
+                        "Result failed: " + result + " for <" + schemaName + "> " + ddl);
+            }
+            TableStatus ts = tableManager.getTableStatus(result.getTableId());
+            ts.reset();
+            if (result.autoIncrementDefined()) {
+                ts.setAutoIncrementValue( result.defaultAutoIncrement() );
             }
         } catch (RollbackException e) {
             Throwable cause = e.getCause();
@@ -1297,6 +1301,18 @@ public class PersistitStore implements CServerConstants, Store {
             final Class<?> clazz = exchange.getKey().indexTo(-1).decodeType();
             if (clazz == Long.class) {
                 value = exchange.getKey().decodeLong();
+            }
+        }
+        else {
+            UserTable uTable = schemaManager.getAis().getUserTable(rowDef.getSchemaName(), rowDef.getTableName());
+            if (uTable != null) {
+                Column autoIncColumn = uTable.getAutoIncrementColumn();
+                if (autoIncColumn != null) {
+                    Long autoIncValue = autoIncColumn.getInitialAutoIncrementValue();
+                    if (autoIncValue != null) {
+                        value = autoIncValue;
+                    }
+                }
             }
         }
         releaseExchange(exchange);

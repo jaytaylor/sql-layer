@@ -1,11 +1,13 @@
 package com.akiban.cserver.api;
 
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
 import com.akiban.cserver.api.dml.scan.*;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.store.Store;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -155,13 +157,21 @@ public final class DMLFunctionsImplTest {
         private final StringRowCollector collector;
 
         private TestDML(Session session, String... rowsToCollect) {
-            super("DEBUG", session);
+            super(getStore(), session);
             collector = new StringRowCollector(1, rowsToCollect);
         }
 
         @Override
         protected RowCollector getRowCollector(ScanRequest request) {
             return collector;
+        }
+
+        private static Store getStore() {
+            try {
+                return UnitTestServiceManagerFactory.getStoreForUnitTests();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

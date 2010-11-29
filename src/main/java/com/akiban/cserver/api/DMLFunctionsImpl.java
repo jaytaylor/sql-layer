@@ -24,11 +24,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static final String MODULE_NAME = DMLFunctionsImpl.class.getCanonicalName();
     private static final AtomicLong cursorsCount = new AtomicLong();
 
-    protected DMLFunctionsImpl(String debugConfirmation, Session session) {
-        super(debugConfirmation);
-        this.session = session;
-    }
-
     public DMLFunctionsImpl(Store store, Session session) {
         super(store);
         this.session = session;

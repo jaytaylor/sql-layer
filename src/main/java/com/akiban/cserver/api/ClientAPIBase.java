@@ -13,19 +13,6 @@ abstract class ClientAPIBase {
     private final Store store;
     private final IdResolverImpl resolver;
 
-    /**
-     * Use this only for debugging!
-     * @param confirmation should be "DEBUG"
-     */
-    ClientAPIBase(String confirmation) {
-        if (!"DEBUG".equalsIgnoreCase(confirmation)) {
-            throw new RuntimeException();
-        }
-        store = null;
-        resolver = null;
-    }
-
-
     ClientAPIBase(Store store) {
         ArgumentValidation.notNull("schema manager", store);
         this.store = store;

@@ -25,7 +25,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -230,17 +229,15 @@ public class PersistitStoreSchemaManager implements CServerConstants,
      *            the table's schema name
      * @param ddl
      *            the table's raw DDL
-     * @param outTableId
-     *            will be set to the table's ID, but only if this method
-     *            succeeds
      * @param rowDefCache
      *            the existing RowDefCache. Used to validate parent columns.
+     * @param result
+     *            the result object to be populated
      * @return CServerConstants.OK iff everything worked
      * @throws InvalidOperationException
      *             if the table isn't valid (or can't be parsed)
      */
-    void createTable(final String useSchemaName, final String ddl,
-            AtomicReference<Integer> outTableId, RowDefCache rowDefCache)
+    void createTable(final String useSchemaName, final String ddl, RowDefCache rowDefCache, CreateTableResult result)
             throws InvalidOperationException, PersistitException {
         Exchange ex = null;
         // Hacky way to avoid UTF-8
@@ -331,10 +328,12 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
                 final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                outTableId.set(tableId);
                 ex.clear().append(BY_ID).append(tableId).fetch();
                 final String previousValue = ex.getValue().getString();
                 if (canonical.equals(previousValue)) {
+                    if (result != null) {
+                        result.fillInInfo(tableDef, tableId);
+                    }
                     return;
                 }
             }
@@ -345,13 +344,15 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             } else {
                 tableId = 1;
             }
-            outTableId.set(tableId);
             ex.getValue().put(canonical);
             ex.clear().append(BY_ID).append(tableId).store();
             ex.getValue().putNull();
             ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(tableId).store();
 
+            if (result != null) {
+                result.fillInInfo(tableDef, tableId);
+            }
             return;
 
             // } catch (StoreException e) {

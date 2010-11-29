@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class SchemaDef {
 
-    public class SchemaDefException extends RuntimeException {
+    public static class SchemaDefException extends RuntimeException {
         public SchemaDefException(String message) {
             super(message);
         }
@@ -239,15 +239,15 @@ public class SchemaDef {
     }
 
     void autoIncrement() {
-        currentColumn.autoincrement = "1";
+        if (currentTable.autoIncrementColumn != null) {
+            throw new SchemaDefException("AUTO_INCREMENT already defined: " + currentTable.autoIncrementColumn);
+        }
+        currentTable.autoIncrementColumn = currentColumn;
+        currentColumn.autoincrement = 1L;
     }
 
     void autoIncrementInitialValue(final String value) {
-        for (final ColumnDef column : currentTable.columns) {
-            if (column.autoincrement != null) {
-                column.autoincrement = value;
-            }
-        }
+        currentTable.autoIncrementColumn.setAutoIncrement(value);
     }
 
     void otherConstraint(final String constraint) {
@@ -281,7 +281,7 @@ public class SchemaDef {
         String typeParam1;
         String typeParam2;
         boolean nullable = true;
-        String autoincrement = null;
+        Long autoincrement = null;
         List<String> constraints = new ArrayList<String>();
         int uposition;
         int gposition;
@@ -298,12 +298,28 @@ public class SchemaDef {
             this.typeParam1 = param1;
             this.typeParam2 = param2;
             this.nullable = nullable;
-            this.autoincrement = autoIncrement;
             this.constraints.addAll( Arrays.asList(constraints));
+            setAutoIncrement(autoIncrement);
+        }
+
+        private void setAutoIncrement(String autoIncrement) {
+            if (autoIncrement == null) {
+                this.autoincrement = null;
+                return;
+            }
+            try {
+                this.autoincrement = Long.parseLong(autoIncrement);
+            } catch (NumberFormatException e) {
+                throw new SchemaDefException("Not a valid AUTO_INCREMENT value: " + autoIncrement);
+            }
         }
 
         public String getName() {
             return name;
+        }
+
+        public Long defaultAutoIncrement() {
+            return autoincrement;
         }
 
         @Override
@@ -383,6 +399,7 @@ public class SchemaDef {
         String engine = "akibandb";
         int id;
         private final List<IndexDefHandle> indexHandles = new ArrayList<IndexDefHandle>();
+        private ColumnDef autoIncrementColumn = null;
 
         UserTableDef(final CName name, int id) {
             this.name = name;
@@ -404,6 +421,10 @@ public class SchemaDef {
                 ret.add(col.getName());
             }
             return ret;
+        }
+
+        public ColumnDef getAutoIncrementColumn() {
+            return autoIncrementColumn;
         }
 
         public List<String> getPrimaryKey() {

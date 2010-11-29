@@ -486,7 +486,7 @@ public class DDLSource extends Source {
                             tableName.getName(), def.name, def.uposition,
                             def.typeName, longValue(def.typeParam1),
                             longValue(def.typeParam2), def.nullable,
-                            longValue(def.autoincrement), groupSchemaName(),
+                            def.defaultAutoIncrement(), groupSchemaName(),
                             groupTableName, groupColumnName, null, null,
                             // This isn't really correct
                             AkibaInformationSchema.DEFAULT_CHARSET,
@@ -495,7 +495,7 @@ public class DDLSource extends Source {
                             groupTableName, groupColumnName, def.gposition,
                             def.typeName, longValue(def.typeParam1),
                             longValue(def.typeParam2), def.nullable,
-                            longValue(def.autoincrement), null, null, null,
+                            def.defaultAutoIncrement(), null, null, null,
                             null, null,
                             // This isn't really correct
                             AkibaInformationSchema.DEFAULT_CHARSET,
