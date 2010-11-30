@@ -36,8 +36,6 @@ public final class ApiTest {
         ApiPair apiPair = new ApiPair();
         final TableId tableId = new TableId("sc1", "t1");
         apiPair.ddl.createTable("sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
-        assertEquals("autoinc value", 10L, apiPair.dml.getAutoIncrementValue(tableId));
-
         TableStatistics tableStats = apiPair.dml.getTableStatistics(tableId, false);
         assertEquals("autoinc value", 10L, tableStats.getAutoIncrementValue());
     }

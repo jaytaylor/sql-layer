@@ -11,8 +11,6 @@ import java.util.Set;
 
 @SuppressWarnings("unused")
 public interface DMLFunctions {
-    long getAutoIncrementValue(TableId tableId) throws NoSuchTableException, GenericInvalidOperationException;
-
     /**
      * Returns the exact number of rows in this table. This may take a while, as it could require a full
      * table scan. Group tables have an undefined row count, so this method will fail if the requested

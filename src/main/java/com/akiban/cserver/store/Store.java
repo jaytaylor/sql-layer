@@ -47,8 +47,6 @@ public interface Store extends Service {
     void updateRow(final RowData oldRowData, final RowData newRowData)
             throws Exception;
 
-    long getAutoIncrementValue(final int rowDefId) throws Exception;
-
     /**
      * @param scanRowsRequest
      * @return The RowCollector that will generated the requested rows

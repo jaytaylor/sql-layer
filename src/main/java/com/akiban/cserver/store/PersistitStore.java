@@ -1269,55 +1269,55 @@ public class PersistitStore implements CServerConstants, Store {
         dropTables(dropRowDefIds);
     }
 
-    @Override
-    public long getAutoIncrementValue(final int rowDefId)
-            throws InvalidOperationException, PersistitException {
-        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        final Exchange exchange;
-        final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
-                .getRowDef(rowDef.getGroupRowDefId());
-
-        final String treeName = groupRowDef.getTreeName();
-
-        switch (rowDef.getRowType()) {
-        case GROUP:
-            return -1L;
-        case ROOT:
-            exchange = db.getExchange(VOLUME_NAME, treeName, true);
-            exchange.append(rowDef.getOrdinal());
-            break;
-        case CHILD:
-        case GRANDCHILD:
-            exchange = db
-                    .getExchange(VOLUME_NAME, rowDef.getPkTreeName(), true);
-            break;
-        default:
-            throw new AssertionError("MissingCase");
-        }
-        exchange.getKey().append(Key.AFTER);
-        boolean found = exchange.previous();
-        long value = -1;
-        if (found) {
-            final Class<?> clazz = exchange.getKey().indexTo(-1).decodeType();
-            if (clazz == Long.class) {
-                value = exchange.getKey().decodeLong();
-            }
-        }
-        else {
-            UserTable uTable = schemaManager.getAis().getUserTable(rowDef.getSchemaName(), rowDef.getTableName());
-            if (uTable != null) {
-                Column autoIncColumn = uTable.getAutoIncrementColumn();
-                if (autoIncColumn != null) {
-                    Long autoIncValue = autoIncColumn.getInitialAutoIncrementValue();
-                    if (autoIncValue != null) {
-                        value = autoIncValue;
-                    }
-                }
-            }
-        }
-        releaseExchange(exchange);
-        return value;
-    }
+//    @Override
+//    public long getAutoIncrementValue(final int rowDefId)
+//            throws InvalidOperationException, PersistitException {
+//        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
+//        final Exchange exchange;
+//        final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
+//                .getRowDef(rowDef.getGroupRowDefId());
+//
+//        final String treeName = groupRowDef.getTreeName();
+//
+//        switch (rowDef.getRowType()) {
+//        case GROUP:
+//            return -1L;
+//        case ROOT:
+//            exchange = db.getExchange(VOLUME_NAME, treeName, true);
+//            exchange.append(rowDef.getOrdinal());
+//            break;
+//        case CHILD:
+//        case GRANDCHILD:
+//            exchange = db
+//                    .getExchange(VOLUME_NAME, rowDef.getPkTreeName(), true);
+//            break;
+//        default:
+//            throw new AssertionError("MissingCase");
+//        }
+//        exchange.getKey().append(Key.AFTER);
+//        boolean found = exchange.previous();
+//        long value = -1;
+//        if (found) {
+//            final Class<?> clazz = exchange.getKey().indexTo(-1).decodeType();
+//            if (clazz == Long.class) {
+//                value = exchange.getKey().decodeLong();
+//            }
+//        }
+//        else {
+//            UserTable uTable = schemaManager.getAis().getUserTable(rowDef.getSchemaName(), rowDef.getTableName());
+//            if (uTable != null) {
+//                Column autoIncColumn = uTable.getAutoIncrementColumn();
+//                if (autoIncColumn != null) {
+//                    Long autoIncValue = autoIncColumn.getInitialAutoIncrementValue();
+//                    if (autoIncValue != null) {
+//                        value = autoIncValue;
+//                    }
+//                }
+//            }
+//        }
+//        releaseExchange(exchange);
+//        return value;
+//    }
 
     @Override
     public RowCollector getSavedRowCollector(final int tableId)

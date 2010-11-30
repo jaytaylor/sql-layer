@@ -30,16 +30,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public long getAutoIncrementValue(TableId tableId) throws NoSuchTableException, GenericInvalidOperationException {
-        final int tableIdInt = tableId.getTableId(idResolver());
-        try {
-            return store().getAutoIncrementValue(tableIdInt);
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
-
-    @Override
     public long countRowsExactly(ScanRange range)
     throws  NoSuchTableException,
             UnsupportedReadException,
