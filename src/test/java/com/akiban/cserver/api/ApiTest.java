@@ -25,7 +25,7 @@ public final class ApiTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            dml = new DMLFunctionsImpl(store, session);
+            dml = new DMLFunctionsImpl(store);
             ddl = new DDLFunctionsImpl(store);
 
         }

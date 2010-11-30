@@ -6,6 +6,7 @@ import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.*;
+import com.akiban.cserver.service.session.Session;
 
 import java.util.Set;
 
@@ -110,6 +111,7 @@ public interface DMLFunctions {
      * to it will be returned for use in subsequent cursor-related methods. When you're finished with the cursor,
      * make sure to close it.
      * @param request the request specifications
+     * @param session the context in which this cursor is opened
      * @return a handle to the newly created cursor.
      * @throws NullPointerException if the request is null
      * @throws NoSuchTableException if the request is for an unknown table
@@ -118,7 +120,7 @@ public interface DMLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      *
      */
-    CursorId openCursor(ScanRequest request)
+    CursorId openCursor(ScanRequest request, Session session)
     throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
@@ -129,16 +131,17 @@ public interface DMLFunctions {
      * to it will be returned for use in subsequent cursor-related methods. When you're finished with the cursor,
      * make sure to close it.
      * @param request the request specifications
+     * @param session the context in which this cursor is opened
      * @return a handle to the newly created cursor.
      * @throws NullPointerException if the request is null
      * @throws NoSuchTableException if the request is for an unknown table
      * @throws NoSuchColumnException if the request includes a column that isn't defined for the requested table
      * @throws NoSuchIndexException if the request is on an index that isn't defined for the requested table
      * @throws GenericInvalidOperationException if some other exception occurred
-     * @deprecated use {@link #openCursor(ScanRequest)}
+     * @deprecated use {@link #openCursor(ScanRequest,Session)}
      */
     @Deprecated
-    CursorId openCursor(LegacyScanRequest request)
+    CursorId openCursor(LegacyScanRequest request, Session session)
     throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
@@ -175,6 +178,7 @@ public interface DMLFunctions {
      *
      * <p>If this method throws any exception, the cursor will be marked as finished.</p>
      * @param cursorId the cursor to scan
+     * @param session the context in which the cursor was opened
      * @param output the RowOutput to collect the given rows
      * @param limit if non-negative, the maximum number of rows to scan
      * @return whether more rows remain to be scanned
@@ -185,7 +189,7 @@ public interface DMLFunctions {
      * @throws RowOutputException if the given RowOutput threw an exception while writing a row
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    boolean scanSome(CursorId cursorId, LegacyRowOutput output, int limit)
+    boolean scanSome(CursorId cursorId, Session session, LegacyRowOutput output, int limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -194,13 +198,14 @@ public interface DMLFunctions {
     /**
      * Closes the given cursor. This releases the relevant resources from the session.
      * @param cursorId the cursor to close
+     * @param session the context in which the cursor was created
      * @throws NullPointerException if the cursor is null
      * @throws CursorIsUnknownException if the given cursor is unknown or has already been closed
      */
-    void closeCursor(CursorId cursorId) throws CursorIsUnknownException;
+    void closeCursor(CursorId cursorId, Session session) throws CursorIsUnknownException;
 
     /**
-     * <p>Returns all open cursors. It is not necessarily safe to call {@linkplain #scanSome(CursorId, LegacyRowOutput , int)}
+     * <p>Returns all open cursors. It is not necessarily safe to call {@linkplain #scanSome(CursorId, Session, LegacyRowOutput , int)}
      * on all of these cursors, since some may have reached their end. But it is safe to close each of these cursors
      * (unless, of course, another thread closes them first).</p>
      *

@@ -156,8 +156,8 @@ public final class DMLFunctionsImplTest {
     private static class TestDML extends DMLFunctionsImpl {
         private final StringRowCollector collector;
 
-        private TestDML(Session session, String... rowsToCollect) {
-            super(getStore(), session);
+        private TestDML(String... rowsToCollect) {
+            super(getStore());
             collector = new StringRowCollector(1, rowsToCollect);
         }
 
@@ -244,25 +244,25 @@ public final class DMLFunctionsImplTest {
     @Test
     public void testSessionLifecycle() throws InvalidOperationException {
         Session session = new SessionImpl();
-        TestDML testDML = new TestDML(session, "Hi there poohbear".split(" "));
+        TestDML testDML = new TestDML("Hi there poohbear".split(" "));
 
         final StringRowOutput output = new StringRowOutput();
-        final CursorId cursorId = testDML.openCursor((ScanRequest)null);
+        final CursorId cursorId = testDML.openCursor((ScanRequest)null, session);
 
-        assertTrue("expected more", testDML.scanSome(cursorId, output, 0));
+        assertTrue("expected more", testDML.scanSome(cursorId, session, output, 0));
         assertEquals("rows collected", 0, output.getRowsCount());
 
-        assertTrue("expected more", testDML.scanSome(cursorId, output, 1));
+        assertTrue("expected more", testDML.scanSome(cursorId, session, output, 1));
         assertEquals("rows collected", 1, output.getRowsCount());
 
-        assertFalse("expected more", testDML.scanSome(cursorId, output, -1));
+        assertFalse("expected more", testDML.scanSome(cursorId, session, output, -1));
         assertEquals("rows collected", 3, output.getRowsCount());
 
-        testDML.closeCursor(cursorId);
+        testDML.closeCursor(cursorId, session);
 
         boolean sawException = false;
         try {
-            testDML.closeCursor(cursorId);
+            testDML.closeCursor(cursorId, session);
         } catch (CursorIsUnknownException e) {
             sawException = true;
         }

@@ -19,14 +19,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("deprecation")
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
-    private final Session session;
 
     private static final String MODULE_NAME = DMLFunctionsImpl.class.getCanonicalName();
     private static final AtomicLong cursorsCount = new AtomicLong();
 
-    public DMLFunctionsImpl(Store store, Session session) {
+    public DMLFunctionsImpl(Store store) {
         super(store);
-        this.session = session;
     }
 
     @Override
@@ -94,27 +92,27 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public CursorId openCursor(ScanRequest request)
+    public CursorId openCursor(ScanRequest request, Session session)
     throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
             GenericInvalidOperationException
     {
-        return openCursorForCollector( getRowCollector(request) );
+        return openCursorForCollector( getRowCollector(request), session );
     }
 
     @Override
     @Deprecated
-    public CursorId openCursor(LegacyScanRequest request)
+    public CursorId openCursor(LegacyScanRequest request, Session session)
     throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
             GenericInvalidOperationException
     {
-        return openCursorForCollector( getRowCollector(request) );
+        return openCursorForCollector( getRowCollector(request), session );
     }
 
-    private CursorId openCursorForCollector(RowCollector rc) throws GenericInvalidOperationException {
+    private CursorId openCursorForCollector(RowCollector rc, Session session) throws GenericInvalidOperationException {
         final CursorId cursor = newUniqueCursor(rc.getTableId());
         Object old = session.put(MODULE_NAME, cursor, new Cursor(rc));
         assert old == null : old;
@@ -141,7 +139,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(CursorId cursorId, LegacyRowOutput output, int limit)
+    public boolean scanSome(CursorId cursorId, Session session, LegacyRowOutput output, int limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -162,13 +160,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
      * Do the actual scan. Refactored out of scanSome for ease of unit testing.
      * @param cursor the cursor itself; used to check status and get a row collector
      * @param cursorId the cursor id; used only to report errors
-     * @param output the output; see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
-     * @param limit the limit, or negative value if none;  ee {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
-     * @return whether more rows remain to be scanned; see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
-     * @throws CursorIsFinishedException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
-     * @throws RowOutputException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
-     * @throws GenericInvalidOperationException see {@link #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)}
-     * @see #scanSome(CursorId, com.akiban.cserver.api.dml.scan.LegacyRowOutput , int)
+     * @param output the output; see {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     * @param limit the limit, or negative value if none;  ee {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     * @return whether more rows remain to be scanned; see {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     * @throws CursorIsFinishedException see {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     * @throws RowOutputException see {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     * @throws GenericInvalidOperationException see {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     * @see #scanSome(CursorId, Session, LegacyRowOutput , int)
      */
     protected static boolean doScan(Cursor cursor, CursorId cursorId, LegacyRowOutput output, int limit)
     throws  CursorIsFinishedException,
@@ -231,7 +229,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public void closeCursor(CursorId cursorId) throws CursorIsUnknownException {
+    public void closeCursor(CursorId cursorId, Session session) throws CursorIsUnknownException {
         ArgumentValidation.notNull("cursor ID", cursorId);
         final Cursor cursor = session.remove(MODULE_NAME, cursorId);
         if (cursor == null) {
