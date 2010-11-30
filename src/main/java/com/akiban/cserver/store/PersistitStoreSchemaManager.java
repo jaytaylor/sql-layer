@@ -297,7 +297,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             if (!parentPKColumns.equals(parentJoin.getParentColumns())) {
                 throw new InvalidOperationException(
                         ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                        "[%s] %s%s references %s%s: %s", useSchemaName,
+                        "children must join to parent's PK columns. [%s] %s%s references %s%s: %s", useSchemaName,
                         tableDef.getCName(), parentJoin.getParentColumns(),
                         parentName, parentPKColumns, ddl);
             }

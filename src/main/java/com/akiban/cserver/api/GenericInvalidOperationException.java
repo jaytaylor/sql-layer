@@ -10,11 +10,22 @@ import com.akiban.cserver.InvalidOperationException;
  * redundant. 
  */
 public final class GenericInvalidOperationException extends InvalidOperationException {
+    private final InvalidOperationException cause;
+
     GenericInvalidOperationException(InvalidOperationException e) {
         super(e.getCode(), e.getMessage(), e);
+        this.cause = e;
     }
 
     GenericInvalidOperationException(Throwable t) {
         super(t);
+        this.cause = (t instanceof InvalidOperationException)
+                ? (InvalidOperationException) t
+                : this;
+    }
+
+    @Override
+    public InvalidOperationException getCause() {
+        return cause;
     }
 }
