@@ -1,6 +1,7 @@
 package com.akiban.cserver.encoding;
 
 import com.akiban.ais.model.Type;
+import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
@@ -236,11 +237,26 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         return declIntSize + declFracSize;
     }
 
-
-
     @Override
     public void toString(FieldDef fieldDef, RowData rowData,
                          StringBuilder sb, final Quote quote) {
+        decodeAndParse(fieldDef, rowData, sb);
+    }
+
+    /**
+     * The real toString. Decodes the field into the given StringBuilder, and then returns the parsed BigDecimal.
+     * (Always parsing the BigDecimal lets us fail fast if there was a decoding error.)
+     * @param fieldDef the field to decode
+     * @param rowData the rowdata taht contains the field
+     * @param sb the stringbuilder to use
+     * @return the parsed BigDecimal
+     * @throws NullPointerException if any arguments are null
+     * @throws EncodingException if the string can't be parsed to a BigDecimal; the exception's cause will be a
+     * NumberFormatException
+     */
+    private BigDecimal decodeAndParse(FieldDef fieldDef, RowData rowData,
+                         StringBuilder sb) {
+        final int sbInitialLen = sb.length();
         final int precision = fieldDef.getTypeParameter1().intValue();
         final int scale = fieldDef.getTypeParameter2().intValue();
 
@@ -250,8 +266,9 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         final int fracFull = scale / DECIMAL_DIGIT_PER;
         final int fracPartial = scale % DECIMAL_DIGIT_PER;
 
-        final int location = (int) fieldDef.getRowDef().fieldLocation(
+        final long locationAndOffset = fieldDef.getRowDef().fieldLocation(
                 rowData, fieldDef.getFieldIndex());
+        final int location = (int) locationAndOffset;
 
         int curOff = location;
         byte[] from = rowData.getBytes();
@@ -305,18 +322,27 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
 
         // Restore high bit
         from[location] ^= 0x80;
+
+        final String createdStr = sb.substring(sbInitialLen);
+        try {
+            return new BigDecimal(createdStr);
+        } catch (NumberFormatException e) {
+            StringBuilder errSb = new StringBuilder();
+            errSb.append("in field[");
+            errSb.append(fieldDef.getRowDef().getRowDefId()).append('.').append(fieldDef.getFieldIndex());
+            errSb.append(" decimal(");
+            errSb.append(fieldDef.getTypeParameter1()).append(',').append(fieldDef.getTypeParameter2());
+            errSb.append(")] 0x");
+            final int bytesLen = (int) (locationAndOffset >>> 32);
+            CServerUtil.hex(errSb, rowData.getBytes(), location, bytesLen);
+            errSb.append(": ").append(createdStr);
+            throw new EncodingException(errSb.toString(), e);
+        }
     }
 
     @Override
     public BigDecimal toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        StringBuilder sb = new StringBuilder();
-        toString(fieldDef, rowData, sb, null);
-        final String string = sb.toString();
-        try {
-            return new BigDecimal(string);
-        } catch (NumberFormatException e) {
-            throw new EncodingException(string, e);
-        }
+        return decodeAndParse(fieldDef, rowData, new StringBuilder(fieldDef.getMaxStorageSize()));
     }
 
     @Override
