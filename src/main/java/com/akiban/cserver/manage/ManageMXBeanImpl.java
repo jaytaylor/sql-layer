@@ -105,7 +105,7 @@ public class ManageMXBeanImpl implements ManageMXBean
     public String loadCustomQuery(final String className) {
         try {
             customClass = null;
-            final URL url = new URL("file:///home/peter/work/trunk/custom/target/classes/");
+            final URL url = new URL("file:///tmp/custom-classes/");
             final ClassLoader cl = new URLClassLoader(new URL[]{url});
             final Class<?> c = cl.loadClass(className);
             if (CustomQuery.class.isAssignableFrom(c)) {
