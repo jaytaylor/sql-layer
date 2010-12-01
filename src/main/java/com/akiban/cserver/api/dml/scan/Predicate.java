@@ -9,7 +9,7 @@ public interface Predicate {
      * (by object identity) the result of {@linkplain #getEndRow()}.
      * @return the predicate's starting range
      */
-    NiceRow getStartRow();
+    NewRow getStartRow();
 
     /**
      * Gets the row that defines this predicate's end. If and only if this predicate is
@@ -17,7 +17,7 @@ public interface Predicate {
      * (by object identity) the result of {@linkplain #getStartRow()}.
      * @return the predicate's ending range
      */
-    NiceRow getEndRow();
+    NewRow getEndRow();
 
     /**
      * Returns a copy of the scan flags set by this predicate. Not all available scan flags are relevant

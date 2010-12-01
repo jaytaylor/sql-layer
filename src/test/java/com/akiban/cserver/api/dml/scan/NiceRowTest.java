@@ -22,13 +22,13 @@ public final class NiceRowTest {
 
         RowData rowData = create(rowDef, objects);
 
-        NiceRow niceRow = NiceRow.fromRowData(rowData, rowDef);
+        NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
-        assertEquals("fields count", 2, niceRow.getFields().size());
-        assertEquals("field[0]", 5L, niceRow.get(0));
-        assertEquals("field[1]", "Bob", niceRow.get(1));
+        assertEquals("fields count", 2, newRow.getFields().size());
+        assertEquals("field[0]", 5L, newRow.get(0));
+        assertEquals("field[1]", "Bob", newRow.get(1));
 
-        compareRowDatas(rowData, niceRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData(rowDef));
     }
 
     @Test
@@ -45,17 +45,17 @@ public final class NiceRowTest {
 
         RowData rowData = create(rowDef, objects);
 
-        NiceRow niceRow = NiceRow.fromRowData(rowData, rowDef);
+        NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
-        assertEquals("fields count", NUM, niceRow.getFields().size());
-        assertEquals("field[0]", 15L, niceRow.get(0));
-        assertEquals("field[1]", "Robert", niceRow.get(1));
+        assertEquals("fields count", NUM, newRow.getFields().size());
+        assertEquals("field[0]", 15L, newRow.get(0));
+        assertEquals("field[1]", "Robert", newRow.get(1));
         for (int i=2; i < NUM; ++i) {
             long expected = i + 1000;
-            assertEquals("field[1]", expected, niceRow.get(i));
+            assertEquals("field[1]", expected, newRow.get(i));
         }
 
-        compareRowDatas(rowData, niceRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData(rowDef));
     }
 
     @Test
@@ -79,17 +79,17 @@ public final class NiceRowTest {
 
         RowData rowData = create(rowDef, objects);
 
-        NiceRow niceRow = NiceRow.fromRowData(rowData, rowDef);
+        NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
-        assertEquals("fields count", NUM - nulls, niceRow.getFields().size());
-        assertEquals("field[0]", 15L, niceRow.get(0));
-        assertEquals("field[1]", "Robert", niceRow.get(1));
+        assertEquals("fields count", NUM - nulls, newRow.getFields().size());
+        assertEquals("field[0]", 15L, newRow.get(0));
+        assertEquals("field[1]", "Robert", newRow.get(1));
         for (int i=2; i < NUM; ++i) {
             Long expected = (i % 3) == 0 ? null : Long.valueOf(i + 1000);
-            assertEquals("field[1]", expected, niceRow.get(i));
+            assertEquals("field[1]", expected, newRow.get(i));
         }
 
-        compareRowDatas(rowData, niceRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData(rowDef));
     }
 
     private static byte[] bytes() {

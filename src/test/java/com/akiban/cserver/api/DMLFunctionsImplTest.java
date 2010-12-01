@@ -247,7 +247,7 @@ public final class DMLFunctionsImplTest {
         TestDML testDML = new TestDML("Hi there poohbear".split(" "));
 
         final StringRowOutput output = new StringRowOutput();
-        final CursorId cursorId = testDML.openCursor((ScanRequest)null, session);
+        final CursorId cursorId = testDML.openCursor(null, session);
 
         assertTrue("expected more", testDML.scanSome(cursorId, session, output, 0));
         assertEquals("rows collected", 0, output.getRowsCount());

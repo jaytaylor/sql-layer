@@ -1,6 +1,7 @@
 package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -11,13 +12,13 @@ import static org.junit.Assert.*;
 public final class SimplePredicateTest {
     @Test
     public void testEquals() throws Exception {
-        final SimplePredicate predicate = new SimplePredicate(SimplePredicate.Comparison.EQ);
+        final SimplePredicate predicate = new SimplePredicate(TableId.of(0), SimplePredicate.Comparison.EQ);
         final Object col0Val = new Object();
 
         predicate.addColumn(new ColumnId(0), col0Val);
 
-        final NiceRow start = predicate.getStartRow();
-        final NiceRow end = predicate.getEndRow();
+        final NewRow start = predicate.getStartRow();
+        final NewRow end = predicate.getEndRow();
 
         assertSame("start and end", start, end);
 
@@ -34,16 +35,16 @@ public final class SimplePredicateTest {
     }
     
     public void testGeneralNE(SimplePredicate.Comparison comparison) {
-        final SimplePredicate predicate = new SimplePredicate(comparison);
+        final SimplePredicate predicate = new SimplePredicate(TableId.of(0), comparison);
         final Object col0Val = new Object();
 
         predicate.addColumn(new ColumnId(0), col0Val);
 
-        final NiceRow start = predicate.getStartRow();
-        final NiceRow end = predicate.getEndRow();
+        final NewRow start = predicate.getStartRow();
+        final NewRow end = predicate.getEndRow();
 
         EnumSet<ScanFlag> expectedFlags = EnumSet.noneOf(ScanFlag.class);
-        final NiceRow rowToCheck;
+        final NewRow rowToCheck;
         switch (comparison) {
             case LT:
                 expectedFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);

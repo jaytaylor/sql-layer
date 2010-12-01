@@ -1,7 +1,5 @@
 package com.akiban.cserver.api;
 
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
@@ -11,7 +9,8 @@ import com.akiban.cserver.service.session.Session;
 import java.util.Set;
 
 @SuppressWarnings("unused")
-public interface DMLFunctions {
+public interface DMLFunctions extends LegacyConverter {
+
     /**
      * Returns the exact number of rows in this table. This may take a while, as it could require a full
      * table scan. Group tables have an undefined row count, so this method will fail if the requested
@@ -24,24 +23,6 @@ public interface DMLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     long countRowsExactly(ScanRange range)
-    throws  NoSuchTableException,
-            UnsupportedReadException,
-            GenericInvalidOperationException;
-
-    /**
-     * Returns the exact number of rows in this table. This may take a while, as it could require a full
-     * table scan. Group tables have an undefined row count, so this method will fail if the requested
-     * table is a group table.
-     * @param range the table, columns and range to count
-     * @return the number of rows in the specified table
-     * @throws NullPointerException if tableId is null
-     * @throws NoSuchTableException if the specified table is unknown
-     * @throws UnsupportedReadException if the specified table is a group table
-     * @throws GenericInvalidOperationException if some other exception occurred
-     * @deprecated use {@link #countRowsExactly(ScanRange)}
-     */
-    @Deprecated
-    long countRowsExactly(LegacyScanRange range)
     throws  NoSuchTableException,
             UnsupportedReadException,
             GenericInvalidOperationException;
@@ -64,30 +45,6 @@ public interface DMLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     long countRowsApproximately(ScanRange range)
-    throws  NoSuchTableException,
-            UnsupportedReadException,
-            GenericInvalidOperationException;
-
-    /**
-     * Returns the approximate number of rows in this table. This estimate may be <em>very</em> approximate. All
-     * that is required is that the returned number be:
-     * <ul>
-     *  <li>0 iff the table has no rows</li>
-     *  <li>1 iff the table has exactly one row</li>
-     *  <li>&gt;= 2 iff the table has two or more rows</li>
-     * </ul>
-     *
-     * Group tables have an undefined row count, so this method will fail if the requested table is a group table.
-     * @param range the table, columns and range to count
-     * @return the number of rows in the specified table
-     * @throws NullPointerException if tableId is null
-     * @throws NoSuchTableException if the specified table is unknown
-     * @throws UnsupportedReadException if the specified table is a group table
-     * @throws GenericInvalidOperationException if some other exception occurred
-     * @deprecated use {@link #countRowsApproximately(ScanRange)}
-     */
-    @Deprecated
-    long countRowsApproximately(LegacyScanRange range)
     throws  NoSuchTableException,
             UnsupportedReadException,
             GenericInvalidOperationException;
@@ -118,30 +75,8 @@ public interface DMLFunctions {
      * @throws NoSuchColumnException if the request includes a column that isn't defined for the requested table
      * @throws NoSuchIndexException if the request is on an index that isn't defined for the requested table
      * @throws GenericInvalidOperationException if some other exception occurred
-     *
      */
     CursorId openCursor(ScanRequest request, Session session)
-    throws  NoSuchTableException,
-            NoSuchColumnException,
-            NoSuchIndexException,
-            GenericInvalidOperationException;
-
-    /**
-     * Opens a new cursor for scanning a table. This cursor will be stored in the current session, and a handle
-     * to it will be returned for use in subsequent cursor-related methods. When you're finished with the cursor,
-     * make sure to close it.
-     * @param request the request specifications
-     * @param session the context in which this cursor is opened
-     * @return a handle to the newly created cursor.
-     * @throws NullPointerException if the request is null
-     * @throws NoSuchTableException if the request is for an unknown table
-     * @throws NoSuchColumnException if the request includes a column that isn't defined for the requested table
-     * @throws NoSuchIndexException if the request is on an index that isn't defined for the requested table
-     * @throws GenericInvalidOperationException if some other exception occurred
-     * @deprecated use {@link #openCursor(ScanRequest,Session)}
-     */
-    @Deprecated
-    CursorId openCursor(LegacyScanRequest request, Session session)
     throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
@@ -220,7 +155,6 @@ public interface DMLFunctions {
      *
      * <p><strong>Note:</strong> The chunkserver doesn't yet support autoincrement, so for now, this method
      * will always return <tt>null</tt>. This is expected to change in the nearish future.</p>
-     * @param tableId the table to write to
      * @param row the row to write
      * @return the generated autoincrement value, or <tt>null</tt> if none was generated
      * @throws NullPointerException if the given tableId or row are null
@@ -231,7 +165,7 @@ public interface DMLFunctions {
      * <tt>akiban_information_schema</tt> table)
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    Long writeRow(TableId tableId, NiceRow row)
+    Long writeRow(NewRow row)
     throws  NoSuchTableException,
             UnsupportedModificationException,
             TableDefinitionMismatchException,
@@ -239,18 +173,7 @@ public interface DMLFunctions {
             GenericInvalidOperationException;
 
     /**
-     * Writes a row
-     * @param rowData the wrote to write
-     * @return null
-     * @throws InvalidOperationException see {@linkplain #writeRow(TableId, NiceRow)}
-     * @deprecated use {@linkplain #writeRow(TableId, NiceRow)}
-     */
-    @Deprecated
-    Long writeRow(RowData rowData) throws InvalidOperationException;
-
-    /**
      * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
-     * @param tableId the table to delete from
      * @param row the row to delete
      * @throws NullPointerException if either the given table ID or row are null
      * @throws NoSuchTableException if the specified table is unknown
@@ -260,7 +183,7 @@ public interface DMLFunctions {
      * @throws NoSuchRowException if the specified row doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void deleteRow(TableId tableId, NiceRow row)
+    void deleteRow(NewRow row)
     throws  NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
@@ -268,24 +191,7 @@ public interface DMLFunctions {
             GenericInvalidOperationException;
 
     /**
-     * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
-     * @param rowData the row to delete
-     * @throws NullPointerException if either the given table ID or row are null
-     * @throws NoSuchTableException if the specified table is unknown
-     * @throws UnsupportedModificationException if the specified table can't be modified (e.g., if it's a group table or
-     * <tt>akiban_information_schema</tt> table)
-     * @throws ForeignKeyConstraintDMLException if the deletion was blocked by at least one child table
-     * @throws NoSuchRowException if the specified row doesn't exist
-     * @deprecated use {@link #deleteRow(TableId, NiceRow)}
-     */
-    @Deprecated
-    void deleteRow(RowData rowData) throws InvalidOperationException;
-
-    NiceRow convertRowData(RowData rowData);
-
-    /**
      * <p>Updates a row, possibly cascading updates to its PK to children rows.</p>
-     * @param tableId the table to update
      * @param oldRow the row to update
      * @param newRow the row's new values
      * @throws NullPointerException if any of the arguments are <tt>null</tt>
@@ -299,7 +205,7 @@ public interface DMLFunctions {
      * @throws NoSuchRowException if the specified oldRow doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void updateRow(TableId tableId, NiceRow oldRow, NiceRow newRow)
+    void updateRow(NewRow oldRow, NewRow newRow)
     throws  NoSuchTableException,
             DuplicateKeyException,
             TableDefinitionMismatchException,
@@ -307,17 +213,6 @@ public interface DMLFunctions {
             ForeignKeyConstraintDMLException,
             NoSuchRowException,
             GenericInvalidOperationException;
-
-    /**
-     * Updates a row
-     * @param oldData the old data
-     * @param newData the new data
-     * @throws TableDefinitionMismatchException if the two RowDatas don't list the same table ID
-     * @throws GenericInvalidOperationException if some other exception occurred
-     * @deprecated use {@link #updateRow(TableId, NiceRow, NiceRow)}
-     */
-    @Deprecated
-    void updateRow(RowData oldData, RowData newData) throws GenericInvalidOperationException, TableDefinitionMismatchException;
 
     /**
      * Truncates the given table, possibly cascading the truncate to child tables.
@@ -342,15 +237,4 @@ public interface DMLFunctions {
             ForeignKeyConstraintDMLException,
             GenericInvalidOperationException;
 
-    public interface LegacyScanRange {
-        RowData getStart();
-        RowData getEnd();
-        byte[] getColumnBitMap();
-        int getTableId();
-    }
-
-    public interface LegacyScanRequest extends LegacyScanRange {
-        int getIndexId();
-        int getScanFlags();
-    }
 }

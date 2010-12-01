@@ -1,7 +1,6 @@
 package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.IdResolverStub;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -41,12 +40,12 @@ public final class ColumnSetTest {
     @Test
     public void emptySet() {
         Set<ColumnId> empty = new HashSet<ColumnId>();
-        assertNotNull("got null byte[]", ColumnSet.packToLegacy(empty, IdResolverStub.instance()));
+        assertNotNull("got null byte[]", ColumnSet.packToLegacy(empty));
         assertBytes("[ ]", empty);
     }
 
     private static void assertBytes(String expected, Set<ColumnId> actual) {
-        final byte[] actualBytes =  ColumnSet.packToLegacy(actual, IdResolverStub.instance());
+        final byte[] actualBytes =  ColumnSet.packToLegacy(actual);
         assertEquals("bytes", expected, bytesToHex(actualBytes));
 
         Set<ColumnId> unpacked = ColumnSet.unpackFromLegacy(actualBytes);

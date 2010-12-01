@@ -1,18 +1,23 @@
 package com.akiban.cserver.api.common;
 
 import com.akiban.ais.model.*;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.dml.NoSuchTableException;
 import com.akiban.cserver.manage.SchemaManager;
+import com.akiban.cserver.store.Store;
+import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
 
 public final class IdResolverImpl implements IdResolver {
     final SchemaManager schemaManager;
+    final Store store;
 
-    public IdResolverImpl(SchemaManager schemaManager) {
-        ArgumentValidation.notNull("schema manager", schemaManager);
-        this.schemaManager = schemaManager;
+    public IdResolverImpl(Store store) {
+        ArgumentValidation.notNull("store", store);
+        this.schemaManager = store.getSchemaManager();
+        this.store = store;
     }
 
     @Override
@@ -36,6 +41,18 @@ public final class IdResolverImpl implements IdResolver {
             throw new NoSuchTableException(id);
         }
         return found.getName();
+    }
+
+    @Override
+    public RowDef getRowDef(TableId id) throws NoSuchTableException {
+        final int idInt = id.getTableId(this);
+        try {
+            RowDef rowDef = store.getRowDefCache().getRowDef(idInt);
+            assert rowDef != null;
+            return rowDef;
+        } catch (RowDefNotFoundException e) {
+            throw new NoSuchTableException(idInt);
+        }
     }
 
     private Table tableById(Collection<? extends Table> tables, int needle) {

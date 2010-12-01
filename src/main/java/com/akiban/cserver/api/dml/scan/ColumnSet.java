@@ -49,7 +49,7 @@ public final class ColumnSet {
      * message compendium's definition of ScanRowsRequest</a> for more information.
      * @return the columns desired
      */
-    public static byte[] packToLegacy(Collection<ColumnId> columns, IdResolver resolver) {
+    public static byte[] packToLegacy(Collection<ColumnId> columns) {
         if (columns.isEmpty()) {
             return new byte[0];
         }

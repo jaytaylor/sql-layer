@@ -24,7 +24,7 @@ public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
     public void handleRow(byte[] bytes, int offset, int length) throws RowOutputException {
         RowData rowData = new RowData(bytes, offset, length);
         rowData.prepareRow(offset);
-        NiceRow nice = NiceRow.fromRowData(rowData, rowDef);
-        output.output(nice);
+        NewRow aNew = NiceRow.fromRowData(rowData, rowDef);
+        output.output(aNew);
     }
 }

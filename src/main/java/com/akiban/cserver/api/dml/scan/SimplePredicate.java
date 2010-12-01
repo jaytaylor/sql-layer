@@ -1,6 +1,7 @@
 package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.EnumSet;
@@ -11,14 +12,16 @@ public final class SimplePredicate implements Predicate {
         EQ, LT, LTE, GT, GTE
     }
 
-    private NiceRow startRow = null;
-    private NiceRow endRow = null;
+    private NewRow startRow = null;
+    private NewRow endRow = null;
+    private final TableId tableId;
     private final Comparison comparison;
     private final Set<ScanFlag> scanFlags = EnumSet.noneOf(ScanFlag.class);
 
-    public SimplePredicate(Comparison comparison) {
+    public SimplePredicate(TableId tableId, Comparison comparison) {
         ArgumentValidation.notNull("comparison operator", comparison);
         this.comparison = comparison;
+        this.tableId = tableId;
     }
 
     public void addColumn(ColumnId column, Object value) {
@@ -29,7 +32,7 @@ public final class SimplePredicate implements Predicate {
             case EQ:
                 if (startRow == null) {
                     assert endRow == null : endRow;
-                    startRow = new NiceRow();
+                    startRow = new NiceRow(tableId);
                     endRow = startRow;
                     scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
                     scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
@@ -40,7 +43,7 @@ public final class SimplePredicate implements Predicate {
             case LT:
             case LTE:
                 if (endRow == null) {
-                    endRow = new NiceRow();
+                    endRow = new NiceRow(tableId);
                 }
                 putToRow(endRow, column, value);
                 scanFlags.add(ScanFlag.START_AT_BEGINNING);
@@ -51,7 +54,7 @@ public final class SimplePredicate implements Predicate {
             case GT:
             case GTE:
                 if (startRow == null) {
-                    startRow = new NiceRow();
+                    startRow = new NiceRow(tableId);
                 }
                 putToRow(startRow, column, value);
                 scanFlags.add(ScanFlag.END_AT_END);
@@ -64,21 +67,21 @@ public final class SimplePredicate implements Predicate {
         }
     }
 
-    private void putToRow(NiceRow which, ColumnId index, Object value) {
+    private void putToRow(NewRow which, ColumnId index, Object value) {
         Object old = which.put(index, value);
         if (old != null && (!old.equals(value))) {
             which.put(index, old);
-            throw new IllegalStateException(String.format("conflict at index %d: %s != %s", index, value, old));
+            throw new IllegalStateException(String.format("conflict at index %s: %s != %s", index, value, old));
         }
     }
 
     @Override
-    public NiceRow getStartRow() {
+    public NewRow getStartRow() {
         return startRow;
     }
 
     @Override
-    public NiceRow getEndRow() {
+    public NewRow getEndRow() {
         return endRow;
     }
 

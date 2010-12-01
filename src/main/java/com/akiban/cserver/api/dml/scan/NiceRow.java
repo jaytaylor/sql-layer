@@ -2,36 +2,43 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.*;
 import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.encoding.Encoding;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
 
-public class NiceRow {
+public class NiceRow implements NewRow {
     private final Map<ColumnId,Object> fields;
+    private final TableId tableId;
 
-    public NiceRow() {
+    public NiceRow(TableId tableId) {
         fields = new TreeMap<ColumnId, Object>();
+        this.tableId = tableId;
     }
 
+    @Override
     public Object put(ColumnId index, Object object) {
         ArgumentValidation.notNull("column", index);
         return fields.put(index, object);
     }
 
+    @Override
+    public TableId getTableId() {
+        return tableId;
+    }
+
+    @Override
     public Object get(int index) {
         return fields.get(new ColumnId(index) );
     }
 
-    /**
-     * Returns an unmodifiable view of the fields
-     * @return the fields that have been set
-     */
+    @Override
     public Map<ColumnId,Object> getFields() {
         return Collections.unmodifiableMap(fields);
     }
 
-    public static NiceRow fromRowData(RowData origData, RowDef rowDef) {
+    public static NewRow fromRowData(RowData origData, RowDef rowDef) {
         Set<ColumnId> activeColumns = new HashSet<ColumnId>();
         for(int fieldIndex=0, fieldsCount=rowDef.getFieldCount(); fieldIndex < fieldsCount; ++fieldIndex) {
             final long location = rowDef.fieldLocation(origData, fieldIndex);
@@ -40,7 +47,7 @@ public class NiceRow {
             }
         }
 
-        NiceRow retval = new NiceRow();
+        NewRow retval = new NiceRow( TableId.of(rowDef.getRowDefId()) );
         for (ColumnId column : activeColumns) {
             final int pos = column.getPosition();
             final FieldDef fieldDef = rowDef.getFieldDef(pos);
@@ -54,6 +61,12 @@ public class NiceRow {
         return retval;
     }
 
+    @Override
+    public boolean needsRowDef() {
+        return true;
+    }
+
+    @Override
     public RowData toRowData(RowDef rowDef) {
         final int fieldsOffset = 0
                 + 4 // record length

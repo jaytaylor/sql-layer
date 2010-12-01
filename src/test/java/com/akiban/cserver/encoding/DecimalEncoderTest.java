@@ -46,8 +46,8 @@ public final class DecimalEncoderTest {
 
     @Test
     public void testStringToBytes() {
-        byte[] actual = bytes("0xBEAFCAFE");
-        int[] expectedInts = { 190, 175, 202, 254 };
+        byte[] actual = bytes("0xBEEFCAFE");
+        int[] expectedInts = { 190, 239, 202, 254 };
         byte[] expected = new byte[expectedInts.length];
         for (int i=0; i < expected.length; ++i) {
             expected[i] = (byte)expectedInts[i];
