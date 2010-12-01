@@ -249,11 +249,38 @@ public class SchemaDef {
     void autoIncrementInitialValue(final String value) {
         currentTable.autoIncrementColumn.setAutoIncrement(value);
     }
+    
+    void addCharsetValue(final String charset) {
+        if (currentColumn != null) {
+            currentColumn.charset = charset;
+        } else {
+            for (final ColumnDef column : currentTable.columns) {
+                if (column.charset == null) {
+                    column.charset = charset;
+                }
+            }
+        }
+    }
+
+    void addCollateValue(final String collate) {
+        if (currentColumn != null) {
+            currentColumn.collate = collate;
+        } else {
+            for (final ColumnDef column : currentTable.columns) {
+                if (column.collate == null) {
+                    column.collate = collate;
+                }
+            }
+        }
+    }
 
     void otherConstraint(final String constraint) {
         currentColumn.constraints.add(constraint);
     }
 
+    void finishTable() {
+        currentColumn = null;
+    }
     /**
      * Checks (via assert) that the comment doesn't appear to be an old-style grouping.
      * @param text the text of the comment, including slash-star and star-slash.
@@ -286,6 +313,8 @@ public class SchemaDef {
         int uposition;
         int gposition;
         String comment;
+        String charset;
+        String collate;
 
         ColumnDef(final String name) {
             this.name = name;

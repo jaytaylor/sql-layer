@@ -12,16 +12,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
 
@@ -69,12 +70,22 @@ public final class PersistitStoreSchemaManagerTest {
         manager.createTable(schema, ddl);
     }
 
+    
     @Test
     public void testUtf8Table() throws Exception {
-        createTable(ErrorCode.UNSUPPORTED_CHARSET, SCHEMA,
-                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set UTF8) engine=akibandb");
-        createTable(ErrorCode.UNSUPPORTED_CHARSET, SCHEMA,
-                "CREATE TABLE myvarchartest(id int key, name varchar(32) character set utf8) engine=akibandb");
+        createTable(SCHEMA,
+                "CREATE TABLE myvarchartest1(id int key, name varchar(85) character set UTF8) engine=akibandb");
+        createTable(SCHEMA,
+                "CREATE TABLE myvarchartest2(id int key, name varchar(86) character set utf8) engine=akibandb");
+        AkibaInformationSchema ais = manager.getAisCopy();
+        Column c1 = ais.getTable(SCHEMA, "myvarchartest1").getColumn("name");
+        Column c2 = ais.getTable(SCHEMA, "myvarchartest2").getColumn("name");
+        assertEquals("UTF8", c1.getCharsetAndCollation().charset());
+        assertEquals("utf8", c2.getCharsetAndCollation().charset());
+        assertEquals(Integer.valueOf(1), c1.getPrefixSize());
+        assertEquals(Integer.valueOf(2), c2.getPrefixSize());
+        manager.dropTable(SCHEMA, "myvarchartest1");
+        manager.dropTable(SCHEMA, "myvarchartest2");
     }
 
     @Test

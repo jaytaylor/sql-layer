@@ -1,12 +1,18 @@
 package com.akiban.cserver.manage;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+
 import com.akiban.cserver.CServer;
+import com.akiban.cserver.CustomQuery;
 import com.akiban.cserver.store.PersistitStore;
 
 public class ManageMXBeanImpl implements ManageMXBean
 {
 
     private final CServer cserver;
+    
+    private Class customClass;
 
     public ManageMXBeanImpl(final CServer cserver) {
         this.cserver = cserver;
@@ -93,6 +99,37 @@ public class ManageMXBeanImpl implements ManageMXBean
             return e.toString();
         }
         return "done";
+    }
+    
+    
+    public String loadCustomQuery(final String className) {
+        try {
+            customClass = null;
+            final URL url = new URL("file:///home/peter/work/trunk/custom/target/classes/");
+            final ClassLoader cl = new URLClassLoader(new URL[]{url});
+            final Class<?> c = cl.loadClass(className);
+            if (CustomQuery.class.isAssignableFrom(c)) {
+                customClass = c;
+                return "OK";
+            } else {
+                return c.getSimpleName() + " does not implement Runnable";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e.toString();
+        }
+    }
+    
+    public String runCustomQuery() {
+        try {
+            final CustomQuery cq = (CustomQuery)(customClass.newInstance());
+            cq.setStore(cserver.getServiceManager().getStore());
+            cq.runQuery();
+            return cq.getResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e.toString();
+        }
     }
 
     private PersistitStore getStore()

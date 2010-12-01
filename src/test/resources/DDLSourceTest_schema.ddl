@@ -1053,5 +1053,15 @@ CREATE TABLE with_enum (
 'x09990','x09991','x09992','x09993','x09994','x09995','x09996','x09997','x09998','x09999')
 ) ENGINE=akibandb;
 
+CREATE TABLE with_utf8 (
+ a1 varchar(100) character set latin1,
+ a2 varchar(100),
+ a3 varchar(100),
+ a4 varchar(100) charset=latin1 collate latin1_german2_ci,
+ a5 varchar(100),
+ a6 varchar(100),
+ primary key(a1)) engine=akibandb default charset=utf8 collate utf8_general_ci;
+ 
+
 
 

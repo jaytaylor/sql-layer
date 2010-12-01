@@ -355,8 +355,7 @@ public class Column implements Serializable, ModelNames
         long maxStorageSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             long maxCharacters = paramCheck(typeParameter1);
-            // TODO: Column needs char set to compute a better value
-            long charWidthMultiplier = 1;
+            final long charWidthMultiplier = characterWidth();
             long maxBytes = maxCharacters * charWidthMultiplier;
             maxStorageSize = maxBytes + prefixSize(maxBytes);
         } else if (type.equals(Types.VARBINARY)) {
@@ -401,8 +400,7 @@ public class Column implements Serializable, ModelNames
         int prefixSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             final long maxCharacters = paramCheck(typeParameter1);
-            // TODO: Column needs the char set to compute a better value
-            final long charWidthMultiplier = 1;
+            final long charWidthMultiplier = characterWidth();
             final long maxBytes = maxCharacters * charWidthMultiplier;
             prefixSize = prefixSize(maxBytes);
         } else if (type.equals(Types.VARBINARY)) {
@@ -415,6 +413,22 @@ public class Column implements Serializable, ModelNames
         return prefixSize;
     }
 
+    /**
+     * Compute the maximum character width.  This is used to determine how many bytes
+     * will be reserved to encode the length in bytes of a VARCHAR or other text field.
+     * TODO: We need to implement a character set table to embody knowledge of many
+     * different character sets.  This is simply a stub to get us past the UTF8
+     * problem.
+     * @return
+     */
+    private int characterWidth() {
+//        if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
+//            return 3;
+//        } else {
+            return 1;
+//        }
+    }
+    
     public CharsetAndCollation getCharsetAndCollation()
     {
         return

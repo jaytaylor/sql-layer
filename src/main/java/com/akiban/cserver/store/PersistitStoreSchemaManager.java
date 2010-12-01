@@ -219,9 +219,6 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         }
     }
 
-    final static Pattern UTF8_PATTERN = Pattern.compile(
-            "CHARACTER\\s+SET\\s*[=\\s]\\s*UTF8", Pattern.CASE_INSENSITIVE);
-
     /**
      * Attempts to create a table.
      * 
@@ -240,11 +237,6 @@ public class PersistitStoreSchemaManager implements CServerConstants,
     void createTable(final String useSchemaName, final String ddl, RowDefCache rowDefCache, CreateTableResult result)
             throws InvalidOperationException, PersistitException {
         Exchange ex = null;
-        // Hacky way to avoid UTF-8
-        if (UTF8_PATTERN.matcher(ddl).find()) {
-            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_CHARSET,
-                    "[%s] UTF8: %s", useSchemaName, ddl);
-        }
 
         String canonical = DDLSource.canonicalStatement(ddl);
         final SchemaDef.UserTableDef tableDef;

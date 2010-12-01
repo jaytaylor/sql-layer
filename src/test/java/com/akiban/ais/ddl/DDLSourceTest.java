@@ -1,6 +1,9 @@
 package com.akiban.ais.ddl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -12,14 +15,16 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import com.akiban.ais.model.UserTable;
 import org.junit.Test;
 
 import com.akiban.ais.io.CSVTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.CharsetAndCollation;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 
 public class DDLSourceTest {
 
@@ -29,6 +34,14 @@ public class DDLSourceTest {
 
     private final static String SCHEMA_NAME = "DDLSourceTest_schema";
 
+    private final static String[] EXPECTED_CHARSET_VALUES = new String[] { "latin1", "utf8", "utf8", "latin1", "utf8",
+        "utf8" };
+    
+    private final static String[] EXPECTED_COLLATION_VALUES = new String[]{
+        "utf8_general_ci", "utf8_general_ci", "utf8_general_ci",
+        "latin1_german2_ci", "utf8_general_ci", 
+        "utf8_general_ci"};
+    
     @Test
     public void testParseEnumAndSet() throws Exception {
         DDLSource parser = new DDLSource();
@@ -71,14 +84,20 @@ public class DDLSourceTest {
 
     @Test
     public void testOverloadedTableColumn() throws Exception {
-        String ddl = "CREATE TABLE `s1`.one (idOne int, PRIMARY KEY (idOne)) engine=akibandb;\n" +
-                    "CREATE TABLE `s2`.one (idTwo int, PRIMARY KEY (idTwo)) engine=akibandb;";
+        String ddl = "CREATE TABLE `s1`.one (idOne int, PRIMARY KEY (idOne)) engine=akibandb;\n"
+                + "CREATE TABLE `s2`.one (idTwo int, PRIMARY KEY (idTwo)) engine=akibandb;";
 
         SchemaDef schemaDef = DDLSource.parseSchemaDef(ddl);
         assertEquals("user tables", 2, schemaDef.getUserTableMap().size());
         assertEquals("group tables", 2, schemaDef.getGroupMap().size());
-        assertTrue("s1.one missing", schemaDef.getGroupMap().containsKey(new SchemaDef.CName("akiba_objects", "one")));
-        assertTrue("s2.one missing", schemaDef.getGroupMap().containsKey(new SchemaDef.CName("akiba_objects", "one$0")));
+        assertTrue(
+                "s1.one missing",
+                schemaDef.getGroupMap().containsKey(
+                        new SchemaDef.CName("akiba_objects", "one")));
+        assertTrue(
+                "s2.one missing",
+                schemaDef.getGroupMap().containsKey(
+                        new SchemaDef.CName("akiba_objects", "one$0")));
 
         AkibaInformationSchema ais = new DDLSource().buildAISFromString(ddl);
         assertEquals("user tables", 2, ais.getUserTables().size());
@@ -87,23 +106,29 @@ public class DDLSourceTest {
         UserTable s2 = ais.getUserTable("s2", "one");
         assertNotNull("s1", s1);
         assertNotNull("s2", s2);
-        assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable().getRoot());
-        assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable().getRoot());
+        assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable()
+                .getRoot());
+        assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable()
+                .getRoot());
     }
 
     @Test
     public void columnMarkedAsPrimaryKey() throws Exception {
         SchemaDef.UserTableDef tableDef = createTableFromInner("id int PRIMARY KEY, whatever int");
-        assertEquals("columns", Arrays.asList("id", "whatever"), tableDef.getColumnNames());
-        assertEquals("PK columns", Arrays.asList("id"), tableDef.getPrimaryKey());
+        assertEquals("columns", Arrays.asList("id", "whatever"),
+                tableDef.getColumnNames());
+        assertEquals("PK columns", Arrays.asList("id"),
+                tableDef.getPrimaryKey());
         assertEquals("other indexes", 0, tableDef.indexes.size());
     }
 
     @Test
     public void columnMarkedAsKey() throws Exception {
         SchemaDef.UserTableDef tableDef = createTableFromInner("id int KEY, whatever int");
-        assertEquals("columns", Arrays.asList("id", "whatever"), tableDef.getColumnNames());
-        assertEquals("PK columns", Arrays.asList("id"), tableDef.getPrimaryKey());
+        assertEquals("columns", Arrays.asList("id", "whatever"),
+                tableDef.getColumnNames());
+        assertEquals("PK columns", Arrays.asList("id"),
+                tableDef.getPrimaryKey());
         assertEquals("other indexes", 0, tableDef.indexes.size());
     }
 
@@ -129,10 +154,10 @@ public class DDLSourceTest {
     }
 
     @Test
-    public void testAkibanFKUnnamedIndex() throws Exception{
-        SchemaDef.UserTableDef tableDef = new DDLSource().parseCreateTable(
-                "two (id int, oid int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk` FOREIGN KEY (`oid`) REFERENCES zebra (id) ) engine=akibandb;");
+    public void testAkibanFKUnnamedIndex() throws Exception {
+        SchemaDef.UserTableDef tableDef = new DDLSource()
+                .parseCreateTable("two (id int, oid int, PRIMARY KEY (id), "
+                        + "CONSTRAINT `__akiban_fk` FOREIGN KEY (`oid`) REFERENCES zebra (id) ) engine=akibandb;");
 
         assertEquals("schema", null, tableDef.getCName().getSchema());
         assertEquals("table", "two", tableDef.getCName().getName());
@@ -145,18 +170,29 @@ public class DDLSourceTest {
         assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
-        assertEquals("index[0] name", "_auto_generated_index_0", tableDef.indexes.get(0).name);
-        assertEquals("index[0] constraints", 1, tableDef.indexes.get(0).constraints.size());
-        assertEquals("index[0] constraint[0]", "__akiban_fk", tableDef.indexes.get(0).constraints.get(0));
-        assertEquals("index[0] child columns", 1, tableDef.indexes.get(0).getChildColumns().size());
-        assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0).getChildColumns().get(0));
-        assertEquals("index[0] parent schema", null, tableDef.indexes.get(0).getParentSchema());
-        assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0).getParentTable());
-        assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0).getParentColumns().size());
-        assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0).getParentColumns().get(0));
+        assertEquals("index[0] name", "_auto_generated_index_0",
+                tableDef.indexes.get(0).name);
+        assertEquals("index[0] constraints", 1,
+                tableDef.indexes.get(0).constraints.size());
+        assertEquals("index[0] constraint[0]", "__akiban_fk",
+                tableDef.indexes.get(0).constraints.get(0));
+        assertEquals("index[0] child columns", 1, tableDef.indexes.get(0)
+                .getChildColumns().size());
+        assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0)
+                .getChildColumns().get(0));
+        assertEquals("index[0] parent schema", null, tableDef.indexes.get(0)
+                .getParentSchema());
+        assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0)
+                .getParentTable());
+        assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0)
+                .getParentColumns().size());
+        assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0)
+                .getParentColumns().get(0));
     }
 
-    private static void createTableWithError(Class<? extends Throwable> errClass, String errMessage, String innerDDL) {
+    private static void createTableWithError(
+            Class<? extends Throwable> errClass, String errMessage,
+            String innerDDL) {
         Throwable thrown = null;
         try {
             createTableFromInner(innerDDL);
@@ -168,10 +204,10 @@ public class DDLSourceTest {
         assertEquals("exception message", errMessage, thrown.getMessage());
     }
 
-    private static SchemaDef.UserTableDef createTableFromInner(String ddl) throws Exception {
-        SchemaDef.UserTableDef ret = new DDLSource().parseCreateTable(
-                "s.t (" + ddl + ") engine=akibandb;"
-        );
+    private static SchemaDef.UserTableDef createTableFromInner(String ddl)
+            throws Exception {
+        SchemaDef.UserTableDef ret = new DDLSource().parseCreateTable("s.t ("
+                + ddl + ") engine=akibandb;");
         assertEquals("schema", "s", ret.getCName().getSchema());
         assertEquals("table", "t", ret.getCName().getName());
         assertEquals("engine", "akibandb", ret.engine);
@@ -179,10 +215,10 @@ public class DDLSourceTest {
     }
 
     @Test
-    public void testParseCreateTable() throws Exception{
-        SchemaDef.UserTableDef tableDef = new DDLSource().parseCreateTable(
-                "two (id int, oid int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk` FOREIGN KEY `__akiban_index` (`oid`) REFERENCES zebra (id) ) engine=akibandb;");
+    public void testParseCreateTable() throws Exception {
+        SchemaDef.UserTableDef tableDef = new DDLSource()
+                .parseCreateTable("two (id int, oid int, PRIMARY KEY (id), "
+                        + "CONSTRAINT `__akiban_fk` FOREIGN KEY `__akiban_index` (`oid`) REFERENCES zebra (id) ) engine=akibandb;");
 
         assertEquals("schema", null, tableDef.getCName().getSchema());
         assertEquals("table", "two", tableDef.getCName().getName());
@@ -195,15 +231,24 @@ public class DDLSourceTest {
         assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
-        assertEquals("index[0] name", "__akiban_index", tableDef.indexes.get(0).name);
-        assertEquals("index[0] constraints", 1, tableDef.indexes.get(0).constraints.size());
-        assertEquals("index[0] constraint[0]", "__akiban_fk", tableDef.indexes.get(0).constraints.get(0));
-        assertEquals("index[0] child columns", 1, tableDef.indexes.get(0).getChildColumns().size());
-        assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0).getChildColumns().get(0));
-        assertEquals("index[0] parent schema", null, tableDef.indexes.get(0).getParentSchema());
-        assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0).getParentTable());
-        assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0).getParentColumns().size());
-        assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0).getParentColumns().get(0));
+        assertEquals("index[0] name", "__akiban_index",
+                tableDef.indexes.get(0).name);
+        assertEquals("index[0] constraints", 1,
+                tableDef.indexes.get(0).constraints.size());
+        assertEquals("index[0] constraint[0]", "__akiban_fk",
+                tableDef.indexes.get(0).constraints.get(0));
+        assertEquals("index[0] child columns", 1, tableDef.indexes.get(0)
+                .getChildColumns().size());
+        assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0)
+                .getChildColumns().get(0));
+        assertEquals("index[0] parent schema", null, tableDef.indexes.get(0)
+                .getParentSchema());
+        assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0)
+                .getParentTable());
+        assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0)
+                .getParentColumns().size());
+        assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0)
+                .getParentColumns().get(0));
     }
 
     public static void main(final String[] args) throws Exception {
@@ -231,7 +276,8 @@ public class DDLSourceTest {
     private void testCOCommon(SchemaDef schemaDef) throws Exception {
         assertEquals("tables length", 2, schemaDef.getUserTableMap().size());
 
-        SchemaDef.UserTableDef customer = schemaDef.getUserTableMap().get(new SchemaDef.CName("schema", "customer"));
+        SchemaDef.UserTableDef customer = schemaDef.getUserTableMap().get(
+                new SchemaDef.CName("schema", "customer"));
 
         assertEquals("indexes size", 0, customer.indexes.size());
 
@@ -242,15 +288,14 @@ public class DDLSourceTest {
     }
 
     private static void testColumn(int which, SchemaDef.UserTableDef table,
-                                   final String name, String typeName, String param1, String param2, boolean nullable,
-                                   String autoIncrement, String... constraints) {
+            final String name, String typeName, String param1, String param2,
+            boolean nullable, String autoIncrement, String... constraints) {
 
         SchemaDef.ColumnDef actual = table.columns.get(which);
-        SchemaDef.ColumnDef expected = new SchemaDef.ColumnDef(name, typeName, param1, param2, nullable, autoIncrement,
-                constraints);
+        SchemaDef.ColumnDef expected = new SchemaDef.ColumnDef(name, typeName,
+                param1, param2, nullable, autoIncrement, constraints);
         assertEquals("column " + which, expected, actual);
     }
-
 
     @Test
     public void fKFullDescription() throws Exception {
@@ -280,19 +325,39 @@ public class DDLSourceTest {
         testOrder(def, null, null);
     }
 
-    private void testOrder(SchemaDef def, String constraintName, String indexName) {
-        SchemaDef.UserTableDef order = def.getUserTableMap().get(new SchemaDef.CName("schema", "order"));
+    @Test
+    public void charsetAndCollate() throws Exception {
+        DDLSource parser = new DDLSource();
+        AkibaInformationSchema ais = parser.buildAIS(DDL_FILE_NAME);
+
+        final Table utf8Table = ais.getTable(new TableName(SCHEMA_NAME,
+                "with_utf8"));
+        for (final Column column : utf8Table.getColumns()) {
+            final CharsetAndCollation cs = column.getCharsetAndCollation();
+            final int columnIndex = column.getPosition();
+            assertEquals(EXPECTED_CHARSET_VALUES[columnIndex], cs.charset());
+            assertEquals(EXPECTED_COLLATION_VALUES[columnIndex], cs.collation());
+        }
+    }
+
+    private void testOrder(SchemaDef def, String constraintName,
+            String indexName) {
+        SchemaDef.UserTableDef order = def.getUserTableMap().get(
+                new SchemaDef.CName("schema", "order"));
 
         assertEquals("columns len", 2, order.columns.size());
         testColumn(0, order, "id", "INT", null, null, true, null);
         testColumn(1, order, "cid", "INT", null, null, true, null);
 
-        List<SchemaDef.IndexColumnDef> columns = Arrays.asList(new SchemaDef.IndexColumnDef("cid"));
+        List<SchemaDef.IndexColumnDef> columns = Arrays
+                .asList(new SchemaDef.IndexColumnDef("cid"));
         SchemaDef.CName customerName = new SchemaDef.CName("schema", "customer");
-        assertEquals("indexes size", indexName == null ? 2 : 3, order.indexes.size());
+        assertEquals("indexes size", indexName == null ? 2 : 3,
+                order.indexes.size());
 
         List<String> index0Constraints = new ArrayList<String>();
-        Set<SchemaDef.IndexQualifier> index0qualifiers = EnumSet.noneOf(SchemaDef.IndexQualifier.class);
+        Set<SchemaDef.IndexQualifier> index0qualifiers = EnumSet
+                .noneOf(SchemaDef.IndexQualifier.class);
         SchemaDef.CName index0ReferenceTable = null;
         List<String> index0ReferenceColumns = new ArrayList<String>();
         if (indexName == null) {
@@ -304,13 +369,14 @@ public class DDLSourceTest {
             index0ReferenceColumns.add("id");
         }
         SchemaDef.IndexDef plainKey = new SchemaDef.IndexDef("given_key",
-                index0qualifiers,
-                columns, index0ReferenceTable, index0ReferenceColumns, index0Constraints);
+                index0qualifiers, columns, index0ReferenceTable,
+                index0ReferenceColumns, index0Constraints);
         assertEquals("index 0", plainKey, order.indexes.get(0));
 
         SchemaDef.IndexDef givenFKIndex = new SchemaDef.IndexDef("givenFk",
-                EnumSet.of(SchemaDef.IndexQualifier.FOREIGN_KEY),
-                columns, customerName, Arrays.asList("id"), Arrays.asList("givenConstraint"));
+                EnumSet.of(SchemaDef.IndexQualifier.FOREIGN_KEY), columns,
+                customerName, Arrays.asList("id"),
+                Arrays.asList("givenConstraint"));
         assertEquals("index 1", givenFKIndex, order.indexes.get(1));
 
         if (indexName != null) {
@@ -318,27 +384,33 @@ public class DDLSourceTest {
             if (constraintName != null) {
                 index2Constraints.add(constraintName);
             }
-            SchemaDef.IndexDef definedFKIndex = new SchemaDef.IndexDef(indexName,
-                    EnumSet.of(SchemaDef.IndexQualifier.FOREIGN_KEY),
-                    columns, customerName, Arrays.asList("id"), index2Constraints);
+            SchemaDef.IndexDef definedFKIndex = new SchemaDef.IndexDef(
+                    indexName,
+                    EnumSet.of(SchemaDef.IndexQualifier.FOREIGN_KEY), columns,
+                    customerName, Arrays.asList("id"), index2Constraints);
             assertEquals("index 2", definedFKIndex, order.indexes.get(2));
         }
     }
 
     /**
-     * Tests this class's private {@linkplain #fk(String, boolean, String, String, String...)} method.
+     * Tests this class's private
+     * {@linkplain #fk(String, boolean, String, String, String...)} method.
      */
     @Test
     public void fkCreation() {
-        assertEquals("full",
+        assertEquals(
+                "full",
                 "CONSTRAINT `fk0` FOREIGN KEY `index0` (`id`) REFERENCES `parent` (`pid`)",
                 fk("parent", true, "fk0", "index0", "parent:pid", "child:id"));
-        assertEquals("no constraint name",
+        assertEquals(
+                "no constraint name",
                 "CONSTRAINT FOREIGN KEY `index0` (`id`) REFERENCES `parent` (`pid`)",
                 fk("parent", true, null, "index0", "parent:pid", "child:id"));
-        assertEquals("no constraint",
+        assertEquals(
+                "no constraint",
                 "FOREIGN KEY `index0` (`id`) REFERENCES `parent` (`pid`)",
-                fk("parent", false, "ignored", "index0", "parent:pid", "child:id"));
+                fk("parent", false, "ignored", "index0", "parent:pid",
+                        "child:id"));
         assertEquals("no index",
                 "FOREIGN KEY (`id`) REFERENCES `parent` (`pid`)",
                 fk("parent", false, "ignored", null, "parent:pid", "child:id"));
@@ -349,19 +421,29 @@ public class DDLSourceTest {
 
     /**
      * Creates the customer-order tables and parses them into a SchemaDef.
-     * @param includeConstraint see {@linkplain #fk(String, boolean, String, String, String...)}
-     * @param constraintName see {@linkplain #fk(String, boolean, String, String, String...)}
-     * @param indexName see {@linkplain #fk(String, boolean, String, String, String...)}
-     * @return a SchemaDef with two tables, customer and order. The order's FK will use the given params.
+     * 
+     * @param includeConstraint
+     *            see
+     *            {@linkplain #fk(String, boolean, String, String, String...)}
+     * @param constraintName
+     *            see
+     *            {@linkplain #fk(String, boolean, String, String, String...)}
+     * @param indexName
+     *            see
+     *            {@linkplain #fk(String, boolean, String, String, String...)}
+     * @return a SchemaDef with two tables, customer and order. The order's FK
+     *         will use the given params.
      */
-    private static SchemaDef parseCO(boolean includeConstraint, String constraintName, String indexName) throws Exception {
+    private static SchemaDef parseCO(boolean includeConstraint,
+            String constraintName, String indexName) throws Exception {
         StringBuilder ret = new StringBuilder();
         ret.append("CREATE TABLE `schema`.`customer` (`id` INT, PRIMARY KEY (`id`)) engine=akibandb;\n");
 
         ret.append("CREATE TABLE `schema`.`order` (`id` INT, `cid` INT, PRIMARY KEY (`id`), ");
         ret.append("KEY `given_key` (`cid`), ");
         ret.append("CONSTRAINT `givenConstraint` FOREIGN KEY `givenFk` (`cid`) REFERENCES `customer` (`id`), ");
-        ret.append(fk("customer", includeConstraint, constraintName, indexName, "parent:id", "child:cid"));
+        ret.append(fk("customer", includeConstraint, constraintName, indexName,
+                "parent:id", "child:cid"));
         ret.append(") engine=akibandb;");
 
         return DDLSource.parseSchemaDef(ret.toString());
@@ -369,31 +451,40 @@ public class DDLSourceTest {
 
     /**
      * Generates a FK statement
-     * @param parent the parent table name
-     * @param includeConstraint whether to include the "CONSTRAINT [symbol]" part of the string
-     * @param constraintName (optional) if non-null and includesConstraint is true, the constraint symbol
-     * @param indexName (optional) the index name
-     * @param columns the columns. Any column that starts with "parent:" will apply only to the parent; any that
-     * starts with "child:" will apply only to the child. All others will apply to both
+     * 
+     * @param parent
+     *            the parent table name
+     * @param includeConstraint
+     *            whether to include the "CONSTRAINT [symbol]" part of the
+     *            string
+     * @param constraintName
+     *            (optional) if non-null and includesConstraint is true, the
+     *            constraint symbol
+     * @param indexName
+     *            (optional) the index name
+     * @param columns
+     *            the columns. Any column that starts with "parent:" will apply
+     *            only to the parent; any that starts with "child:" will apply
+     *            only to the child. All others will apply to both
      * @return the FK
      */
-    private static String fk(String parent, boolean includeConstraint, String constraintName, String indexName, String... columns) {
+    private static String fk(String parent, boolean includeConstraint,
+            String constraintName, String indexName, String... columns) {
         List<String> parentCols = new ArrayList<String>(columns.length);
         List<String> childCols = new ArrayList<String>(columns.length);
         for (String column : columns) {
             if (column.startsWith("parent")) {
                 parentCols.add(column.substring("parent:".length()));
-            }
-            else if (column.startsWith("child:")) {
+            } else if (column.startsWith("child:")) {
                 childCols.add(column.substring("child:".length()));
-            }
-            else {
+            } else {
                 parentCols.add(column);
                 childCols.add(column);
             }
         }
-        assertEquals("column mismatch between parent " + parentCols +" and child " + childCols,
-                parentCols.size(), childCols.size());
+        assertEquals("column mismatch between parent " + parentCols
+                + " and child " + childCols, parentCols.size(),
+                childCols.size());
 
         StringBuilder builder = new StringBuilder();
         if (includeConstraint) {

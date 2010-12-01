@@ -60,6 +60,7 @@ NULL = 'null' ;
 DEFAULT = 'default' ;
 AUTO_INCREMENT = 'auto_increment';
 CHARSET = 'charset';
+COLLATE = 'collate';
 REFERENCES = 'references';
 ASC = 'asc';
 DESC = 'desc';
@@ -112,7 +113,7 @@ table[SchemaDef schema]
 table_spec[SchemaDef schema]
 	: table_name[$schema] LEFT_PAREN
 		table_element[$schema] (COMMA table_element[$schema])* RIGHT_PAREN
-		(table_suffix[$schema])* 
+		{$schema.finishTable();} (table_suffix[$schema])* 
 	{ $schema.resolveProvisionalIndexes(); }
 	;
 
@@ -122,9 +123,10 @@ table_name[SchemaDef schema]
     
 table_suffix[SchemaDef schema]
 	: (ENGINE EQUALS engine=qname {$schema.setEngine(engine);})
-	| AUTO_INCREMENT EQUALS NUMBER {$schema.autoIncrementInitialValue($NUMBER.text);}
-	| DEFAULT CHARSET EQUALS? ID
-	| ID EQUALS qvalue
+	| (AUTO_INCREMENT EQUALS NUMBER {$schema.autoIncrementInitialValue($NUMBER.text);})
+	| (DEFAULT? character_set[$schema])
+	| (collation[$schema])
+	| (ID EQUALS qvalue)
 	;
 	
 table_element[SchemaDef schema]
@@ -146,6 +148,8 @@ column_constraint[SchemaDef schema]
 	| AUTO_INCREMENT {$schema.autoIncrement();}
 	| ON UPDATE qvalue
 	| MCOMMENT EQUALS? TICKVALUE {$schema.addColumnComment($TICKVALUE.text);}
+	| character_set[$schema]
+	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
 	| PRIMARY ? KEY {$schema.inlineColumnPK();}
 	;
@@ -197,6 +201,14 @@ reference_column[SchemaDef schema]
     : qname {$schema.addIndexReferenceColumn($qname.name); }
     ;
 	
+character_set[SchemaDef schema]
+    : (CHARSET EQUALS? | CHARACTER SET) ID {$schema.addCharsetValue($ID.text);}
+    ;
+    
+collation[SchemaDef schema]
+	: COLLATE ID {$schema.addCollateValue($ID.text);}
+	;
+    
 data_type_def returns [String type, String len1, String len2]
 	: data_type {$type = $data_type.type;} (length_constraint {$len1 = $length_constraint.len1;})?
 	| numeric_data_type {$type = $numeric_data_type.type;}  

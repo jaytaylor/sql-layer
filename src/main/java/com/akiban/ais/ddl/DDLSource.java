@@ -488,18 +488,22 @@ public class DDLSource extends Source {
                             longValue(def.typeParam2), def.nullable,
                             def.defaultAutoIncrement(), groupSchemaName(),
                             groupTableName, groupColumnName, null, null,
-                            // This isn't really correct
-                            AkibaInformationSchema.DEFAULT_CHARSET,
-                            AkibaInformationSchema.DEFAULT_COLLATION));
+                            // TODO: This isn't really correct: if collation is specified but not 
+                            // charset, the collation's default charset should be used.
+                            // But to do this we need to add a charset/collation database.
+                            def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
+                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
                     columnReceiver.receive(map(column, groupSchemaName(),
                             groupTableName, groupColumnName, def.gposition,
                             def.typeName, longValue(def.typeParam1),
                             longValue(def.typeParam2), def.nullable,
                             def.defaultAutoIncrement(), null, null, null,
                             null, null,
-                            // This isn't really correct
-                            AkibaInformationSchema.DEFAULT_CHARSET,
-                            AkibaInformationSchema.DEFAULT_COLLATION));
+                            // TODO: This isn't really correct: if collation is specified but not 
+                            // charset, the collation's default charset should be used.
+                            // But to do this we need to add a charset/collation database.
+                            def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
+                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
                 }
             }
         }
