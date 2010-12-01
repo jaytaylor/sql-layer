@@ -422,6 +422,8 @@ public class Column implements Serializable, ModelNames
      * @return
      */
     private int characterWidth() {
+//
+//  See bug 337
 //        if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
 //            return 3;
 //        } else {
