@@ -35,7 +35,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
      * @param off
      *            offset to start at in buf
      */
-    private int miUnpack(int len, byte[] buf, int off) {
+    private static int miUnpack(int len, byte[] buf, int off) {
         int val = 0;
 
         if (len == 1) {
@@ -244,7 +244,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     }
 
     /**
-     * The real toString. Decodes the field into the given StringBuilder, and then returns the parsed BigDecimal.
+     * Decodes the field into the given StringBuilder and then returns the parsed BigDecimal.
      * (Always parsing the BigDecimal lets us fail fast if there was a decoding error.)
      * @param fieldDef the field to decode
      * @param rowData the rowdata taht contains the field
@@ -254,11 +254,43 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
      * @throws EncodingException if the string can't be parsed to a BigDecimal; the exception's cause will be a
      * NumberFormatException
      */
-    private BigDecimal decodeAndParse(FieldDef fieldDef, RowData rowData,
-                         StringBuilder sb) {
-        final int sbInitialLen = sb.length();
+    private static BigDecimal decodeAndParse(FieldDef fieldDef, RowData rowData, StringBuilder sb) {
         final int precision = fieldDef.getTypeParameter1().intValue();
         final int scale = fieldDef.getTypeParameter2().intValue();
+        final long locationAndOffset = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
+        final int location = (int) locationAndOffset;
+        final byte[] from = rowData.getBytes();
+
+        try {
+            return decodeAndParse(from, location, precision, scale, sb);
+        } catch (NumberFormatException e) {
+            StringBuilder errSb = new StringBuilder();
+            errSb.append("in field[");
+            errSb.append(fieldDef.getRowDef().getRowDefId()).append('.').append(fieldDef.getFieldIndex());
+            errSb.append(" decimal(");
+            errSb.append(fieldDef.getTypeParameter1()).append(',').append(fieldDef.getTypeParameter2());
+            errSb.append(")] 0x");
+            final int bytesLen = (int) (locationAndOffset >>> 32);
+            CServerUtil.hex(errSb, rowData.getBytes(), location, bytesLen);
+            errSb.append(": ").append( e.getMessage() );
+            throw new EncodingException(errSb.toString(), e);
+        }
+    }
+
+    /**
+     * Decodes bytes into the given StringBuilder and returns the parsed BigDecimal.
+     * @param from the bytes to parse
+     * @param location the starting offset within the "from" array
+     * @param precision the decimal's precision
+     * @param scale the decimal's scale
+     * @param sb the StringBuilder to write to
+     * @return the parsed BigDecimal
+     * @throws NullPointerException if from or sb are null
+     * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
+     * tried to parse
+     */
+    static BigDecimal decodeAndParse(byte[] from, int location, int precision, int scale, StringBuilder sb) {
+        final int sbInitialLen = sb.length();
 
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
@@ -266,12 +298,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         final int fracFull = scale / DECIMAL_DIGIT_PER;
         final int fracPartial = scale % DECIMAL_DIGIT_PER;
 
-        final long locationAndOffset = fieldDef.getRowDef().fieldLocation(
-                rowData, fieldDef.getFieldIndex());
-        final int location = (int) locationAndOffset;
-
         int curOff = location;
-        byte[] from = rowData.getBytes();
 
         final int mask = (from[curOff] & 0x80) != 0 ? 0 : -1;
 
@@ -324,19 +351,11 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         from[location] ^= 0x80;
 
         final String createdStr = sb.substring(sbInitialLen);
+
         try {
             return new BigDecimal(createdStr);
         } catch (NumberFormatException e) {
-            StringBuilder errSb = new StringBuilder();
-            errSb.append("in field[");
-            errSb.append(fieldDef.getRowDef().getRowDefId()).append('.').append(fieldDef.getFieldIndex());
-            errSb.append(" decimal(");
-            errSb.append(fieldDef.getTypeParameter1()).append(',').append(fieldDef.getTypeParameter2());
-            errSb.append(")] 0x");
-            final int bytesLen = (int) (locationAndOffset >>> 32);
-            CServerUtil.hex(errSb, rowData.getBytes(), location, bytesLen);
-            errSb.append(": ").append(createdStr);
-            throw new EncodingException(errSb.toString(), e);
+            throw new NumberFormatException(createdStr);
         }
     }
 
