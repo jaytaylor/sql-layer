@@ -8,7 +8,7 @@ import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 
-public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service {
+public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service<Void> {
     private static final String FORMATTER = "com.akiban:type=%s";
 
     private boolean started = false;
@@ -61,6 +61,11 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
                 }
             }
         }
+    }
+
+    @Override
+    public Void cast() {
+        throw new NotCastableException();
     }
 
     protected MBeanServer getMBeanServer() {

@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
-public class ConfigurationServiceImpl implements ConfigurationService, ConfigurationServiceMXBean, JmxManageable, Service
+public class ConfigurationServiceImpl implements ConfigurationService, ConfigurationServiceMXBean, JmxManageable, Service<ConfigurationService>
 {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private final static String AKIBAN_ADMIN = "akiban.admin";
@@ -103,6 +103,11 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     @Override
     public final JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("Configuration", this, ConfigurationServiceMXBean.class);
+    }
+
+    @Override
+    public ConfigurationService cast() {
+        return this;
     }
 
     private Map<Property.Key, Property> internalLoadProperties() throws IOException, ServiceStartupException {

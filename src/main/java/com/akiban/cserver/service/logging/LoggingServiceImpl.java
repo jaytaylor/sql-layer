@@ -6,7 +6,7 @@ import com.akiban.cserver.service.jmx.JmxManageable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class LoggingServiceImpl implements LoggingService, JmxManageable, Service {
+public class LoggingServiceImpl implements LoggingService, JmxManageable, Service<LoggingService> {
     private final List<LoggingError> internalErrors = Collections.synchronizedList( new ArrayList<LoggingError>() );
     private final AtomicInteger traceCount = new AtomicInteger();
     private final AtomicInteger debugCount = new AtomicInteger();
@@ -138,5 +138,10 @@ public class LoggingServiceImpl implements LoggingService, JmxManageable, Servic
     @Override
     public void stop() {
         // no-op
+    }
+
+    @Override
+    public LoggingService cast() {
+        return this;
     }
 }

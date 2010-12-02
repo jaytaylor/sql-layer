@@ -16,7 +16,7 @@ import com.akiban.util.Tap;
 /**
  * @author peter
  */
-public class CServer implements CServerConstants, Service, JmxManageable {
+public class CServer implements CServerConstants, Service<CServer>, JmxManageable {
 
     private static final Log LOG = LogFactory.getLog(CServer.class.getName());
 
@@ -106,6 +106,12 @@ public class CServer implements CServerConstants, Service, JmxManageable {
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return jmxObjectInfo;
+    }
+
+
+    @Override
+    public CServer cast() {
+        return this;
     }
 
     /**

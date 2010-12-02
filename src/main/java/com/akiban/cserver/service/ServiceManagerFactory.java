@@ -1,16 +1,22 @@
 package com.akiban.cserver.service;
 
+import com.akiban.cserver.CServer;
+import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.logging.LoggingService;
+import com.akiban.cserver.service.network.NetworkService;
+import com.akiban.cserver.store.Store;
+
 public interface ServiceManagerFactory
 {
     ServiceManager serviceManager();
 
-    Service configurationService();
+    Service<ConfigurationService> configurationService();
 
-    Service loggingService();
+    Service<LoggingService> loggingService();
 
-    Service networkService();
+    Service<NetworkService> networkService();
 
-    Service storeService();
+    Service<Store> storeService();
 
-    Service chunkserverService();
+    Service<CServer> chunkserverService();
 }

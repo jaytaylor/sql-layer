@@ -9,7 +9,7 @@ import com.akiban.cserver.store.SchemaId;
 
 import java.util.List;
 
-public final class SchemaServiceImpl implements SchemaService, JmxManageable, Service {
+public final class SchemaServiceImpl implements SchemaService, JmxManageable, Service<SchemaService> {
     private final SchemaManager manager;
 
     public SchemaServiceImpl(SchemaManager manager) {
@@ -54,5 +54,10 @@ public final class SchemaServiceImpl implements SchemaService, JmxManageable, Se
     @Override
     public void stop() throws Exception {
         // no-op
+    }
+
+    @Override
+    public SchemaService cast() {
+        return this;
     }
 }

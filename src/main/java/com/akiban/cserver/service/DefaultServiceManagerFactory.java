@@ -3,7 +3,10 @@ package com.akiban.cserver.service;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.config.ConfigurationServiceImpl;
+import com.akiban.cserver.service.logging.LoggingService;
+import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
+import com.akiban.cserver.store.Store;
 
 public class DefaultServiceManagerFactory implements ServiceManagerFactory
 {
@@ -22,7 +25,7 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     }
 
     @Override
-    public Service configurationService()
+    public Service<ConfigurationService> configurationService()
     {
         if (configurationService == null) {
             configurationService = new ConfigurationServiceImpl();
@@ -31,24 +34,24 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     }
 
     @Override
-    public Service loggingService()
+    public Service<LoggingService> loggingService()
     {
         assert false : "Not implemented yet";
         return null;
     }
 
     @Override
-    public Service networkService()
+    public Service<NetworkService> networkService()
     {
         if (networkService == null) {
-            ConfigurationService config = (ConfigurationService) configurationService();
+            ConfigurationService config = configurationService().cast();
             networkService = new NetworkServiceImpl(config);
         }
         return networkService;
     }
 
     @Override
-    public Service storeService()
+    public Service<Store> storeService()
     {
         // Store is still allocated in ServiceManagerImpl. Need to clean up CServerConfig.
         assert false : "not implemented yet";
@@ -56,7 +59,7 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     }
 
     @Override
-    public Service chunkserverService()
+    public Service<CServer> chunkserverService()
     {
         if (chunkserverService == null)
         {

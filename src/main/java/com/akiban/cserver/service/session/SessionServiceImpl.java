@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public final class SessionServiceImpl implements SessionService, JmxManageable, Service, SessionFactory
+public final class SessionServiceImpl implements SessionService, JmxManageable, Service<SessionService>, SessionFactory
 {
     private final SessionFactory factory;
     private final Map<SessionHandle, Session> sessions = new HashMap<SessionHandle, Session>();
@@ -37,6 +37,11 @@ public final class SessionServiceImpl implements SessionService, JmxManageable, 
     @Override
     public void stop() throws Exception {
         // No-op
+    }
+
+    @Override
+    public SessionService cast() {
+        return this;
     }
 
     @Override

@@ -22,7 +22,7 @@ import com.persistit.Exchange;
  * @author peter
  * 
  */
-public interface Store extends Service {
+public interface Store extends Service<Store> {
 
     RowDefCache getRowDefCache();
 
