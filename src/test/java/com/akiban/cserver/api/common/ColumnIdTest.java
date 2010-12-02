@@ -9,8 +9,8 @@ import static org.junit.Assert.*;
 public final class ColumnIdTest {
     @Test
     public void testEquality() {
-        ColumnId columnOne = new ColumnId(1);
-        ColumnId columnTwo = new ColumnId(1);
+        ColumnId columnOne = ColumnId.of(1);
+        ColumnId columnTwo = ColumnId.of(1);
 
         assertEquals("columns", columnOne, columnTwo);
         

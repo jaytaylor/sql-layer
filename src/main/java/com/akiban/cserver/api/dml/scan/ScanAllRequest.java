@@ -21,7 +21,7 @@ public class ScanAllRequest implements ScanRequest {
         this.tableId = tableId;
         Set<ColumnId> columnIdSet = new HashSet<ColumnId>(columnIds.length);
         for (int colId : columnIds) {
-            columnIdSet.add( new ColumnId(colId) );
+            columnIdSet.add( ColumnId.of(colId) );
         }
         this.columns = ColumnSet.packToLegacy(columnIdSet);
     }

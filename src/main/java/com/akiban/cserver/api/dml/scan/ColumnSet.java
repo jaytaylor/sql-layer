@@ -17,7 +17,7 @@ public final class ColumnSet {
         int added = 0;
         for(int relativePos=0; relativePos < 8; ++relativePos) {
             if ( 0!= (theByte & (1 << relativePos))) {
-                if (out.add( new ColumnId( (byteNum*8) + relativePos) )) {
+                if (out.add( ColumnId.of( (byteNum*8) + relativePos) )) {
                     ++added;
                 }
             }

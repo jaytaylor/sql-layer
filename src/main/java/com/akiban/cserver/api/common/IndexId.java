@@ -1,12 +1,26 @@
 package com.akiban.cserver.api.common;
 
+import com.akiban.util.CacheMap;
+
 import java.nio.ByteBuffer;
 
 public final class IndexId extends ByteBufferWriter {
+
+    private final static CacheMap<Integer,IndexId> cache = new CacheMap<Integer, IndexId>(new CacheMap.Allocator<Integer,IndexId>() {
+        @Override
+        public IndexId allocateFor(Integer key) {
+            return new IndexId(key);
+        }
+    });
+
     private final int indexId;
 
-    public IndexId(int indexId) {
+    private IndexId(int indexId) {
         this.indexId = indexId;
+    }
+
+    public static IndexId of(int indexId) {
+        return cache.get(indexId);
     }
 
     /**

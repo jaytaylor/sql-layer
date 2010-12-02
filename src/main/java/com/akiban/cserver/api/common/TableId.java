@@ -2,6 +2,7 @@ package com.akiban.cserver.api.common;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.api.dml.NoSuchTableException;
+import com.akiban.util.CacheMap;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,11 +25,19 @@ import java.util.concurrent.atomic.AtomicReference;
  * them. Any attempt to do so will result in a ResolutionException being thrown.</p>
  */
 public final class TableId extends ByteBufferWriter {
+
+    private final static CacheMap<Integer,TableId> cache = new CacheMap<Integer, TableId>(new CacheMap.Allocator<Integer,TableId>() {
+        @Override
+        public TableId allocateFor(Integer key) {
+            return new TableId(key);
+        }
+    });
+    
     private final AtomicReference<Integer> tableId = new AtomicReference<Integer>();
     private final TableName tableName;
 
     public static TableId of(int tableId) {
-        return new TableId(tableId);
+        return cache.get(tableId);
     }
 
     private TableId(int tableId) {

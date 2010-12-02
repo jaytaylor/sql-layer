@@ -31,7 +31,7 @@ public class NiceRow implements NewRow {
 
     @Override
     public Object get(int index) {
-        return fields.get(new ColumnId(index) );
+        return fields.get(ColumnId.of(index) );
     }
 
     @Override
@@ -44,7 +44,7 @@ public class NiceRow implements NewRow {
         for(int fieldIndex=0, fieldsCount=rowDef.getFieldCount(); fieldIndex < fieldsCount; ++fieldIndex) {
             final long location = rowDef.fieldLocation(origData, fieldIndex);
             if (location != 0) {
-                activeColumns.add( new ColumnId(fieldIndex) );
+                activeColumns.add( ColumnId.of(fieldIndex) );
             }
         }
 

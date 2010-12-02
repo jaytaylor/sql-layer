@@ -13,8 +13,8 @@ public final class ColumnSetTest {
     @Test
     public void pack1Byte() throws Exception {
         Set<ColumnId> columns = new HashSet<ColumnId>();
-        columns.add( new ColumnId(0) );
-        columns.add( new ColumnId(6) );
+        columns.add( ColumnId.of(0) );
+        columns.add( ColumnId.of(6) );
 
         assertBytes("[ 10000010 ]", columns);
     }
@@ -22,9 +22,9 @@ public final class ColumnSetTest {
     @Test
     public void pack2BytesBoth() throws Exception {
         Set<ColumnId> columns = new HashSet<ColumnId>();
-        columns.add( new ColumnId(0) );
-        columns.add( new ColumnId(6) );
-        columns.add( new ColumnId(9) );
+        columns.add( ColumnId.of(0) );
+        columns.add( ColumnId.of(6) );
+        columns.add( ColumnId.of(9) );
 
         assertBytes("[ 10000010 01000000 ]", columns);
     }
@@ -32,7 +32,7 @@ public final class ColumnSetTest {
     @Test
     public void pack2BytesSparse() throws Exception {
         Set<ColumnId> columns = new HashSet<ColumnId>();
-        columns.add( new ColumnId(8) );
+        columns.add( ColumnId.of(8) );
 
         assertBytes("[ 00000000 10000000 ]", columns);
     }

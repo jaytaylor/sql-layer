@@ -100,13 +100,13 @@ public final class NiceRowTest {
         TreeMap<Integer,NiceRow> mapOne = new TreeMap<Integer, NiceRow>();
         TreeMap<Integer,NiceRow> mapTwo = new TreeMap<Integer, NiceRow>();
         NiceRow rowOne = new NiceRow(TableId.of(1));
-        rowOne.put(new ColumnId(0), Long.valueOf(0l));
-        rowOne.put(new ColumnId(1), "hello world");
+        rowOne.put(ColumnId.of(0), Long.valueOf(0l));
+        rowOne.put(ColumnId.of(1), "hello world");
         mapOne.put(0, rowOne);
 
         NiceRow rowTwo = new NiceRow(TableId.of(1));
-        rowTwo.put(new ColumnId(0), Long.valueOf(0l));
-        rowTwo.put(new ColumnId(1), "hello world");
+        rowTwo.put(ColumnId.of(0), Long.valueOf(0l));
+        rowTwo.put(ColumnId.of(1), "hello world");
         mapTwo.put(0, rowTwo);
 
         assertEquals("rows", rowOne, rowTwo);

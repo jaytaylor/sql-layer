@@ -1,26 +1,28 @@
 package com.akiban.cserver.api.common;
 
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.CacheMap;
 
 import java.nio.ByteBuffer;
 
 public final class ColumnId extends ByteBufferWriter implements Comparable<ColumnId> {
+
+    private final static CacheMap<Integer,ColumnId> cache = new CacheMap<Integer, ColumnId>(new CacheMap.Allocator<Integer,ColumnId>() {
+        @Override
+        public ColumnId allocateFor(Integer key) {
+            return new ColumnId(key);
+        }
+    });
+
     private final int columnPosition;
 
-    public ColumnId(int columnPosition) {
+    private ColumnId(int columnPosition) {
         ArgumentValidation.isNotNegative("position", columnPosition);
         this.columnPosition = columnPosition;
     }
 
-    /**
-     * Reads an int from the buffer.
-     * @param readFrom the buffer to read from
-     * @param allocatedBytes must be 4
-     * @throws java.nio.BufferUnderflowException if thrown from reading the buffer
-     */
-    public ColumnId(ByteBuffer readFrom, int allocatedBytes) {
-        WrongByteAllocationException.ifNotEqual(allocatedBytes, 4);
-        columnPosition = readFrom.getInt();
+    public static ColumnId of(int columnPosition) {
+        return cache.get(columnPosition);
     }
 
     @Override
