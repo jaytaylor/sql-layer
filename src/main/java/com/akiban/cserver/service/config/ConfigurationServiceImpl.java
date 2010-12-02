@@ -132,9 +132,15 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         
         props = loadResourceProperties(props);
         props = loadSystemProperties(props);
-        props = loadAdminProperties(props);
+        if (shouldLoadAdminProperties()) {
+            props = loadAdminProperties(props);
+        }
 
         return propetiesToMap(props);
+    }
+
+    protected boolean shouldLoadAdminProperties() {
+        return true;
     }
 
     protected Set<Property.Key> getRequiredKeys() {

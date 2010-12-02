@@ -4,10 +4,13 @@ import com.akiban.ais.model.Types;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 
 import static org.junit.Assert.*;
 
@@ -90,6 +93,24 @@ public final class NiceRowTest {
         }
 
         compareRowDatas(rowData, newRow.toRowData(rowDef));
+    }
+
+    @Test
+    public void testEquality() {
+        TreeMap<Integer,NiceRow> mapOne = new TreeMap<Integer, NiceRow>();
+        TreeMap<Integer,NiceRow> mapTwo = new TreeMap<Integer, NiceRow>();
+        NiceRow rowOne = new NiceRow(TableId.of(1));
+        rowOne.put(new ColumnId(0), Long.valueOf(0l));
+        rowOne.put(new ColumnId(1), "hello world");
+        mapOne.put(0, rowOne);
+
+        NiceRow rowTwo = new NiceRow(TableId.of(1));
+        rowTwo.put(new ColumnId(0), Long.valueOf(0l));
+        rowTwo.put(new ColumnId(1), "hello world");
+        mapTwo.put(0, rowTwo);
+
+        assertEquals("rows", rowOne, rowTwo);
+        assertEquals("maps", mapOne, mapTwo);
     }
 
     private static byte[] bytes() {

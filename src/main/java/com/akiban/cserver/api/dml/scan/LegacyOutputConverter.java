@@ -12,13 +12,8 @@ import com.akiban.cserver.RowDef;
  * LegacyRowOutput.</p>
  */
 public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
-    private final RowDef rowDef;
-    private final RowOutput output;
-
-    private LegacyOutputConverter(RowDef rowDef, RowOutput output) {
-        this.rowDef = rowDef;
-        this.output = output;
-    }
+    private RowDef rowDef;
+    private RowOutput output;
 
     @Override
     public void handleRow(byte[] bytes, int offset, int length) throws RowOutputException {
@@ -26,5 +21,13 @@ public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
         rowData.prepareRow(offset);
         NewRow aNew = NiceRow.fromRowData(rowData, rowDef);
         output.output(aNew);
+    }
+
+    public void setRowDef(RowDef rowDef) {
+        this.rowDef = rowDef;
+    }
+
+    public void setOutput(RowOutput output) {
+        this.output = output;
     }
 }

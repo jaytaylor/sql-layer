@@ -11,10 +11,13 @@ import com.akiban.cserver.api.dml.scan.*;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.store.Store;
+import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
 
 import java.nio.ByteBuffer;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings("deprecation")
@@ -22,6 +25,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final String MODULE_NAME = DMLFunctionsImpl.class.getCanonicalName();
     private static final AtomicLong cursorsCount = new AtomicLong();
+    private static final Object OPEN_CURSORS = new Object();
 
     public DMLFunctionsImpl(Store store) {
         super(store);
@@ -74,7 +78,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    @Deprecated
     public CursorId openCursor(ScanRequest request, Session session)
     throws  NoSuchTableException,
             NoSuchColumnException,
@@ -82,10 +85,19 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
     {
         final RowCollector rc = getRowCollector(request);
-        final CursorId cursor = newUniqueCursor(rc.getTableId());
-        Object old = session.put(MODULE_NAME, cursor, new Cursor(rc));
+        final CursorId cursorId = newUniqueCursor(rc.getTableId());
+        final Cursor cursor = new Cursor(rc);
+        Object old = session.put(MODULE_NAME, cursorId, cursor);
         assert old == null : old;
-        return cursor;
+
+        Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
+        if (cursors == null) {
+            cursors = new HashSet<CursorId>();
+            session.put(MODULE_NAME, OPEN_CURSORS, cursors);
+        }
+        boolean addWorked = cursors.add(cursorId);
+        assert addWorked : String.format("%s -> %s", cursor, cursors);
+        return cursorId;
     }
 
     protected RowCollector getRowCollector(ScanRequest request)
@@ -108,6 +120,15 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
+    public CursorState getCursorState(CursorId cursorId, Session session) {
+        final Cursor cursor = session.get(MODULE_NAME, cursorId);
+        if (cursor == null) {
+            return CursorState.UNKNOWN_CURSOR;
+        }
+        return cursor.getState();
+    }
+
+    @Override
     public boolean scanSome(CursorId cursorId, Session session, LegacyRowOutput output, int limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
@@ -123,6 +144,77 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throw new CursorIsUnknownException(cursorId);
         }
         return doScan(cursor, cursorId, output, limit);
+    }
+
+    private static class PooledConverter {
+        private final LegacyOutputConverter converter;
+        private final LegacyOutputRouter router;
+        private final Store store;
+
+        public PooledConverter(Store store) {
+            this.store = store;
+            router = new LegacyOutputRouter(1024 * 1024, true);
+            converter = new LegacyOutputConverter();
+            router.addHandler(converter);
+        }
+
+        public LegacyRowOutput getLegacyOutput() {
+            return router;
+        }
+
+        public void setConverter(int rowDefId, RowOutput output) throws NoSuchTableException {
+            final RowDef rowDef;
+            try {
+                rowDef = store.getRowDefCache().getRowDef( rowDefId );
+            } catch (RowDefNotFoundException e) {
+                throw new NoSuchTableException( rowDefId );
+            }
+            converter.setRowDef(rowDef);
+            converter.setOutput(output);
+        }
+    }
+    
+    private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
+
+    private PooledConverter getPooledConverter(int tableId, RowOutput output) throws NoSuchTableException {
+        PooledConverter converter = convertersPool.poll();
+        if (converter == null) {
+            // TODO Log something here: we're allocating a new buffer, which shouldn't happen a lot
+            converter = new PooledConverter(store());
+        }
+        try {
+            converter.setConverter(tableId, output);
+        } catch (NoSuchTableException e) {
+            releasePooledConverter(converter);
+            throw e;
+        } catch (RuntimeException e) {
+            releasePooledConverter(converter);
+            throw e;
+        }
+        return converter;
+    }
+
+    private void releasePooledConverter(PooledConverter which) {
+        if (!convertersPool.offer(which)) {
+            // TODO Log something here -- this is a warning of inefficient tuning
+        }
+    }
+
+    @Override
+    public boolean scanSome(CursorId cursorId, Session session, RowOutput output, int limit)
+    throws  CursorIsFinishedException,
+            CursorIsUnknownException,
+            RowOutputException,
+            NoSuchTableException,
+            GenericInvalidOperationException
+    {
+        final PooledConverter converter = getPooledConverter(cursorId.getTableId(), output);
+        try {
+            return scanSome(cursorId, session, converter.getLegacyOutput(), limit);
+        }
+        finally {
+            releasePooledConverter(converter);
+        }
     }
 
     /**
@@ -204,12 +296,19 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
+        Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
+        // cursors should not be null, since the cursor isn't null and creating it guarantees a Set<Cursor>
+        boolean removeWorked = cursors.remove(cursorId);
+        assert removeWorked : String.format("%s %s -> %s", cursorId, cursor, cursors);
     }
 
     @Override
-    public Set<CursorId> getCursors() {
-        throw new UnsupportedOperationException("need to revisit whether we need this; "
-                + "it may require modifications to Session to make this easy");
+    public Set<CursorId> getCursors(Session session) {
+        Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
+        if (cursors == null) {
+            return Collections.emptySet();
+        }
+        return Collections.unmodifiableSet(cursors);
     }
 
     @Override

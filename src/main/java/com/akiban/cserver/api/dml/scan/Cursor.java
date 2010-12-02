@@ -3,11 +3,8 @@ package com.akiban.cserver.api.dml.scan;
 import com.akiban.cserver.store.RowCollector;
 
 public final class Cursor {
-    private enum State {
-        FRESH, SCANNING, FINISHED
-    }
 
-    private State state = State.FRESH;
+    private CursorState state = CursorState.FRESH;
     private final RowCollector rowCollector;
 
     public Cursor(RowCollector rowCollector) {
@@ -19,21 +16,25 @@ public final class Cursor {
     }
 
     public void setScanning() {
-        if (State.FINISHED.equals(state)) {
+        if (CursorState.FINISHED.equals(state)) {
             throw new IllegalStateException("Can't set state to SCANNING from FINISHED");
         }
-        state = State.SCANNING;
+        state = CursorState.SCANNING;
     }
 
     public void setFinished() {
-        state = State.FINISHED;
+        state = CursorState.FINISHED;
     }
 
     public boolean isScanning() {
-        return state.equals(State.SCANNING);
+        return state.equals(CursorState.SCANNING);
     }
 
     public boolean isFinished() {
-        return state.equals(State.FINISHED);
+        return state.equals(CursorState.FINISHED);
+    }
+
+    public CursorState getState() {
+        return state;
     }
 }

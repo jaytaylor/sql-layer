@@ -58,4 +58,9 @@ public final class CursorId extends ByteBufferWriter {
     public int hashCode() {
         return (int) (cursorId ^ (cursorId >>> 32));
     }
+
+    @Override
+    public String toString() {
+        return String.format("CursorId[%d for tableId=%d]", cursorId, tableId);
+    }
 }

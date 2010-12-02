@@ -21,11 +21,13 @@ public final class GenericInvalidOperationException extends InvalidOperationExce
         super(t);
         this.cause = (t instanceof InvalidOperationException)
                 ? (InvalidOperationException) t
-                : this;
+                : new InvalidOperationException(t);
     }
 
     @Override
     public InvalidOperationException getCause() {
         return cause;
     }
+
+    
 }

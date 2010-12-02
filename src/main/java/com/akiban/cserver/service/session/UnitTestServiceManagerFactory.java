@@ -3,16 +3,23 @@ package com.akiban.cserver.service.session;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.config.ConfigurationServiceImpl;
 import com.akiban.cserver.service.config.Property;
 import com.akiban.cserver.store.PersistitStore;
 
-public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
+public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
 {
     private static class TestConfigService extends ConfigurationServiceImpl {
+        @Override
+        protected boolean shouldLoadAdminProperties() {
+            return false;
+        }
+
         @Override
         protected Map<Property.Key, Property> loadProperties() throws IOException {
             Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>(super.loadProperties());
@@ -56,7 +63,7 @@ public final class UnitTestServiceManagerFactory extends DefaultServiceManagerFa
     ConfigurationServiceImpl configService = null;
 
     @Override
-    public Service configurationService() {
+    public Service<ConfigurationService> configurationService() {
         if (configService == null) {
             configService = new TestConfigService();
         }

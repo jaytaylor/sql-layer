@@ -129,6 +129,60 @@ public interface DMLFunctions extends LegacyConverter {
             CursorIsUnknownException,
             RowOutputException,
             GenericInvalidOperationException;
+    /**
+     * <p>Performs a scan using the given cursor. This scan optionally limits the number of rows scanned, and passes
+     * each row to the given RowOutput.</p>
+     *
+     * <p>This method is similar to its LegacyRowOutput-taking twin, but it takes a RowOutput instead. Converting
+     * from legacy RowData instances to NewRows requires RowDef knowledge that the caller may not have, but
+     * DMLFunctions implementations should have this information. Thus, this call acts as both a convenience
+     * and a separator of concerns.</p> 
+     *
+     * <p>This method returns whether there are more rows to be scanned; if it returns <tt>false</tt>, subsequent scans
+     * on this cursor will raise a CursorIsFinishedException. The first invocation of this method on a cursor will never
+     * throw a CursorIsFinishedException, even if there are now rows in the table.</p>
+     *
+     * <p>If the specified limit is <tt>&gt;= 0</tt>, this method will scan no more than that limit; it may scan
+     * fewer, if the table has fewer remaining rows. If al limit is provided and this method returns <tt>true</tt>,
+     * exactly <tt>limit</tt> rows will have been scanned; if a limit is provided and this method returns
+     * <tt>false</tt>, the number of rows is <tt>&lt;=limit</tt>. If this is the case and you need to know how many
+     * rows were actually scanned, using {@link LegacyRowOutput#getRowsCount()}.</p>
+     *
+     * <p>There is nothing special about a limit of 0; this method will scan no rows, and will return whether there
+     * are more rows to be scanned. Note that passing a limit of 0 is essentially analogous to a "hasMore()" method.
+     * As such, the Cursor will assume you now know there are no rows to scan, and any subsequent invocation of this
+     * method will throw a CursorIsFinishedException -- even if that invocation uses a limit of 0. This is actually
+     * a specific case of the general rule: if this method ever returns false, the next invocation using the same
+     * cursor ID will throw a CursorIsFinishedException.</p>
+     *
+     * <p>The check for whether the cursor is finished is performed
+     * before any limit tests; so if a previous invocation of this method returned <tt>false</tt> and you invoke
+     * it on the same CursorId, even with a limit of 0, you will get a CursorIsFinishedException.</p>
+     *
+     * <p>Any negative limit will be regarded as infinity; this method will scan all remaining rows in the table.</p>
+     *
+     * <p>If the RowOutput throws an exception, it will be wrapped in a RowOutputException.</p>
+     *
+     * <p>If this method throws any exception, the cursor will be marked as finished.</p>
+     * @param cursorId the cursor to scan
+     * @param session the context in which the cursor was opened
+     * @param output the RowOutput to collect the given rows
+     * @param limit if non-negative, the maximum number of rows to scan
+     * @return whether more rows remain to be scanned
+     * @throws NullPointerException if cursorId or output are null
+     * @throws CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
+     * <tt>false</tt>
+     * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
+     * @throws RowOutputException if the given RowOutput threw an exception while writing a row
+     * @throws NoSuchTableException if the table ID specified by cursorId isn't recognized
+     * @throws GenericInvalidOperationException if some other exception occurred
+     */
+    boolean scanSome(CursorId cursorId, Session session, RowOutput output, int limit)
+            throws  CursorIsFinishedException,
+            CursorIsUnknownException,
+            RowOutputException,
+            NoSuchTableException,
+            GenericInvalidOperationException;
 
     /**
      * Closes the given cursor. This releases the relevant resources from the session.
@@ -140,6 +194,15 @@ public interface DMLFunctions extends LegacyConverter {
     void closeCursor(CursorId cursorId, Session session) throws CursorIsUnknownException;
 
     /**
+     * Gets the state of the given cursor. This method will never throw an exception; if the cursor is unknown,
+     * it will return the special enum {@link CursorState#UNKNOWN_CURSOR}
+     * @param cursorId the cursorID to get state for
+     * @param session the session in which the cursor is defined
+     * @return the cursor's state
+     */
+    CursorState getCursorState(CursorId cursorId, Session session);
+
+    /**
      * <p>Returns all open cursors. It is not necessarily safe to call {@linkplain #scanSome(CursorId, Session, LegacyRowOutput , int)}
      * on all of these cursors, since some may have reached their end. But it is safe to close each of these cursors
      * (unless, of course, another thread closes them first).</p>
@@ -147,7 +210,7 @@ public interface DMLFunctions extends LegacyConverter {
      * <p>If this method returns an empty Set, it will be unmodifiable. Otherwise, it is safe to modify.</p>
      * @return the set of open (but possibly finished) cursors
      */
-    Set<CursorId> getCursors();
+    Set<CursorId> getCursors(Session session);
 
     /**
      * Writes a row to the specified table. If the table contains an autoincrement column, and a value for that

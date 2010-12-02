@@ -13,6 +13,7 @@ public class NiceRow implements NewRow {
     private final TableId tableId;
 
     public NiceRow(TableId tableId) {
+        ArgumentValidation.notNull("tableId", tableId);
         fields = new TreeMap<ColumnId, Object>();
         this.tableId = tableId;
     }
@@ -109,5 +110,25 @@ public class NiceRow implements NewRow {
         }
         sb.append(']');
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        NiceRow niceRow = (NiceRow) o;
+
+        if (!fields.equals(niceRow.fields)) return false;
+        if (!tableId.equals(niceRow.tableId)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = fields.hashCode();
+        result = 31 * result + tableId.hashCode();
+        return result;
     }
 }
