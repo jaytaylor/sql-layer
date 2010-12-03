@@ -28,8 +28,8 @@ public final class NiceRowTest {
         NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
         assertEquals("fields count", 2, newRow.getFields().size());
-        assertEquals("field[0]", 5L, newRow.get(0));
-        assertEquals("field[1]", "Bob", newRow.get(1));
+        assertEquals("field[0]", 5L, newRow.get(ColumnId.of(0)));
+        assertEquals("field[1]", "Bob", newRow.get(ColumnId.of(1)));
 
         compareRowDatas(rowData, newRow.toRowData(rowDef));
     }
@@ -51,11 +51,11 @@ public final class NiceRowTest {
         NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
         assertEquals("fields count", NUM, newRow.getFields().size());
-        assertEquals("field[0]", 15L, newRow.get(0));
-        assertEquals("field[1]", "Robert", newRow.get(1));
+        assertEquals("field[0]", 15L, newRow.get(ColumnId.of(0)));
+        assertEquals("field[1]", "Robert", newRow.get(ColumnId.of(1)));
         for (int i=2; i < NUM; ++i) {
             long expected = i + 1000;
-            assertEquals("field[1]", expected, newRow.get(i));
+            assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
         }
 
         compareRowDatas(rowData, newRow.toRowData(rowDef));
@@ -85,11 +85,11 @@ public final class NiceRowTest {
         NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
         assertEquals("fields count", NUM - nulls, newRow.getFields().size());
-        assertEquals("field[0]", 15L, newRow.get(0));
-        assertEquals("field[1]", "Robert", newRow.get(1));
+        assertEquals("field[0]", 15L, newRow.get(ColumnId.of(0)));
+        assertEquals("field[1]", "Robert", newRow.get(ColumnId.of(1)));
         for (int i=2; i < NUM; ++i) {
-            Long expected = (i % 3) == 0 ? null : Long.valueOf(i + 1000);
-            assertEquals("field[1]", expected, newRow.get(i));
+            Long expected = (i % 3) == 0 ? null : i + 1000L;
+            assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
         }
 
         compareRowDatas(rowData, newRow.toRowData(rowDef));

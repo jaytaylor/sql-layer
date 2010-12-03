@@ -2,11 +2,17 @@ package com.akiban.cserver.api.dml;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 
 public final class NoSuchTableException extends DMLException {
     public NoSuchTableException(InvalidOperationException e) {
         super(e);
+    }
+
+    public NoSuchTableException(TableId tableId, RowDefNotFoundException e) {
+        super(ErrorCode.NO_SUCH_TABLE, "TableId not found: " + tableId, e);
     }
 
     public NoSuchTableException(int id) {

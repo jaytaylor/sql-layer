@@ -1,20 +1,15 @@
 package com.akiban.cserver.api;
 
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.common.IdResolverImpl;
-import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.NoSuchTableException;
-import com.akiban.cserver.api.dml.scan.NewRow;
-import com.akiban.cserver.api.dml.scan.NiceRow;
+import com.akiban.cserver.api.dml.NoSuchRowException;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.Store;
 import com.akiban.util.ArgumentValidation;
 
-abstract class ClientAPIBase implements LegacyConverter {
+abstract class ClientAPIBase {
 
     private final Store store;
     private final IdResolverImpl resolver;
@@ -37,32 +32,6 @@ abstract class ClientAPIBase implements LegacyConverter {
         return resolver;
     }
 
-    @Override
-    public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
-        RowDef rowDef = idResolver().getRowDef( TableId.of(rowData.getRowDefId()) );
-        return NiceRow.fromRowData(rowData, rowDef);
-    }
-
-    @Override
-    public NewRow[] convertRowDatas(RowData... rowDatas) throws NoSuchTableException {
-        if (rowDatas.length == 0) {
-            return new NewRow[0];
-        }
-
-        NewRow[] retval = new NewRow[rowDatas.length];
-        int lastRowDefId = -1; rowDatas[0].getRowDefId();
-        RowDef rowDef = null;
-        for (int i=0; i < retval.length; ++i) {
-            int currRowDefId = rowDatas[i].getRowDefId();
-            if ( (rowDef == null) || (currRowDefId != lastRowDefId) ) {
-                lastRowDefId = currRowDefId;
-                rowDef = idResolver().getRowDef( TableId.of(currRowDefId) );
-            }
-            retval[i] = NiceRow.fromRowData(rowDatas[i], rowDef);
-        }
-        return retval;
-    }
-
     static Store getDefaultStore() {
         ServiceManager serviceManager = ServiceManagerImpl.get();
         if (serviceManager == null) {
@@ -76,24 +45,37 @@ abstract class ClientAPIBase implements LegacyConverter {
     }
 
     /**
-     * Throws a specific DDLException based on the invalid operation exception specified. This method will always
-     * throw an exception, but it is listed as having a return value so that you can tell the compiler you're
-     * throwing the result; this helps the compiler compute execution paths.
-     * @param e the cause
-     * @throws GenericInvalidOperationException if the given exception isn't recognized
-     * @return nothing; this method will always throw an InvalidOperationException
+     * Returns an exception as an InvalidOperationException. If the given exception is one that we know how to turn
+     * into a specific InvalidOperationException (e.g., NoSuchRowException), the returned exception will be of that
+     * type. Otherwise, if the given exception is an InvalidOperationException, we'll just return it, and if not,
+     * we'll wrap it in a GenericInvalidOperationException.
+     * @param e the exception to wrap
+     * @return as specific an InvalidOperationException as we know how to make
      */
-    static GenericInvalidOperationException rethrow(Exception e) throws GenericInvalidOperationException {
-        if (! (e instanceof InvalidOperationException)) {
-            throw new GenericInvalidOperationException(e);
+    protected static InvalidOperationException launder(Exception e) {
+        if (e instanceof InvalidOperationException) {
+            final InvalidOperationException ioe = (InvalidOperationException)e;
+            switch (ioe.getCode()) {
+                case NO_SUCH_RECORD:
+                    return new NoSuchRowException(ioe);
+                default:
+                    return ioe;
+            }
         }
-        final InvalidOperationException ioe = (InvalidOperationException)e;
-        switch (ioe.getCode()) {
-            // TODO FINISH THIS
-//            case PARSE_EXCEPTION:
-//                throw new ParseException(ioe);
-            default:
-                throw new GenericInvalidOperationException(ioe);
+        return new GenericInvalidOperationException(e);
+    }
+
+    /**
+     * Throws the given InvalidOperationException, downcast, if it's of the appropriate type
+     * @param cls the class to check for and cast to
+     * @param e the exception to check
+     * @param <T> an InvalidOperationException to throw as
+     * @throws T the e instance, cast down
+     */
+    protected static <T extends InvalidOperationException>
+    void throwIfInstanceOf(Class<T> cls, InvalidOperationException e) throws T {
+        if(cls.isInstance(e)) {
+            throw cls.cast(e);
         }
     }
 }

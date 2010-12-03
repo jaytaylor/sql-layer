@@ -38,7 +38,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
         try {
             schemaManager().createTable(schema, ddlText);
         } catch (Exception e) {
-            rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
@@ -60,7 +60,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
             schemaManager().dropTable(tableName.getSchemaName(), tableName.getTableName());
         }
         catch (Exception e) {
-            rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
@@ -74,7 +74,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
             schemaManager().dropSchema(schemaName);
         }
         catch (Exception e) {
-            rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 

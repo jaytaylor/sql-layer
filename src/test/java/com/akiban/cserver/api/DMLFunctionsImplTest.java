@@ -242,36 +242,6 @@ public final class DMLFunctionsImplTest {
     }
 
     @Test
-    public void testSessionLifecycle() throws InvalidOperationException {
-        Session session = new SessionImpl();
-        TestDML testDML = new TestDML("Hi there poohbear".split(" "));
-
-        final StringRowOutput output = new StringRowOutput();
-        final CursorId cursorId = testDML.openCursor(null, session);
-
-        assertTrue("expected more", testDML.scanSome(cursorId, session, output, 0));
-        assertEquals("rows collected", 0, output.getRowsCount());
-
-        assertTrue("expected more", testDML.scanSome(cursorId, session, output, 1));
-        assertEquals("rows collected", 1, output.getRowsCount());
-
-        assertFalse("expected more", testDML.scanSome(cursorId, session, output, -1));
-        assertEquals("rows collected", 3, output.getRowsCount());
-
-        testDML.closeCursor(cursorId, session);
-
-        boolean sawException = false;
-        try {
-            testDML.closeCursor(cursorId, session);
-        } catch (CursorIsUnknownException e) {
-            sawException = true;
-        }
-        assertTrue("expected exception", sawException);
-
-
-    }
-
-    @Test
     public void testTheTestClasses() {
         final String[] stringsArray = new String[] {"Hello", "world", "how are you"};
         StringRowCollector rc = new StringRowCollector(4, stringsArray);

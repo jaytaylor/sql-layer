@@ -1441,6 +1441,7 @@ public class PersistitStore implements CServerConstants, Store {
         return rc;
     }
 
+    public final static long HACKED_ROW_COUNT = 2;
     @Override
     public long getRowCount(final boolean exact, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception {
@@ -1449,7 +1450,7 @@ public class PersistitStore implements CServerConstants, Store {
         // special because it's not 0 or 1, but small enough to induce
         // MySQL to use an index rather than full table scan.
         //
-        return 2;
+        return HACKED_ROW_COUNT; // TODO: delete the HACKED_ROW_COUNT field when this gets fixed
         // final int tableId = start.getRowDefId();
         // final TableStatus status = tableManager.getTableStatus(tableId);
         // return status.getRowCount();

@@ -1,15 +1,17 @@
 package com.akiban.cserver.api;
 
+import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.*;
 import com.akiban.cserver.service.session.Session;
 
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("unused")
-public interface DMLFunctions extends LegacyConverter {
+public interface DMLFunctions {
 
     /**
      * Returns the exact number of rows in this table. This may take a while, as it could require a full
@@ -208,9 +210,14 @@ public interface DMLFunctions extends LegacyConverter {
      * (unless, of course, another thread closes them first).</p>
      *
      * <p>If this method returns an empty Set, it will be unmodifiable. Otherwise, it is safe to modify.</p>
+     * @param session the session whose cursors we should return
      * @return the set of open (but possibly finished) cursors
+     * @throws NullPointerException if
      */
     Set<CursorId> getCursors(Session session);
+
+    NewRow convertRowData(RowData rowData) throws NoSuchTableException;
+    List<NewRow> convertRowDatas(RowData... rowData) throws NoSuchTableException;
 
     /**
      * Writes a row to the specified table. If the table contains an autoincrement column, and a value for that

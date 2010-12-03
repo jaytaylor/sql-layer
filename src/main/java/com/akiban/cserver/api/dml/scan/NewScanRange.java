@@ -28,10 +28,6 @@ public class NewScanRange implements ScanRange {
         return ColumnSet.packToLegacy(columns);
     }
 
-    public int getTableIdInt(IdResolver resolver) throws NoSuchTableException {
-        return tableId.getTableId(resolver);
-    }
-
     @Override
     public RowData getStart(IdResolver idResolver) throws NoSuchTableException {
         return convert(predicate.getStartRow(), idResolver);
@@ -56,7 +52,12 @@ public class NewScanRange implements ScanRange {
     }
 
     @Override
-    public int getTableId(IdResolver idResolver) throws NoSuchTableException {
+    public int getTableIdInt(IdResolver idResolver) throws NoSuchTableException {
         return tableId.getTableId(idResolver);
+    }
+
+    @Override
+    public TableId getTableId() {
+        return tableId;
     }
 }

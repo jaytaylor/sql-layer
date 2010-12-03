@@ -33,7 +33,17 @@ public final class LegacyRowWrapper implements NewRow {
     }
 
     @Override
-    public Object get(int index) {
+    public Object get(ColumnId columnId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean hasValue(ColumnId columnId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object remove(ColumnId columnId) {
         throw new UnsupportedOperationException();
     }
 

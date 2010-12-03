@@ -12,6 +12,10 @@ public class DMLException extends InvalidOperationException {
         super(code, message);
     }
 
+    protected DMLException(ErrorCode code, String message, Throwable cause) {
+        super(code, message, cause);
+    }
+
     protected DMLException(ErrorCode code, String formatter, Object... args) {
         super(code, formatter, args);
     }

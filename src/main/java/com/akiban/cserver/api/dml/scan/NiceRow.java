@@ -30,13 +30,23 @@ public class NiceRow implements NewRow {
     }
 
     @Override
-    public Object get(int index) {
-        return fields.get(ColumnId.of(index) );
+    public Object get(ColumnId column) {
+        return fields.get(column);
+    }
+
+    @Override
+    public boolean hasValue(ColumnId columnId) {
+        return fields.containsKey(columnId);
+    }
+
+    @Override
+    public Object remove(ColumnId columnId) {
+        return fields.remove(columnId);
     }
 
     @Override
     public Map<ColumnId,Object> getFields() {
-        return Collections.unmodifiableMap(fields);
+        return fields;
     }
 
     public static NewRow fromRowData(RowData origData, RowDef rowDef) {
@@ -105,7 +115,7 @@ public class NiceRow implements NewRow {
             if (pos != nextExpectedPos) {
                 sb.append("... ");
             }
-            sb.append(entry.getKey().getPosition()).append("=(").append(entry.getValue()).append(") ");
+            sb.append('(').append(entry.getKey().getPosition()).append(": ").append(entry.getValue()).append(") ");
             nextExpectedPos = pos + 1;
         }
         sb.append(']');

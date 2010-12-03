@@ -25,14 +25,29 @@ public interface NewRow {
 
     /**
      * Gets the value at the specified index, which is a 0-indexed column position offset.
-     * @param index the column position
+     * @param columnId the column to get
      * @return the value at the specified index, or null if there is none
      * @throws UnsupportedOperationException if not supported
      */
-    Object get(int index);
+    Object get(ColumnId columnId);
 
     /**
-     * Returns an unmodifiable view of the fields
+     * Whether a value is defined in this column. This is the equivalent of Map.containsKey.
+     * @param columnId the column to request
+     * @return whether a value is defined for the given column
+     */
+    boolean hasValue(ColumnId columnId);
+
+    /**
+     * Removes a value from the row, if it existed. Returns back the old value
+     * @param columnId the column whose value we should remove
+     * @return the old value, or null if there wasn't one
+     */
+    Object remove(ColumnId columnId);
+
+    /**
+     * Returns an modifiable map view of the fields. The modifying the NewRow will update the Map, and updating
+     * the Map will modify the NewRow. The Map must support all optional operations.
      * @return the fields that have been set
      * @throws UnsupportedOperationException if not supported
      */

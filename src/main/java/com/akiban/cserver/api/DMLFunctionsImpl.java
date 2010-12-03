@@ -4,6 +4,7 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
@@ -32,7 +33,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    @Deprecated
     public long countRowsExactly(ScanRange range)
             throws  NoSuchTableException,
             UnsupportedReadException,
@@ -42,12 +42,11 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             final IdResolver idr = idResolver();
             return store().getRowCount(true, range.getStart(idr), range.getEnd(idr), range.getColumnBitMap());
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    @Deprecated
     public long countRowsApproximately(ScanRange range)
     throws  NoSuchTableException,
             UnsupportedReadException,
@@ -57,7 +56,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             final IdResolver idr = idResolver();
             return store().getRowCount(false, range.getStart(idr), range.getEnd(idr), range.getColumnBitMap());
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
@@ -73,7 +72,30 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
             return store().getTableStatistics(tableIdInt);
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
+        }
+    }
+
+    private static final class ScanData {
+        private final Cursor cursor;
+        private final Set<ColumnId> scanColumns;
+
+        ScanData(ScanRequest request, Cursor cursor) {
+            scanColumns = ColumnSet.unpackFromLegacy(request.getColumnBitMap());
+            this.cursor = cursor;
+        }
+
+        public Set<ColumnId> getScanColumns() {
+            return scanColumns;
+        }
+
+        public Cursor getCursor() {
+            return cursor;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("ScanData[cursor=%s, columns=%s]", cursor, scanColumns);
         }
     }
 
@@ -87,7 +109,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final RowCollector rc = getRowCollector(request);
         final CursorId cursorId = newUniqueCursor(rc.getTableId());
         final Cursor cursor = new Cursor(rc);
-        Object old = session.put(MODULE_NAME, cursorId, cursor);
+        Object old = session.put(MODULE_NAME, cursorId, new ScanData(request, cursor));
         assert old == null : old;
 
         Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
@@ -108,10 +130,14 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         try {
             final IdResolver idr = idResolver();
-            return store().newRowCollector(request.getTableId(idr), request.getIndexId(), request.getScanFlags(),
+            return store().newRowCollector(request.getTableIdInt(idr), request.getIndexId(), request.getScanFlags(),
                     request.getStart(idr), request.getEnd(idr), request.getColumnBitMap());
-        } catch (Exception e) {
-            throw rethrow(e);
+        }
+        catch (RowDefNotFoundException e) {
+            throw new NoSuchTableException(request.getTableId(), e);
+        }
+        catch (Exception e) {
+            throw new GenericInvalidOperationException(e);
         }
     }
 
@@ -121,11 +147,11 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public CursorState getCursorState(CursorId cursorId, Session session) {
-        final Cursor cursor = session.get(MODULE_NAME, cursorId);
-        if (cursor == null) {
+        final ScanData extraData = session.get(MODULE_NAME, cursorId);
+        if (extraData == null || extraData.getCursor() == null) {
             return CursorState.UNKNOWN_CURSOR;
         }
-        return cursor.getState();
+        return extraData.getCursor().getState();
     }
 
     @Override
@@ -139,7 +165,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
 
-        final Cursor cursor = session.get(MODULE_NAME, cursorId);
+        final Cursor cursor = session.<ScanData>get(MODULE_NAME, cursorId).getCursor();
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
@@ -162,7 +188,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             return router;
         }
 
-        public void setConverter(int rowDefId, RowOutput output) throws NoSuchTableException {
+        public void setConverter(int rowDefId, RowOutput output, Set<ColumnId> columns) throws NoSuchTableException {
             final RowDef rowDef;
             try {
                 rowDef = store.getRowDefCache().getRowDef( rowDefId );
@@ -171,19 +197,22 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
             converter.setRowDef(rowDef);
             converter.setOutput(output);
+            converter.setColumnsToScan(columns);
         }
     }
     
     private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
 
-    private PooledConverter getPooledConverter(int tableId, RowOutput output) throws NoSuchTableException {
+    private PooledConverter getPooledConverter(int tableId, RowOutput output, Set<ColumnId> columns)
+    throws NoSuchTableException
+    {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             // TODO Log something here: we're allocating a new buffer, which shouldn't happen a lot
             converter = new PooledConverter(store());
         }
         try {
-            converter.setConverter(tableId, output);
+            converter.setConverter(tableId, output, columns);
         } catch (NoSuchTableException e) {
             releasePooledConverter(converter);
             throw e;
@@ -208,7 +237,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             NoSuchTableException,
             GenericInvalidOperationException
     {
-        final PooledConverter converter = getPooledConverter(cursorId.getTableId(), output);
+        final ScanData scanData = session.get(MODULE_NAME, cursorId);
+        assert scanData != null;
+        final PooledConverter converter = getPooledConverter(cursorId.getTableId(), output, scanData.getScanColumns());
         try {
             return scanSome(cursorId, session, converter.getLegacyOutput(), limit);
         }
@@ -285,21 +316,21 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             return hasMore;
         } catch (Exception e) {
             cursor.setFinished();
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
     public void closeCursor(CursorId cursorId, Session session) throws CursorIsUnknownException {
         ArgumentValidation.notNull("cursor ID", cursorId);
-        final Cursor cursor = session.remove(MODULE_NAME, cursorId);
-        if (cursor == null) {
+        final ScanData scanData = session.remove(MODULE_NAME, cursorId);
+        if (scanData == null) {
             throw new CursorIsUnknownException(cursorId);
         }
         Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
         // cursors should not be null, since the cursor isn't null and creating it guarantees a Set<Cursor>
         boolean removeWorked = cursors.remove(cursorId);
-        assert removeWorked : String.format("%s %s -> %s", cursorId, cursor, cursors);
+        assert removeWorked : String.format("%s %s -> %s", cursorId, scanData, cursors);
     }
 
     @Override
@@ -309,6 +340,33 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             return Collections.emptySet();
         }
         return Collections.unmodifiableSet(cursors);
+    }
+
+
+    @Override
+    public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
+        RowDef rowDef = idResolver().getRowDef( TableId.of(rowData.getRowDefId()) );
+        return NiceRow.fromRowData(rowData, rowDef);
+    }
+
+    @Override
+    public List<NewRow> convertRowDatas(RowData... rowDatas) throws NoSuchTableException {
+        if (rowDatas.length == 0) {
+            return Collections.emptyList();
+        }
+
+        List<NewRow> converted = new ArrayList<NewRow>(rowDatas.length);
+        int lastRowDefId = -1; rowDatas[0].getRowDefId();
+        RowDef rowDef = null;
+        for (RowData rowData : rowDatas) {
+            int currRowDefId = rowData.getRowDefId();
+            if ((rowDef == null) || (currRowDefId != lastRowDefId)) {
+                lastRowDefId = currRowDefId;
+                rowDef = idResolver().getRowDef(TableId.of(currRowDefId));
+            }
+            converted.add(NiceRow.fromRowData(rowData, rowDef));
+        }
+        return converted;
     }
 
     @Override
@@ -324,7 +382,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             store().writeRow(rowData);
             return null;
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
@@ -335,7 +393,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             store().writeRow(rowData);
             return null;
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
     
@@ -351,7 +409,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         try {
             store().deleteRow(rowData);
         } catch (Exception e) {
-            throw rethrow(e);
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(NoSuchRowException.class, ioe);
+            throw new GenericInvalidOperationException(e) ;
         }
     }
 
@@ -361,12 +421,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             rowDef = store().getRowDefCache().getRowDef(row.getTableId().getTableId(idResolver()));
         }
         return row.toRowData(rowDef);
-    }
-
-    @Override
-    public NewRow convertRowData(RowData rowData) {
-        final RowDef rowDef = store().getRowDefCache().getRowDef( rowData.getRowDefId() );
-        return NiceRow.fromRowData(rowData, rowDef);
     }
 
     @Override
@@ -386,7 +440,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         try {
             store().updateRow(oldData, newData);
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
@@ -400,7 +454,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         try {
             store().truncateTable(tableId.getTableId(idResolver()) );
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 }
