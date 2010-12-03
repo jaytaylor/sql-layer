@@ -108,17 +108,24 @@ public class NiceRow implements NewRow {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("NiceRow[ ");
+        StringBuilder sb = new StringBuilder("NiceRow{ ");
         int nextExpectedPos = 0;
         for (Map.Entry<ColumnId,Object> entry : fields.entrySet()) {
             final int pos = entry.getKey().getPosition();
             if (pos != nextExpectedPos) {
                 sb.append("... ");
             }
-            sb.append('(').append(entry.getKey().getPosition()).append(": ").append(entry.getValue()).append(") ");
+            
+            final Object value = entry.getValue();
+            sb.append('(').append(entry.getKey().getPosition()).append(": ");
+            if (value != null) {
+                sb.append(value.getClass().getSimpleName()).append(' ');
+            }
+            sb.append(value).append(") ");
+
             nextExpectedPos = pos + 1;
         }
-        sb.append(']');
+        sb.append('}');
         return sb.toString();
     }
 

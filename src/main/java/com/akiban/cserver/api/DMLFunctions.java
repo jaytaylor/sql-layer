@@ -216,8 +216,23 @@ public interface DMLFunctions {
      */
     Set<CursorId> getCursors(Session session);
 
+    /**
+     * Converts a RowData to a NewRow. This conversion requires a RowDef, which the caller may not have, but which
+     * implementers of this interface should.
+     * @param rowData the row to convert
+     * @return a NewRow representation of the RowData
+     * @throws NoSuchTableException if the rowData refers to a rowDefId that isn't known
+     */
     NewRow convertRowData(RowData rowData) throws NoSuchTableException;
-    List<NewRow> convertRowDatas(RowData... rowData) throws NoSuchTableException;
+
+    /**
+     * Converts several RowData objects at once. This is not just a convenience; it lets implementations of this
+     * class cache RowDefs they need, which could save time.
+     * @param rowDatas the rows to convert
+     * @return a List of NewRows, each of which is a converted RowData
+     * @throws NoSuchTableException if any rowDatas refer to a rowDefId that isn't known
+     */
+    List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException;
 
     /**
      * Writes a row to the specified table. If the table contains an autoincrement column, and a value for that
@@ -251,6 +266,7 @@ public interface DMLFunctions {
      * <tt>akiban_information_schema</tt> table)
      * @throws ForeignKeyConstraintDMLException if the deletion was blocked by at least one child table
      * @throws NoSuchRowException if the specified row doesn't exist
+     * @throws TableDefinitionMismatchException if the row to delete isn't of the appropriate type
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void deleteRow(NewRow row)
@@ -258,6 +274,7 @@ public interface DMLFunctions {
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
             NoSuchRowException,
+            TableDefinitionMismatchException,
             GenericInvalidOperationException;
 
     /**

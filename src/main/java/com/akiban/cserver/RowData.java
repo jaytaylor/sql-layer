@@ -1,5 +1,6 @@
 package com.akiban.cserver;
 
+import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.util.RowDefNotFoundException;
 
 import java.io.IOException;
@@ -357,14 +358,23 @@ public class RowData {
             FieldDef fieldDef = rowDef.getFieldDef(index);
             if (fieldDef.isFixedSize()) {
                 if (object != null) {
-                    offset += fieldDef.getEncoding().fromObject(fieldDef,
-                            object, bytes, offset);
+                    try {
+                        offset += fieldDef.getEncoding().fromObject(fieldDef,
+                                object, bytes, offset);
+                    } catch (Exception e) {
+                        throw EncodingException.dueTo(e);
+                    }
+
                 }
             } else {
                 vmax += fieldDef.getMaxStorageSize();
                 if (object != null) {
-                    vlength += fieldDef.getEncoding().widthFromObject(fieldDef,
-                            object);
+                    try {
+                        vlength += fieldDef.getEncoding().widthFromObject(fieldDef,
+                                object);
+                    } catch (Exception e) {
+                        throw EncodingException.dueTo(e);
+                    }
                     final int width = CServerUtil.varWidth(vmax);
                     switch (width) {
                     case 0:
@@ -387,8 +397,12 @@ public class RowData {
             Object object = values[index];
             final FieldDef fieldDef = rowDef.getFieldDef(index);
             if (object != null && !fieldDef.isFixedSize()) {
-                offset += fieldDef.getEncoding().fromObject(fieldDef,
-                        values[index], bytes, offset);
+                try {
+                    offset += fieldDef.getEncoding().fromObject(fieldDef,
+                            values[index], bytes, offset);
+                } catch (Exception e) {
+                    throw EncodingException.dueTo(e);
+                }
             }
         }
         CServerUtil.putChar(bytes, offset, SIGNATURE_B);

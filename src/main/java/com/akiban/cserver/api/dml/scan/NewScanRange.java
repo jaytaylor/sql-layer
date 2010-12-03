@@ -60,4 +60,9 @@ public class NewScanRange implements ScanRange {
     public TableId getTableId() {
         return tableId;
     }
+
+    @Override
+    public boolean scanAllColumns() {
+        return false;
+    }
 }

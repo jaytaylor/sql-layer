@@ -16,11 +16,16 @@ public class ScanAllRange implements ScanRange {
 
     public ScanAllRange(TableId tableId, int... columnIds) {
         this.tableId = tableId;
-        Set<ColumnId> columnIdSet = new HashSet<ColumnId>(columnIds.length);
-        for (int colId : columnIds) {
-            columnIdSet.add( ColumnId.of(colId) );
+        if (columnIds == null) {
+            columns = null;
         }
-        this.columns = ColumnSet.packToLegacy(columnIdSet);
+        else {
+            Set<ColumnId> columnIdSet = new HashSet<ColumnId>(columnIds.length);
+            for (int colId : columnIds) {
+                columnIdSet.add( ColumnId.of(colId) );
+            }
+            this.columns = ColumnSet.packToLegacy(columnIdSet);
+        }
     }
 
     @Override
@@ -35,6 +40,9 @@ public class ScanAllRange implements ScanRange {
 
     @Override
     public byte[] getColumnBitMap() {
+        if (scanAllColumns()) {
+            throw new UnsupportedOperationException("scanAllColumns() is true!");
+        }
         return columns;
     }
 
@@ -46,5 +54,10 @@ public class ScanAllRange implements ScanRange {
     @Override
     public TableId getTableId() {
         return tableId;
+    }
+
+    @Override
+    public boolean scanAllColumns() {
+        return columns == null;
     }
 }

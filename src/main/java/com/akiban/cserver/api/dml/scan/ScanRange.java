@@ -11,4 +11,11 @@ public interface ScanRange {
     byte[] getColumnBitMap();
     int getTableIdInt(IdResolver idResolver) throws NoSuchTableException;
     TableId getTableId();
+
+    /**
+     * If this is provided, {@linkplain #getColumnBitMap()} should be ignored, and the behavior should be as if the
+     * column bit map were for all of the table's columns.
+     * @return
+     */
+    boolean scanAllColumns();
 }

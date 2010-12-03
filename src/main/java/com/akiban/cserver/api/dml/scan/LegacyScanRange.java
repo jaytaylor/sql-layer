@@ -50,4 +50,9 @@ public class LegacyScanRange implements ScanRange {
     public TableId getTableId() {
         return TableId.of(tableId);
     }
+
+    @Override
+    public boolean scanAllColumns() {
+        return false;
+    }
 }
