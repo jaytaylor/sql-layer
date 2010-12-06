@@ -497,10 +497,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             ForeignKeyConstraintDMLException,
             GenericInvalidOperationException
     {
-        try {
-            store().truncateTable(tableId.getTableId(idResolver()) );
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
+        throw new UnsupportedOperationException("truncate not supported");
     }
 }
