@@ -424,11 +424,11 @@ public class Column implements Serializable, ModelNames
     private int characterWidth() {
 //
 //  See bug 337
-//        if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
-//            return 3;
-//        } else {
+        if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
+            return 3;
+        } else {
             return 1;
-//        }
+        }
     }
     
     public CharsetAndCollation getCharsetAndCollation()
