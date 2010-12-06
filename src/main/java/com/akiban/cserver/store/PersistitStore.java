@@ -291,6 +291,11 @@ public class PersistitStore implements CServerConstants, Store {
         return this;
     }
 
+    @Override
+    public Class<Store> castClass() {
+        return Store.class;
+    }
+
     public Persistit getDb() {
         return db;
     }

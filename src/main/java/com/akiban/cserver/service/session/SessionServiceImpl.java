@@ -45,6 +45,11 @@ public final class SessionServiceImpl implements SessionService, JmxManageable, 
     }
 
     @Override
+    public Class<SessionService> castClass() {
+        return SessionService.class;
+    }
+
+    @Override
     public SessionHandle createSessionWithHandle()
     {
         SessionHandle handle = new DefaultSessionHandle();

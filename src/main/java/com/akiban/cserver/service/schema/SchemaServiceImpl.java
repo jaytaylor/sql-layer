@@ -60,4 +60,9 @@ public final class SchemaServiceImpl implements SchemaService, JmxManageable, Se
     public SchemaService cast() {
         return this;
     }
+
+    @Override
+    public Class<SchemaService> castClass() {
+        return SchemaService.class;
+    }
 }

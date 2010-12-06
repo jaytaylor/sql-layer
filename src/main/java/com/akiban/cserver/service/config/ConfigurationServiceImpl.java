@@ -110,6 +110,11 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return this;
     }
 
+    @Override
+    public Class<ConfigurationService> castClass() {
+        return ConfigurationService.class;
+    }
+
     private Map<Property.Key, Property> internalLoadProperties() throws IOException, ServiceStartupException {
         Map<Property.Key,  Property> ret = loadProperties();
 

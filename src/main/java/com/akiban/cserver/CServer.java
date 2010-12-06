@@ -114,6 +114,11 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
         return this;
     }
 
+    @Override
+    public Class<CServer> castClass() {
+        return CServer.class;
+    }
+
     /**
      * @param args
      *            the command line arguments

@@ -20,17 +20,9 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
     // TODO: Supply the factory externally.
     private final ServiceManagerFactory factory;
-    private Map<String, Service> services;
+    private Map<Class<?>, Service<?>> services; // for each key-val, the ? should be the same; (T.class -> Service<T>)
 
     private final CountDownLatch blockerLatch = new CountDownLatch(1);
-
-    private static final String NETWORK = "network";
-    private static final String CONFIGURATION = "configuration";
-    private static final String JMX = "jmx";
-    private static final String STORE = "store";
-    private static final String CSERVER = "cserver";
-    private static final String SCHEMA = "schema";
-    private static final String SESSION = "session";
 
     public static void setServiceManager(ServiceManager newInstance)
     {
@@ -42,17 +34,14 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         }
     }
 
-    private ServiceManagerImpl()
-    {
-        this(new DefaultServiceManagerFactory());
-    }
     /**
      * This constructor is made protected for unit testing.
+     * @param factory the factory that creates the services this instance manages
      */
     protected ServiceManagerImpl(ServiceManagerFactory factory)
     {
         this.factory = factory;
-        services = new LinkedHashMap<String, Service>();
+        services = new LinkedHashMap<Class<?>, Service<?>>();
     }
 
     public static ServiceManager get()
@@ -62,40 +51,40 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
 
     @Override
     public CServer getCServer() {
-        return (CServer) getService(CSERVER);
+        return getService(CServer.class);
     }
 
     @Override
     public Store getStore() {
-        return (Store) getService(STORE);
+        return getService(Store.class);
     }
 
     @Override
     public SessionService getSessionService() {
-        return (SessionService) getService(SESSION);
+        return getService(SessionService.class);
     }
 
     public void startServices() throws Exception {
 
         JmxRegistryServiceImpl jmxRegistry = new JmxRegistryServiceImpl();
-        startAndPut(jmxRegistry, JMX, jmxRegistry);
-        startAndPut(factory.configurationService(), CONFIGURATION, jmxRegistry);
+        startAndPut(jmxRegistry, jmxRegistry);
+        startAndPut(factory.configurationService(), jmxRegistry);
 
         jmxRegistry.register(this);
-        ConfigurationService configService = (ConfigurationService) getService(CONFIGURATION);
-        servicesDebugHooks(configService, jmxRegistry);
+        ConfigurationService configService = getServiceAsService(ConfigurationService.class).cast();
+        servicesDebugHooks(configService);
 
         // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
-        startAndPut(new SessionServiceImpl(), SESSION, jmxRegistry);
+        startAndPut(new SessionServiceImpl(), jmxRegistry);
         Store store = new PersistitStore(configService);
-        startAndPut(store, STORE, jmxRegistry);
-        startAndPut(factory.networkService(), NETWORK, jmxRegistry);
-        startAndPut(factory.chunkserverService(), CSERVER, jmxRegistry);
-        startAndPut(new SchemaServiceImpl( store.getSchemaManager() ), SCHEMA, jmxRegistry);
+        startAndPut(store, jmxRegistry);
+        startAndPut(factory.networkService(), jmxRegistry);
+        startAndPut(factory.chunkserverService(), jmxRegistry);
+        startAndPut(new SchemaServiceImpl( store.getSchemaManager() ), jmxRegistry);
         setServiceManager(this);
     }
 
-    private void servicesDebugHooks(ConfigurationService configService, JmxRegistryServiceImpl jmxRegistry)
+    private void servicesDebugHooks(ConfigurationService configService)
     throws InterruptedException
     {
         if (configService.getProperty("services", "start_blocked", "false").equalsIgnoreCase("true")) {
@@ -110,10 +99,15 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         }
     }
 
-    private void startAndPut(Service service, String name, JmxRegistryService jmxRegistry) throws Exception {
+    private void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
         //System.out.println("Starting service: " + service.getClass()); // TODO change to logging
         service.start();
-        services.put(name, service);
+        Service<?> old = services.put(service.castClass(), service);
+        if (old != null) {
+            services.put(service.castClass(), old);
+            throw new RuntimeException(String.format("Conflicting services: %s (%s) would bump %s (%s)",
+                    service.getClass(), service.castClass(), old.getClass(), old.castClass()));
+        }
         if (service instanceof JmxManageable) {
             jmxRegistry.register((JmxManageable) service);
         }
@@ -146,8 +140,28 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         }
     }
 
-    public Service getService(final String name) {
-        return services.get(name);
+    private <T> T getService(Class<T> ofClass) {
+        Service<T> serviceT = getServiceAsService(ofClass);
+        if (serviceT == null) {
+            throw new ServiceNotStartedException(ofClass.getName());
+        }
+        return serviceT.cast();
+    }
+
+    private <T> Service<T> getServiceAsService(Class<T> ofClass) {
+        final Service<?> service = services.get(ofClass);
+        if (service == null) {
+            return null;
+        }
+        final Object asObject = service.cast();
+        if (!ofClass.isInstance(asObject)) {
+            Class<?> actualClass = asObject == null ? null : asObject.getClass();
+            throw new RuntimeException(
+                    String.format("%s expected to be of class %s, was %s", asObject, ofClass, actualClass));
+        }
+        @SuppressWarnings("unchecked") final Service<T> serviceT = (Service<T>) service;
+        assert serviceT.castClass().equals(ofClass) : String.format("%s != %s", serviceT.castClass(), ofClass);
+        return serviceT;
     }
 
     @Override

@@ -3,7 +3,6 @@ package com.akiban.cserver.service.session;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import com.akiban.cserver.service.Service;
@@ -60,6 +59,60 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
         }
     }
 
+    public static class UnitTestPersistitStore extends PersistitStore
+    {
+        private final ConfigurationService stubConfig;
+
+        private UnitTestPersistitStore(ConfigurationService config) throws Exception {
+            super(config);
+            stubConfig = config;
+        }
+
+        @Override
+        public synchronized void start() throws Exception {
+            File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
+            int contents = datadir.list().length;
+            if (contents != 0) {
+                throw new Exception(String.format("%s is not empty: %s", datadir, Arrays.asList(datadir.list())));
+            }
+            super.start();
+        }
+
+        public synchronized void superStart() throws Exception {
+            super.start();
+        }
+
+        public synchronized void superStop() throws Exception {
+            super.stop();
+        }
+
+        @Override
+        public synchronized void stop() throws Exception
+        {
+            super.stop();
+            File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
+            Set<File> failedToDelete = new HashSet<File>();
+            for (File dataFile : datadir.listFiles())
+            {
+                boolean fileDeleted = dataFile.delete();
+                if (!fileDeleted)
+                {
+                    failedToDelete.add(dataFile);
+                }
+            }
+            if (!failedToDelete.isEmpty())
+            {
+                StringBuffer error = new StringBuffer();
+                error.append("Failed to delete the following files: \n");
+                for (File file : failedToDelete)
+                {
+                    error.append(file.getAbsolutePath()).append("\n");
+                }
+                throw new Exception(error.toString());
+            }
+        }
+    }
+
     ConfigurationServiceImpl configService = null;
 
     @Override
@@ -71,52 +124,11 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
     }
 
     // TODO - this is a temporary way for unit tests to get a configured PersistitStore.
-    public static PersistitStore getStoreForUnitTests() throws Exception
+    public static UnitTestPersistitStore getStoreForUnitTests() throws Exception
     {
         final ConfigurationServiceImpl stubConfig = new TestConfigService();
         stubConfig.start();
-        final PersistitStore store = new PersistitStore(stubConfig)
-        {
-            @Override
-            public void start() throws Exception {
-                File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
-                int contents = datadir.list().length;
-                if (contents != 0) {
-                    throw new Exception(String.format("%s is not empty: %s", datadir, Arrays.asList(datadir.list())));
-                }
-                super.start();
-            }
-
-
-            @Override
-            public synchronized void stop() throws Exception
-            {
-                super.stop();
-
-                File datadir = new File(stubConfig.getProperty("cserver", "datapath"));
-                stubConfig.stop();
-                Set<File> failedToDelete = new HashSet<File>();
-                for (File dataFile : datadir.listFiles())
-                {
-                    boolean fileDeleted = dataFile.delete();
-                    if (!fileDeleted)
-                    {
-                        failedToDelete.add(dataFile);
-                    }
-                }
-                if (failedToDelete.isEmpty() == false)
-                {
-                    StringBuffer error = new StringBuffer();
-                    error.append("Failed to delete the following files: \n");
-                    for (File file : failedToDelete)
-                    {
-                        error.append(file.getAbsolutePath()).append("\n");
-                    }
-                    throw new Exception(error.toString());
-                }
-
-            }
-        };
+        UnitTestPersistitStore store = new UnitTestPersistitStore(stubConfig);
         store.start();
         return store;
     }

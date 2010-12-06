@@ -144,4 +144,9 @@ public class LoggingServiceImpl implements LoggingService, JmxManageable, Servic
     public LoggingService cast() {
         return this;
     }
+
+    @Override
+    public Class<LoggingService> castClass() {
+        return LoggingService.class;
+    }
 }
