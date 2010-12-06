@@ -3,6 +3,9 @@ package com.akiban.cserver.api;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.service.logging.AkibanLogger;
+import com.akiban.cserver.service.logging.LoggingService;
+import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
@@ -25,7 +28,8 @@ public final class ApiTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            dml = new DMLFunctionsImpl(store);
+            LoggingService loggingService = new LoggingServiceImpl();
+            dml = new DMLFunctionsImpl(store, loggingService);
             ddl = new DDLFunctionsImpl(store);
 
         }

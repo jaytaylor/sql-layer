@@ -1,5 +1,7 @@
 package com.akiban.cserver.api;
 
+import com.akiban.cserver.service.logging.LoggingService;
+import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.InvalidOperationException;
@@ -157,7 +159,7 @@ public final class DMLFunctionsImplTest {
         private final StringRowCollector collector;
 
         private TestDML(String... rowsToCollect) {
-            super(getStore());
+            super(getStore(), new LoggingServiceImpl());
             collector = new StringRowCollector(1, rowsToCollect);
         }
 

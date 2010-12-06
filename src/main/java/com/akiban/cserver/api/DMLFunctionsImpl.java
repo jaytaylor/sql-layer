@@ -1,6 +1,6 @@
 package com.akiban.cserver.api;
 
-import com.akiban.ais.model.Table;
+import com.akiban.ais.model.*;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
@@ -14,6 +14,7 @@ import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.service.logging.AkibanLogger;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.util.RowDefNotFoundException;
@@ -492,6 +493,54 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             ForeignKeyConstraintDMLException,
             GenericInvalidOperationException
     {
-        throw new UnsupportedOperationException("truncate not supported");
+        // Store.truncate doesn't work well, so we have to actually scan the rows
+        TableName tableName = tableId.getTableName(idResolver());
+        Index pkIndex = store().getAis().getTable(tableName).getIndex("PRIMARY");
+        assert pkIndex.isPrimaryKey() : pkIndex;
+        int[] pks = new int[pkIndex.getColumns().size()];
+        int i = 0;
+        for (IndexColumn column : pkIndex.getColumns()) {
+            int pos = column.getColumn().getPosition();
+            pks[i++] = pos;
+        }
+        ScanRequest all = new ScanAllRequest(tableId, pks);
+
+        final List<NewRow> deleteRows = new ArrayList<NewRow>();
+        RowOutput output = new RowOutput() {
+            @Override
+            public void output(NewRow row) throws RowOutputException {
+                deleteRows.add(row);
+            }
+        };
+        final Session tmpSession = new SessionImpl();
+        final CursorId cursorId;
+        try {
+             cursorId = openCursor(all, tmpSession);
+        } catch (InvalidOperationException e) {
+            throw new RuntimeException("Internal error", e);
+        }
+
+        try {
+            while(scanSome(cursorId, tmpSession, output, -1))
+            {}
+        } catch (InvalidOperationException e) {
+            throw new RuntimeException("Internal error", e);
+        } finally {
+            try {
+                closeCursor(cursorId, tmpSession);
+            } catch (CursorIsUnknownException e) {
+                throw new RuntimeException("Internal error", e);
+            }
+        }
+
+        for (NewRow row : deleteRows) {
+            try {
+                deleteRow(row);
+            } catch (NoSuchRowException e) {
+                throw new RuntimeException("Internal error", e);
+            } catch (TableDefinitionMismatchException e) {
+                throw new RuntimeException("Internal error", e);
+            }
+        }
     }
 }
