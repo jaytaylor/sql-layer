@@ -12,45 +12,6 @@ import java.util.Set;
 
 @SuppressWarnings("unused")
 public interface DMLFunctions {
-
-    /**
-     * Returns the exact number of rows in this table. This may take a while, as it could require a full
-     * table scan. Group tables have an undefined row count, so this method will fail if the requested
-     * table is a group table.
-     * @param range the table, columns and range to count
-     * @return the number of rows in the specified table
-     * @throws NullPointerException if tableId is null
-     * @throws NoSuchTableException if the specified table is unknown
-     * @throws UnsupportedReadException if the specified table is a group table
-     * @throws GenericInvalidOperationException if some other exception occurred
-     */
-    long countRowsExactly(ScanRange range)
-    throws  NoSuchTableException,
-            UnsupportedReadException,
-            GenericInvalidOperationException;
-
-    /**
-     * Returns the approximate number of rows in this table. This estimate may be <em>very</em> approximate. All
-     * that is required is that the returned number be:
-     * <ul>
-     *  <li>0 iff the table has no rows</li>
-     *  <li>1 iff the table has exactly one row</li>
-     *  <li>&gt;= 2 iff the table has two or more rows</li>
-     * </ul>
-     *
-     * Group tables have an undefined row count, so this method will fail if the requested table is a group table.
-     * @param range the table, columns and range to count
-     * @return the number of rows in the specified table
-     * @throws NullPointerException if tableId is null
-     * @throws NoSuchTableException if the specified table is unknown
-     * @throws UnsupportedReadException if the specified table is a group table
-     * @throws GenericInvalidOperationException if some other exception occurred
-     */
-    long countRowsApproximately(ScanRange range)
-    throws  NoSuchTableException,
-            UnsupportedReadException,
-            GenericInvalidOperationException;
-
     /**
      * Gets the table statistics for the specified table, optionally updating the statistics first. If you request
      * this update, the method may take significantly longer.

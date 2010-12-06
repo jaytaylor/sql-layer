@@ -1,8 +1,6 @@
 package com.akiban.cserver.api;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
@@ -34,34 +32,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     public DMLFunctionsImpl(Store store) {
         super(store);
-    }
-
-    @Override
-    public long countRowsExactly(ScanRange range)
-            throws  NoSuchTableException,
-            UnsupportedReadException,
-            GenericInvalidOperationException
-    {
-        try {
-            final IdResolver idr = idResolver();
-            return store().getRowCount(true, range.getStart(idr), range.getEnd(idr), range.getColumnBitMap());
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
-    }
-
-    @Override
-    public long countRowsApproximately(ScanRange range)
-    throws  NoSuchTableException,
-            UnsupportedReadException,
-            GenericInvalidOperationException
-    {
-        try {
-            final IdResolver idr = idResolver();
-            return store().getRowCount(false, range.getStart(idr), range.getEnd(idr), range.getColumnBitMap());
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
     }
 
     @Override
