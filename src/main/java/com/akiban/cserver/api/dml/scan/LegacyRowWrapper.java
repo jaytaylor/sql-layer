@@ -11,7 +11,7 @@ public final class LegacyRowWrapper implements NewRow {
     private RowData rowData;
 
     public LegacyRowWrapper() {
-
+        setRowData(null);
     }
 
     public LegacyRowWrapper(RowData rowData) {

@@ -14,18 +14,9 @@ public class ScanAllRange implements ScanRange {
     private final TableId tableId;
     private final byte[] columns;
 
-    public ScanAllRange(TableId tableId, int... columnIds) {
+    public ScanAllRange(TableId tableId, Set<ColumnId> columnIds) {
         this.tableId = tableId;
-        if (columnIds == null) {
-            columns = null;
-        }
-        else {
-            Set<ColumnId> columnIdSet = new HashSet<ColumnId>(columnIds.length);
-            for (int colId : columnIds) {
-                columnIdSet.add( ColumnId.of(colId) );
-            }
-            this.columns = ColumnSet.packToLegacy(columnIdSet);
-        }
+        this.columns = columnIds == null ? null : ColumnSet.packToLegacy(columnIds);
     }
 
     @Override

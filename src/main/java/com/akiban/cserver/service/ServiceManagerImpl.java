@@ -4,6 +4,7 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.logging.LoggingService;
+import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.schema.SchemaServiceImpl;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.session.SessionServiceImpl;
@@ -81,6 +82,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         servicesDebugHooks(configService);
 
         // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
+        startAndPut(new LoggingServiceImpl(), jmxRegistry);
         startAndPut(new SessionServiceImpl(), jmxRegistry);
         Store store = new PersistitStore(configService);
         startAndPut(store, jmxRegistry);

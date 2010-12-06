@@ -13,6 +13,22 @@ import java.util.Set;
 
 public final class ColumnSet {
 
+    /**
+     * Translates an array of ints into a set of ColumnIds. Repeated ints are ignored.
+     * @param positions the positions to translate to ColumnIds
+     * @return the Set of ColumnIds generated from the given positions; or null if positions is null
+     */
+    public static Set<ColumnId> ofPositions(int... positions) {
+        if (positions == null) {
+            return null;
+        }
+        Set<ColumnId> set = new HashSet<ColumnId>(positions.length);
+        for (int pos : positions) {
+            set.add(ColumnId.of(pos));
+        }
+        return set;
+    }
+
     public static int unpackByteFromLegacy(byte theByte, int byteNum, Set<ColumnId> out) {
         int added = 0;
         for(int relativePos=0; relativePos < 8; ++relativePos) {

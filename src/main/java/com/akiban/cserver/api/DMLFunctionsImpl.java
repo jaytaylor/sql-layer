@@ -488,7 +488,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public void truncateTable(TableId tableId)
-    throws NoSuchTableException,
+    throws  NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
             GenericInvalidOperationException
@@ -497,19 +497,21 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         TableName tableName = tableId.getTableName(idResolver());
         Index pkIndex = store().getAis().getTable(tableName).getIndex("PRIMARY");
         assert pkIndex.isPrimaryKey() : pkIndex;
-        int[] pks = new int[pkIndex.getColumns().size()];
-        int i = 0;
+        Set<ColumnId> pkColumns = new HashSet<ColumnId>();
         for (IndexColumn column : pkIndex.getColumns()) {
             int pos = column.getColumn().getPosition();
-            pks[i++] = pos;
+            pkColumns.add(ColumnId.of(pos));
         }
-        ScanRequest all = new ScanAllRequest(tableId, pks);
+        ScanRequest all = new ScanAllRequest(tableId, pkColumns);
 
-        final List<NewRow> deleteRows = new ArrayList<NewRow>();
         RowOutput output = new RowOutput() {
             @Override
             public void output(NewRow row) throws RowOutputException {
-                deleteRows.add(row);
+                try {
+                    deleteRow(row);
+                } catch (InvalidOperationException e) {
+                    throw new RowOutputException(e);
+                }
             }
         };
         final Session tmpSession = new SessionImpl();
@@ -529,16 +531,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             try {
                 closeCursor(cursorId, tmpSession);
             } catch (CursorIsUnknownException e) {
-                throw new RuntimeException("Internal error", e);
-            }
-        }
-
-        for (NewRow row : deleteRows) {
-            try {
-                deleteRow(row);
-            } catch (NoSuchRowException e) {
-                throw new RuntimeException("Internal error", e);
-            } catch (TableDefinitionMismatchException e) {
                 throw new RuntimeException("Internal error", e);
             }
         }
