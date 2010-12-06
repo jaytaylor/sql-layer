@@ -3,6 +3,7 @@ package com.akiban.cserver.service;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
+import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.schema.SchemaServiceImpl;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.session.SessionServiceImpl;
@@ -57,6 +58,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     @Override
     public Store getStore() {
         return getService(Store.class);
+    }
+
+    @Override
+    public LoggingService getLogging() {
+        return getService(LoggingService.class);
     }
 
     @Override

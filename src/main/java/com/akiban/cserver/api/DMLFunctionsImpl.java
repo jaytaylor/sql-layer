@@ -11,6 +11,8 @@ import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.*;
 import com.akiban.cserver.encoding.EncodingException;
+import com.akiban.cserver.service.logging.AkibanLogger;
+import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.store.Store;
@@ -23,15 +25,17 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-@SuppressWarnings("deprecation")
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final String MODULE_NAME = DMLFunctionsImpl.class.getCanonicalName();
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final Object OPEN_CURSORS = new Object();
 
-    public DMLFunctionsImpl(Store store) {
+    private final AkibanLogger logger;
+
+    public DMLFunctionsImpl(Store store, LoggingService loggingService) {
         super(store);
+        logger = loggingService.getLogger(DMLFunctionsImpl.class);
     }
 
     @Override
@@ -246,7 +250,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
-            // TODO Log something here: we're allocating a new buffer, which shouldn't happen a lot
+            logger.debug("Allocating new PooledConverter");
             converter = new PooledConverter(store());
         }
         try {
@@ -263,7 +267,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private void releasePooledConverter(PooledConverter which) {
         if (!convertersPool.offer(which)) {
-            // TODO Log something here -- this is a warning of inefficient tuning
+            logger.warn("Failed to release PooledConverter " + which + " to pool. "
+                    +"This could result in superfluous allocations, and may happen because too many pools are being "
+                    +"released at the same time.");
         }
     }
 
@@ -417,17 +423,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
     {
         final RowData rowData = niceRowToRowData(row);
-        try {
-            store().writeRow(rowData);
-            return null;
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
-        }
-    }
-
-    @Deprecated
-    public Long writeRow(RowData rowData) throws InvalidOperationException
-    {
         try {
             store().writeRow(rowData);
             return null;
