@@ -1,7 +1,5 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
-import com.akiban.cserver.api.dml.scan.RowOutputException;
 import com.akiban.util.ArgumentValidation;
 
 import java.nio.ByteBuffer;

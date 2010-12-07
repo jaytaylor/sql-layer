@@ -219,12 +219,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static class PooledConverter {
         private final LegacyOutputConverter converter;
         private final LegacyOutputRouter router;
-        private final Store store;
 
-        public PooledConverter(Store store) {
-            this.store = store;
+        public PooledConverter(DMLFunctions dmlFunctions) {
             router = new LegacyOutputRouter(1024 * 1024, true);
-            converter = new LegacyOutputConverter();
+            converter = new LegacyOutputConverter(dmlFunctions);
             router.addHandler(converter);
         }
 
@@ -232,14 +230,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             return router;
         }
 
-        public void setConverter(int rowDefId, RowOutput output, Set<ColumnId> columns) throws NoSuchTableException {
-            final RowDef rowDef;
-            try {
-                rowDef = store.getRowDefCache().getRowDef( rowDefId );
-            } catch (RowDefNotFoundException e) {
-                throw new NoSuchTableException( rowDefId );
-            }
-            converter.setRowDef(rowDef);
+        public void setConverter(RowOutput output, Set<ColumnId> columns) throws NoSuchTableException {
             converter.setOutput(output);
             converter.setColumnsToScan(columns);
         }
@@ -247,16 +238,16 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     
     private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
 
-    private PooledConverter getPooledConverter(int tableId, RowOutput output, Set<ColumnId> columns)
+    private PooledConverter getPooledConverter(RowOutput output, Set<ColumnId> columns)
     throws NoSuchTableException
     {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
-            converter = new PooledConverter(store());
+            converter = new PooledConverter(this);
         }
         try {
-            converter.setConverter(tableId, output, columns);
+            converter.setConverter(output, columns);
         } catch (NoSuchTableException e) {
             releasePooledConverter(converter);
             throw e;
@@ -286,7 +277,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final ScanData scanData = session.get(MODULE_NAME, cursorId);
         assert scanData != null;
         Set<ColumnId> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
-        final PooledConverter converter = getPooledConverter(cursorId.getTableId(), output, scanColumns);
+        final PooledConverter converter = getPooledConverter(output, scanColumns);
         try {
             return scanSome(cursorId, session, converter.getLegacyOutput(), limit);
         }
@@ -528,6 +519,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throw new RuntimeException("Internal error", e);
         }
 
+        InvalidOperationException thrown = null;
         try {
             while(scanSome(cursorId, tmpSession, output, -1))
             {}
@@ -537,8 +529,11 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             try {
                 closeCursor(cursorId, tmpSession);
             } catch (CursorIsUnknownException e) {
-                throw new RuntimeException("Internal error", e);
+                thrown = e;
             }
+        }
+        if (thrown != null) {
+            throw new RuntimeException("Internal error", thrown);
         }
     }
 }

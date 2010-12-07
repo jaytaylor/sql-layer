@@ -1,8 +1,9 @@
 package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
+import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.NoSuchTableException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -16,28 +17,27 @@ import java.util.Set;
  * LegacyRowOutput.</p>
  */
 public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
-    private RowDef rowDef;
+    private final DMLFunctions converter;
     private RowOutput output;
     private Set<ColumnId> columnsToScan;
+
+    public LegacyOutputConverter(DMLFunctions converter) {
+        this.converter = converter;
+    }
 
     @Override
     public void handleRow(byte[] bytes, int offset, int length) throws RowOutputException {
         RowData rowData = new RowData(bytes, offset, length);
         rowData.prepareRow(offset);
-        NewRow aNew = NiceRow.fromRowData(rowData, rowDef);
+        final NewRow aNew;
+        try {
+            aNew = converter.convertRowData(rowData);
+        } catch (NoSuchTableException e) {
+            throw new RowOutputException(e);
+        }
 
         if (columnsToScan != null) {
-            final Set<ColumnId> missingColumns = new HashSet<ColumnId>();
-            for (ColumnId requestedColumn : columnsToScan) {
-                if (!aNew.hasValue(requestedColumn)) {
-                    missingColumns.add(requestedColumn);
-                }
-            }
-            if (!missingColumns.isEmpty()) {
-                throw new RowOutputException("Given output is missing one or more requested columns: " + missingColumns);
-            }
-
-            final Set<ColumnId> colsToRemove = missingColumns; // recycle the set, which is empty
+            final Set<ColumnId> colsToRemove = new HashSet<ColumnId>();
             for (ColumnId newRowCol : aNew.getFields().keySet()) {
                 if (!columnsToScan.contains(newRowCol)) {
                     colsToRemove.add(newRowCol);
@@ -49,10 +49,6 @@ public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
         }
 
         output.output(aNew);
-    }
-
-    public void setRowDef(RowDef rowDef) {
-        this.rowDef = rowDef;
     }
 
     public void setOutput(RowOutput output) {
