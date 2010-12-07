@@ -5,7 +5,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.*;
-import com.akiban.cserver.api.dml.NoSuchTableException;
+import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
@@ -81,6 +81,18 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
     @Override
     public AkibaInformationSchema getAIS() {
         return store().getAis();
+    }
+
+    @Override
+    public TableName getTableName(TableId tableId) throws NoSuchTableException {
+        return tableId.getTableName(idResolver());
+    }
+
+    @Override
+    public TableId resolveTableId(TableId tableId) throws NoSuchTableException {
+        tableId.getTableId(idResolver());
+        tableId.getTableName(idResolver());
+        return tableId;
     }
 
     @Override

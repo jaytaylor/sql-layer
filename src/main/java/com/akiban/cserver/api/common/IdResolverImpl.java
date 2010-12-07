@@ -2,7 +2,6 @@ package com.akiban.cserver.api.common;
 
 import com.akiban.ais.model.*;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.dml.NoSuchTableException;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.util.RowDefNotFoundException;

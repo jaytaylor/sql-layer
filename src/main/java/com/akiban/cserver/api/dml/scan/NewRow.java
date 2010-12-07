@@ -61,7 +61,7 @@ public interface NewRow {
     Object remove(ColumnId columnId);
 
     /**
-     * Returns an modifiable map view of the fields. The modifying the NewRow will update the Map, and updating
+     * Returns a modifiable map view of the fields. The modifying the NewRow will update the Map, and updating
      * the Map will modify the NewRow. The Map must support all optional operations.
      * @return the fields that have been set
      * @throws UnsupportedOperationException if not supported

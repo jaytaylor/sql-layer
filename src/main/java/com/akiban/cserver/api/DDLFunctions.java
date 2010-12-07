@@ -1,7 +1,9 @@
 package com.akiban.cserver.api;
 
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.*;
@@ -77,6 +79,25 @@ public interface DDLFunctions {
      * @return returns the store's AIS.
      */
     AkibaInformationSchema getAIS();
+
+    /**
+     * Resolves the given TableId to its table's name. As a side effect, the tableId will be resolved.
+     * @param tableId the table to look up
+     * @return the table's name
+     * @throws NoSuchTableException if the given table doesn't exist
+     * @throws NullPointerException if the tableId is null
+     */
+    TableName getTableName(TableId tableId) throws NoSuchTableException;
+
+    /**
+     * Resolves the given TableId and returns it (as a convenience, for chaining).
+     * @see com.akiban.cserver.api.common.TableId#isResolved() 
+     * @param tableId the table ID to resolve
+     * @return the same instance you passed in
+     * @throws NoSuchTableException if the table ID can't be resolved
+     * @throws NullPointerException if the given table ID is null
+     */
+    TableId resolveTableId(TableId tableId) throws NoSuchTableException;
 
     /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including group tables and tables in the

@@ -1,8 +1,9 @@
-package com.akiban.cserver.api.dml;
+package com.akiban.cserver.api.common;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.DMLException;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 

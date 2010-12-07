@@ -2,6 +2,7 @@ package com.akiban.cserver.api;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.*;
@@ -19,11 +20,11 @@ public interface DMLFunctions {
      * @param updateFirst whether to update the statistics before returning them
      * @return the table's statistics
      * @throws NullPointerException if tableId is null
-     * @throws NoSuchTableException if the specified table doesn't exist
+     * @throws com.akiban.cserver.api.common.NoSuchTableException if the specified table doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     TableStatistics getTableStatistics(TableId tableId, boolean updateFirst)
-    throws  NoSuchTableException,
+    throws NoSuchTableException,
             GenericInvalidOperationException;
 
     /**
@@ -34,7 +35,7 @@ public interface DMLFunctions {
      * @param session the context in which this cursor is opened
      * @return a handle to the newly created cursor.
      * @throws NullPointerException if the request is null
-     * @throws NoSuchTableException if the request is for an unknown table
+     * @throws com.akiban.cserver.api.common.NoSuchTableException if the request is for an unknown table
      * @throws NoSuchColumnException if the request includes a column that isn't defined for the requested table
      * @throws NoSuchIndexException if the request is on an index that isn't defined for the requested table
      * @throws GenericInvalidOperationException if some other exception occurred
@@ -178,6 +179,14 @@ public interface DMLFunctions {
     Set<CursorId> getCursors(Session session);
 
     /**
+     * Converts a NewRow to a RowData; mostly useful for debugging purposes.
+     * @param row the row to convert
+     * @return the converted row
+     * @throws NoSuchTableException if the NewRow's TableId can't be resolved
+     */
+    RowData convertNewRow(NewRow row) throws NoSuchTableException;
+
+    /**
      * Converts a RowData to a NewRow. This conversion requires a RowDef, which the caller may not have, but which
      * implementers of this interface should.
      * @param rowData the row to convert
@@ -273,7 +282,7 @@ public interface DMLFunctions {
      * In particular, this means that orphan rows will also be deleted,</p>
      * @param tableId the table to truncate
      * @throws NullPointerException if the given tableId is null
-     * @throws NoSuchTableException if the given table doesn't exist
+     * @throws com.akiban.cserver.api.common.NoSuchTableException if the given table doesn't exist
      * @throws UnsupportedModificationException if the specified table can't be modified (e.g., if it's a group table or
      * <tt>akiban_information_schema</tt> table)
      * @throws ForeignKeyConstraintDMLException if the truncate was blocked by at least one child table

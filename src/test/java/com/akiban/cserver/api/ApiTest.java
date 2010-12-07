@@ -3,7 +3,6 @@ package com.akiban.cserver.api;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.service.logging.AkibanLogger;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
@@ -38,7 +37,7 @@ public final class ApiTest {
     @Test
     public void testAutoIncrement() throws InvalidOperationException {
         ApiPair apiPair = new ApiPair();
-        final TableId tableId = new TableId("sc1", "t1");
+        final TableId tableId = TableId.of("sc1", "t1");
         apiPair.ddl.createTable("sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
         TableStatistics tableStats = apiPair.dml.getTableStatistics(tableId, false);
         assertEquals("autoinc value", 10L, tableStats.getAutoIncrementValue());

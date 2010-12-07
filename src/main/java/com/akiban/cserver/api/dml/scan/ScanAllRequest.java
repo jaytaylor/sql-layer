@@ -1,13 +1,9 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.NoSuchTableException;
 
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Set;
 
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {

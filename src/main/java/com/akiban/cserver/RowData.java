@@ -115,9 +115,8 @@ public class RowData {
 
     /**
      * Interpret the length and signature fixed fields of the row at the
-     * specified offset. This method sets the {@link #rowStart}, {@link #rowEnd}
-     * and {@link #rowDefId} fields so that subsequent calls to interpret fields
-     * are supported.
+     * specified offset. This method sets the {@link #rowStart} and {@link #rowEnd}
+     * fields so that subsequent calls to interpret fields are supported.
      * 
      * @param offset
      *            byte offset to record start within the buffer
@@ -252,8 +251,8 @@ public class RowData {
 
     public long getIntegerValue(final int offset, final int width) {
         if (offset < rowStart || offset + width >= rowEnd) {
-            throw new IllegalArgumentException("Bad location: " + offset + ":"
-                    + width);
+            throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
+                    offset, width, rowStart, rowEnd));
         }
         return CServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
     }

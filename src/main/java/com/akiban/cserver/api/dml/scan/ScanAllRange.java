@@ -4,9 +4,8 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.NoSuchTableException;
+import com.akiban.cserver.api.common.NoSuchTableException;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public class ScanAllRange implements ScanRange {

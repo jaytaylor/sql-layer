@@ -7,6 +7,7 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
+import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.*;
@@ -388,6 +389,11 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         return Collections.unmodifiableSet(cursors);
     }
 
+    @Override
+    public RowData convertNewRow(NewRow row) throws NoSuchTableException {
+        RowDef rowDef = row.needsRowDef() ? idResolver().getRowDef(row.getTableId()) : null;
+        return row.toRowData(rowDef);
+    }
 
     @Override
     public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
@@ -488,7 +494,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public void truncateTable(TableId tableId)
-    throws  NoSuchTableException,
+    throws NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
             GenericInvalidOperationException

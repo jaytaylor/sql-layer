@@ -1,10 +1,8 @@
 package com.akiban.cserver.api.common;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.cserver.api.dml.NoSuchTableException;
 import com.akiban.util.CacheMap;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -24,8 +22,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * equality and hash code, and cannot be used in any contexts (such as a Set or a Map's key) which require
  * them. Any attempt to do so will result in a ResolutionException being thrown.</p>
  */
-public final class TableId extends ByteBufferWriter {
+public class TableId {
 
+    @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
     private final static CacheMap<Integer,TableId> cache = new CacheMap<Integer, TableId>(new CacheMap.Allocator<Integer,TableId>() {
         @Override
         public TableId allocateFor(Integer key) {
@@ -40,40 +39,55 @@ public final class TableId extends ByteBufferWriter {
         return cache.get(tableId);
     }
 
+    public static TableId of(String schemaName, String tableName) {
+        return new TableId(schemaName, tableName);
+    }
+
     private TableId(int tableId) {
-        this.tableId.set(tableId);
-        this.tableName = null;
+        this(tableId, null);
+    }
+
+    private TableId(String schemaName, String tableName) {
+        this(null, TableName.create(schemaName, tableName));
+    }
+
+    protected TableId(Integer id, TableName tableName) {
+        this.tableId.set(id);
+        this.tableName = tableName;
     }
 
     /**
-     * Reads an int from the buffer.
-     * @param readFrom the buffer to read from
-     * @param allocatedBytes must be 4
-     * @throws java.nio.BufferUnderflowException if thrown from reading the buffer
+     * <p>Whether this TableId has been resolved to an integer table ID. A TableId can be specified by name, by
+     * integer or by both (if both are given, the integer takes precedence). A resolved TableId has properties a
+     * non-resolved one doesn't have (see below).
+     *
+     * <p>A table is considered resolved if it has an integer value. This can happen a couple of
+     * different ways:
+     * <ul>
+     *  <li>by constructing the TableId by int</li>
+     *  <li>by invoking {@linkplain #getTableId(IdResolver)}</li>
+     * <ul></p>
+     *
+     * <p>A TableId can only be resolved once; once the integer ID is known, it is always used in preference to
+     * the TableName.</p>
+     *
+     * <p>A resolved TableId and unresolved TableId work in different ways:
+     * <ul>
+     *  <li>{@linkplain #getTableId(IdResolver)} may take a null IdResolver iff the TableId is resolved
+     * (since resolution isn't needed in that case)</li>
+     *  <li>equality and hash code computation only work with resolved TableIds</li>
+     * </ul>
+     * </p>
+     *
+     * <p>Note that resolution only caches the table's integer ID, not the TableName. This means that every invocation
+     * of {@linkplain #getTableName(IdResolver)} will use the IdResolver to look up the table name. This is due to the
+     * fact that a table's name may change, but its ID is, by definition, unique and persistent. One consequence of this
+     * is that if you create a TableId by name and then store it, you could end up referring to a table you didn't mean
+     * to. Consider a TableId("s", "c1") that refers to table ID 1. The user then deletes that table and creates a
+     * new table with the same name; it'll have a different ID. Is you had already resolved the initial TableId, its
+     * integer value will continue to point to the original, deleted table ID.</p>
+     * @return whether this TableId is resolved
      */
-    public TableId(ByteBuffer readFrom, int allocatedBytes) {
-        WrongByteAllocationException.ifNotEqual(allocatedBytes, 4);
-        tableId.set(readFrom.getInt());
-        this.tableName = null;
-    }
-
-    public TableId(String schemaName, String tableName) {
-        this.tableName = new TableName(schemaName, tableName);
-    }
-
-    private int getIdOrThrow() throws ResolutionException {
-        Integer tableIdInt = tableId.get();
-        if (tableIdInt == null) {
-            throw new ResolutionException(this);
-        }
-        return tableIdInt;
-    }
-
-    @Override
-    protected void writeToBuffer(ByteBuffer output) throws Exception {
-        output.putInt(getIdOrThrow());
-    }
-
     public boolean isResolved() {
         return tableId.get() != null;
     }
