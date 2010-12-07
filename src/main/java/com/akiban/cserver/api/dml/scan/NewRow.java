@@ -7,6 +7,21 @@ import com.akiban.cserver.api.common.TableId;
 
 import java.util.Map;
 
+/**
+ * <p>A map-like interface for defining rows. This interface does not specify any inherent binding to a row definition;
+ * that binding (including any errors that arise from it) should happen when the row is used.</p>
+ *
+ * <p>Rows should be able to accept <tt>null</tt> values, which should be distinct from unset values. So the following
+ * are <strong>not</strong> equivalent:
+ * <pre>   {1: 'foo', 2: null }
+ * {1: 'foo' }</pre>
+ * </p>
+ *
+ * <p>Note: Although this interface primarily defines a ColumnId -&gt; Object mapping, it is not, and should not be,
+ * related to the <tt>Map</tt> interface. This is because the <tt>Map</tt> interface specifies a <tt>hashCode</tt>
+ * and <tt>equals</tt> implementation which are not compatible with this class; in particular, this class's equality
+ * and hash should take its TableId into consideration.</p>
+ */
 public interface NewRow {
     /**
      * Puts a value into the row. Optional operation.
@@ -66,4 +81,27 @@ public interface NewRow {
      * @throws NullPointerException if rowDef is required but null
      */
     RowData toRowData(RowDef rowDef);
+
+    /**
+     * <p>Compares the specified object with this NewRow. Returns <tt>true</tt> if the given object is also a
+     * <tt>NewRow</tt>, defines the same (ColumnId, Object) mapping and corresponds to the same TableId.</p>
+     *
+     * <p>Note that TableIds can only be used in equality and hashcode if they're resolved. That restriction
+     * propagates to implementations of this class.</p>
+     * @param o the object to compare to
+     * @return if the given object is equal to this NewRow
+     */
+    @Override
+    boolean equals(Object o);
+
+    /**
+     * <p>Returns the hash code for this NewRow. The hash code is defined as sum of the NewRow's tableId hash code and
+     * the hash code for the <tt>Map</tt> returned by {@linkplain #getFields}.</p>
+     *
+     * <p>Note that TableIds can only be used in equality and hashcode if they're resolved. That restriction
+     * propagates to implementations of this class.</p>
+     * @return the hash code for this NewRow
+     */
+    @Override
+    int hashCode();
 }

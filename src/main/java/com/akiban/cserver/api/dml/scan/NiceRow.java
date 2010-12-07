@@ -79,7 +79,7 @@ public class NiceRow implements NewRow {
 
     @Override
     public RowData toRowData(RowDef rowDef) {
-        final int fieldsOffset = 0
+        final int fieldsOffset =
                 + 4 // record length
                 + 2 // signature byte 'AB'
                 + 2 // fields count
@@ -136,16 +136,12 @@ public class NiceRow implements NewRow {
 
         NiceRow niceRow = (NiceRow) o;
 
-        if (!fields.equals(niceRow.fields)) return false;
-        if (!tableId.equals(niceRow.tableId)) return false;
+        return fields.equals(niceRow.fields) && tableId.equals(niceRow.tableId);
 
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = fields.hashCode();
-        result = 31 * result + tableId.hashCode();
-        return result;
+        return tableId.hashCode() + fields.hashCode();
     }
 }
