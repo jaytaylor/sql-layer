@@ -29,9 +29,11 @@ MEDIUMINT = 'mediumint';
 INT = 'int';
 INTEGER = 'integer';
 BIGINT = 'bigint';
-FLOAT = 'float';
+REAL = 'real';
 DOUBLE = 'double';
+FLOAT = 'float';
 DECIMAL = 'decimal';
+NUMERIC = 'numeric';
 DATE = 'date';
 DATETIME = 'datetime';
 TIMESTAMP = 'timestamp';
@@ -69,7 +71,18 @@ DELETE = 'delete';
 UPDATE = 'update';
 MCOMMENT = 'comment';
 CONSTRAINT = 'constraint';
-
+RESTRICT = 'restrict';
+CASCADE = 'cascade';
+NO = 'no';
+ACTION = 'action';
+USING = 'using';
+BTREE = 'btree';
+HASH = 'hash';
+KEY_BLOCK_SIZE = 'key_block_size';
+WITH = 'with';
+PARSER = 'parser';
+FULLTEXT = 'fulltext';
+SPATIAL = 'spatial';
 }
 
 
@@ -93,19 +106,14 @@ cname[SchemaDef schema] returns[CName cname]
     : (schemaName=qname DOT)? tableName=qname  {return new CName($schema, $schemaName.name, $tableName.name);}
     ;
     
-
 schema_ddl[SchemaDef schema]
     : (table[$schema] | use[$schema]) SEMICOLON
     ;
  
-    
-    
 use[SchemaDef schema]
     : USE qname {schema.use($qname.name);}
     ; 
     
-
-
 table[SchemaDef schema]
 	: CREATE TABLE (IF NOT EXISTS)? table_spec[$schema]
 	;
@@ -125,15 +133,16 @@ table_suffix[SchemaDef schema]
 	: (ENGINE EQUALS engine=qname {$schema.setEngine(engine);})
 	| (AUTO_INCREMENT EQUALS NUMBER {$schema.autoIncrementInitialValue($NUMBER.text);})
 	| (DEFAULT? character_set[$schema])
-	| (collation[$schema])
+	| (DEFAULT? collation[$schema])
 	| (ID EQUALS qvalue)
+	| (MCOMMENT EQUALS? qvalue)
 	;
 	
 table_element[SchemaDef schema]
 	: column_specification[$schema]
-	| key_constraint[$schema]? primary_key_specification[$schema] { $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
-	| key_constraint[$schema]? foreign_key_specification[$schema] { $schema.finishConstraint(SchemaDef.IndexQualifier.FOREIGN_KEY); }
-	| other_key_specification[$schema]
+	| key_constraint[$schema]? primary_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
+	| key_constraint[$schema]? foreign_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.FOREIGN_KEY); }
+	| other_key_specification[$schema] index_option[$schema]*
 	;
 	
 column_specification[SchemaDef schema]
@@ -147,7 +156,7 @@ column_constraint[SchemaDef schema]
 	| DEFAULT qvalue  {$schema.otherConstraint("DEFAULT=" + $qvalue.text);}
 	| AUTO_INCREMENT {$schema.autoIncrement();}
 	| ON UPDATE qvalue
-	| MCOMMENT EQUALS? TICKVALUE {$schema.addColumnComment($TICKVALUE.text);}
+	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
 	| character_set[$schema]
 	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
@@ -159,7 +168,7 @@ key_constraint[SchemaDef schema]
 	;
 
 primary_key_specification[SchemaDef schema]
-	: PRIMARY KEY {$schema.startPrimaryKey();}
+	: PRIMARY KEY index_type[$schema]? {$schema.startPrimaryKey();}
 	  LEFT_PAREN primary_key_column[$schema] (COMMA primary_key_column[$schema])*
 	  RIGHT_PAREN
 	;
@@ -171,16 +180,19 @@ primary_key_column[SchemaDef schema]
 other_key_specification[SchemaDef schema]
 	: ( unique__key_specification[$schema]
 	  | nonunique_key_specification[$schema]
-	  )
+	  ) 
+	index_type[$schema]?
 	LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 	;
 
 foreign_key_specification[SchemaDef schema]
 	: FOREIGN KEY qn1=qname? {$schema.addIndex($qn1.name);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.FOREIGN_KEY);} 
+		index_type[$schema]?
 	    LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 		REFERENCES refTable=cname[$schema] {$schema.setIndexReference(refTable);}
 		LEFT_PAREN reference_column[$schema] (COMMA reference_column[$schema])* RIGHT_PAREN
-		( ON DELETE qname)?
+		( ON DELETE reference_option)?
+		( ON UPDATE reference_option)?
 	;
 
 unique__key_specification[SchemaDef schema]
@@ -188,25 +200,43 @@ unique__key_specification[SchemaDef schema]
 	;
 
 nonunique_key_specification[SchemaDef schema]
-	: (KEY | INDEX)? qname? {$schema.addIndex($qname.name);}
+	: (FULLTEXT | SPATIAL)? (KEY | INDEX)? qname? {$schema.addIndex($qname.name);}
 	;
-
+	
 index_key_column[SchemaDef schema]
 	: qname {$schema.addIndexColumn($qname.name); }
 	  (LEFT_PAREN NUMBER RIGHT_PAREN {$schema.setIndexedLength($NUMBER.text);} )?
 	  (ASC | DESC {$schema.setIndexColumnDesc();})?
 	;
+
+index_type[SchemaDef schema]
+	: USING (BTREE | HASH)
+	;
+	
+index_option[SchemaDef schema]
+	: KEY_BLOCK_SIZE EQUALS qvalue
+	| index_type[$schema]
+	| WITH PARSER qname
+	| MCOMMENT qvalue
+	;
 	
 reference_column[SchemaDef schema]
     : qname {$schema.addIndexReferenceColumn($qname.name); }
     ;
+    
+reference_option returns [String option]
+	: RESTRICT {$option = "RESTRICT";}
+	| CASCADE {$option = "CASCADE";}
+	| SET NULL {$option = "SET NULL";}
+	| NO ACTION {$option = "NO ACTION";}
+	;
 	
 character_set[SchemaDef schema]
-    : (CHARSET EQUALS? | CHARACTER SET) ID {$schema.addCharsetValue($ID.text);}
+    : (CHARSET | CHARACTER SET) EQUALS? ID {$schema.addCharsetValue($ID.text);}
     ;
     
 collation[SchemaDef schema]
-	: COLLATE ID {$schema.addCollateValue($ID.text);}
+	: COLLATE EQUALS? ID {$schema.addCollateValue($ID.text);}
 	;
     
 data_type_def returns [String type, String len1, String len2]
@@ -214,9 +244,9 @@ data_type_def returns [String type, String len1, String len2]
 	| numeric_data_type {$type = $numeric_data_type.type;}  
 	   (length_constraint {$len1 = $length_constraint.len1;})? 
 	   (UNSIGNED {$type=$type + " UNSIGNED";})?
-	| decimal_data_type 
-	   {$type = $decimal_data_type.type; $len1 = $decimal_data_type.len1; 
-	    $len2 = $decimal_data_type.len2;}
+	| decimal_data_type {$type = $decimal_data_type.type;}
+      (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
+      (UNSIGNED {$type=$type + " UNSIGNED";})?
 	| enum_or_set_data_type {$type = $enum_or_set_data_type.type; $len1 = $enum_or_set_data_type.len1;}
 	;
 
@@ -252,14 +282,14 @@ numeric_data_type returns [String type]
 	| INT {$type = "INT";}
 	| INTEGER {$type = "INT";}
 	| BIGINT {$type = "BIGINT";}
-	| FLOAT {$type = "FLOAT";}
-	| DOUBLE {$type = "DOUBLE";}
 	;
 
-decimal_data_type returns [String type, String len1, String len2]
+decimal_data_type returns [String type]
     : DECIMAL {$type = "DECIMAL";} 
-      (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
-      (UNSIGNED {$type=$type + " UNSIGNED";})?
+	| NUMERIC {$type = "NUMERIC";}
+	| REAL {$type = "REAL";}
+	| DOUBLE {$type = "DOUBLE";}
+	| FLOAT {$type = "FLOAT";}
     ;
 
 enum_or_set_data_type returns [String type, String len1]
@@ -278,7 +308,7 @@ eset_constraint returns [int count]
     
 count_quoted_strings returns [int count]
     : TICKVALUE {$count = 1;} (COMMA TICKVALUE {$count++;})*;	
-
+    	
 qname returns [String name]
 	:	(ID  {$name = $ID.text; } )
 	|   (QNAME {$name = $QNAME.text.substring(1, $QNAME.text.length()-1); }  )
@@ -297,8 +327,8 @@ qvalue returns [String value]
 WS : ( '\t' | ' ' | '\r' | '\n' | '\u000C' )+ 	{ $channel = HIDDEN; } ;
 TICKVALUE: '\'' (~ '\'')* '\'';
 fragment DIGIT :   '0'..'9' ;
-NUMBER 	:	('-')? (DIGIT)+;
-QNAME : '`' ('a'..'z' | '_') ('a'..'z' | DIGIT | '_' | '$' )* '`' ;
+NUMBER 	:	('-')? (DIGIT | DOT)+;
+QNAME : '`' (.)* '`' ;
 ID : ('a'..'z' | '_') ('a'..'z' | DIGIT | '_' | '$')*;
 COMMENT: '--' (~('\r' | '\n'))* ('\r' | '\n')  { $channel = HIDDEN; } ;
 IGNORE: ('/*' | '*/')+  { $channel = HIDDEN; } ;

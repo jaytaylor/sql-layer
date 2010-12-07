@@ -1,5 +1,37 @@
 package com.akiban.ais.ddl;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CharStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.ais.ddl.SchemaDef.CName;
 import com.akiban.ais.ddl.SchemaDef.ColumnDef;
 import com.akiban.ais.ddl.SchemaDef.IndexDef;
@@ -9,19 +41,15 @@ import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Source;
-import org.antlr.runtime.*;
-import org.apache.commons.cli.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.UserTable;
+import com.akiban.util.Strings;
 
 /**
  * This class reads the CREATE TABLE statements in a mysqldump file, plus
@@ -257,6 +285,11 @@ public class DDLSource extends Source {
         return buildAIS(new StringStream(string));
     }
 
+    private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex)
+    {
+        return (fkIndex.getParentSchema() + "/" + fkIndex.getParentTable() + "/" + Strings.join(fkIndex.getParentColumns(), ",") + "/" + childTable.getCName().getSchema() + "/" + childTable.name + "/" + Strings.join(fkIndex.getChildColumns(), ",")).toLowerCase();
+    }
+    
     public static SchemaDef parseSchemaDef(final String string)
             throws Exception {
         DDLSource instance = new DDLSource();
@@ -532,8 +565,7 @@ public class DDLSource extends Source {
         for (final CName groupName : schemaDef.getGroupMap().keySet()) {
             final List<CName> tableList = depthFirstSortedUserTables(groupName);
             for (final CName childTableName : tableList) {
-                final UserTableDef childTable = schemaDef.getUserTableMap()
-                        .get(childTableName);
+                final UserTableDef childTable = schemaDef.getUserTableMap().get(childTableName);
                 if (childTable.parent != null) {
                     CName parentName = childTable.parent.name;
                     final UserTableDef parentTable = schemaDef
@@ -851,4 +883,149 @@ public class DDLSource extends Source {
             sb.delete(0, s.length());
         }
     }
+    
+    public AkibaInformationSchema buildAISFromBuilder(final String string) throws Exception
+    {
+        parseSchemaDef(new StringStream(string));
+
+        AISBuilder builder = new AISBuilder();
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        int indexIdGenerator = 0;
+
+        // loop through user tables and add to AIS
+        for (UserTableDef utDef : schemaDef.getUserTableMap().values())
+        {
+            String schemaName = utDef.getCName().getSchema();
+            String tableName = utDef.getCName().getName();
+
+            // table
+            builder.userTable(schemaName, tableName);
+            
+            // engine
+            UserTable ut = ais.getUserTable(schemaName, tableName);
+            ut.setEngine(utDef.engine);
+            
+            // auto-increment
+            if (utDef.getAutoIncrementColumn() != null && utDef.getAutoIncrementColumn().defaultAutoIncrement() != null){
+                ut.setInitialAutoIncrementValue(utDef.getAutoIncrementColumn().defaultAutoIncrement());
+            }
+            
+            // columns
+            List<ColumnDef> columns = utDef.columns;
+            int columnIndex = 0;
+            for (ColumnDef def : columns)
+            {
+                Type type = ais.getType(def.typeName);
+                Column column = Column.create(ut,
+                                              def.name,
+                                              columnIndex++,
+                                              type);
+                column.setNullable(def.nullable);
+                column.setAutoIncrement(def.autoincrement == null ? false : true);
+                column.setTypeParameter1(longValue(def.typeParam1));
+                column.setTypeParameter2(longValue(def.typeParam2));
+                column.setCharset(def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset);
+                column.setCollation(def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate);
+            }
+            
+            // pk index
+            if (utDef.primaryKey.size() > 0)
+            {
+                String pkIndexName = "PRIMARY";
+                Index pkIndex = Index.create(ais, ut, pkIndexName, indexIdGenerator++, true, pkIndexName);
+
+                columnIndex = 0;
+                for (String pkName : utDef.primaryKey)
+                {
+                    Column pkColumn = ut.getColumn(pkName);
+                    pkIndex.addColumn(new IndexColumn(pkIndex, pkColumn, columnIndex++, true, null));
+                }
+            }
+
+            // indexes / constraints
+            for (IndexDef indexDef : utDef.indexes)
+            {
+                String indexType = "INDEX";
+                boolean unique = false;
+                for (SchemaDef.IndexQualifier qualifier : indexDef.qualifiers)
+                {
+                    if (qualifier.equals(SchemaDef.IndexQualifier.FOREIGN_KEY))
+                    {
+                        indexType = "FOREIGN KEY";
+                    }
+                    if (qualifier.equals(SchemaDef.IndexQualifier.UNIQUE))
+                    {
+                        indexType = "UNIQUE";
+                        unique = true;
+                    }
+                }
+
+                if (indexType.equalsIgnoreCase("FOREIGN KEY"))
+                {
+                    // foreign keys (aka candidate joins)
+                    CName childTable = utDef.name;
+                    CName parentTable = indexDef.referenceTable;
+                    String joinName = constructFKJoinName(utDef, indexDef);
+
+                    builder.joinTables(joinName, parentTable.getSchema(), parentTable.getName(), childTable.getSchema(), childTable.getName());
+
+                    Iterator<String> childJoinColumnNameScan = indexDef.getChildColumns().iterator();
+                    Iterator<String> parentJoinColumnNameScan = indexDef.getParentColumns().iterator();
+
+                    while (childJoinColumnNameScan.hasNext() && parentJoinColumnNameScan.hasNext())
+                    {
+                        String childJoinColumnName = childJoinColumnNameScan.next();
+                        String parentJoinColumnName = parentJoinColumnNameScan.next();
+
+                        builder.joinColumns(joinName, parentTable.getSchema(), parentTable.getName(), parentJoinColumnName, childTable.getSchema(), childTable.getName(), childJoinColumnName);
+                    }
+                }
+                else
+                {
+                    // indexes
+                    Index fkIndex = Index.create(ais, ut, indexDef.name, indexIdGenerator++, unique, indexType);
+
+                    columnIndex = 0;
+                    for (SchemaDef.IndexColumnDef indexColumnDef : indexDef.columns)
+                    {
+                        Column fkColumn = ut.getColumn(indexColumnDef.columnName);
+                        fkIndex.addColumn(new IndexColumn(fkIndex, fkColumn, columnIndex++, !indexColumnDef.descending, indexColumnDef.indexedLength));
+                    }
+                }
+            }
+        }
+
+        builder.basicSchemaIsComplete();
+
+        // loop through group tables and add to AIS
+        for (CName group : schemaDef.getGroupMap().keySet())
+        {
+            LOG.info("Group = " + group.getName());
+            builder.createGroup(group.getName(), groupSchemaName(), groupTableName(group));
+
+            List<CName> tablesInGroup = depthFirstSortedUserTables(group);
+            for (CName table : tablesInGroup)
+            {
+                UserTableDef tableDef = schemaDef.getUserTableMap().get(table);
+                IndexDef akibanFK = getAkibanJoin(tableDef);
+                if (akibanFK == null)
+                {
+                    // No FK: this is a root table so do nothing
+                    LOG.info("Group Root Table = " + table.getName());
+                }
+                else
+                {
+                    LOG.info("Group Child Table = " + table.getName());
+                    if (akibanFK.referenceTable != null) {
+                        String joinName = constructFKJoinName(tableDef, akibanFK);
+                        builder.addJoinToGroup(group.getName(), joinName, 0);
+                    }
+                }
+            }
+        }
+        if (!schemaDef.getGroupMap().isEmpty()) builder.groupingIsComplete();
+
+        return builder.akibaInformationSchema();
+    }
+    
 }

@@ -426,26 +426,42 @@ public class AISBuilder
         updateGroupTablesOnMove(oldGroup, group, children);
     }
     
+    public void moveTreeToNoGroup(String schemaName, String tableName)
+    {
+         LOG.info("moveTree: " + schemaName + "." + tableName + " -> no group ");
+        // table
+        UserTable table = ais.getUserTable(schemaName, tableName);
+        checkFound(table, "moving tree", "table", concat(schemaName, tableName));
+        
+        // group
+        Group oldGroup = table.getGroup();
+        Group group = null;
+
+        // Remove table's parent join from its current group (if there is a parent)
+        Join parentJoin = table.getParentJoin();
+        if (parentJoin != null) {
+            parentJoin.setGroup(null);
+        }
+        
+        // Move table to group. Get the children first (see comment in moveTreeToGroup).
+        List<Join> children = table.getChildJoins();
+        table.setGroup(group);
+        
+        // update group table columns and indexes for the affected groups
+        updateGroupTablesOnMove(oldGroup, group, children);
+    }
+    
     private void updateGroupTablesOnMove(Group oldGroup, Group newGroup, List<Join> moveJoins){
            
-        /*
-         * If moving from within the same group we do not have to reset the join
-         * groups or do duplicate column and index updates
-         */
-        boolean sameGroup = false;
-        if (oldGroup != null)
-            sameGroup = oldGroup.getName().equalsIgnoreCase(newGroup.getName());
-        
-        // Move everything below the join
-        if (!sameGroup) moveTree(moveJoins, newGroup);
+        moveTree(moveJoins, newGroup);
         
         // update columns in old and new groups
         if (oldGroup != null) generateGroupTableColumns(oldGroup);
-        if (!sameGroup) generateGroupTableColumns(newGroup);
+        if (newGroup != null) generateGroupTableColumns(newGroup);
         
         // update indexes in old and new groups
         if (oldGroup != null) generateGroupTableIndexes(oldGroup);
-        if (!sameGroup) generateGroupTableIndexes(newGroup);
+        if (newGroup != null) generateGroupTableIndexes(newGroup);
         
     }
     
