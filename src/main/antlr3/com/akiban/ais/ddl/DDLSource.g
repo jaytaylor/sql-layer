@@ -191,8 +191,11 @@ foreign_key_specification[SchemaDef schema]
 	    LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 		REFERENCES refTable=cname[$schema] {$schema.setIndexReference(refTable);}
 		LEFT_PAREN reference_column[$schema] (COMMA reference_column[$schema])* RIGHT_PAREN
-		( ON DELETE reference_option)?
-		( ON UPDATE reference_option)?
+		fk_cascade_clause*
+	;
+
+fk_cascade_clause
+	: ON (UPDATE | DELETE) reference_option
 	;
 
 unique__key_specification[SchemaDef schema]

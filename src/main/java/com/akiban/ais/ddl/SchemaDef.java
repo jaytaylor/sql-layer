@@ -61,7 +61,9 @@ public class SchemaDef {
     }
 
     void addTable(final CName tableName) {
-        assert provisionalIndexes.isEmpty() : provisionalIndexes;
+        // If ANTLR detects a problem, it'll try to push forward as much as it can. If this happens while there's
+        // a provisional index pending, we need to clear it.
+        provisionalIndexes.clear();
         currentTable = getUserTableDef(tableName);
     }
 
