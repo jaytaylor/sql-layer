@@ -57,13 +57,13 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     public Map<String, Object> map()
     {
         Map<String, Object> map = new HashMap<String, Object>();
+        map.put(join_joinName, joinName);
         map.put(join_parentSchemaName, parent.getName().getSchemaName());
         map.put(join_parentTableName, parent.getName().getTableName());
         map.put(join_childSchemaName, child.getName().getSchemaName());
         map.put(join_childTableName, child.getName().getTableName());
-        map.put(join_joinName, joinName);
-        map.put(join_joinWeight, weight);
         map.put(join_groupName, group == null ? null : group.getName());
+        map.put(join_joinWeight, weight);
         map.put(join_groupingUsage, groupingUsage.ordinal());
         map.put(join_sourceTypes, sourceTypes.toInt());
         return map;

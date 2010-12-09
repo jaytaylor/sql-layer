@@ -287,7 +287,8 @@ public class DDLSource extends Source {
 
     private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex)
     {
-        return (fkIndex.getParentSchema() + "/" + fkIndex.getParentTable() + "/" + Strings.join(fkIndex.getParentColumns(), ",") + "/" + childTable.getCName().getSchema() + "/" + childTable.name + "/" + Strings.join(fkIndex.getChildColumns(), ",")).toLowerCase();
+        String ret = (fkIndex.getParentSchema() + "/" + fkIndex.getParentTable() + "/" + Strings.join(fkIndex.getParentColumns(), ",") + "/" + childTable.getCName().getSchema() + "/" + childTable.name + "/" + Strings.join(fkIndex.getChildColumns(), ",")).toLowerCase();
+        return ret.replace(',','_');
     }
     
     public static SchemaDef parseSchemaDef(final String string)

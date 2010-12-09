@@ -64,6 +64,9 @@ public class CSVTarget extends Target
 
     private void writeStringOrNull(String s)
     {
+        if((s != null) && s.contains(",")) {
+            throw new IllegalArgumentException("No commas allowed: " + s);
+        }
         output.print(", ");
         if (s != null) {
             output.print(quote(s));
