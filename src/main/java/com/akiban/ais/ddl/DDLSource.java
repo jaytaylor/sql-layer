@@ -946,7 +946,7 @@ public class DDLSource extends Source {
             // indexes / constraints
             for (IndexDef indexDef : utDef.indexes)
             {
-                String indexType = "INDEX";
+                String indexType = "KEY";
                 boolean unique = false;
                 for (SchemaDef.IndexQualifier qualifier : indexDef.qualifiers)
                 {
@@ -963,6 +963,7 @@ public class DDLSource extends Source {
 
                 if (indexType.equalsIgnoreCase("FOREIGN KEY"))
                 {
+                    indexType = "KEY";
                     // foreign keys (aka candidate joins)
                     CName childTable = utDef.name;
                     CName parentTable = indexDef.referenceTable;
@@ -981,7 +982,7 @@ public class DDLSource extends Source {
                         builder.joinColumns(joinName, parentTable.getSchema(), parentTable.getName(), parentJoinColumnName, childTable.getSchema(), childTable.getName(), childJoinColumnName);
                     }
                 }
-                else
+//                else
                 {
                     // indexes
                     Index fkIndex = Index.create(ais, ut, indexDef.name, indexIdGenerator++, unique, indexType);
