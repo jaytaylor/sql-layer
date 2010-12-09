@@ -249,7 +249,9 @@ public class SchemaDef {
     }
 
     void autoIncrementInitialValue(final String value) {
-        currentTable.autoIncrementColumn.setAutoIncrement(value);
+        if (currentTable.autoIncrementColumn != null) {
+            currentTable.autoIncrementColumn.setAutoIncrement(value);
+        }
     }
     
     void addCharsetValue(final String charset) {
