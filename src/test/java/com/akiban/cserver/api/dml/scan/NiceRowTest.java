@@ -1,9 +1,7 @@
 package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.ais.model.Types;
-import com.akiban.cserver.FieldDef;
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
+import com.akiban.cserver.*;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import org.junit.Test;
@@ -16,7 +14,8 @@ import static org.junit.Assert.*;
 
 public final class NiceRowTest {
     @Test
-    public void toRowDataBasic() {
+    public void toRowDataBasic() throws Exception
+    {
         RowDef rowDef = createRowDef(2);
 
         Object[] objects = new Object[2];
@@ -35,7 +34,8 @@ public final class NiceRowTest {
     }
 
     @Test
-    public void toRowDataLarge() {
+    public void toRowDataLarge() throws Exception
+    {
         final int NUM = 30;
         RowDef rowDef = createRowDef(NUM);
 
@@ -62,7 +62,8 @@ public final class NiceRowTest {
     }
 
     @Test
-    public void toRowDataSparse() {
+    public void toRowDataSparse() throws Exception
+    {
         final int NUM = 30;
         RowDef rowDef = createRowDef(NUM);
 
@@ -117,17 +118,20 @@ public final class NiceRowTest {
         return new byte[1024];
     }
 
-    private static RowDef createRowDef(int totalColumns) {
+    private static RowDef createRowDef(int totalColumns) throws Exception {
         assertTrue("bad totalColumns=" + totalColumns, totalColumns >= 2);
-        FieldDef[] fields = new FieldDef[totalColumns];
+        String[] ddl = new String[totalColumns + 3];
         int i = 0;
-        fields[i++] = new FieldDef("id", Types.INT);
-        fields[i++] = new FieldDef("name", Types.VARCHAR, 128, 1, 129L, null);
-        while(i < totalColumns) {
-            fields[i++] = new FieldDef("field_"+i, Types.INT);
+        ddl[i++] = "use test_schema; ";
+        ddl[i++] = "create table test_table(";
+        ddl[i++] = "id int";
+        ddl[i++] = ", name varchar(128)";
+        for (int c = 2; c < totalColumns; c++) {
+            ddl[i++] = String.format(", field_%s int", c);
         }
-
-        return new RowDef(1, fields);
+        ddl[i] = ") engine = akibandb;";
+        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        return rowDefCache.getRowDef("test_schema.test_table");
     }
 
     private RowData create(RowDef rowDef, Object[] objects) {
@@ -161,4 +165,6 @@ public final class NiceRowTest {
         }
         return bytesList;
     }
+
+    private static final RowDefCacheFactory ROW_DEF_CACHE_FACTORY = new RowDefCacheFactory();
 }

@@ -1,10 +1,12 @@
 package com.akiban.cserver;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.cserver.encoding.EncoderFactory;
 import com.akiban.cserver.encoding.Encoding;
 
 public class FieldDef {
+    private final Column column;
 
     private final Type type;
 
@@ -16,37 +18,42 @@ public class FieldDef {
 
     private final Encoding encoding;
 
-    private int fieldIndex;
-
     private RowDef rowDef;
 
     private Long typeParameter1;
 
     private Long typeParameter2;
 
-    public FieldDef(final String name, final Type type) {
+    public FieldDef(String name, Type type) {
         this(name, type, (int) (type.maxSizeBytes().longValue()));
     }
 
-    public FieldDef(final String name, final Type type, final int maxStorageSize) {
-        this(name, type, maxStorageSize, 0, null, null);
+    public FieldDef(String name, Type type, int maxStorageSize) {
+        this(null, name, type, maxStorageSize, 0, null, null);
     }
 
-    public FieldDef(final String name, final Type type,
-            final int maxStorageSize, final int prefixSize) {
-        this(name, type, maxStorageSize, prefixSize, null, null);
+    public FieldDef(String name,
+                    Type type,
+                    int maxStorageSize,
+                    int prefixSize) {
+        this(null, name, type, maxStorageSize, prefixSize, null, null);
     }
 
-    public FieldDef(final String name, final Type type,
-            final int maxStorageSize, final int prefixSize,
-            final Long typeParameter1, final Long typeParameter2) {
-        this.columnName = name;
-        this.type = type;
-        this.encoding = EncoderFactory.valueOf(type.encoding(), type);
-        this.maxStorageSize = maxStorageSize;
-        this.prefixSize = prefixSize;
-        this.typeParameter1 = typeParameter1;
-        this.typeParameter2 = typeParameter2;
+    public FieldDef(RowDef rowDef, Column column)
+    {
+        this(column,
+             column.getName(),
+             column.getType(),
+             column.getMaxStorageSize().intValue(),
+             column.getPrefixSize(),
+             column.getTypeParameter1(),
+             column.getTypeParameter2());
+        this.rowDef = rowDef;
+    }
+
+    public Column column()
+    {
+        return column;
     }
 
     public String getName() {
@@ -90,11 +97,9 @@ public class FieldDef {
     }
 
     public int getFieldIndex() {
-        return fieldIndex;
-    }
-
-    public void setFieldIndex(int fieldIndex) {
-        this.fieldIndex = fieldIndex;
+        // setFieldPosition was only done in RowDefCache, not in tests that construct FieldDefs directly.
+        assert column != null : this;
+        return column.getPosition();
     }
 
     @Override
@@ -106,7 +111,7 @@ public class FieldDef {
     public boolean equals(final Object o) {
         FieldDef def = (FieldDef) o;
         return type == def.type && columnName == def.columnName
-                && encoding == def.encoding && fieldIndex == def.fieldIndex
+                && encoding == def.encoding && column.getPosition() == def.column.getPosition()
                 && CServerUtil.equals(typeParameter1, def.typeParameter1)
                 && CServerUtil.equals(typeParameter2, def.typeParameter2);
     }
@@ -114,9 +119,28 @@ public class FieldDef {
     @Override
     public int hashCode() {
         return type.hashCode() ^ columnName.hashCode() ^ encoding.hashCode()
-                ^ fieldIndex ^ CServerUtil.hashCode(typeParameter1)
+                ^ column.getPosition() ^ CServerUtil.hashCode(typeParameter1)
                 ^ CServerUtil.hashCode(typeParameter2);
     }
 
-
+    private FieldDef(Column column,
+                     String name,
+                     Type type,
+                     int maxStorageSize,
+                     int prefixSize,
+                     Long typeParameter1,
+                     Long typeParameter2) {
+        this.column = column;
+        this.columnName = name;
+        this.type = type;
+        this.encoding = EncoderFactory.valueOf(type.encoding(), type);
+        if (!encoding.validate(type)) {
+            throw new IllegalArgumentException("Encoding " + encoding
+                    + " not valid for type " + type);
+        }
+        this.maxStorageSize = maxStorageSize;
+        this.prefixSize = prefixSize;
+        this.typeParameter1 = typeParameter1;
+        this.typeParameter2 = typeParameter2;
+    }
 }

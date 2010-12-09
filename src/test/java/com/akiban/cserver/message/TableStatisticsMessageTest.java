@@ -4,14 +4,10 @@ import static org.junit.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.cserver.*;
 import org.junit.Test;
 
 import com.akiban.ais.model.Types;
-import com.akiban.cserver.FieldDef;
-import com.akiban.cserver.IndexDef;
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.TableStatistics;
 import com.persistit.Key;
 import com.persistit.Persistit;
 
@@ -20,13 +16,17 @@ public class TableStatisticsMessageTest {
     @Test
     public void testTableStatisticsResponseMessageSerialization()
             throws Exception {
-        final RowDef rowDef = new RowDef(123, new FieldDef[] {
-                new FieldDef("a", Types.TINYINT),
-                new FieldDef("b", Types.TINYINT),
-                new FieldDef("c", Types.SMALLINT), });
-        rowDef.setIndexDefs(new IndexDef[] { new IndexDef("x", rowDef, "_x",
-                456, new int[] { 1 }, false, true) });
-
+        String[] DDL = new String[] {
+            "use schema; ",
+            "create table test(",
+            "    a tinyint, ",
+            "    b tinyint, ",
+            "    c smallint, ",
+            "    unique index(b));"
+        };
+        RowDefCacheFactory rowDefCacheFactory = new RowDefCacheFactory();
+        RowDefCache rowDefCache = rowDefCacheFactory.rowDefCache(DDL);
+        RowDef rowDef = rowDefCache.getRowDef("schema.test");
         final TableStatistics ts = new TableStatistics(123);
         ts.setAutoIncrementValue(999);
         ts.setBlockSize(8192);

@@ -1,5 +1,6 @@
 package com.akiban.cserver;
 
+import com.akiban.ais.model.*;
 import com.akiban.cserver.util.RowDefNotFoundException;
 
 import java.util.ArrayList;
@@ -17,15 +18,12 @@ import java.util.List;
  * 
  */
 public class RowDef {
+    private final Table table;
+
     /**
      * Array of FieldDef, one per column
      */
     private final FieldDef[] fieldDefs;
-
-    /**
-     * Unique, permanent handle for a version of a table definition
-     */
-    private final int rowDefId;
 
     /**
      * Denotes position within a group; this value is used to identify a table
@@ -41,30 +39,15 @@ public class RowDef {
     private int[] pkFields;
 
     /**
-     * Parent table. This denotes the table hierarchy within a group. Value is
-     * zero, meaning there is no parent RowDef, if this table is a root table.
-     */
-    private int parentRowDefId;
-
-    /**
      * Field(s) that constitute the foreign key by which this row is joined to
      * its parent table.
      */
     private int[] parentJoinFields;
 
     /**
-     * Schema's name for this table.
-     */
-    private String tableName;
-    /**
      * Name of the tree storing this table - same as the group table name
      */
     private String treeName;
-
-    /**
-     * Schema this RowDef belongs to.
-     */
-    private String schemaName;
 
     /**
      * Field index of the auto-increment column; -1 if none.
@@ -76,12 +59,6 @@ public class RowDef {
      * for a group table. Null if this is the RowDef for a user table.
      */
     private RowDef[] userTableRowDefs;
-
-    /**
-     * If this is a user table, the rowDefId of the group table it belongs too,
-     * else 0.
-     */
-    private int groupRowDefId;
 
     /**
      * For a user table, the column position of the first column of the user
@@ -115,66 +92,27 @@ public class RowDef {
      * method to assist in looking up a field's offset and length.
      */
     private final byte[][] varLenFieldMap;
-    /**
-     * Factory method used for convenience in tests
-     * 
-     * @param rowDefId
-     * @param fieldDefs
-     * @param tableName
-     * @param treeName
-     * @param pkFields
-     * @return
-     */
-    public static RowDef createRowDef(final int rowDefId,
-            final FieldDef[] fieldDefs, final String tableName,
-            String treeName, final int[] pkFields) {
-        final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-        rowDef.setTableName(tableName);
-        rowDef.setTreeName(treeName);
-        rowDef.setPkFields(pkFields);
-        rowDef.setParentRowDefId(0);
-        rowDef.setParentJoinFields(new int[0]);
-        rowDef.setIndexDefs(new IndexDef[0]);
-        return rowDef;
-    }
 
-    /**
-     * Factory method used for convenience in tests
-     * 
-     * @param rowDefId
-     * @param fieldDefs
-     * @param tableName
-     * @param groupTableName
-     * @param pkFields
-     * @param parentRowDefId
-     * @param parentJoinFields
-     * @return
-     */
-    public static RowDef createRowDef(final int rowDefId,
-            final FieldDef[] fieldDefs, final String tableName,
-            final String groupTableName, final int[] pkFields,
-            final int parentRowDefId, final int[] parentJoinFields) {
-        final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-        rowDef.setTableName(tableName);
-        rowDef.setTreeName(groupTableName);
-        rowDef.setPkFields(pkFields);
-        rowDef.setParentRowDefId(parentRowDefId);
-        rowDef.setParentJoinFields(parentJoinFields);
-        rowDef.setIndexDefs(new IndexDef[0]);
-        return rowDef;
-    }
-
-    public RowDef(final int rowDefId, final FieldDef[] fieldDefs) {
-        this.rowDefId = rowDefId;
-        this.fieldDefs = fieldDefs;
-        for (int index = 0; index < fieldDefs.length; index++) {
-            final FieldDef fieldDef = fieldDefs[index];
-            fieldDef.setRowDef(this);
-            fieldDef.setFieldIndex(index);
+    public RowDef(Table table) {
+        this.table = table;
+        this.fieldDefs = new FieldDef[table.getColumns().size()];
+        for (Column column : table.getColumns()) {
+            this.fieldDefs[column.getPosition()] = new FieldDef(this, column);
         }
         fieldCoordinates = new int[(fieldDefs.length + 7) / 8][];
         varLenFieldMap = new byte[(fieldDefs.length + 7) / 8][];
         preComputeFieldCoordinates(fieldDefs);
+    }
+
+    public Table table()
+    {
+        return table;
+    }
+
+    public UserTable userTable()
+    {
+        assert table instanceof UserTable : this;
+        return (UserTable) table;
     }
 
     /**
@@ -215,7 +153,7 @@ public class RowDef {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(String.format(
-                "RowDef #%d %s (%s.%s) %s ", rowDefId, tableName, treeName,
+                "RowDef #%d %s (%s.%s) %s ", table.getTableId(), table.getName(), treeName,
                 getPkTreeName(), rowType));
         if (userTableRowDefs != null) {
             for (int i = 0; i < userTableRowDefs.length; i++) {
@@ -424,7 +362,7 @@ public class RowDef {
     }
 
     public int getGroupRowDefId() {
-        return groupRowDefId;
+        return table instanceof GroupTable ? table.getTableId() : table.getGroup().getGroupTable().getTableId();
     }
 
     public IndexDef[] getIndexDefs() {
@@ -442,12 +380,17 @@ public class RowDef {
         return null;
     }
 
+    /**
+     * deprecated
+     */
     public int[] getParentJoinFields() {
         return parentJoinFields;
     }
 
     public int getParentRowDefId() {
-        return parentRowDefId;
+        UserTable userTable = (UserTable) table;
+        Join parentJoin = userTable.getParentJoin();
+        return parentJoin == null ? 0 : parentJoin.getParent().getTableId();
     }
 
     // NOT the entire PK. Just the fields of the PK that do not participate in join with parent.
@@ -461,7 +404,7 @@ public class RowDef {
     }
 
     public int getRowDefId() {
-        return rowDefId;
+        return table.getTableId();
     }
 
     public int getOrdinal() {
@@ -469,7 +412,7 @@ public class RowDef {
     }
 
     public String getTableName() {
-        return tableName;
+        return table.getName().getTableName();
     }
 
     public String getTreeName() {
@@ -477,11 +420,15 @@ public class RowDef {
     }
 
     public String getSchemaName() {
-        return schemaName;
+        return table.getName().getSchemaName();
     }
 
     public boolean isGroupTable() {
         return userTableRowDefs != null;
+    }
+
+    public boolean isUserTable() {
+        return !isGroupTable();
     }
 
     public void setRowType(final RowType rowType) {
@@ -492,20 +439,12 @@ public class RowDef {
         this.ordinal = ordinal;
     }
 
-    public void setGroupRowDefId(final int groupRowDefId) {
-        this.groupRowDefId = groupRowDefId;
-    }
-
     public void setIndexDefs(IndexDef[] indexDefs) {
         this.indexDefs = indexDefs;
     }
 
     public void setParentJoinFields(int[] parentJoinFields) {
         this.parentJoinFields = parentJoinFields;
-    }
-
-    public void setParentRowDefId(int parentRowDefId) {
-        this.parentRowDefId = parentRowDefId;
     }
 
     public void setPkFields(int[] pkFields) {
@@ -516,16 +455,8 @@ public class RowDef {
         this.autoIncrementField = autoIncrementField;
     }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
     public void setTreeName(final String treeName) {
         this.treeName = treeName;
-    }
-
-    public void setSchemaName(final String schemaName) {
-        this.schemaName = schemaName;
     }
 
     public int getAutoIncrementField() {
@@ -537,6 +468,7 @@ public class RowDef {
     }
 
     public int getColumnOffset() {
+        assert !isGroupTable() || columnOffset == 0;
         return columnOffset;
     }
 
@@ -611,10 +543,10 @@ public class RowDef {
     void computeRowDefType(final RowDefCache rowDefCache) throws RowDefNotFoundException {
         if (userTableRowDefs != null) {
             rowType = RowType.GROUP;
-        } else if (parentRowDefId == 0) {
+        } else if (getParentRowDefId() == 0) {
             rowType = RowType.ROOT;
         } else {
-            RowDef parentRowDef = rowDefCache.getRowDef(parentRowDefId);
+            RowDef parentRowDef = rowDefCache.getRowDef(getParentRowDefId());
             assert parentRowDef != null;
             if (parentRowDef.getParentRowDefId() == 0) {
                 rowType = RowType.CHILD;
@@ -624,54 +556,60 @@ public class RowDef {
         }
     }
 
-    void computeFieldAssociations(final RowDefCache rowDefCache) throws RowDefNotFoundException {
-        for (final IndexDef indexDef : indexDefs) {
-            final List<RowDef> path = new ArrayList<RowDef>();
-            RowDef def = leafUserRowDef(indexDef.getFields());
-            int hkeyDepth = 0;
-            while (def != null) {
-                path.add(0, def);
-                hkeyDepth += 1 + def.getPkFields().length;
-                def = def.getParentRowDefId() == 0 ? null : rowDefCache
-                        .getRowDef(def.getParentRowDefId());
+    void computeFieldAssociations(RowDefCache rowDefCache) throws RowDefNotFoundException
+    {
+        // hkeyDepth is hkey position of the last column in the last segment. (Or the position
+        // of the last segment if that segment has no columns.)
+        if (isUserTable()) {
+            List<HKeySegment> segments = userTable().hKey().segments();
+            HKeySegment lastSegment = segments.get(segments.size() - 1);
+            List<HKeyColumn> lastColumns = lastSegment.columns();
+            hkeyDepth =
+                1 + (lastColumns.isEmpty()
+                     ? lastSegment.positionInHKey()
+                     : lastColumns.get(lastColumns.size() - 1).positionInHKey());
+        }
+        for (IndexDef indexDef : indexDefs) {
+            List<RowDef> path = new ArrayList<RowDef>();
+            RowDef userRowDef = userRowDef(rowDefCache, indexDef);
+            while (userRowDef != null) {
+                path.add(0, userRowDef);
+                userRowDef =
+                    userRowDef.getParentRowDefId() == 0
+                    ? null
+                    : rowDefCache.getRowDef(userRowDef.getParentRowDefId());
             }
-            if (!isGroupTable()) {
-                this.hkeyDepth = hkeyDepth;
-            }
-            indexDef.computeFieldAssociations(rowDefCache, this, path);
+            indexDef.computeFieldAssociations(rowDefCache, path);
         }
     }
 
-    // TODO -
-    // Total hack. This is because all the mechanism that sets up the
-    // IndexDef objects for group tables does nothing to record the
-    // IndexDef's association to its user RowDef, but we need that to
-    // make the index->hkey transformation in SELECT.
-    //
-    private RowDef leafUserRowDef(final int[] fields) {
-        int field = fields[0]; // 
+    private RowDef userRowDef(RowDefCache rowDefCache, IndexDef indexDef)
+    {
+        RowDef userRowDef = null;
         if (isGroupTable()) {
-            for (final RowDef userRowDef : userTableRowDefs) {
-                if (userRowDef.getColumnOffset() <= field
-                        && userRowDef.getColumnOffset()
-                                + userRowDef.getFieldCount() > field) {
-                    return userRowDef;
+            for (IndexColumn indexColumn : indexDef.index().getColumns()) {
+                Column groupColumn = indexColumn.getColumn();
+                Column userColumn = groupColumn.getUserColumn();
+                UserTable userTable = userColumn.getUserTable();
+                if (userRowDef == null) {
+                    userRowDef = rowDefCache.rowDef(userTable);
+                } else {
+                    assert userRowDef == rowDefCache.rowDef(userTable) : indexDef;
                 }
             }
-            throw new IllegalStateException(
-                    "Didn't find the IndexDef's originating user RowDef");
         } else {
-            return this;
+            userRowDef = this;
         }
+        assert userRowDef != null;
+        return userRowDef;
     }
 
     @Override
     public boolean equals(final Object o) {
         final RowDef def = (RowDef) o;
-        return rowDefId == def.rowDefId
-                && CServerUtil.equals(tableName, def.tableName)
+        return def.getRowDefId() == def.getRowDefId()
+                && CServerUtil.equals(table.getName(), def.table.getName())
                 && CServerUtil.equals(treeName, def.treeName)
-                && CServerUtil.equals(schemaName, def.schemaName)
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexDefs, def.indexDefs)
                 && ordinal == def.ordinal
@@ -682,12 +620,11 @@ public class RowDef {
 
     @Override
     public int hashCode() {
-        return rowDefId ^ CServerUtil.hashCode(tableName)
+        return getRowDefId()
+                ^ table.getName().hashCode()
                 ^ CServerUtil.hashCode(treeName)
-                ^ CServerUtil.hashCode(schemaName) ^ Arrays.hashCode(fieldDefs)
+                ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(indexDefs) ^ Arrays.hashCode(pkFields)
                 ^ Arrays.hashCode(parentJoinFields);
     }
-
-
 }

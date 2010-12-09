@@ -417,8 +417,8 @@ public class RowData {
      */
     @Override
     public String toString() {
-        return CServerUtil.dump(bytes, rowStart, rowEnd
-                - rowStart);
+        // return CServerUtil.dump(bytes, rowStart, rowEnd - rowStart);
+        return toString(RowDefCache.latest());
     }
 
     public String toString(final RowDefCache cache) {

@@ -115,12 +115,12 @@ public class PersistitStoreIndexManager {
             probeEx = store.getExchange(indexDef.getRowDef(), null);
             startKey = new Key(store.getDb());
             endKey = new Key(store.getDb());
-            final IndexDef.I2H[] i2hFields = indexDef.getHkeyFields();
+            final IndexDef.I2H[] i2hFields = indexDef.hkeyFields();
             assert i2hFields[0].isOrdinalType();
             final KeyFilter.Term[] terms = new KeyFilter.Term[i2hFields.length];
-            startKey.append(i2hFields[0].getOrdinal());
-            endKey.append(i2hFields[0].getOrdinal());
-            terms[0] = KeyFilter.simpleTerm(i2hFields[0].getOrdinal());
+            startKey.append(i2hFields[0].ordinal());
+            endKey.append(i2hFields[0].ordinal());
+            terms[0] = KeyFilter.simpleTerm(i2hFields[0].ordinal());
             startKey.append(Key.BEFORE);
             endKey.append(Key.AFTER);
             keyDepth = i2hFields.length;
@@ -176,8 +176,7 @@ public class PersistitStoreIndexManager {
         final Key key = new Key((Persistit) null);
         final RowData rowData = new RowData(new byte[ROW_DATA_LENGTH]);
         final RowData indexRowData = new RowData(new byte[ROW_DATA_LENGTH]);
-        final Object[] indexValues = new Object[indexDef.getRowDef()
-                .getFieldCount()];
+        final Object[] indexValues = new Object[indexDef.getRowDef().getFieldCount()];
 
         try {
             transaction.run(new TransactionRunnable() {
@@ -213,11 +212,10 @@ public class PersistitStoreIndexManager {
                         int remainingSegments = key.getDepth();
 
                         if (indexDef.isHKeyEquivalent()) {
-                            for (final I2H i2h : indexDef.getHkeyFields()) {
-                                final Object keySegmentValue = --remainingSegments >= 0 ? key
-                                        .decode() : null;
+                            for (final I2H i2h : indexDef.hkeyFields()) {
+                                final Object keySegmentValue = --remainingSegments >= 0 ? key.decode() : null;
                                 if (!i2h.isOrdinalType()) {
-                                    indexValues[i2h.getFieldIndex()] = keySegmentValue;
+                                    indexValues[i2h.fieldIndex()] = keySegmentValue;
                                 }
                             }
                         } else {

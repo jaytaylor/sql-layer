@@ -3,6 +3,10 @@
  */
 package com.akiban.cserver.store;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
@@ -162,9 +166,11 @@ public class PersistitStoreRowCollector implements RowCollector {
                     }
                     this.iEx = store.getExchange(rowDef, indexDef).append(Key.BEFORE);
                     this.iFilter = computeIFilter(indexDef, rowDef, start, end);
+/* See bugs 344, 345
                     coveringFields = computeCoveringIndexFields(rowDef, def,
                             columnBitMap);
-                    
+*/
+
                     if (store.isVerbose() && LOG.isInfoEnabled()) {
                         LOG.info("Select using index " + indexDef + " filter="
                                 + iFilter
@@ -268,42 +274,86 @@ public class PersistitStoreRowCollector implements RowCollector {
      * @return
      * @throws Exception
      */
-    KeyFilter computeHFilter(final RowDef rowDef, final RowData start, final RowData end) {
+    KeyFilter computeHFilter(final RowDef rowDef, final RowData start, final RowData end)
+    {
+        // KeyFilter oldFilter = computeHFilterOld(rowDef, start, end);
+        KeyFilter newFilter = computeHFilterNew(rowDef, start, end);
+        // assert oldFilter.toString().equals(newFilter.toString()) : String.format("old: %s, new: %s", oldFilter.toString(), newFilter.toString());
+        return newFilter;
+    }
+
+    KeyFilter computeHFilterOld(final RowDef rowDef, final RowData start, final RowData end)
+    {
         final RowDef leafRowDef = projectedRowDefs[projectedRowDefs.length - 1];
-        final KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef
-                .getHKeyDepth()];
+        final KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef.getHKeyDepth()];
         final Key key = hEx.getKey();
         int index = terms.length;
         RowDef def = leafRowDef;
-
         while (def != null) {
             final int[] fields = def.getPkFields();
             if (index < (fields.length + 1)) {
-                throw new IllegalStateException(
-                        "Length mismatch in computeHFilter: def=" + def
-                                + " leafRowDef=" + leafRowDef + " index="
-                                + index);
+                throw new IllegalStateException(String.format(
+                    "Length mismatch in computeHFilter: def=%s, leafRowDef=%s, index=%s",
+                    def, leafRowDef, index));
             }
-            terms[index - fields.length - 1] = KeyFilter.simpleTerm(def
-                    .getOrdinal());
+            terms[index - fields.length - 1] = KeyFilter.simpleTerm(def.getOrdinal());
             for (int k = 0; k < fields.length; k++) {
-                terms[index - fields.length + k] = computeKeyFilterTerm(key,
-                        rowDef, start, end, fields[k] + def.getColumnOffset()
-                                - rowDef.getColumnOffset());
+                terms[index - fields.length + k] =
+                    computeKeyFilterTerm(key,
+                                         rowDef,
+                                         start,
+                                         end,
+                                         fields[k] + def.getColumnOffset() - rowDef.getColumnOffset());
             }
             index -= (fields.length + 1);
             final int parentId = def.getParentRowDefId();
-            def = parentId == 0 ? null : store.getRowDefCache().getRowDef(
-                    parentId);
+            def = parentId == 0 ? null : store.getRowDefCache().getRowDef(parentId);
         }
         if (index != 0) {
-            throw new IllegalStateException(
-                    "Length mismatch in computeHFilter: leafRowDef="
-                            + leafRowDef + " index=" + index);
+            throw new IllegalStateException(String.format(
+                "Length mismatch in computeHFilter: leafRowDef=%s, index=%s",
+                leafRowDef, index));
         }
         key.clear();
-        return new KeyFilter(terms, 0, isDeepMode() ? Integer.MAX_VALUE
-                : terms.length);
+        return new KeyFilter(terms, 0, isDeepMode() ? Integer.MAX_VALUE : terms.length);
+    }
+
+    KeyFilter computeHFilterNew(RowDef rowDef, RowData start, RowData end)
+    {
+        RowDef leafRowDef = projectedRowDefs[projectedRowDefs.length - 1];
+        KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef.getHKeyDepth()];
+        Key key = hEx.getKey();
+        HKey hKey =
+            rowDef.isGroupTable()
+            ? leafRowDef.userTable().branchHKey()
+            : leafRowDef.userTable().hKey();
+        int t = 0;
+        List<HKeySegment> segments = hKey.segments();
+        for (int s = 0; s < segments.size(); s++) {
+            HKeySegment hKeySegment = segments.get(s);
+            RowDef def = store.getRowDefCache().getRowDef(hKeySegment.table().getTableId());
+            terms[t++] = KeyFilter.simpleTerm(def.getOrdinal());
+            List<HKeyColumn> segmentColumns = hKeySegment.columns();
+            for (int c = 0; c < segmentColumns.size(); c++) {
+                HKeyColumn segmentColumn = segmentColumns.get(c);
+                KeyFilter.Term filterTerm;
+                // A group table row has columns that are constrained to be equals, e.g. customer$cid and order$cid.
+                // The non-null values in start/end could restrict one or the other, but the hkey references one
+                // or the other. For the current segment column, use a literal for any of the equivalent columns.
+                // For a user table, segmentColumn.equivalentColumns() == segmentColumn.column().
+                filterTerm = KeyFilter.ALL;
+                // Must end loop as soon as term other than ALL is found because computeKeyFilterTerm has
+                // side effects if it returns anything else.
+                List<Column> matchingColumns = segmentColumn.equivalentColumns();
+                for (int m = 0; filterTerm == KeyFilter.ALL && m < matchingColumns.size(); m++) {
+                    Column column = matchingColumns.get(m);
+                    filterTerm = computeKeyFilterTerm(key, rowDef, start, end, column.getPosition());
+                }
+                terms[t++] = filterTerm;
+            }
+        }
+        key.clear();
+        return new KeyFilter(terms, 0, isDeepMode() ? Integer.MAX_VALUE : terms.length);
     }
 
     /**
@@ -437,16 +487,15 @@ public class PersistitStoreRowCollector implements RowCollector {
             // For now, only works on user tables
             return null;
         }
-        final IndexDef.H2I[] h2iArray = indexDef.getIndexKeyFields();
+        final IndexDef.H2I[] h2iArray = indexDef.indexKeyFields();
         final List<I2R> coveredFields = new ArrayList<I2R>();
         for (int fieldIndex = 0; fieldIndex < rowDef.getFieldCount(); fieldIndex++) {
             if (isBit(columnBitMap, fieldIndex)) {
                 boolean found = false;
                 for (int j = 0; j < h2iArray.length; j++) {
-                    if (h2iArray[j].getFieldIndex() == fieldIndex) {
+                    if (h2iArray[j].fieldIndex() == fieldIndex) {
                         found = true;
-                        coveredFields.add(new I2R(j, h2iArray[j]
-                                .getFieldIndex()));
+                        coveredFields.add(new I2R(j, h2iArray[j].fieldIndex()));
                         break;
                     }
                 }

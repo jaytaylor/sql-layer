@@ -1,14 +1,14 @@
 package com.akiban.cserver;
 
 import com.akiban.ais.model.*;
+import com.akiban.cserver.store.PersistitStoreTableManager;
+import com.akiban.cserver.store.TableStatus;
 import com.akiban.cserver.util.RowDefNotFoundException;
+import com.persistit.exception.PersistitException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
@@ -19,6 +19,9 @@ import java.util.TreeMap;
  */
 public class RowDefCache implements CServerConstants {
 
+    // TODO: For debugging - remove this
+    private static volatile RowDefCache LATEST;
+
     private static final Log LOG = LogFactory.getLog(RowDefCache.class
             .getName());
 
@@ -27,6 +30,15 @@ public class RowDefCache implements CServerConstants {
     private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
 
     private int hashCode;
+
+    {
+        LATEST = this;
+    }
+
+    public static RowDefCache latest()
+    {
+        return LATEST;
+    }
 
     /**
      * Look up and return a RowDef for a supplied rowDefId value.
@@ -63,10 +75,9 @@ public class RowDefCache implements CServerConstants {
      * @return a unique form
      */
     public static String nameOf(String schema, String table) {
-        // TODO: this is NOT guaranteed to work. Needs fixing. For now, I'm just refactoring it out.
-        return schema == null
-               ? table
-               : schema + "." + table;
+        assert schema != null;
+        assert table != null;
+        return schema + "." + table;
     }
 
     public synchronized void clear() {
@@ -97,37 +108,70 @@ public class RowDefCache implements CServerConstants {
         hashCode = cacheMap.hashCode();
     }
 
-    private FieldDef fieldDef(final Column column) {
-        return new FieldDef(column.getName(), column.getType(), column
-                .getMaxStorageSize().intValue(), column.getPrefixSize()
-                .intValue(), column.getTypeParameter1(), column
-                .getTypeParameter2());
-    }
-
-    private RowDef createUserTableRowDef(final AkibaInformationSchema ais,
-            final UserTable table) {
-
-        // rowDefId
-        final int rowDefId = table.getTableId();
-        int autoIncrementField = -1;
-
-        // FieldDef[]
-        final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
-        for (final Column column : table.getColumns()) {
-            final int fieldIndex = column.getPosition();
-            fieldDefs[fieldIndex] = fieldDef(column);
-            if (column.getInitialAutoIncrementValue() != null) {
-                autoIncrementField = fieldIndex;
+    public synchronized void fixUpOrdinals(PersistitStoreTableManager tableManager) throws PersistitException
+    {
+        for (final RowDef groupRowDef : getRowDefs()) {
+            if (groupRowDef.isGroupTable()) {
+                // groupTable has no ordinal
+                groupRowDef.setOrdinal(0);
+                final HashSet<Integer> assigned = new HashSet<Integer>();
+                // First pass: merge already assigned values
+                for (final RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
+                    final TableStatus tableStatus = tableManager.getTableStatus(userRowDef.getRowDefId());
+                    if (tableStatus.getOrdinal() != 0 &&
+                        userRowDef.getOrdinal() != 0 &&
+                        tableStatus.getOrdinal() != userRowDef.getOrdinal()) {
+                        throw new IllegalStateException(
+                            String.format("Mismatched ordinals: %s and %s",
+                                          userRowDef.getOrdinal(),
+                                          tableStatus.getOrdinal()));
+                    }
+                    int ordinal = 0;
+                    if (tableStatus.getOrdinal() != 0) {
+                        ordinal = tableStatus.getOrdinal();
+                        userRowDef.setOrdinal(ordinal);
+                    } else if (userRowDef.getOrdinal() != 0 && tableStatus.getOrdinal() == 0) {
+                        ordinal = userRowDef.getOrdinal();
+                        tableStatus.setOrdinal(ordinal);
+                    }
+                    if (ordinal != 0 && !assigned.add(ordinal)) {
+                        throw new IllegalStateException(
+                            String.format("Non-unique ordinal value %s added to %s", ordinal, assigned));
+                    }
+                }
+                int nextOrdinal = 1;
+                for (final RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
+                    final TableStatus tableStatus = tableManager.getTableStatus(userRowDef.getRowDefId());
+                    if (userRowDef.getOrdinal() == 0) {
+                        // find an unassigned value. Here we could try to optimize layout
+                        // by assigning "bushy" values in some optimal pattern
+                        // (if we knew that was...)
+                        for (; assigned.contains(nextOrdinal); nextOrdinal++) {
+                        }
+                        tableStatus.setOrdinal(nextOrdinal);
+                        userRowDef.setOrdinal(nextOrdinal);
+                        assigned.add(nextOrdinal);
+                    }
+                }
+                if (assigned.size() != groupRowDef.getUserTableRowDefs().length) {
+                    throw new IllegalStateException(
+                        String.format("Inconsistent ordinal number assignments: %s", assigned));
+                }
             }
         }
+    }
 
+    private RowDef createUserTableRowDef(AkibaInformationSchema ais, UserTable table) {
+        RowDef rowDef = new RowDef(table);
+        int autoIncrementField =
+            table.getAutoIncrementColumn() == null
+            ? -1
+            : table.getAutoIncrementColumn().getPosition();
         // parentRowDef
-        int parentRowDefId;
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
             final Join join = table.getParentJoin();
             final UserTable parentTable = join.getParent();
-            parentRowDefId = parentTable.getTableId();
             //
             // parentJoinFields - TODO - not sure this is right.
             //
@@ -137,7 +181,6 @@ public class RowDefCache implements CServerConstants {
                 parentJoinFields[index] = joinColumn.getChild().getPosition();
             }
         } else {
-            parentRowDefId = 0;
             parentJoinFields = new int[0];
         }
 
@@ -191,124 +234,63 @@ public class RowDefCache implements CServerConstants {
             }
         }
 
-        final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
-
         // Secondary indexes
-        final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
-        for (final Index index : table.getIndexes()) {
-            final List<IndexColumn> indexColumns = index.getColumns();
-            if (indexColumns.isEmpty()) {
-                // Don't try to create an index for an artificial
-                // IndexDef that has no fields.
-                continue;
-            }
-            int[] indexFields = new int[indexColumns.size()];
-            for (final IndexColumn indexColumn : indexColumns) {
-                final int positionInRow = indexColumn.getColumn().getPosition();
-                final int positionInIndex = indexColumn.getPosition();
-                indexFields[positionInIndex] = positionInRow;
-            }
-
-            final String treeName = groupTableName + "$$" + index.getIndexId();
-            final IndexDef indexDef = new IndexDef(index.getIndexName()
-                    .getName(), rowDef, treeName, index.getIndexId(),
-                    indexFields, index.isPrimaryKey(), index.isUnique());
-            if (index.isPrimaryKey()) {
-                indexDefList.add(0, indexDef);
-            } else {
-                indexDefList.add(indexDef);
-            }
+        List<IndexDef> indexDefList = new ArrayList<IndexDef>();
+        for (Index index : table.getIndexes()) {
+            List<IndexColumn> indexColumns = index.getColumns();
+            if (!indexColumns.isEmpty()) {
+                String treeName = groupTableName + "$$" + index.getIndexId();
+                IndexDef indexDef = new IndexDef(treeName, rowDef, index);
+                if (index.isPrimaryKey()) {
+                    indexDefList.add(0, indexDef);
+                } else {
+                    indexDefList.add(indexDef);
+                }
+            } // else: Don't create an index for an artificial IndexDef that has no fields.
         }
-        rowDef.setTableName(table.getName().getTableName());
         rowDef.setTreeName(groupTableName);
-        rowDef.setSchemaName(table.getName().getSchemaName());
         rowDef.setPkFields(pkFields);
-        rowDef.setParentRowDefId(parentRowDefId);
         rowDef.setParentJoinFields(parentJoinFields);
-        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
-                .size()]));
+        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
         rowDef.setOrdinal(0);
         rowDef.setAutoIncrementField(autoIncrementField);
-
         return rowDef;
 
     }
 
-    private RowDef createGroupTableRowDef(final AkibaInformationSchema ais,
-            final GroupTable table) {
-        // rowDefId
-        final int rowDefId = table.getTableId();
-
-        // FieldDef[]
-        final FieldDef[] fieldDefs = new FieldDef[table.getColumns().size()];
-        final Column[] columns = new Column[table.getColumns().size()];
-        int[] tempRowDefIds = new int[columns.length];
-        int userTableIndex = 0;
-        int columnCount = 0;
-        for (final Column column : table.getColumns()) {
-            final int p = column.getPosition();
-            if (columns[p] != null) {
-                throw new IllegalStateException("Group table column "
-                        + column.getName() + " has overlapping position " + p);
-            }
-            columns[p] = column;
-        }
-        for (int position = 0; position < columns.length; position++) {
-            final Column column = columns[position];
-            final int fieldIndex = column.getPosition();
-            fieldDefs[fieldIndex] = fieldDef(column);
-            final Column userColumn = column.getUserColumn();
+    private RowDef createGroupTableRowDef(AkibaInformationSchema ais, GroupTable table) {
+        RowDef rowDef = new RowDef(table);
+        List<Integer> userTableRowDefIds = new ArrayList<Integer>();
+        for (Column column : table.getColumns()) {
+            Column userColumn = column.getUserColumn();
             if (userColumn.getPosition() == 0) {
                 int userRowDefId = userColumn.getTable().getTableId();
-                tempRowDefIds[userTableIndex] = userRowDefId;
-                userTableIndex++;
-                columnCount += userColumn.getTable().getColumns().size();
-                RowDef userRowDef = cacheMap.get(Integer.valueOf(userRowDefId));
-                userRowDef.setGroupRowDefId(rowDefId);
-                userRowDef.setColumnOffset(position);
+                userTableRowDefIds.add(userRowDefId);
+                RowDef userRowDef = cacheMap.get(userRowDefId);
+                userRowDef.setColumnOffset(column.getPosition());
             }
         }
-        final RowDef[] userTableRowDefs = new RowDef[userTableIndex];
-        for (int index = 0; index < userTableIndex; index++) {
-            userTableRowDefs[index] = cacheMap.get(Integer
-                    .valueOf(tempRowDefIds[index]));
+        RowDef[] userTableRowDefs = new RowDef[userTableRowDefIds.size()];
+        int i = 0;
+        for (Integer userTableRowDefId : userTableRowDefIds) {
+            userTableRowDefs[i++] = cacheMap.get(userTableRowDefId);
         }
-
-        final RowDef rowDef = new RowDef(rowDefId, fieldDefs);
         final String groupTableName = table.getName().getTableName();
-
         // Secondary indexes
         final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
-        for (final Index index : table.getIndexes()) {
-            final List<IndexColumn> indexColumns = index.getColumns();
-            if (indexColumns.isEmpty()) {
-                // Don't try to create a group table index for an
-                // artificial IndeDef that has no fields.
-                continue;
-            }
-
-            int[] indexFields = new int[indexColumns.size()];
-            for (final IndexColumn indexColumn : indexColumns) {
-                final int positionInRow = indexColumn.getColumn().getPosition();
-                final int positionInIndex = indexColumn.getPosition();
-                indexFields[positionInIndex] = positionInRow;
-            }
-
-            final String treeName = groupTableName + "$$" + index.getIndexId();
-            final IndexDef indexDef = new IndexDef(index.getIndexName()
-                    .getName(), rowDef, treeName, index.getIndexId(),
-                    indexFields, false, index.isUnique());
-            indexDefList.add(indexDef);
+        for (Index index : table.getIndexes()) {
+            List<IndexColumn> indexColumns = index.getColumns();
+            if (!indexColumns.isEmpty()) {
+                String treeName = groupTableName + "$$" + index.getIndexId();
+                IndexDef indexDef = new IndexDef(treeName, rowDef, index);
+                indexDefList.add(indexDef);
+            } // else: Don't create a group table index for an artificial IndeDef that has no fields.
         }
-        rowDef.setTableName(groupTableName);
         rowDef.setTreeName(groupTableName);
-        rowDef.setSchemaName(table.getName().getSchemaName());
         rowDef.setPkFields(new int[0]);
         rowDef.setUserTableRowDefs(userTableRowDefs);
-        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
-                .size()]));
+        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
         rowDef.setOrdinal(0);
-
         return rowDef;
     }
 
@@ -323,7 +305,7 @@ public class RowDefCache implements CServerConstants {
      * @param rowDef
      */
     public synchronized void putRowDef(final RowDef rowDef) {
-        final Integer key = Integer.valueOf(rowDef.getRowDefId());
+        final Integer key = rowDef.getRowDefId();
         final String name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
         if (cacheMap.containsKey(key) || nameMap.containsKey(name)) {
             throw new IllegalStateException("RowDef " + rowDef
@@ -354,6 +336,16 @@ public class RowDefCache implements CServerConstants {
     void analyze(final RowDef rowDef) throws RowDefNotFoundException {
         rowDef.computeRowDefType(this);
         rowDef.computeFieldAssociations(this);
+    }
+
+    RowDef rowDef(Table table)
+    {
+        for (RowDef rowDef : cacheMap.values()) {
+            if (rowDef.table() == table) {
+                return rowDef;
+            }
+        }
+        return null;
     }
 
     @Override

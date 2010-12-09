@@ -4,86 +4,104 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import com.akiban.ais.model.Types;
-
 public class RowDefTest extends TestCase {
 
     private final static boolean VERBOSE = true;
 
-    private final static FieldDef[][] FIELD_DEF_CASES = new FieldDef[][] {
-            { new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.SMALLINT), },
-
-            { new FieldDef(n(), Types.VARCHAR, 100),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.TINYINT), },
-
-            { new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT), },
-
-            { new FieldDef(n(), Types.VARCHAR, 100),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1),
-                    new FieldDef(n(), Types.VARCHAR, 100, 1), },
-
-            { new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.SMALLINT),
-                    new FieldDef(n(), Types.MEDIUMINT),
-                    new FieldDef(n(), Types.INT),
-                    new FieldDef(n(), Types.BIGINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.SMALLINT),
-                    new FieldDef(n(), Types.MEDIUMINT),
-                    new FieldDef(n(), Types.INT),
-                    new FieldDef(n(), Types.BIGINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.VARCHAR, 200, 1),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.SMALLINT),
-                    new FieldDef(n(), Types.MEDIUMINT),
-                    new FieldDef(n(), Types.INT),
-                    new FieldDef(n(), Types.BIGINT),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.SMALLINT),
-                    new FieldDef(n(), Types.MEDIUMINT),
-                    new FieldDef(n(), Types.INT),
-                    new FieldDef(n(), Types.BIGINT),
-                    new FieldDef(n(), Types.VARCHAR, 200, 1),
-                    new FieldDef(n(), Types.TINYINT),
-                    new FieldDef(n(), Types.TINYINT), },
-
+    private final static String[][] TEST_CASES = new String[][] {
+            {
+                "use schema; ",
+                "create table test(",
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s smallint ", n()),
+                ");"
+            },
+            {
+                "use schema; ",
+                "create table test(",
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s tinyint ", n()),
+                ");"
+            },
+            {
+                "use schema; ",
+                "create table test(",
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint ", n()),
+                ");"
+            },
+            {
+                "use schema; ",
+                "create table test(",
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100), ", n()),
+                String.format("    %s varchar(100) ", n()),
+                ");"
+            },
+            {
+                "use schema; ",
+                "create table test(",
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s smallint, ", n()),
+                String.format("    %s mediumint, ", n()),
+                String.format("    %s int, ", n()),
+                String.format("    %s bigint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s smallint, ", n()),
+                String.format("    %s mediumint, ", n()),
+                String.format("    %s int, ", n()),
+                String.format("    %s bigint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s varchar(200), ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s smallint, ", n()),
+                String.format("    %s mediumint, ", n()),
+                String.format("    %s int, ", n()),
+                String.format("    %s bigint, ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s smallint, ", n()),
+                String.format("    %s mediumint, ", n()),
+                String.format("    %s int, ", n()),
+                String.format("    %s bigint, ", n()),
+                String.format("    %s varchar(200), ", n()),
+                String.format("    %s tinyint, ", n()),
+                String.format("    %s tinyint ", n()),
+                ");"
+            }
     };
 
     private final static Object[][][] DATA_CASES = new Object[][][] {
@@ -128,10 +146,14 @@ public class RowDefTest extends TestCase {
         return "C" + (++fieldNameCounter);
     }
 
-    public void testComputeFieldLocations1() {
-        for (int def = 0; def < FIELD_DEF_CASES.length; def++) {
-            final FieldDef[] fieldDefs = FIELD_DEF_CASES[def];
-            final RowDef rowDef = new RowDef(def + 100, fieldDefs);
+    public void testComputeFieldLocations1() throws Exception
+    {
+        RowDefCacheFactory rowDefCacheFactory = new RowDefCacheFactory();
+        for (int def = 0; def < TEST_CASES.length; def++) {
+            String[] ddl = TEST_CASES[def];
+            RowDefCache rowDefCache = rowDefCacheFactory.rowDefCache(ddl);
+            RowDef rowDef = rowDefCache.getRowDef("schema.test");
+            FieldDef[] fieldDefs = rowDef.getFieldDefs();
             if (VERBOSE) {
                 System.out.println(rowDef);
             }

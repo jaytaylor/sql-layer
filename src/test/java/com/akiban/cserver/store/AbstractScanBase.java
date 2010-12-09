@@ -1,5 +1,8 @@
 package com.akiban.cserver.store;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +76,7 @@ public abstract class AbstractScanBase implements CServerConstants {
         // Create the tables in alphabetical order. Because of the
         // way the tables are defined, this also creates all parents before
         // their children.
+        // PrintStream output = new PrintStream(new FileOutputStream(new File("/tmp/srt.out")));
         for (String name : tableMap.keySet()) {
             final RowDef rowDef = rowDefCache.getRowDef(name);
             final int level = name.length() - SCHEMA.length() - 1;
@@ -80,6 +84,7 @@ public abstract class AbstractScanBase implements CServerConstants {
             for (int i = 0; i < k; i++) {
                 rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8,
                         i + "X" });
+                // output.println(rowData.toString(rowDefCache));
                 try {
                     store.writeRow(rowData);
                 }
@@ -88,6 +93,7 @@ public abstract class AbstractScanBase implements CServerConstants {
                 }
             }
         }
+        // output.close();
     }
 
     protected RowDef userRowDef(final String name) {

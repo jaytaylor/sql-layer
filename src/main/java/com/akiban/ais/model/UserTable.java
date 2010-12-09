@@ -11,7 +11,6 @@ package com.akiban.ais.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 public class UserTable extends Table
@@ -200,10 +199,36 @@ public class UserTable extends Table
             : "cannot change migration usage from INCOMPATIBLE to " + migrationUsage;
         this.migrationUsage = migrationUsage;
     }
-    
+
     public void setEngine(String engine)
     {
         this.engine = engine;
+    }
+
+    public HKey hKey()
+    {
+        assert getGroup() != null;
+        assert getPrimaryKey() != null;
+        if (hKey == null) {
+            computeHKey();
+        }
+        return hKey;
+    }
+
+    // An HKey in terms of group table columns, for a branch of a group, terminating with this user table.
+    public HKey branchHKey()
+    {
+        if (branchHKey == null) {
+            // Construct an hkey in which group columns replace user columns.
+            branchHKey = new HKey(this);
+            for (HKeySegment userHKeySegment : hKey().segments()) {
+                HKeySegment branchHKeySegment = branchHKey.addSegment(userHKeySegment.table());
+                for (HKeyColumn userHKeyColumn : userHKeySegment.columns()) {
+                    branchHKeySegment.addColumn(userHKeyColumn.column().getGroupColumn());
+                }
+            }
+        }
+        return branchHKey;
     }
 
     public List<Column> allHKeyColumns()
@@ -211,29 +236,23 @@ public class UserTable extends Table
         assert getGroup() != null;
         assert getPrimaryKey() != null;
         if (allHKeyColumns == null) {
-            computeHKeyColumns();
+            allHKeyColumns = new ArrayList<Column>();
+            for (HKeySegment segment : hKey().segments()) {
+                for (HKeyColumn hKeyColumn : segment.columns()) {
+                    allHKeyColumns.add(hKeyColumn.column());
+                }
+            }
         }
         return allHKeyColumns;
-    }
-
-    public List<Column> localHKeyColumns()
-    {
-        assert getGroup() != null;
-        assert getPrimaryKey() != null;
-        if (localHKeyColumns == null) {
-            computeHKeyColumns();
-        }
-        return localHKeyColumns;
     }
 
     public boolean containsOwnHKey()
     {
         for (Column column : allHKeyColumns()) {
             if (column.getTable() != this) {
-                return false;
+                 return false;
             }
         }
-        assert localHKeyColumns().equals(allHKeyColumns());
         return true;
     }
 
@@ -243,48 +262,38 @@ public class UserTable extends Table
         // XXX: GWT requires empty constructor
     }
 
-    private void computeHKeyColumns()
+    private void computeHKey()
     {
+        hKey = new HKey(this);
         if (isRoot()) {
-            List<Column> hkey = getPrimaryKey().getColumns();
-            localHKeyColumns = Collections.unmodifiableList(hkey);
-            allHKeyColumns = localHKeyColumns;
+            HKeySegment segment = hKey.addSegment(this);
+            for (Column pkColumn : getPrimaryKey().getColumns()) {
+                segment.addColumn(pkColumn);
+            }
         } else {
             // Start with the parent's hkey
             Join join = getParentJoin();
-            List<Column> parentHKey = parentTable().allHKeyColumns();
+            HKey parentHKey = join.getParent().hKey();
             // Start forming this table's full by including all of the parent hkey columns, but replacing
             // columns participating in the join (to this table) by columns from this table.
-            List<Column> hkey = new ArrayList<Column>();
-            for (Column parentHKeyColumn : parentHKey) {
-                Column hKeyColumn = join.getMatchingChild(parentHKeyColumn);
-                hkey.add(hKeyColumn == null ? parentHKeyColumn : hKeyColumn);
+            List<Column> hKeyColumns = new ArrayList<Column>();
+            for (HKeySegment parentHKeySegment : parentHKey.segments()) {
+                HKeySegment segment = hKey.addSegment(parentHKeySegment.table());
+                for (HKeyColumn parentHKeyColumn : parentHKeySegment.columns()) {
+                    Column columnInChild = join.getMatchingChild(parentHKeyColumn.column());
+                    Column segmentColumn = columnInChild == null ? parentHKeyColumn.column() : columnInChild;
+                    segment.addColumn(segmentColumn);
+                    hKeyColumns.add(segmentColumn);
+                }
             }
             // This table's hkey also includes any PK columns not already included.
+            HKeySegment newSegment = hKey.addSegment(this);
             for (Column pkColumn : getPrimaryKey().getColumns()) {
-                if (!hkey.contains(pkColumn)) {
-                    hkey.add(pkColumn);
+                if (!hKeyColumns.contains(pkColumn)) {
+                    newSegment.addColumn(pkColumn);
                 }
             }
-            allHKeyColumns = Collections.unmodifiableList(new ArrayList<Column>(hkey));
-            // Local hkey columns is allHKey columns without columns from other tables
-            for (Iterator<Column> i = hkey.iterator(); i.hasNext();) {
-                Column hKeyColumn = i.next();
-                if (hKeyColumn.getUserTable() != this) {
-                    i.remove();
-                }
-            }
-            localHKeyColumns = Collections.unmodifiableList(new ArrayList<Column>(hkey));
         }
-    }
-
-    private UserTable parentTable()
-    {
-        UserTable parentTable = null;
-        if (getParentJoin() != null) {
-            parentTable = getParentJoin().getParent();
-        }
-        return parentTable;
     }
 
     // State
@@ -293,6 +302,7 @@ public class UserTable extends Table
     private List<Join> candidateParentJoins = new ArrayList<Join>();
     private List<Join> candidateChildJoins = new ArrayList<Join>();
     private PrimaryKey primaryKey;
-    private transient List<Column> localHKeyColumns;
+    private transient HKey hKey;
+    private transient HKey branchHKey;
     private transient List<Column> allHKeyColumns;
 }

@@ -28,6 +28,7 @@ public class ScanRowsTest extends AbstractScanBase {
         final RowData end = new RowData(new byte[256]);
         byte[] bitMap;
 
+/*
         {
             // Just the root table rows
             final RowDef userRowDef = userRowDef("a");
@@ -35,6 +36,23 @@ public class ScanRowsTest extends AbstractScanBase {
             end.createRow(rowDef, new Object[fc]);
             bitMap = bitsToRoot(userRowDef, rowDef);
             assertEquals(10, scanAllRows("all a", start, end, bitMap, 0));
+        }
+
+        {
+            final RowDef userRowDef = userRowDef("aa");
+            int pkcol = 0; // a1 is column 0
+            int userRowFieldCount = userRowDef.getFieldCount();
+            Object[] startValue = new Object[userRowFieldCount];
+            Object[] endValue = new Object[userRowFieldCount];
+            startValue[pkcol] = 2;
+            endValue[pkcol] = 2;
+            start.createRow(userRowDef, startValue);
+            end.createRow(userRowDef, endValue);
+            bitMap = new byte[]{1}; // position of output column within user table
+            assertEquals(
+                    10, // 10 aa rows per a, selecting with 2 should find 10 of them.
+                    scanAllRows("all aa for pk = 2 using fk index", start, end, bitMap,
+                            findIndexId(userRowDef, "__akiban_fk_0")));
         }
 
         {
@@ -99,6 +117,44 @@ public class ScanRowsTest extends AbstractScanBase {
                     556,
                     scanAllRows("aaaa with aa.aa1 in [1,5]", start, end,
                             bitMap, indexId));
+        }
+*/
+
+        // Test querying join columns within a group table, on both sides of the join
+        // parent side
+        {
+            final RowDef userRowDef = userRowDef("aaa");
+            RowDef parentRowDef = rowDefCache.getRowDef(userRowDef.getParentRowDefId());
+            int pkcol = findFieldIndex(rowDef, "aa$aa1");
+            assertTrue(pkcol >= 0);
+            Object[] startValue = new Object[fc];
+            Object[] endValue = new Object[fc];
+            startValue[pkcol] = 1;
+            endValue[pkcol] = 1;
+            start.createRow(rowDef, startValue);
+            end.createRow(rowDef, endValue);
+            bitMap = bitsToRoot(userRowDef, rowDef);
+            assertEquals(
+                    12, // 10 aaa, 1 aa, 1 a
+                    scanAllRows("aaa with aaa$aa1 = 1 (restrict parent side of fk)", start, end,
+                            bitMap, findIndexId(rowDef, parentRowDef, 1))); // position of aa1 in the aa table
+        }
+        // child side
+        {
+            final RowDef userRowDef = userRowDef("aaa");
+            int fkcol = findFieldIndex(rowDef, "aaa$aa1");
+            assertTrue(fkcol >= 0);
+            Object[] startValue = new Object[fc];
+            Object[] endValue = new Object[fc];
+            startValue[fkcol] = 1;
+            endValue[fkcol] = 1;
+            start.createRow(rowDef, startValue);
+            end.createRow(rowDef, endValue);
+            bitMap = bitsToRoot(userRowDef, rowDef);
+            assertEquals(
+                    12, // 10 aaa, 1 aa, 1 a
+                    scanAllRows("aaa with aaa$aa1 = 1 (restrict child side of fk)", start, end,
+                            bitMap, findIndexId(rowDef, userRowDef, 0))); // position of aa1 in the aaa table
         }
 
         store.deleteIndexes("");

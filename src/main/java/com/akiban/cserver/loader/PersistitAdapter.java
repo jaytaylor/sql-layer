@@ -1,74 +1,46 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.cserver.*;
 import com.akiban.cserver.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 public class PersistitAdapter
 {
-    public PersistitAdapter(PersistitStore store, GenerateFinalTask task)
-            throws PersistitException
+    public PersistitAdapter(PersistitStore store, GenerateFinalTask task, Tracker tracker)
+        throws PersistitException
     {
+        this.tracker = tracker;
         this.store = store;
         this.task = task;
         UserTable leafTable = task.table();
-        int nKeySegments = leafTable.getDepth() + 1;
-        // Traverse group from leaf table to root. Gather FieldDefs, ordinals and other data needed to construct
-        // hkeys later. Accumulate FieldDefs in a stack since we're discovering them backwards, and we don't know
-        // how many there will be.
-        Stack<FieldDef> hKeyFieldDefStack = new Stack<FieldDef>();
-        ordinals = new int[nKeySegments];
-        nKeyColumns = new int[nKeySegments];
+        List<Column> hKeyColumns = leafTable.allHKeyColumns();
+        hKeyFieldDefs = new FieldDef[hKeyColumns.size()];
+        hKey = new Object[hKeyColumns.size()];
+        HKey leafHKey = leafTable.hKey();
+        int nHKeySegments = leafHKey.segments().size();
+        ordinals = new int[nHKeySegments];
+        nKeyColumns = new int[nHKeySegments];
         RowDefCache rowDefCache = store.getRowDefCache();
-        leafRowDef = rowDefCache.getRowDef(leafTable.getName().getDescription());
-        RowDef rowDef = leafRowDef;
-        UserTable table = leafTable;
-        int depth = nKeySegments;
-        int hKeyColumns = 0;
-        while (table != null) {
-            depth--;
-            // Find key columns not involved in join with parent. Or, if there is no parent, take all columns.
-            // This is the way that RowDefCache.createUserTableRowDef uses PK columns along a path, and therefore
-            // with the FieldDefs provided by rowDef.getPkFields().
-            Join join = table.getParentJoin();
-            List<Column> uniqueKeyColumns = new ArrayList<Column>(table.getPrimaryKey().getColumns());
-            if (join != null) {
-                List<Column> childJoinColumns = columnsInChild(join.getParent().getPrimaryKey().getColumns(), join);
-                uniqueKeyColumns.removeAll(childJoinColumns);
+        leafRowDef = rowDefCache.getRowDef(leafTable.getTableId());
+        int segmentCount = 0;
+        int hKeyColumnCount = 0;
+        for (HKeySegment segment : leafHKey.segments()) {
+            RowDef segmentRowDef = rowDefCache.getRowDef(segment.table().getTableId());
+            ordinals[segmentCount] = segmentRowDef.getOrdinal();
+            nKeyColumns[segmentCount] = segment.columns().size();
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                Table columnTable = hKeyColumn.column().getTable();
+                RowDef columnRowDef = rowDefCache.getRowDef(columnTable.getTableId());
+                hKeyFieldDefs[hKeyColumnCount] = columnRowDef.getFieldDef(hKeyColumn.column().getPosition());
+                hKeyColumnCount++;
             }
-            // Save FieldDefs. Push them in reverse order so they pop in the right order.
-            for (int i = uniqueKeyColumns.size() - 1; i >= 0; i--) {
-                hKeyFieldDefStack.push(rowDef.getFieldDef(rowDef.getPkFields()[i]));
-            }
-            // Count hkey columns
-            hKeyColumns += uniqueKeyColumns.size();
-            // ordinals
-            ordinals[depth] = rowDef.getOrdinal();
-            nKeyColumns[depth] = uniqueKeyColumns.size();
-            table = table.getParentJoin() == null
-                    ? null
-                    : table.getParentJoin().getParent();
-            if (table != null) {
-                rowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
-            }
-        }
-        assert hKeyFieldDefStack.size() == hKeyColumns : table;
-        hKey = new Object[hKeyColumns];
-        hKeyFieldDefs = new FieldDef[hKeyColumns];
-        int i = 0;
-        while (!hKeyFieldDefStack.empty()) {
-            hKeyFieldDefs[i++] = hKeyFieldDefStack.pop();
+            segmentCount++;
         }
         hKeyColumnPositions = task.hKeyColumnPositions();
         columnPositions = task.columnPositions();
@@ -146,17 +118,17 @@ public class PersistitAdapter
             if (i > 0) {
                 fieldDefsBuffer.append(", ");
             }
-            fieldDefsBuffer.append(hKeyFieldDefs[i].toString());
+            FieldDef field = hKeyFieldDefs[i];
+            fieldDefsBuffer.append(String.format("%s.%s", field.getRowDef().getTableName(), field.getName()));
         }
         ordinalBuffers.append(']');
         nKeyColumnsBuffer.append(']');
         fieldDefsBuffer.append(']');
-        logger.info(String.format("ordinals: %s", ordinalBuffers.toString()));
-        logger.info(String.format("nKeyColumns: %s", nKeyColumnsBuffer.toString()));
-        logger.info(String.format("fieldDefsBuffer: %s", fieldDefsBuffer.toString()));
+        tracker.info(String.format("ordinals: %s", ordinalBuffers.toString()));
+        tracker.info(String.format("nKeyColumns: %s", nKeyColumnsBuffer.toString()));
+        tracker.info(String.format("fieldDefsBuffer: %s", fieldDefsBuffer.toString()));
     }
 
-    private static final Log logger = LogFactory.getLog(PersistitAdapter.class);
     private static final int ROW_DATA_BUFFER_SIZE = 1 << 16; // 64k
 
     private final PersistitStore store;
@@ -172,5 +144,6 @@ public class PersistitAdapter
     private final Object[] hKey;
     private final RowData rowData;
     private final Exchange exchange;
+    private final Tracker tracker;
     private long rowCount = 0;
 }

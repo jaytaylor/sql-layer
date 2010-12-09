@@ -176,7 +176,7 @@ public class Column implements Serializable, ModelNames
     @Override
     public String toString()
     {
-        return columnName; 
+        return table.getName().getTableName() + "." + columnName;
         /*** Too verbose for my taste. Restore this if you really need it
         StringBuilder typeDescription = new StringBuilder();
         typeDescription.append(type.name());

@@ -385,7 +385,6 @@ public class PersistitStoreWithAISTest extends TestCase implements
                 .getTableStatus(td.defI.getRowDefId()).isDeleted());
 
         store.dropTable(td.defA.getRowDefId());
-        assertNotNull(volume.getTree(td.defA.getPkTreeName(), false));
         assertTrue(store.getTableManager()
                 .getTableStatus(td.defA.getRowDefId()).isDeleted());
 
@@ -617,6 +616,14 @@ public class PersistitStoreWithAISTest extends TestCase implements
             final List<RowData> list = store.fetchRows("data_dictionary_test",
                     "customer", "customer_id", 1, 1, "item");
             assertEquals(31, list.size());
+            dump("c.cid = 1", list);
+        }
+
+        {
+            final List<RowData> list = store.fetchRows("data_dictionary_test",
+                    "order", "customer_id", 1, 1, "item");
+            dump("o.cid = 1", list);
+            assertEquals(30, list.size());
         }
 
         {
@@ -632,6 +639,14 @@ public class PersistitStoreWithAISTest extends TestCase implements
                 System.out.println(rowData.toString(rowDefCache));
             }
             assertEquals(157, list.size());
+        }
+    }
+
+    private void dump(String label, List<RowData> rows)
+    {
+        System.out.println(label + ":");
+        for (RowData row : rows) {
+            System.out.println(row.toString(rowDefCache));
         }
     }
 

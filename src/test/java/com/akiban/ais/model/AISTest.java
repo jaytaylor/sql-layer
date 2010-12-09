@@ -1,9 +1,12 @@
 package com.akiban.ais.model;
 
-import junit.framework.Assert;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
+
+import static junit.framework.Assert.*;
 
 public class AISTest
 {
@@ -20,7 +23,7 @@ public class AISTest
         UserTable table = ais.getUserTable("schema", "table");
         int expectedPosition = 0;
         for (Column column : table.getColumns()) {
-            Assert.assertEquals(expectedPosition, column.getPosition().intValue());
+            assertEquals(expectedPosition, column.getPosition().intValue());
             expectedPosition++;
         }
     }
@@ -47,15 +50,15 @@ public class AISTest
         Index index = table.getIndex("index");
         Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
         IndexColumn indexColumn = indexColumnScan.next();
-        Assert.assertEquals(5, indexColumn.getColumn().getPosition().intValue());
-        Assert.assertEquals(0, indexColumn.getPosition().intValue());
+        assertEquals(5, indexColumn.getColumn().getPosition().intValue());
+        assertEquals(0, indexColumn.getPosition().intValue());
         indexColumn = indexColumnScan.next();
-        Assert.assertEquals(4, indexColumn.getColumn().getPosition().intValue());
-        Assert.assertEquals(1, indexColumn.getPosition().intValue());
+        assertEquals(4, indexColumn.getColumn().getPosition().intValue());
+        assertEquals(1, indexColumn.getPosition().intValue());
         indexColumn = indexColumnScan.next();
-        Assert.assertEquals(3, indexColumn.getColumn().getPosition().intValue());
-        Assert.assertEquals(2, indexColumn.getPosition().intValue());
-        Assert.assertTrue(!indexColumnScan.hasNext());
+        assertEquals(3, indexColumn.getColumn().getPosition().intValue());
+        assertEquals(2, indexColumn.getPosition().intValue());
+        assertTrue(!indexColumnScan.hasNext());
     }
 
     @Test
@@ -80,12 +83,12 @@ public class AISTest
         PrimaryKey pk = table.getPrimaryKey();
         Iterator<Column> indexColumnScan = pk.getColumns().iterator();
         Column pkColumn = indexColumnScan.next();
-        Assert.assertEquals(5, pkColumn.getPosition().intValue());
+        assertEquals(5, pkColumn.getPosition().intValue());
         pkColumn = indexColumnScan.next();
-        Assert.assertEquals(4, pkColumn.getPosition().intValue());
+        assertEquals(4, pkColumn.getPosition().intValue());
         pkColumn = indexColumnScan.next();
-        Assert.assertEquals(3, pkColumn.getPosition().intValue());
-        Assert.assertTrue(!indexColumnScan.hasNext());
+        assertEquals(3, pkColumn.getPosition().intValue());
+        assertTrue(!indexColumnScan.hasNext());
     }
 
     @Test
@@ -115,15 +118,16 @@ public class AISTest
         Join join = ais.getJoin("join");
         Iterator<JoinColumn> joinColumns = join.getJoinColumns().iterator();
         JoinColumn joinColumn = joinColumns.next();
-        Assert.assertEquals("p1", joinColumn.getParent().getName());
-        Assert.assertEquals("c0", joinColumn.getChild().getName());
+        assertEquals("p1", joinColumn.getParent().getName());
+        assertEquals("c0", joinColumn.getChild().getName());
         joinColumn = joinColumns.next();
-        Assert.assertEquals("p0", joinColumn.getParent().getName());
-        Assert.assertEquals("c1", joinColumn.getChild().getName());
-        Assert.assertTrue(!joinColumns.hasNext());
+        assertEquals("p0", joinColumn.getParent().getName());
+        assertEquals("c1", joinColumn.getChild().getName());
+        assertTrue(!joinColumns.hasNext());
     }
-    
-    @Test public void testHKeyNonCascadingPKs()
+
+    @Test
+    public void testHKeyNonCascadingPKs()
     {
         AISBuilder builder = new AISBuilder();
         // customer(cid) pk: cid
@@ -155,63 +159,44 @@ public class AISTest
         builder.groupingIsComplete();
         // get ready to test
         AkibaInformationSchema ais = builder.akibaInformationSchema();
-        Iterator<Column> allHKeyColumns;
-        Iterator<Column> localHKeyColumns;
-        Column column;
-        // Check customer hkey
+        // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("schema", "customer");
-        allHKeyColumns = customer.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = customer.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check order hkey
+        GroupTable coi = customer.getGroup().getGroupTable();
+        checkHKey(customer.hKey(),
+                  customer, customer, "cid");
+        // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("schema", "order");
-        allHKeyColumns = order.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = order.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check item hkey
+        assertSame(coi, order.getGroup().getGroupTable());
+        checkHKey(order.hKey(),
+                  customer, order, "cid",
+                  order, order, "oid");
+        // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("schema", "item");
-        allHKeyColumns = item.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = item.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
+        assertSame(coi, item.getGroup().getGroupTable());
+        checkHKey(item.hKey(),
+                  customer, order, "cid",
+                  order, item, "oid",
+                  item, item, "iid");
+        // ---------------- Branch hkeys -------------------------------------
+        // customer
+        checkBranchHKeyColumn(customer.branchHKey(), coi,
+                              customer, "customer$cid", "order$cid");
+        // order
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              customer, "order$cid", "customer$cid");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              order, "order$oid", "item$oid");
+        // item
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              customer, "order$cid", "customer$cid");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              order, "item$oid", "order$oid");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              item, "item$iid");
     }
 
-    @Test public void testHKeyNonCascadingMultiColumnPKs()
+    @Test
+    public void testHKeyNonCascadingMultiColumnPKs()
     {
         AISBuilder builder = new AISBuilder();
         // customer(cid) pk: cid
@@ -253,96 +238,56 @@ public class AISTest
         builder.groupingIsComplete();
         // get ready to test
         AkibaInformationSchema ais = builder.akibaInformationSchema();
-        Iterator<Column> allHKeyColumns;
-        Iterator<Column> localHKeyColumns;
-        Column column;
-        // Check customer hkey
+        // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("schema", "customer");
-        allHKeyColumns = customer.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = customer.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check order hkey
+        GroupTable coi = customer.getGroup().getGroupTable();
+        checkHKey(customer.hKey(),
+                  customer, customer, "cid0", customer, "cid1");
+        // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("schema", "order");
-        allHKeyColumns = order.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = order.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check item hkey
+        assertSame(coi, order.getGroup().getGroupTable());
+        checkHKey(order.hKey(),
+                  customer, order, "cid0", order, "cid1",
+                  order, order, "oid0", order, "oid1");
+        // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("schema", "item");
-        allHKeyColumns = item.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid1", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = item.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid1", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
+        assertSame(coi, item.getGroup().getGroupTable());
+        checkHKey(item.hKey(),
+                  customer, order, "cid0", order, "cid1",
+                  order, item, "oid0", item, "oid1",
+                  item, item, "iid0", item, "iid1");
+        // ---------------- Branch hkeys -------------------------------------
+        // customer
+        checkBranchHKeyColumn(customer.branchHKey(), coi,
+                              customer, "customer$cid0", "order$cid0");
+        checkBranchHKeyColumn(customer.branchHKey(), coi,
+                              customer, "customer$cid1", "order$cid1");
+        // order
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              customer, "order$cid0", "customer$cid0");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              customer, "order$cid1", "customer$cid1");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              order, "order$oid0", "item$oid0");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              order, "order$oid1", "item$oid1");
+        // item
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              customer, "order$cid0", "customer$cid0");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              customer, "order$cid1", "customer$cid1");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              order, "item$oid0", "order$oid0");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              order, "item$oid1", "order$oid1");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              item, "item$iid0");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              item, "item$iid1");
     }
 
-    @Test public void testHKeyCascadingPKs()
+    @Test
+    public void testHKeyCascadingPKs()
     {
         AISBuilder builder = new AISBuilder();
         // customer(cid) pk: cid
@@ -379,66 +324,44 @@ public class AISTest
         builder.groupingIsComplete();
         // get ready to test
         AkibaInformationSchema ais = builder.akibaInformationSchema();
-        Iterator<Column> allHKeyColumns;
-        Iterator<Column> localHKeyColumns;
-        Column column;
-        // Check customer hkey
+        // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("schema", "customer");
-        allHKeyColumns = customer.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = customer.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check order hkey
+        GroupTable coi = customer.getGroup().getGroupTable();
+        checkHKey(customer.hKey(),
+                  customer, customer, "cid");
+        // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("schema", "order");
-        allHKeyColumns = order.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = order.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check item hkey
+        assertSame(coi, order.getGroup().getGroupTable());
+        checkHKey(order.hKey(),
+                  customer, order, "cid",
+                  order, order, "oid");
+        // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("schema", "item");
-        allHKeyColumns = item.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = item.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("cid", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
+        assertSame(coi, item.getGroup().getGroupTable());
+        checkHKey(item.hKey(),
+                  customer, item, "cid",
+                  order, item, "oid",
+                  item, item, "iid");
+        // ---------------- Branch hkeys -------------------------------------
+        // customer
+        checkBranchHKeyColumn(customer.branchHKey(), coi,
+                              customer, "customer$cid", "order$cid", "item$cid");
+        // order
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              customer, "order$cid", "customer$cid", "item$cid");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              order, "order$oid", "item$oid");
+        // item
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              customer, "item$cid", "customer$cid", "order$cid");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              order, "item$oid", "order$oid");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              item, "item$iid");
     }
 
-    @Test public void testHKeyCascadingMultiColumnPKs()
+    @Test
+    public void testHKeyCascadingMultiColumnPKs()
     {
         AISBuilder builder = new AISBuilder();
         // customer(cid) pk: cid
@@ -490,98 +413,189 @@ public class AISTest
         builder.groupingIsComplete();
         // get ready to test
         AkibaInformationSchema ais = builder.akibaInformationSchema();
-        Iterator<Column> allHKeyColumns;
-        Iterator<Column> localHKeyColumns;
-        Column column;
-        // Check customer hkey
+        // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("schema", "customer");
-        allHKeyColumns = customer.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = customer.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(customer, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check order hkey
+        GroupTable coi = customer.getGroup().getGroupTable();
+        checkHKey(customer.hKey(),
+                  customer, customer, "cid0", customer, "cid1");
+        // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("schema", "order");
-        allHKeyColumns = order.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = order.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(order, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
-        // Check item hkey
+        assertSame(coi, order.getGroup().getGroupTable());
+        checkHKey(order.hKey(),
+                  customer, order, "cid0", order, "cid1",
+                  order, order, "oid0", order, "oid1");
+        // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("schema", "item");
-        allHKeyColumns = item.allHKeyColumns().iterator();
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid0", column.getName());
-        column = allHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid1", column.getName());
-        Assert.assertTrue(!allHKeyColumns.hasNext());
-        localHKeyColumns = item.localHKeyColumns().iterator();
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("cid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("cid1", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("oid1", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid0", column.getName());
-        column = localHKeyColumns.next();
-        Assert.assertEquals(item, column.getTable());
-        Assert.assertEquals("iid1", column.getName());
-        Assert.assertTrue(!localHKeyColumns.hasNext());
+        assertSame(coi, item.getGroup().getGroupTable());
+        checkHKey(item.hKey(),
+                  customer, item, "cid0", item, "cid1",
+                  order, item, "oid0", item, "oid1",
+                  item, item, "iid0", item, "iid1");
+        // ---------------- Branch hkeys -------------------------------------
+        // customer
+        checkBranchHKeyColumn(customer.branchHKey(), coi,
+                              customer, "customer$cid0", "order$cid0", "item$cid0");
+        checkBranchHKeyColumn(customer.branchHKey(), coi,
+                              customer, "customer$cid1", "order$cid1", "item$cid1");
+        // order
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              customer, "order$cid0", "customer$cid0", "item$cid0");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              customer, "order$cid1", "customer$cid1", "item$cid1");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              order, "order$oid0", "item$oid0");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              order, "order$oid1", "item$oid1");
+        // item
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              customer, "item$cid0", "customer$cid0", "order$cid0");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              customer, "item$cid1", "customer$cid1", "order$cid1");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              order, "item$oid0", "order$oid0");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              order, "item$oid1", "order$oid1");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              item, "item$iid0");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              item, "item$iid1");
+    }
+
+    @Test
+    public void testHKeyWithBranches()
+    {
+        AISBuilder builder = new AISBuilder();
+        // customer(cid) pk: cid
+        builder.userTable("schema", "customer");
+        builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "customer", "pk", "cid", 0, true, 0);
+        // order(oid, cid) pk: oid, fk: cid
+        builder.userTable("schema", "order");
+        builder.column("schema", "order", "oid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "order", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "order", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "order", "pk", "oid", 0, true, 0);
+        builder.joinTables("co", "schema", "customer", "schema", "order");
+        builder.joinColumns("co", "schema", "customer", "cid", "schema", "order", "cid");
+        // item(iid, oid) pk: iid, fk: oid
+        builder.userTable("schema", "item");
+        builder.column("schema", "item", "iid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "item", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "item", "pk", "iid", 0, true, 0);
+        builder.joinTables("oi", "schema", "order", "schema", "item");
+        builder.joinColumns("oi", "schema", "order", "oid", "schema", "item", "oid");
+        builder.basicSchemaIsComplete();
+        // address(aid, cid) pk: aid, fk: cid
+        builder.userTable("schema", "address");
+        builder.column("schema", "address", "aid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("schema", "address", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.index("schema", "address", "pk", true, "PRIMARY");
+        builder.indexColumn("schema", "address", "pk", "aid", 0, true, 0);
+        builder.joinTables("ca", "schema", "customer", "schema", "address");
+        builder.joinColumns("ca", "schema", "customer", "cid", "schema", "address", "cid");
+        // Create group
+        builder.createGroup("coi", "coi", "coi");
+        builder.addJoinToGroup("coi", "co", 0);
+        builder.addJoinToGroup("coi", "oi", 0);
+        builder.addJoinToGroup("coi", "ca", 0);
+        builder.groupingIsComplete();
+        // get ready to test
+        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        // ---------------- Customer -------------------------------------
+        UserTable customer = ais.getUserTable("schema", "customer");
+        GroupTable coi = customer.getGroup().getGroupTable();
+        checkHKey(customer.hKey(),
+                  customer, customer, "cid");
+        // ---------------- Order -------------------------------------
+        UserTable order = ais.getUserTable("schema", "order");
+        assertSame(coi, order.getGroup().getGroupTable());
+        checkHKey(order.hKey(),
+                  customer, order, "cid",
+                  order, order, "oid");
+        // ---------------- Item -------------------------------------
+        UserTable item = ais.getUserTable("schema", "item");
+        assertSame(coi, item.getGroup().getGroupTable());
+        checkHKey(item.hKey(),
+                  customer, order, "cid",
+                  order, item, "oid",
+                  item, item, "iid");
+        // ---------------- Item -------------------------------------
+        UserTable address = ais.getUserTable("schema", "address");
+        assertSame(coi, address.getGroup().getGroupTable());
+        checkHKey(address.hKey(),
+                  customer, address, "cid",
+                  address, address, "aid");
+        // ---------------- Branch hkeys -------------------------------------
+        // customer
+        checkBranchHKeyColumn(customer.branchHKey(), coi,
+                              customer, "customer$cid", "order$cid");
+        // order
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              customer, "order$cid", "customer$cid");
+        checkBranchHKeyColumn(order.branchHKey(), coi,
+                              order, "order$oid", "item$oid");
+        // item
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              customer, "order$cid", "customer$cid");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              order, "item$oid", "order$oid");
+        checkBranchHKeyColumn(item.branchHKey(), coi,
+                              item, "item$iid");
+        // address
+        checkBranchHKeyColumn(address.branchHKey(), coi,
+                              customer, "address$cid", "customer$cid");
+        checkBranchHKeyColumn(address.branchHKey(), coi,
+                              address, "address$aid");
+    }
+
+    private void checkHKey(HKey hKey, Object ... elements)
+    {
+        int e = 0;
+        int position = 0;
+        for (HKeySegment segment : hKey.segments()) {
+            assertEquals(position++, segment.positionInHKey());
+            assertSame(elements[e++], segment.table());
+            for (HKeyColumn column : segment.columns()) {
+                assertEquals(position++, column.positionInHKey());
+                assertEquals(elements[e++], column.column().getTable());
+                assertEquals(elements[e++], column.column().getName());
+            }
+        }
+        assertEquals(elements.length, e);
+    }
+
+    private void checkBranchHKeyColumn(HKey hKey, GroupTable groupTable,
+                                       UserTable segmentUserTable,
+                                       String columnName,
+                                       Object ... matches)
+    {
+        HKeySegment segment = null;
+        for (HKeySegment s : hKey.segments()) {
+            if (s.table() == segmentUserTable) {
+                segment = s;
+            }
+        }
+        assertNotNull(segment);
+        HKeyColumn column = null;
+        for (HKeyColumn c : segment.columns()) {
+            if (c.column().getName().equals(columnName)) {
+                column = c;
+            }
+        }
+        assertNotNull(column);
+        assertNotNull(column.equivalentColumns());
+        Set<String> expected = new HashSet<String>();
+        for (Column equivalentColumn : column.equivalentColumns()) {
+            assertSame(groupTable, equivalentColumn.getTable());
+            expected.add(equivalentColumn.getName());
+        }
+        Set<String> actual = new HashSet<String>();
+        actual.add(columnName);
+        for (Object m : matches) {
+            actual.add((String) m);
+        }
+        assertEquals(expected, actual);
     }
 }

@@ -27,6 +27,7 @@ public class PersistitLoader
             for (GenerateFinalTask task : finalTasks) {
                 load(task, connection);
             }
+            store.buildIndexes("");
             // transaction.commit();
         } catch (PersistitException e) {
             tracker.error("Caught exception while loading persistit", e);
@@ -50,7 +51,7 @@ public class PersistitLoader
         boolean deferIndexes = store.isDeferIndexes();
         store.setDeferIndexes(true);
         try {
-            final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task);
+            final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task, tracker);
             final int[] count = new int[1];
             connection.new Query(SQL_TEMPLATE, task.artifactTableName())
             {

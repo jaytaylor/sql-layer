@@ -25,7 +25,7 @@ import com.akiban.ais.model.UserTable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.*;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
@@ -365,8 +365,17 @@ public class PersistitStore implements CServerConstants, Store {
      * @throws PersistitException
      * @throws InvalidOperationException
      */
-    void constructHKey(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData) throws PersistitException,
+    void constructHKey(Exchange hEx, RowDef rowDef, RowData rowData)
+        throws PersistitException, InvalidOperationException
+    {
+        constructHKeyOld(hEx, rowDef, rowData);
+        String oldHKey = hEx.getKey().toString();
+        constructHKeyNew(hEx, rowDef, rowData);
+        String newHKey = hEx.getKey().toString();
+        assert oldHKey.equals(newHKey) : String.format("old: %s, new: %s", oldHKey, newHKey);
+    }
+
+    void constructHKeyOld(final Exchange hEx, final RowDef rowDef, final RowData rowData) throws PersistitException,
             InvalidOperationException {
         final Key hkey = hEx.getKey();
         hkey.clear();
@@ -381,8 +390,7 @@ public class PersistitStore implements CServerConstants, Store {
             break;
 
         case CHILD: {
-            final RowDef parentRowDef = rowDefCache.getRowDef(rowDef
-                    .getParentRowDefId());
+            RowDef parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
             hkey.append(parentRowDef.getOrdinal());
             appendKeyFields(hkey, rowDef, rowData, rowDef.getParentJoinFields());
             if (!hEx.isValueDefined()) {
@@ -395,10 +403,8 @@ public class PersistitStore implements CServerConstants, Store {
         }
 
         case GRANDCHILD: {
-            final RowDef parentRowDef = rowDefCache.getRowDef(rowDef
-                    .getParentRowDefId());
-            final Exchange iEx = getExchange(rowDef,
-                    parentRowDef.getPKIndexDef());
+            RowDef parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
+            Exchange iEx = getExchange(rowDef, parentRowDef.getPKIndexDef());
             constructParentPKIndexKey(iEx.getKey(), rowDef, rowData);
             if (!iEx.hasChildren()) {
                 throw new InvalidOperationException(
@@ -415,10 +421,52 @@ public class PersistitStore implements CServerConstants, Store {
         }
     }
 
-    void constructHKey(final Exchange hEx, final RowDef rowDef,
-            final int[] ordinals, final int[] nKeyColumns,
-            final FieldDef[] hKeyFieldDefs, final Object[] hKeyValues)
-            throws Exception {
+    void constructHKeyNew(Exchange hEx, RowDef rowDef, RowData rowData)
+        throws PersistitException, InvalidOperationException
+    {
+        Key hKey = hEx.getKey();
+        hKey.clear();
+        UserTable table = rowDef.userTable();
+        int parentHKeySegments = 0;
+        if (!table.containsOwnHKey()) {
+            // For hkey fields not in rowDef's table, find the parent row and get the hkey from it. That provides
+            // the hkey up to the point that rowData can contribute the rest.
+            RowDef parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
+            Exchange iEx = getExchange(rowDef, parentRowDef.getPKIndexDef());
+            constructParentPKIndexKey(iEx.getKey(), rowDef, rowData);
+            if (!iEx.hasChildren()) {
+                throw new InvalidOperationException(
+                        ErrorCode.NO_REFERENCED_ROW, iEx.getKey().toString());
+            }
+            boolean next = iEx.next(true);
+            assert next;
+            constructHKeyFromIndexKey(hKey, iEx.getKey(), parentRowDef.getPKIndexDef());
+            releaseExchange(iEx);
+            parentHKeySegments = parentRowDef.userTable().hKey().segments().size();
+        }
+        // Get hkey contributions from this row
+        List<HKeySegment> segments = table.hKey().segments();
+        for (int s = parentHKeySegments; s < segments.size(); s++) {
+            HKeySegment segment = segments.get(s);
+            RowDef segmentRowDef = rowDefCache.getRowDef(segment.table().getTableId());
+            hKey.append(segmentRowDef.getOrdinal());
+            FieldDef[] fieldDefs = rowDef.getFieldDefs();
+            List<HKeyColumn> segmentColumns = segment.columns();
+            for (int c = 0; c < segmentColumns.size(); c++) {
+                HKeyColumn segmentColumn = segmentColumns.get(c);
+                appendKeyField(hKey, fieldDefs[segmentColumn.column().getPosition()], rowData);
+            }
+        }
+    }
+
+    void constructHKey(Exchange hEx,
+                       RowDef rowDef,
+                       int[] ordinals,
+                       int[] nKeyColumns,
+                       FieldDef[] hKeyFieldDefs,
+                       Object[] hKeyValues)
+            throws Exception
+    {
         final Key hkey = hEx.getKey();
         hkey.clear();
         int k = 0;
@@ -438,18 +486,19 @@ public class PersistitStore implements CServerConstants, Store {
      * @param rowData
      * @param indexDef
      */
-    void constructIndexKey(final Key iKey, final RowData rowData,
-            final IndexDef indexDef, final Key hKey) throws PersistitException {
-        final IndexDef.H2I[] fassoc = indexDef.getIndexKeyFields();
+    void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef, Key hKey)
+        throws PersistitException
+    {
+        IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
         iKey.clear();
         for (int index = 0; index < fassoc.length; index++) {
-            final IndexDef.H2I assoc = fassoc[index];
-            if (assoc.getFieldIndex() >= 0) {
-                final int fieldIndex = assoc.getFieldIndex();
-                final RowDef rowDef = indexDef.getRowDef();
+            IndexDef.H2I assoc = fassoc[index];
+            if (assoc.fieldIndex() >= 0) {
+                int fieldIndex = assoc.fieldIndex();
+                RowDef rowDef = indexDef.getRowDef();
                 appendKeyField(iKey, rowDef.getFieldDef(fieldIndex), rowData);
-            } else if (assoc.getHkeyLoc() >= 0) {
-                appendKeyFieldFromKey(hKey, iKey, assoc.getHkeyLoc());
+            } else if (assoc.hKeyLoc() >= 0) {
+                appendKeyFieldFromKey(hKey, iKey, assoc.hKeyLoc());
             } else {
                 throw new IllegalStateException("Invalid FA");
             }
@@ -466,20 +515,20 @@ public class PersistitStore implements CServerConstants, Store {
      */
     void constructHKeyFromIndexKey(final Key hKey, final Key indexKey,
             final IndexDef indexDef) {
-        final IndexDef.I2H[] fassoc = indexDef.getHkeyFields();
+        final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
         hKey.clear();
         for (int index = 0; index < fassoc.length; index++) {
             final IndexDef.I2H fa = fassoc[index];
             if (fa.isOrdinalType()) {
-                hKey.append(fa.getOrdinal());
+                hKey.append(fa.ordinal());
             } else {
-                final int depth = fassoc[index].getIndexKeyLoc();
+                final int depth = fassoc[index].indexKeyLoc();
                 if (depth < 0 || depth > indexKey.getDepth()) {
                     throw new IllegalStateException(
                             "IndexKey too shallow - requires depth=" + depth
                                     + ": " + indexKey);
                 }
-                appendKeyFieldFromKey(indexKey, hKey, fa.getIndexKeyLoc());
+                appendKeyFieldFromKey(indexKey, hKey, fa.indexKeyLoc());
             }
         }
     }
@@ -523,8 +572,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     }
 
-    private void appendKeyField(final Key key, final FieldDef fieldDef,
-            Object value) {
+    private void appendKeyField(final Key key, final FieldDef fieldDef, Object value) {
         fieldDef.getEncoding().toKey(fieldDef, value, key);
     }
 
@@ -560,6 +608,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     public void fixUpOrdinals() throws Exception {
+        rowDefCache.fixUpOrdinals(tableManager);
         for (final RowDef groupRowDef : rowDefCache.getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
                 // groupTable has no ordinal
@@ -817,17 +866,21 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData, final int[] ordinals,
-            final int[] nKeyColumns, final FieldDef[] hKeyFieldDefs,
-            final Object[] hKeyValues) throws Exception {
+    public void writeRowForBulkLoad(Exchange hEx,
+                                    RowDef rowDef,
+                                    RowData rowData,
+                                    int[] ordinals,
+                                    int[] nKeyColumns,
+                                    FieldDef[] hKeyFieldDefs,
+                                    Object[] hKeyValues)
+        throws Exception
+    {
         /*
          * if (verbose && LOG.isInfoEnabled()) { LOG.info("BulkLoad writeRow: "
          * + rowData.toString(rowDefCache)); }
          */
 
-        constructHKey(hEx, rowDef, ordinals, nKeyColumns, hKeyFieldDefs,
-                hKeyValues);
+        constructHKey(hEx, rowDef, ordinals, nKeyColumns, hKeyFieldDefs, hKeyValues);
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
         hEx.getValue().ensureFit(size);
@@ -1489,6 +1542,7 @@ public class PersistitStore implements CServerConstants, Store {
         indexManager.analyzeTable(rowDef);
     }
 
+    // FOR TESTING ONLY
     @Override
     public List<RowData> fetchRows(final String schemaName,
             final String tableName, final String columnName,

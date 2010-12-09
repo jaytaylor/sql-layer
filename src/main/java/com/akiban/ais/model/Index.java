@@ -41,6 +41,34 @@ public class Index implements Serializable, ModelNames, Traversable
         table.addIndex(index);
         return index;
     }
+    
+    // For a user table index: the user table hkey
+    // For a group table index: the hkey of the leafmost user table, but with user table columns replaced by
+    // group table columns.
+    public HKey hKey()
+    {
+        if (hKey == null) {
+            if (table.isUserTable()) {
+                hKey = ((UserTable) table).hKey();
+            } else {
+                // Find the user table corresponding to this index. Currently, the columns of a group table index all
+                // correspond to the same user table.
+                UserTable userTable = null;
+                for (IndexColumn indexColumn : columns) {
+                    Column userColumn = indexColumn.getColumn().getUserColumn();
+                    if (userTable == null) {
+                        userTable = (UserTable) userColumn.getTable();
+                    } else {
+                        assert userTable == userColumn.getTable();
+                    }
+                }
+                // Construct an hkey like userTable.hKey(), but with group columns replacing user columns.
+                assert userTable != null : this;
+                hKey = userTable.branchHKey();
+            }
+        }
+        return hKey;
+    }
 
     @SuppressWarnings("unused")
     private Index()
@@ -165,4 +193,5 @@ public class Index implements Serializable, ModelNames, Traversable
     private String constraint;
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
+    private transient HKey hKey;
 }

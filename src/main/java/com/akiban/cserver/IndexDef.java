@@ -1,7 +1,10 @@
 package com.akiban.cserver;
 
+import com.akiban.ais.model.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -13,139 +16,147 @@ import java.util.List;
  */
 public class IndexDef {
 
-    private final String name;
+    private final Index index;
 
     private final String treeName;
 
-    private final int id;
-
+    // Identifies fields within the row that form the key part of the index entry.
     private final int[] fields;
-
-    private final boolean primary;
-
-    private final boolean unique;
 
     private final RowDef rowDef;
 
     private boolean hkeyEquivalent;
 
+    // indexKeyFields[i].field is, if set (>-1), is the position within the row of the ith index field.
+    // These values must match the contents of fields. If indexKeyFields[i].field is not set, then
+    // hKeyLoc specifies where within the hkey the ith index field comes from.
     private H2I[] indexKeyFields;
 
-    private I2H[] hkeyFields;
+    // Specifies the layout of an hkey, as derived from an index entry. If hKeyFields[i].ordinal is
+    // set (>-1), then the ith field of the hkey is that ordinal. Otherwise, hKeyFields[i].indexLoc
+    // specifies the position within the index entry of the ith hkey field.
+    private I2H[] hKeyFields;
 
-    /**
-     * Structure that determines how a field in a table binds to a key segment
-     * of an index key. An H2I defines the field's position in an hkey and/or an
-     * h-row. For an index field that is not part of the row's primary key, the
-     * hKeyLoc property is -1.
+    /*
+     * Structure that determines how a field in a table binds to a key segment of an index key. An H2I defines
+     * the field's position in an hkey and/or an h-row. hKeyLoc is used only as a last resort.
+     * (This is important for covering index analysis.)
      */
-    public static class H2I {
-
-        int fieldIndex = -1;
-        int hkeyLoc = -1;
-
-        public String toString() {
-            if (hkeyLoc == -1) {
-                return "H2I<field=" + fieldIndex + ">";
-            } else if (fieldIndex == -1) {
-                return "H2I<hkeyLoc=" + hkeyLoc + ">";
-            } else {
-                return "H2I<field=" + fieldIndex + ",hkeyLoc=" + hkeyLoc + ">";
-            }
+    public static class H2I
+    {
+        public String toString()
+        {
+            return
+                fieldIndex == -1
+                ? String.format("H2I<hKeyLoc=%s>", hKeyLoc)
+                : String.format("H2I<fieldIndex=%s>", fieldIndex);
         }
 
-        public int getFieldIndex() {
+        public int fieldIndex()
+        {
             return fieldIndex;
         }
 
-        public int getHkeyLoc() {
-            return hkeyLoc;
+        public int hKeyLoc()
+        {
+            return hKeyLoc;
         }
 
-        public void setFieldIndex(int fieldIndex) {
+        static H2I fromField(int fieldIndex)
+        {
+            return new H2I(fieldIndex, -1);
+        }
+
+        private H2I(int fieldIndex, int hKeyLoc)
+        {
             this.fieldIndex = fieldIndex;
+            this.hKeyLoc = hKeyLoc;
         }
 
-        public void setHkeyLoc(int hkeyLoc) {
-            this.hkeyLoc = hkeyLoc;
+        static H2I fromHKeyField(int hKeyLoc)
+        {
+            return new H2I(-1, hKeyLoc);
         }
+
+        private final int fieldIndex;
+        private final int hKeyLoc;
     }
 
-    /**
-     * Structure that binds information about an index key segment to a h-row
-     * field. Instances are used when scanning rows by index. After an index key
-     * is selected, the I2H objects for that index are used in constructing the
-     * corresponding h-key to fetch the row.
-     * 
-     * As a special case, an instance of this class may represent a segment in
-     * the hkey where a table's ordinal id is written. (The ordinal is an
-     * identifier used to separate siblings in bushy trees.) This special case
-     * is recognized when fieldIndex and indexKeyLoc are both -1.
-     * 
+    /*
+     * Structure that binds information about an index key segment to an hkey
+     * field. If rowDef is set, it's used to set an hkey ordinal. Otherwise,
+     * indexKeyLoc is set, and it stores the position within the index of the hkey
+     * field.
      */
-    public static class I2H {
-
-        final RowDef rowDef;
-        int fieldIndex = -1;
-        int indexKeyLoc = -1;
-
-        private I2H(final RowDef rowDef) {
-            this.rowDef = rowDef;
+    public static class I2H
+    {
+        public String toString()
+        {
+            return
+                isOrdinalType()
+                ? String.format("I2H<ordinal=%s>", rowDef.getOrdinal())
+                : String.format("I2H<fieldIndex=%s, indexKeyLoc=%s>", fieldIndex, indexKeyLoc);
         }
 
-        public String toString() {
-            if (isOrdinalType()) {
-                return "I2H<ordinal=" + rowDef.getOrdinal() + ">";
-            } else if (indexKeyLoc == -1) {
-                return "I2H<field=" + fieldIndex + ">";
-            } else if (fieldIndex == -1) {
-                return "I2H<indexLoc=" + indexKeyLoc + ">";
-            } else {
-                return "I2H<field=" + fieldIndex + ",indexLoc=" + indexKeyLoc
-                        + ">";
-            }
-        }
-
-        public int getFieldIndex() {
+        public int fieldIndex()
+        {
             return fieldIndex;
         }
 
-        public int getIndexKeyLoc() {
+        public int indexKeyLoc()
+        {
             return indexKeyLoc;
         }
 
-        public int getOrdinal() {
+        public int ordinal()
+        {
             return rowDef.getOrdinal();
         }
 
-        public boolean isOrdinalType() {
-            return fieldIndex == -1 && indexKeyLoc == -1;
+        public boolean isOrdinalType()
+        {
+            return rowDef != null;
         }
 
-        public void setFieldIndex(int fieldIndex) {
+        I2H(final RowDef rowDef)
+        {
+            this.rowDef = rowDef;
+            this.indexKeyLoc = -1;
+            this.fieldIndex = -1;
+        }
+
+        I2H(int indexKeyLoc, int fieldIndex)
+        {
+            this.rowDef = null;
+            this.indexKeyLoc = indexKeyLoc;
             this.fieldIndex = fieldIndex;
         }
 
-        public void setIndexKeyLoc(int indexKeyLoc) {
-            this.indexKeyLoc = indexKeyLoc;
-        }
-
+        private final RowDef rowDef;
+        private final int fieldIndex;
+        private final int indexKeyLoc;
     }
 
-    public IndexDef(final String name, final RowDef rowDef,
-            final String treeName, final int id, final int[] fields,
-            final boolean primary, final boolean unique) {
-        this.name = name;
-        this.rowDef = rowDef;
+    public IndexDef(String treeName, RowDef rowDef, Index index)
+    {
+        this.index = index;
         this.treeName = treeName;
-        this.id = id;
-        this.fields = fields;
-        this.primary = primary;
-        this.unique = unique;
+        this.rowDef = rowDef;
+        this.fields = new int[index.getColumns().size()];
+        for (IndexColumn indexColumn : index.getColumns()) {
+            int positionInRow = indexColumn.getColumn().getPosition();
+            int positionInIndex = indexColumn.getPosition();
+            this.fields[positionInIndex] = positionInRow;
+        }
+    }
+
+    public Index index()
+    {
+        return index;
     }
 
     public String getName() {
-        return name;
+        return index.getIndexName().getName();
     }
 
     public String getTreeName() {
@@ -153,7 +164,7 @@ public class IndexDef {
     }
 
     public int getId() {
-        return id;
+        return index.getIndexId();
     }
 
     public int[] getFields() {
@@ -161,21 +172,19 @@ public class IndexDef {
     }
 
     public boolean isPkIndex() {
-        return primary;
+        return rowDef.isGroupTable() ? false : index.isPrimaryKey();
     }
 
     /**
      * True if this index represents fields matching the pkFields of the root
      * table. If so, then there is no separately stored index tree.
-     * 
-     * @return
      */
     public boolean isHKeyEquivalent() {
         return hkeyEquivalent;
     }
 
     public boolean isUnique() {
-        return unique;
+        return index.isUnique();
     }
 
     public RowDef getRowDef() {
@@ -186,19 +195,21 @@ public class IndexDef {
         return fields.length;
     }
 
-    public H2I[] getIndexKeyFields() {
+    public H2I[] indexKeyFields()
+    {
         return indexKeyFields;
     }
 
-    public I2H[] getHkeyFields() {
-        return hkeyFields;
+    public I2H[] hkeyFields()
+    {
+        return hKeyFields;
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(rowDef.getTableName());
         sb.append(":");
-        sb.append(name);
+        sb.append(getName());
         sb.append("(");
         for (int i = 0; i < fields.length; i++) {
             sb.append(i == 0 ? "" : ",");
@@ -212,170 +223,102 @@ public class IndexDef {
         return sb.toString();
     }
 
-    /**
-     * This complex method populates two arrays: hkeyFields and indexKeyFields.
-     * The elements of these arrays serve similar purposes: hkeyFields contains
-     * I2H elements which help the
-     * {@link com.akiban.cserver.store.PersistitStoreRowCollector} construct an
-     * h-key given an index key value; indexKeyFields contains H2I elements
-     * which help the PersistitStoreRowCollector construct an index key given
-     * HKey and RowData objects.
-     * 
-     * Once this method has finished, {@link #getHkeyFields()} returns an array
-     * containing one I2H object for each segment of the h-key, and
-     * {@link #getIndexKeyFields()} returns an array containing one H2I object
-     * for each segment of the index key.
-     * 
-     * This method also detects whether the index is "h-key equivalent", which
-     * means that instead of traversing this index, the RowCollector should
-     * instead traverse the h-keys themselves. The {@link #isHKeyEquivalent()}
-     * method returns this result.
-     * 
-     * This method must be called by the {@link com.akiban.cserver.RowDefCache}
-     * before the index can be used.
-     * 
-     * @param rowDefCache
-     * @param rowDef
-     * @param path
-     */
-    void computeFieldAssociations(final RowDefCache rowDefCache,
-            final RowDef rowDef, final List<RowDef> path) {
 
+    // TODO: 1) hkey equivalence needs to account for collation, character sets and other
+    // TODO:    elements that affect ordering.
+    // TODO: 2) This won't work from group table indexes whose columns span multiple user tables.
+    void computeFieldAssociations(RowDefCache rowDefCache, List<RowDef> path)
+    {
+        computeHKeyEquivalence(path);
+        // indexKeyFields is a list of H2I objects which map row and hkey fields to the fields of an index.
+        // The leading index fields are exactly the fields identified by IndexDef.fields, i.e., the declared
+        // index columns. The remaining index fields are whatever fields are necessary to ensure that the
+        // index contains all hkey fields. When an index field could be filled in from the row or the hkey,
+        // the preference is to use the value from the row. This simplifies covering index analysis.
         //
-        // Determine whether the fields in the index correspond exactly to the
-        // fields in the h-table key for some table in the group. If so then
-        // there is no need for a separate index. We mark it "hkeyEquivalent"
-        // which prevents elements being filed in an index tree and prevents
-        // SELECT from selecting on this index. Note that SELECT can filter on
-        // fields in the hkey, so there's no loss of filtering ability.
-        //
-        // TODO: Once we start implementing collation, character sets and other
-        // elements that affect ordering, this test needs to verify that the
-        // defined index matches the hkey's native ordering - otherwise this we
-        // will need to store the index even though it contains the same fields
-        // as the hkey.
-        // 
-        // TODO:
-        // Detect that a non-PK field of a child row may be a PK field
-        // of its parent.
-        // 
-        boolean matches = true;
-        int at = 0;
-        for (RowDef def : path) {
-            if (at >= fields.length || !matches) {
-                break;
-            }
-            final int[] pkFields = def.getPkFields();
-            for (int j = 0; at < fields.length && j < pkFields.length; j++, at++) {
-                int indexField = fields[at] + rowDef.getColumnOffset();
-                int pkField = pkFields[j] + def.getColumnOffset();
-                if (indexField != pkField) {
-                    matches = false;
-                    break;
-                }
-            }
+        // The complete set of index fields is tracked by the indexColumns variable. This variable serves
+        // two purposes. First, after including everything from IndexDef.fields, it is used to figure out if
+        // an hkey column is already present. Second, it is used to compute hKeyFields.
+        List<H2I> h2iList = new ArrayList<H2I>();
+        List<Column> indexColumns = new ArrayList<Column>();
+        // Add index key fields
+        for (int fieldPosition : fields) {
+            h2iList.add(H2I.fromField(fieldPosition));
+            Column column = rowDef.getFieldDefs()[fieldPosition].column();
+            indexColumns.add(column);
         }
-
-        if (at < fields.length) {
-            matches = false;
-        }
-
-        if (matches) {
-            hkeyEquivalent = true;
-        }
-
-        //
-        // Set up the I2H and H2I arrays for the RowCollector.
-        //
-        final List<I2H> i2hList = new ArrayList<I2H>();
-        final List<H2I> h2iList = new ArrayList<H2I>();
-
-        //
-        // Start by adding an H2I for each field in the index.
-        //
-
-        for (int fieldIndex : fields) {
-            final H2I h2i = new H2I();
-            h2i.setFieldIndex(fieldIndex);
-            h2iList.add(h2i);
-        }
-
-        //
-        // Now set up the I2H list, and as a side-effect, add
-        // needed information to the H2I objects.
-        //
-        for (final RowDef def : path) {
-            //
-            // This I2H is a placeholder to insert the RowDef's ordinal into
-            // the h-key.
-            //
-            final I2H ordinalI2h = new I2H(def);
-            i2hList.add(ordinalI2h);
-            //
-            // And then add an H2I for each pkField.
-            //
-            for (int i = 0; i < def.getPkFields().length; i++) {
-                final int pkField = def.getPkFields()[i]
-                        + (rowDef.isGroupTable() ? def.getColumnOffset() : 0);
-                //
-                // Search for an H2I already on the list that maps
-                // to this field. This handles, for example, an pkField
-                // that is also specified as a member of a secondary
-                // index.
-                //
-                int indexLoc = -1;
-                if (def == rowDef || rowDef.isGroupTable()) {
-                    for (int j = 0; j < h2iList.size(); j++) {
-                        final H2I h2i = h2iList.get(j);
-                        if (h2i.getFieldIndex() == pkField) {
-                            indexLoc = j;
-                            h2i.setHkeyLoc(i2hList.size());
-                            break;
-                        }
+        // Add hkey fields not already included
+        HKey hKey = index.hKey();
+        for (HKeySegment hKeySegment : hKey.segments()) {
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                if (!indexColumns.contains(hKeyColumn.column())) {
+                    H2I h2i;
+                    if (index.getTable().getColumns().contains(hKeyColumn.column())) {
+                        h2i = H2I.fromField(hKeyColumn.column().getPosition());
+                    } else {
+                        assert rowDef.isUserTable();
+                        h2i = H2I.fromHKeyField(hKeyColumn.positionInHKey());
                     }
-                }
-                //
-                // If the H2I was not found above, then this pkField
-                // needs to be added to the index key.
-                //
-                if (indexLoc == -1) {
-                    final H2I h2i = new H2I();
-                    h2i.setHkeyLoc(i2hList.size());
-                    if (def == rowDef) {
-                        h2i.setFieldIndex(pkField);
-                    }
-                    indexLoc = h2iList.size();
                     h2iList.add(h2i);
+                    indexColumns.add(hKeyColumn.column());
                 }
-                //
-                // Build the I2H that maps index field location to hkey
-                //
-                final I2H i2h = new I2H(null);
-
-                if (def == rowDef || rowDef.isGroupTable()) {
-                    i2h.setFieldIndex(pkField);
-                }
-                i2h.setIndexKeyLoc(indexLoc);
-                i2hList.add(i2h);
             }
         }
-
-        hkeyFields = i2hList.toArray(new I2H[i2hList.size()]);
         indexKeyFields = h2iList.toArray(new H2I[h2iList.size()]);
+        // hKeyFields is a list of I2H objects used to construct hkey values from index entries.
+        // There are two types of I2H entries, "ordinal" entries, and entries that identify index fields.
+        // An ordinal entry, identifying a user table, appears in the hkey precedes all the hkey values
+        // from that user table. Non-ordinal I2H objects also contain the position of the hkey column
+        // in the table, for ues in index analysis (PersistitStoreIndexManager.analyzeIndex).
+        List<I2H> i2hList = new ArrayList<I2H>();
+        for (HKeySegment hKeySegment : hKey.segments()) {
+            i2hList.add(new I2H(rowDefCache.rowDef(hKeySegment.table())));
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                int hKeyColumnIndexPosition = indexColumns.indexOf(hKeyColumn.column());
+                int hKeyColumnFieldPosition = hKeyColumn.column().getPosition();
+                i2hList.add(new I2H(hKeyColumnIndexPosition, hKeyColumnFieldPosition));
+            }
+        }
+        hKeyFields = i2hList.toArray(new I2H[i2hList.size()]);
+    }
+
+    private void computeHKeyEquivalence(List<RowDef> path)
+    {
+        hkeyEquivalent = true;
+        // Collect the HKeyColumns of the index's hkey
+        List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
+        for (HKeySegment hKeySegment : index.hKey().segments()) {
+            hKeyColumns.addAll(hKeySegment.columns());
+        }
+        // Scan hkey columns and index columns and see if they match
+        Iterator<HKeyColumn> hKeyColumnScan = hKeyColumns.iterator();
+        Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
+        while (hkeyEquivalent && hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
+            Column hKeyColumn = hKeyColumnScan.next().column();
+            Column indexColumn = indexColumnScan.next().getColumn();
+            hkeyEquivalent = hKeyColumn == indexColumn;
+        }
+        if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
+            hkeyEquivalent = false;
+        }
     }
 
     @Override
     public boolean equals(final Object o) {
         final IndexDef def = (IndexDef) o;
-        return name.equals(def.name) && treeName.equals(def.treeName)
-                && id == def.id && Arrays.equals(fields, def.fields)
-                && primary == def.primary && unique == def.unique;
+        return
+            getName().equals(def.getName()) &&
+            treeName.equals(def.treeName) &&
+            getId() == def.getId() &&
+            Arrays.equals(fields, def.fields) &&
+            isPkIndex() == def.isPkIndex() &&
+            isUnique() == def.isUnique();
     }
 
     @Override
-    public int hashCode() {
-        return name.hashCode() ^ treeName.hashCode() ^ id
-                ^ Arrays.hashCode(fields);
+    public int hashCode()
+    {
+        return getName().hashCode() ^ treeName.hashCode() ^ getId() ^ Arrays.hashCode(fields);
     }
 
 }
