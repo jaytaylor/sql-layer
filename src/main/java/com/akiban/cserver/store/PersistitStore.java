@@ -368,11 +368,15 @@ public class PersistitStore implements CServerConstants, Store {
     void constructHKey(Exchange hEx, RowDef rowDef, RowData rowData)
         throws PersistitException, InvalidOperationException
     {
+/*
         constructHKeyOld(hEx, rowDef, rowData);
         String oldHKey = hEx.getKey().toString();
+*/
         constructHKeyNew(hEx, rowDef, rowData);
+/*
         String newHKey = hEx.getKey().toString();
         assert oldHKey.equals(newHKey) : String.format("old: %s, new: %s", oldHKey, newHKey);
+*/
     }
 
     void constructHKeyOld(final Exchange hEx, final RowDef rowDef, final RowData rowData) throws PersistitException,
@@ -572,7 +576,8 @@ public class PersistitStore implements CServerConstants, Store {
 
     }
 
-    private void appendKeyField(final Key key, final FieldDef fieldDef, Object value) {
+    private void appendKeyField(final Key key, final FieldDef fieldDef,
+            Object value) {
         fieldDef.getEncoding().toKey(fieldDef, value, key);
     }
 
