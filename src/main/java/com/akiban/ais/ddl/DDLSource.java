@@ -885,10 +885,22 @@ public class DDLSource extends Source {
         }
     }
     
-    public AkibaInformationSchema buildAISFromBuilder(final String string) throws Exception
+    public AkibaInformationSchema buildAISFromBuilder(final String string) throws RecognitionException, Exception
     {
-        parseSchemaDef(new StringStream(string));
-
+        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(string));
+        CommonTokenStream tokens = new CommonTokenStream(lex);
+        final DDLSourceParser tsparser = new DDLSourceParser(tokens);
+        this.schemaDef = new SchemaDef();
+        tsparser.schema(schemaDef);
+        
+        /*if (tsparser.getNumberOfSyntaxErrors() > 0) {
+            throw new RuntimeException("DDLSource reported a syntax error in: "
+                    + ddlSourceName);
+        }
+        */
+        addImpliedGroups(schemaDef.getMasterSchemaName());
+        //computeColumnMapAndPositions();
+        
         AISBuilder builder = new AISBuilder();
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         int indexIdGenerator = 0;
