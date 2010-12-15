@@ -20,12 +20,13 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.model.*;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
@@ -39,6 +40,7 @@ import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.config.ModuleConfiguration;
+import com.akiban.cserver.service.session.Session;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
@@ -300,6 +302,7 @@ public class PersistitStore implements CServerConstants, Store {
         return db;
     }
 
+    @Override
     public AkibaInformationSchema getAis() {
         return schemaManager.getAis();
     }
@@ -699,7 +702,7 @@ public class PersistitStore implements CServerConstants, Store {
      *             if the table is invalid
      */
     @Override
-    public void createTable(final String schemaName, final String ddl)
+    public void createTable(final Session session, final String schemaName, final String ddl)
             throws PersistitException, InvalidOperationException {
         if (AKIBAN_SPECIAL_SCHEMA_FLAG.equals(schemaName)) {
             deferIndexes = ddl.contains(AKIBAN_SPECIAL_DEFER_INDEXES_FLAG);
@@ -710,7 +713,7 @@ public class PersistitStore implements CServerConstants, Store {
                 deleteIndexes(ddl);
             }
             if (ddl.contains(AKIBAN_SPECIAL_BUILD_INDEXES_FLAG)) {
-                buildIndexes(ddl);
+                buildIndexes(session, ddl);
             }
             return;
         }
@@ -765,7 +768,7 @@ public class PersistitStore implements CServerConstants, Store {
      *             duplicate key error
      */
     @Override
-    public void writeRow(final RowData rowData)
+    public void writeRow(final Session session, final RowData rowData)
             throws InvalidOperationException, PersistitException {
         final int rowDefId = rowData.getRowDefId();
 
@@ -871,7 +874,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void writeRowForBulkLoad(Exchange hEx,
+    public void writeRowForBulkLoad(final Session session, Exchange hEx,
                                     RowDef rowDef,
                                     RowData rowData,
                                     int[] ordinals,
@@ -905,7 +908,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void updateTableStats(RowDef rowDef, long rowCount)
+    public void updateTableStats(final Session session, RowDef rowDef, long rowCount)
             throws InvalidOperationException, PersistitException {
         final int rowDefId = rowDef.getRowDefId();
         TableStatus tableStatus = checkTableStatus(rowDefId);
@@ -915,7 +918,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void deleteRow(final RowData rowData)
+    public void deleteRow(final Session session, final RowData rowData)
             throws InvalidOperationException, PersistitException {
         final int rowDefId = rowData.getRowDefId();
 
@@ -1010,7 +1013,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void updateRow(final RowData oldRowData, final RowData newRowData)
+    public void updateRow(final Session session, final RowData oldRowData, final RowData newRowData)
             throws InvalidOperationException, PersistitException {
         final int rowDefId = oldRowData.getRowDefId();
 
@@ -1070,8 +1073,8 @@ public class PersistitStore implements CServerConstants, Store {
                                     "Can't cascade UPDATE on PK field: %s",
                                     hEx.getKey());
                         }
-                        deleteRow(oldRowData);
-                        writeRow(newRowData);
+                        deleteRow(session, oldRowData);
+                        writeRow(session, newRowData);
                     } else {
                         final int start = newRowData.getInnerStart();
                         final int size = newRowData.getInnerSize();
@@ -1125,7 +1128,7 @@ public class PersistitStore implements CServerConstants, Store {
      * group.
      */
     @Override
-    public void truncateTable(final int rowDefId) throws PersistitException,
+    public void truncateTable(final Session session, final int rowDefId) throws PersistitException,
             InvalidOperationException {
 
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
@@ -1191,11 +1194,11 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void dropTable(int rowDefId) throws InvalidOperationException,
+    public void dropTable(final Session session, int rowDefId) throws InvalidOperationException,
             PersistitException {
         List<Integer> list = new ArrayList<Integer>();
         list.add(rowDefId);
-        dropTables(list);
+        dropTables(session, list);
     }
 
     /**
@@ -1203,7 +1206,7 @@ public class PersistitStore implements CServerConstants, Store {
      * table data from within a group. clients.
      */
     @Override
-    public void dropTables(final Collection<Integer> rowDefIds)
+    public void dropTables(final Session session, final Collection<Integer> rowDefIds)
             throws InvalidOperationException, PersistitException {
         List<Integer> myRowDefIds = new ArrayList(rowDefIds);
         // Never drop group tables
@@ -1326,7 +1329,7 @@ public class PersistitStore implements CServerConstants, Store {
      * @return <tt>OK</tt>, in the current implementation
      */
     @Override
-    public void dropSchema(final String schemaName)
+    public void dropSchema(final Session session, final String schemaName)
             throws InvalidOperationException, PersistitException {
         List<Integer> dropRowDefIds = new ArrayList<Integer>();
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
@@ -1334,7 +1337,7 @@ public class PersistitStore implements CServerConstants, Store {
                 dropRowDefIds.add(rowDef.getRowDefId());
             }
         }
-        dropTables(dropRowDefIds);
+        dropTables(session, dropRowDefIds);
     }
 
 //    @Override
@@ -1388,7 +1391,7 @@ public class PersistitStore implements CServerConstants, Store {
 //    }
 
     @Override
-    public RowCollector getSavedRowCollector(final int tableId)
+    public RowCollector getSavedRowCollector(final Session session, final int tableId)
             throws InvalidOperationException {
         final List<RowCollector> list = collectorsForTableId(tableId);
         if (list.isEmpty()) {
@@ -1404,7 +1407,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void addSavedRowCollector(final RowCollector rc) {
+    public void addSavedRowCollector(final Session session, final RowCollector rc) {
         final Integer tableId = rc.getTableId();
         final List<RowCollector> list = collectorsForTableId(tableId);
         if (!list.isEmpty()) {
@@ -1424,7 +1427,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void removeSavedRowCollector(final RowCollector rc)
+    public void removeSavedRowCollector(final Session session, final RowCollector rc)
             throws InvalidOperationException {
         final Integer tableId = rc.getTableId();
         final List<RowCollector> list = collectorsForTableId(tableId);
@@ -1470,7 +1473,7 @@ public class PersistitStore implements CServerConstants, Store {
         return rowDefCache.getRowDef(rowDefId);
     }
 
-    public RowCollector newRowCollector(ScanRowsRequest request)
+    public RowCollector newRowCollector(final Session session, ScanRowsRequest request)
             throws InvalidOperationException, PersistitException {
         NEW_COLLECTOR_TAP.in();
 
@@ -1489,7 +1492,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public RowCollector newRowCollector(final int rowDefId, int indexId,
+    public RowCollector newRowCollector(final Session session, final int rowDefId, int indexId,
             final int scanFlags, RowData start, RowData end, byte[] columnBitMap)
             throws InvalidOperationException, PersistitException {
 
@@ -1506,7 +1509,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     public final static long HACKED_ROW_COUNT = 2;
     @Override
-    public long getRowCount(final boolean exact, final RowData start,
+    public long getRowCount(final Session session, final boolean exact, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception {
         //
         // TODO: Compute a reasonable value. The value "2" is a hack -
@@ -1520,7 +1523,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public TableStatistics getTableStatistics(int tableId) throws Exception {
+    public TableStatistics getTableStatistics(final Session session, int tableId) throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = tableManager.getTableStatus(tableId);
@@ -1542,23 +1545,23 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void analyzeTable(final int tableId) throws Exception {
+    public void analyzeTable(final Session session, final int tableId) throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
-        indexManager.analyzeTable(rowDef);
+        indexManager.analyzeTable(session, rowDef);
     }
 
     // FOR TESTING ONLY
     @Override
-    public List<RowData> fetchRows(final String schemaName,
+    public List<RowData> fetchRows(final Session session, final String schemaName,
             final String tableName, final String columnName,
             final Object least, final Object greatest,
             final String leafTableName) throws Exception {
         final ByteBuffer payload = ByteBuffer.allocate(65536);
-        return fetchRows(schemaName, tableName, columnName, least, greatest,
+        return fetchRows(session, schemaName, tableName, columnName, least, greatest,
                 leafTableName, payload);
     }
 
-    public List<RowData> fetchRows(final String schemaName,
+    public List<RowData> fetchRows(final Session session, final String schemaName,
             final String tableName, final String columnName,
             final Object least, final Object greatest,
             final String leafTableName, final ByteBuffer payload)
@@ -1658,7 +1661,7 @@ public class PersistitStore implements CServerConstants, Store {
             }
         }
 
-        final RowCollector rc = newRowCollector(groupRowDef.getRowDefId(),
+        final RowCollector rc = newRowCollector(session, groupRowDef.getRowDefId(),
                 indexDef.getId(), flags, start, end,
                 bitMap);
         while (rc.hasMore()) {
@@ -1855,7 +1858,7 @@ public class PersistitStore implements CServerConstants, Store {
         updateListeners.remove(listener);
     }
 
-    public void buildIndexes(final String ddl) {
+    public void buildIndexes(final Session session, final String ddl) {
         flushIndexes();
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
@@ -1893,7 +1896,7 @@ public class PersistitStore implements CServerConstants, Store {
             }
             int indexKeyCount = 0;
             try {
-                final PersistitStoreRowCollector rc = (PersistitStoreRowCollector) newRowCollector(
+                final PersistitStoreRowCollector rc = (PersistitStoreRowCollector) newRowCollector(session,
                         rowDef.getRowDefId(), 0, 0, rowData, rowData,
                         columnBitMap);
                 // final KeyFilter hFilter = rc.getHFilter();

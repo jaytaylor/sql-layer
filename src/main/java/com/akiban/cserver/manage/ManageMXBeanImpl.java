@@ -5,6 +5,7 @@ import java.net.URLClassLoader;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CustomQuery;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.PersistitStore;
 
 public class ManageMXBeanImpl implements ManageMXBean
@@ -77,7 +78,7 @@ public class ManageMXBeanImpl implements ManageMXBean
 
     @Override
     public void buildIndexes(final String arg) {
-        getStore().buildIndexes(arg);
+        getStore().buildIndexes(new SessionImpl(), arg);
     }
 
     @Override

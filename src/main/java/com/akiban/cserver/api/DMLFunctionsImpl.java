@@ -41,16 +41,16 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public TableStatistics getTableStatistics(TableId tableId, boolean updateFirst)
+    public TableStatistics getTableStatistics(Session session, TableId tableId, boolean updateFirst)
     throws  NoSuchTableException,
             GenericInvalidOperationException
     {
         final int tableIdInt = tableId.getTableId(idResolver());
         try {
             if (updateFirst) {
-                store().analyzeTable(tableIdInt);
+                store().analyzeTable(session, tableIdInt);
             }
-            return store().getTableStatistics(tableIdInt);
+            return store().getTableStatistics(session, tableIdInt);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -90,7 +90,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public CursorId openCursor(ScanRequest request, Session session)
+    public CursorId openCursor(Session session, ScanRequest request)
     throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
@@ -99,7 +99,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (request.scanAllColumns()) {
             request = scanAllColumns(request);
         }
-        final RowCollector rc = getRowCollector(request);
+        final RowCollector rc = getRowCollector(session, request);
         final CursorId cursorId = newUniqueCursor(rc.getTableId());
         final Cursor cursor = new Cursor(rc);
         Object old = session.put(MODULE_NAME, cursorId, new ScanData(request, cursor));
@@ -166,7 +166,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         };
     }
 
-    protected RowCollector getRowCollector(ScanRequest request)
+    protected RowCollector getRowCollector(Session session, ScanRequest request)
             throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
@@ -174,7 +174,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         try {
             final IdResolver idr = idResolver();
-            return store().newRowCollector(request.getTableIdInt(idr), request.getIndexId(), request.getScanFlags(),
+            return store().newRowCollector(session, request.getTableIdInt(idr), request.getIndexId(), request.getScanFlags(),
                     request.getStart(idr), request.getEnd(idr), request.getColumnBitMap());
         }
         catch (RowDefNotFoundException e) {
@@ -190,7 +190,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public CursorState getCursorState(CursorId cursorId, Session session) {
+    public CursorState getCursorState(Session session, CursorId cursorId) {
         final ScanData extraData = session.get(MODULE_NAME, cursorId);
         if (extraData == null || extraData.getCursor() == null) {
             return CursorState.UNKNOWN_CURSOR;
@@ -199,7 +199,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(CursorId cursorId, Session session, LegacyRowOutput output, int limit)
+    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, int limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -267,7 +267,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(CursorId cursorId, Session session, RowOutput output, int limit)
+    public boolean scanSome(Session session, CursorId cursorId, RowOutput output, int limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -279,7 +279,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         Set<ColumnId> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
         final PooledConverter converter = getPooledConverter(output, scanColumns);
         try {
-            return scanSome(cursorId, session, converter.getLegacyOutput(), limit);
+            return scanSome(session, cursorId, converter.getLegacyOutput(), limit);
         }
         finally {
             releasePooledConverter(converter);
@@ -359,7 +359,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public void closeCursor(CursorId cursorId, Session session) throws CursorIsUnknownException {
+    public void closeCursor(Session session, CursorId cursorId) throws CursorIsUnknownException {
         ArgumentValidation.notNull("cursor ID", cursorId);
         final ScanData scanData = session.remove(MODULE_NAME, cursorId);
         if (scanData == null) {
@@ -413,7 +413,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public Long writeRow(NewRow row)
+    public Long writeRow(Session session, NewRow row)
     throws  NoSuchTableException,
             UnsupportedModificationException,
             TableDefinitionMismatchException,
@@ -422,7 +422,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         final RowData rowData = niceRowToRowData(row);
         try {
-            store().writeRow(rowData);
+            store().writeRow(session, rowData);
             return null;
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
@@ -430,7 +430,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
     
     @Override
-    public void deleteRow(NewRow row)
+    public void deleteRow(Session session, NewRow row)
     throws  NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
@@ -440,7 +440,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         final RowData rowData = niceRowToRowData(row);
         try {
-            store().deleteRow(rowData);
+            store().deleteRow(session, rowData);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -461,7 +461,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public void updateRow(NewRow oldRow, NewRow newRow)
+    public void updateRow(Session session, NewRow oldRow, NewRow newRow)
     throws  NoSuchTableException,
             DuplicateKeyException,
             TableDefinitionMismatchException,
@@ -475,7 +475,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
         LegacyUtils.matchRowDatas(oldData, newData);
         try {
-            store().updateRow(oldData, newData);
+            store().updateRow(session, oldData, newData);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -484,7 +484,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public void truncateTable(TableId tableId)
+    public void truncateTable(final Session session, final TableId tableId)
     throws NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
@@ -505,29 +505,29 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             @Override
             public void output(NewRow row) throws RowOutputException {
                 try {
-                    deleteRow(row);
+                    deleteRow(session, row);
                 } catch (InvalidOperationException e) {
                     throw new RowOutputException(e);
                 }
             }
         };
-        final Session tmpSession = new SessionImpl();
+
         final CursorId cursorId;
         try {
-             cursorId = openCursor(all, tmpSession);
+             cursorId = openCursor(session, all);
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
         }
 
         InvalidOperationException thrown = null;
         try {
-            while(scanSome(cursorId, tmpSession, output, -1))
+            while(scanSome(session, cursorId, output, -1))
             {}
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
         } finally {
             try {
-                closeCursor(cursorId, tmpSession);
+                closeCursor(session, cursorId);
             } catch (CursorIsUnknownException e) {
                 thrown = e;
             }

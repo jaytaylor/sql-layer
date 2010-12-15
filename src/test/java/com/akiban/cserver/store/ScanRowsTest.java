@@ -176,7 +176,7 @@ public class ScanRowsTest extends AbstractScanBase {
                             bitMap, indexId));
         }
 
-        store.buildIndexes("");
+        store.buildIndexes(session, "");
 
         {
             final RowDef userRowDef = userRowDef("aaaa");
@@ -359,7 +359,7 @@ public class ScanRowsTest extends AbstractScanBase {
         
         bitMap = bitsToRoot(userRowDef, rowDef);
 
-        final RowCollector rc = store.newRowCollector(start.getRowDefId(), 0,
+        final RowCollector rc = store.newRowCollector(session, start.getRowDefId(), 0,
                 0, start, end, bitMap);
         final ByteBuffer payload = ByteBuffer.allocate(65536);
         // Since there are no aaaa rows, we should get no results

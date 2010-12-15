@@ -1,12 +1,14 @@
 package com.akiban.cserver;
 
+import java.sql.SQLException;
+import java.util.Map;
+
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.Store;
-
-import java.sql.SQLException;
-import java.util.Map;
 
 /**
  * Implements the Target interface. This class is intended only for unit tests.
@@ -19,6 +21,8 @@ import java.util.Map;
 public class CServerAisTarget extends Target {
 
     private final Store store;
+    
+    private final Session session = new SessionImpl();
 
     // Target interface
 
@@ -41,7 +45,7 @@ public class CServerAisTarget extends Target {
             throw new IllegalStateException(
                     "Missing table definition for AIS table " + name);
         }
-        store.dropTable(rowDef.getRowDefId());
+        store.dropTable(session, rowDef.getRowDefId());
     }
 
     @Override
@@ -92,6 +96,6 @@ public class CServerAisTarget extends Target {
         }
         final RowData rowData = new RowData(new byte[1024]);
         rowData.createRow(rowDef, values);
-        store.writeRow(rowData);
+        store.writeRow(session, rowData);
     }
 }

@@ -2,6 +2,8 @@ package com.akiban.cserver.store;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
 
@@ -22,6 +24,8 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
             + ") ENGINE=AKIBANDB;";
 
     private PersistitStore store;
+
+    protected final static Session session = new SessionImpl();
 
     private RowDefCache rowDefCache;
 
@@ -50,10 +54,10 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
             int csize = (int)Math.pow(10, i);
             rowData.createRow(rowDef, new Object[]{i, bigString(bsize), bigString(csize)});
             expected[i] = rowData.toString(rowDefCache);
-            store.writeRow(rowData);
+            store.writeRow(session, rowData);
         }
         
-        final RowCollector rc = store.newRowCollector(rowDef.getRowDefId(), 0, 0, null, null, new byte[]{7});
+        final RowCollector rc = store.newRowCollector(session, rowDef.getRowDefId(), 0, 0, null, null, new byte[]{7});
         final ByteBuffer bb = ByteBuffer.allocate(5000000);
         for (int i = 1; i <= 6; i++) {
             assertTrue(rc.hasMore());

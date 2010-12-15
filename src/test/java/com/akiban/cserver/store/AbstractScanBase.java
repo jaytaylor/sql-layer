@@ -1,15 +1,11 @@
 package com.akiban.cserver.store;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -22,6 +18,9 @@ import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.akiban.util.ByteBufferFactory;
 
 public abstract class AbstractScanBase implements CServerConstants {
@@ -35,6 +34,8 @@ public abstract class AbstractScanBase implements CServerConstants {
     protected final static boolean VERBOSE = false;
 
     protected static PersistitStore store;
+    
+    protected final static Session session = new SessionImpl();
 
     protected static RowDefCache rowDefCache;
 
@@ -86,7 +87,7 @@ public abstract class AbstractScanBase implements CServerConstants {
                         i + "X" });
                 // output.println(rowData.toString(rowDefCache));
                 try {
-                    store.writeRow(rowData);
+                    store.writeRow(session, rowData);
                 }
                 catch (Throwable t) {
                     throw new Exception(t);
@@ -116,7 +117,7 @@ public abstract class AbstractScanBase implements CServerConstants {
             final byte[] columnBitMap, final int indexId) throws Exception {
         int scanCount = 0;
         result.clear();
-        final RowCollector rc = store.newRowCollector(rowDefId, indexId,
+        final RowCollector rc = store.newRowCollector(session, rowDefId, indexId,
                 scanFlags, start, end, columnBitMap);
         if (VERBOSE) {
             System.out.println("Test " + test);

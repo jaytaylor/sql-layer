@@ -1,15 +1,19 @@
 package com.akiban.cserver.store;
 
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.persistit.Exchange;
 import com.persistit.Key;
 
 public class CreateTableTest extends TestCase implements CServerConstants {
+
+    protected final static Session session = new SessionImpl();
 
     private final static String CREATE_TABLE_STATEMENT1 = "CREATE TABLE `coitest_1m`.`foo1` ("
             + "`a` int(11) DEFAULT NULL,"
@@ -35,7 +39,7 @@ public class CreateTableTest extends TestCase implements CServerConstants {
     }
 
     public void testCreateTable() throws Exception {
-        store.createTable("foo", CREATE_TABLE_STATEMENT1);
+        store.createTable(session, "foo", CREATE_TABLE_STATEMENT1);
         final Exchange ex = store.getDb().getExchange(
                 PersistitStore.VOLUME_NAME, PersistitStore.SCHEMA_TREE_NAME,
                 false);

@@ -1,10 +1,11 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.cserver.store.PersistitStore;
-import com.persistit.exception.PersistitException;
-
 import java.sql.ResultSet;
 import java.util.List;
+
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.store.PersistitStore;
+import com.persistit.exception.PersistitException;
 
 public class PersistitLoader
 {
@@ -27,7 +28,7 @@ public class PersistitLoader
             for (GenerateFinalTask task : finalTasks) {
                 load(task, connection);
             }
-            store.buildIndexes("");
+            store.buildIndexes(new SessionImpl(), "");
             // transaction.commit();
         } catch (PersistitException e) {
             tracker.error("Caught exception while loading persistit", e);

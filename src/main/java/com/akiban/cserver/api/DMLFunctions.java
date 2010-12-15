@@ -23,7 +23,7 @@ public interface DMLFunctions {
      * @throws com.akiban.cserver.api.common.NoSuchTableException if the specified table doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    TableStatistics getTableStatistics(TableId tableId, boolean updateFirst)
+    TableStatistics getTableStatistics(Session session, TableId tableId, boolean updateFirst)
     throws NoSuchTableException,
             GenericInvalidOperationException;
 
@@ -40,7 +40,7 @@ public interface DMLFunctions {
      * @throws NoSuchIndexException if the request is on an index that isn't defined for the requested table
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    CursorId openCursor(ScanRequest request, Session session)
+    CursorId openCursor(Session session, ScanRequest request)
     throws  NoSuchTableException,
             NoSuchColumnException,
             NoSuchIndexException,
@@ -88,7 +88,7 @@ public interface DMLFunctions {
      * @throws RowOutputException if the given RowOutput threw an exception while writing a row
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    boolean scanSome(CursorId cursorId, Session session, LegacyRowOutput output, int limit)
+    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, int limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -141,7 +141,7 @@ public interface DMLFunctions {
      * @throws NoSuchTableException if the table ID specified by cursorId isn't recognized
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    boolean scanSome(CursorId cursorId, Session session, RowOutput output, int limit)
+    boolean scanSome(Session session, CursorId cursorId, RowOutput output, int limit)
             throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -155,7 +155,7 @@ public interface DMLFunctions {
      * @throws NullPointerException if the cursor is null
      * @throws CursorIsUnknownException if the given cursor is unknown or has already been closed
      */
-    void closeCursor(CursorId cursorId, Session session) throws CursorIsUnknownException;
+    void closeCursor(Session session, CursorId cursorId) throws CursorIsUnknownException;
 
     /**
      * Gets the state of the given cursor. This method will never throw an exception; if the cursor is unknown,
@@ -164,7 +164,7 @@ public interface DMLFunctions {
      * @param session the session in which the cursor is defined
      * @return the cursor's state
      */
-    CursorState getCursorState(CursorId cursorId, Session session);
+    CursorState getCursorState(Session session, CursorId cursorId);
 
     /**
      * <p>Returns all open cursors. It is not necessarily safe to call {@linkplain #scanSome(CursorId, Session, LegacyRowOutput , int)}
@@ -220,7 +220,7 @@ public interface DMLFunctions {
      * <tt>akiban_information_schema</tt> table)
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    Long writeRow(NewRow row)
+    Long writeRow(Session session, NewRow row)
     throws  NoSuchTableException,
             UnsupportedModificationException,
             TableDefinitionMismatchException,
@@ -239,7 +239,7 @@ public interface DMLFunctions {
      * @throws TableDefinitionMismatchException if the row to delete isn't of the appropriate type
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void deleteRow(NewRow row)
+    void deleteRow(Session session, NewRow row)
     throws  NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,
@@ -262,7 +262,7 @@ public interface DMLFunctions {
      * @throws NoSuchRowException if the specified oldRow doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void updateRow(NewRow oldRow, NewRow newRow)
+    void updateRow(Session session, NewRow oldRow, NewRow newRow)
     throws  NoSuchTableException,
             DuplicateKeyException,
             TableDefinitionMismatchException,
@@ -288,7 +288,7 @@ public interface DMLFunctions {
      * @throws ForeignKeyConstraintDMLException if the truncate was blocked by at least one child table
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void truncateTable(TableId tableId)
+    void truncateTable(Session session, TableId tableId)
     throws NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,

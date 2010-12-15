@@ -1,16 +1,26 @@
 package com.akiban.cserver.api;
 
+import java.util.List;
+
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.ddl.*;
 import com.akiban.cserver.api.common.NoSuchTableException;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
+import com.akiban.cserver.api.ddl.DuplicateTableNameException;
+import com.akiban.cserver.api.ddl.ForeignConstraintDDLException;
+import com.akiban.cserver.api.ddl.GroupWithProtectedTableException;
+import com.akiban.cserver.api.ddl.JoinToUnknownTableException;
+import com.akiban.cserver.api.ddl.JoinToWrongColumnsException;
+import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
+import com.akiban.cserver.api.ddl.ParseException;
+import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
+import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
-
-import java.util.List;
 
 public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
     
@@ -23,7 +33,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
     }
 
     @Override
-    public void createTable(String schema, String ddlText)
+    public void createTable(Session session, String schema, String ddlText)
     throws ParseException,
             UnsupportedCharsetException,
             ProtectedTableDDLException,
@@ -36,14 +46,14 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
             GenericInvalidOperationException
     {
         try {
-            schemaManager().createTable(schema, ddlText);
+            schemaManager().createTable(session, schema, ddlText);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    public void dropTable(TableId tableId)
+    public void dropTable(Session session, TableId tableId)
     throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
             GenericInvalidOperationException
@@ -57,7 +67,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
         }
         
         try {
-            schemaManager().dropTable(tableName.getSchemaName(), tableName.getTableName());
+            schemaManager().dropTable(session, tableName.getSchemaName(), tableName.getTableName());
         }
         catch (Exception e) {
             throw new GenericInvalidOperationException(e);
@@ -65,13 +75,13 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
     }
 
     @Override
-    public void dropSchema(String schemaName)
+    public void dropSchema(Session session, String schemaName)
             throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
             GenericInvalidOperationException
     {
         try {
-            schemaManager().dropSchema(schemaName);
+            schemaManager().dropSchema(session, schemaName);
         }
         catch (Exception e) {
             throw new GenericInvalidOperationException(e);

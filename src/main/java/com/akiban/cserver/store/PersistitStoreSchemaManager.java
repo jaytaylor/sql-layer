@@ -1,5 +1,27 @@
 package com.akiban.cserver.store;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.io.Writer;
@@ -7,26 +29,32 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.staticgrouping.*;
+import com.akiban.ais.model.staticgrouping.Group;
+import com.akiban.ais.model.staticgrouping.Grouping;
+import com.akiban.ais.model.staticgrouping.GroupingVisitor;
+import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
+import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.ais.util.AISPrinter;
 import com.akiban.ais.util.DDLGenerator;
-import com.akiban.cserver.*;
+import com.akiban.cserver.CServer;
+import com.akiban.cserver.CServerAisTarget;
+import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.manage.SchemaManager;
+import com.akiban.cserver.service.session.Session;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
-import com.persistit.*;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.KeyFilter;
+import com.persistit.Transaction;
+import com.persistit.TransactionRunnable;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class PersistitStoreSchemaManager implements CServerConstants,
         SchemaManager {
@@ -678,15 +706,15 @@ public class PersistitStoreSchemaManager implements CServerConstants,
     }
 
     @Override
-    public void createTable(String schemaName, String DDL) throws Exception {
-        store.createTable(schemaName, DDL);
+    public void createTable(final Session session, String schemaName, String DDL) throws Exception {
+        store.createTable(session, schemaName, DDL);
         store.getPropertiesManager().incrementSchemaId();
         acquireAIS();
     }
 
     @Override
-    public void dropTable(String schema, String tableName) throws Exception {
-        dropGroups(Arrays.asList(TableName.create(schema, tableName)));
+    public void dropTable(final Session session, String schema, String tableName) throws Exception {
+        dropGroups(session, Arrays.asList(TableName.create(schema, tableName)));
     }
 
     /**
@@ -697,17 +725,17 @@ public class PersistitStoreSchemaManager implements CServerConstants,
      * @throws Exception
      */
     @Override
-    public void dropAllTables() throws Exception {
+    public void dropAllTables(final Session session) throws Exception {
         try {
             final Collection<Integer> dropTables = getTablesToRefIds().values();
-            store.dropTables(dropTables);
+            store.dropTables(session, dropTables);
             store.getPropertiesManager().incrementSchemaId();
         } finally {
             acquireAIS();
         }
     }
 
-    private void dropGroups(Collection<TableName> containingTables)
+    private void dropGroups(final Session session, Collection<TableName> containingTables)
             throws Exception {
         for (TableName containingTable : containingTables) {
             if (containingTable.getSchemaName().equals("akiba_objects")
@@ -769,7 +797,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
 
         List<Integer> dropTables = grouping.traverse(visitor);
         try {
-            store.dropTables(dropTables);
+            store.dropTables(session, dropTables);
             store.getPropertiesManager().incrementSchemaId();
         } finally {
             acquireAIS();
@@ -791,8 +819,8 @@ public class PersistitStoreSchemaManager implements CServerConstants,
     }
 
     @Override
-    public void dropSchema(String schemaName) throws Exception {
-        store.dropSchema(schemaName);
+    public void dropSchema(final Session session, String schemaName) throws Exception {
+        store.dropSchema(session, schemaName);
     }
 
     public String getGrouping() throws Exception {

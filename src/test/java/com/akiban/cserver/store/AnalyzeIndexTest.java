@@ -16,7 +16,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
     public void testAnalyzeAllIndexes() throws Exception {
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
             for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                store.getIndexManager().analyzeIndex(indexDef, 10);
+                store.getIndexManager().analyzeIndex(session, indexDef, 10);
             }
         }
     }
@@ -24,7 +24,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
     @Test
     public void testPopulateTableStatistics() throws Exception {
         final RowDef rowDef = userRowDef("aa");
-        store.analyzeTable(rowDef.getRowDefId());
+        store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
         store.getIndexManager().populateTableStatistics(ts);
         {
@@ -62,7 +62,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
     @Test
     public void testGroupTableStatistics() throws Exception {
         final RowDef rowDef = groupRowDef("_akiba_a");
-        store.analyzeTable(rowDef.getRowDefId());
+        store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
         store.getIndexManager().populateTableStatistics(ts);
         final int indexId = findIndexId(rowDef, "aa$str");
@@ -81,11 +81,11 @@ public class AnalyzeIndexTest extends AbstractScanBase {
         final RowDef rowDef = userRowDef("bug253");
         final RowData rowData = new RowData(new byte[256]);
         rowData.createRow(rowDef, new Object[]{1, "blog"});
-        store.writeRow(rowData);
+        store.writeRow(session, rowData);
         rowData.createRow(rowDef, new Object[]{1, "book"});
-        store.writeRow(rowData);
+        store.writeRow(session, rowData);
         try {
-        store.analyzeTable(rowDef.getRowDefId());
+        store.analyzeTable(session, rowDef.getRowDefId());
         } catch (NumberFormatException nfe) {
             fail("Bug 253 strikes again!");
         }

@@ -1,13 +1,14 @@
 package com.akiban.cserver.service.schema;
 
+import java.util.List;
+
 import com.akiban.ais.io.CSVTarget;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.jmx.JmxManageable;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.SchemaId;
-
-import java.util.List;
 
 public final class SchemaServiceImpl implements SchemaService, JmxManageable, Service<SchemaService> {
     private final SchemaManager manager;
@@ -38,7 +39,7 @@ public final class SchemaServiceImpl implements SchemaService, JmxManageable, Se
 
     @Override
     public void dropAllTables() throws Exception {
-        manager.dropAllTables();
+        manager.dropAllTables(new SessionImpl());
     }
 
     @Override

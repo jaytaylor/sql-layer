@@ -14,6 +14,7 @@ import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
 
 /**
@@ -30,28 +31,28 @@ public interface Store extends Service<Store> {
 
     void setVerbose(final boolean verbose);
 
-    void createTable(final String schemaName, final String createTableStatement)
+    void createTable(final Session session, final String schemaName, final String createTableStatement)
             throws Exception;
 
-    void writeRow(final RowData rowData) throws Exception;
+    void writeRow(final Session session, final RowData rowData) throws Exception;
 
-    void writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
+    void writeRowForBulkLoad(final Session session, final Exchange hEx, final RowDef rowDef,
             final RowData rowData, final int[] ordinals,
             final int[] nKeyColumns, final FieldDef[] fieldDefs,
             final Object[] hKey) throws Exception;
 
-    void updateTableStats(final RowDef rowDef, long rowCount) throws Exception;
+    void updateTableStats(final Session session, final RowDef rowDef, long rowCount) throws Exception;
 
-    void deleteRow(final RowData rowData) throws Exception;
+    void deleteRow(final Session session, final RowData rowData) throws Exception;
 
-    void updateRow(final RowData oldRowData, final RowData newRowData)
+    void updateRow(final Session session, final RowData oldRowData, final RowData newRowData)
             throws Exception;
 
     /**
      * @param scanRowsRequest
      * @return The RowCollector that will generated the requested rows
      */
-    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest)
+    RowCollector newRowCollector(final Session session, ScanRowsRequest scanRowsRequest)
             throws Exception;
 
     /**
@@ -68,7 +69,7 @@ public interface Store extends Service<Store> {
      * @return
      * @throws Exception
      */
-    RowCollector newRowCollector(final int rowDefId, final int indexId,
+    RowCollector newRowCollector(final Session session, final int rowDefId, final int indexId,
             final int scanFlags, final RowData start, final RowData end,
             final byte[] columnBitMap) throws Exception;
 
@@ -79,7 +80,7 @@ public interface Store extends Service<Store> {
      * @param tableId
      * @return
      */
-    RowCollector getSavedRowCollector(final int tableId)
+    RowCollector getSavedRowCollector(final Session session, final int tableId)
             throws InvalidOperationException;
 
     /**
@@ -88,7 +89,7 @@ public interface Store extends Service<Store> {
      * 
      * @param rc
      */
-    void addSavedRowCollector(final RowCollector rc);
+    void addSavedRowCollector(final Session session, final RowCollector rc);
 
     /***
      * Remove a previously saved RowCollector. Must the the most recently added
@@ -96,13 +97,13 @@ public interface Store extends Service<Store> {
      * 
      * @param rc
      */
-    void removeSavedRowCollector(final RowCollector rc)
+    void removeSavedRowCollector(final Session session, final RowCollector rc)
             throws InvalidOperationException;
 
-    long getRowCount(final boolean exact, final RowData start,
+    long getRowCount(final Session session, final boolean exact, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception;
 
-    TableStatistics getTableStatistics(final int tableId) throws Exception;
+    TableStatistics getTableStatistics(final Session session, final int tableId) throws Exception;
 
     /**
      * Drops a single table, identified by ID.
@@ -116,7 +117,7 @@ public interface Store extends Service<Store> {
      *             if the rowDef couldn't be looked up, or if the transaction
      *             failed
      */
-    void dropTable(final int rowDefId) throws Exception;
+    void dropTable(final Session session, final int rowDefId) throws Exception;
 
     /**
      * Drops several tables as a single transaction. Each table's drop is
@@ -133,11 +134,11 @@ public interface Store extends Service<Store> {
      * @throws Exception
      *             see {@linkplain #dropTable(int)}
      */
-    void dropTables(final Collection<Integer> rowDefIds) throws Exception;
+    void dropTables(final Session session, final Collection<Integer> rowDefIds) throws Exception;
 
-    void truncateTable(final int rowDefId) throws Exception;
+    void truncateTable(final Session session, final int rowDefId) throws Exception;
 
-    void dropSchema(final String schemaName) throws Exception;
+    void dropSchema(final Session session, final String schemaName) throws Exception;
 
     void fixUpOrdinals() throws Exception;
 
@@ -214,7 +215,7 @@ public interface Store extends Service<Store> {
      * @return List of RowData objects containing the result
      * @throws Exception
      */
-    List<RowData> fetchRows(final String schemaName, final String tableName,
+    List<RowData> fetchRows(final Session session, final String schemaName, final String tableName,
             final String columnName, final Object least, final Object greatest,
             final String leafTableName) throws Exception;
 
@@ -244,7 +245,7 @@ public interface Store extends Service<Store> {
      * @return List of RowData objects containing the result
      * @throws Exception
      */
-    List<RowData> fetchRows(final String schemaName, final String tableName,
+    List<RowData> fetchRows(final Session session, final String schemaName, final String tableName,
             final String columnName, final Object least, final Object greatest,
             final String leafTableName, final ByteBuffer payload)
             throws Exception;
@@ -256,7 +257,7 @@ public interface Store extends Service<Store> {
      * @param tableId
      * @throws Exception
      */
-    void analyzeTable(int tableId) throws Exception;
+    void analyzeTable(final Session session, int tableId) throws Exception;
 
     /**
      * Register a CommittedUpdateListener to handle update events.

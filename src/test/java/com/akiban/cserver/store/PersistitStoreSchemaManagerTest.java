@@ -22,6 +22,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
@@ -33,6 +35,8 @@ public final class PersistitStoreSchemaManagerTest {
 
     private PersistitStore store;
     
+    protected final static Session session = new SessionImpl();
+
     PersistitStoreSchemaManager manager;
 
     @Before
@@ -58,7 +62,7 @@ public final class PersistitStoreSchemaManagerTest {
     private void createTable(ErrorCode expectedCode, String schema, String ddl) throws Exception {
         ErrorCode actualCode  = null;
         try {
-            manager.createTable(schema, ddl);
+            manager.createTable(session, schema, ddl);
         }
         catch (InvalidOperationException e) {
             actualCode = e.getCode();
@@ -67,7 +71,7 @@ public final class PersistitStoreSchemaManagerTest {
     }
     
     private void createTable(String schema, String ddl) throws Exception {
-        manager.createTable(schema, ddl);
+        manager.createTable(session, schema, ddl);
     }
 
     
@@ -86,8 +90,8 @@ public final class PersistitStoreSchemaManagerTest {
 //  See bug 337 - reenable these asserts after 337 is fixed.
         assertEquals(Integer.valueOf(1), c1.getPrefixSize());
         assertEquals(Integer.valueOf(2), c2.getPrefixSize());
-        manager.dropTable(SCHEMA, "myvarchartest1");
-        manager.dropTable(SCHEMA, "myvarchartest2");
+        manager.dropTable(session, SCHEMA, "myvarchartest1");
+        manager.dropTable(session, SCHEMA, "myvarchartest2");
     }
 
     @Test
@@ -109,7 +113,7 @@ public final class PersistitStoreSchemaManagerTest {
         Index index = table.getIndexes().iterator().next();
         assertTrue("index isn't primary: " + index, index.isPrimaryKey());
 
-        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
     }
 
     @Test
@@ -130,7 +134,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.zebra( id int key)");
-        manager.dropTable(SCHEMA, "zebra");
+        manager.dropTable(session, SCHEMA, "zebra");
     }
 
     @Test
@@ -155,7 +159,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
                 "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
         assertTables("user tables",
                 "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine=akibandb",
@@ -163,7 +167,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
         
-        manager.dropTable(SCHEMA, "two");
+        manager.dropTable(session, SCHEMA, "two");
     }
 
     @Test
@@ -189,7 +193,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
                 "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropAllTables();
+        manager.dropAllTables(session);
     }
 
     @Test
@@ -226,7 +230,7 @@ public final class PersistitStoreSchemaManagerTest {
         Index fkIndex = table.getIndex("__akiban_fk_a");
         assertEquals("fk index name" + " in " + table.getIndexes(), "__akiban_fk_a", fkIndex.getIndexName().getName());
 
-        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
     }
 
     @Test
@@ -249,7 +253,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
     }
 
     @Test
@@ -271,7 +275,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
     }
 
     @Test
@@ -297,7 +301,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
     }
 
     @Test
@@ -325,7 +329,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "CREATE TABLE `my_schema`.two (id int, one_id int, PRIMARY KEY (id), " +
                         "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
-        manager.dropTable(SCHEMA, "two");
+        manager.dropTable(session, SCHEMA, "two");
         // Commenting out the following as a fix to bug 188. We're now dropping whole groups at a time, instead of just
         // branches.
 //        assertTables("user tables",
@@ -344,7 +348,7 @@ public final class PersistitStoreSchemaManagerTest {
 
     @Test
     public void dropNonExistentTable() throws Exception {
-        manager.dropTable("this_schema_does_not", "exist");
+        manager.dropTable(session, "this_schema_does_not", "exist");
         
         createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
@@ -355,11 +359,11 @@ public final class PersistitStoreSchemaManagerTest {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(SCHEMA, "one");
-        manager.dropTable(SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
+        manager.dropTable(session, SCHEMA, "one");
 
-        manager.dropTable("this_schema_never_existed", "it_really_didnt");
-        manager.dropTable("this_schema_never_existed", "it_really_didnt");
+        manager.dropTable(session, "this_schema_never_existed", "it_really_didnt");
+        manager.dropTable(session, "this_schema_never_existed", "it_really_didnt");
     }
 
     @Test
@@ -396,7 +400,7 @@ public final class PersistitStoreSchemaManagerTest {
                 "CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS(expectedDDLs2.toArray(new String[expectedDDLs.size()]));
 
-        manager.dropTable("s2", "one");
+        manager.dropTable(session, "s2", "one");
         List<String> expectedDDLs3 = new ArrayList<String>(expectedDDLs);
         expectedDDLs3.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine=akibandb");
         expectedDDLs3.add("create database if not exists `s3`");
@@ -408,8 +412,8 @@ public final class PersistitStoreSchemaManagerTest {
                 "CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS(expectedDDLs3.toArray(new String[expectedDDLs.size()]));
 
-        manager.dropTable("s3", "one");
-        manager.dropTable("s1", "one");
+        manager.dropTable(session, "s3", "one");
+        manager.dropTable(session, "s1", "one");
     }
 
     private void assertTables(String message, String... expecteds) throws Exception {

@@ -164,7 +164,7 @@ public final class DMLFunctionsImplTest {
         }
 
         @Override
-        protected RowCollector getRowCollector(ScanRequest request) {
+        protected RowCollector getRowCollector(final Session session, ScanRequest request) {
             return collector;
         }
 

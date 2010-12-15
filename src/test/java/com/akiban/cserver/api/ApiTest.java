@@ -38,8 +38,9 @@ public final class ApiTest {
     public void testAutoIncrement() throws InvalidOperationException {
         ApiPair apiPair = new ApiPair();
         final TableId tableId = TableId.of("sc1", "t1");
-        apiPair.ddl.createTable("sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
-        TableStatistics tableStats = apiPair.dml.getTableStatistics(tableId, false);
+        final Session session = new SessionImpl();
+        apiPair.ddl.createTable(session, "sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
+        TableStatistics tableStats = apiPair.dml.getTableStatistics(session, tableId, false);
         assertEquals("autoinc value", 10L, tableStats.getAutoIncrementValue());
     }
 }
