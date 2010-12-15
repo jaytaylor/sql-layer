@@ -200,7 +200,11 @@
         <configuration>
           <generateHistorical>true</generateHistorical>
           <historyDir>/clover/history</historyDir>
-          <license><![CDATA[PpMOqBXixXwmrECcCXcNWMiPdoNUxGimeeaAxQLAHXjuxGqmj2L00k1BlPcP>5lr6tcyjP5U2KJ>74Tfqpr3R>yJZm5IOWrqortTONOOQqqprRPqnuVOQmPNRMMqqnnnVVTXusxXowuUxxMnmnmUUnotqnmqummmmmUUnotqnmqummmmmUUXhfYXkWfkZUUn]]></license>
+          <license><![CDATA[PpMOqBXixXwmrECcCXcNWMiPdoNUxGimeeaAxQLAHXjuxGq
+mj2L00k1BlPcP>5lr6tcyjP5U2KJ>74Tfqpr3R>yJZm5IOW
+rqortTONOOQqqprRPqnuVOQmPNRMMqqnnnVVTXusxXowuUx
+xMnmnmUUnotqnmqummmmmUUnotqnmqummmmmUUXhfYXkWfk
+ZUUn]]></license>
           <generateXml>true</generateXml>
         </configuration>
       </plugin>
