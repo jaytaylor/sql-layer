@@ -99,7 +99,7 @@
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${system.config}/config/ais_object_model.xml" 
+		file="src/main/resources/ais_object_model.xml" 
 		todir="${cserver.configdir}/config" />
 
 
