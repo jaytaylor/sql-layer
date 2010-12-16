@@ -31,8 +31,20 @@ public final class DecimalEncoderTest {
         }
 
         List<TestElement> tests = Arrays.asList(
+                new TestElement(4, 2, "0.44", "0x00"),
+                new TestElement(4, 2, "12703.18", "0x00"),
+                new TestElement(4, 2, "1652.00", "0x00"),
+                new TestElement(4, 2, "17588.70", "0x00"),
+                new TestElement(4, 2, "18850.68", "0x00"),
+                new TestElement(4, 2, "4673.96", "0x00"),
+                new TestElement(4, 2, "6009.00", "0x00"),
+                new TestElement(4, 2, "6436.92", "0x00"),
+                new TestElement(4, 2, "8542.35", "0x00"),
+                new TestElement(12, 2, "1", "0x00"),
+                new TestElement(12, 2, "10.00", "0x00"),
+                new TestElement(12, 2, "8028.00", "0x00"),
                 // These next two aren't part of the bug, but we have them here anyway.
-                // One's an example from mysql docs, and the other caused us a problem before.
+                // One is an example from mysql docs, and the other caused us a problem before.
                 new TestElement(14, 4, "1234567890.1234", "0x810DFB38D204D2"),
                 new TestElement(12, 10, "90.1956251262", "0xDA0BA900A602")
         );
