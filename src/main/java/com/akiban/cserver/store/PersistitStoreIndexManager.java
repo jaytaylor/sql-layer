@@ -57,7 +57,7 @@ public class PersistitStoreIndexManager {
     private final static int SAMPLE_SIZE_MULTIPLIER = 32;
 
     private final PersistitStore store;
-
+    
     public PersistitStoreIndexManager(final PersistitStore store) {
         this.store = store;
     }
@@ -79,7 +79,7 @@ public class PersistitStoreIndexManager {
         }
     }
 
-    public void deleteIndexAnalysis(final IndexDef indexDef) throws PersistitException {
+    public void deleteIndexAnalysis(final Session session, final IndexDef indexDef) throws PersistitException {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
         if (indexAnalysisRowDef == null) {
@@ -87,7 +87,7 @@ public class PersistitStoreIndexManager {
             return;
         }
         final Exchange analysisEx = store
-                .getExchange(indexAnalysisRowDef, null);
+                .getExchange(session, indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
         transaction.run(new TransactionRunnable() {
             @Override
@@ -100,7 +100,7 @@ public class PersistitStoreIndexManager {
                 // Remove previous analysis
                 //
                 try {
-                    store.constructHKey(analysisEx, indexAnalysisRowDef,
+                    store.constructHKey(session, analysisEx, indexAnalysisRowDef,
                             rowData);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
@@ -124,7 +124,7 @@ public class PersistitStoreIndexManager {
         KeyFilter keyFilter = null;
 
         if (indexDef.isHKeyEquivalent()) {
-            probeEx = store.getExchange(indexDef.getRowDef(), null);
+            probeEx = store.getExchange(session, indexDef.getRowDef(), null);
             startKey = new Key(store.getDb());
             endKey = new Key(store.getDb());
             final IndexDef.I2H[] i2hFields = indexDef.hkeyFields();
@@ -142,7 +142,7 @@ public class PersistitStoreIndexManager {
             keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
 
         } else {
-            probeEx = store.getExchange(indexDef.getRowDef(), indexDef);
+            probeEx = store.getExchange(session, indexDef.getRowDef(), indexDef);
             startKey = Key.LEFT_GUARD_KEY;
             endKey = Key.RIGHT_GUARD_KEY;
             keyDepth = indexDef.getFields().length;
@@ -179,7 +179,7 @@ public class PersistitStoreIndexManager {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
         final Exchange analysisEx = store
-                .getExchange(indexAnalysisRowDef, null);
+                .getExchange(session, indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
         final Date now = new Date();
         final KeyHistogram keyHistogram0 = keyHistogram;
@@ -204,7 +204,7 @@ public class PersistitStoreIndexManager {
                     // Remove previous analysis
                     //
                     try {
-                        store.constructHKey(analysisEx, indexAnalysisRowDef,
+                        store.constructHKey(session, analysisEx, indexAnalysisRowDef,
                                 rowData);
                         analysisEx.getKey().cut();
                         analysisEx.remove(Key.GT);
@@ -297,7 +297,7 @@ public class PersistitStoreIndexManager {
         }
     }
 
-    public void populateTableStatistics(final TableStatistics tableStatistics)
+    public void populateTableStatistics(final Session session, final TableStatistics tableStatistics)
             throws Exception {
         final int tableId = tableStatistics.getRowDefId();
         final RowDef rowDef = store.getRowDefCache().getRowDef(tableId);
@@ -313,7 +313,7 @@ public class PersistitStoreIndexManager {
             final Histogram histogram = new Histogram(indexDef.getId());
             final RowDef indexAnalysisRowDef = store.getRowDefCache()
                     .getRowDef(ANALYSIS_TABLE_NAME);
-            final Exchange exchange = store.getExchange(indexAnalysisRowDef,
+            final Exchange exchange = store.getExchange(session, indexAnalysisRowDef,
                     null);
             exchange.clear().append(indexAnalysisRowDef.getOrdinal())
                     .append((long) tableId).append((long) indexDef.getId())
@@ -323,7 +323,7 @@ public class PersistitStoreIndexManager {
                 final RowData rowData = new RowData(new byte[exchange
                         .getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
                 store.expandRowData(exchange,
-                        indexAnalysisRowDef.getRowDefId(), rowData);
+                        indexAnalysisRowDef, rowData);
                 rows.add(rowData);
             }
 

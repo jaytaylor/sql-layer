@@ -1,21 +1,27 @@
 package com.akiban.cserver.service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
+import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.logging.LoggingServiceImpl;
+import com.akiban.cserver.service.persistit.PersistitService;
+import com.akiban.cserver.service.persistit.PersistitServiceImpl;
 import com.akiban.cserver.service.schema.SchemaServiceImpl;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.session.SessionServiceImpl;
-import com.akiban.cserver.service.jmx.JmxManageable;
-import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
-
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ServiceManagerImpl implements ServiceManager, JmxManageable
 {
@@ -81,10 +87,13 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         ConfigurationService configService = getServiceAsService(ConfigurationService.class).cast();
         servicesDebugHooks(configService);
 
-        // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
         startAndPut(new LoggingServiceImpl(), jmxRegistry);
         startAndPut(new SessionServiceImpl(), jmxRegistry);
-        Store store = new PersistitStore(configService);
+        
+        // TODO: I think it would be better to use dependency injection - PDB
+        PersistitService persistitService = new PersistitServiceImpl(configService);
+        startAndPut(persistitService, jmxRegistry);
+        Store store = new PersistitStore(persistitService);
         startAndPut(store, jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);

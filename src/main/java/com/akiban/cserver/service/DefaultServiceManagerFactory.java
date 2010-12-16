@@ -6,6 +6,7 @@ import com.akiban.cserver.service.config.ConfigurationServiceImpl;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
+import com.akiban.cserver.service.persistit.PersistitServiceImpl;
 import com.akiban.cserver.store.Store;
 
 public class DefaultServiceManagerFactory implements ServiceManagerFactory
@@ -14,6 +15,8 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     private Service configurationService;
     private Service networkService;
     private Service chunkserverService;
+    private Service storeService;
+    private Service persistitService;
     
     @Override
     public ServiceManager serviceManager()
@@ -53,9 +56,11 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     @Override
     public Service<Store> storeService()
     {
-        // Store is still allocated in ServiceManagerImpl. Need to clean up CServerConfig.
-        assert false : "not implemented yet";
-        return null;
+        if (storeService == null) {
+            ConfigurationService config = configurationService().cast();
+            persistitService = new PersistitServiceImpl(config);
+        }
+        return storeService;
     }
 
     @Override

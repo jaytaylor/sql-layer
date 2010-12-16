@@ -26,7 +26,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
         final RowDef rowDef = userRowDef("aa");
         store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
-        store.getIndexManager().populateTableStatistics(ts);
+        store.getIndexManager().populateTableStatistics(session, ts);
         {
             // Checks a secondary index
             //
@@ -64,7 +64,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
         final RowDef rowDef = groupRowDef("_akiba_a");
         store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
-        store.getIndexManager().populateTableStatistics(ts);
+        store.getIndexManager().populateTableStatistics(session, ts);
         final int indexId = findIndexId(rowDef, "aa$str");
         TableStatistics.Histogram histogram = null;
         for (TableStatistics.Histogram h : ts.getHistogramList()) {

@@ -83,7 +83,7 @@ public class ManageMXBeanImpl implements ManageMXBean
 
     @Override
     public void deleteIndexes(final String arg) {
-        getStore().deleteIndexes(arg);
+        getStore().deleteIndexes(new SessionImpl(), arg);
     }
 
     @Override
@@ -91,18 +91,7 @@ public class ManageMXBeanImpl implements ManageMXBean
         getStore().flushIndexes();
     }
 
-    // TODO - temporary
-    @Override
-    public String copyBackPages() {
-        try {
-            getStore().getDb().copyBackPages();
-        } catch (Exception e) {
-            return e.toString();
-        }
-        return "done";
-    }
-    
-    
+   
     public String loadCustomQuery(final String className) {
         try {
             customClass = null;

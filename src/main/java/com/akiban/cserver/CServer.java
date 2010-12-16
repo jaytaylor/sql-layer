@@ -10,7 +10,6 @@ import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerFactory;
 import com.akiban.cserver.service.jmx.JmxManageable;
-import com.akiban.cserver.store.Store;
 import com.akiban.util.Tap;
 
 /**

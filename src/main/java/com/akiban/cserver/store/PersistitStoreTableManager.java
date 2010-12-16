@@ -1,18 +1,21 @@
 package com.akiban.cserver.store;
 
-import com.akiban.cserver.RowDef;
-import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.encoding.ValueRenderer;
-import com.persistit.exception.PersistitException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.encoding.ValueRenderer;
+import com.persistit.exception.PersistitException;
 
 /**
  * Manage tables in a PersistitStore. Maintain a map of rowDefId->TableStatus.
@@ -84,8 +87,8 @@ public class PersistitStoreTableManager {
     public void shutDown() throws Exception {
         timer.cancel();
         timer.purge();
-
-        final Exchange exchange = statusExchange();
+        final Session session = new SessionImpl();
+        final Exchange exchange = statusExchange(session);
         try {
             for (final TableStatus tableStatus : statusMap.values()) {
                 if (tableStatus.testIsStale()) {
@@ -93,7 +96,7 @@ public class PersistitStoreTableManager {
                 }
             }
         } finally {
-            store.releaseExchange(exchange);
+            store.releaseExchange(session, exchange);
         }
     }
 
@@ -103,14 +106,14 @@ public class PersistitStoreTableManager {
         if (tableStatus == null) {
             tableStatus = new TableStatus(rowDefId);
             statusMap.put(rowDefId, tableStatus);
-            final Exchange exchange = statusExchange();
-            loadStatus(exchange, tableStatus);
+            loadStatus(tableStatus);
         }
         return tableStatus;
     }
 
     void preload() throws PersistitException {
-        Exchange exchange = statusExchange();
+        final Session session = new SessionImpl();
+        Exchange exchange = statusExchange(session);
         try {
             exchange.clear().to(Key.BEFORE);
             while (exchange.next()) {
@@ -122,13 +125,14 @@ public class PersistitStoreTableManager {
                 }
             }
         } finally {
-            store.releaseExchange(exchange);
+            store.releaseExchange(session, exchange);
         }
     }
 
     void updateTableStatus() throws PersistitException {
+        final Session session = new SessionImpl();
         final List<RowDef> rowDefs = store.getRowDefCache().getRowDefs();
-        Exchange exchange = statusExchange();
+        Exchange exchange = statusExchange(session);
         try {
             for (final RowDef rowDef : rowDefs) {
                 TableStatus tableStatus = statusMap.get(rowDef.getRowDefId());
@@ -143,50 +147,54 @@ public class PersistitStoreTableManager {
                 }
             }
         } finally {
-            store.releaseExchange(exchange);
+            store.releaseExchange(session, exchange);
         }
     }
 
     public void loadStatus(final TableStatus tableStatus)
             throws PersistitException {
-        Exchange exchange = statusExchange();
+        final Session session = new SessionImpl();
+        Exchange exchange = statusExchange(session);
         try {
             loadStatus(exchange, tableStatus);
         } finally {
-            store.releaseExchange(exchange);
+            store.releaseExchange(session, exchange);
         }
     }
 
     public void saveStatus(final TableStatus tableStatus)
             throws PersistitException {
-        Exchange exchange = statusExchange();
+        final Session session = new SessionImpl();
+        Exchange exchange = statusExchange(session);
         try {
             saveStatus(exchange, tableStatus);
         } finally {
-            store.releaseExchange(exchange);
+            store.releaseExchange(session, exchange);
         }
     }
 
     public void deleteStatus(final TableStatus tableStatus)
             throws PersistitException {
-        Exchange exchange = statusExchange();
+        final Session session = new SessionImpl();
+        Exchange exchange = statusExchange(session);
         try {
             exchange.clear().append(tableStatus.getRowDefId());
             exchange.remove();
             statusMap.remove(tableStatus.getRowDefId());
         } finally {
-            store.releaseExchange(exchange);
+            store.releaseExchange(session, exchange);
         }
     }
 
     public void deleteStatus(final int rowDefId) throws PersistitException {
-        Exchange exchange = statusExchange();
+        final Session session = new SessionImpl();
+        Exchange exchange = statusExchange(session);
         try {
             exchange.clear().append(rowDefId);
             exchange.remove();
             statusMap.remove(rowDefId);
         } finally {
-            store.releaseExchange(exchange);
+            store.releaseExchange(session, exchange);
         }
     }
 
@@ -207,8 +215,8 @@ public class PersistitStoreTableManager {
         tableStatus.flushed();
     }
 
-    private Exchange statusExchange() throws PersistitException {
-        return store.getExchange(STATUS_TREE_NAME);
+    private Exchange statusExchange(final Session session) throws PersistitException {
+        return store.getExchange(session, STATUS_TREE_NAME);
     }
 
     static long now() {

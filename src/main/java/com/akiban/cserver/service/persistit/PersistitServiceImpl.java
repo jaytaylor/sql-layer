@@ -1,9 +1,10 @@
-package com.akiban.cserver.store;
+package com.akiban.cserver.service.persistit;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.rmi.RemoteException;
 import java.util.Properties;
+
+import javax.help.UnsupportedOperationException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -13,6 +14,8 @@ import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
+import com.persistit.Transaction;
+import com.persistit.Tree;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
@@ -115,17 +118,7 @@ public class PersistitServiceImpl implements PersistitService {
         }
 
     }
-
-    public void setDisplayFilter(final PersistitStore store) {
-        try {
-            db.getManagement().setDisplayFilter(
-                    new RowDataDisplayFilter(store, db.getManagement()
-                            .getDisplayFilter()));
-        } catch (RemoteException e) {
-            // Ignore - Not important
-        }
-    }
-
+    
     /**
      * Makes sure the given directory exists, optionally trying to create it.
      * 
@@ -185,26 +178,42 @@ public class PersistitServiceImpl implements PersistitService {
         return PersistitService.class;
     }
 
+    @Override
     public Persistit getDb() {
         return db;
     }
 
+    @Override
     public Exchange getExchange(final Session session, final String schemaName,
-            final String treeName) throws Exception {
+            final String treeName) throws PersistitException {
         final Volume volume = mappedVolume(schemaName, treeName);
         return getExchange(session, volume, treeName);
     }
     
-    private Exchange getExchange(final Session session, final Volume volume, final String treeName) throws Exception {
-        return null;
+    @Override
+    public Exchange getExchange(final Session session, final Tree tree) throws PersistitException {
+        // TODO
+        throw new UnsupportedOperationException();
+    }
+    
+    private Exchange getExchange(final Session session, final Volume volume, final String treeName) throws PersistitException {
+        // TODO
+        throw new UnsupportedOperationException();
     }
 
+    @Override
     public void releaseExchange(final Session session, final Exchange exchange) {
-
+        // TODO
+    }
+    
+    @Override
+    public Transaction getTransaction() {
+        return db.getTransaction();
     }
 
+    @Override
     public void visitStorage(final StorageVisitor visitor,
-            final String treeName, final Object context) throws Exception {
+            final String treeName, final Object context) throws PersistitException {
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
@@ -216,11 +225,17 @@ public class PersistitServiceImpl implements PersistitService {
                 }
             }
         }
-
+    }
+    
+    @Override
+    public int volumeHandle(final Exchange exchange) {
+        // TODO
+        throw new UnsupportedOperationException();
     }
     
     private Volume mappedVolume(final String schema, final String treeName) {
-        return null;
+        // TODO
+        throw new UnsupportedOperationException();
     }
 
 }

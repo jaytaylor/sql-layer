@@ -2,13 +2,20 @@ package com.akiban.cserver.service.session;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.config.ConfigurationServiceImpl;
 import com.akiban.cserver.service.config.Property;
+import com.akiban.cserver.service.persistit.PersistitService;
+import com.akiban.cserver.service.persistit.PersistitServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
 
 public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
@@ -63,8 +70,8 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
     {
         private final ConfigurationService stubConfig;
 
-        private UnitTestPersistitStore(ConfigurationService config) throws Exception {
-            super(config);
+        private UnitTestPersistitStore(ConfigurationService config, PersistitService ps) throws Exception {
+            super(ps);
             stubConfig = config;
         }
 
@@ -128,7 +135,9 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
     {
         final ConfigurationServiceImpl stubConfig = new TestConfigService();
         stubConfig.start();
-        UnitTestPersistitStore store = new UnitTestPersistitStore(stubConfig);
+        PersistitService persistitStore = new PersistitServiceImpl(stubConfig);
+        persistitStore.start();
+        UnitTestPersistitStore store = new UnitTestPersistitStore(stubConfig, persistitStore);
         store.start();
         return store;
     }

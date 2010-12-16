@@ -46,6 +46,7 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
 import com.persistit.Exchange;
@@ -79,6 +80,8 @@ public class PersistitStoreSchemaManager implements CServerConstants,
     private final PersistitStore store;
 
     private final Set<ColumnName> knownColumns = new HashSet<ColumnName>(100);
+    
+    final SchemaId schemaId = new SchemaId(0);
 
     // TODO -Initialize as an empty AIS - needed for a unit test
     private AkibaInformationSchema ais;
@@ -177,14 +180,14 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         this.ais = createEmptyAIS();
     }
 
-    private void populateSchema(final List<CreateTableStruct> result)
+    private void populateSchema(final Session session, final List<CreateTableStruct> result)
             throws PersistitException {
         Exchange ex1 = null;
         Exchange ex2 = null;
 
         try {
-            ex1 = store.getExchange(SCHEMA_TREE_NAME);
-            ex2 = store.getExchange(SCHEMA_TREE_NAME);
+            ex1 = store.getExchange(session, SCHEMA_TREE_NAME);
+            ex2 = store.getExchange(session, SCHEMA_TREE_NAME);
             ex1.clear().append(BY_NAME);
             final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
 
@@ -213,8 +216,8 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         } catch (Throwable t) {
             LOG.error("createTable failed", t);
         } finally {
-            store.releaseExchange(ex1);
-            store.releaseExchange(ex2);
+            store.releaseExchange(session, ex1);
+            store.releaseExchange(session, ex2);
         }
     }
 
@@ -262,7 +265,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
      * @throws InvalidOperationException
      *             if the table isn't valid (or can't be parsed)
      */
-    void createTable(final String useSchemaName, final String ddl, RowDefCache rowDefCache, CreateTableResult result)
+    void createTable(final Session session, final String useSchemaName, final String ddl, RowDefCache rowDefCache, CreateTableResult result)
             throws InvalidOperationException, PersistitException {
         Exchange ex = null;
 
@@ -336,7 +339,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         }
 
         try {
-            ex = store.getExchange(SCHEMA_TREE_NAME);
+            ex = store.getExchange(session, SCHEMA_TREE_NAME);
 
             String schemaName = tableDef.getCName().getSchema();
             if (schemaName == null) {
@@ -381,7 +384,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             // }
             // return e.getResult();
         } finally {
-            store.releaseExchange(ex);
+            store.releaseExchange(session, ex);
         }
     }
 
@@ -395,7 +398,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
      * @throws InvalidOperationException
      *             if the table is protected
      */
-    void dropCreateTable(final String schemaName, final String tableName)
+    void dropCreateTable(final Session session, final String schemaName, final String tableName)
             throws PersistitException {
 
         if (AKIBA_INFORMATION_SCHEMA.equals(schemaName)
@@ -406,8 +409,8 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         Exchange ex1 = null;
         Exchange ex2 = null;
         try {
-            ex1 = store.getExchange(SCHEMA_TREE_NAME);
-            ex2 = store.getExchange(SCHEMA_TREE_NAME);
+            ex1 = store.getExchange(session, SCHEMA_TREE_NAME);
+            ex2 = store.getExchange(session, SCHEMA_TREE_NAME);
             ex1.clear().append(BY_NAME).append(schemaName).append(tableName);
             final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
 
@@ -422,15 +425,15 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             throw e;
         } finally {
             if (ex1 != null) {
-                store.releaseExchange(ex1);
+                store.releaseExchange(session, ex1);
             }
             if (ex2 != null) {
-                store.releaseExchange(ex2);
+                store.releaseExchange(session, ex2);
             }
         }
     }
 
-    private List<CreateTableStruct> getSchemaStructs() throws Exception {
+    private List<CreateTableStruct> getSchemaStructs(final Session session) throws Exception {
         Transaction transaction = store.getDb().getTransaction();
         final List<CreateTableStruct> result = new ArrayList<CreateTableStruct>();
         transaction.run(new TransactionRunnable() {
@@ -438,7 +441,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             @Override
             public void runTransaction() throws PersistitException,
                     RollbackException {
-                populateSchema(result);
+                populateSchema(session, result);
             }
         });
         return result;
@@ -526,7 +529,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
                     "non-experimental mode is deprecated.");
         }
 
-        this.ais = createFreshAIS(getSchemaStructs());
+        this.ais = createFreshAIS(getSchemaStructs(new SessionImpl()));
         installAIS();
         new Writer(new CServerAisTarget(store)).save(ais);
     }
@@ -578,7 +581,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         }
         return Collections.unmodifiableList(ret);
     }
-
+    
     public AkibaInformationSchema getAis() {
         return ais;
     }
@@ -676,7 +679,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
 
         StringBuilder builder = new StringBuilder();
 
-        for (CreateTableStruct table : getSchemaStructs()) {
+        for (CreateTableStruct table : getSchemaStructs(new SessionImpl())) {
             if (table.getSchemaName().equals("akiba_information_schema")) {
                 continue;
             }
@@ -697,18 +700,18 @@ public class PersistitStoreSchemaManager implements CServerConstants,
 
     @Override
     public SchemaId getSchemaID() throws Exception {
-        return store.getPropertiesManager().getSchemaId();
+        return schemaId;
     }
 
     @Override
     public void forceSchemaGenerationUpdate() throws Exception {
-        store.getPropertiesManager().incrementSchemaId();
+        schemaId.incrementGeneration();
     }
 
     @Override
     public void createTable(final Session session, String schemaName, String DDL) throws Exception {
         store.createTable(session, schemaName, DDL);
-        store.getPropertiesManager().incrementSchemaId();
+        schemaId.incrementGeneration();
         acquireAIS();
     }
 
@@ -717,23 +720,6 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         dropGroups(session, Arrays.asList(TableName.create(schema, tableName)));
     }
 
-    /**
-     * Drops all tables. If this succeeds, the schema generation will be
-     * incremented.
-     * 
-     * @return the drop result
-     * @throws Exception
-     */
-    @Override
-    public void dropAllTables(final Session session) throws Exception {
-        try {
-            final Collection<Integer> dropTables = getTablesToRefIds().values();
-            store.dropTables(session, dropTables);
-            store.getPropertiesManager().incrementSchemaId();
-        } finally {
-            acquireAIS();
-        }
-    }
 
     private void dropGroups(final Session session, Collection<TableName> containingTables)
             throws Exception {
@@ -798,7 +784,7 @@ public class PersistitStoreSchemaManager implements CServerConstants,
         List<Integer> dropTables = grouping.traverse(visitor);
         try {
             store.dropTables(session, dropTables);
-            store.getPropertiesManager().incrementSchemaId();
+            schemaId.incrementGeneration();
         } finally {
             acquireAIS();
         }

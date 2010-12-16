@@ -275,8 +275,6 @@ public interface Store extends Service<Store> {
      */
     void removeCommittedUpdateListener(final CommittedUpdateListener listener);
 
-    SchemaId getSchemaId();
-
     AkibaInformationSchema getAis();
 
     boolean isDeferIndexes();
@@ -286,4 +284,7 @@ public interface Store extends Service<Store> {
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
     SchemaManager getSchemaManager();
+    
+    // TODO - temporary
+    SchemaId getSchemaId() throws Exception;
 }

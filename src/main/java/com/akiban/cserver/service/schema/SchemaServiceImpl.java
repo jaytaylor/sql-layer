@@ -36,11 +36,11 @@ public final class SchemaServiceImpl implements SchemaService, JmxManageable, Se
         AkibaInformationSchema ais = manager.getAisCopy();
         return CSVTarget.toString(ais).split("\\n");
     }
-
-    @Override
-    public void dropAllTables() throws Exception {
-        manager.dropAllTables(new SessionImpl());
-    }
+//
+//    @Override
+//    public void dropAllTables() throws Exception {
+//        manager.dropAllTables(new SessionImpl());
+//    }
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {

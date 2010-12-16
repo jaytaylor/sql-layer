@@ -62,7 +62,7 @@ public interface SchemaMXBean {
      */
     void dropTable(final Session session, String schema, String tableName) throws Exception;
 
-    void dropAllTables(final Session session) throws Exception;
+//    void dropAllTables(final Session session) throws Exception;
 
     /**
      * Drops a schema and all of its tables.
@@ -93,4 +93,5 @@ public interface SchemaMXBean {
      *             if there was a problem in getting the info
      */
     public List<String> getDDLs() throws Exception;
+
 }

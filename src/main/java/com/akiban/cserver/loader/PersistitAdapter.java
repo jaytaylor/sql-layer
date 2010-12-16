@@ -58,7 +58,7 @@ public class PersistitAdapter
         columnPositions = task.columnPositions();
         dbRow = new Object[leafTable.getColumns().size()];
         rowData = new RowData(new byte[ROW_DATA_BUFFER_SIZE]);
-        exchange = store.getExchange(leafRowDef, null);
+        exchange = store.getExchange(session, leafRowDef, null);
         logState();
     }
 
@@ -89,7 +89,7 @@ public class PersistitAdapter
     public void close() throws InvalidOperationException, PersistitException
     {
         store.updateTableStats(session, leafRowDef, rowCount);
-        store.releaseExchange(exchange);
+        store.releaseExchange(session, exchange);
     }
 
     // parentColumns are columns that may be present in
