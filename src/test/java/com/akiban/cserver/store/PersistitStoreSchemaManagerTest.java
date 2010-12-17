@@ -1,8 +1,5 @@
 package com.akiban.cserver.store;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -21,28 +18,22 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
 
-public final class PersistitStoreSchemaManagerTest {
+public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
 
     private final static String SCHEMA = "my_schema";
     private final static Pattern REGEX = Pattern.compile("CREATE TABLE `(\\w+)`\\.(\\w+)");
 
-    private PersistitStore store;
-    
-    protected final static Session session = new SessionImpl();
-
     PersistitStoreSchemaManager manager;
-
+ 
     @Before
     public void setUp() throws Exception {
-        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
-        manager = store.getSchemaManager();
+        super.setUp();
+        manager = getSchemaManager();
         assertEquals("user tables in AIS", 0, manager.getAisCopy().getUserTables().size());
         assertTables("user tables");
         assertDDLS();
@@ -55,7 +46,7 @@ public final class PersistitStoreSchemaManagerTest {
             assertTables("user tables");
             assertDDLS();
         } finally {
-            store.stop();
+            super.tearDown();
         }
     }
 

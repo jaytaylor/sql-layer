@@ -1,16 +1,6 @@
 package com.akiban.cserver.api;
 
-import com.akiban.cserver.service.logging.LoggingService;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
-import com.akiban.cserver.store.RowCollector;
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
-import com.akiban.cserver.api.dml.scan.*;
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.Store;
-import org.junit.Test;
+import static com.akiban.cserver.api.DMLFunctionsImpl.doScan;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -18,10 +8,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static com.akiban.cserver.api.DMLFunctionsImpl.doScan;
-import static junit.framework.Assert.*;
+import org.junit.Test;
 
-public final class DMLFunctionsImplTest {
+import com.akiban.cserver.CServerTestCase;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.dml.scan.Cursor;
+import com.akiban.cserver.api.dml.scan.CursorId;
+import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
+import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
+import com.akiban.cserver.api.dml.scan.ScanRequest;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.service.logging.LoggingServiceImpl;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.store.RowCollector;
+import com.akiban.cserver.store.Store;
+
+public final class DMLFunctionsImplTest extends CServerTestCase {
+    
     private static class StringRowCollector implements RowCollector {
         private final List<String> strings;
         private final int tableId;
@@ -155,25 +158,17 @@ public final class DMLFunctionsImplTest {
         }
     }
 
-    private static class TestDML extends DMLFunctionsImpl {
+    private class TestDML extends DMLFunctionsImpl {
         private final StringRowCollector collector;
 
         private TestDML(String... rowsToCollect) {
-            super(getStore(), new LoggingServiceImpl());
+            super(store, new LoggingServiceImpl());
             collector = new StringRowCollector(1, rowsToCollect);
         }
 
         @Override
         protected RowCollector getRowCollector(final Session session, ScanRequest request) {
             return collector;
-        }
-
-        private static Store getStore() {
-            try {
-                return UnitTestServiceManagerFactory.getStoreForUnitTests();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 

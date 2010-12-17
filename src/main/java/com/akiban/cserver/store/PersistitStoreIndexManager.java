@@ -27,7 +27,7 @@ import com.persistit.TransactionRunnable;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 
-public class PersistitStoreIndexManager {
+public class PersistitStoreIndexManager implements IndexManager {
 
     private static final Log LOG = LogFactory
             .getLog(PersistitStoreIndexManager.class.getName());
@@ -63,15 +63,25 @@ public class PersistitStoreIndexManager {
     }
 
     public void startUp() {
+        
     }
-
+    
     public void shutDown() {
+        
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#analyzeTable(com.akiban.cserver.service.session.Session, com.akiban.cserver.RowDef)
+     */
+    @Override
     public void analyzeTable(final Session session, final RowDef rowDef) throws Exception {
         analyzeTable(session, rowDef, DEFAULT_SAMPLE_SIZE - 1);
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#analyzeTable(com.akiban.cserver.service.session.Session, com.akiban.cserver.RowDef, int)
+     */
+    @Override
     public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize)
             throws Exception {
         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
@@ -79,6 +89,10 @@ public class PersistitStoreIndexManager {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#deleteIndexAnalysis(com.akiban.cserver.service.session.Session, com.akiban.cserver.IndexDef)
+     */
+    @Override
     public void deleteIndexAnalysis(final Session session, final IndexDef indexDef) throws PersistitException {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
@@ -114,6 +128,10 @@ public class PersistitStoreIndexManager {
         });
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#analyzeIndex(com.akiban.cserver.service.session.Session, com.akiban.cserver.IndexDef, int)
+     */
+    @Override
     public void analyzeIndex(final Session session, final IndexDef indexDef, final int sampleSize)
             throws InvalidOperationException, PersistitException {
 
@@ -297,6 +315,10 @@ public class PersistitStoreIndexManager {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#populateTableStatistics(com.akiban.cserver.service.session.Session, com.akiban.cserver.TableStatistics)
+     */
+    @Override
     public void populateTableStatistics(final Session session, final TableStatistics tableStatistics)
             throws Exception {
         final int tableId = tableStatistics.getRowDefId();

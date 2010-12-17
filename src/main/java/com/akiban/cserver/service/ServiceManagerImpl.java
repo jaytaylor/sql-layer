@@ -12,15 +12,9 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
-import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.service.logging.LoggingService;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.persistit.PersistitService;
-import com.akiban.cserver.service.persistit.PersistitServiceImpl;
-import com.akiban.cserver.service.schema.SchemaServiceImpl;
 import com.akiban.cserver.service.session.SessionService;
-import com.akiban.cserver.service.session.SessionServiceImpl;
-import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 
 public class ServiceManagerImpl implements ServiceManager, JmxManageable
@@ -76,28 +70,30 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     public SessionService getSessionService() {
         return getService(SessionService.class);
     }
+    
+    @Override
+    public PersistitService getPersistitService() {
+        return getService(PersistitService.class);
+    }
 
     public void startServices() throws Exception {
 
-        JmxRegistryServiceImpl jmxRegistry = new JmxRegistryServiceImpl();
-        startAndPut(jmxRegistry, jmxRegistry);
+        Service<JmxRegistryService> jmxRegistryService = factory.jmxRegistryService();
+        JmxRegistryService jmxRegistry = jmxRegistryService.cast();
+        
+        startAndPut(jmxRegistryService, jmxRegistry);
         startAndPut(factory.configurationService(), jmxRegistry);
 
         jmxRegistry.register(this);
         ConfigurationService configService = getServiceAsService(ConfigurationService.class).cast();
         servicesDebugHooks(configService);
 
-        startAndPut(new LoggingServiceImpl(), jmxRegistry);
-        startAndPut(new SessionServiceImpl(), jmxRegistry);
-        
-        // TODO: I think it would be better to use dependency injection - PDB
-        PersistitService persistitService = new PersistitServiceImpl(configService);
-        startAndPut(persistitService, jmxRegistry);
-        Store store = new PersistitStore(persistitService);
-        startAndPut(store, jmxRegistry);
+        startAndPut(factory.loggingService(), jmxRegistry);
+        startAndPut(factory.sessionService(), jmxRegistry);
+        startAndPut(factory.persistitService(), jmxRegistry);
+        startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
-        startAndPut(new SchemaServiceImpl( store.getSchemaManager() ), jmxRegistry);
         setServiceManager(this);
     }
 
@@ -205,7 +201,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
      */
     public static void main(String[] ignored) throws Exception {
         final DefaultServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
-        ServiceManager sm = serviceManagerFactory.serviceManager();
+        ServiceManager sm = new ServiceManagerImpl(serviceManagerFactory);
         sm.startServices();
         Object foo = new Object();
         synchronized (foo) {

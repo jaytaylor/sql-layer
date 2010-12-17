@@ -88,6 +88,7 @@ public class PersistitAdapter
 
     public void close() throws InvalidOperationException, PersistitException
     {
+        store.flushIndexes(session);
         store.updateTableStats(session, leafRowDef, rowCount);
         store.releaseExchange(session, exchange);
     }

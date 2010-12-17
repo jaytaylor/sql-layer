@@ -13,6 +13,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
@@ -23,7 +24,7 @@ import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
-public class PersistitServiceImpl implements PersistitService {
+public class PersistitServiceImpl implements PersistitService, Service<PersistitService> {
 
     private final static int MEGA = 1024 * 1024;
 

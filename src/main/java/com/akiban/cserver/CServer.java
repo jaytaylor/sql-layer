@@ -7,8 +7,9 @@ import com.akiban.cserver.manage.ManageMXBean;
 import com.akiban.cserver.manage.ManageMXBeanImpl;
 import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import com.akiban.cserver.service.Service;
-import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerFactory;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 
@@ -45,7 +46,6 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
      */
     private static final String CSERVER_NAME = System.getProperty("cserver.name");
 
-    private final ServiceManager serviceManager;
     
     private final int cserverPort = CSERVER_PORT; // TODO - get from
                                                   // ConfigurationService
@@ -54,8 +54,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
     
     private final JmxObjectInfo jmxObjectInfo;
 
-    public CServer(final ServiceManager serviceManager) {
-        this.serviceManager = serviceManager;
+    public CServer() {
         this.jmxObjectInfo = new JmxObjectInfo("CSERVER", new ManageMXBeanImpl(
                 this), ManageMXBean.class);
     }
@@ -69,7 +68,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
         _shutdownHook = new Thread(new Runnable() {
             public void run() {
                 try {
-                    serviceManager.stopServices();
+                    ServiceManagerImpl.get().stopServices();
                 } catch (Exception e) {
                     LOG.warn("Caught exception while stopping services", e);
                 }
@@ -99,7 +98,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
 
     public ServiceManager getServiceManager()
     {
-        return serviceManager;
+        return ServiceManagerImpl.get();
     }
 
     @Override
@@ -124,8 +123,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
      */
     public static void main(String[] args) throws Exception
     {
-        final ServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
-        final ServiceManager serviceManager = serviceManagerFactory.serviceManager();
+        final ServiceManager serviceManager = DefaultServiceManagerFactory.createServiceManager();
         serviceManager.startServices();
     }
 }

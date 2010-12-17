@@ -58,21 +58,21 @@ public final class ConfigurationServiceImplTest {
     }
 
     @Test(expected= ServiceNotStartedException.class)
-    public void stoppedGetProperties() {
+    public void stoppedGetProperties() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
         service.getProperties();
     }
 
     @Test(expected= ServiceNotStartedException.class)
-    public void stoppedGetPropertyDefault() {
+    public void stoppedGetPropertyDefault() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
         service.getProperty("mod1", "key1", "default1");
     }
 
     @Test(expected=ServiceNotStartedException.class)
-    public void stoppedGetProperty() {
+    public void stoppedGetProperty() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
         service.getProperty("mod1", "key1");

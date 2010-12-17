@@ -69,7 +69,6 @@ public class PersistitLoader
             persistitAdapter.close();
             tracker.info(String.format("Loaded persistit for %s: %s rows", task.artifactTableName(), count[0]));
         } finally {
-            store.flushIndexes();
             store.setDeferIndexes(deferIndexes);
         }
     }

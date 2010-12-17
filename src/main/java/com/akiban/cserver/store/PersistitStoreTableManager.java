@@ -26,7 +26,7 @@ import com.persistit.exception.PersistitException;
  * @author peter
  * 
  */
-public class PersistitStoreTableManager {
+public class PersistitStoreTableManager implements TableManager {
 
     private static final Log LOG = LogFactory
             .getLog(PersistitStoreTableManager.class.getName());
@@ -100,6 +100,10 @@ public class PersistitStoreTableManager {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.TableManager#getTableStatus(int)
+     */
+    @Override
     public synchronized TableStatus getTableStatus(final int rowDefId)
             throws PersistitException {
         TableStatus tableStatus = statusMap.get(rowDefId);
@@ -151,6 +155,10 @@ public class PersistitStoreTableManager {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.TableManager#loadStatus(com.akiban.cserver.store.TableStatus)
+     */
+    @Override
     public void loadStatus(final TableStatus tableStatus)
             throws PersistitException {
         final Session session = new SessionImpl();
@@ -162,6 +170,10 @@ public class PersistitStoreTableManager {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.TableManager#saveStatus(com.akiban.cserver.store.TableStatus)
+     */
+    @Override
     public void saveStatus(final TableStatus tableStatus)
             throws PersistitException {
         final Session session = new SessionImpl();
@@ -173,6 +185,10 @@ public class PersistitStoreTableManager {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.TableManager#deleteStatus(com.akiban.cserver.store.TableStatus)
+     */
+    @Override
     public void deleteStatus(final TableStatus tableStatus)
             throws PersistitException {
         final Session session = new SessionImpl();
@@ -186,6 +202,10 @@ public class PersistitStoreTableManager {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.TableManager#deleteStatus(int)
+     */
+    @Override
     public void deleteStatus(final int rowDefId) throws PersistitException {
         final Session session = new SessionImpl();
         Exchange exchange = statusExchange(session);

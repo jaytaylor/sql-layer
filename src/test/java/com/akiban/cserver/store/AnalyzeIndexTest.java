@@ -11,7 +11,7 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
 
 public class AnalyzeIndexTest extends AbstractScanBase {
-
+    
     @Test
     public void testAnalyzeAllIndexes() throws Exception {
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {

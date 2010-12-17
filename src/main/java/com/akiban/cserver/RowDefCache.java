@@ -1,7 +1,7 @@
 package com.akiban.cserver;
 
 import com.akiban.ais.model.*;
-import com.akiban.cserver.store.PersistitStoreTableManager;
+import com.akiban.cserver.store.TableManager;
 import com.akiban.cserver.store.TableStatus;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.persistit.exception.PersistitException;
@@ -108,7 +108,7 @@ public class RowDefCache implements CServerConstants {
         hashCode = cacheMap.hashCode();
     }
 
-    public synchronized void fixUpOrdinals(PersistitStoreTableManager tableManager) throws PersistitException
+    public synchronized void fixUpOrdinals(TableManager tableManager) throws PersistitException
     {
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {

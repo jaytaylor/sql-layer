@@ -2,8 +2,9 @@ package com.akiban.cserver;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.io.MessageTarget;
@@ -12,30 +13,28 @@ import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
-import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.PersistitStoreSchemaManager;
 
-public class CServerAisSourceTest extends TestCase implements CServerConstants {
+public class CServerAisSourceTest extends CServerTestCase implements CServerConstants {
 
     private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
 
-    private PersistitStore store;
-
     private AkibaInformationSchema ais;
 
+    @Before
     @Override
     public void setUp() throws Exception {
-        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
+        super.setUp();
 //        store.getRowDefCache().setAIS(new PersistitStoreSchemaManager(store).createEmptyAIS());
         this.ais = new DDLSource().buildAIS(DDL_FILE_NAME);
     }
 
+    @After
     @Override
     public void tearDown() throws Exception {
-        store.stop();
-        store = null;
+        super.tearDown();
     }
 
+    @Test
     public void testCServerAis() throws Exception {
         // Store AIS data in Chunk Server
         final Target target = new CServerAisTarget(store);
@@ -53,6 +52,7 @@ public class CServerAisSourceTest extends TestCase implements CServerConstants {
         assertTrue(equals(ais, aisCopy));
     }
 
+    @Test
     public void testReloadAIS() throws Exception {
         // Store AIS data in Chunk Server
         final Target target = new CServerAisTarget(store);

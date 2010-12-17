@@ -2,7 +2,7 @@ package com.akiban.cserver;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.store.PersistitStoreTableManager;
+import com.akiban.cserver.store.TableManager;
 import com.persistit.exception.PersistitException;
 
 public class RowDefCacheFactory
@@ -23,7 +23,7 @@ public class RowDefCacheFactory
     private static class FakeRowDefCache extends RowDefCache
     {
         @Override
-        public void fixUpOrdinals(PersistitStoreTableManager tableManager) throws PersistitException
+        public void fixUpOrdinals(TableManager tableManager) throws PersistitException
         {
             assert tableManager == null;
             for (RowDef groupRowDef : getRowDefs()) {

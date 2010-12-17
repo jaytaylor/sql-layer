@@ -88,7 +88,7 @@ public class ManageMXBeanImpl implements ManageMXBean
 
     @Override
     public void flushIndexes() {
-        getStore().flushIndexes();
+        getStore().flushIndexes(new SessionImpl());
     }
 
    

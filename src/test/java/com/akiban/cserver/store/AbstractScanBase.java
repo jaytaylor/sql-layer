@@ -13,17 +13,15 @@ import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerTestSuite;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
+import com.akiban.cserver.service.UnitTestServiceManagerFactory;
 import com.akiban.util.ByteBufferFactory;
 
-public abstract class AbstractScanBase implements CServerConstants {
+public abstract class AbstractScanBase extends CServerTestSuite implements CServerConstants {
 
     protected final static String DDL_FILE_NAME = "src/test/resources/scan_rows_test.ddl";
 
@@ -32,12 +30,7 @@ public abstract class AbstractScanBase implements CServerConstants {
     protected final static String GROUP_SCHEMA = "akiba_objects";
 
     protected final static boolean VERBOSE = false;
-
-    protected static PersistitStore store;
     
-    protected final static Session session = new SessionImpl();
-
-    protected static RowDefCache rowDefCache;
 
     protected static SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
 
@@ -45,8 +38,7 @@ public abstract class AbstractScanBase implements CServerConstants {
 
     @BeforeClass
     public static void setUpSuite() throws Exception {
-        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
-        rowDefCache = store.getRowDefCache();
+        CServerTestSuite.setUpSuite();
         // initially empty
         final AkibaInformationSchema ais0 = store.getAis();
         
@@ -66,9 +58,7 @@ public abstract class AbstractScanBase implements CServerConstants {
 
     @AfterClass
     public static void tearDownSuite() throws Exception {
-        store.stop();
-        store = null;
-        rowDefCache = null;
+        CServerTestSuite.tearDownSuite();
         tableMap.clear();
     }
 

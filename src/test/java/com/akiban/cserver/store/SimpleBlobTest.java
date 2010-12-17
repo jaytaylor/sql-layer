@@ -2,10 +2,10 @@ package com.akiban.cserver.store;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Before;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
@@ -13,6 +13,10 @@ import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.UnitTestServiceManagerFactory;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 
 public class SimpleBlobTest extends TestCase implements CServerConstants {
 
@@ -23,21 +27,27 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
             + "PRIMARY KEY (a)"
             + ") ENGINE=AKIBANDB;";
 
-    private PersistitStore store;
+    private Store store;
+    
+    private ServiceManager serviceManager;
 
     protected final static Session session = new SessionImpl();
 
     private RowDefCache rowDefCache;
 
+    @Before
     @Override
     public void setUp() throws Exception {
-        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
+        serviceManager = UnitTestServiceManagerFactory.createServiceManager();
+        serviceManager.startServices();
+        store = serviceManager.getStore();
         rowDefCache = store.getRowDefCache();
         final AkibaInformationSchema ais = new DDLSource().buildAISFromString(CREATE_TABLE_STATEMENT1);
         rowDefCache.setAIS(ais);
         store.fixUpOrdinals();
     }
 
+    @After
     @Override
     public void tearDown() throws Exception {
         store.stop();

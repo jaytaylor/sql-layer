@@ -127,7 +127,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(final PersistitService ps) throws Exception {
+    public PersistitStore(final PersistitService ps) {
         this.ps = ps;
         this.rowDefCache = new RowDefCache();
     }
@@ -454,11 +454,11 @@ public class PersistitStore implements CServerConstants, Store {
         return object;
     }
 
-    public PersistitStoreTableManager getTableManager() {
+    public TableManager getTableManager() {
         return errorIfNull("table manager", tableManager);
     }
 
-    public PersistitStoreIndexManager getIndexManager() {
+    public IndexManager getIndexManager() {
         return errorIfNull("index manager", indexManager);
     }
 
@@ -559,7 +559,7 @@ public class PersistitStore implements CServerConstants, Store {
         if (AKIBAN_SPECIAL_SCHEMA_FLAG.equals(schemaName)) {
             deferIndexes = ddl.contains(AKIBAN_SPECIAL_DEFER_INDEXES_FLAG);
             if (ddl.contains(AKIBAN_SPECIAL_FLUSH_INDEXES_FLAG)) {
-                flushIndexes();
+                flushIndexes(session);
             }
             if (ddl.contains(AKIBAN_SPECIAL_DELETE_INDEXES_FLAG)) {
                 deleteIndexes(session, ddl);
@@ -1738,7 +1738,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     public void buildIndexes(final Session session, final String ddl) {
-        flushIndexes();
+        flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
         final Set<RowDef> groupRowDefs = new HashSet<RowDef>();
@@ -1806,7 +1806,7 @@ public class PersistitStore implements CServerConstants, Store {
                         + rowDef.getSchemaName() + "." + rowDef.getTableName(),
                         e);
             }
-            flushIndexes();
+            flushIndexes(session);
             if (LOG.isInfoEnabled()) {
                 LOG.info("Inserted " + indexKeyCount
                         + " index keys into group " + rowDef.getSchemaName()
@@ -1815,9 +1815,9 @@ public class PersistitStore implements CServerConstants, Store {
         }
     }
 
-    public void flushIndexes() {
+    public void flushIndexes(final Session session) {
         try {
-            putAllDeferredIndexKeys(new SessionImpl());
+            putAllDeferredIndexKeys(session);
         } catch (Exception e) {
             LOG.error("Exception while trying "
                     + " to flush deferred index keys", e);

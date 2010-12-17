@@ -1,15 +1,18 @@
 package com.akiban.cserver;
 
+import static junit.framework.Assert.assertSame;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import junit.framework.Assert;
+
+import org.junit.Test;
+
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.UserTable;
-import junit.framework.Assert;
-import org.junit.Test;
-
-import static junit.framework.Assert.assertSame;
-import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 public class RowDefCacheTest
 {
