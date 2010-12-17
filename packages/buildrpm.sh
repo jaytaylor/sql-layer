@@ -2,6 +2,7 @@
 set -x
 set -e
 
+BUILD_VCS_NUMBER=$(bzr revision-info | sed "s/\([0-9]*\) .*/\1/")
 TEAMCITY=${TEAMCITY:-0}
 PUBLISH=${PUBLISH:-0}
 rev=${BUILD_VCS_NUMBER:-1000}
@@ -22,7 +23,7 @@ tarball()
 	rm -rf ${cdir} rpmbuild ../target ${name}.tar.gz
 	mkdir -p ${cdir}
 	cp -r ../*        ${cdir}
-	cp -r ../../config        ${randir}
+	cp -r config        ${randir}
 	find ${cdir} -name .svn | xargs rm -rf
 	tar -C ${randir} -cf ${name}.tar . 
 	gzip ${name}.tar
