@@ -64,7 +64,7 @@ public class CServerLifecycleTest
         throws Exception
     {
         MessageRegistry.reset(); // In case a message registry is left over from a previous test in the same JVM.
-        serviceManager = UnitTestServiceManagerFactory.createServiceManager();
+        serviceManager = UnitTestServiceManagerFactory.createServiceManagerWithNetworkService();
         final Properties originalProperties = System.getProperties();
         try {
             final Properties testProperties = new Properties(System.getProperties());

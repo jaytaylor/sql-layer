@@ -15,6 +15,7 @@ import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
+import com.akiban.cserver.service.network.NetworkServiceImpl;
 
 /**
  * Extension of DefaultServiceManagerFactory that creates mock services for unit tests.
@@ -26,13 +27,19 @@ import com.akiban.cserver.service.network.NetworkService;
  */
 public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
 {
-    private final static File TESTDIR = new File("cserver-junit");
+    private final static File TESTDIR = new File("/tmp/cserver-junit");
     private final MockJmxRegistryService jmxRegistryService = new MockJmxRegistryService();
     private final TestConfigService configService = new TestConfigService();
     private final MockNetworkService networkService = new MockNetworkService(configService);
     
+    private final boolean withNetwork;
+    
     public static ServiceManagerImpl createServiceManager() {
-        return new ServiceManagerImpl(new UnitTestServiceManagerFactory());
+        return new ServiceManagerImpl(new UnitTestServiceManagerFactory(false));
+    }
+    
+    public static ServiceManagerImpl createServiceManagerWithNetworkService() {
+        return new ServiceManagerImpl(new UnitTestServiceManagerFactory(true));
     }
     
     public static ServiceManager getServiceManager() {
@@ -168,6 +175,10 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
             return tmpFile;
         }
     }
+    
+    private UnitTestServiceManagerFactory(final boolean withNetwork) {
+        this.withNetwork = withNetwork;
+    }
 
     @Override
     public Service<JmxRegistryService> jmxRegistryService() {
@@ -181,6 +192,9 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
     
     @Override
     public Service<NetworkService> networkService() {
+        if (withNetwork) {
+            return new NetworkServiceImpl(configService);
+        }
         return networkService;
     }
 }

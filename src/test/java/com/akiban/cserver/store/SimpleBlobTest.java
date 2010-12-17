@@ -2,14 +2,13 @@ package com.akiban.cserver.store;
 
 import java.nio.ByteBuffer;
 
-import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.Before;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
@@ -18,7 +17,7 @@ import com.akiban.cserver.service.UnitTestServiceManagerFactory;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 
-public class SimpleBlobTest extends TestCase implements CServerConstants {
+public class SimpleBlobTest extends CServerTestCase implements CServerConstants {
 
     private final static String CREATE_TABLE_STATEMENT1 = "CREATE TABLE `test`.`blobtest` ("
             + "`a` int,"
@@ -27,21 +26,11 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
             + "PRIMARY KEY (a)"
             + ") ENGINE=AKIBANDB;";
 
-    private Store store;
-    
-    private ServiceManager serviceManager;
-
-    protected final static Session session = new SessionImpl();
-
-    private RowDefCache rowDefCache;
 
     @Before
     @Override
     public void setUp() throws Exception {
-        serviceManager = UnitTestServiceManagerFactory.createServiceManager();
-        serviceManager.startServices();
-        store = serviceManager.getStore();
-        rowDefCache = store.getRowDefCache();
+        super.setUp();
         final AkibaInformationSchema ais = new DDLSource().buildAISFromString(CREATE_TABLE_STATEMENT1);
         rowDefCache.setAIS(ais);
         store.fixUpOrdinals();
@@ -50,9 +39,7 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
     @After
     @Override
     public void tearDown() throws Exception {
-        store.stop();
-        store = null;
-        rowDefCache = null;
+        super.tearDown();
     }
     
     public void testBlobs() throws Exception {
