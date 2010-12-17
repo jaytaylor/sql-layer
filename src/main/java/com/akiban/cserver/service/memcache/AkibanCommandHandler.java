@@ -1,11 +1,10 @@
 package com.akiban.cserver.service.memcache;
 
-import com.thimbleware.jmemcached.Key;
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.MemCacheDaemon;
 import com.thimbleware.jmemcached.LocalCacheElement;
-import com.thimbleware.jmemcached.protocol.Op;
+import com.thimbleware.jmemcached.protocol.Command;
 import com.thimbleware.jmemcached.protocol.CommandMessage;
 import com.thimbleware.jmemcached.protocol.ResponseMessage;
 import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
@@ -91,13 +90,13 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
         }
 
         CommandMessage<CACHE_ELEMENT> command = (CommandMessage<CACHE_ELEMENT>) event.getMessage();
-        Op cmdOp = command.op;
+        Command cmdOp = command.cmd;
 
         if(LOG.isDebugEnabled()) {
             StringBuilder msg = new StringBuilder();
-            msg.append(command.op);
+            msg.append(command.cmd);
             if(command.element != null) {
-                msg.append(" ").append(command.element.getKey());
+                msg.append(" ").append(command.element.getKeystring());
             }
             for(int i = 0; i < command.keys.size(); ++i) {
                 msg.append(" ").append(command.keys.get(i));
@@ -155,7 +154,7 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
     protected void handleStats(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
         String option = "";
         if(command.keys.size() > 0) {
-            option = new String(command.keys.get(0).bytes);
+            option = new String(command.keys.get(0));
         }
         Map<String, Set<String>> statResponse = null;
         // statResponse = cache.stat(option)
@@ -217,11 +216,11 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
     }
 
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
-        Key[] keys = new Key[command.keys.size()];
+        String[] keys = new String[command.keys.size()];
         keys = command.keys.toArray(keys);
         CACHE_ELEMENT[] results = null;
 
-        byte[] key = keys[0].bytes;
+        byte[] key = keys[0].getBytes();
         byte[] result_bytes = null;
 
         if(key != null) {
