@@ -171,32 +171,6 @@ public final class PersistitStoreSchemaManagerTest {
     }
 
     @Test
-    public void testDropAllTables() throws Exception{
-
-        createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
-
-        assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
-                "create database if not exists `my_schema`",
-                "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-
-        createTable(SCHEMA, "CREATE TABLE two (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertTables("user tables",
-                "CREATE TABLE %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
-                "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create table `akiba_objects`.`_akiba_one`(`one$id` int ,  INDEX _akiba_one$PK_1(`one$id`)) engine=akibandb",
-                "create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine=akibandb",
-                "create database if not exists `my_schema`",
-                "use `my_schema`",
-                "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
-                "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
-
-        manager.dropAllTables(session);
-    }
-
-    @Test
     public void testAddDropTwoTablesOneGroupDropRoot() throws Exception {
         createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 

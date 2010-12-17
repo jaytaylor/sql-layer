@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import junit.framework.TestCase;
 
 import org.junit.Test;
@@ -23,6 +20,10 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.persistit.PersistitService;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.ByteBufferFactory;
 import com.persistit.Exchange;
@@ -373,7 +374,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
     public void testDropTable() throws Exception {
         final TestData td = new TestData(5, 5, 5, 5);
         td.insertTestRows();
-        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
+        Volume volume = store.getDb().getVolume(PersistitService.VOLUME_NAME);
         assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
@@ -426,7 +427,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
     @Test
     public void testBug47() throws Exception {
         //
-        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
+        Volume volume = store.getDb().getVolume(PersistitService.VOLUME_NAME);
         for (int loop = 0; loop < 20; loop++) {
             final TestData td = new TestData(10, 10, 10, 10);
             td.insertTestRows();
@@ -739,7 +740,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         dumpIndexes(new PrintWriter(a = new StringWriter()));
         store.flushIndexes();
         dumpIndexes(new PrintWriter(b = new StringWriter()));
-        store.deleteIndexes("");
+        store.deleteIndexes(new SessionImpl(), "");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
         store.buildIndexes(session, "");
         dumpIndexes(new PrintWriter(d = new StringWriter()));
@@ -754,7 +755,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         td.insertTestRows();
         final StringWriter a, b, c;
         dumpIndexes(new PrintWriter(a = new StringWriter()));
-        store.deleteIndexes("");
+        store.deleteIndexes(new SessionImpl(), "");
         dumpIndexes(new PrintWriter(b = new StringWriter()));
         store.buildIndexes(session, "");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
@@ -878,7 +879,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
 
     private void dumpIndex(final IndexDef indexDef, final PrintWriter pw)
             throws Exception {
-        final Exchange ex = store.getExchange(indexDef.getRowDef(), indexDef);
+        final Exchange ex = store.getExchange(new SessionImpl(), indexDef.getRowDef(), indexDef);
         ex.clear();
         while (ex.next(true)) {
             pw.println(ex.getKey());
@@ -887,12 +888,12 @@ public class PersistitStoreWithAISTest extends TestCase implements
     }
 
     private boolean isGone(final String treeName) throws Exception {
-        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
+        Volume volume = store.getDb().getVolume(PersistitService.VOLUME_NAME);
         final Tree tree = volume.getTree(treeName, false);
         if (tree == null) {
             return true;
         }
-        final Exchange exchange = store.getExchange(treeName);
+        final Exchange exchange = store.getExchange(new SessionImpl(), treeName);
         exchange.clear();
         return !exchange.hasChildren();
     }

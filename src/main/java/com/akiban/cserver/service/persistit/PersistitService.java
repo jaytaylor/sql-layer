@@ -15,6 +15,14 @@ import com.persistit.exception.PersistitException;
  * 
  */
 public interface PersistitService extends Service<PersistitService> {
+    
+    final static String VOLUME_NAME = "akiban_data";
+    
+    final static String SCHEMA_TREE_NAME = "_schema_";
+    
+    final static String BY_ID = "byId";
+
+    final static String BY_NAME = "byName";
 
     Persistit getDb();
     

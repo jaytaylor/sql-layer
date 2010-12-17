@@ -157,7 +157,7 @@ public class ScanRowsTest extends AbstractScanBase {
                             bitMap, findIndexId(rowDef, userRowDef, 0))); // position of aa1 in the aaa table
         }
 
-        store.deleteIndexes("");
+        store.deleteIndexes(session, "");
 
         {
             final RowDef userRowDef = userRowDef("aaaa");

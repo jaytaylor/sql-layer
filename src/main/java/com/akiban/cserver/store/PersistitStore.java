@@ -168,7 +168,7 @@ public class PersistitStore implements CServerConstants, Store {
     public Persistit getDb() {
         return ps.getDb();
     }
-    
+
     public SchemaId getSchemaId() throws Exception {
         return schemaManager.getSchemaID();
     }
@@ -576,8 +576,8 @@ public class PersistitStore implements CServerConstants, Store {
                 @Override
                 public void runTransaction() {
                     try {
-                        schemaManager.createTable(session, schemaName, ddl, rowDefCache,
-                                result);
+                        schemaManager.createTable(session, schemaName, ddl,
+                                rowDefCache, result);
                     } catch (Exception e) {
                         throw new RollbackException(e);
                     }
@@ -1087,8 +1087,8 @@ public class PersistitStore implements CServerConstants, Store {
                 tablesToForget.clear();
                 for (final int rowDefId : myRowDefIds) {
                     final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-                    schemaManager.dropCreateTable(session, rowDef.getSchemaName(),
-                            rowDef.getTableName());
+                    schemaManager.dropCreateTable(session,
+                            rowDef.getSchemaName(), rowDef.getTableName());
                     tablesToForget.add(rowDef.getTableName());
                     final TableStatus ts = tableManager
                             .getTableStatus(rowDefId);
@@ -1116,7 +1116,7 @@ public class PersistitStore implements CServerConstants, Store {
                         }
                     }
                     if (deleteGroup) {
-                        schemaManager.dropCreateTable(session, 
+                        schemaManager.dropCreateTable(session,
                                 groupRowDef.getSchemaName(),
                                 groupRowDef.getTableName());
                         tableManager.getTableStatus(groupRowDef.getRowDefId())
@@ -1573,8 +1573,7 @@ public class PersistitStore implements CServerConstants, Store {
         iEx.getValue().clear();
         if (deferIndexes) {
             synchronized (deferredIndexKeys) {
-                final String treeName = iEx.getTree().getName();
-                SortedSet<KeyState> keySet = deferredIndexKeys.get(treeName);
+                SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx.getTree());
                 if (keySet == null) {
                     keySet = new TreeSet<KeyState>();
                     deferredIndexKeys.put(iEx.getTree(), keySet);
@@ -1694,16 +1693,18 @@ public class PersistitStore implements CServerConstants, Store {
 
         final int rowDefId = CServerUtil.getInt(valueBytes,
                 RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
-        final int expectedRowDefId = rowDef.getRowDefId();
-        if (rowDefId != expectedRowDefId && expectedRowDefId != 0) {
-            //
-            // TODO: Add code to here to evolve data to required
-            // expectedRowDefId
-            //
-            throw new InvalidOperationException(
-                    ErrorCode.MULTIGENERATIONAL_TABLE,
-                    "Unable to convert rowDefId " + rowDefId
-                            + " to expected rowDefId " + expectedRowDefId);
+        if (rowDef != null) {
+            final int expectedRowDefId = rowDef.getRowDefId();
+            if (rowDefId != expectedRowDefId) {
+                //
+                // TODO: Add code to here to evolve data to required
+                // expectedRowDefId
+                //
+                throw new InvalidOperationException(
+                        ErrorCode.MULTIGENERATIONAL_TABLE,
+                        "Unable to convert rowDefId " + rowDefId
+                                + " to expected rowDefId " + expectedRowDefId);
+            }
         }
         if (rowDataSize > rowDataBytes.length) {
             rowDataBytes = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
@@ -1783,7 +1784,7 @@ public class PersistitStore implements CServerConstants, Store {
                 hEx.getKey().clear();
                 // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
                 while (hEx.next(true)) {
-                    expandRowData(hEx, rowDef, rowData);
+                    expandRowData(hEx, null, rowData);
                     final int tableId = rowData.getRowDefId();
                     final RowDef userRowDef = rowDefCache.getRowDef(tableId);
                     if (userRowDefs.contains(userRowDef)) {

@@ -2,9 +2,12 @@ package com.akiban.cserver.service.persistit;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-
-import javax.help.UnsupportedOperationException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -54,16 +57,10 @@ public class PersistitServiceImpl implements PersistitService {
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
-    final static String SCHEMA_TREE_NAME = "_schema_";
-
-    final static String BY_ID = "byId";
-
-    final static String BY_NAME = "byName";
-
-    final static String VOLUME_NAME = "akiban_data";
-
     private final ConfigurationService configService;
 
+    private final static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
+    
     private Persistit db;
 
     public PersistitServiceImpl(final ConfigurationService configService) {
@@ -72,6 +69,8 @@ public class PersistitServiceImpl implements PersistitService {
 
     public synchronized void start() throws Exception {
         assert db == null;
+        // TODO - remove this when sure we don't need it
+        assert INSTANCE_COUNT.incrementAndGet() == 1;
         final Properties properties = configService.getModuleConfiguration(
                 PERSISTIT_MODULE_NAME).getProperties();
         //
@@ -161,6 +160,8 @@ public class PersistitServiceImpl implements PersistitService {
     }
 
     public synchronized void stop() throws Exception {
+        // TODO - remove this when sure we don't need it
+        assert INSTANCE_COUNT.decrementAndGet() == 0;
         if (db != null) {
             db.shutdownGUI();
             db.close();
@@ -192,18 +193,25 @@ public class PersistitServiceImpl implements PersistitService {
     
     @Override
     public Exchange getExchange(final Session session, final Tree tree) throws PersistitException {
-        // TODO
-        throw new UnsupportedOperationException();
+        final List<Exchange> list = exchangeList(session, tree);
+        if (list.isEmpty()) {
+            return new Exchange(tree);
+        } else {
+            return list.remove(list.size() - 1);
+        }
     }
     
     private Exchange getExchange(final Session session, final Volume volume, final String treeName) throws PersistitException {
-        // TODO
-        throw new UnsupportedOperationException();
+        final Tree tree = volume.getTree(treeName, true);
+        return getExchange(session, tree);
     }
 
     @Override
     public void releaseExchange(final Session session, final Exchange exchange) {
-        // TODO
+        exchange.getKey().clear();
+        exchange.getValue().clear();
+        final List<Exchange> list = exchangeList(session, exchange.getTree());
+        list.add(exchange);
     }
     
     @Override
@@ -229,13 +237,30 @@ public class PersistitServiceImpl implements PersistitService {
     
     @Override
     public int volumeHandle(final Exchange exchange) {
-        // TODO
-        throw new UnsupportedOperationException();
+         // TODO - implement this
+        return 0;
     }
     
     private Volume mappedVolume(final String schema, final String treeName) {
-        // TODO
-        throw new UnsupportedOperationException();
+        // TODO - Tablespace Mapping
+        return db.getVolume(VOLUME_NAME);
     }
 
+    private List<Exchange> exchangeList(final Session session, final Tree tree) {
+        Map<Tree, List<Exchange>> map = session.get("persistit", "exchangemap");
+        List<Exchange> list;
+        if (map == null) {
+            map = new HashMap<Tree, List<Exchange>>();
+            session.put("persistit", "exchangemap", map);
+            list = new ArrayList<Exchange>();
+            map.put(tree, list);
+        } else {
+            list = map.get(tree);
+            if (list == null) {
+                list = new ArrayList<Exchange>();
+                map.put(tree, list);
+            }
+        }
+        return list;
+    }
 }

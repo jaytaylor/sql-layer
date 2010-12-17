@@ -66,12 +66,12 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
         }
     }
 
-    public static class UnitTestPersistitStore extends PersistitStore
+    public static class UnitTestPersistitService extends PersistitServiceImpl
     {
         private final ConfigurationService stubConfig;
 
-        private UnitTestPersistitStore(ConfigurationService config, PersistitService ps) throws Exception {
-            super(ps);
+        private UnitTestPersistitService(ConfigurationService config) throws Exception {
+            super(config);
             stubConfig = config;
         }
 
@@ -131,13 +131,20 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
     }
 
     // TODO - this is a temporary way for unit tests to get a configured PersistitStore.
-    public static UnitTestPersistitStore getStoreForUnitTests() throws Exception
+    public static PersistitStore getStoreForUnitTests() throws Exception
     {
         final ConfigurationServiceImpl stubConfig = new TestConfigService();
         stubConfig.start();
-        PersistitService persistitStore = new PersistitServiceImpl(stubConfig);
-        persistitStore.start();
-        UnitTestPersistitStore store = new UnitTestPersistitStore(stubConfig, persistitStore);
+        final PersistitService persistitService = new UnitTestPersistitService(stubConfig);
+        persistitService.start();
+        PersistitStore store = new PersistitStore(persistitService) {
+            // TODO - temporary hack to stop the PersistitService (which now has a
+            // separate lifecycle) within unit tests.  Fix the tests.
+            public void stop() throws Exception {
+                super.stop();
+                persistitService.stop();
+            }
+        };
         store.start();
         return store;
     }

@@ -5,6 +5,7 @@ import junit.framework.TestCase;
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
@@ -41,12 +42,12 @@ public class CreateTableTest extends TestCase implements CServerConstants {
     public void testCreateTable() throws Exception {
         store.createTable(session, "foo", CREATE_TABLE_STATEMENT1);
         final Exchange ex = store.getDb().getExchange(
-                PersistitStore.VOLUME_NAME, PersistitStore.SCHEMA_TREE_NAME,
+                PersistitService.VOLUME_NAME, PersistitService.SCHEMA_TREE_NAME,
                 false);
         assertEquals(DDLSource.canonicalStatement(CREATE_TABLE_STATEMENT1), ex
-                .clear().append(PersistitStore.BY_ID).append(1).fetch()
+                .clear().append(PersistitService.BY_ID).append(1).fetch()
                 .getValue().getString());
-        ex.clear().append(PersistitStore.BY_ID).append(Key.AFTER).previous();
+        ex.clear().append(PersistitService.BY_ID).append(Key.AFTER).previous();
         assertEquals(1, ex.getKey().indexTo(-1).decodeInt());
     }
 
