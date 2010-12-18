@@ -19,4 +19,6 @@ public interface ServiceManagerFactory
     Service<Store> storeService();
 
     Service<CServer> chunkserverService();
+
+    Service memcacheService();
 }
