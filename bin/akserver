@@ -62,6 +62,8 @@ launch_service()
     if [ "x$foreground" != "x" ]; then
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
     else
+        # use log4j to log output
+        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$CONFIG_DIR/config/log4j.properties"
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
         [ ! -z $pidpath ] && printf "%d" $! > $pidpath
     fi
