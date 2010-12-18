@@ -9,58 +9,28 @@
 # This script relies on few environment variables to determine startup
 # behavior, those variables are:
 #
-#   CLASSPATH -- A Java classpath containing everything necessary to run.
 #   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
 #   AKIBAN_CONF -- Directory containing configuration files.
 #
-# As a convenience, a fragment of shell is sourced in order to set one or
-# more of these variables. This so-called `include' can be placed in a 
-# number of locations and will be searched for in order. The lowest 
-# priority search path is the same directory as the startup script, and
-# since this is the location of the sample in the project tree, it should
-# almost work Out Of The Box.
-#
-# Any serious use-case though will likely require customization of the
-# include. For production installations, it is recommended that you copy
-# the sample to one of /usr/share/akiban/akserver.in.sh,
-# /usr/local/share/akiban/akserver.in.sh, or 
-# /opt/akiban/akserver.in.sh and make your modifications there.
-#
-# Another option is to specify the full path to the include file in the
-# environment. For example:
-#
-#   $ AKIBAN_INCLUDE=/path/to/in.sh akserver -p /var/run/akiban.pid
-#
-# Note: This is particularly handy for running multiple instances on a 
-# single installation, or for quick tests.
-#
-# Finally, developers and enthusiasts who frequently run from a bzr
-# checkout, and do not want to locally modify bin/akserver.in.sh, can put
-# a customized include file at ~/.akserver.in.sh.
-#
-# If you would rather configure startup entirely from the environment, you
-# can disable the include by exporting an empty AKIBAN_INCLUDE, or by 
-# ensuring that no include files exist in the aforementioned search list.
-# Be aware that you will be entirely responsible for populating the needed
-# environment variables.
 
-# If an include wasn't specified in the environment, then search for one...
-if [ "x$AKIBAN_INCLUDE" = "x" ]; then
-    # Locations (in order) to use when searching for an include file.
-    for include in /usr/share/akiban/akserver.in.sh \
-                   /usr/local/share/akiban/akserver.in.sh \
-                   /opt/akiban/akserver.in.sh \
-                   ~/.akserver.in.sh \
-                   `dirname $0`/akserver.in.sh; do
-        if [ -r $include ]; then
-            . $include
-            break
-        fi
-    done
-# ...otherwise, source the specified include.
-elif [ -r $AKIBAN_INCLUDE ]; then
-    . $AKIBAN_INCLUDE
-fi
+akiban_home=`dirname $0`/..
+
+# This can be the path to a jar file, or a directory containing the 
+# compiled classes. NOTE: This isn't needed by the startup script,
+# it's just used here in constructing the classpath.
+akiban_bin=$akiban_home/target/classes
+
+# the config file to use for the chunk server
+CONFIG_DIR="${akiban_home}/conf"
+
+# default AKIBAN_CONF dir
+AKIBAN_CONF=$CONFIG_DIR
+
+# JAVA_HOME can optionally be set here
+#JAVA_HOME=/usr/local/jdk6
+
+# the JAR file we use to launch the akiban server
+JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
