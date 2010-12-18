@@ -22,6 +22,10 @@
             <name>libs-snapshots-local</name>
             <url>http://172.16.20.117:9999/artifactory/libs-snapshots-local</url>
         </repository>
+        <repository>
+            <id>thimbleware.repo</id>
+            <url>http://thimbleware.com/maven</url>
+        </repository>
     </repositories>
     
     <pluginRepositories>
@@ -132,6 +136,11 @@
             <groupId>org.mortbay.jetty</groupId>
             <artifactId>jetty-embedded</artifactId>
             <version>6.1.14</version>
+        </dependency>
+        <dependency>
+            <groupId>com.thimbleware.jmemcached</groupId>
+            <artifactId>jmemcached-core</artifactId>
+            <version>0.9.1</version>
         </dependency>
     </dependencies>
 
