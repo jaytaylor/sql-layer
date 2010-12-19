@@ -23,9 +23,6 @@ akiban_bin=$akiban_home/target/classes
 # the config file to use for the chunk server
 CONFIG_DIR="${akiban_home}/conf"
 
-# default AKIBAN_CONF dir
-AKIBAN_CONF=$CONFIG_DIR
-
 # JAVA_HOME can optionally be set here
 #JAVA_HOME=/usr/local/jdk6
 
@@ -40,8 +37,8 @@ else
 fi
 
 if [ -z $AKIBAN_CONF ]; then
-    echo "You must set the AKIBAN_CONF variable" >&2
-    exit 1
+    # default AKIBAN_CONF dir
+    AKIBAN_CONF=$CONFIG_DIR
 fi
 
 if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
