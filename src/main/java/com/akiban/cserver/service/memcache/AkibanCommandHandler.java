@@ -247,7 +247,7 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                     List<RowData> list = store.fetchRows(schema, table, colkey, min_val, max_val, null, payload);
                     
                     int current_def_id = -1;
-                    List def_id_stack = new ArrayList<Integer>();
+                    List<Integer> def_id_stack = new ArrayList<Integer>();
 
                     for(RowData data : list) {
                         final int def_id = data.getRowDefId();
@@ -284,7 +284,7 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                             int last = def_id_stack.size() - 1;
 
                             sb.append(" } ]");
-                            while(parent_def_id != def_id_stack.get(last)) {
+                            while(!def_id_stack.get(last).equals(parent_def_id)) {
                                 if(pop_count++ > 0) {
                                     sb.append(" ]");
                                 }
