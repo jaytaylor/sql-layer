@@ -152,10 +152,10 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
     }
 
     protected void handleStats(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
-        String option = "";
-        if(command.keys.size() > 0) {
-            option = new String(command.keys.get(0));
-        }
+//        String option = "";
+//        if(command.keys.size() > 0) {
+//            option = new String(command.keys.get(0));
+//        }
         Map<String, Set<String>> statResponse = null;
         // statResponse = cache.stat(option)
         Channels.fireMessageReceived(context, new ResponseMessage(command).withStatResponse(statResponse), channel.getRemoteAddress());
@@ -233,7 +233,6 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                 String colkey = tokens[2];
                 String min_val = null;
                 String max_val = null;
-                String leaf_table = null;
                 ByteBuffer payload = (ByteBuffer) context.getAttachment();
 
                 if(tokens.length == 4) {
@@ -254,7 +253,7 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                         final RowDef def = cache.getRowDef(def_id);
                         final int parent_def_id = def.getParentRowDefId();
 
-                        if(def_id_stack.isEmpty() == true) {
+                        if(def_id_stack.isEmpty()) {
                             current_def_id = def_id;
                             def_id_stack.add(parent_def_id);
                             sb.append("{ \"");
@@ -324,11 +323,11 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                     }
                 }
                 catch(Exception e) {
-                    result_bytes = new String("read error: " + e.getMessage()).getBytes();
+                    result_bytes = ("read error: " + e.getMessage()).getBytes();
                 }
             }
             else {
-                result_bytes = new String("invalid key: " + request).getBytes();
+                result_bytes = ("invalid key: " + request).getBytes();
             }
         }
 
