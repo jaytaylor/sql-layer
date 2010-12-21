@@ -31,22 +31,35 @@ public final class DecimalEncoderTest {
         }
 
         List<TestElement> tests = Arrays.asList(
-                new TestElement(4, 2, "0.44", "0x00"),
-                new TestElement(4, 2, "12703.18", "0x00"),
-                new TestElement(4, 2, "1652.00", "0x00"),
-                new TestElement(4, 2, "17588.70", "0x00"),
-                new TestElement(4, 2, "18850.68", "0x00"),
-                new TestElement(4, 2, "4673.96", "0x00"),
-                new TestElement(4, 2, "6009.00", "0x00"),
-                new TestElement(4, 2, "6436.92", "0x00"),
-                new TestElement(4, 2, "8542.35", "0x00"),
-                new TestElement(12, 2, "1", "0x00"),
-                new TestElement(12, 2, "10.00", "0x00"),
-                new TestElement(12, 2, "8028.00", "0x00"),
-                // These next two aren't part of the bug, but we have them here anyway.
-                // One is an example from mysql docs, and the other caused us a problem before.
-                new TestElement(14, 4, "1234567890.1234", "0x810DFB38D204D2"),
-                new TestElement(12, 10, "90.1956251262", "0xDA0BA900A602")
+            // Values that were in the c_discount decimal(4,2) field
+            new TestElement(4, 2, "0.38", "0x8026"),
+            new TestElement(4, 2, "0.44", "0x802C"),
+            new TestElement(4, 2, "0.01", "0x8001"),
+            new TestElement(4, 2, "0.33", "0x8021"),
+            new TestElement(4, 2, "0.04", "0x8004"),
+            new TestElement(4, 2, "0.50", "0x8032"),
+            new TestElement(4, 2, "0.45", "0x802D"),
+            new TestElement(4, 2, "0.14", "0x800E"),
+            new TestElement(4, 2, "0.03", "0x8003"),
+
+            // Values that were in the c_balance decimal(12,2) field
+            new TestElement(12, 2, "4673.96", "0x800000124160"),
+            new TestElement(12, 2, "8028.00", "0x8000001F5C00"),
+            new TestElement(12, 2, "1652.00", "0x800000067400"),
+            new TestElement(12, 2, "17588.70", "0x80000044B446"),
+            new TestElement(12, 2, "8542.35", "0x800000215E23"),
+            new TestElement(12, 2, "12703.18", "0x800000319F12"),
+            new TestElement(12, 2, "6009.00", "0x800000177900"),
+            new TestElement(12, 2, "18850.68", "0x80000049A244"),
+            new TestElement(12, 2, "6436.92", "0x80000019245C"),
+
+            // The only value that was in the c_ytd_payment decimal(12,2) field
+            new TestElement(12, 2, "10.00", "0x800000000A00"),
+
+            // These next two aren't part of the bug, but we have them here anyway.
+            // One is an example from mysql docs, and the other caused us a problem before.
+            new TestElement(14, 4, "1234567890.1234", "0x810DFB38D204D2"),
+            new TestElement(12, 10, "90.1956251262", "0xDA0BA900A602")
         );
         
         for (TestElement test : tests) {
