@@ -110,45 +110,8 @@ public interface Store extends Service<Store> {
     TableStatistics getTableStatistics(final Session session, final int tableId)
             throws Exception;
 
-    /**
-     * Drops a single table, identified by ID.
-     * 
-     * This is a no-op if the rowDefID corresponds to a group table.
-     * 
-     * @param rowDefId
-     *            the ID of the table to drop
-     * @return the result of the drop; OK or an error.
-     * @throws Exception
-     *             if the rowDef couldn't be looked up, or if the transaction
-     *             failed
-     */
-    void dropTable(final Session session, final int rowDefId) throws Exception;
-
-    /**
-     * Drops several tables as a single transaction. Each table's drop is
-     * handled equivalently to {@link #dropTable(int)}, but if any fail, the
-     * transaction is rolled back and the failed drop's status is returned.
-     * 
-     * The given Collection, and all of its elements, must be non-null. Any null
-     * values will result in a NPE being thrown and the transaction atomically
-     * failing.
-     * 
-     * @param rowDefIds
-     *            the list of rowDefs to return. This list will not be modified.
-     * @return the result of the drop; OK or the first error
-     * @throws Exception
-     *             see {@linkplain #dropTable(int)}
-     */
-    void dropTables(final Session session, final Collection<Integer> rowDefIds)
-            throws Exception;
-
     void truncateTable(final Session session, final int rowDefId)
             throws Exception;
-
-    void dropSchema(final Session session, final String schemaName)
-            throws Exception;
-
-    void fixUpOrdinals() throws Exception;
 
     /**
      * <p>
@@ -285,15 +248,9 @@ public interface Store extends Service<Store> {
      */
     void removeCommittedUpdateListener(final CommittedUpdateListener listener);
 
-    AkibaInformationSchema getAis();
-
     boolean isDeferIndexes();
 
     void setDeferIndexes(final boolean b);
-
-    // TODO - temporary - we want this to be a separate service acquired
-    // from ServiceManager.
-    SchemaManager getSchemaManager();
 
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
@@ -302,9 +259,6 @@ public interface Store extends Service<Store> {
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
     TableManager getTableManager();
-
-    // TODO - temporary
-    SchemaId getSchemaId() throws Exception;
 
     void deleteIndexes(Session session, String string);
 

@@ -88,7 +88,7 @@ public interface DDLFunctions {
      * Gets the AIS from the Store.
      * @return returns the store's AIS.
      */
-    AkibaInformationSchema getAIS();
+    AkibaInformationSchema getAIS(Session session);
 
     /**
      * Resolves the given TableId to its table's name. As a side effect, the tableId will be resolved.
@@ -118,7 +118,7 @@ public interface DDLFunctions {
      * @throws InvalidOperationException if an exception occurred
      * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to the chunkserver's known tables
      */
-    List<String> getDDLs() throws InvalidOperationException;
+    String getDDLs(Session session) throws InvalidOperationException;
 
     SchemaId getSchemaID() throws InvalidOperationException;
 

@@ -6,8 +6,8 @@ import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.persistit.PersistitService;
-import com.akiban.cserver.service.schema.SchemaService;
 import com.akiban.cserver.service.session.SessionService;
+import com.akiban.cserver.store.SchemaManager2;
 import com.akiban.cserver.store.Store;
 
 public interface ServiceManagerFactory
@@ -25,6 +25,8 @@ public interface ServiceManagerFactory
     Service<CServer> chunkserverService();
     
     Service<PersistitService> persistitService();
+    
+    Service<SchemaManager2> schemaManager();
     
     Service<Store> storeService();
 }

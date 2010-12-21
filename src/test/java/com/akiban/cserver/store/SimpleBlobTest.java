@@ -33,7 +33,7 @@ public class SimpleBlobTest extends CServerTestCase implements CServerConstants 
         super.setUp();
         final AkibaInformationSchema ais = new DDLSource().buildAISFromString(CREATE_TABLE_STATEMENT1);
         rowDefCache.setAIS(ais);
-        store.fixUpOrdinals();
+        rowDefCache.fixUpOrdinals(store.getTableManager());
     }
 
     @After

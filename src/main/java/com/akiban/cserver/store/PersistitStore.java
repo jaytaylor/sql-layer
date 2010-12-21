@@ -20,7 +20,6 @@ import java.util.TreeSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.UserTable;
@@ -35,9 +34,10 @@ import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.RowType;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.message.ScanRowsRequest;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
@@ -108,15 +108,15 @@ public class PersistitStore implements CServerConstants, Store {
 
     private boolean deferIndexes = false;
 
-    private PersistitService ps;
-
     private final RowDefCache rowDefCache;
+
+    private ServiceManager serviceManager;
+
+    private PersistitService ps;
 
     private PersistitStoreTableManager tableManager;
 
     private PersistitStoreIndexManager indexManager;
-
-    private PersistitStoreSchemaManager schemaManager;
 
     private boolean forceToDisk = false; // default to "group commit"
 
@@ -127,21 +127,20 @@ public class PersistitStore implements CServerConstants, Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(final PersistitService ps) {
-        this.ps = ps;
+    public PersistitStore() {
+        this.serviceManager = ServiceManagerImpl.get();
+        this.ps = serviceManager.getPersistitService();
         this.rowDefCache = new RowDefCache();
     }
 
     private synchronized void createManagers() {
-        this.tableManager = new PersistitStoreTableManager(this);
+        this.tableManager = new PersistitStoreTableManager();
         this.indexManager = new PersistitStoreIndexManager(this);
-        this.schemaManager = new PersistitStoreSchemaManager(this);
     }
 
     public synchronized void start() throws Exception {
         createManagers();
         tableManager.startUp();
-        schemaManager.startUp();
     }
 
     private synchronized void destroyManagers() throws Exception {
@@ -169,41 +168,30 @@ public class PersistitStore implements CServerConstants, Store {
         return ps.getDb();
     }
 
-    public SchemaId getSchemaId() throws Exception {
-        return schemaManager.getSchemaID();
-    }
-
-    @Override
-    public AkibaInformationSchema getAis() {
-        return schemaManager.getAis();
-    }
-
     public Exchange getExchange(final Session session, final RowDef rowDef,
             final IndexDef indexDef) throws PersistitException {
-        final String treeName;
         if (indexDef == null) {
             final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef
                     : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
-            treeName = groupRowDef.getTreeName();
+            return ps.getExchange(session, groupRowDef);
         } else {
-            treeName = indexDef.getTreeName();
+            return ps.getExchange(session, indexDef);
         }
-        return ps.getExchange(session, rowDef.getSchemaName(), treeName);
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
         ps.releaseExchange(session, exchange);
     }
 
-    private Exchange getExchange(final Session session, final Tree tree)
-            throws PersistitException {
-        return ps.getExchange(session, tree);
-    }
-
-    public Exchange getExchange(final Session session, final String treeName)
-            throws PersistitException {
-        return ps.getExchange(session, "_system_", treeName);
-    }
+    // private Exchange getExchange(final Session session, final Tree tree)
+    // throws PersistitException {
+    // return ps.getExchange(session, tree);
+    // }
+    //
+    // public Exchange getExchange(final Session session, final String treeName)
+    // throws PersistitException {
+    // return ps.getExchange(session, "_system_", treeName);
+    // }
 
     /**
      * Given a RowData for a table, construct an hkey for a row in the table.
@@ -462,70 +450,8 @@ public class PersistitStore implements CServerConstants, Store {
         return errorIfNull("index manager", indexManager);
     }
 
-    public PersistitStoreSchemaManager getSchemaManager() {
-        return errorIfNull("schema manger", schemaManager);
-    }
-
     public void fixUpOrdinals() throws Exception {
         rowDefCache.fixUpOrdinals(tableManager);
-        for (final RowDef groupRowDef : rowDefCache.getRowDefs()) {
-            if (groupRowDef.isGroupTable()) {
-                // groupTable has no ordinal
-                groupRowDef.setOrdinal(0);
-                final HashSet<Integer> assigned = new HashSet<Integer>();
-                //
-                // First pass: merge already assigned values
-                //
-                for (final RowDef userRowDef : groupRowDef
-                        .getUserTableRowDefs()) {
-                    final TableStatus tableStatus = tableManager
-                            .getTableStatus(userRowDef.getRowDefId());
-                    if (tableStatus.getOrdinal() != 0
-                            && userRowDef.getOrdinal() != 0
-                            && tableStatus.getOrdinal() != userRowDef
-                                    .getOrdinal()) {
-                        throw new IllegalStateException("Mismatched ordinals: "
-                                + userRowDef.getOrdinal() + "/"
-                                + tableStatus.getOrdinal());
-                    }
-                    int ordinal = 0;
-                    if (tableStatus.getOrdinal() != 0) {
-                        ordinal = tableStatus.getOrdinal();
-                        userRowDef.setOrdinal(ordinal);
-                    } else if (userRowDef.getOrdinal() != 0
-                            && tableStatus.getOrdinal() == 0) {
-                        ordinal = userRowDef.getOrdinal();
-                        tableStatus.setOrdinal(ordinal);
-                    }
-                    if (ordinal != 0 && !assigned.add(ordinal)) {
-                        throw new IllegalStateException(
-                                "Non-unique ordinal value " + ordinal
-                                        + " added to " + assigned);
-                    }
-                }
-                int nextOrdinal = 1;
-                for (final RowDef userRowDef : groupRowDef
-                        .getUserTableRowDefs()) {
-                    final TableStatus tableStatus = tableManager
-                            .getTableStatus(userRowDef.getRowDefId());
-                    if (userRowDef.getOrdinal() == 0) {
-                        // find an unassigned value. Here we could try to
-                        // optimize layout
-                        // by assigning "bushy" values in some optimal pattern
-                        // (if we knew that was...)
-                        for (; assigned.contains(nextOrdinal); nextOrdinal++) {
-                        }
-                        tableStatus.setOrdinal(nextOrdinal);
-                        userRowDef.setOrdinal(nextOrdinal);
-                        assigned.add(nextOrdinal);
-                    }
-                }
-                if (assigned.size() != groupRowDef.getUserTableRowDefs().length) {
-                    throw new IllegalStateException("Inconsistent ordinal "
-                            + "number assignments: " + assigned);
-                }
-            }
-        }
     }
 
     @Override
@@ -569,30 +495,20 @@ public class PersistitStore implements CServerConstants, Store {
             }
             return;
         }
-        Transaction transaction = ps.getTransaction();
+        Transaction transaction = ps.getTransaction(session);
         try {
-            final CreateTableResult result = new CreateTableResult();
             transaction.run(new TransactionRunnable() {
                 @Override
                 public void runTransaction() {
                     try {
-                        schemaManager.createTable(session, schemaName, ddl,
-                                rowDefCache, result);
+                        serviceManager
+                                .getSchemaManager()
+                                .createTableDefinition(session, schemaName, ddl);
                     } catch (Exception e) {
                         throw new RollbackException(e);
                     }
                 }
             });
-            if (!result.wasSuccessful()) {
-                throw new InvalidOperationException(ErrorCode.UNKNOWN,
-                        "Result failed: " + result + " for <" + schemaName
-                                + "> " + ddl);
-            }
-            TableStatus ts = tableManager.getTableStatus(result.getTableId());
-            ts.reset();
-            if (result.autoIncrementDefined()) {
-                ts.setAutoIncrementValue(result.defaultAutoIncrement());
-            }
         } catch (RollbackException e) {
             Throwable cause = e.getCause();
             if (cause instanceof InvalidOperationException) {
@@ -640,7 +556,7 @@ public class PersistitStore implements CServerConstants, Store {
         Exchange hEx = null;
         try {
             hEx = getExchange(session, rowDef, null);
-            transaction = ps.getTransaction();
+            transaction = ps.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -778,7 +694,7 @@ public class PersistitStore implements CServerConstants, Store {
         try {
             hEx = getExchange(session, rowDef, null);
 
-            final Transaction transaction = ps.getTransaction();
+            final Transaction transaction = ps.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -880,7 +796,7 @@ public class PersistitStore implements CServerConstants, Store {
         Exchange hEx = null;
         try {
             hEx = getExchange(session, rowDef, null);
-            final Transaction transaction = ps.getTransaction();
+            final Transaction transaction = ps.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -992,7 +908,7 @@ public class PersistitStore implements CServerConstants, Store {
         RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
                 .getRowDef(rowDef.getGroupRowDefId());
 
-        transaction = ps.getTransaction();
+        transaction = ps.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
 
@@ -1048,157 +964,6 @@ public class PersistitStore implements CServerConstants, Store {
             }
         }
     }
-
-    @Override
-    public void dropTable(final Session session, int rowDefId)
-            throws InvalidOperationException, PersistitException {
-        List<Integer> list = new ArrayList<Integer>();
-        list.add(rowDefId);
-        dropTables(session, list);
-    }
-
-    /**
-     * Remove contents of table and its schema information. TODO: remove user
-     * table data from within a group. clients.
-     */
-    @Override
-    public void dropTables(final Session session,
-            final Collection<Integer> rowDefIds)
-            throws InvalidOperationException, PersistitException {
-        List<Integer> myRowDefIds = new ArrayList(rowDefIds);
-        // Never drop group tables
-        for (Iterator<Integer> iter = myRowDefIds.iterator(); iter.hasNext();) {
-            int rowDefId = iter.next();
-            RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-            if (rowDef.isGroupTable()) {
-                iter.remove();
-            }
-        }
-        if (myRowDefIds.isEmpty()) {
-            return;
-        }
-
-        final Transaction transaction = ps.getTransaction();
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        final List<String> tablesToForget = new ArrayList<String>();
-        for (;;) {
-            transaction.begin();
-            try {
-                tablesToForget.clear();
-                for (final int rowDefId : myRowDefIds) {
-                    final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-                    schemaManager.dropCreateTable(session,
-                            rowDef.getSchemaName(), rowDef.getTableName());
-                    tablesToForget.add(rowDef.getTableName());
-                    final TableStatus ts = tableManager
-                            .getTableStatus(rowDefId);
-                    // if (ts.isDeleted()) {
-                    // throw new StoreException(HA_ERR_NO_SUCH_TABLE,
-                    // "Table "
-                    // + rowDef.getTableName() + " has been deleted");
-                    // }
-                    boolean deleteGroup = true;
-                    ts.setDeleted(true);
-                    tableManager.saveStatus(ts);
-                    final RowDef groupRowDef;
-                    if (rowDef.isGroupTable()) {
-                        groupRowDef = rowDef;
-                    } else {
-                        groupRowDef = getRowDefCache().getRowDef(
-                                rowDef.getGroupRowDefId());
-                        for (int i = 0; deleteGroup
-                                && i < groupRowDef.getUserTableRowDefs().length; i++) {
-                            final int childId = groupRowDef
-                                    .getUserTableRowDefs()[i].getRowDefId();
-                            final TableStatus childStatus = tableManager
-                                    .getTableStatus(childId);
-                            deleteGroup &= childStatus.isDeleted();
-                        }
-                    }
-                    if (deleteGroup) {
-                        schemaManager.dropCreateTable(session,
-                                groupRowDef.getSchemaName(),
-                                groupRowDef.getTableName());
-                        tableManager.getTableStatus(groupRowDef.getRowDefId())
-                                .setDeleted(true);
-                        // IOException
-                        // Remove the index trees
-                        //
-                        for (final IndexDef indexDef : groupRowDef
-                                .getIndexDefs()) {
-                            if (!indexDef.isHKeyEquivalent()) {
-                                final Exchange iEx = getExchange(session,
-                                        groupRowDef, indexDef);
-                                iEx.removeAll();
-                                releaseExchange(session, iEx);
-                            }
-                            indexManager.deleteIndexAnalysis(session, indexDef);
-                        }
-                        for (final RowDef userRowDef : groupRowDef
-                                .getUserTableRowDefs()) {
-                            for (final IndexDef indexDef : userRowDef
-                                    .getIndexDefs()) {
-                                indexManager.deleteIndexAnalysis(session,
-                                        indexDef);
-                            }
-                        }
-                        //
-                        // remove the htable tree
-                        //
-                        final Exchange hEx = getExchange(session, groupRowDef,
-                                null);
-                        hEx.removeAll();
-                        releaseExchange(session, hEx);
-
-                        for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
-                            final int childId = groupRowDef
-                                    .getUserTableRowDefs()[i].getRowDefId();
-                            tableManager.deleteStatus(childId);
-                        }
-                        tableManager.deleteStatus(groupRowDef.getRowDefId());
-                    }
-                }
-
-                transaction.commit(forceToDisk);
-                for (String tableToForget : tablesToForget) {
-                    schemaManager.forgetTableColumns(tableToForget);
-                }
-                return;
-            } catch (RollbackException e) {
-                if (--retries < 0) {
-                    throw new TransactionFailedException();
-                }
-            } finally {
-                transaction.end();
-            }
-        }
-        // } catch (StoreException e) {
-        // if (verbose &&LOG.isInfoEnabled()) {
-        // LOG.info("dropTable error " + e.getResult(), e);
-        // }
-        // return e.getResult();
-    }
-
-    /**
-     * No-op. MySQL will send dropTable requests for each AkibaDB table in this
-     * schema anyway, so we don't need to do anything here.
-     * 
-     * @param schemaName
-     *            the schema name
-     * @return <tt>OK</tt>, in the current implementation
-     */
-    @Override
-    public void dropSchema(final Session session, final String schemaName)
-            throws InvalidOperationException, PersistitException {
-        List<Integer> dropRowDefIds = new ArrayList<Integer>();
-        for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
-            if (rowDef.getSchemaName().equals(schemaName)) {
-                dropRowDefIds.add(rowDef.getRowDefId());
-            }
-        }
-        dropTables(session, dropRowDefIds);
-    }
-
     // @Override
     // public long getAutoIncrementValue(final int rowDefId)
     // throws InvalidOperationException, PersistitException {
@@ -1573,7 +1338,8 @@ public class PersistitStore implements CServerConstants, Store {
         iEx.getValue().clear();
         if (deferIndexes) {
             synchronized (deferredIndexKeys) {
-                SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx.getTree());
+                SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx
+                        .getTree());
                 if (keySet == null) {
                     keySet = new TreeSet<KeyState>();
                     deferredIndexKeys.put(iEx.getTree(), keySet);
@@ -1593,7 +1359,7 @@ public class PersistitStore implements CServerConstants, Store {
         synchronized (deferredIndexKeys) {
             for (final Map.Entry<Tree, SortedSet<KeyState>> entry : deferredIndexKeys
                     .entrySet()) {
-                final Exchange iEx = getExchange(session, entry.getKey());
+                final Exchange iEx = ps.getExchange(session, entry.getKey());
                 buildIndexAddKeys(entry.getValue(), iEx);
                 entry.getValue().clear();
             }

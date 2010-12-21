@@ -18,7 +18,7 @@ import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.service.UnitTestServiceManagerFactory;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.util.ByteBufferFactory;
 
 public abstract class AbstractScanBase extends CServerTestSuite implements CServerConstants {
@@ -40,7 +40,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
     public static void setUpSuite() throws Exception {
         CServerTestSuite.setUpSuite();
         // initially empty
-        final AkibaInformationSchema ais0 = store.getAis();
+        final AkibaInformationSchema ais0 = schemaManager.getAis(new SessionImpl());
         
         //rowDefCache.setAIS(ais0);
         final AkibaInformationSchema ais = new DDLSource()
@@ -52,7 +52,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
                         + table.getName().getTableName(), table);
             }
         }
-        store.fixUpOrdinals();
+        rowDefCache.fixUpOrdinals(store.getTableManager());
         populateTables();
     }
 

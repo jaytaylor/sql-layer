@@ -11,11 +11,11 @@ import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
 import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.persistit.PersistitServiceImpl;
-import com.akiban.cserver.service.schema.SchemaService;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.session.SessionServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.PersistitStoreSchemaManager;
+import com.akiban.cserver.store.PersistitStoreSchemaManager2;
+import com.akiban.cserver.store.SchemaManager2;
 import com.akiban.cserver.store.Store;
 
 public class DefaultServiceManagerFactory implements ServiceManagerFactory {
@@ -96,10 +96,16 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory {
     @Override
     public Service<Store> storeService() {
         if (storeService == null) {
-            final PersistitService ps = persistitService().cast();
-            storeService = new PersistitStore(ps);
+            storeService = new PersistitStore();
         }
         return storeService;
     }
 
+    @Override
+    public Service<SchemaManager2> schemaManager() {
+        if (schemaService == null) {
+            schemaService = new PersistitStoreSchemaManager2();
+        }
+        return schemaService;
+    }
 }

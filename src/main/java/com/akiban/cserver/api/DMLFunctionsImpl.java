@@ -35,8 +35,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private final AkibanLogger logger;
 
-    public DMLFunctionsImpl(Store store, LoggingService loggingService) {
-        super(store);
+    public DMLFunctionsImpl(LoggingService loggingService) {
+        super();
         logger = loggingService.getLogger(DMLFunctionsImpl.class);
     }
 
@@ -97,7 +97,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
     {
         if (request.scanAllColumns()) {
-            request = scanAllColumns(request);
+            request = scanAllColumns(session, request);
         }
         final RowCollector rc = getRowCollector(session, request);
         final CursorId cursorId = newUniqueCursor(rc.getTableId());
@@ -115,8 +115,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         return cursorId;
     }
 
-    private ScanRequest scanAllColumns(final ScanRequest request) throws NoSuchTableException {
-        Table table = store().getAis().getTable( request.getTableId().getTableName(idResolver()) );
+    private ScanRequest scanAllColumns(final Session session, final ScanRequest request) throws NoSuchTableException {
+        Table table = schemaManager().getAis(session).getTable( request.getTableId().getTableName(idResolver()) );
         final int colsCount = table.getColumns().size();
         Set<ColumnId> allColumns = new HashSet<ColumnId>(colsCount);
         for (int i=0; i < colsCount; ++i) {
@@ -492,7 +492,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         // Store.truncate doesn't work well, so we have to actually scan the rows
         TableName tableName = tableId.getTableName(idResolver());
-        Index pkIndex = store().getAis().getTable(tableName).getIndex("PRIMARY");
+        Index pkIndex = schemaManager().getAis(session).getTable(tableName).getIndex("PRIMARY");
         assert pkIndex.isPrimaryKey() : pkIndex;
         Set<ColumnId> pkColumns = new HashSet<ColumnId>();
         for (IndexColumn column : pkIndex.getColumns()) {

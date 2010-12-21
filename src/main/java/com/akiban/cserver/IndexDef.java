@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Defines an Index within the Chunk Server
@@ -14,7 +15,7 @@ import java.util.List;
  * @author peter
  * 
  */
-public class IndexDef {
+public class IndexDef implements StorageLink {
 
     private final Index index;
 
@@ -37,6 +38,8 @@ public class IndexDef {
     // specifies the position within the index entry of the ith hkey field.
     private I2H[] hKeyFields;
 
+    private AtomicReference<Object> storageCache = new AtomicReference<Object>();
+    
     /*
      * Structure that determines how a field in a table binds to a key segment of an index key. An H2I defines
      * the field's position in an hkey and/or an h-row. hKeyLoc is used only as a last resort.
@@ -319,6 +322,31 @@ public class IndexDef {
     public int hashCode()
     {
         return getName().hashCode() ^ treeName.hashCode() ^ getId() ^ Arrays.hashCode(fields);
+    }
+
+    @Override
+    public String getSchemaName() {
+        return rowDef.getSchemaName();
+    }
+
+    @Override
+    public String getTableName() {
+        return rowDef.getTableName();
+    }
+
+    @Override
+    public String getIndexName() {
+        return getName();
+    }
+
+    @Override
+    public void setStorageCache(Object object) {
+       storageCache.set(object);
+    }
+
+    @Override
+    public Object getStorageCache() {
+        return storageCache.get();
     }
 
 }

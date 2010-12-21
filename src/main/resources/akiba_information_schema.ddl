@@ -1,9 +1,9 @@
-create table groups(
+create akiba_information_schema.table groups(
     group_name varchar(64),
     primary key(group_name)
 ) engine=akibandb;
 
-create table tables(
+create akiba_information_schema.table tables(
     schema_name       varchar(64),
     table_name        varchar(64),
     table_type        varchar(8),
@@ -13,7 +13,7 @@ create table tables(
     primary key(schema_name, table_name)
 ) engine=akibandb;
 
-create table columns (
+create akiba_information_schema.table columns (
     schema_name         varchar(64),
     table_name          varchar(64),
     column_name         varchar(64),
@@ -33,8 +33,8 @@ create table columns (
     primary key(schema_name, table_name, column_name)
 ) engine=akibandb;
 
-create table joins(
-    join_name               varchar(767),
+create akiba_information_schema.table joins(
+    join_name               varchar(255),
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
     child_schema_name       varchar(64),
@@ -46,8 +46,8 @@ create table joins(
     primary key(join_name)
 ) engine=akibandb;
 
-create table join_columns(
-    join_name               varchar(767),
+create akiba_information_schema.table join_columns(
+    join_name               varchar(255),
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
     parent_column_name      varchar(64),
@@ -57,7 +57,7 @@ create table join_columns(
     primary key(join_name, parent_column_name, child_column_name)
 ) engine=akibandb;
 
-create table indexes (
+create akiba_information_schema.table indexes (
     schema_name      varchar(64),
     table_name       varchar(64),
     index_name       varchar(64),
@@ -67,7 +67,7 @@ create table indexes (
     primary key(schema_name, table_name, index_name)
 ) engine=akibandb;
 
-create table index_columns (
+create akiba_information_schema.table index_columns (
     schema_name       varchar(64),
     table_name        varchar(64),
     index_name        varchar(64),
@@ -78,7 +78,7 @@ create table index_columns (
     primary key(schema_name, table_name, index_name, column_name)
 ) engine=akibandb;
 
-create table types(
+create akiba_information_schema.table types(
     type_name           varchar(64),
     parameters          int,
     fixed_size          tinyint,
@@ -86,7 +86,7 @@ create table types(
     primary key(type_name)
 ) engine=akibandb;
 
-create table index_analysis(
+create akiba_information_schema.table index_analysis(
     table_id            int,
     index_id            int,
     analysis_timestamp  timestamp,

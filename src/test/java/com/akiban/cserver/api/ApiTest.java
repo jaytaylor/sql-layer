@@ -19,8 +19,8 @@ public final class ApiTest extends CServerTestCase {
         
         private ApiPair() {
             LoggingService loggingService = new LoggingServiceImpl();
-            dml = new DMLFunctionsImpl(store, loggingService);
-            ddl = new DDLFunctionsImpl(store);
+            dml = new DMLFunctionsImpl(loggingService);
+            ddl = new DDLFunctionsImpl();
         }
     }
 

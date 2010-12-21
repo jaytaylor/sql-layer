@@ -19,34 +19,24 @@ import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
-import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
 
-public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
-    
-    public static DDLFunctions instance() {
-        return new DDLFunctionsImpl(getDefaultStore());
-    }
+public final class DDLFunctionsImpl extends ClientAPIBase implements
+        DDLFunctions {
 
-    public DDLFunctionsImpl(Store store) {
-        super(store);
+    public static DDLFunctions instance() {
+        return new DDLFunctionsImpl();
     }
 
     @Override
     public void createTable(Session session, String schema, String ddlText)
-    throws ParseException,
-            UnsupportedCharsetException,
-            ProtectedTableDDLException,
-            DuplicateTableNameException,
-            GroupWithProtectedTableException,
-            JoinToUnknownTableException,
-            JoinToWrongColumnsException,
-            NoPrimaryKeyException,
-            DuplicateColumnNameException,
-            GenericInvalidOperationException
-    {
+            throws ParseException, UnsupportedCharsetException,
+            ProtectedTableDDLException, DuplicateTableNameException,
+            GroupWithProtectedTableException, JoinToUnknownTableException,
+            JoinToWrongColumnsException, NoPrimaryKeyException,
+            DuplicateColumnNameException, GenericInvalidOperationException {
         try {
-            schemaManager().createTable(session, schema, ddlText);
+            schemaManager().createTableDefinition(session, schema, ddlText);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -54,43 +44,42 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
 
     @Override
     public void dropTable(Session session, TableId tableId)
-    throws  ProtectedTableDDLException,
-            ForeignConstraintDDLException,
-            GenericInvalidOperationException
-    {
+            throws ProtectedTableDDLException, ForeignConstraintDDLException,
+            GenericInvalidOperationException {
         final TableName tableName;
+        final int rowDefId;
         try {
             tableName = tableId.getTableName(idResolver());
-        }
-        catch (NoSuchTableException e) {
+            rowDefId = tableId.getTableId(idResolver());
+        } catch (NoSuchTableException e) {
             return; // dropping a nonexistent table is a no-op
         }
-        
+
         try {
-            schemaManager().dropTable(session, tableName.getSchemaName(), tableName.getTableName());
-        }
-        catch (Exception e) {
+            // TODO - reconsider the API for truncateTable.
+            // TODO - needs to be wrapped in a Transaction
+            store().truncateTable(session, rowDefId);
+            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(),
+                    tableName.getTableName());
+        } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
     public void dropSchema(Session session, String schemaName)
-            throws  ProtectedTableDDLException,
-            ForeignConstraintDDLException,
-            GenericInvalidOperationException
-    {
+            throws ProtectedTableDDLException, ForeignConstraintDDLException,
+            GenericInvalidOperationException {
         try {
-            schemaManager().dropSchema(session, schemaName);
-        }
-        catch (Exception e) {
+            schemaManager().deleteSchemaDefinition(session, schemaName);
+        } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    public AkibaInformationSchema getAIS() {
-        return store().getAis();
+    public AkibaInformationSchema getAIS(final Session session) {
+        return schemaManager().getAis(session);
     }
 
     @Override
@@ -106,30 +95,25 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
     }
 
     @Override
-    public List<String> getDDLs() throws InvalidOperationException {
+    public String getDDLs(final Session session) throws InvalidOperationException {
         try {
-            return schemaManager().getDDLs();
+            return schemaManager().schemaString(
+                    session, true);
         } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
+            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
+                    "Unexpected exception", e);
         }
     }
 
     @Override
     public SchemaId getSchemaID() throws InvalidOperationException {
-        try {
-            return schemaManager().getSchemaID();
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
-        }
+        return new SchemaId(schemaManager().getSchemaGeneration());
     }
 
     @Override
-    @SuppressWarnings("unused") // meant to be used from JMX
+    @SuppressWarnings("unused")
+    // meant to be used from JMX
     public void forceGenerationUpdate() throws InvalidOperationException {
-        try {
-            schemaManager().forceSchemaGenerationUpdate();
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
-        }
+        schemaManager().forceNewTimestamp();
     }
 }

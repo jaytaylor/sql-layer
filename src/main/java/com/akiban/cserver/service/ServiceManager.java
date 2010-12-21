@@ -4,6 +4,7 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.SessionService;
+import com.akiban.cserver.store.SchemaManager2;
 import com.akiban.cserver.store.Store;
 
 public interface ServiceManager extends ServiceManagerMXBean {
@@ -21,4 +22,6 @@ public interface ServiceManager extends ServiceManagerMXBean {
     SessionService getSessionService();
     
     PersistitService getPersistitService();
+    
+    SchemaManager2 getSchemaManager();
 }

@@ -14,16 +14,18 @@ import org.junit.Before;
 
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.UnitTestServiceManagerFactory;
+import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.PersistitStoreSchemaManager;
+import com.akiban.cserver.store.SchemaManager2;
 import com.akiban.cserver.store.Store;
 import com.persistit.Persistit;
 
 public class CServerTestCase extends TestCase {
 
     protected Store store;
+    protected SchemaManager2 schemaManager;
     protected ServiceManager serviceManager;
     protected RowDefCache rowDefCache;
     protected final static Session session = new SessionImpl();
@@ -34,6 +36,7 @@ public class CServerTestCase extends TestCase {
         serviceManager = UnitTestServiceManagerFactory.createServiceManager();
         serviceManager.startServices();
         store = serviceManager.getStore();
+        schemaManager = serviceManager.getSchemaManager();
         rowDefCache = store.getRowDefCache();
     }
 
@@ -48,12 +51,16 @@ public class CServerTestCase extends TestCase {
     protected Persistit getDb() {
         return serviceManager.getPersistitService().getDb();
     }
-    
-    protected PersistitStoreSchemaManager getSchemaManager() {
-        return (PersistitStoreSchemaManager)store.getSchemaManager();
+
+    protected SchemaManager2 getSchemaManager() {
+        return schemaManager;
     }
-    
+
     protected PersistitStore getPersistitStore() {
-        return (PersistitStore)store;
+        return (PersistitStore) store;
+    }
+
+    protected PersistitService getPersistitService() {
+        return serviceManager.getPersistitService();
     }
 }

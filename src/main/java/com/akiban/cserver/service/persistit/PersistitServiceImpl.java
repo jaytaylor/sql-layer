@@ -13,6 +13,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.StorageLink;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.session.Session;
@@ -24,7 +25,8 @@ import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
-public class PersistitServiceImpl implements PersistitService, Service<PersistitService> {
+public class PersistitServiceImpl implements PersistitService,
+        Service<PersistitService> {
 
     private final static int MEGA = 1024 * 1024;
 
@@ -61,7 +63,7 @@ public class PersistitServiceImpl implements PersistitService, Service<Persistit
     private final ConfigurationService configService;
 
     private final static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
-    
+
     private Persistit db;
 
     public PersistitServiceImpl(final ConfigurationService configService) {
@@ -118,7 +120,7 @@ public class PersistitServiceImpl implements PersistitService, Service<Persistit
         }
 
     }
-    
+
     /**
      * Makes sure the given directory exists, optionally trying to create it.
      * 
@@ -186,14 +188,20 @@ public class PersistitServiceImpl implements PersistitService, Service<Persistit
     }
 
     @Override
-    public Exchange getExchange(final Session session, final String schemaName,
-            final String treeName) throws PersistitException {
-        final Volume volume = mappedVolume(schemaName, treeName);
-        return getExchange(session, volume, treeName);
+    public Exchange getExchange(final Session session, final StorageLink link)
+            throws PersistitException {
+        Tree tree = (Tree) link.getStorageCache();
+        if (tree == null) {
+            Volume volume = mappedVolume(link);
+            tree = volume.getTree(link.getTreeName(), true);
+            link.setStorageCache(tree);
+        }
+        return getExchange(session, link);
     }
-    
+
     @Override
-    public Exchange getExchange(final Session session, final Tree tree) throws PersistitException {
+    public Exchange getExchange(final Session session, final Tree tree)
+            throws PersistitException {
         final List<Exchange> list = exchangeList(session, tree);
         if (list.isEmpty()) {
             return new Exchange(tree);
@@ -201,8 +209,9 @@ public class PersistitServiceImpl implements PersistitService, Service<Persistit
             return list.remove(list.size() - 1);
         }
     }
-    
-    private Exchange getExchange(final Session session, final Volume volume, final String treeName) throws PersistitException {
+
+    private Exchange getExchange(final Session session, final Volume volume,
+            final String treeName) throws PersistitException {
         final Tree tree = volume.getTree(treeName, true);
         return getExchange(session, tree);
     }
@@ -214,15 +223,21 @@ public class PersistitServiceImpl implements PersistitService, Service<Persistit
         final List<Exchange> list = exchangeList(session, exchange.getTree());
         list.add(exchange);
     }
+
+    @Override
+    public Transaction getTransaction(final Session session) {
+        return db.getTransaction();
+    }
     
     @Override
-    public Transaction getTransaction() {
-        return db.getTransaction();
+    public long getTimestamp(final Session session) {
+        return db.getTransaction().getTimestamp();
     }
 
     @Override
     public void visitStorage(final StorageVisitor visitor,
-            final String treeName, final Object context) throws PersistitException {
+            final String treeName)
+            throws Exception {
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
@@ -230,19 +245,25 @@ public class PersistitServiceImpl implements PersistitService, Service<Persistit
                 final Exchange exchange = db.getExchange(volume, treeName,
                         false);
                 if (exchange != null) {
-                    visitor.visit(exchange, context);
+                    visitor.visit(exchange);
                 }
             }
         }
     }
-    
+
     @Override
     public int volumeHandle(final Exchange exchange) {
-         // TODO - implement this
+        // TODO - implement this
         return 0;
     }
     
-    private Volume mappedVolume(final String schema, final String treeName) {
+    @Override
+    public boolean isContainer(final Exchange exchange, final StorageLink storageLink) {
+        final Volume volume = mappedVolume(storageLink);
+        return exchange.getVolume().equals(volume);
+    }
+
+    private Volume mappedVolume(final StorageLink link) {
         // TODO - Tablespace Mapping
         return db.getVolume(VOLUME_NAME);
     }

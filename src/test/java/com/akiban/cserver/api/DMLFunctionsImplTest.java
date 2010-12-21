@@ -162,7 +162,7 @@ public final class DMLFunctionsImplTest extends CServerTestCase {
         private final StringRowCollector collector;
 
         private TestDML(String... rowsToCollect) {
-            super(store, new LoggingServiceImpl());
+            super(new LoggingServiceImpl());
             collector = new StringRowCollector(1, rowsToCollect);
         }
 

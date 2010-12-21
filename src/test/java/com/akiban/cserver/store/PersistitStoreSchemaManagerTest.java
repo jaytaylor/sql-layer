@@ -2,6 +2,7 @@ package com.akiban.cserver.store;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,13 +29,13 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     private final static String SCHEMA = "my_schema";
     private final static Pattern REGEX = Pattern.compile("CREATE TABLE `(\\w+)`\\.(\\w+)");
 
-    PersistitStoreSchemaManager manager;
+    SchemaManager2 manager;
  
     @Before
     public void setUp() throws Exception {
         super.setUp();
         manager = getSchemaManager();
-        assertEquals("user tables in AIS", 0, manager.getAisCopy().getUserTables().size());
+        assertEquals("user tables in AIS", 0, manager.getAis(session).getUserTables().size());
         assertTables("user tables");
         assertDDLS();
     }
@@ -42,7 +43,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     @After
     public void tearDown() throws Exception {
         try {
-            assertEquals("user tables in AIS", 0, manager.getAisCopy().getUserTables().size());
+            assertEquals("user tables in AIS", 0, manager.getAis(session).getUserTables().size());
             assertTables("user tables");
             assertDDLS();
         } finally {
@@ -53,7 +54,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     private void createTable(ErrorCode expectedCode, String schema, String ddl) throws Exception {
         ErrorCode actualCode  = null;
         try {
-            manager.createTable(session, schema, ddl);
+            manager.createTableDefinition(session, schema, ddl);
         }
         catch (InvalidOperationException e) {
             actualCode = e.getCode();
@@ -62,7 +63,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     }
     
     private void createTable(String schema, String ddl) throws Exception {
-        manager.createTable(session, schema, ddl);
+        manager.createTableDefinition(session, schema, ddl);
     }
 
     
@@ -72,7 +73,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "CREATE TABLE myvarchartest1(id int key, name varchar(85) character set UTF8) engine=akibandb");
         createTable(SCHEMA,
                 "CREATE TABLE myvarchartest2(id int key, name varchar(86) character set utf8) engine=akibandb");
-        AkibaInformationSchema ais = manager.getAisCopy();
+        AkibaInformationSchema ais = manager.getAis(session);
         Column c1 = ais.getTable(SCHEMA, "myvarchartest1").getColumn("name");
         Column c2 = ais.getTable(SCHEMA, "myvarchartest2").getColumn("name");
         assertEquals("UTF8", c1.getCharsetAndCollation().charset());
@@ -81,8 +82,8 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
 //  See bug 337 - reenable these asserts after 337 is fixed.
         assertEquals(Integer.valueOf(1), c1.getPrefixSize());
         assertEquals(Integer.valueOf(2), c2.getPrefixSize());
-        manager.dropTable(session, SCHEMA, "myvarchartest1");
-        manager.dropTable(session, SCHEMA, "myvarchartest2");
+        manager.deleteTableDefinition(session, SCHEMA, "myvarchartest1");
+        manager.deleteTableDefinition(session, SCHEMA, "myvarchartest2");
     }
 
     @Test
@@ -97,14 +98,14 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        AkibaInformationSchema ais = manager.getAisCopy();
+        AkibaInformationSchema ais = manager.getAis(session);
         assertEquals("ais size", 1, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "one");
         assertEquals("number of index", 1, table.getIndexes().size());
         Index index = table.getIndexes().iterator().next();
         assertTrue("index isn't primary: " + index, index.isPrimaryKey());
 
-        manager.dropTable(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
     }
 
     @Test
@@ -125,7 +126,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "create database if not exists `my_schema`",
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.zebra( id int key)");
-        manager.dropTable(session, SCHEMA, "zebra");
+        manager.deleteTableDefinition(session, SCHEMA, "zebra");
     }
 
     @Test
@@ -150,7 +151,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
                 "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
         assertTables("user tables",
                 "CREATE TABLE %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create table `akiba_objects`.`_akiba_two`(`two$id` int ,  INDEX _akiba_two$PK_1(`two$id`)) engine=akibandb",
@@ -158,7 +159,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
         
-        manager.dropTable(session, SCHEMA, "two");
+        manager.deleteTableDefinition(session, SCHEMA, "two");
     }
 
     @Test
@@ -186,7 +187,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "CREATE TABLE `my_schema`.two (id int, one_id int, PRIMARY KEY (id), " +
                         "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
-        AkibaInformationSchema ais = manager.getAisCopy();
+        AkibaInformationSchema ais = manager.getAis(session);
         assertEquals("ais size", 2, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "two");
         assertEquals("number of index", 2, table.getIndexes().size());
@@ -195,7 +196,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         Index fkIndex = table.getIndex("__akiban_fk_a");
         assertEquals("fk index name" + " in " + table.getIndexes(), "__akiban_fk_a", fkIndex.getIndexName().getName());
 
-        manager.dropTable(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
     }
 
     @Test
@@ -218,7 +219,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
     }
 
     @Test
@@ -240,7 +241,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
     }
 
     @Test
@@ -266,7 +267,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
     }
 
     @Test
@@ -294,7 +295,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "CREATE TABLE `my_schema`.two (id int, one_id int, PRIMARY KEY (id), " +
                         "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
-        manager.dropTable(session, SCHEMA, "two");
+        manager.deleteTableDefinition(session, SCHEMA, "two");
         // Commenting out the following as a fix to bug 188. We're now dropping whole groups at a time, instead of just
         // branches.
 //        assertTables("user tables",
@@ -306,14 +307,14 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
 
         // Commenting out the following as a fix to bug 188. We're now dropping whole groups at a time, instead of just
         // branches.
-//        manager.dropTable(SCHEMA, "one");
+//        manager.deleteTableDefinition(SCHEMA, "one");
 //        assertTables("user tables");
 //        assertDDLS();
     }
 
     @Test
     public void dropNonExistentTable() throws Exception {
-        manager.dropTable(session, "this_schema_does_not", "exist");
+        manager.deleteTableDefinition(session, "this_schema_does_not", "exist");
         
         createTable(SCHEMA, "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
@@ -324,11 +325,11 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "use `my_schema`",
                 "CREATE TABLE `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.dropTable(session, SCHEMA, "one");
-        manager.dropTable(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
+        manager.deleteTableDefinition(session, SCHEMA, "one");
 
-        manager.dropTable(session, "this_schema_never_existed", "it_really_didnt");
-        manager.dropTable(session, "this_schema_never_existed", "it_really_didnt");
+        manager.deleteTableDefinition(session, "this_schema_never_existed", "it_really_didnt");
+        manager.deleteTableDefinition(session, "this_schema_never_existed", "it_really_didnt");
     }
 
     @Test
@@ -359,13 +360,13 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
 
         // No changes when trying to add a table like s2.one
         createTable(ErrorCode.DUPLICATE_COLUMN_NAMES, "s3", "CREATE TABLE one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        manager.getAisCopy();
+        manager.getAis(session);
         assertTables("user tables",
                 "CREATE TABLE `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;",
                 "CREATE TABLE `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS(expectedDDLs2.toArray(new String[expectedDDLs.size()]));
 
-        manager.dropTable(session, "s2", "one");
+        manager.deleteTableDefinition(session, "s2", "one");
         List<String> expectedDDLs3 = new ArrayList<String>(expectedDDLs);
         expectedDDLs3.add(0, "create table `akiba_objects`.`_akiba_one$0`(`one$id` int ,  INDEX _akiba_one$0$PK_1(`one$id`)) engine=akibandb");
         expectedDDLs3.add("create database if not exists `s3`");
@@ -377,12 +378,19 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "CREATE TABLE `s3`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS(expectedDDLs3.toArray(new String[expectedDDLs.size()]));
 
-        manager.dropTable(session, "s3", "one");
-        manager.dropTable(session, "s1", "one");
+        manager.deleteTableDefinition(session, "s3", "one");
+        manager.deleteTableDefinition(session, "s1", "one");
     }
 
     private void assertTables(String message, String... expecteds) throws Exception {
-        Map<TableName,String>  actual = manager.getUserTables();
+        Collection<TableDefinition> definitions = schemaManager.getTableDefinitions(session, SCHEMA).values();
+        Map<TableName,String>  actual = new HashMap<TableName, String>();
+        for (TableDefinition td : definitions) {
+            TableName tn = new TableName(td.getSchemaName(), td.getTableName());
+            actual.put(tn, td.getDDL());
+        }
+        
+        
         Map<TableName,String> expMap = new HashMap<TableName, String>(actual.size());
         for (String expected : expecteds) {
             expected = String.format(expected, '`' + SCHEMA + '`');
@@ -411,7 +419,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         expectedList.add("create schema if not exists `akiba_objects`");
 
         expectedList.addAll(Arrays.asList(expected));
-        String actual = Strings.join(manager.getDDLs());
+        String actual = manager.schemaString(session, true);
         String expectedStr = Strings.join(expectedList);
         assertEquals("DDLs", expectedStr, actual);
     }

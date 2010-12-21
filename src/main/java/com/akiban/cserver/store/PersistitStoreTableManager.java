@@ -10,6 +10,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.RowDef;
+import com.akiban.cserver.StorageLink;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.persistit.Exchange;
@@ -33,18 +36,23 @@ public class PersistitStoreTableManager implements TableManager {
 
     private final static long DELAY = 10000L;
 
+    private final static String TEMPORARY_SCHEMA_NAME = "_system_";
+    
     private final static String STATUS_TREE_NAME = "_status_";
 
     private final Map<Integer, TableStatus> statusMap = new ConcurrentHashMap<Integer, TableStatus>();
 
-    private final PersistitStore store;
+    private final Store store;
+    
+    private final PersistitService ps;
 
     private final ValueRenderer encoder = new TableStatus.PersistitEncoder();
 
     private final Timer timer = new Timer("TableStatus_Flusher", true);
 
-    PersistitStoreTableManager(final PersistitStore store) {
-        this.store = store;
+    PersistitStoreTableManager() {
+        this.store = ServiceManagerImpl.get().getStore();
+        this.ps = ServiceManagerImpl.get().getPersistitService();
     }
 
     /**
@@ -54,7 +62,7 @@ public class PersistitStoreTableManager implements TableManager {
      * @throws Exception
      */
     public void startUp() throws Exception {
-        store.getDb().getCoderManager().registerValueCoder(TableStatus.class,
+        ps.getDb().getCoderManager().registerValueCoder(TableStatus.class,
                 encoder);
         //
         // Do this in the foreground thread to throw any configuration-
@@ -96,7 +104,7 @@ public class PersistitStoreTableManager implements TableManager {
                 }
             }
         } finally {
-            store.releaseExchange(session, exchange);
+            ps.releaseExchange(session, exchange);
         }
     }
 
@@ -129,7 +137,7 @@ public class PersistitStoreTableManager implements TableManager {
                 }
             }
         } finally {
-            store.releaseExchange(session, exchange);
+            ps.releaseExchange(session, exchange);
         }
     }
 
@@ -151,7 +159,7 @@ public class PersistitStoreTableManager implements TableManager {
                 }
             }
         } finally {
-            store.releaseExchange(session, exchange);
+            ps.releaseExchange(session, exchange);
         }
     }
 
@@ -166,7 +174,7 @@ public class PersistitStoreTableManager implements TableManager {
         try {
             loadStatus(exchange, tableStatus);
         } finally {
-            store.releaseExchange(session, exchange);
+            ps.releaseExchange(session, exchange);
         }
     }
 
@@ -181,7 +189,7 @@ public class PersistitStoreTableManager implements TableManager {
         try {
             saveStatus(exchange, tableStatus);
         } finally {
-            store.releaseExchange(session, exchange);
+            ps.releaseExchange(session, exchange);
         }
     }
 
@@ -198,7 +206,7 @@ public class PersistitStoreTableManager implements TableManager {
             exchange.remove();
             statusMap.remove(tableStatus.getRowDefId());
         } finally {
-            store.releaseExchange(session, exchange);
+            ps.releaseExchange(session, exchange);
         }
     }
 
@@ -214,7 +222,7 @@ public class PersistitStoreTableManager implements TableManager {
             exchange.remove();
             statusMap.remove(rowDefId);
         } finally {
-            store.releaseExchange(session, exchange);
+            ps.releaseExchange(session, exchange);
         }
     }
 
@@ -236,7 +244,39 @@ public class PersistitStoreTableManager implements TableManager {
     }
 
     private Exchange statusExchange(final Session session) throws PersistitException {
-        return store.getExchange(session, STATUS_TREE_NAME);
+        return ps.getExchange(session, new StorageLink() {
+            Object cache;
+            @Override
+            public String getSchemaName() {
+                return TEMPORARY_SCHEMA_NAME;
+            }
+
+            @Override
+            public String getTableName() {
+                return null;
+            }
+
+            @Override
+            public String getIndexName() {
+                return null;
+            }
+
+            @Override
+            public String getTreeName() {
+                return STATUS_TREE_NAME;
+            }
+
+            @Override
+            public void setStorageCache(Object object) {
+                cache = object;
+            }
+
+            @Override
+            public Object getStorageCache() {
+                return cache;
+            }
+            
+        });
     }
 
     static long now() {

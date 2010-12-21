@@ -37,7 +37,7 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
     @Test
     public void testCServerAis() throws Exception {
         // Store AIS data in Chunk Server
-        final Target target = new CServerAisTarget(store);
+        final Target target = new CServerAisTarget(store, schemaManager);
         new Writer(target).save(ais);
 
         // Retrieve AIS data from Chunk Server
@@ -55,7 +55,7 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
     @Test
     public void testReloadAIS() throws Exception {
         // Store AIS data in Chunk Server
-        final Target target = new CServerAisTarget(store);
+        final Target target = new CServerAisTarget(store, schemaManager);
         new Writer(target).save(ais);
 
         // Retrieve AIS data from Chunk Server

@@ -1,11 +1,19 @@
 package com.akiban.cserver;
 
-import com.akiban.ais.model.*;
-import com.akiban.cserver.util.RowDefNotFoundException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.util.RowDefNotFoundException;
 
 /**
  * Contain the relevant schema information for one version of a table
@@ -17,7 +25,8 @@ import java.util.List;
  * @author peter
  * 
  */
-public class RowDef {
+public class RowDef implements StorageLink {
+    
     private final Table table;
 
     /**
@@ -92,7 +101,9 @@ public class RowDef {
      * method to assist in looking up a field's offset and length.
      */
     private final byte[][] varLenFieldMap;
-
+    
+    private AtomicReference<Object> storageCache = new AtomicReference<Object>();
+    
     public RowDef(Table table) {
         this.table = table;
         this.fieldDefs = new FieldDef[table.getColumns().size()];
@@ -626,5 +637,21 @@ public class RowDef {
                 ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(indexDefs) ^ Arrays.hashCode(pkFields)
                 ^ Arrays.hashCode(parentJoinFields);
+    }
+    
+   
+    @Override
+    public String getIndexName() {
+        return null;
+    }
+    
+    @Override
+    public void setStorageCache(final Object cache) {
+        storageCache.set(cache);
+    }
+    
+    @Override
+    public Object getStorageCache() {
+        return storageCache.get();
     }
 }

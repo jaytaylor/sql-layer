@@ -1,5 +1,6 @@
 package com.akiban.cserver.service.persistit;
 
+import com.akiban.cserver.StorageLink;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
@@ -15,27 +16,33 @@ import com.persistit.exception.PersistitException;
  * 
  */
 public interface PersistitService extends Service<PersistitService> {
-    
-    final static String VOLUME_NAME = "akiban_data";
-    
-    final static String SCHEMA_TREE_NAME = "_schema_";
-    
-    final static String BY_ID = "byId";
 
-    final static String BY_NAME = "byName";
+    static String VOLUME_NAME = "akiban_data";
+
+    static String SCHEMA_TREE_NAME = "_schema_";
+
+    static String BY_ID = "byId";
+
+    static String BY_NAME = "byName";
 
     Persistit getDb();
+
+    Exchange getExchange(Session session, StorageLink context)
+            throws PersistitException;
+
+    Exchange getExchange(Session session, Tree tree) throws PersistitException;
     
-    Exchange getExchange(final Session session, final String schemaName, final String tableName) throws PersistitException;
-    
-    Exchange getExchange(final Session session, final Tree tree) throws PersistitException;
-    
-    void releaseExchange(final Session session, final Exchange exchange);
-    
-    Transaction getTransaction();
-    
-    void visitStorage(StorageVisitor visitor, final String treeName, final Object object) throws PersistitException;
-    
-    int volumeHandle(final Exchange exchange);
-    
+    void releaseExchange(Session session, Exchange exchange);
+
+    Transaction getTransaction(Session session);
+
+    void visitStorage(StorageVisitor visitor, String treeName)
+            throws Exception;
+
+    int volumeHandle(Exchange exchange);
+
+    long getTimestamp(Session session);
+
+    boolean isContainer(Exchange exchange, StorageLink storageLink);
+
 }

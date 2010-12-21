@@ -15,6 +15,7 @@ import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.SessionService;
+import com.akiban.cserver.store.SchemaManager2;
 import com.akiban.cserver.store.Store;
 
 public class ServiceManagerImpl implements ServiceManager, JmxManageable
@@ -75,6 +76,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     public PersistitService getPersistitService() {
         return getService(PersistitService.class);
     }
+    
+    @Override
+    public SchemaManager2 getSchemaManager() {
+        return getService(SchemaManager2.class);
+    }
 
     public void startServices() throws Exception {
 
@@ -92,6 +98,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.persistitService(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
+        startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
         setServiceManager(this);
