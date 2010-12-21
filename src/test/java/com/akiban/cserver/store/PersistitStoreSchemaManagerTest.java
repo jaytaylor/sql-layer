@@ -29,7 +29,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     private final static String SCHEMA = "my_schema";
     private final static Pattern REGEX = Pattern.compile("CREATE TABLE `(\\w+)`\\.(\\w+)");
 
-    SchemaManager2 manager;
+    SchemaManager manager;
  
     @Before
     public void setUp() throws Exception {

@@ -22,7 +22,7 @@ import com.akiban.cserver.service.session.Session;
  * @author peter
  * 
  */
-public interface SchemaManager2 {
+public interface SchemaManager {
 
     /**
      * Create or update a table definition. This method attempts to parse and

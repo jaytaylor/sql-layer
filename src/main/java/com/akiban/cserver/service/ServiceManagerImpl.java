@@ -15,7 +15,7 @@ import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.SessionService;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
 public class ServiceManagerImpl implements ServiceManager, JmxManageable
@@ -78,8 +78,8 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     }
     
     @Override
-    public SchemaManager2 getSchemaManager() {
-        return getService(SchemaManager2.class);
+    public SchemaManager getSchemaManager() {
+        return getService(SchemaManager.class);
     }
 
     public void startServices() throws Exception {

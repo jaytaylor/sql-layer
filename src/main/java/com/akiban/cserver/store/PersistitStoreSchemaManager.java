@@ -36,10 +36,10 @@ import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 
-public class PersistitStoreSchemaManager2 implements Service<SchemaManager2>,
-        SchemaManager2 {
+public class PersistitStoreSchemaManager implements Service<SchemaManager>,
+        SchemaManager {
     private static final Log LOG = LogFactory
-            .getLog(PersistitStoreSchemaManager2.class.getName());
+            .getLog(PersistitStoreSchemaManager.class.getName());
 
     private final static String CREATE_TABLE = "create table ";
 
@@ -69,7 +69,7 @@ public class PersistitStoreSchemaManager2 implements Service<SchemaManager2>,
 
     private long timestamp;
 
-    public PersistitStoreSchemaManager2() {
+    public PersistitStoreSchemaManager() {
         this.serviceManager = ServiceManagerImpl.get();
         this.aisSchema = readAisSchema();
         changed(serviceManager.getPersistitService(), new SessionImpl());
@@ -666,13 +666,13 @@ public class PersistitStoreSchemaManager2 implements Service<SchemaManager2>,
     }
 
     @Override
-    public SchemaManager2 cast() {
+    public SchemaManager cast() {
         return this;
     }
 
     @Override
     public Class castClass() {
-        return PersistitStoreSchemaManager2.class;
+        return PersistitStoreSchemaManager.class;
     }
 
     @Override

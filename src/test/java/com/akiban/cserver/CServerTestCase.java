@@ -18,14 +18,14 @@ import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 import com.persistit.Persistit;
 
 public class CServerTestCase extends TestCase {
 
     protected Store store;
-    protected SchemaManager2 schemaManager;
+    protected SchemaManager schemaManager;
     protected ServiceManager serviceManager;
     protected RowDefCache rowDefCache;
     protected final static Session session = new SessionImpl();
@@ -52,7 +52,7 @@ public class CServerTestCase extends TestCase {
         return serviceManager.getPersistitService().getDb();
     }
 
-    protected SchemaManager2 getSchemaManager() {
+    protected SchemaManager getSchemaManager() {
         return schemaManager;
     }
 

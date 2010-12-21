@@ -14,8 +14,8 @@ import com.akiban.cserver.service.persistit.PersistitServiceImpl;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.session.SessionServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.PersistitStoreSchemaManager2;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.PersistitStoreSchemaManager;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
 public class DefaultServiceManagerFactory implements ServiceManagerFactory {
@@ -102,9 +102,9 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory {
     }
 
     @Override
-    public Service<SchemaManager2> schemaManager() {
+    public Service<SchemaManager> schemaManager() {
         if (schemaService == null) {
-            schemaService = new PersistitStoreSchemaManager2();
+            schemaService = new PersistitStoreSchemaManager();
         }
         return schemaService;
     }

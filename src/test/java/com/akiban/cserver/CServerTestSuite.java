@@ -11,13 +11,13 @@ import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.UnitTestServiceManagerFactory;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
 public class CServerTestSuite {
 
     protected static Store store;
-    protected static SchemaManager2 schemaManager;
+    protected static SchemaManager schemaManager;
     protected static ServiceManager serviceManager;
     protected static RowDefCache rowDefCache;
     protected final static Session session = new SessionImpl();

@@ -5,13 +5,13 @@ import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.dml.NoSuchRowException;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
 abstract class ClientAPIBase {
 
     private final Store store;
-    private final SchemaManager2 schemaManager;
+    private final SchemaManager schemaManager;
     private final IdResolverImpl resolver;
 
     ClientAPIBase() {
@@ -25,7 +25,7 @@ abstract class ClientAPIBase {
         return store;
     }
 
-    final public SchemaManager2 schemaManager() {
+    final public SchemaManager schemaManager() {
         return schemaManager;
     }
 

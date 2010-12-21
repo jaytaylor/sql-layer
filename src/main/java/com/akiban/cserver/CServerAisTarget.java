@@ -8,7 +8,7 @@ import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
 /**
@@ -23,7 +23,7 @@ public class CServerAisTarget extends Target {
 
     private final Store store;
     
-    private final SchemaManager2 schemaManager;
+    private final SchemaManager schemaManager;
     
     private final Session session = new SessionImpl();
 
@@ -58,7 +58,7 @@ public class CServerAisTarget extends Target {
     public void close() throws SQLException {
     }
 
-    public CServerAisTarget(final Store store, final SchemaManager2 schemaManager) {
+    public CServerAisTarget(final Store store, final SchemaManager schemaManager) {
         this.store = store;
         this.schemaManager = schemaManager;
     }

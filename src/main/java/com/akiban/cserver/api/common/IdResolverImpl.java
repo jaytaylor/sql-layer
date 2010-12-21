@@ -8,13 +8,13 @@ import com.akiban.ais.model.TableName;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
 
 public final class IdResolverImpl implements IdResolver {
-    final SchemaManager2 schemaManager;
+    final SchemaManager schemaManager;
     final Store store;
 
     public IdResolverImpl(Store store) {

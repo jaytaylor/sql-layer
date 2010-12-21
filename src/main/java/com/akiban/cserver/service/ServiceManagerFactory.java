@@ -7,7 +7,7 @@ import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.SessionService;
-import com.akiban.cserver.store.SchemaManager2;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
 public interface ServiceManagerFactory
@@ -26,7 +26,7 @@ public interface ServiceManagerFactory
     
     Service<PersistitService> persistitService();
     
-    Service<SchemaManager2> schemaManager();
+    Service<SchemaManager> schemaManager();
     
     Service<Store> storeService();
 }
