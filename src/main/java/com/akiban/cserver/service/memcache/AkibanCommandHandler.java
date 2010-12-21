@@ -33,7 +33,7 @@ import com.akiban.cserver.store.Store;
  * Inspried by: com.thimbleware.jmemcached.protocol.MemcachedCommandHandler
  */
 @ChannelHandler.Sharable
-public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> extends SimpleChannelUpstreamHandler
+public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
     /**
      * State variables that are universal for entire service.
@@ -89,7 +89,7 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
             return;
         }
 
-        CommandMessage<CACHE_ELEMENT> command = (CommandMessage<CACHE_ELEMENT>) event.getMessage();
+        CommandMessage<CacheElement> command = (CommandMessage<CacheElement>) event.getMessage();
         Command cmdOp = command.cmd;
 
         if(LOG.isDebugEnabled()) {
@@ -131,11 +131,11 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
         }
     }
 
-    protected void handleNoOp(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command) {
+    protected void handleNoOp(ChannelHandlerContext context, CommandMessage<CacheElement> command) {
         Channels.fireMessageReceived(context, new ResponseMessage(command));
     }
 
-    protected void handleFlush(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleFlush(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         boolean flushSuccess = false;
         // flushSuccess = cache.flush_all(command.time)
         Channels.fireMessageReceived(context, new ResponseMessage(command).withFlushResponse(flushSuccess), channel.getRemoteAddress());
@@ -145,80 +145,80 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
         channel.disconnect();
     }
 
-    protected void handleVersion(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleVersion(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         ResponseMessage responseMessage = new ResponseMessage(command);
         responseMessage.version = MemCacheDaemon.memcachedVersion;
         Channels.fireMessageReceived(context, responseMessage, channel.getRemoteAddress());
     }
 
-    protected void handleStats(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
-        String option = "";
-        if(command.keys.size() > 0) {
-            option = new String(command.keys.get(0));
-        }
+    protected void handleStats(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
+//        String option = "";
+//        if(command.keys.size() > 0) {
+//            option = new String(command.keys.get(0));
+//        }
         Map<String, Set<String>> statResponse = null;
         // statResponse = cache.stat(option)
         Channels.fireMessageReceived(context, new ResponseMessage(command).withStatResponse(statResponse), channel.getRemoteAddress());
     }
 
-    protected void handleDelete(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleDelete(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Cache.DeleteResponse dr = null;
         //dr = cache.delete(command.keys.get(0), command.time);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withDeleteResponse(dr), channel.getRemoteAddress());
     }
 
-    protected void handleDecr(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleDecr(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Integer incrDecrResp = null;
         //incDecrResp = cache.get_add(command.keys.get(0), -1 * command.incrAmount);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withIncrDecrResponse(incrDecrResp), channel.getRemoteAddress());
     }
 
-    protected void handleIncr(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleIncr(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Integer incrDecrResp = null;
         //incRecrResp = cache.get_add(command.keys.get(0), command.incrAmount); // TODO support default value and expiry!!
         Channels.fireMessageReceived(context, new ResponseMessage(command).withIncrDecrResponse(incrDecrResp), channel.getRemoteAddress());
     }
 
-    protected void handlePrepend(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handlePrepend(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Cache.StoreResponse ret = null;
         //ret = cache.prepend(command.element);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleAppend(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleAppend(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Cache.StoreResponse ret = null;
         //ret = cache.append(command.element);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleReplace(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleReplace(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Cache.StoreResponse ret = null;
         //ret = cache.replace(command.element);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleAdd(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleAdd(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Cache.StoreResponse ret = null;
         //ret = cache.add(command.element);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleCas(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleCas(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Cache.StoreResponse ret = null;
         //ret = cache.cas(command.cas_key, command.element);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleSet(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleSet(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         Cache.StoreResponse ret = null;
         //ret = cache.set(command.element);
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleGets(ChannelHandlerContext context, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+    protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         String[] keys = new String[command.keys.size()];
         keys = command.keys.toArray(keys);
-        CACHE_ELEMENT[] results = null;
+        CacheElement[] results = null;
 
         byte[] key = keys[0].getBytes();
         byte[] result_bytes = null;
@@ -233,7 +233,6 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                 String colkey = tokens[2];
                 String min_val = null;
                 String max_val = null;
-                String leaf_table = null;
                 ByteBuffer payload = (ByteBuffer) context.getAttachment();
 
                 if(tokens.length == 4) {
@@ -247,14 +246,14 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                     List<RowData> list = store.fetchRows(schema, table, colkey, min_val, max_val, null, payload);
                     
                     int current_def_id = -1;
-                    List def_id_stack = new ArrayList<Integer>();
+                    List<Integer> def_id_stack = new ArrayList<Integer>();
 
                     for(RowData data : list) {
                         final int def_id = data.getRowDefId();
                         final RowDef def = cache.getRowDef(def_id);
                         final int parent_def_id = def.getParentRowDefId();
 
-                        if(def_id_stack.isEmpty() == true) {
+                        if(def_id_stack.isEmpty()) {
                             current_def_id = def_id;
                             def_id_stack.add(parent_def_id);
                             sb.append("{ \"");
@@ -284,7 +283,7 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                             int last = def_id_stack.size() - 1;
 
                             sb.append(" } ]");
-                            while(parent_def_id != def_id_stack.get(last)) {
+                            while(!def_id_stack.get(last).equals(parent_def_id)) {
                                 if(pop_count++ > 0) {
                                     sb.append(" ]");
                                 }
@@ -324,22 +323,21 @@ public final class AkibanCommandHandler<CACHE_ELEMENT extends CacheElement> exte
                     }
                 }
                 catch(Exception e) {
-                    result_bytes = new String("read error: " + e.getMessage()).getBytes();
+                    result_bytes = ("read error: " + e.getMessage()).getBytes();
                 }
             }
             else {
-                result_bytes = new String("invalid key: " + request).getBytes();
+                result_bytes = ("invalid key: " + request).getBytes();
             }
         }
 
         if(result_bytes != null) {
             LocalCacheElement element = new LocalCacheElement(keys[0]);
             element.setData(result_bytes);
-            results = (CACHE_ELEMENT[]) new LocalCacheElement[1];
-            results[0] = (CACHE_ELEMENT) element;
+            results = new CacheElement[] { element };
         }
 
-        ResponseMessage<CACHE_ELEMENT> resp = new ResponseMessage<CACHE_ELEMENT>(command).withElements(results);
+        ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
     }
 }
