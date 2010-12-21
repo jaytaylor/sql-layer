@@ -1,17 +1,14 @@
 package com.akiban.cserver.store;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.List;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.TableStatistics;
-import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.session.Session;

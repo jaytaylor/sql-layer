@@ -3,12 +3,10 @@ package com.akiban.cserver.api;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.dml.NoSuchRowException;
-import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.SchemaManager2;
 import com.akiban.cserver.store.Store;
-import com.akiban.util.ArgumentValidation;
 
 abstract class ClientAPIBase {
 
