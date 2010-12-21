@@ -84,6 +84,8 @@ while true; do
         ;;
         -h)
             echo "Usage: $0 [-f] [-g] [-h]"
+            echo "-f launch the akiban server process in the foreground"
+            echo "-g launch the persistit admin tool"
             exit 0
         ;;
         -D)
