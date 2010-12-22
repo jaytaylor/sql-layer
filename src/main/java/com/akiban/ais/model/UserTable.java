@@ -208,7 +208,6 @@ public class UserTable extends Table
     public HKey hKey()
     {
         assert getGroup() != null;
-        assert getPrimaryKey() != null;
         if (hKey == null) {
             computeHKey();
         }
@@ -224,13 +223,22 @@ public class UserTable extends Table
             for (HKeySegment userHKeySegment : hKey().segments()) {
                 HKeySegment branchHKeySegment = branchHKey.addSegment(userHKeySegment.table());
                 for (HKeyColumn userHKeyColumn : userHKeySegment.columns()) {
-                    branchHKeySegment.addColumn(userHKeyColumn.column().getGroupColumn());
+                    Column userColumn = userHKeyColumn.column();
+                    if (userColumn == null) {
+                        branchHKeySegment.addTableCounter(userHKeyColumn.pkLessTable());
+                    } else {
+                        branchHKeySegment.addColumn(userColumn.getGroupColumn());
+                    }
                 }
             }
         }
         return branchHKey;
     }
 
+    /**
+     * @deprecated
+     * @return
+     */
     public List<Column> allHKeyColumns()
     {
         assert getGroup() != null;
@@ -248,12 +256,26 @@ public class UserTable extends Table
 
     public boolean containsOwnHKey()
     {
-        for (Column column : allHKeyColumns()) {
-            if (column.getTable() != this) {
-                 return false;
+        for (HKeySegment segment : hKey().segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                Column column = hKeyColumn.column();
+                if (column != null) {
+                    if (column.getTable() != this) {
+                        return false;
+                    }
+                } // else: PK-less table
             }
         }
         return true;
+    }
+
+    public int hKeyColumnCount()
+    {
+        int count = 0;
+        for (HKeySegment segment : hKey().segments()) {
+            count += segment.columns().size();
+        }
+        return count;
     }
 
     @SuppressWarnings("unused")
@@ -265,18 +287,13 @@ public class UserTable extends Table
     private void computeHKey()
     {
         hKey = new HKey(this);
-        if (isRoot()) {
-            HKeySegment segment = hKey.addSegment(this);
-            for (Column pkColumn : getPrimaryKey().getColumns()) {
-                segment.addColumn(pkColumn);
-            }
-        } else {
+        List<Column> hKeyColumns = new ArrayList<Column>();
+        if (!isRoot()) {
             // Start with the parent's hkey
             Join join = getParentJoin();
             HKey parentHKey = join.getParent().hKey();
             // Start forming this table's full by including all of the parent hkey columns, but replacing
             // columns participating in the join (to this table) by columns from this table.
-            List<Column> hKeyColumns = new ArrayList<Column>();
             for (HKeySegment parentHKeySegment : parentHKey.segments()) {
                 HKeySegment segment = hKey.addSegment(parentHKeySegment.table());
                 for (HKeyColumn parentHKeyColumn : parentHKeySegment.columns()) {
@@ -286,8 +303,12 @@ public class UserTable extends Table
                     hKeyColumns.add(segmentColumn);
                 }
             }
-            // This table's hkey also includes any PK columns not already included.
-            HKeySegment newSegment = hKey.addSegment(this);
+        }
+        // This table's hkey also includes any PK columns not already included.
+        HKeySegment newSegment = hKey.addSegment(this);
+        if (getPrimaryKey() == null) {
+            newSegment.addTableCounter(this);
+        } else {
             for (Column pkColumn : getPrimaryKey().getColumns()) {
                 if (!hKeyColumns.contains(pkColumn)) {
                     newSegment.addColumn(pkColumn);

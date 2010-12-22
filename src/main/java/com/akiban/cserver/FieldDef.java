@@ -51,6 +51,18 @@ public class FieldDef {
         this.rowDef = rowDef;
     }
 
+    public static FieldDef pkLessTableCounter(RowDef rowDef)
+    {
+        FieldDef fieldDef = new FieldDef(null, null, null, -1, -1, null, null);
+        fieldDef.rowDef = rowDef;
+        return fieldDef;
+    }
+
+    public boolean isPKLessTableCounter()
+    {
+        return rowDef != null && column == null;
+    }
+
     public Column column()
     {
         return column;

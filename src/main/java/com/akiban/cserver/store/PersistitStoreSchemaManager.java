@@ -252,11 +252,6 @@ public class PersistitStoreSchemaManager implements CServerConstants,
                     "[%s] %s is protected: %s", useSchemaName,
                     AKIBA_INFORMATION_SCHEMA, ddl);
         }
-        if (tableDef.getPrimaryKey().size() == 0) {
-            throw new InvalidOperationException(ErrorCode.NO_PRIMARY_KEY,
-                    "[%s] %s", useSchemaName, ddl);
-        }
-
         SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
         if (parentJoin != null) {
             if (AKIBA_INFORMATION_SCHEMA.equals(parentJoin.getParentSchema())

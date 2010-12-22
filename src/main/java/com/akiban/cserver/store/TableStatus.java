@@ -46,6 +46,8 @@ public class TableStatus implements Serializable {
 
     private long lastFlushed;
 
+    private long uniqueId; // Used for pk-less tables
+
     private boolean dirty;
 
     public void reset() {
@@ -60,6 +62,7 @@ public class TableStatus implements Serializable {
         lastUpdateTime = 0;
         lastDeleteTime = 0;
         lastFlushed = 0;
+        uniqueId = 0;
         dirty = false;
     }
 
@@ -161,6 +164,12 @@ public class TableStatus implements Serializable {
     public synchronized void deleted() {
         this.lastDeleteTime = now();
         dirty = true;
+    }
+
+    public synchronized long newUniqueId() {
+        dirty = true;
+        return uniqueId++;
+
     }
 
     public synchronized long getRowCount() {

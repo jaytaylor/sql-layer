@@ -276,50 +276,6 @@ public class PersistitStoreRowCollector implements RowCollector {
      */
     KeyFilter computeHFilter(final RowDef rowDef, final RowData start, final RowData end)
     {
-        // KeyFilter oldFilter = computeHFilterOld(rowDef, start, end);
-        KeyFilter newFilter = computeHFilterNew(rowDef, start, end);
-        // assert oldFilter.toString().equals(newFilter.toString()) : String.format("old: %s, new: %s", oldFilter.toString(), newFilter.toString());
-        return newFilter;
-    }
-
-    KeyFilter computeHFilterOld(final RowDef rowDef, final RowData start, final RowData end)
-    {
-        final RowDef leafRowDef = projectedRowDefs[projectedRowDefs.length - 1];
-        final KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef.getHKeyDepth()];
-        final Key key = hEx.getKey();
-        int index = terms.length;
-        RowDef def = leafRowDef;
-        while (def != null) {
-            final int[] fields = def.getPkFields();
-            if (index < (fields.length + 1)) {
-                throw new IllegalStateException(String.format(
-                    "Length mismatch in computeHFilter: def=%s, leafRowDef=%s, index=%s",
-                    def, leafRowDef, index));
-            }
-            terms[index - fields.length - 1] = KeyFilter.simpleTerm(def.getOrdinal());
-            for (int k = 0; k < fields.length; k++) {
-                terms[index - fields.length + k] =
-                    computeKeyFilterTerm(key,
-                                         rowDef,
-                                         start,
-                                         end,
-                                         fields[k] + def.getColumnOffset() - rowDef.getColumnOffset());
-            }
-            index -= (fields.length + 1);
-            final int parentId = def.getParentRowDefId();
-            def = parentId == 0 ? null : store.getRowDefCache().getRowDef(parentId);
-        }
-        if (index != 0) {
-            throw new IllegalStateException(String.format(
-                "Length mismatch in computeHFilter: leafRowDef=%s, index=%s",
-                leafRowDef, index));
-        }
-        key.clear();
-        return new KeyFilter(terms, 0, isDeepMode() ? Integer.MAX_VALUE : terms.length);
-    }
-
-    KeyFilter computeHFilterNew(RowDef rowDef, RowData start, RowData end)
-    {
         RowDef leafRowDef = projectedRowDefs[projectedRowDefs.length - 1];
         KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef.getHKeyDepth()];
         Key key = hEx.getKey();
