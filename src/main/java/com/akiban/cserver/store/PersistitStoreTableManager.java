@@ -50,8 +50,8 @@ public class PersistitStoreTableManager implements TableManager {
 
     private final Timer timer = new Timer("TableStatus_Flusher", true);
 
-    PersistitStoreTableManager() {
-        this.store = ServiceManagerImpl.get().getStore();
+    PersistitStoreTableManager(final Store store) {
+        this.store = store;
         this.ps = ServiceManagerImpl.get().getPersistitService();
     }
 
@@ -112,13 +112,13 @@ public class PersistitStoreTableManager implements TableManager {
      * @see com.akiban.cserver.store.TableManager#getTableStatus(int)
      */
     @Override
-    public synchronized TableStatus getTableStatus(final int rowDefId)
+    public synchronized TableStatus getTableStatus(final Session session, final int rowDefId)
             throws PersistitException {
         TableStatus tableStatus = statusMap.get(rowDefId);
         if (tableStatus == null) {
             tableStatus = new TableStatus(rowDefId);
             statusMap.put(rowDefId, tableStatus);
-            loadStatus(tableStatus);
+            loadStatus(session, tableStatus);
         }
         return tableStatus;
     }
@@ -167,9 +167,8 @@ public class PersistitStoreTableManager implements TableManager {
      * @see com.akiban.cserver.store.TableManager#loadStatus(com.akiban.cserver.store.TableStatus)
      */
     @Override
-    public void loadStatus(final TableStatus tableStatus)
+    public void loadStatus(final Session session, final TableStatus tableStatus)
             throws PersistitException {
-        final Session session = new SessionImpl();
         Exchange exchange = statusExchange(session);
         try {
             loadStatus(exchange, tableStatus);
@@ -182,9 +181,8 @@ public class PersistitStoreTableManager implements TableManager {
      * @see com.akiban.cserver.store.TableManager#saveStatus(com.akiban.cserver.store.TableStatus)
      */
     @Override
-    public void saveStatus(final TableStatus tableStatus)
+    public void saveStatus(final Session session, final TableStatus tableStatus)
             throws PersistitException {
-        final Session session = new SessionImpl();
         Exchange exchange = statusExchange(session);
         try {
             saveStatus(exchange, tableStatus);
@@ -197,9 +195,9 @@ public class PersistitStoreTableManager implements TableManager {
      * @see com.akiban.cserver.store.TableManager#deleteStatus(com.akiban.cserver.store.TableStatus)
      */
     @Override
-    public void deleteStatus(final TableStatus tableStatus)
+    public void deleteStatus(final Session session, final TableStatus tableStatus)
             throws PersistitException {
-        final Session session = new SessionImpl();
+
         Exchange exchange = statusExchange(session);
         try {
             exchange.clear().append(tableStatus.getRowDefId());
@@ -214,8 +212,8 @@ public class PersistitStoreTableManager implements TableManager {
      * @see com.akiban.cserver.store.TableManager#deleteStatus(int)
      */
     @Override
-    public void deleteStatus(final int rowDefId) throws PersistitException {
-        final Session session = new SessionImpl();
+    public void deleteStatus(final Session session, final int rowDefId) throws PersistitException {
+
         Exchange exchange = statusExchange(session);
         try {
             exchange.clear().append(rowDefId);

@@ -1,9 +1,9 @@
-create akiba_information_schema.table groups(
+create table akiba_information_schema.groups (
     group_name varchar(64),
     primary key(group_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table tables(
+create table akiba_information_schema.tables (
     schema_name       varchar(64),
     table_name        varchar(64),
     table_type        varchar(8),
@@ -13,7 +13,7 @@ create akiba_information_schema.table tables(
     primary key(schema_name, table_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table columns (
+create table akiba_information_schema.columns (
     schema_name         varchar(64),
     table_name          varchar(64),
     column_name         varchar(64),
@@ -33,7 +33,7 @@ create akiba_information_schema.table columns (
     primary key(schema_name, table_name, column_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table joins(
+create table akiba_information_schema.joins (
     join_name               varchar(255),
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
@@ -46,7 +46,7 @@ create akiba_information_schema.table joins(
     primary key(join_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table join_columns(
+create table akiba_information_schema.join_columns (
     join_name               varchar(255),
     parent_schema_name      varchar(64),
     parent_table_name       varchar(64),
@@ -57,7 +57,7 @@ create akiba_information_schema.table join_columns(
     primary key(join_name, parent_column_name, child_column_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table indexes (
+create table akiba_information_schema.indexes (
     schema_name      varchar(64),
     table_name       varchar(64),
     index_name       varchar(64),
@@ -67,7 +67,7 @@ create akiba_information_schema.table indexes (
     primary key(schema_name, table_name, index_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table index_columns (
+create table akiba_information_schema.index_columns (
     schema_name       varchar(64),
     table_name        varchar(64),
     index_name        varchar(64),
@@ -78,7 +78,7 @@ create akiba_information_schema.table index_columns (
     primary key(schema_name, table_name, index_name, column_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table types(
+create table akiba_information_schema.types (
     type_name           varchar(64),
     parameters          int,
     fixed_size          tinyint,
@@ -86,7 +86,7 @@ create akiba_information_schema.table types(
     primary key(type_name)
 ) engine=akibandb;
 
-create akiba_information_schema.table index_analysis(
+create table akiba_information_schema.index_analysis (
     table_id            int,
     index_id            int,
     analysis_timestamp  timestamp,

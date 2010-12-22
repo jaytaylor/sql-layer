@@ -196,7 +196,7 @@ public class PersistitServiceImpl implements PersistitService,
             tree = volume.getTree(link.getTreeName(), true);
             link.setStorageCache(tree);
         }
-        return getExchange(session, link);
+        return getExchange(session, tree);
     }
 
     @Override

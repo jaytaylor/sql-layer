@@ -108,7 +108,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     private boolean deferIndexes = false;
 
-    private final RowDefCache rowDefCache;
+    private RowDefCache rowDefCache;
 
     private ServiceManager serviceManager;
 
@@ -127,18 +127,14 @@ public class PersistitStore implements CServerConstants, Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore() {
-        this.serviceManager = ServiceManagerImpl.get();
-        this.ps = serviceManager.getPersistitService();
-        this.rowDefCache = new RowDefCache();
-    }
-
     private synchronized void createManagers() {
-        this.tableManager = new PersistitStoreTableManager();
+        this.tableManager = new PersistitStoreTableManager(this);
         this.indexManager = new PersistitStoreIndexManager(this);
     }
 
     public synchronized void start() throws Exception {
+        ps = ServiceManagerImpl.get().getPersistitService();
+        this.rowDefCache = new RowDefCache();
         createManagers();
         tableManager.startUp();
     }
@@ -518,9 +514,9 @@ public class PersistitStore implements CServerConstants, Store {
         }
     }
 
-    private TableStatus checkTableStatus(int rowDefId)
+    private TableStatus checkTableStatus(final Session session, final int rowDefId)
             throws PersistitException, InvalidOperationException {
-        TableStatus ts = tableManager.getTableStatus(rowDefId);
+        TableStatus ts = tableManager.getTableStatus(session, rowDefId);
         if (ts.isDeleted()) {
             throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE,
                     "Table is deleted: %d", rowDefId);
@@ -561,7 +557,7 @@ public class PersistitStore implements CServerConstants, Store {
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = checkTableStatus(rowDefId);
+                    final TableStatus ts = checkTableStatus(session, rowDefId);
 
                     //
                     // Does the heavy lifting of looking up the full hkey in
@@ -676,10 +672,10 @@ public class PersistitStore implements CServerConstants, Store {
     public void updateTableStats(final Session session, RowDef rowDef,
             long rowCount) throws InvalidOperationException, PersistitException {
         final int rowDefId = rowDef.getRowDefId();
-        TableStatus tableStatus = checkTableStatus(rowDefId);
+        TableStatus tableStatus = checkTableStatus(session, rowDefId);
         tableStatus.setRowCount(rowCount);
         tableStatus.updated();
-        tableManager.saveStatus(tableStatus);
+        tableManager.saveStatus(session, tableStatus);
     }
 
     @Override
@@ -699,7 +695,7 @@ public class PersistitStore implements CServerConstants, Store {
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = checkTableStatus(rowDefId);
+                    final TableStatus ts = checkTableStatus(session, rowDefId);
 
                     constructHKey(session, hEx, rowDef, rowData);
                     hEx.fetch();
@@ -801,7 +797,7 @@ public class PersistitStore implements CServerConstants, Store {
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = checkTableStatus(rowDefId);
+                    final TableStatus ts = checkTableStatus(session, rowDefId);
                     constructHKey(session, hEx, rowDef, oldRowData);
                     hEx.fetch();
                     //
@@ -915,7 +911,7 @@ public class PersistitStore implements CServerConstants, Store {
             transaction.begin();
 
             try {
-                final TableStatus ts = checkTableStatus(rowDefId);
+                final TableStatus ts = checkTableStatus(session, rowDefId);
                 //
                 // Remove the index trees
                 //
@@ -944,11 +940,11 @@ public class PersistitStore implements CServerConstants, Store {
                     final int childId = groupRowDef.getUserTableRowDefs()[i]
                             .getRowDefId();
                     final TableStatus ts1 = tableManager
-                            .getTableStatus(childId);
+                            .getTableStatus(session, childId);
                     ts1.setRowCount(Long.MIN_VALUE);
                     ts1.deleted();
                 }
-                final TableStatus ts0 = tableManager.getTableStatus(groupRowDef
+                final TableStatus ts0 = tableManager.getTableStatus(session, groupRowDef
                         .getRowDefId());
                 ts0.setRowCount(0);
                 ts0.deleted();
@@ -1085,10 +1081,10 @@ public class PersistitStore implements CServerConstants, Store {
         return list;
     }
 
-    public final RowDef checkRequest(int rowDefId, RowData start, RowData end,
+    private final RowDef checkRequest(final Session session, int rowDefId, RowData start, RowData end,
             int indexId, int scanFlags) throws InvalidOperationException,
             PersistitException {
-        final TableStatus ts = checkTableStatus(rowDefId);
+        final TableStatus ts = checkTableStatus(session, rowDefId);
 
         if (start != null && start.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException(
@@ -1113,7 +1109,7 @@ public class PersistitStore implements CServerConstants, Store {
         int indexId = request.getIndexId();
         int scanFlags = request.getScanFlags();
         byte[] columnBitMap = request.getColumnBitMap();
-        final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
+        final RowDef rowDef = checkRequest(session, rowDefId, start, end, indexId,
                 scanFlags);
         RowCollector rc = new PersistitStoreRowCollector(session, this,
                 scanFlags, start, end, columnBitMap, rowDef, indexId);
@@ -1128,7 +1124,7 @@ public class PersistitStore implements CServerConstants, Store {
             throws InvalidOperationException, PersistitException {
 
         NEW_COLLECTOR_TAP.in();
-        final RowDef rowDef = checkRequest(rowDefId, start, end, indexId,
+        final RowDef rowDef = checkRequest(session, rowDefId, start, end, indexId,
                 scanFlags);
 
         final RowCollector rc = new PersistitStoreRowCollector(session, this,
@@ -1161,7 +1157,7 @@ public class PersistitStore implements CServerConstants, Store {
             throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         final TableStatistics ts = new TableStatistics(tableId);
-        final TableStatus status = tableManager.getTableStatus(tableId);
+        final TableStatus status = tableManager.getTableStatus(session, tableId);
         if (rowDef.getRowType() == RowType.GROUP) {
             ts.setRowCount(2);
             ts.setAutoIncrementValue(-1);

@@ -49,7 +49,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static final int GROUP_TABLE_ID_OFFSET = 1000000000;
 
-    private static final String AIS_DDL_NAME = "akiba_information_schema2.ddl";
+    private static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
 
     private final static String SCHEMA_TREE_NAME = "_schema_";
 
@@ -65,15 +65,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private List<TableDefinition> aisSchema;
 
-    private final ServiceManager serviceManager;
+    private ServiceManager serviceManager;
 
     private long timestamp;
-
-    public PersistitStoreSchemaManager() {
-        this.serviceManager = ServiceManagerImpl.get();
-        this.aisSchema = readAisSchema();
-        changed(serviceManager.getPersistitService(), new SessionImpl());
-    }
 
     /**
      * Create or update a table definition given a schema name, table name and a
@@ -529,7 +523,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 sb.append(CServerUtil.NEW_LINE);
             }
             for (final TableDefinition tableStruct : aisSchema) {
-                sb.append("CREATE TABLE ").append(tableStruct.getDDL())
+                sb.append(CREATE_TABLE).append(tableStruct.getDDL())
                         .append(CServerUtil.NEW_LINE);
             }
         }
@@ -615,15 +609,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 CServer.class.getClassLoader()
                         .getResourceAsStream(AIS_DDL_NAME)));
         final Pattern pattern = Pattern.compile("create table "
-                + AKIBAN_INFORMATION_SCHEMA + ".(\\w+)\\.");
+                + AKIBAN_INFORMATION_SCHEMA + ".(\\w+).*");
         for (String statement : (new MySqlStatementSplitter(reader))) {
             Matcher matcher = pattern.matcher(statement);
             if (!matcher.find()) {
                 throw new RuntimeException("couldn't match regex for: "
                         + statement);
             }
+            final String canonical = DDLSource.canonicalStatement(statement);
             TableDefinition def = new TableDefinition(tableId++,
-                    "akiba_information_schema", matcher.group(1), statement);
+                    "akiba_information_schema", matcher.group(1), canonical);
             definitions.add(def);
         }
         return Collections.unmodifiableList(definitions);
@@ -672,13 +667,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public Class castClass() {
-        return PersistitStoreSchemaManager.class;
+        return SchemaManager.class;
     }
 
     @Override
     public void start() throws Exception {
-        // Nothing to do
-
+        this.serviceManager = ServiceManagerImpl.get();
+        this.aisSchema = readAisSchema();
+        changed(serviceManager.getPersistitService(), new SessionImpl());
     }
 
     @Override

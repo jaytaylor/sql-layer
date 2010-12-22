@@ -373,26 +373,26 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         
         ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
         assertTrue(store.getTableManager()
-                .getTableStatus(td.defO.getRowDefId()).isDeleted());
+                .getTableStatus(session, td.defO.getRowDefId()).isDeleted());
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
 
         ddlf.dropTable(session, TableId.of(td.defI.getRowDefId()));
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
         assertTrue(store.getTableManager()
-                .getTableStatus(td.defI.getRowDefId()).isDeleted());
+                .getTableStatus(session, td.defI.getRowDefId()).isDeleted());
 
         ddlf.dropTable(session, TableId.of(td.defA.getRowDefId()));
         assertTrue(store.getTableManager()
-                .getTableStatus(td.defA.getRowDefId()).isDeleted());
+                .getTableStatus(session, td.defA.getRowDefId()).isDeleted());
 
         ddlf.dropTable(session, TableId.of(td.defC.getRowDefId()));
         assertTrue(store.getTableManager()
-                .getTableStatus(td.defC.getRowDefId()).isDeleted());
+                .getTableStatus(session, td.defC.getRowDefId()).isDeleted());
 
         ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertTrue(store.getTableManager()
-                .getTableStatus(td.defO.getRowDefId()).isDeleted());
+                .getTableStatus(session, td.defO.getRowDefId()).isDeleted());
 
         ddlf.dropTable(session, TableId.of(td.defX.getRowDefId()));
 

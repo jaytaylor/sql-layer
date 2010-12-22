@@ -1,14 +1,30 @@
 package com.akiban.cserver;
 
-import com.akiban.ais.model.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.PrimaryKey;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.TableManager;
 import com.akiban.cserver.store.TableStatus;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.persistit.exception.PersistitException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.util.*;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
@@ -114,6 +130,7 @@ public class RowDefCache implements CServerConstants {
 
     public synchronized void fixUpOrdinals(TableManager tableManager)
             throws PersistitException {
+        final Session session = new SessionImpl();
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
                 // groupTable has no ordinal
@@ -123,7 +140,7 @@ public class RowDefCache implements CServerConstants {
                 for (final RowDef userRowDef : groupRowDef
                         .getUserTableRowDefs()) {
                     final TableStatus tableStatus = tableManager
-                            .getTableStatus(userRowDef.getRowDefId());
+                            .getTableStatus(session, userRowDef.getRowDefId());
                     if (tableStatus.getOrdinal() != 0
                             && userRowDef.getOrdinal() != 0
                             && tableStatus.getOrdinal() != userRowDef
@@ -152,7 +169,7 @@ public class RowDefCache implements CServerConstants {
                 for (final RowDef userRowDef : groupRowDef
                         .getUserTableRowDefs()) {
                     final TableStatus tableStatus = tableManager
-                            .getTableStatus(userRowDef.getRowDefId());
+                            .getTableStatus(session, userRowDef.getRowDefId());
                     if (userRowDef.getOrdinal() == 0) {
                         // find an unassigned value. Here we could try to
                         // optimize layout

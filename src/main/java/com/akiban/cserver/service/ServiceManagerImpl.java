@@ -93,15 +93,21 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         jmxRegistry.register(this);
         ConfigurationService configService = getServiceAsService(ConfigurationService.class).cast();
         servicesDebugHooks(configService);
-
+        
+        // TODO -
+        // Temporarily I moved this so that services can refer to their predecessors
+        // during their start() methods.  I think this is natural and appropriate, but
+        // it also means the order of the following method calls is fragile.
+        // I'd like to brainstorm a better approach. -- Peter
+        
+        setServiceManager(this);
         startAndPut(factory.loggingService(), jmxRegistry);
         startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.persistitService(), jmxRegistry);
-        startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
+        startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
-        setServiceManager(this);
     }
 
     private void servicesDebugHooks(ConfigurationService configService)
