@@ -6,6 +6,7 @@ import com.akiban.cserver.service.config.ConfigurationServiceImpl;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
+import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.store.Store;
 
 public class DefaultServiceManagerFactory implements ServiceManagerFactory
@@ -14,6 +15,7 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
     private Service configurationService;
     private Service networkService;
     private Service chunkserverService;
+    private Service memcacheService;
     
     @Override
     public ServiceManager serviceManager()
@@ -67,5 +69,15 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
             chunkserverService = chunkserver;
         }
         return chunkserverService;
+    }
+
+    @Override
+    public Service memcacheService()
+    {
+        if (memcacheService == null)
+        {
+            memcacheService = new MemcacheService(serviceManager);
+        }
+        return memcacheService;
     }
 }
