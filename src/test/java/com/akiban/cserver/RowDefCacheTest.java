@@ -63,9 +63,7 @@ public class RowDefCacheTest
         checkField("bb3", bb, 3);
         checkField("bb4", bb, 4);
         checkField("bb5", bb, 5);
-        assertArrayEquals(new int[]{3, 2, 4, 1}, b.getPkFields());
         assertArrayEquals(new int[]{}, b.getParentJoinFields());
-        assertArrayEquals(new int[]{5, 4}, bb.getPkFields());
         assertArrayEquals(new int[]{0, 2, 1, 3}, bb.getParentJoinFields());
         assertEquals(b.getRowDefId(), bb.getParentRowDefId());
         assertEquals(0, b.getParentRowDefId());
@@ -112,9 +110,7 @@ public class RowDefCacheTest
                   p, c, "id",
                   c);
         assertEquals(3, child.getHKeyDepth()); // parent ordinal, id, child ordinal
-        assertArrayEquals("parent PKs", new int[]{0}, parent.getPkFields());
         assertArrayEquals("parent joins", new int[]{}, parent.getParentJoinFields());
-        assertArrayEquals("child PKs", new int[]{}, child.getPkFields());
         assertArrayEquals("child joins", new int[]{0}, child.getParentJoinFields());
     }
 
@@ -190,7 +186,6 @@ public class RowDefCacheTest
         RowDef customer = rowDefCache.getRowDef(tableName("customer"));
         checkFields(customer, "cid", "cx");
         assertEquals(2, customer.getHKeyDepth()); // customer ordinal, cid
-        assertArrayEquals(new int[]{0}, customer.getPkFields());
         assertArrayEquals(new int[]{}, customer.getParentJoinFields());
         // index on cid
         index = index(customer, "cid");
@@ -224,7 +219,6 @@ public class RowDefCacheTest
         RowDef orders = rowDefCache.getRowDef(tableName("orders"));
         checkFields(orders, "oid", "cid", "ox");
         assertEquals(4, orders.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid
-        assertArrayEquals(new int[]{0}, orders.getPkFields());
         assertArrayEquals(new int[]{1}, orders.getParentJoinFields());
         // index on oid
         index = index(orders, "oid");
@@ -300,7 +294,6 @@ public class RowDefCacheTest
         RowDef item = rowDefCache.getRowDef(tableName("item"));
         checkFields(item, "iid", "oid", "ix");
         assertEquals(6, item.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid, item ordinal, iid
-        assertArrayEquals(new int[]{0}, item.getPkFields());
         assertArrayEquals(new int[]{1}, item.getParentJoinFields());
         // Index on iid
         index = index(item, "iid");
@@ -634,7 +627,6 @@ public class RowDefCacheTest
         RowDef customer = rowDefCache.getRowDef(tableName("customer"));
         checkFields(customer, "cid", "cx");
         assertEquals(2, customer.getHKeyDepth()); // customer ordinal, cid
-        assertArrayEquals(new int[]{0}, customer.getPkFields());
         assertArrayEquals(new int[]{}, customer.getParentJoinFields());
         // index on cid
         index = index(customer, "cid");
@@ -667,7 +659,6 @@ public class RowDefCacheTest
         RowDef orders = rowDefCache.getRowDef(tableName("orders"));
         checkFields(orders, "cid", "oid", "ox");
         assertEquals(4, orders.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid
-        assertArrayEquals(new int[]{1}, orders.getPkFields());
         assertArrayEquals(new int[]{0}, orders.getParentJoinFields());
         // index on cid, oid
         index = index(orders, "cid", "oid");
@@ -708,7 +699,6 @@ public class RowDefCacheTest
         RowDef item = rowDefCache.getRowDef(tableName("item"));
         checkFields(item, "cid", "oid", "iid", "ix");
         assertEquals(6, item.getHKeyDepth()); // customer ordinal, cid, orders ordinal, oid, item ordinal iid
-        assertArrayEquals(new int[]{2}, item.getPkFields());
         assertArrayEquals(new int[]{0, 1}, item.getParentJoinFields());
         // index on cid, oid, iid
         index = index(item, "cid", "oid", "iid");

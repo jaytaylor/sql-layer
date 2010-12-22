@@ -113,11 +113,6 @@ public final class PersistitStoreSchemaManagerTest {
     }
 
     @Test
-    public void tableWithoutPK() throws Exception {
-        createTable(ErrorCode.NO_PRIMARY_KEY, SCHEMA, "CREATE TABLE one (id int) engine=akibandb;");
-    }
-
-    @Test
     public void testSelfReferencingTable() throws Exception {
         createTable(ErrorCode.JOIN_TO_UNKNOWN_TABLE, SCHEMA, "CREATE TABLE one (id int, self_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb;");

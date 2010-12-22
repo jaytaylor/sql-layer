@@ -611,22 +611,25 @@ public class DDLSource extends Source {
                         tableName);
                 
                 final Map<String, AtomicInteger> indexNamingMap = new HashMap<String, AtomicInteger>();
-                indexId++;
                 int columnIndex = 0;
-                for (final String pk : utDef.primaryKey) {
-                    final ColumnDef columnDef = columnDefMap.get(utDef.name
-                            + "." + pk);
-                    final String gtn = groupTableName(groupName);
-                    indexColumnReceiver
-                            .receive(map(indexColumn, tableName.getSchema(),
-                                    tableName.getName(), "PRIMARY",
-                                    columnDef.name, columnIndex, true, null));
-                    indexColumnReceiver.receive(map(indexColumn,
-                            groupSchemaName(), gtn,
-                            userPKIndexName(gtn, utDef, indexId),
-                            mangledColumnName(utDef.name, columnDef.name),
-                            columnIndex, true, null));
-                    columnIndex++;
+                if (!utDef.getPrimaryKey().isEmpty()) {
+                    indexId++;
+                    columnIndex = 0;
+                    for (final String pk : utDef.primaryKey) {
+                        final ColumnDef columnDef = columnDefMap.get(utDef.name
+                                + "." + pk);
+                        final String gtn = groupTableName(groupName);
+                        indexColumnReceiver
+                                .receive(map(indexColumn, tableName.getSchema(),
+                                        tableName.getName(), "PRIMARY",
+                                        columnDef.name, columnIndex, true, null));
+                        indexColumnReceiver.receive(map(indexColumn,
+                                groupSchemaName(), gtn,
+                                userPKIndexName(gtn, utDef, indexId),
+                                mangledColumnName(utDef.name, columnDef.name),
+                                columnIndex, true, null));
+                        columnIndex++;
+                    }
                 }
                 for (final IndexDef indexDef : utDef.indexes) {
                     columnIndex = 0;
@@ -673,22 +676,31 @@ public class DDLSource extends Source {
         for (final CName groupName : schemaDef.getGroupMap().keySet()) {
             int indexId = 0;
             for (final CName tableName : schemaDef.getGroupMap().get(groupName)) {
-                final UserTableDef utDef = schemaDef.getUserTableMap().get(
-                        tableName);
+                final UserTableDef utDef = schemaDef.getUserTableMap().get(tableName);
                 final Map<String, AtomicInteger> indexNamingMap = new HashMap<String, AtomicInteger>();
-                indexId++;
-                final String gtn = groupTableName(groupName);
-                indexReceiver.receive(map(index, tableName.getSchema(),
-                        tableName.getName(), "PRIMARY", indexId, "PRIMARY",
-                        true));
-                indexReceiver.receive(map(index, groupSchemaName(), gtn,
-                        userPKIndexName(gtn, utDef, indexId), indexId, "INDEX", false));
+                if (!utDef.getPrimaryKey().isEmpty()) {
+                    indexId++;
+                    final String gtn = groupTableName(groupName);
+                    indexReceiver.receive(map(index,
+                                              tableName.getSchema(),
+                                              tableName.getName(),
+                                              "PRIMARY",
+                                              indexId,
+                                              "PRIMARY",
+                                              true));
+                    indexReceiver.receive(map(index,
+                                              groupSchemaName(),
+                                              gtn,
+                                              userPKIndexName(gtn, utDef, indexId),
+                                              indexId,
+                                              "INDEX",
+                                              false));
+                }
                 for (final IndexDef indexDef : utDef.indexes) {
                     String indexType = "INDEX";
                     boolean unique = false;
                     for (final SchemaDef.IndexQualifier qualifier : indexDef.qualifiers) {
-                        if (qualifier
-                                .equals(SchemaDef.IndexQualifier.FOREIGN_KEY)) {
+                        if (qualifier.equals(SchemaDef.IndexQualifier.FOREIGN_KEY)) {
                             indexType = "FOREIGN KEY";
                         }
                         if (qualifier.equals(SchemaDef.IndexQualifier.UNIQUE)) {
