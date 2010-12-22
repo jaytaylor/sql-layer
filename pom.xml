@@ -6,55 +6,31 @@
     <packaging>jar</packaging>
     <version>0.0.2-SNAPSHOT</version>
     <name>akiban-cserver</name>
-
     <repositories>
         <repository>
-            <id>libs-releases-local</id>
-            <name>Repository</name>
+            <id>JBOSS</id>
+            <name>JBoss Repository</name>
+            <url>http://repository.jboss.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>Artifact-Repository</id>
+            <name>Artifact-Repository</name>
+            <url>http://www.artifact-repository.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
             <layout>default</layout>
-            <url>http://172.16.20.117:9999/artifactory/libs-releases-local</url>
+            <url>http://repo1.maven.org/maven2</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-        </repository>
-        <repository>
-            <id>repo</id>
-            <name>libs-snapshots-local</name>
-            <url>http://172.16.20.117:9999/artifactory/libs-snapshots-local</url>
         </repository>
         <repository>
             <id>thimbleware.repo</id>
             <url>http://thimbleware.com/maven</url>
         </repository>
     </repositories>
-    
-    <pluginRepositories>
-        <pluginRepository>
-            <id>plugins-releases-local</id>
-            <name>Plugin Repository</name>
-            <url>http://172.16.20.117:9999/artifactory/plugins-releases-local</url>
-            <layout>default</layout>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <updatePolicy>never</updatePolicy>
-            </releases>
-        </pluginRepository>
-    </pluginRepositories>
-    <distributionManagement>
-        <repository>
-            <id>repo</id>
-            <name>libs-snapshots-local</name>
-            <url>http://172.16.20.117:9999/artifactory/libs-snapshots-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>repo</id>
-            <name>libs-snapshots-local</name>
-            <url>http://172.16.20.117:9999/artifactory/libs-snapshots-local</url>
-        </snapshotRepository>
-    </distributionManagement>
-
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -97,7 +73,7 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.9</version>
-        </dependency>
+        </dependency>    
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
@@ -137,19 +113,18 @@
             <artifactId>jetty-embedded</artifactId>
             <version>6.1.14</version>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.5.11</version>
-            <scope>compile</scope>
-        </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>1.5.11</version>
+                <scope>compile</scope>
+            </dependency>
         <dependency>
             <groupId>com.thimbleware.jmemcached</groupId>
             <artifactId>jmemcached-core</artifactId>
             <version>0.9.1</version>
         </dependency>
     </dependencies>
-
 
     <build>
         <plugins>
@@ -167,8 +142,6 @@
                         <configuration>
                             <portNames>
                                 <portName>cserver.port</portName>
-                                <portName>rmi.port</portName>
-                                <portName>jmx.port</portName>
                                 <portName>debug.port</portName>
                             </portNames>
                         </configuration>
@@ -211,10 +184,8 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
-                        <!-- This is used for inheritance merges ?? -->
-                        <phase>install</phase>
-                        <!-- Append to the install phase -->
+                        <id>make-assembly</id> <!-- This is used for inheritance merges ?? -->
+                        <phase>install</phase> <!-- Append to the install phase -->
                         <goals>
                             <goal>single</goal>
                         </goals>
@@ -234,11 +205,26 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>com.atlassian.maven.plugins</groupId>
+                <artifactId>maven-clover2-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <generateHistorical>true</generateHistorical>
+                    <historyDir>/clover/history</historyDir>
+                    <license><![CDATA[PpMOqBXixXwmrECcCXcNWMiPdoNUxGimeeaAxQLAHXjuxGq
+mj2L00k1BlPcP>5lr6tcyjP5U2KJ>74Tfqpr3R>yJZm5IOW
+rqortTONOOQqqprRPqnuVOQmPNRMMqqnnnVVTXusxXowuUx
+xMnmnmUUnotqnmqummmmmUUnotqnmqummmmmUUXhfYXkWfk
+ZUUn]]></license>
+                    <generateXml>true</generateXml>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
-                    <argLine>-Xmx512m -Xms128m -Drmiport=${rmi.port} -Dcserver.port=${cserver.port}</argLine>
+                    <argLine>-Xmx512m -Xms128m -Dcserver.port=${cserver.port}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -247,25 +233,6 @@
                         <!-- None -->
                     </excludes>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.6</version>
-                <executions>
-                    <execution>
-                        <id>integration-test</id>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>verify</id>
-                        <goals>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -279,6 +246,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>
-
-
