@@ -259,16 +259,25 @@ public class IndexDef implements StorageLink {
         HKey hKey = index.hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                if (!indexColumns.contains(hKeyColumn.column())) {
-                    H2I h2i;
-                    if (index.getTable().getColumns().contains(hKeyColumn.column())) {
-                        h2i = H2I.fromField(hKeyColumn.column().getPosition());
-                    } else {
-                        assert rowDef.isUserTable();
-                        h2i = H2I.fromHKeyField(hKeyColumn.positionInHKey());
-                    }
+                Column column = hKeyColumn.column();
+                H2I h2i;
+                if (column == null) {
+                    // hkey column is a pk-less table counter
+                    h2i = H2I.fromHKeyField(hKeyColumn.positionInHKey());
                     h2iList.add(h2i);
-                    indexColumns.add(hKeyColumn.column());
+                    indexColumns.add(null);
+                } else {
+                    // hkey column is a real column
+                    if (!indexColumns.contains(column)) {
+                        if (index.getTable().getColumns().contains(hKeyColumn.column())) {
+                            h2i = H2I.fromField(hKeyColumn.column().getPosition());
+                        } else {
+                            assert rowDef.isUserTable();
+                            h2i = H2I.fromHKeyField(hKeyColumn.positionInHKey());
+                        }
+                        h2iList.add(h2i);
+                        indexColumns.add(hKeyColumn.column());
+                    }
                 }
             }
         }
@@ -282,8 +291,14 @@ public class IndexDef implements StorageLink {
         for (HKeySegment hKeySegment : hKey.segments()) {
             i2hList.add(new I2H(rowDefCache.rowDef(hKeySegment.table())));
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                int hKeyColumnIndexPosition = indexColumns.indexOf(hKeyColumn.column());
-                int hKeyColumnFieldPosition = hKeyColumn.column().getPosition();
+                Column column = hKeyColumn.column();
+                // hKeyColumn.column() will be null for an hkey segment from a pk-less table.
+                // For such a column, a null has already been placed in indexColumns, so this use
+                // of indexColumns.indexOf() should just work. (This would not work if an index could
+                // contain multiple pk-less table counters.) In this case, hKeyColumnFieldPosition,
+                // (used to set I2H.fieldPosition) should not be used.
+                int hKeyColumnIndexPosition = indexColumns.indexOf(column);
+                int hKeyColumnFieldPosition = column == null ? -1 : column.getPosition();
                 i2hList.add(new I2H(hKeyColumnIndexPosition, hKeyColumnFieldPosition));
             }
         }

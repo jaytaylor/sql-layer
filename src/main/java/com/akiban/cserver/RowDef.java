@@ -408,12 +408,6 @@ public class RowDef implements StorageLink {
         return parentJoin == null ? 0 : parentJoin.getParent().getTableId();
     }
 
-    // NOT the entire PK. Just the fields of the PK that do not participate in
-    // join with parent.
-    public int[] getPkFields() {
-        return pkFields;
-    }
-
     public String getPkTreeName() {
         final IndexDef pkIndexDef = getPKIndexDef();
         return pkIndexDef != null ? pkIndexDef.getTreeName() : null;

@@ -23,6 +23,8 @@ public class TableStatus {
     private boolean isAutoIncrement;
 
     private long autoIncrementValue;
+    
+    private long uniqueId; // Used for pk-less tables
 
     private long rowCount;
 
@@ -145,6 +147,11 @@ public class TableStatus {
         this.rowCount = Math.max(0, this.rowCount + delta);
         dirty = true;
     }
+    
+    public synchronized long newUniqueId() {
+        dirty = true;
+        return uniqueId++;
+    }
 
     public long getTimestamp() {
         return timestamp;
@@ -196,6 +203,7 @@ public class TableStatus {
             value.put(ordinal);
             value.put(isAutoIncrement);
             value.put(autoIncrementValue);
+            value.put(uniqueId);
             value.put(rowCount);
             value.put(creationTime);
             value.put(lastWriteTime);
@@ -240,6 +248,7 @@ public class TableStatus {
             ordinal = value.getInt();
             isAutoIncrement = value.getBoolean();
             autoIncrementValue = value.getLong();
+            uniqueId = value.getLong();
             rowCount = value.getLong();
             creationTime = value.getLong();
             lastWriteTime = value.getLong();

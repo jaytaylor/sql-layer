@@ -473,6 +473,38 @@ public class RowData {
         return sb.toString();
     }
 
+    public String toJSONString(final RowDefCache cache) {
+        final StringBuilder sb = new StringBuilder();
+
+        try {
+            final RowDef rowDef = cache.getRowDef(getRowDefId());
+            for(int i = 0; i < getFieldCount(); i++) {
+                final FieldDef fieldDef = rowDef.getFieldDef(i);
+                final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
+                if(i != 0) {
+                    sb.append(", ");
+                }   
+                sb.append("\"");
+                sb.append(fieldDef.getName());
+                sb.append("\" : ");
+
+                if(location != 0) {
+                    fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.DOUBLE_QUOTE);
+                }   
+                else {
+                    sb.append("null");
+                }   
+            }   
+        } catch(Exception e) {
+            sb.setLength(0);
+            sb.append("\"hex_row\" : \"");
+            CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
+            sb.append("\"");
+        }   
+
+        return sb.toString();
+    }
+
     public String explain() {
 
         final StringBuilder sb = new StringBuilder();

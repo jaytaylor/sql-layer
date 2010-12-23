@@ -30,9 +30,8 @@ public class PersistitAdapter
         this.store = store;
         this.task = task;
         UserTable leafTable = task.table();
-        List<Column> hKeyColumns = leafTable.allHKeyColumns();
-        hKeyFieldDefs = new FieldDef[hKeyColumns.size()];
-        hKey = new Object[hKeyColumns.size()];
+        hKeyFieldDefs = new FieldDef[leafTable.hKeyColumnCount()];
+        hKey = new Object[leafTable.hKeyColumnCount()];
         HKey leafHKey = leafTable.hKey();
         int nHKeySegments = leafHKey.segments().size();
         ordinals = new int[nHKeySegments];
@@ -46,9 +45,15 @@ public class PersistitAdapter
             ordinals[segmentCount] = segmentRowDef.getOrdinal();
             nKeyColumns[segmentCount] = segment.columns().size();
             for (HKeyColumn hKeyColumn : segment.columns()) {
-                Table columnTable = hKeyColumn.column().getTable();
-                RowDef columnRowDef = rowDefCache.getRowDef(columnTable.getTableId());
-                hKeyFieldDefs[hKeyColumnCount] = columnRowDef.getFieldDef(hKeyColumn.column().getPosition());
+                Column column = hKeyColumn.column();
+                if (column == null) {
+                    // hKeyColumn's segment is a PK-less table
+                    hKeyFieldDefs[hKeyColumnCount] = FieldDef.pkLessTableCounter(segmentRowDef);
+                } else {
+                    Table columnTable = column.getTable();
+                    RowDef columnRowDef = rowDefCache.getRowDef(columnTable.getTableId());
+                    hKeyFieldDefs[hKeyColumnCount] = columnRowDef.getFieldDef(column.getPosition());
+                }
                 hKeyColumnCount++;
             }
             segmentCount++;

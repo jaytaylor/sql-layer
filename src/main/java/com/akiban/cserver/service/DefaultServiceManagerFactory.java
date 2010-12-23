@@ -7,6 +7,7 @@ import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.logging.LoggingServiceImpl;
+import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
 import com.akiban.cserver.service.persistit.PersistitService;
@@ -26,9 +27,11 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory {
     private Service configurationService;
     private Service networkService;
     private Service chunkserverService;
+
     private Service persistitService;
     private Service storeService;
     private Service schemaService;
+    private Service memcacheService;
     
     public static ServiceManager createServiceManager() {
         return new ServiceManagerImpl(new DefaultServiceManagerFactory());
@@ -107,5 +110,14 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory {
             schemaService = new PersistitStoreSchemaManager();
         }
         return schemaService;
+    }
+    
+    public Service memcacheService()
+    {
+        if (memcacheService == null)
+        {
+            memcacheService = new MemcacheService();
+        }
+        return memcacheService;
     }
 }

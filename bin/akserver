@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# OPTIONS:
+#   -f: start in foreground
+#   -p <filename>: log the pid to a file (useful to kill it later)
+#
+# CONTROLLING STARTUP:
+# 
+# This script relies on few environment variables to determine startup
+# behavior, those variables are:
+#
+#   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
+#   AKIBAN_CONF -- Directory containing configuration files.
+#
+
+akiban_home=`dirname $0`/..
+
+# This can be the path to a jar file, or a directory containing the 
+# compiled classes. NOTE: This isn't needed by the startup script,
+# it's just used here in constructing the classpath.
+akiban_bin=$akiban_home/target/classes
+
+# the config file to use for the chunk server
+CONFIG_DIR="${akiban_home}/conf"
+
+# JAVA_HOME can optionally be set here
+#JAVA_HOME=/usr/local/jdk6
+
+# the JAR file we use to launch the akiban server
+JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+
+# Use JAVA_HOME if set, otherwise look for java in PATH
+if [ -x $JAVA_HOME/bin/java ]; then
+    JAVA=$JAVA_HOME/bin/java
+else
+    JAVA=`which java`
+fi
+
+if [ -z $AKIBAN_CONF ]; then
+    # default AKIBAN_CONF dir
+    AKIBAN_CONF=$CONFIG_DIR
+fi
+
+if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
+    . "$AKIBAN_CONF/akiban-env.sh"
+fi
+
+launch_service()
+{
+    foreground=$1
+    props=$2
+    usegui=$3
+    akiban_parms="-Dcom.akiban.config=$CONFIG_DIR -Dakiban.admin=$CONFIG_DIR"
+
+    if [ "x$usegui" != "x" ]; then
+        akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
+    fi
+
+    if [ "x$foreground" != "x" ]; then
+        exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
+    else
+        # use log4j to log output
+        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$CONFIG_DIR/config/log4j.properties"
+        exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
+        [ ! -z $pidpath ] && printf "%d" $! > $pidpath
+    fi
+
+    return $?
+}
+
+# Parse any command line options.
+args=`getopt fghD: "$@"`
+eval set -- "$args"
+
+while true; do
+    case "$1" in
+        -f)
+            foreground="yes"
+            shift
+        ;;
+        -g)
+            gui="yes"
+            shift
+        ;;
+        -h)
+            echo "Usage: $0 [-f] [-g] [-h]"
+            echo "-f launch the akiban server process in the foreground"
+            echo "-g launch the persistit admin tool"
+            exit 0
+        ;;
+        -D)
+            properties="$properties -D$2"
+            shift 2
+        ;;
+        --)
+            shift
+            break
+        ;;
+        *)
+            echo "Error parsing arguments!" >&2
+            exit 1
+        ;;
+    esac
+done
+
+# Start up the service
+launch_service "$foreground" "$properties" "$gui"
+
+exit $?
+
+# vi:ai sw=4 ts=4 tw=0 et

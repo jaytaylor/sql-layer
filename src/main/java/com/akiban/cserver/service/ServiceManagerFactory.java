@@ -29,4 +29,6 @@ public interface ServiceManagerFactory
     Service<SchemaManager> schemaManager();
     
     Service<Store> storeService();
+
+    Service memcacheService();
 }
