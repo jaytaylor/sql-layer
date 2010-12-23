@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.util.ArgumentValidation;
-
 import java.util.EnumSet;
 import java.util.Set;
+
+import com.akiban.util.ArgumentValidation;
 
 public enum ScanFlag {
     DESCENDING (0),

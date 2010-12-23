@@ -12,7 +12,6 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.FieldDef;
-import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
@@ -86,7 +85,7 @@ public class PersistitAdapter
         store.writeRowForBulkLoad(session, exchange, leafRowDef, rowData, ordinals, nKeyColumns, hKeyFieldDefs, hKey);
     }
 
-    public void close() throws InvalidOperationException, PersistitException
+    public void close() throws Exception
     {
         store.flushIndexes(session);
         store.updateTableStats(session, leafRowDef, rowCount);

@@ -21,8 +21,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.TableManager;
-import com.akiban.cserver.store.TableStatus;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.persistit.exception.PersistitException;
 
@@ -128,20 +127,41 @@ public class RowDefCache implements CServerConstants {
         hashCode = cacheMap.hashCode();
     }
 
-    public synchronized void fixUpOrdinals(TableManager tableManager)
+    /**
+     * Assign "ordinal" values to user table RowDef instances. An ordinal the
+     * integer used to identify a user table subtree within an hkey. This method
+     * Assigned unique integers where needed to any tables that have not already
+     * received non-zero ordinal values. Once a table is populated, its ordinal
+     * is written as part of the TableStatus record, and on subsequent server
+     * start-ups, that value is loaded and reused from the status tree.
+     * 
+     * Consequently it is necessary to invoke
+     * {@link SchemaManager#loadTableStatusRecords(Session)} before this method
+     * is called; otherwise the wrong ordinal values are likely to be assigned.
+     * This sequence is validated by asserting that the TableStatus whose
+     * ordinal is to be assigned may not be "dirty". A newly constructed
+     * TableStatus is dirty; one that has been validated through the
+     * loadTableStatusRecords method is not dirty.
+     * 
+     * @param schemaManager
+     * @throws PersistitException
+     */
+    public synchronized void fixUpOrdinals(SchemaManager schemaManager)
             throws PersistitException {
-        final Session session = new SessionImpl();
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
                 // groupTable has no ordinal
-                groupRowDef.setOrdinal(0);
                 final HashSet<Integer> assigned = new HashSet<Integer>();
                 // First pass: merge already assigned values
                 for (final RowDef userRowDef : groupRowDef
                         .getUserTableRowDefs()) {
-                    final TableStatus tableStatus = tableManager
-                            .getTableStatus(session, userRowDef.getRowDefId());
-                    if (tableStatus.getOrdinal() != 0
+                    final TableStatus tableStatus = userRowDef.getTableStatus();
+                    // Ensure that the loadTableStatusRecords method was called
+                    // before this.
+                    assert !tableStatus.isDirty();
+                    int ordinal = tableStatus == null ? 0 : tableStatus
+                            .getOrdinal();
+                    if (ordinal != 0
                             && userRowDef.getOrdinal() != 0
                             && tableStatus.getOrdinal() != userRowDef
                                     .getOrdinal()) {
@@ -150,9 +170,7 @@ public class RowDefCache implements CServerConstants {
                                 userRowDef.getOrdinal(),
                                 tableStatus.getOrdinal()));
                     }
-                    int ordinal = 0;
-                    if (tableStatus.getOrdinal() != 0) {
-                        ordinal = tableStatus.getOrdinal();
+                    if (ordinal != 0) {
                         userRowDef.setOrdinal(ordinal);
                     } else if (userRowDef.getOrdinal() != 0
                             && tableStatus.getOrdinal() == 0) {
@@ -168,8 +186,6 @@ public class RowDefCache implements CServerConstants {
                 int nextOrdinal = 1;
                 for (final RowDef userRowDef : groupRowDef
                         .getUserTableRowDefs()) {
-                    final TableStatus tableStatus = tableManager
-                            .getTableStatus(session, userRowDef.getRowDefId());
                     if (userRowDef.getOrdinal() == 0) {
                         // find an unassigned value. Here we could try to
                         // optimize layout
@@ -177,7 +193,6 @@ public class RowDefCache implements CServerConstants {
                         // (if we knew that was...)
                         for (; assigned.contains(nextOrdinal); nextOrdinal++) {
                         }
-                        tableStatus.setOrdinal(nextOrdinal);
                         userRowDef.setOrdinal(nextOrdinal);
                         assigned.add(nextOrdinal);
                     }
@@ -194,8 +209,6 @@ public class RowDefCache implements CServerConstants {
     private RowDef createUserTableRowDef(AkibaInformationSchema ais,
             UserTable table) {
         RowDef rowDef = new RowDef(table);
-        int autoIncrementField = table.getAutoIncrementColumn() == null ? -1
-                : table.getAutoIncrementColumn().getPosition();
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
@@ -284,7 +297,6 @@ public class RowDefCache implements CServerConstants {
         rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
                 .size()]));
         rowDef.setOrdinal(0);
-        rowDef.setAutoIncrementField(autoIncrementField);
         return rowDef;
 
     }
@@ -324,7 +336,6 @@ public class RowDefCache implements CServerConstants {
         rowDef.setUserTableRowDefs(userTableRowDefs);
         rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
                 .size()]));
-        rowDef.setOrdinal(0);
         return rowDef;
     }
 

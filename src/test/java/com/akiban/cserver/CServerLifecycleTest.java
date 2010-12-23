@@ -1,24 +1,26 @@
 package com.akiban.cserver;
 
-import com.akiban.cserver.service.ServiceManagerImpl;
+import java.io.IOException;
+import java.util.Properties;
+
+import junit.framework.Assert;
+
+import org.junit.Test;
+
+import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.UnitTestServiceManagerFactory;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.AkibanConnectionImpl;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.MessageRegistryBase;
 import com.akiban.util.Command;
-import junit.framework.Assert;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.util.Properties;
 
 public class CServerLifecycleTest
 {
     private static final int N = 5;
     private static final int N_REQUESTS = 10;
 
-    private ServiceManagerImpl serviceManager;
+    private ServiceManager serviceManager;
 
     @Test
     public void testStartupShutdown() throws Exception

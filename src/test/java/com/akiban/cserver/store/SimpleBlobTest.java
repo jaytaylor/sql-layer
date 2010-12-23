@@ -11,29 +11,17 @@ import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.UnitTestServiceManagerFactory;
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
 
 public class SimpleBlobTest extends CServerTestCase implements CServerConstants {
 
-    private final static String CREATE_TABLE_STATEMENT1 = "CREATE TABLE `test`.`blobtest` ("
-            + "`a` int,"
-            + "`b` blob,"
-            + "`c` blob,"
-            + "PRIMARY KEY (a)"
-            + ") ENGINE=AKIBANDB;";
+    private final static String SIMPLE_BLOB_TEST_DDL = "simple_blob_test.ddl";
 
 
     @Before
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        final AkibaInformationSchema ais = new DDLSource().buildAISFromString(CREATE_TABLE_STATEMENT1);
-        rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinals(store.getTableManager());
+        final AkibaInformationSchema ais = setUpAisForTests(SIMPLE_BLOB_TEST_DDL);
     }
 
     @After

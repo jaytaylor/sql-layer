@@ -17,11 +17,9 @@ import com.akiban.cserver.api.dml.scan.CursorId;
 import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
 import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
 import com.akiban.cserver.api.dml.scan.ScanRequest;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
-import com.akiban.cserver.store.Store;
 
 public final class DMLFunctionsImplTest extends CServerTestCase {
     

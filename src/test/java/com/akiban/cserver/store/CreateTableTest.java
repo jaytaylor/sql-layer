@@ -20,7 +20,7 @@ public class CreateTableTest extends CServerTestCase implements CServerConstants
             + ") ENGINE=AKIBANDB;";
 
     public void testCreateTable() throws Exception {
-        store.createTable(session, "foo", CREATE_TABLE_STATEMENT1);
+        schemaManager.createTableDefinition(session, "foo", CREATE_TABLE_STATEMENT1);
         final Exchange ex = serviceManager.getPersistitService().getDb().getExchange(
                 PersistitService.VOLUME_NAME, PersistitService.SCHEMA_TREE_NAME,
                 false);

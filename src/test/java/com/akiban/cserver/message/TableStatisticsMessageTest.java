@@ -4,10 +4,13 @@ import static org.junit.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.cserver.*;
 import org.junit.Test;
 
-import com.akiban.ais.model.Types;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.RowDefCacheFactory;
+import com.akiban.cserver.TableStatistics;
 import com.persistit.Key;
 import com.persistit.Persistit;
 

@@ -1,10 +1,10 @@
 package com.akiban.cserver.api.common;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.TreeMap;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public final class ColumnIdTest {
     @Test

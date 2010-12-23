@@ -1,11 +1,11 @@
 package com.akiban.cserver.encoding;
 
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
 
 public final class DecimalEncoderTest {
     @Test

@@ -1,11 +1,11 @@
 package com.akiban.ais.io;
 
+import java.nio.ByteBuffer;
+import java.util.Map;
+
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
-
-import java.nio.ByteBuffer;
-import java.util.Map;
 
 public class MessageTarget extends Target
 {

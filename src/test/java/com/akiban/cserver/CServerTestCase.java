@@ -11,17 +11,21 @@ import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 
+import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.UnitTestServiceManagerFactory;
 import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.PersistitStore;
+import com.akiban.cserver.store.PersistitStoreSchemaManager;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 import com.persistit.Persistit;
 
+@Ignore
 public class CServerTestCase extends TestCase {
 
     protected Store store;
@@ -62,5 +66,14 @@ public class CServerTestCase extends TestCase {
 
     protected PersistitService getPersistitService() {
         return serviceManager.getPersistitService();
+    }
+
+    protected AkibaInformationSchema setUpAisForTests(final String resourceName)
+            throws Exception {
+        final AkibaInformationSchema ais = ((PersistitStoreSchemaManager)schemaManager).getAisForTests(resourceName);
+        rowDefCache.setAIS(ais);
+        CServerTestSuite.markTableStatusClean(rowDefCache);
+        rowDefCache.fixUpOrdinals(schemaManager);
+        return ais;
     }
 }

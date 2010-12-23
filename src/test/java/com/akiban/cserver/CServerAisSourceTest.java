@@ -6,7 +6,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.Writer;
@@ -16,7 +15,7 @@ import com.akiban.ais.model.Target;
 
 public class CServerAisSourceTest extends CServerTestCase implements CServerConstants {
 
-    private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
+    private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
 
     private AkibaInformationSchema ais;
 
@@ -24,8 +23,7 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
     @Override
     public void setUp() throws Exception {
         super.setUp();
-//        store.getRowDefCache().setAIS(new PersistitStoreSchemaManager(store).createEmptyAIS());
-        this.ais = new DDLSource().buildAIS(DDL_FILE_NAME);
+        ais = setUpAisForTests(DDL_FILE_NAME);
     }
 
     @After

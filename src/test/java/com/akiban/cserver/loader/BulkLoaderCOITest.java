@@ -1,16 +1,18 @@
 package com.akiban.cserver.loader;
 
+import java.sql.SQLException;
+import java.util.IdentityHashMap;
+import java.util.List;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.junit.Test;
+
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
-import junit.framework.Assert;
-import junit.framework.TestCase;
-import org.junit.Test;
-
-import java.sql.SQLException;
-import java.util.IdentityHashMap;
-import java.util.List;
 
 // Check task details for bulk load of COI schema
 

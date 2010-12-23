@@ -228,23 +228,23 @@ public class PersistitServiceImpl implements PersistitService,
     public Transaction getTransaction(final Session session) {
         return db.getTransaction();
     }
-    
+
     @Override
     public long getTimestamp(final Session session) {
         return db.getTransaction().getTimestamp();
     }
 
     @Override
-    public void visitStorage(final StorageVisitor visitor,
-            final String treeName)
+    public void visitStorage(final Session session,
+            final StorageVisitor visitor, final String treeName)
             throws Exception {
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
             if (volume != sysVol && volume != txnVol) {
-                final Exchange exchange = db.getExchange(volume, treeName,
-                        false);
-                if (exchange != null) {
+                final Tree tree = volume.getTree(treeName, false);
+                if (tree != null) {
+                    final Exchange exchange = getExchange(session, tree);
                     visitor.visit(exchange);
                 }
             }
@@ -256,9 +256,10 @@ public class PersistitServiceImpl implements PersistitService,
         // TODO - implement this
         return 0;
     }
-    
+
     @Override
-    public boolean isContainer(final Exchange exchange, final StorageLink storageLink) {
+    public boolean isContainer(final Exchange exchange,
+            final StorageLink storageLink) {
         final Volume volume = mappedVolume(storageLink);
         return exchange.getVolume().equals(volume);
     }

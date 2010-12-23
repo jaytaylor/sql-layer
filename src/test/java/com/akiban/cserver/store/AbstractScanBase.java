@@ -9,7 +9,6 @@ import java.util.TreeMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServerConstants;
@@ -18,12 +17,11 @@ import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.util.ByteBufferFactory;
 
 public abstract class AbstractScanBase extends CServerTestSuite implements CServerConstants {
 
-    protected final static String DDL_FILE_NAME = "src/test/resources/scan_rows_test.ddl";
+    protected final static String DDL_FILE_NAME = "scan_rows_test.ddl";
 
     protected final static String SCHEMA = "scan_rows_test";
 
@@ -39,20 +37,15 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
     @BeforeClass
     public static void setUpSuite() throws Exception {
         CServerTestSuite.setUpSuite();
-        // initially empty
-        final AkibaInformationSchema ais0 = schemaManager.getAis(new SessionImpl());
         
         //rowDefCache.setAIS(ais0);
-        final AkibaInformationSchema ais = new DDLSource()
-                .buildAIS(DDL_FILE_NAME);
-        rowDefCache.setAIS(ais);
+        final AkibaInformationSchema ais = setUpAisForTests(DDL_FILE_NAME);
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getName().getTableName().startsWith("a")) {
                 tableMap.put(table.getName().getSchemaName() + "."
                         + table.getName().getTableName(), table);
             }
         }
-        rowDefCache.fixUpOrdinals(store.getTableManager());
         populateTables();
     }
 

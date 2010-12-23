@@ -1,11 +1,17 @@
 package com.akiban.cserver.store;
 
+import static com.akiban.ais.ddl.DDLSource.CREATE_TABLE;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,7 +27,10 @@ import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.StorageLink;
+import com.akiban.cserver.TableStatus;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
@@ -38,20 +47,26 @@ import com.persistit.exception.PersistitException;
 
 public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         SchemaManager {
+
+    static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
+
     private static final Log LOG = LogFactory
             .getLog(PersistitStoreSchemaManager.class.getName());
 
-    private final static String CREATE_TABLE = "create table ";
+    // TODO - replace with transactional cache implementation
+    private final static long DELAY = 10000L;
 
     private final static String CREATE_SCHEMA_IF_NOT_EXISTS = "create schema if not exists ";
+    
+    private final static String SEMI_COLON = ";";
 
     private final static int AIS_BASE_TABLE_IDS = 100000;
 
     private static final int GROUP_TABLE_ID_OFFSET = 1000000000;
 
-    private static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
-
     private final static String SCHEMA_TREE_NAME = "_schema_";
+
+    private final static String STATUS_TREE_NAME = "_status_";
 
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiba_information_schema";
 
@@ -59,15 +74,23 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private final static String BY_NAME = "byName";
 
+    private static List<TableDefinition> aisSchema = readAisSchema();
+
     private AkibaInformationSchema ais;
 
     private long aisTimestamp;
 
-    private List<TableDefinition> aisSchema;
-
     private ServiceManager serviceManager;
 
-    private long timestamp;
+    private RowDefCache rowDefCache;
+
+    private long saveTimestamp;
+
+    private final Map<String, StorageLink> schemaLinkMap = new HashMap<String, StorageLink>();
+
+    private final Map<String, StorageLink> statusLinkMap = new HashMap<String, StorageLink>();
+
+    private final Timer timer = new Timer("TableStatus_Flusher", true);
 
     /**
      * Create or update a table definition given a schema name, table name and a
@@ -110,19 +133,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 defaultSchemaName, canonical);
         String schemaName = tableDef.getCName().getSchema();
         if (schemaName == null) {
-            final StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder(CREATE_TABLE);
             schemaName = defaultSchemaName;
             TableName.escape(schemaName, sb);
             sb.append(".");
-            sb.append(canonical);
+            sb.append(naked(canonical));
             canonical = sb.toString();
         }
         final String tableName = tableDef.getCName().getName();
 
         validateTableDefinition(schemaName, statement, tableDef);
-
-        final StorageLink storageLink = storageLink(schemaName);
-        final Exchange ex = ps.getExchange(session, storageLink);
+        final Exchange ex = ps.getExchange(session,
+                storageLink(schemaName, SCHEMA_TREE_NAME));
 
         try {
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
@@ -147,6 +169,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(tableId).store();
             changed(ps, session);
+            saveTableStatusRecords(session);
             return;
         } finally {
             ps.releaseExchange(session, ex);
@@ -168,7 +191,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public void deleteTableDefinition(Session session, final int tableId)
             throws Exception {
         final PersistitService ps = serviceManager.getPersistitService();
-        ps.visitStorage(new StorageVisitor() {
+        ps.visitStorage(session, new StorageVisitor() {
 
             @Override
             public void visit(Exchange exchange) throws Exception {
@@ -183,6 +206,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
 
         }, SCHEMA_TREE_NAME);
+        removeStaleTableStatusRecords(session);
+        saveTableStatusRecords(session);
     }
 
     /**
@@ -208,13 +233,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
-        final StorageLink storageLink = storageLink(schemaName);
         final PersistitService ps = serviceManager.getPersistitService();
         Exchange ex1 = null;
         Exchange ex2 = null;
         try {
-            ex1 = ps.getExchange(session, storageLink);
-            ex2 = ps.getExchange(session, storageLink);
+            ex1 = ps.getExchange(session,
+                    storageLink(schemaName, SCHEMA_TREE_NAME));
+            ex2 = ps.getExchange(session,
+                    storageLink(schemaName, SCHEMA_TREE_NAME));
+
             ex1.clear().append(BY_NAME).append(schemaName).append(tableName);
             final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
 
@@ -237,6 +264,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 ps.releaseExchange(session, ex2);
             }
         }
+        removeStaleTableStatusRecords(session);
+        saveTableStatusRecords(session);
     }
 
     /**
@@ -262,13 +291,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
-        final StorageLink storageLink = storageLink(schemaName);
         final PersistitService ps = serviceManager.getPersistitService();
         Exchange ex1 = null;
         Exchange ex2 = null;
         try {
-            ex1 = ps.getExchange(session, storageLink);
-            ex2 = ps.getExchange(session, storageLink);
+            ex1 = ps.getExchange(session,
+                    storageLink(schemaName, SCHEMA_TREE_NAME));
+            ex2 = ps.getExchange(session,
+                    storageLink(schemaName, SCHEMA_TREE_NAME));
             ex1.clear().append(BY_NAME).append(schemaName);
             final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
 
@@ -302,7 +332,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void deleteAllDefinitions(final Session session) throws Exception {
         final PersistitService ps = serviceManager.getPersistitService();
-        ps.visitStorage(new StorageVisitor() {
+        ps.visitStorage(session, new StorageVisitor() {
 
             @Override
             public void visit(final Exchange exchange) throws Exception {
@@ -333,9 +363,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return null;
         }
-        final StorageLink storageLink = storageLink(schemaName);
         final PersistitService ps = serviceManager.getPersistitService();
-        final Exchange ex = ps.getExchange(session, storageLink);
+        final Exchange ex = ps.getExchange(session,
+                storageLink(schemaName, SCHEMA_TREE_NAME));
         try {
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
@@ -374,9 +404,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return result;
         }
-        final StorageLink storageLink = storageLink(schemaName);
         final PersistitService ps = serviceManager.getPersistitService();
-        final Exchange ex = ps.getExchange(session, storageLink);
+        final Exchange ex = ps.getExchange(session,
+                storageLink(schemaName, SCHEMA_TREE_NAME));
         ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                 .append(Key.BEFORE);
         try {
@@ -410,24 +440,27 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return result;
         }
-        final StorageLink storageLink = storageLink(schemaName);
         final PersistitService ps = serviceManager.getPersistitService();
-        final Exchange ex = ps.getExchange(session, storageLink);
-        ex.clear().append(BY_NAME).append(schemaName);
-        final KeyFilter kf = new KeyFilter(ex.getKey(), 3, 3);
+        final Exchange ex1 = ps.getExchange(session,
+                storageLink(schemaName, SCHEMA_TREE_NAME));
+        final Exchange ex2 = ps.getExchange(session,
+                storageLink(schemaName, SCHEMA_TREE_NAME));
+        ex1.clear().append(BY_NAME).append(schemaName).append(Key.BEFORE);
         try {
-            while (ex.next(kf)) {
-                final String tableName = ex.getKey().indexTo(-1).decodeString();
-                if (ex.append(Key.AFTER).previous()) {
-                    final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                    ex.clear().append(BY_ID).append(tableId).fetch();
+            while (ex1.next()) {
+                final String tableName = ex1.getKey().indexTo(-1)
+                        .decodeString();
+                if (ex1.append(Key.AFTER).previous()) {
+                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
+                    ex2.clear().append(BY_ID).append(tableId).fetch();
                     result.put(tableName, new TableDefinition(tableId,
-                            schemaName, tableName, ex.getValue().getString()));
+                            schemaName, tableName, ex2.getValue().getString()));
                 }
+                ex1.cut();
             }
             return result;
         } finally {
-            ps.releaseExchange(session, ex);
+            ps.releaseExchange(session, ex1);
         }
     }
 
@@ -449,26 +482,63 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final PersistitService ps = serviceManager.getPersistitService();
             long wasTimestamp;
             synchronized (this) {
-                if (aisTimestamp == timestamp) {
+                if (aisTimestamp == saveTimestamp) {
                     return ais;
                 }
-                wasTimestamp = timestamp;
+                wasTimestamp = saveTimestamp;
             }
             AkibaInformationSchema newAis;
             try {
-                final String schemaText = schemaString(session, false);
+                final StringBuilder sb = new StringBuilder();
+                assembleSchema(session, sb, true, false, false);
+                final String schemaText = sb.toString();
                 newAis = new DDLSource().buildAISFromString(schemaText);
             } catch (Exception e) {
+                // TODO - better handling
                 LOG.error("Exception while building new AIS", e);
                 return ais;
             }
             synchronized (this) {
-                if (timestamp == wasTimestamp && aisTimestamp != timestamp) {
-                    aisTimestamp = timestamp;
+                if (saveTimestamp == wasTimestamp
+                        && aisTimestamp != saveTimestamp) {
+                    aisTimestamp = saveTimestamp;
                     ais = newAis;
+                    final RowDefCache rowDefCache = getRowDefCache();
+                    rowDefCache.clear();
+                    rowDefCache.setAIS(ais);
+                    try {
+                        loadTableStatusRecords(session);
+                        rowDefCache.fixUpOrdinals(this);
+                    } catch (Exception e) {
+                        LOG.error("Exception while building new AIS", e);
+                    }
                 }
             }
+            try {
+                loadTableStatusRecords(session);
+                // TODO - better handling
+            } catch (Exception e) {
+                LOG.error("Exception while loading table status elements", e);
+                return ais;
+            }
         }
+    }
+
+    public AkibaInformationSchema getAisForTests(final String schema)
+            throws Exception {
+        final StringBuilder sb = new StringBuilder();
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(
+                CServer.class.getClassLoader().getResourceAsStream(schema)));
+        for (String statement : (new MySqlStatementSplitter(reader))) {
+            sb.append(statement).append(CServerUtil.NEW_LINE);
+        }
+        for (final TableDefinition tableStruct : aisSchema) {
+            sb.append(tableStruct.getDDL()).append(CServerUtil.NEW_LINE);
+        }
+        ais = new DDLSource().buildAISFromString(sb.toString());
+        forceNewTimestamp();
+        aisTimestamp = saveTimestamp;
+        return ais;
     }
 
     /**
@@ -487,7 +557,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public String schemaString(final Session session,
             final boolean withGroupTables) throws Exception {
         final StringBuilder sb = new StringBuilder();
-        assembleSchema(session, sb, true, withGroupTables, false);
+        assembleSchema(session, sb, true, withGroupTables, true);
         return sb.toString();
     }
 
@@ -514,22 +584,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final boolean withCreateSchemaStatements) throws Exception {
 
         final PersistitService ps = serviceManager.getPersistitService();
-        
+
         // append the AIS table definitions
         if (withAisTables) {
             if (withCreateSchemaStatements) {
                 sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
                 TableName.escape(AKIBAN_INFORMATION_SCHEMA, sb);
-                sb.append(CServerUtil.NEW_LINE);
+                sb.append(SEMI_COLON).append(CServerUtil.NEW_LINE);
             }
             for (final TableDefinition tableStruct : aisSchema) {
-                sb.append(CREATE_TABLE).append(tableStruct.getDDL())
-                        .append(CServerUtil.NEW_LINE);
+                sb.append(tableStruct.getDDL()).append(CServerUtil.NEW_LINE);
             }
         }
-        
+
         // append the User Table definitions
-        ps.visitStorage(new StorageVisitor() {
+        ps.visitStorage(session, new StorageVisitor() {
 
             @Override
             public void visit(Exchange ex) throws Exception {
@@ -538,35 +607,35 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     final String schemaName = ex.getKey().indexTo(-1)
                             .decodeString();
                     ex.append(Key.BEFORE);
-                    if (ps.isContainer(ex, storageLink(schemaName))) {
+                    if (ps.isContainer(ex,
+                            storageLink(schemaName, SCHEMA_TREE_NAME))) {
                         if (withCreateSchemaStatements) {
                             sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
                             TableName.escape(schemaName, sb);
-                            sb.append(CServerUtil.NEW_LINE);
+                            sb.append(SEMI_COLON).append(CServerUtil.NEW_LINE);
                         }
                         while (ex.next()) {
                             final String tableName = ex.getKey().indexTo(-1)
                                     .decodeString();
                             final TableDefinition td = getTableDefinition(
                                     session, schemaName, tableName);
-                            sb.append(CREATE_TABLE).append(td.getDDL())
-                                    .append(CServerUtil.NEW_LINE);
+                            sb.append(td.getDDL()).append(CServerUtil.NEW_LINE);
                         }
                     }
                     ex.cut();
                 }
             }
         }, SCHEMA_TREE_NAME);
-        
+
         // append the Group table definitions
         if (withGroupTables) {
             final AkibaInformationSchema ais = getAis(session);
-            final List<String> statements = new DDLGenerator().createAllGroupTables(ais);
+            final List<String> statements = new DDLGenerator()
+                    .createAllGroupTables(ais);
             for (final String statement : statements) {
                 sb.append(statement).append(CServerUtil.NEW_LINE);
             }
         }
-
     }
 
     /**
@@ -582,14 +651,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public synchronized long getUpdateTimestamp() {
-        return timestamp;
+        return saveTimestamp;
     }
 
     @Override
     public int getSchemaGeneration() {
         final long ts = getUpdateTimestamp();
-        return (int)ts ^ (int)(ts >>> 32);
+        return (int) ts ^ (int) (ts >>> 32);
     }
+
     /**
      * Updates the current timestamp to a new value greater than any previously
      * returned value. This method can be used to force clients that rely on a
@@ -599,10 +669,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public synchronized void forceNewTimestamp() {
         final PersistitService ps = serviceManager.getPersistitService();
-        timestamp = ps.getTimestamp(new SessionImpl());
+        saveTimestamp = ps.getTimestamp(new SessionImpl());
     }
 
-    private List<TableDefinition> readAisSchema() {
+    private static List<TableDefinition> readAisSchema() {
         List<TableDefinition> definitions = new ArrayList<TableDefinition>();
         int tableId = AIS_BASE_TABLE_IDS;
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -624,42 +694,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return Collections.unmodifiableList(definitions);
     }
 
-    private StorageLink storageLink(final String schemaName) {
-        return new StorageLink() {
-            Object cache;
-
-            @Override
-            public String getSchemaName() {
-                return schemaName;
-            }
-
-            @Override
-            public String getTableName() {
-                return null;
-            }
-
-            @Override
-            public String getIndexName() {
-                return null;
-            }
-
-            @Override
-            public String getTreeName() {
-                return SCHEMA_TREE_NAME;
-            }
-
-            @Override
-            public void setStorageCache(Object object) {
-                cache = object;
-            }
-
-            @Override
-            public Object getStorageCache() {
-                return cache;
-            }
-        };
-    }
-
     @Override
     public SchemaManager cast() {
         return this;
@@ -674,6 +708,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public void start() throws Exception {
         this.serviceManager = ServiceManagerImpl.get();
         this.aisSchema = readAisSchema();
+        startTableStatusFlusher();
         changed(serviceManager.getPersistitService(), new SessionImpl());
     }
 
@@ -683,11 +718,166 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     }
 
+    /**
+     * Load TableStatus records from backing store. This happens only when
+     * creating a new AIS due to a schema change or upon system startup.
+     * 
+     * @param session
+     * @throws Exception
+     */
+    public void loadTableStatusRecords(final Session session)
+            throws PersistitException {
+        final PersistitService ps = serviceManager.getPersistitService();
+        for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
+            final TableStatus ts = rowDef.getTableStatus();
+            final Exchange exchange = ps.getExchange(session,
+                    storageLink(rowDef.getSchemaName(), STATUS_TREE_NAME));
+            try {
+                exchange.clear().append(rowDef.getRowDefId()).fetch();
+                if (exchange.isValueDefined()) {
+                    ts.get(exchange.getValue());
+                }
+                // Either there is no stored record, or we loaded it. In either
+                // case
+                // the TableStatus is no longer dirty.
+                ts.flushed();
+            } finally {
+                ps.releaseExchange(session, exchange);
+            }
+        }
+    }
+
+    /**
+     * Remove any TableStatus records belonging to tables that no longer exist.
+     * This method should be called by deleteTableDefinition.
+     * 
+     * @param session
+     * @throws PersistitException
+     */
+    @Override
+    public void removeStaleTableStatusRecords(final Session session)
+            throws Exception {
+        final PersistitService ps = serviceManager.getPersistitService();
+        ps.visitStorage(session, new StorageVisitor() {
+
+            @Override
+            public void visit(Exchange exchange) throws Exception {
+                exchange.clear().to(Key.BEFORE);
+                while (exchange.next()) {
+                    final int rowDefId = exchange.getKey().reset().decodeInt();
+                    final RowDef rowDef = getRowDefCache().getRowDef(rowDefId);
+                    if (rowDef == null) {
+                        exchange.remove();
+                    }
+                }
+            }
+        }, STATUS_TREE_NAME);
+    }
+
+    @Override
+    public void saveTableStatusRecords(final Session session)
+            throws PersistitException {
+        final PersistitService ps = serviceManager.getPersistitService();
+        for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
+            final TableStatus ts = rowDef.getTableStatus();
+            if (ts.isDirty()) {
+                final Exchange exchange = ps.getExchange(session,
+                        storageLink(rowDef.getSchemaName(), STATUS_TREE_NAME));
+                try {
+                    exchange.clear().append(rowDef.getRowDefId());
+                    ts.put(exchange.getValue());
+                    exchange.store();
+                    ts.flushed();
+                } finally {
+                    ps.releaseExchange(session, exchange);
+                }
+            }
+        }
+    }
+
+    void saveStatus(final Session session, final TableStatus tableStatus)
+            throws PersistitException {
+        final PersistitService ps = serviceManager.getPersistitService();
+        final RowDef rowDef = getRowDefCache().getRowDef(
+                tableStatus.getRowDefId());
+        final Exchange exchange = ps.getExchange(session,
+                storageLink(rowDef.getSchemaName(), STATUS_TREE_NAME));
+        try {
+            exchange.clear().append(tableStatus.getRowDefId());
+            tableStatus.put(exchange.getValue());
+            exchange.store();
+            tableStatus.flushed();
+        } finally {
+            ps.releaseExchange(session, exchange);
+        }
+    }
+
+    private StorageLink storageLink(final String schemaName,
+            final String treeName) {
+        final Map<String, StorageLink> map = treeName == STATUS_TREE_NAME ? statusLinkMap
+                : schemaLinkMap;
+        StorageLink link;
+        synchronized (map) {
+            link = map.get(schemaName);
+            if (link == null) {
+                link = new StorageLink() {
+                    Object cache;
+
+                    @Override
+                    public String getSchemaName() {
+                        return schemaName;
+                    }
+
+                    @Override
+                    public String getTableName() {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
+
+                    @Override
+                    public String getIndexName() {
+                        // TODO Auto-generated method stub
+                        return null;
+                    }
+
+                    @Override
+                    public String getTreeName() {
+                        return treeName;
+                    }
+
+                    @Override
+                    public void setStorageCache(Object object) {
+                        cache = object;
+                    }
+
+                    @Override
+                    public Object getStorageCache() {
+                        return cache;
+                    }
+
+                };
+                map.put(schemaName, link);
+            }
+        }
+        return link;
+    }
+
+    static long now() {
+        return System.nanoTime() / 1000L;
+    }
+
+    private RowDefCache getRowDefCache() {
+        if (rowDefCache == null) {
+            rowDefCache = serviceManager.getStore().getRowDefCache();
+        }
+        return rowDefCache;
+    }
+
     private SchemaDef.UserTableDef parseTableStatement(
             final String defaultSchemaName, final String canonical)
             throws InvalidOperationException {
         try {
-            return new DDLSource().parseCreateTable(canonical);
+            return new DDLSource().parseCreateTable(naked(canonical));
         } catch (Exception e1) {
             throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
                     "[%s] %s: %s", defaultSchemaName, e1.getMessage(),
@@ -747,8 +937,39 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             // TODO - this is good enough for now (mostly single-threaded)
             // but when we have transactional cache, should use that
             // instead.
-            timestamp = Math.max(timestamp, ps.getTimestamp(session));
+            saveTimestamp = Math.max(saveTimestamp, ps.getTimestamp(session));
         }
+    }
+
+    private static String naked(final String canonical) {
+        return canonical.substring(CREATE_TABLE.length());
+    }
+
+    /**
+     * Start a Timer that periodically flushes any changed TableStatus records
+     * to backing store. TODO: remove this and instead implement
+     * "transactional cache".
+     * 
+     * @throws Exception
+     */
+    private void startTableStatusFlusher() throws Exception {
+        //
+        // Schedule Timer to flush every DELAY milliseconds.
+        //
+        final Session session = new SessionImpl();
+        timer.schedule(new TimerTask() {
+
+            @Override
+            public void run() {
+                try {
+                    saveTableStatusRecords(session);
+                } catch (Exception e) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Failed to updateTableState", e);
+                    }
+                }
+            }
+        }, DELAY, DELAY);
 
     }
 

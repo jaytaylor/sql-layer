@@ -1,11 +1,13 @@
 package com.akiban.ais.model.staticgrouping;
 
-import com.akiban.ais.model.AISBuilder;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 
 import java.util.List;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
+
+import com.akiban.ais.model.AISBuilder;
 
 public class GroupsBuilderTest {
     private final String SCHEMA = "test_schema";

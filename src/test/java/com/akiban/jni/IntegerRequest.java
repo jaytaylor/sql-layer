@@ -1,8 +1,8 @@
 package com.akiban.jni;
 
-import com.akiban.message.Request;
-
 import java.nio.ByteBuffer;
+
+import com.akiban.message.Request;
 
 public final class IntegerRequest extends Request {
 

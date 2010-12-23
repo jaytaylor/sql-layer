@@ -1,11 +1,11 @@
 package com.akiban.cserver.api.dml.scan;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.util.ArgumentValidation;
-
-import java.util.EnumSet;
-import java.util.Set;
 
 public final class SimplePredicate implements Predicate {
     public enum Comparison {

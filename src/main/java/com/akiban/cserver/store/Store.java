@@ -28,9 +28,6 @@ public interface Store extends Service<Store> {
 
     void setVerbose(final boolean verbose);
 
-    void createTable(final Session session, final String schemaName,
-            final String createTableStatement) throws Exception;
-
     void writeRow(final Session session, final RowData rowData)
             throws Exception;
 
@@ -252,10 +249,6 @@ public interface Store extends Service<Store> {
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
     IndexManager getIndexManager();
-
-    // TODO - temporary - we want this to be a separate service acquired
-    // from ServiceManager.
-    TableManager getTableManager();
 
     void deleteIndexes(Session session, String string);
 

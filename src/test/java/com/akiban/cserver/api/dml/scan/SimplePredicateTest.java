@@ -1,13 +1,17 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 import java.util.EnumSet;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
+
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
 
 public final class SimplePredicateTest {
     @Test

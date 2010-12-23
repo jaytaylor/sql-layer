@@ -2,7 +2,6 @@ package com.akiban.ais.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class PrimaryKey implements Serializable

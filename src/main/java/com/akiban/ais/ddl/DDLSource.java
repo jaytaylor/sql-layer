@@ -76,6 +76,9 @@ public class DDLSource extends Source {
         }
     }
 
+    public final static String CREATE_TABLE = "create table ";
+    public final static String IF_NOT_EXISTS = "if not exists ";
+
     private static final Log LOG = LogFactory.getLog(DDLSource.class.getName());
 
     private final static String SCHEMA_FILE_NAME = "src/test/resources/xxxxxxxx_schema.ddl";
@@ -849,9 +852,6 @@ public class DDLSource extends Source {
         return utDef;
     }
 
-    private final static String CREATE_TABLE = "CREATE TABLE ";
-    private final static String IF_NOT_EXISTS = "IF NOT EXISTS ";
-
     public static String canonicalStatement(final String s) {
         final StringBuilder sb = new StringBuilder();
         boolean sc = false;
@@ -876,6 +876,7 @@ public class DDLSource extends Source {
         }
         strip(sb, CREATE_TABLE);
         strip(sb, IF_NOT_EXISTS);
+        sb.insert(0, CREATE_TABLE);
         return sb.toString();
     }
 

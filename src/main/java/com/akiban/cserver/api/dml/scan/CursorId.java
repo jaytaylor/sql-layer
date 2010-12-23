@@ -1,12 +1,10 @@
 package com.akiban.cserver.api.dml.scan;
 
+import java.nio.ByteBuffer;
+
 import com.akiban.cserver.api.common.ByteBufferWriter;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.common.WrongByteAllocationException;
 import com.akiban.util.ArgumentValidation;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class CursorId extends ByteBufferWriter {
     private final int SIZE_ON_BUFFER = Long.SIZE / 8 + Integer.SIZE / 8;

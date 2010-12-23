@@ -1,9 +1,10 @@
 package com.akiban.ais.model;
 
-import junit.framework.Assert;
-import org.junit.Test;
-
 import java.util.List;
+
+import junit.framework.Assert;
+
+import org.junit.Test;
 
 public class AISBuilderTest
 {

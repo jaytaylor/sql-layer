@@ -1,8 +1,8 @@
 package com.akiban.ais.model.staticgrouping;
 
-import com.akiban.ais.model.TableName;
-
 import java.util.List;
+
+import com.akiban.ais.model.TableName;
 
 final class VisitToString implements GroupingVisitor<String> {
     final static String NL = "\n";

@@ -1,9 +1,15 @@
 package com.akiban.ais.util;
 
-import com.akiban.ais.model.*;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.Type;
 
 public class DDLGenerator
 {

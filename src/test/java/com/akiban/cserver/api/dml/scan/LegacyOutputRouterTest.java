@@ -1,13 +1,14 @@
 package com.akiban.cserver.api.dml.scan;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public final class LegacyOutputRouterTest {
     private final static int bytesPerInt = Integer.SIZE / 8;

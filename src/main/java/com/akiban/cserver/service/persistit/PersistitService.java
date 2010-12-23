@@ -36,7 +36,7 @@ public interface PersistitService extends Service<PersistitService> {
 
     Transaction getTransaction(Session session);
 
-    void visitStorage(StorageVisitor visitor, String treeName)
+    void visitStorage(Session session, StorageVisitor visitor, String treeName)
             throws Exception;
 
     int volumeHandle(Exchange exchange);

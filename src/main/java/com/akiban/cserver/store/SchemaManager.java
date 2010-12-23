@@ -5,6 +5,7 @@ import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.service.session.Session;
+import com.persistit.exception.PersistitException;
 
 /**
  * A SchemaManager implementation updates, maintains and supplied schema (DDL)
@@ -141,6 +142,7 @@ public interface SchemaManager {
     String schemaString(Session session, boolean withGroupTables)
             throws Exception;
 
+
     /**
      * Return the system-wide Timestamp (as known from Persistit) for the last
      * update successfully committed to the schema database.
@@ -168,4 +170,9 @@ public interface SchemaManager {
      */
     int getSchemaGeneration();
 
+    void loadTableStatusRecords(final Session session) throws PersistitException;
+    
+    void removeStaleTableStatusRecords(final Session session) throws Exception;
+    
+    void saveTableStatusRecords(final Session session) throws PersistitException;
 }

@@ -30,7 +30,7 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory {
     private Service storeService;
     private Service schemaService;
     
-    public static ServiceManagerImpl createServiceManager() {
+    public static ServiceManager createServiceManager() {
         return new ServiceManagerImpl(new DefaultServiceManagerFactory());
     }
 

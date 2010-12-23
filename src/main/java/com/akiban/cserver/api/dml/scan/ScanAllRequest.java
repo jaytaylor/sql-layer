@@ -1,10 +1,10 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
-
 import java.util.EnumSet;
 import java.util.Set;
+
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
 
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {
 

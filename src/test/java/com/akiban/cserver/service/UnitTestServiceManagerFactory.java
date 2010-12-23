@@ -34,11 +34,13 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
     
     private final boolean withNetwork;
     
-    public static ServiceManagerImpl createServiceManager() {
+    public static ServiceManager createServiceManager() {
+        ServiceManagerImpl.setServiceManager(null);
         return new ServiceManagerImpl(new UnitTestServiceManagerFactory(false));
     }
     
-    public static ServiceManagerImpl createServiceManagerWithNetworkService() {
+    public static ServiceManager createServiceManagerWithNetworkService() {
+        ServiceManagerImpl.setServiceManager(null);
         return new ServiceManagerImpl(new UnitTestServiceManagerFactory(true));
     }
     

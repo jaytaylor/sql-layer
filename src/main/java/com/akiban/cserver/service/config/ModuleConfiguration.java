@@ -1,6 +1,5 @@
 package com.akiban.cserver.service.config;
 
-import java.util.Map;
 import java.util.Properties;
 
 /**

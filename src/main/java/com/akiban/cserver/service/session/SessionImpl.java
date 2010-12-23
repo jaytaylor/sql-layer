@@ -1,9 +1,9 @@
 package com.akiban.cserver.service.session;
 
-import com.akiban.util.ArgumentValidation;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.akiban.util.ArgumentValidation;
 
 public final class SessionImpl implements Session
 {

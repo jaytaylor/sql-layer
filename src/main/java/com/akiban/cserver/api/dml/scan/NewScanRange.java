@@ -1,13 +1,13 @@
 package com.akiban.cserver.api.dml.scan;
 
+import java.util.Set;
+
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
-
-import java.util.Set;
 
 public class NewScanRange implements ScanRange {
     protected final TableId tableId;

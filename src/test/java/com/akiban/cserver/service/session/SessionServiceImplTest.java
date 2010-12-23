@@ -1,11 +1,13 @@
 package com.akiban.cserver.service.session;
 
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
 
 public final class SessionServiceImplTest {
     private void fullLifecycle(boolean removeBeforeClosing) {

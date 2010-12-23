@@ -1,11 +1,11 @@
 package com.akiban.admin.action;
 
+import java.io.IOException;
+import java.util.Collection;
+
 import com.akiban.admin.Admin;
 import com.akiban.admin.AdminKey;
 import com.akiban.admin.config.ChunkserverNetworkConfig;
-
-import java.io.IOException;
-import java.util.Collection;
 
 public abstract class ClearConfig
 {

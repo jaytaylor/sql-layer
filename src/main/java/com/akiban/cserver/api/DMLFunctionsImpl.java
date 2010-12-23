@@ -1,6 +1,19 @@
 package com.akiban.cserver.api;
 
-import com.akiban.ais.model.*;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
@@ -9,23 +22,35 @@ import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.*;
-import com.akiban.cserver.api.dml.scan.*;
+import com.akiban.cserver.api.dml.DuplicateKeyException;
+import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
+import com.akiban.cserver.api.dml.NoSuchColumnException;
+import com.akiban.cserver.api.dml.NoSuchIndexException;
+import com.akiban.cserver.api.dml.NoSuchRowException;
+import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
+import com.akiban.cserver.api.dml.UnsupportedModificationException;
+import com.akiban.cserver.api.dml.scan.ColumnSet;
+import com.akiban.cserver.api.dml.scan.Cursor;
+import com.akiban.cserver.api.dml.scan.CursorId;
+import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
+import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
+import com.akiban.cserver.api.dml.scan.CursorState;
+import com.akiban.cserver.api.dml.scan.LegacyOutputConverter;
+import com.akiban.cserver.api.dml.scan.LegacyOutputRouter;
+import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.api.dml.scan.NiceRow;
+import com.akiban.cserver.api.dml.scan.RowOutput;
+import com.akiban.cserver.api.dml.scan.RowOutputException;
+import com.akiban.cserver.api.dml.scan.ScanAllRequest;
+import com.akiban.cserver.api.dml.scan.ScanRequest;
 import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.service.logging.AkibanLogger;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.RowCollector;
-import com.akiban.cserver.store.Store;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
-
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 

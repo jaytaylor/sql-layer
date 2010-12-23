@@ -7,7 +7,6 @@ import com.akiban.cserver.manage.ManageMXBean;
 import com.akiban.cserver.manage.ManageMXBeanImpl;
 import com.akiban.cserver.service.DefaultServiceManagerFactory;
 import com.akiban.cserver.service.Service;
-import com.akiban.cserver.service.ServiceManagerFactory;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;

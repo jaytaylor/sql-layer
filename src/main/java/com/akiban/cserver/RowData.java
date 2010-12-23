@@ -1,11 +1,11 @@
 package com.akiban.cserver;
 
-import com.akiban.cserver.encoding.EncodingException;
-import com.akiban.cserver.util.RowDefNotFoundException;
-
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
+
+import com.akiban.cserver.encoding.EncodingException;
+import com.akiban.cserver.util.RowDefNotFoundException;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array

@@ -26,8 +26,10 @@ import com.akiban.cserver.util.RowDefNotFoundException;
  * 
  */
 public class RowDef implements StorageLink {
-    
+
     private final Table table;
+
+    private final TableStatus tableStatus;
 
     /**
      * Array of FieldDef, one per column
@@ -61,7 +63,7 @@ public class RowDef implements StorageLink {
     /**
      * Field index of the auto-increment column; -1 if none.
      */
-    private int autoIncrementField = -1;
+    private final int autoIncrementField;
 
     /**
      * RowDefs of constituent user tables. Populated only if this is the RowDef
@@ -101,11 +103,12 @@ public class RowDef implements StorageLink {
      * method to assist in looking up a field's offset and length.
      */
     private final byte[][] varLenFieldMap;
-    
+
     private AtomicReference<Object> storageCache = new AtomicReference<Object>();
-    
+
     public RowDef(Table table) {
         this.table = table;
+        this.tableStatus = new TableStatus(this);
         this.fieldDefs = new FieldDef[table.getColumns().size()];
         for (Column column : table.getColumns()) {
             this.fieldDefs[column.getPosition()] = new FieldDef(this, column);
@@ -113,15 +116,14 @@ public class RowDef implements StorageLink {
         fieldCoordinates = new int[(fieldDefs.length + 7) / 8][];
         varLenFieldMap = new byte[(fieldDefs.length + 7) / 8][];
         preComputeFieldCoordinates(fieldDefs);
+        autoIncrementField = setUpAutoIncrementStuff();
     }
 
-    public Table table()
-    {
+    public Table table() {
         return table;
     }
 
-    public UserTable userTable()
-    {
+    public UserTable userTable() {
         assert table instanceof UserTable : this;
         return (UserTable) table;
     }
@@ -164,8 +166,8 @@ public class RowDef implements StorageLink {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(String.format(
-                "RowDef #%d %s (%s.%s) %s ", table.getTableId(), table.getName(), treeName,
-                getPkTreeName(), rowType));
+                "RowDef #%d %s (%s.%s) %s ", table.getTableId(),
+                table.getName(), treeName, getPkTreeName(), rowType));
         if (userTableRowDefs != null) {
             for (int i = 0; i < userTableRowDefs.length; i++) {
                 sb.append(i == 0 ? "{" : ",");
@@ -340,16 +342,17 @@ public class RowDef implements StorageLink {
             return (start + offset) | ((long) (end - start) << 32);
         }
     }
-    
+
     public String explain(final RowData rowData) {
         final StringBuilder sb = new StringBuilder();
-        sb.append("rowStart=" + rowData.getRowStart() + " rowEnd=" + rowData.getRowEnd() + " rowSize=" + rowData.getRowSize());
-        for (int i= 0 ; i < fieldDefs.length; i++) {
+        sb.append("rowStart=" + rowData.getRowStart() + " rowEnd="
+                + rowData.getRowEnd() + " rowSize=" + rowData.getRowSize());
+        for (int i = 0; i < fieldDefs.length; i++) {
             sb.append(CServerUtil.NEW_LINE);
             sb.append(i + ": " + fieldDefs[i] + "  ");
             final long fieldLocation = fieldLocation(rowData, i);
-            final int offset = (int)fieldLocation;
-            final int width = (int)(fieldLocation >>> 32);
+            final int offset = (int) fieldLocation;
+            final int width = (int) (fieldLocation >>> 32);
             sb.append(" offset=" + offset + " width=" + width + "==>");
             sb.append(CServerUtil.hex(rowData.getBytes(), offset, width));
         }
@@ -373,7 +376,8 @@ public class RowDef implements StorageLink {
     }
 
     public int getGroupRowDefId() {
-        return table instanceof GroupTable ? table.getTableId() : table.getGroup().getGroupTable().getTableId();
+        return table instanceof GroupTable ? table.getTableId() : table
+                .getGroup().getGroupTable().getTableId();
     }
 
     public IndexDef[] getIndexDefs() {
@@ -404,7 +408,8 @@ public class RowDef implements StorageLink {
         return parentJoin == null ? 0 : parentJoin.getParent().getTableId();
     }
 
-    // NOT the entire PK. Just the fields of the PK that do not participate in join with parent.
+    // NOT the entire PK. Just the fields of the PK that do not participate in
+    // join with parent.
     public int[] getPkFields() {
         return pkFields;
     }
@@ -418,12 +423,12 @@ public class RowDef implements StorageLink {
         return table.getTableId();
     }
 
-    public int getOrdinal() {
-        return ordinal;
-    }
-
     public String getTableName() {
         return table.getName().getTableName();
+    }
+
+    public TableStatus getTableStatus() {
+        return tableStatus;
     }
 
     public String getTreeName() {
@@ -438,16 +443,20 @@ public class RowDef implements StorageLink {
         return userTableRowDefs != null;
     }
 
+    public int getOrdinal() {
+        return tableStatus.getOrdinal();
+    }
+
+    public void setOrdinal(final int ordinal) {
+        tableStatus.setOrdinal(ordinal);
+    }
+
     public boolean isUserTable() {
         return !isGroupTable();
     }
 
     public void setRowType(final RowType rowType) {
         this.rowType = rowType;
-    }
-
-    public void setOrdinal(int ordinal) {
-        this.ordinal = ordinal;
     }
 
     public void setIndexDefs(IndexDef[] indexDefs) {
@@ -460,10 +469,6 @@ public class RowDef implements StorageLink {
 
     public void setPkFields(int[] pkFields) {
         this.pkFields = pkFields;
-    }
-
-    public void setAutoIncrementField(int autoIncrementField) {
-        this.autoIncrementField = autoIncrementField;
     }
 
     public void setTreeName(final String treeName) {
@@ -501,6 +506,25 @@ public class RowDef implements StorageLink {
 
     public void setUserTableRowDefs(final RowDef[] userTableRowDefs) {
         this.userTableRowDefs = userTableRowDefs;
+    }
+
+    /*
+     * Populate various fields needed for autoincrement processing.
+     * Likely to change when server-side autoincrement support is
+     * implemented.
+     */
+    private int setUpAutoIncrementStuff() {
+        if (table.isGroupTable()) {
+            return -1;
+        }
+        final UserTable userTable = (UserTable) table;
+        if (userTable.getAutoIncrementColumn() == null) {
+            return -1;
+        }
+        tableStatus.setAutoIncrement(true);
+        tableStatus.setAutoIncrementValue(userTable.getAutoIncrementColumn()
+                .getInitialAutoIncrementValue().longValue());
+        return userTable.getAutoIncrementColumn().getPosition();
     }
 
     /**
@@ -551,7 +575,8 @@ public class RowDef implements StorageLink {
         }
     }
 
-    void computeRowDefType(final RowDefCache rowDefCache) throws RowDefNotFoundException {
+    void computeRowDefType(final RowDefCache rowDefCache)
+            throws RowDefNotFoundException {
         if (userTableRowDefs != null) {
             rowType = RowType.GROUP;
         } else if (getParentRowDefId() == 0) {
@@ -567,35 +592,32 @@ public class RowDef implements StorageLink {
         }
     }
 
-    void computeFieldAssociations(RowDefCache rowDefCache) throws RowDefNotFoundException
-    {
-        // hkeyDepth is hkey position of the last column in the last segment. (Or the position
+    void computeFieldAssociations(RowDefCache rowDefCache)
+            throws RowDefNotFoundException {
+        // hkeyDepth is hkey position of the last column in the last segment.
+        // (Or the position
         // of the last segment if that segment has no columns.)
         if (isUserTable()) {
             List<HKeySegment> segments = userTable().hKey().segments();
             HKeySegment lastSegment = segments.get(segments.size() - 1);
             List<HKeyColumn> lastColumns = lastSegment.columns();
-            hkeyDepth =
-                1 + (lastColumns.isEmpty()
-                     ? lastSegment.positionInHKey()
-                     : lastColumns.get(lastColumns.size() - 1).positionInHKey());
+            hkeyDepth = 1 + (lastColumns.isEmpty() ? lastSegment
+                    .positionInHKey() : lastColumns.get(lastColumns.size() - 1)
+                    .positionInHKey());
         }
         for (IndexDef indexDef : indexDefs) {
             List<RowDef> path = new ArrayList<RowDef>();
             RowDef userRowDef = userRowDef(rowDefCache, indexDef);
             while (userRowDef != null) {
                 path.add(0, userRowDef);
-                userRowDef =
-                    userRowDef.getParentRowDefId() == 0
-                    ? null
-                    : rowDefCache.getRowDef(userRowDef.getParentRowDefId());
+                userRowDef = userRowDef.getParentRowDefId() == 0 ? null
+                        : rowDefCache.getRowDef(userRowDef.getParentRowDefId());
             }
             indexDef.computeFieldAssociations(rowDefCache, path);
         }
     }
 
-    private RowDef userRowDef(RowDefCache rowDefCache, IndexDef indexDef)
-    {
+    private RowDef userRowDef(RowDefCache rowDefCache, IndexDef indexDef) {
         RowDef userRowDef = null;
         if (isGroupTable()) {
             for (IndexColumn indexColumn : indexDef.index().getColumns()) {
@@ -631,25 +653,22 @@ public class RowDef implements StorageLink {
 
     @Override
     public int hashCode() {
-        return getRowDefId()
-                ^ table.getName().hashCode()
-                ^ CServerUtil.hashCode(treeName)
-                ^ Arrays.hashCode(fieldDefs)
+        return getRowDefId() ^ table.getName().hashCode()
+                ^ CServerUtil.hashCode(treeName) ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(indexDefs) ^ Arrays.hashCode(pkFields)
                 ^ Arrays.hashCode(parentJoinFields);
     }
-    
-   
+
     @Override
     public String getIndexName() {
         return null;
     }
-    
+
     @Override
     public void setStorageCache(final Object cache) {
         storageCache.set(cache);
     }
-    
+
     @Override
     public Object getStorageCache() {
         return storageCache.get();

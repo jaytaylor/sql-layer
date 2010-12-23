@@ -1,13 +1,14 @@
 package com.akiban.util;
 
-import junit.framework.Assert;
-import org.junit.Test;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import junit.framework.Assert;
+
+import org.junit.Test;
 
 public final class MultiCloserTest
 {

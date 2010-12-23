@@ -48,7 +48,7 @@ public class CServerAisTarget extends Target {
             throw new IllegalStateException(
                     "Missing table definition for AIS table " + name);
         }
-        schemaManager.deleteTableDefinition(session, rowDef.getRowDefId());
+        store.truncateTable(session, rowDef.getRowDefId());
     }
 
     @Override

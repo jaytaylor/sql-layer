@@ -1,7 +1,5 @@
 package com.akiban.cserver.api;
 
-import java.util.List;
-
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;

@@ -1,8 +1,14 @@
 package com.akiban.ais.model.staticgrouping;
 
-import com.akiban.ais.model.TableName;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
+import com.akiban.ais.model.TableName;
 
 /**
  * <p>Static grouping structure.</p>

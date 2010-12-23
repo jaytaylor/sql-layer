@@ -1,10 +1,17 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.ais.model.*;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.*;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.UserTable;
 
 /*
  * The algorithm for generating tasks is discussed here:

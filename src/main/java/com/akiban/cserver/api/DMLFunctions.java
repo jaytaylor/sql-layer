@@ -1,15 +1,29 @@
 package com.akiban.cserver.api;
 
+import java.util.List;
+import java.util.Set;
+
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.*;
-import com.akiban.cserver.api.dml.scan.*;
+import com.akiban.cserver.api.dml.DuplicateKeyException;
+import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
+import com.akiban.cserver.api.dml.NoSuchColumnException;
+import com.akiban.cserver.api.dml.NoSuchIndexException;
+import com.akiban.cserver.api.dml.NoSuchRowException;
+import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
+import com.akiban.cserver.api.dml.UnsupportedModificationException;
+import com.akiban.cserver.api.dml.scan.CursorId;
+import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
+import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
+import com.akiban.cserver.api.dml.scan.CursorState;
+import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.api.dml.scan.RowOutput;
+import com.akiban.cserver.api.dml.scan.RowOutputException;
+import com.akiban.cserver.api.dml.scan.ScanRequest;
 import com.akiban.cserver.service.session.Session;
-
-import java.util.List;
-import java.util.Set;
 
 @SuppressWarnings("unused")
 public interface DMLFunctions {

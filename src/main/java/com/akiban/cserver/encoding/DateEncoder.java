@@ -1,12 +1,11 @@
 package com.akiban.cserver.encoding;
 
-import com.akiban.ais.model.Type;
-import com.akiban.cserver.FieldDef;
-import com.akiban.cserver.RowData;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+
+import com.akiban.cserver.FieldDef;
+import com.akiban.cserver.RowData;
 
 public final class DateEncoder extends AbstractDateEncoder {
     DateEncoder() {

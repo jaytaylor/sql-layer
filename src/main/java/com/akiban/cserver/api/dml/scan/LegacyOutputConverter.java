@@ -1,12 +1,12 @@
 package com.akiban.cserver.api.dml.scan;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * <p>A class that acts as a LegacyRowOutput and converts each row, as it's seen, to a NiceRow. That NiceRow

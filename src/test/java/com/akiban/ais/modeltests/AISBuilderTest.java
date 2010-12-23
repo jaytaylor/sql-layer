@@ -1,6 +1,9 @@
 package com.akiban.ais.modeltests;
 
+import java.util.List;
+
 import junit.framework.Assert;
+
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
@@ -10,8 +13,6 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
-
-import java.util.List;
 
 public class AISBuilderTest
 {

@@ -1,13 +1,14 @@
 package com.akiban.admin;
 
-import com.akiban.admin.config.ClusterConfig;
-import org.junit.Test;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.AfterClass;
-
 import java.io.File;
 import java.io.IOException;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.akiban.admin.config.ClusterConfig;
 
 public class AdminTest
 {

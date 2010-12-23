@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.common;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.akiban.ais.model.TableName;
 import com.akiban.util.CacheMap;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <p>A wrapper for a table ID, identified either by the table's int ID or by the table's name.</p>

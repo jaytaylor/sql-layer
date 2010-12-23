@@ -1,8 +1,11 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.api.common.*;
-
 import java.util.Set;
+
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.IdResolver;
+import com.akiban.cserver.api.common.IndexId;
+import com.akiban.cserver.api.common.TableId;
 
 public final class NewScanRequest extends NewScanRange {
 

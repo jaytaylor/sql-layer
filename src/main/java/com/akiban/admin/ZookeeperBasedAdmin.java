@@ -1,6 +1,14 @@
 package com.akiban.admin;
 
-import com.akiban.admin.state.ChunkserverState;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
@@ -8,9 +16,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.*;
+import com.akiban.admin.state.ChunkserverState;
 
 public class ZookeeperBasedAdmin extends Admin
 {
