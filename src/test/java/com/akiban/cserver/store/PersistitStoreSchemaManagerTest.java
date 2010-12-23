@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
@@ -28,7 +29,6 @@ import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
-import com.akiban.util.Strings;
 
 public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
 
@@ -161,6 +161,8 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         manager.deleteTableDefinition(session, SCHEMA, "two");
     }
 
+    // TODO This test proves that dropping a parent table definition also drops the child.
+    // Still in play. Or at least I want to have the discussion.
     @Test
     public void testAddDropTwoTablesOneGroupDropRoot() throws Exception {
         createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
@@ -252,6 +254,9 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         manager.deleteTableDefinition(session, SCHEMA, "one");
     }
 
+    
+    // TODO: This test proves that dropping a child table definition also drops the parent.
+    // Still in play. Or at least I want to have the discussion.
     @Test
     public void testAddDropTwoTablesOneGroupDropChild() throws Exception {
         createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");

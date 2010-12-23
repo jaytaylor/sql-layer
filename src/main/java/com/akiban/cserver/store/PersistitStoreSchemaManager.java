@@ -22,6 +22,8 @@ import org.apache.commons.logging.LogFactory;
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.CServer;
@@ -57,7 +59,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final static long DELAY = 10000L;
 
     private final static String CREATE_SCHEMA_IF_NOT_EXISTS = "create schema if not exists ";
-    
+
     private final static String SEMI_COLON = ";";
 
     private final static int AIS_BASE_TABLE_IDS = 100000;
@@ -142,7 +144,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         final String tableName = tableDef.getCName().getName();
 
-        validateTableDefinition(schemaName, statement, tableDef);
+        validateTableDefinition(session, schemaName, statement, tableDef);
         final Exchange ex = ps.getExchange(session,
                 storageLink(schemaName, SCHEMA_TREE_NAME));
 
@@ -233,39 +235,69 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
-        final PersistitService ps = serviceManager.getPersistitService();
-        Exchange ex1 = null;
-        Exchange ex2 = null;
-        try {
-            ex1 = ps.getExchange(session,
-                    storageLink(schemaName, SCHEMA_TREE_NAME));
-            ex2 = ps.getExchange(session,
-                    storageLink(schemaName, SCHEMA_TREE_NAME));
+        // TODO - This is temporary. this method finds all the members of the
+        // group containing specified table, and deletes them all. Note - this
+        // implementation requires an up-to-date AIS, which is created lazily as
+        // a side-effect.
+        //
+        final AkibaInformationSchema ais = getAis(session);
+        final Table table = ais.getTable(schemaName, tableName);
+        if (table == null) {
+            return;
+        }
 
-            ex1.clear().append(BY_NAME).append(schemaName).append(tableName);
-            final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
-
-            ex1.clear();
-            while (ex1.next(keyFilter)) {
-                final int tableId = ex1.getKey().indexTo(-1).decodeInt();
-                ex2.clear().append(BY_ID).append(tableId).remove();
-                ex1.remove();
-            }
-            changed(ps, session);
-        } catch (PersistitException e) {
-            LOG.error("Failed to delete table " + schemaName + "." + tableName,
-                    e);
-            throw e;
-        } finally {
-            if (ex1 != null) {
-                ps.releaseExchange(session, ex1);
-            }
-            if (ex2 != null) {
-                ps.releaseExchange(session, ex2);
+        final List<TableName> tables = new ArrayList<TableName>();
+        final Group group = table.getGroup();
+        tables.add(group.getGroupTable().getName());
+        for (final Table t : ais.getUserTables().values()) {
+            if (t.getGroup().equals(group)) {
+                tables.add(t.getName());
             }
         }
+        deleteTableDefinitionList(session, tables);
         removeStaleTableStatusRecords(session);
         saveTableStatusRecords(session);
+    }
+
+    private void deleteTableDefinitionList(final Session session,
+            final List<TableName> tables) throws Exception {
+        final PersistitService ps = serviceManager.getPersistitService();
+
+        for (final TableName tn : tables) {
+            final String schemaName = tn.getSchemaName();
+            final String tableName = tn.getTableName();
+            Exchange ex1 = null;
+            Exchange ex2 = null;
+            try {
+                ex1 = ps.getExchange(session,
+                        storageLink(schemaName, SCHEMA_TREE_NAME));
+                ex2 = ps.getExchange(session,
+                        storageLink(schemaName, SCHEMA_TREE_NAME));
+
+                ex1.clear().append(BY_NAME).append(schemaName)
+                        .append(tableName);
+                final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
+
+                ex1.clear();
+                while (ex1.next(keyFilter)) {
+                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
+                    ex2.clear().append(BY_ID).append(tableId).remove();
+                    ex1.remove();
+                }
+                changed(ps, session);
+            } catch (PersistitException e) {
+                LOG.error("Failed to delete table " + schemaName + "."
+                        + tableName, e);
+                throw e;
+            } finally {
+                if (ex1 != null) {
+                    ps.releaseExchange(session, ex1);
+                }
+                if (ex2 != null) {
+                    ps.releaseExchange(session, ex2);
+                }
+            }
+        }
     }
 
     /**
@@ -706,16 +738,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() throws Exception {
+        aisSchema = readAisSchema();
         this.serviceManager = ServiceManagerImpl.get();
-        this.aisSchema = readAisSchema();
         startTableStatusFlusher();
         changed(serviceManager.getPersistitService(), new SessionImpl());
     }
 
     @Override
     public void stop() throws Exception {
-        // Nothing to do
-
+        aisSchema = null;
+        this.serviceManager = null;
+        stopTableStatusFlusher();
     }
 
     /**
@@ -898,9 +931,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return cname;
     }
 
-    private void validateTableDefinition(final String schemaName,
-            final String statement, final SchemaDef.UserTableDef tableDef)
-            throws InvalidOperationException {
+    private void validateTableDefinition(final Session session,
+            final String schemaName, final String statement,
+            final SchemaDef.UserTableDef tableDef) throws Exception {
 
         if (AKIBAN_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
             throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
@@ -912,7 +945,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     "[%s] %s", schemaName, statement);
         }
 
-        SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
+        final SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
         if (parentJoin == null) {
             return;
         }
@@ -929,7 +962,27 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, parentJoin.getParentSchema(), statement);
         }
 
-        // TODO - make sure the referenced table and columns exist
+        final String tableName = tableDef.getCName().getName();
+        final String parentTableName = parentJoin.getParentTable();
+        if (schemaName.equals(parentSchema)
+                && tableName.equals(parentTableName)) {
+            throw new InvalidOperationException(
+                    ErrorCode.JOIN_TO_UNKNOWN_TABLE,
+                    "Table %s.%s refers to undefined table %s.%s: %s",
+                    schemaName, tableName, parentSchema, parentTableName,
+                    statement);
+        }
+        final TableDefinition parentDef = getTableDefinition(session,
+                parentSchema, parentTableName);
+        if (parentDef == null) {
+            throw new InvalidOperationException(
+                    ErrorCode.JOIN_TO_UNKNOWN_TABLE,
+                    "Table %s.%s refers to undefined table %s.%s: %s",
+                    schemaName, tableName, parentSchema, parentTableName,
+                    statement);
+        }
+
+        // Still TODO - verify that parent join columns are defined
     }
 
     private void changed(final PersistitService ps, final Session session) {
@@ -970,7 +1023,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }
             }
         }, DELAY, DELAY);
-
     }
 
+    private void stopTableStatusFlusher() {
+        timer.cancel();
+    }
 }
