@@ -1,17 +1,20 @@
-#!/bin/bash
-#
-# /etc/init.d/akiban
-#
-# Startup script for akiban server
-# 
-# chkconfig: 2345 20 80
-# description: Starts and stops Akiban Server
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          akiban-server
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: akiban server
+# Description:       Server for Akiban Orthogonal Architecture
+### END INIT INFO
+
+# Author: Padraig O'Sullivan <posullivan@akiban.com>
 
 export JAR_FILE=/usr/share/akiban/akiban-server.jar
 export AKIBAN_HOME=/usr/share/akiban/
 export AKIBAN_CONF=/etc/akiban
-#export AKIBAN_OWNR=akiban
-export AKIBAN_OWNR=posulliv
+export AKIBAN_OWNR=akiban
 NAME="akiban"
 DESC="Akiban"
 log_file=/var/log/akiban/server_stdout.log
@@ -69,7 +72,7 @@ case "$1" in
         su $AKIBAN_OWNR -c "rm $pidfile"
         [ "$VERBOSE" != no ] && log_end_msg 0
         ;;
-    reload|restart)
+    force-reload|restart)
         $0 stop
         $0 start
         ;;

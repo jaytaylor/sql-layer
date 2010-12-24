@@ -3,3 +3,11 @@ akiban-cserver.ipr
 akiban-cserver.iws
 target
 velocity.log
+debian/changelog
+debian/debhelper.log
+debian/files
+debian/postinst.debhelper
+debian/postrm.debhelper
+debian/prerm.debhelper
+debian/substvars
+debian/tmp/
