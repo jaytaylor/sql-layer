@@ -2,6 +2,7 @@
 #
 # OPTIONS:
 #   -f: start in foreground
+#   -g: start the persistit GUI
 #   -p <filename>: log the pid to a file (useful to kill it later)
 #
 # CONTROLLING STARTUP:
@@ -15,19 +16,10 @@
 
 akiban_home=`dirname $0`/..
 
-# This can be the path to a jar file, or a directory containing the 
-# compiled classes. NOTE: This isn't needed by the startup script,
-# it's just used here in constructing the classpath.
-akiban_bin=$akiban_home/target/classes
-
-# the config file to use for the chunk server
-CONFIG_DIR="${akiban_home}/conf"
-
-# JAVA_HOME can optionally be set here
-#JAVA_HOME=/usr/local/jdk6
-
 # the JAR file we use to launch the akiban server
-JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+if [ -z $JAR_FILE ]; then
+    JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+fi
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -38,7 +30,7 @@ fi
 
 if [ -z $AKIBAN_CONF ]; then
     # default AKIBAN_CONF dir
-    AKIBAN_CONF=$CONFIG_DIR
+    AKIBAN_CONF=${akiban_home}/conf
 fi
 
 if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
@@ -50,6 +42,7 @@ launch_service()
     foreground=$1
     props=$2
     usegui=$3
+    pidpath=$4
     akiban_parms="-Dcom.akiban.config=$CONFIG_DIR -Dakiban.admin=$CONFIG_DIR"
 
     if [ "x$usegui" != "x" ]; then
@@ -69,11 +62,15 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fghD: "$@"`
+args=`getopt fghp:D: "$@"`
 eval set -- "$args"
 
 while true; do
     case "$1" in
+        -p)
+            pidfile="$2"
+            shift 2
+        ;;
         -f)
             foreground="yes"
             shift
@@ -83,9 +80,10 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-f] [-g] [-h]"
+            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile]"
             echo "-f launch the akiban server process in the foreground"
             echo "-g launch the persistit admin tool"
+            echo "-p specify a pid file"
             exit 0
         ;;
         -D)
@@ -104,7 +102,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$foreground" "$properties" "$gui"
+launch_service "$foreground" "$properties" "$gui" "$pidfile"
 
 exit $?
 

@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# /etc/init.d/akiban
+#
+# Startup script for akiban server
+# 
+# chkconfig: 2345 20 80
+# description: Starts and stops Akiban Server
+
+. /etc/rc.d/init.d/functions
+
+export JAR_FILE=/usr/share/akiban/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar
+export AKIBAN_HOME=/usr/share/akiban/
+export AKIBAN_CONF=/etc/akiban
+export AKIBAN_OWNR=akiban
+NAME="akiban"
+log_file=/var/log/akiban/server.log
+pid_file=/var/run/akiban/server.pid
+AKIBAN_PROG=/usr/sbin/akiban
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+case "$1" in
+    start)
+        echo -n "Starting Akiban: "
+        su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file" > $log_file 2>&1
+        echo "OK"
+        ;;
+    stop)
+        echo -n "Shutdown Akiban: "
+        su $AKIBAN_OWNR -c "kill `cat $pid_file`"
+        echo "OK"
+        ;;
+    reload|restart)
+        $0 stop
+        $0 start
+        ;;
+    status)
+        status -p $pid_file akiban
+        ;;
+    *)
+        echo "Usage: `basename $0` start|stop|status|restart|reload"
+        exit 1
+esac
+
+exit 0
+
