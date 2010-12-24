@@ -1,0 +1,5 @@
+usr/share/akiban
+etc/akiban
+etc/akiban/config
+var/lib/akiban
+var/log/akiban

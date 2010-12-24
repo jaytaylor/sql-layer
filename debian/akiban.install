@@ -1,0 +1,6 @@
+debian/ais_object_model.xml etc/akiban
+debian/chunkserver.properties etc/akiban/config
+debian/cluster.properties etc/akiban/config
+debian/log4j.properties etc/akiban/config
+conf/akiban-env.sh etc/akiban
+bin/akserver usr/sbin
