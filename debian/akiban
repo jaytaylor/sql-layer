@@ -14,7 +14,7 @@ export AKIBAN_HOME=/usr/share/akiban/
 export AKIBAN_CONF=/etc/akiban
 export AKIBAN_OWNR=akiban
 NAME="akiban"
-log_file=/var/log/akiban/server.log
+log_file=/var/log/akiban/server_stdout.log
 pid_file=/var/run/akiban/server.pid
 AKIBAN_PROG=/usr/sbin/akiban
 
