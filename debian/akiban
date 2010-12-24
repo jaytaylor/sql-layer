@@ -7,42 +7,85 @@
 # chkconfig: 2345 20 80
 # description: Starts and stops Akiban Server
 
-. /etc/rc.d/init.d/functions
-
-export JAR_FILE=/usr/share/akiban/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar
+export JAR_FILE=/usr/share/akiban/akiban-server.jar
 export AKIBAN_HOME=/usr/share/akiban/
 export AKIBAN_CONF=/etc/akiban
-export AKIBAN_OWNR=akiban
+#export AKIBAN_OWNR=akiban
+export AKIBAN_OWNR=posulliv
 NAME="akiban"
+DESC="Akiban"
 log_file=/var/log/akiban/server_stdout.log
-pid_file=/var/run/akiban/server.pid
-AKIBAN_PROG=/usr/sbin/akiban
+pidfile=/var/run/akiban/server.pid
+AKIBAN_PROG=/usr/sbin/akserver
+
+[ -e /usr/share/akiban/akiban-server.jar ] || exit 0
+[ -e /etc/akiban/akiban-env.sh ] || exit 0
+
+# read akiban environment file
+. /etc/akiban/akiban-env.sh
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
+if [ -z "$JVM_OPTS" ]; then
+    echo "Initialization failed; \$JVM_OPTS not set!" >&2
+    exit 3
+fi
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+#
+# Function that returns 0 if process is running, or nonzero if not.
+#
+# The nonzero value is 3 if the process is simply not running, and 1 if the
+# process is not running but the pidfile exists (to match the exit codes for
+# the "status" command; see LSB core spec 3.1, section 20.2)
+#
+CMD_PATT="akiban-server"
+is_running()
+{
+    if [ -f $pidfile ]; then
+        pid=`cat $pidfile`
+        grep -Eq "$CMD_PATT" "/proc/$pid/cmdline" 2>/dev/null && return 0
+        return 1
+    fi
+    return 3
+}
+
 case "$1" in
     start)
-        echo -n "Starting Akiban: "
-        su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file" > $log_file 2>&1
-        echo "OK"
+        [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+        su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pidfile" > $log_file 2>&1
+        [ "$VERBOSE" != no ] && log_end_msg 0
         ;;
     stop)
-        echo -n "Shutdown Akiban: "
-        su $AKIBAN_OWNR -c "kill `cat $pid_file`"
-        echo "OK"
+        [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+        su $AKIBAN_OWNR -c "kill `cat $pidfile`"
+        su $AKIBAN_OWNR -c "rm $pidfile"
+        [ "$VERBOSE" != no ] && log_end_msg 0
         ;;
     reload|restart)
         $0 stop
         $0 start
         ;;
     status)
-        status -p $pid_file akiban
+        is_running
+        stat=$?
+        case "$stat" in
+          0) log_success_msg "$DESC is running" ;;
+          1) log_failure_msg "could not access pidfile for $DESC" ;;
+          *) log_success_msg "$DESC is not running" ;;
+        esac
+        exit "$stat"
         ;;
     *)
-        echo "Usage: `basename $0` start|stop|status|restart|reload"
-        exit 1
+        echo "Usage: $SCRIPTNAME start|stop|status|restart|reload"
+        exit 3
 esac
 
-exit 0
-
+:
