@@ -3,7 +3,6 @@ akiban-cserver.ipr
 akiban-cserver.iws
 target
 velocity.log
-debian/changelog
 debian/debhelper.log
 debian/files
 debian/postinst.debhelper
