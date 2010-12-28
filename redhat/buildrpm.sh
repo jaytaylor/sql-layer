@@ -30,14 +30,14 @@ tarball()
 	mkdir -p rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
 	mv ${name}.tar.gz rpmbuild/SOURCES
 	rm -rf ${randir}
-	cat chunkserver.spec        | sed "s/REVISION/${rev}/g" > chunkserver-${rev}.spec 
+	cat akiban-server.spec        | sed "s/REVISION/${rev}/g" > akiban-server-${rev}.spec 
 }
 
 
 # create chunkserver rpm
 chunkserver_rpm()
 {
-	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild"   -ba chunkserver-${rev}.spec 
+	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild"   -ba akiban-server-${rev}.spec 
 }
 
 #update the yum repository
@@ -54,4 +54,4 @@ fi
 rpm_env
 tarball
 chunkserver_rpm
-publish
+#publish
