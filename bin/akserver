@@ -4,6 +4,7 @@
 #   -f: start in foreground
 #   -g: start the persistit GUI
 #   -p <filename>: log the pid to a file (useful to kill it later)
+#   -j <filename>: jar file of server to use
 #
 # CONTROLLING STARTUP:
 # 
@@ -16,25 +17,11 @@
 
 akiban_home=`dirname $0`/..
 
-# the JAR file we use to launch the akiban server
-if [ -z $JAR_FILE ]; then
-    JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
-fi
-
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
     JAVA=$JAVA_HOME/bin/java
 else
     JAVA=`which java`
-fi
-
-if [ -z $AKIBAN_CONF ]; then
-    # default AKIBAN_CONF dir
-    AKIBAN_CONF="${akiban_home}/conf"
-fi
-
-if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
-    . "$AKIBAN_CONF/akiban-env.sh"
 fi
 
 launch_service()
@@ -43,7 +30,23 @@ launch_service()
     props=$2
     usegui=$3
     pidpath=$4
+    JAR_FILE=$5
+    AKIBAN_CONF=$6
     akiban_parms="-Dcom.akiban.config=$AKIBAN_CONF -Dakiban.admin=$AKIBAN_CONF"
+
+    # the JAR file we use to launch the akiban server
+    if [ "x$JAR_FILE" == "x" ]; then
+        JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+    fi
+
+    if [ "x$AKIBAN_CONF" == "x" ]; then
+        # default AKIBAN_CONF dir
+        AKIBAN_CONF="${akiban_home}/conf"
+    fi
+
+    if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
+        . "$AKIBAN_CONF/akiban-env.sh"
+    fi
 
     if [ "x$usegui" != "x" ]; then
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
@@ -62,13 +65,21 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fghp:D: "$@"`
+args=`getopt fghj:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
     case "$1" in
         -p)
             pidfile="$2"
+            shift 2
+        ;;
+        -j)
+            jarfile="$2"
+            shift 2
+        ;;
+        -c)
+            conf="$2"
             shift 2
         ;;
         -f)
@@ -80,10 +91,11 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile]"
+            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile] [-j jarfile]"
             echo "-f launch the akiban server process in the foreground"
             echo "-g launch the persistit admin tool"
             echo "-p specify a pid file"
+            echo "-j specify a jar file for the server to use"
             exit 0
         ;;
         -D)
@@ -102,7 +114,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$foreground" "$properties" "$gui" "$pidfile"
+launch_service "$foreground" "$properties" "$gui" "$pidfile" "$jarfile" "$conf"
 
 exit $?
 

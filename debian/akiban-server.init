@@ -12,14 +12,15 @@
 # Author: Padraig O'Sullivan <posullivan@akiban.com>
 
 export JAR_FILE=/usr/share/akiban/akiban-server.jar
-export AKIBAN_HOME=/usr/share/akiban/
 export AKIBAN_CONF=/etc/akiban
 export AKIBAN_OWNR=akiban
+SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
 NAME="akiban"
 DESC="Akiban"
 log_file=/var/log/akiban/server_stdout.log
 pidfile=/var/run/akiban/server.pid
 AKIBAN_PROG=/usr/sbin/akserver
+DAEMON=/usr/sbin/akserver
 
 [ -e /usr/share/akiban/akiban-server.jar ] || exit 0
 [ -e /etc/akiban/akiban-env.sh ] || exit 0
@@ -62,19 +63,23 @@ is_running()
 
 case "$1" in
     start)
-        [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
-        su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pidfile" > $log_file 2>&1
-        [ "$VERBOSE" != no ] && log_end_msg 0
+        log_daemon_msg "Starting $DESC"
+        start_daemon -b -p "$pidfile" "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
+        log_progress_msg "$DESC"
+        log_end_msg 0
         ;;
     stop)
-        [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
-        su $AKIBAN_OWNR -c "kill `cat $pidfile`"
-        su $AKIBAN_OWNR -c "rm $pidfile"
-        [ "$VERBOSE" != no ] && log_end_msg 0
+        log_daemon_msg "Stopping $DESC"
+        if [ -f "$pidfile" ]; then
+            killproc -p "$pidfile" "$DAEMON"
+            rm -f "$pidfile"
+            log_progress_msg "$DESC"
+        fi
+        log_end_msg 0
         ;;
     force-reload|restart)
-        $0 stop
-        $0 start
+        set +e; $SELF stop; set -e
+        $SELF start
         ;;
     status)
         is_running
@@ -87,7 +92,7 @@ case "$1" in
         exit "$stat"
         ;;
     *)
-        echo "Usage: $SCRIPTNAME start|stop|status|restart|reload"
+        echo "Usage: $SELF start|stop|status|restart|reload"
         exit 3
 esac
 
