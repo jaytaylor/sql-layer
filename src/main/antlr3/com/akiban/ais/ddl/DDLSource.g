@@ -161,7 +161,9 @@ column_constraint[SchemaDef schema]
 	| character_set[$schema]
 	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
-	| (PRIMARY | UNIQUE) ? KEY {$schema.inlineColumnPK();}
+	| KEY {$schema.inlineKey();}
+	| PRIMARY KEY {$schema.inlineColumnPK();}
+	| UNIQUE KEY {$schema.inlineUniqueKey();}
 	;
 
 key_constraint[SchemaDef schema]
