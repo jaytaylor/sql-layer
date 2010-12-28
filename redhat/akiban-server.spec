@@ -16,8 +16,6 @@ URL:            http://akiban.com/
 Source0:       cserver.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
-Conflicts:     akiban-server
-
 Requires:      java >= 1.6.0
 Requires(pre): user(akiban)
 Requires(pre): group(akiban)
