@@ -23,7 +23,6 @@ tarball()
 	rm -rf ${cdir} rpmbuild ../target ${name}.tar.gz
 	mkdir -p ${cdir}
 	cp -r ../*        ${cdir}
-	cp -r config        ${randir}
 	find ${cdir} -name .svn | xargs rm -rf
 	tar -C ${randir} -cf ${name}.tar . 
 	gzip ${name}.tar
@@ -54,4 +53,4 @@ fi
 rpm_env
 tarball
 chunkserver_rpm
-#publish
+publish

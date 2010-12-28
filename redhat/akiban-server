@@ -27,9 +27,8 @@ case "$1" in
         echo "OK"
         ;;
     stop)
-        # Cassandra shutdown
-        echo -n "Shutdown Cassandra: "
-        su $CASSANDRA_OWNR -c "kill `cat $pid_file`"
+        echo -n "Shutdown Akiban: "
+        su $AKIBAN_OWNR -c "kill `cat $pid_file`"
         echo "OK"
         ;;
     reload|restart)
@@ -37,7 +36,7 @@ case "$1" in
         $0 start
         ;;
     status)
-        status -p $pid_file cassandra
+        status -p $pid_file akiban
         ;;
     *)
         echo "Usage: `basename $0` start|stop|status|restart|reload"

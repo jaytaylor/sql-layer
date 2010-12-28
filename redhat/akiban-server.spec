@@ -13,15 +13,12 @@ Group:          Development/Libraries
 License:        GPLv2 with exceptions
 URL:            http://akiban.com/
 
-Source0: cserver.tar.gz
-
-BuildRequires: java-devel
-BuildRequires: jpackage-utils
+Source0:       cserver.tar.gz
+BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
 Conflicts:     akiban-server
 
 Requires:      java >= 1.6.0
-Requires:      jpackage-utils
 Requires(pre): user(akiban)
 Requires(pre): group(akiban)
 Requires(pre): shadow-utils
@@ -45,18 +42,18 @@ mvn -Dmaven.test.skip=true -B clean install
 rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{username}/
 mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}
-mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}/lib
 mkdir -p ${RPM_BUILD_ROOT}/etc/%{username}/config
 mkdir -p ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 mkdir -p ${RPM_BUILD_ROOT}/etc/security/limits.d/
 mkdir -p ${RPM_BUILD_ROOT}/etc/default/
 mkdir -p ${RPM_BUILD_ROOT}/usr/sbin
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
-cp -p redhat/cluster.properties ${RPM_BUILD_ROOT}/etc/%{username}/
-cp -p redhat/chunkserver.properties ${RPM_BUILD_ROOT}/etc/%{username}/
-cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}/
+cp -p redhat/cluster.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
+cp -p redhat/chunkserver.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
+cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 cp -p target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/lib
+ln -s /usr/share/%{username}/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
 cp conf/akiban-env.sh ${RPM_BUILD_ROOT}/etc/%{username}/
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
@@ -84,10 +81,9 @@ fi
 %defattr(-,root,root,0755)
 %attr(755,root,root) %{_sbindir}/akserver
 %attr(755,root,root) /etc/rc.d/init.d/akiban-server
-%attr(755,root,root) /etc/default/%{username}
 %attr(755,%{username},%{username}) /usr/share/%{username}*
 %attr(755,%{username},%{username}) %config(noreplace) /%{_sysconfdir}/%{username}
-%attr(755,%{username},%{username}) %config(noreplace) /var/lib/%{username}/*
+%attr(755,%{username},%{username}) %config(noreplace) /var/lib/%{username}
 %attr(755,%{username},%{username}) /var/log/%{username}*
 %attr(755,%{username},%{username}) /var/run/%{username}*
 
@@ -98,6 +94,6 @@ exit 0
 %postun
 # only delete alternative on removal, not upgrade
 if [ "$1" = "0" ]; then
-    alternatives --remove %{username} /etc/%{username}/default.conf/
+    alternatives --remove %{username} 
 fi
 exit 0
