@@ -32,6 +32,7 @@ BIGINT = 'bigint';
 REAL = 'real';
 DOUBLE = 'double';
 FLOAT = 'float';
+DEC = 'dec';
 DECIMAL = 'decimal';
 NUMERIC = 'numeric';
 DATE = 'date';
@@ -160,7 +161,7 @@ column_constraint[SchemaDef schema]
 	| character_set[$schema]
 	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
-	| PRIMARY ? KEY {$schema.inlineColumnPK();}
+	| (PRIMARY | UNIQUE) ? KEY {$schema.inlineColumnPK();}
 	;
 
 key_constraint[SchemaDef schema]
@@ -290,6 +291,7 @@ numeric_data_type returns [String type]
 decimal_data_type returns [String type]
     : DECIMAL {$type = "DECIMAL";} 
 	| NUMERIC {$type = "NUMERIC";}
+	| DEC {$type = "DEC";}
 	| REAL {$type = "REAL";}
 	| DOUBLE {$type = "DOUBLE";}
 	| FLOAT {$type = "FLOAT";}
