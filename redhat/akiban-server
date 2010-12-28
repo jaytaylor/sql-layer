@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# /etc/init.d/akiban-server
+#
+# Startup script for Akiban Server
+# 
+# chkconfig: 2345 20 80
+# description: Starts and stops Akiban Server
+
+. /etc/rc.d/init.d/functions
+
+export JAR_FILE=/usr/share/akiban/akiban-server.jar
+export AKIBAN_CONF=/etc/akiban
+export AKIBNA_OWNR=akiban
+NAME="akiban"
+log_file=/var/log/akiban/server_stdout.log
+pid_file=/var/run/akiban/server.pid
+AKIBAN_PROG=/usr/sbin/akserver
+
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+case "$1" in
+    start)
+        echo -n "Starting Akiban: "
+        su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file -j $JAR_FILE -c $AKIBAN_CONF" > $log_file 2>&1
+        echo "OK"
+        ;;
+    stop)
+        # Cassandra shutdown
+        echo -n "Shutdown Cassandra: "
+        su $CASSANDRA_OWNR -c "kill `cat $pid_file`"
+        echo "OK"
+        ;;
+    reload|restart)
+        $0 stop
+        $0 start
+        ;;
+    status)
+        status -p $pid_file cassandra
+        ;;
+    *)
+        echo "Usage: `basename $0` start|stop|status|restart|reload"
+        exit 1
+esac
+
+exit 0
+
