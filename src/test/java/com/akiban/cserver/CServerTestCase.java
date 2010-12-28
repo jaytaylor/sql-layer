@@ -15,10 +15,10 @@ import org.junit.Ignore;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.UnitTestServiceManagerFactory;
-import com.akiban.cserver.service.persistit.PersistitService;
+import com.akiban.cserver.service.UnitTestServiceFactory;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.PersistitStoreSchemaManager;
 import com.akiban.cserver.store.SchemaManager;
@@ -37,7 +37,7 @@ public class CServerTestCase extends TestCase {
     @Before
     @Override
     public void setUp() throws Exception {
-        serviceManager = UnitTestServiceManagerFactory.createServiceManager();
+        serviceManager = UnitTestServiceFactory.createServiceManager();
         serviceManager.startServices();
         store = serviceManager.getStore();
         schemaManager = serviceManager.getSchemaManager();
@@ -64,7 +64,7 @@ public class CServerTestCase extends TestCase {
         return (PersistitStore) store;
     }
 
-    protected PersistitService getPersistitService() {
+    protected TreeService getPersistitService() {
         return serviceManager.getPersistitService();
     }
 

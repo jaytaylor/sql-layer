@@ -8,7 +8,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.UnitTestServiceManagerFactory;
+import com.akiban.cserver.service.UnitTestServiceFactory;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.AkibanConnectionImpl;
 import com.akiban.message.MessageRegistry;
@@ -66,7 +66,7 @@ public class CServerLifecycleTest
         throws Exception
     {
         MessageRegistry.reset(); // In case a message registry is left over from a previous test in the same JVM.
-        serviceManager = UnitTestServiceManagerFactory.createServiceManagerWithNetworkService();
+        serviceManager = UnitTestServiceFactory.createServiceManagerWithNetworkService();
         final Properties originalProperties = System.getProperties();
         try {
             final Properties testProperties = new Properties(System.getProperties());

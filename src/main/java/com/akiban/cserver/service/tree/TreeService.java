@@ -1,4 +1,4 @@
-package com.akiban.cserver.service.persistit;
+package com.akiban.cserver.service.tree;
 
 import com.akiban.cserver.StorageLink;
 import com.akiban.cserver.service.Service;
@@ -15,7 +15,7 @@ import com.persistit.exception.PersistitException;
  * @author peter
  * 
  */
-public interface PersistitService extends Service<PersistitService> {
+public interface TreeService extends Service<TreeService> {
 
     static String VOLUME_NAME = "akiban_data";
 
@@ -36,7 +36,7 @@ public interface PersistitService extends Service<PersistitService> {
 
     Transaction getTransaction(Session session);
 
-    void visitStorage(Session session, StorageVisitor visitor, String treeName)
+    void visitStorage(Session session, TreeVisitor visitor, String treeName)
             throws Exception;
 
     int volumeHandle(Exchange exchange);

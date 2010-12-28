@@ -36,8 +36,8 @@ import com.akiban.cserver.TableStatus;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
-import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
@@ -111,7 +111,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     private ServiceManager serviceManager;
 
-    private PersistitService ps;
+    private TreeService treeService;
     
     private SchemaManager schemaManager;
 
@@ -131,7 +131,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     public synchronized void start() throws Exception {
-        ps = ServiceManagerImpl.get().getPersistitService();
+        treeService = ServiceManagerImpl.get().getPersistitService();
         schemaManager = ServiceManagerImpl.get().getSchemaManager();
         this.rowDefCache = new RowDefCache();
         createManagers();
@@ -157,7 +157,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     public Persistit getDb() {
-        return ps.getDb();
+        return treeService.getDb();
     }
 
     public Exchange getExchange(final Session session, final RowDef rowDef,
@@ -165,14 +165,14 @@ public class PersistitStore implements CServerConstants, Store {
         if (indexDef == null) {
             final RowDef groupRowDef = rowDef.isGroupTable() ? rowDef
                     : rowDefCache.getRowDef(rowDef.getGroupRowDefId());
-            return ps.getExchange(session, groupRowDef);
+            return treeService.getExchange(session, groupRowDef);
         } else {
-            return ps.getExchange(session, indexDef);
+            return treeService.getExchange(session, indexDef);
         }
     }
 
     public void releaseExchange(final Session session, final Exchange exchange) {
-        ps.releaseExchange(session, exchange);
+        treeService.releaseExchange(session, exchange);
     }
 
     // private Exchange getExchange(final Session session, final Tree tree)
@@ -426,7 +426,7 @@ public class PersistitStore implements CServerConstants, Store {
         Exchange hEx = null;
         try {
             hEx = getExchange(session, rowDef, null);
-            transaction = ps.getTransaction(session);
+            transaction = treeService.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -561,7 +561,7 @@ public class PersistitStore implements CServerConstants, Store {
         try {
             hEx = getExchange(session, rowDef, null);
 
-            final Transaction transaction = ps.getTransaction(session);
+            final Transaction transaction = treeService.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -663,7 +663,7 @@ public class PersistitStore implements CServerConstants, Store {
         Exchange hEx = null;
         try {
             hEx = getExchange(session, rowDef, null);
-            final Transaction transaction = ps.getTransaction(session);
+            final Transaction transaction = treeService.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -776,7 +776,7 @@ public class PersistitStore implements CServerConstants, Store {
         RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
                 .getRowDef(rowDef.getGroupRowDefId());
 
-        transaction = ps.getTransaction(session);
+        transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
 
@@ -1226,7 +1226,7 @@ public class PersistitStore implements CServerConstants, Store {
         synchronized (deferredIndexKeys) {
             for (final Map.Entry<Tree, SortedSet<KeyState>> entry : deferredIndexKeys
                     .entrySet()) {
-                final Exchange iEx = ps.getExchange(session, entry.getKey());
+                final Exchange iEx = treeService.getExchange(session, entry.getKey());
                 buildIndexAddKeys(entry.getValue(), iEx);
                 entry.getValue().clear();
             }

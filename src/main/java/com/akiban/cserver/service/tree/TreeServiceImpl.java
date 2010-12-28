@@ -1,4 +1,4 @@
-package com.akiban.cserver.service.persistit;
+package com.akiban.cserver.service.tree;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,12 +25,12 @@ import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
-public class PersistitServiceImpl implements PersistitService,
-        Service<PersistitService> {
+public class TreeServiceImpl implements TreeService,
+        Service<TreeService> {
 
     private final static int MEGA = 1024 * 1024;
 
-    private static final Log LOG = LogFactory.getLog(PersistitServiceImpl.class
+    private static final Log LOG = LogFactory.getLog(TreeServiceImpl.class
             .getName());
 
     private static final String SERVER_MODULE_NAME = "cserver";
@@ -66,7 +66,7 @@ public class PersistitServiceImpl implements PersistitService,
 
     private Persistit db;
 
-    public PersistitServiceImpl(final ConfigurationService configService) {
+    public TreeServiceImpl(final ConfigurationService configService) {
         this.configService = configService;
     }
 
@@ -173,13 +173,13 @@ public class PersistitServiceImpl implements PersistitService,
     }
 
     @Override
-    public PersistitService cast() {
+    public TreeService cast() {
         return this;
     }
 
     @Override
-    public Class<PersistitService> castClass() {
-        return PersistitService.class;
+    public Class<TreeService> castClass() {
+        return TreeService.class;
     }
 
     @Override
@@ -210,12 +210,6 @@ public class PersistitServiceImpl implements PersistitService,
         }
     }
 
-    private Exchange getExchange(final Session session, final Volume volume,
-            final String treeName) throws PersistitException {
-        final Tree tree = volume.getTree(treeName, true);
-        return getExchange(session, tree);
-    }
-
     @Override
     public void releaseExchange(final Session session, final Exchange exchange) {
         exchange.getKey().clear();
@@ -236,7 +230,7 @@ public class PersistitServiceImpl implements PersistitService,
 
     @Override
     public void visitStorage(final Session session,
-            final StorageVisitor visitor, final String treeName)
+            final TreeVisitor visitor, final String treeName)
             throws Exception {
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();

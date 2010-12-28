@@ -36,10 +36,10 @@ import com.akiban.cserver.TableStatus;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
-import com.akiban.cserver.service.persistit.PersistitService;
-import com.akiban.cserver.service.persistit.StorageVisitor;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.tree.TreeService;
+import com.akiban.cserver.service.tree.TreeVisitor;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
 import com.persistit.Exchange;
@@ -129,7 +129,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public void createTableDefinition(final Session session,
             final String defaultSchemaName, final String statement)
             throws Exception {
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         String canonical = DDLSource.canonicalStatement(statement);
         final SchemaDef.UserTableDef tableDef = parseTableStatement(
                 defaultSchemaName, canonical);
@@ -192,8 +192,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void deleteTableDefinition(Session session, final int tableId)
             throws Exception {
-        final PersistitService ps = serviceManager.getPersistitService();
-        ps.visitStorage(session, new StorageVisitor() {
+        final TreeService ps = serviceManager.getPersistitService();
+        ps.visitStorage(session, new TreeVisitor() {
 
             @Override
             public void visit(Exchange exchange) throws Exception {
@@ -261,7 +261,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private void deleteTableDefinitionList(final Session session,
             final List<TableName> tables) throws Exception {
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
 
         for (final TableName tn : tables) {
             final String schemaName = tn.getSchemaName();
@@ -323,7 +323,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         Exchange ex1 = null;
         Exchange ex2 = null;
         try {
@@ -363,8 +363,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void deleteAllDefinitions(final Session session) throws Exception {
-        final PersistitService ps = serviceManager.getPersistitService();
-        ps.visitStorage(session, new StorageVisitor() {
+        final TreeService ps = serviceManager.getPersistitService();
+        ps.visitStorage(session, new TreeVisitor() {
 
             @Override
             public void visit(final Exchange exchange) throws Exception {
@@ -395,7 +395,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return null;
         }
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         final Exchange ex = ps.getExchange(session,
                 storageLink(schemaName, SCHEMA_TREE_NAME));
         try {
@@ -436,7 +436,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return result;
         }
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         final Exchange ex = ps.getExchange(session,
                 storageLink(schemaName, SCHEMA_TREE_NAME));
         ex.clear().append(BY_NAME).append(schemaName).append(tableName)
@@ -472,7 +472,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return result;
         }
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         final Exchange ex1 = ps.getExchange(session,
                 storageLink(schemaName, SCHEMA_TREE_NAME));
         final Exchange ex2 = ps.getExchange(session,
@@ -511,7 +511,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public AkibaInformationSchema getAis(final Session session) {
         // TODO - make this transactional
         while (true) {
-            final PersistitService ps = serviceManager.getPersistitService();
+            final TreeService ps = serviceManager.getPersistitService();
             long wasTimestamp;
             synchronized (this) {
                 if (aisTimestamp == saveTimestamp) {
@@ -615,7 +615,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final boolean withAisTables, final boolean withGroupTables,
             final boolean withCreateSchemaStatements) throws Exception {
 
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
 
         // append the AIS table definitions
         if (withAisTables) {
@@ -630,7 +630,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
 
         // append the User Table definitions
-        ps.visitStorage(session, new StorageVisitor() {
+        ps.visitStorage(session, new TreeVisitor() {
 
             @Override
             public void visit(Exchange ex) throws Exception {
@@ -700,7 +700,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public synchronized void forceNewTimestamp() {
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         saveTimestamp = ps.getTimestamp(new SessionImpl());
     }
 
@@ -760,7 +760,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     public void loadTableStatusRecords(final Session session)
             throws PersistitException {
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
             final TableStatus ts = rowDef.getTableStatus();
             final Exchange exchange = ps.getExchange(session,
@@ -790,8 +790,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void removeStaleTableStatusRecords(final Session session)
             throws Exception {
-        final PersistitService ps = serviceManager.getPersistitService();
-        ps.visitStorage(session, new StorageVisitor() {
+        final TreeService ps = serviceManager.getPersistitService();
+        ps.visitStorage(session, new TreeVisitor() {
 
             @Override
             public void visit(Exchange exchange) throws Exception {
@@ -810,7 +810,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void saveTableStatusRecords(final Session session)
             throws PersistitException {
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
             final TableStatus ts = rowDef.getTableStatus();
             if (ts.isDirty()) {
@@ -830,7 +830,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     void saveStatus(final Session session, final TableStatus tableStatus)
             throws PersistitException {
-        final PersistitService ps = serviceManager.getPersistitService();
+        final TreeService ps = serviceManager.getPersistitService();
         final RowDef rowDef = getRowDefCache().getRowDef(
                 tableStatus.getRowDefId());
         final Exchange exchange = ps.getExchange(session,
@@ -985,7 +985,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // Still TODO - verify that parent join columns are defined
     }
 
-    private void changed(final PersistitService ps, final Session session) {
+    private void changed(final TreeService ps, final Session session) {
         synchronized (this) {
             // TODO - this is good enough for now (mostly single-threaded)
             // but when we have transactional cache, should use that

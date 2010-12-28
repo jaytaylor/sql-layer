@@ -18,14 +18,14 @@ import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
 
 /**
- * Extension of DefaultServiceManagerFactory that creates mock services for unit tests.
+ * Extension of DefaultServiceFactory that creates mock services for unit tests.
  * Specifically, this class is used by tests that need to run the CServer and
  * PersistitStore code methods, but which do not need the JmxRegistryService
  * and NetworkService implementations to be functional.
  * @author peter
  *
  */
-public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
+public class UnitTestServiceFactory extends DefaultServiceFactory
 {
     private final static File TESTDIR = new File("/tmp/cserver-junit");
     private final MockJmxRegistryService jmxRegistryService = new MockJmxRegistryService();
@@ -36,12 +36,12 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
     
     public static ServiceManager createServiceManager() {
         ServiceManagerImpl.setServiceManager(null);
-        return new ServiceManagerImpl(new UnitTestServiceManagerFactory(false));
+        return new ServiceManagerImpl(new UnitTestServiceFactory(false));
     }
     
     public static ServiceManager createServiceManagerWithNetworkService() {
         ServiceManagerImpl.setServiceManager(null);
-        return new ServiceManagerImpl(new UnitTestServiceManagerFactory(true));
+        return new ServiceManagerImpl(new UnitTestServiceFactory(true));
     }
     
     public static ServiceManager getServiceManager() {
@@ -178,7 +178,7 @@ public class UnitTestServiceManagerFactory extends DefaultServiceManagerFactory
         }
     }
     
-    private UnitTestServiceManagerFactory(final boolean withNetwork) {
+    private UnitTestServiceFactory(final boolean withNetwork) {
         this.withNetwork = withNetwork;
     }
 

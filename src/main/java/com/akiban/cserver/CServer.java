@@ -5,7 +5,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.manage.ManageMXBean;
 import com.akiban.cserver.manage.ManageMXBeanImpl;
-import com.akiban.cserver.service.DefaultServiceManagerFactory;
+import com.akiban.cserver.service.DefaultServiceFactory;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
@@ -122,7 +122,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
      */
     public static void main(String[] args) throws Exception
     {
-        final ServiceManager serviceManager = DefaultServiceManagerFactory.createServiceManager();
+        final ServiceManager serviceManager = new ServiceManagerImpl(new DefaultServiceFactory());
         serviceManager.startServices();
     }
 }

@@ -9,7 +9,7 @@ package com.akiban.cserver;
  */
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.UnitTestServiceManagerFactory;
+import com.akiban.cserver.service.UnitTestServiceFactory;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.PersistitStoreSchemaManager;
@@ -25,7 +25,7 @@ public class CServerTestSuite {
     protected final static Session session = new SessionImpl();
 
     public static void setUpSuite() throws Exception {
-        serviceManager = UnitTestServiceManagerFactory.createServiceManager();
+        serviceManager = UnitTestServiceFactory.createServiceManager();
         serviceManager.startServices();
         store = serviceManager.getStore();
         schemaManager = serviceManager.getSchemaManager();

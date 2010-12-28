@@ -21,8 +21,8 @@ import com.akiban.cserver.StorageLink;
 import com.akiban.cserver.api.DDLFunctions;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.ByteBufferFactory;
 import com.persistit.Exchange;
@@ -361,7 +361,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
     public void testDropTable() throws Exception {
         final TestData td = new TestData(5, 5, 5, 5);
         td.insertTestRows();
-        Volume volume = getDb().getVolume(PersistitService.VOLUME_NAME);
+        Volume volume = getDb().getVolume(TreeService.VOLUME_NAME);
         assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
@@ -880,7 +880,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
     }
 
     private boolean isGone(final StorageLink link) throws Exception {
-        Volume volume = getDb().getVolume(PersistitService.VOLUME_NAME);
+        Volume volume = getDb().getVolume(TreeService.VOLUME_NAME);
         final Tree tree = volume.getTree(link.getTreeName(), false);
         if (tree == null) {
             return true;

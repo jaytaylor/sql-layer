@@ -8,33 +8,34 @@ import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.memcache.MemcacheService;
+import com.akiban.cserver.service.memcache.MemcacheServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
-import com.akiban.cserver.service.persistit.PersistitService;
-import com.akiban.cserver.service.persistit.PersistitServiceImpl;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.session.SessionServiceImpl;
+import com.akiban.cserver.service.tree.TreeService;
+import com.akiban.cserver.service.tree.TreeServiceImpl;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.PersistitStoreSchemaManager;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
-public class DefaultServiceManagerFactory implements ServiceManagerFactory {
+public class DefaultServiceFactory implements ServiceFactory {
 
-    private Service jmxRegistryService;
-    private Service loggingService;
-    private Service sessionService;
-    private Service configurationService;
-    private Service networkService;
-    private Service chunkserverService;
+    private Service<JmxRegistryService> jmxRegistryService;
+    private Service<LoggingService> loggingService;
+    private Service<SessionService> sessionService;
+    private Service<ConfigurationService> configurationService;
+    private Service<NetworkService> networkService;
+    private Service<CServer> chunkserverService;
 
-    private Service persistitService;
-    private Service storeService;
-    private Service schemaService;
-    private Service memcacheService;
+    private Service<TreeService> treeService;
+    private Service<Store> storeService;
+    private Service<SchemaManager> schemaService;
+    private Service<MemcacheService> memcacheService;
     
     public static ServiceManager createServiceManager() {
-        return new ServiceManagerImpl(new DefaultServiceManagerFactory());
+        return new ServiceManagerImpl(new DefaultServiceFactory());
     }
 
     @Override
@@ -88,12 +89,12 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory {
     }
 
     @Override
-    public Service<PersistitService> persistitService() {
-        if (persistitService == null) {
+    public Service<TreeService> treeService() {
+        if (treeService == null) {
             final ConfigurationService config = configurationService().cast();
-            persistitService = new PersistitServiceImpl(config);
+            treeService = new TreeServiceImpl(config);
         }
-        return persistitService;
+        return treeService;
     }
 
     @Override
@@ -112,11 +113,11 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory {
         return schemaService;
     }
     
-    public Service memcacheService()
+    public Service<MemcacheService> memcacheService()
     {
         if (memcacheService == null)
         {
-            memcacheService = new MemcacheService();
+            memcacheService = new MemcacheServiceImpl();
         }
         return memcacheService;
     }

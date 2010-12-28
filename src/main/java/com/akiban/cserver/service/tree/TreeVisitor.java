@@ -1,8 +1,8 @@
-package com.akiban.cserver.service.persistit;
+package com.akiban.cserver.service.tree;
 
 import com.persistit.Exchange;
 
-public interface StorageVisitor {
+public interface TreeVisitor {
 
     void visit(final Exchange exchange) throws Exception;
 }

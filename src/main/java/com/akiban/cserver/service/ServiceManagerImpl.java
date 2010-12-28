@@ -13,8 +13,8 @@ import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.logging.LoggingService;
-import com.akiban.cserver.service.persistit.PersistitService;
 import com.akiban.cserver.service.session.SessionService;
+import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
@@ -22,7 +22,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
 {
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
     // TODO: Supply the factory externally.
-    private final ServiceManagerFactory factory;
+    private final ServiceFactory factory;
     private Map<Class<?>, Service<?>> services; // for each key-val, the ? should be the same; (T.class -> Service<T>)
 
     private final CountDownLatch blockerLatch = new CountDownLatch(1);
@@ -41,7 +41,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
      * This constructor is made protected for unit testing.
      * @param factory the factory that creates the services this instance manages
      */
-    protected ServiceManagerImpl(ServiceManagerFactory factory)
+    public ServiceManagerImpl(ServiceFactory factory)
     {
         this.factory = factory;
         services = new LinkedHashMap<Class<?>, Service<?>>();
@@ -73,8 +73,8 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     }
     
     @Override
-    public PersistitService getPersistitService() {
-        return getService(PersistitService.class);
+    public TreeService getPersistitService() {
+        return getService(TreeService.class);
     }
     
     @Override
@@ -103,7 +103,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         setServiceManager(this);
         startAndPut(factory.loggingService(), jmxRegistry);
         startAndPut(factory.sessionService(), jmxRegistry);
-        startAndPut(factory.persistitService(), jmxRegistry);
+        startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
@@ -213,8 +213,8 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
      *            ignored
      */
     public static void main(String[] ignored) throws Exception {
-        final DefaultServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
-        ServiceManager sm = new ServiceManagerImpl(serviceManagerFactory);
+        final DefaultServiceFactory serviceFactory = new DefaultServiceFactory();
+        ServiceManager sm = new ServiceManagerImpl(serviceFactory);
         sm.startServices();
         Object foo = new Object();
         synchronized (foo) {
