@@ -15,7 +15,7 @@
 #   AKIBAN_CONF -- Directory containing configuration files.
 #
 
-akiban_home=`dirname $0`/..
+akiban_home=$(cd $(dirname $0)/..; pwd -P)
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -32,7 +32,6 @@ launch_service()
     pidpath=$4
     JAR_FILE=$5
     AKIBAN_CONF=$6
-    akiban_parms="-Dcom.akiban.config=$AKIBAN_CONF -Dakiban.admin=$AKIBAN_CONF"
 
     # the JAR file we use to launch the akiban server
     if [ "x$JAR_FILE" == "x" ]; then
@@ -43,6 +42,7 @@ launch_service()
         # default AKIBAN_CONF dir
         AKIBAN_CONF="${akiban_home}/conf"
     fi
+    akiban_parms="-Dcom.akiban.config=$AKIBAN_CONF -Dakiban.admin=$AKIBAN_CONF"
 
     if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
         . "$AKIBAN_CONF/akiban-env.sh"
