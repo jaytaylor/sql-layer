@@ -146,24 +146,22 @@ Thnd = RowType('hnd', ['hkey', 'name', 'order_date'])
 Tnd = RowType('nd', ['name', 'order_date'])
 
 run_plan("select c.name, o.order_date from customer c, order o where o.cid = c.cid and o.order_date like '2010/1/%'",
-         Project(
-             Flatten(
-                 Project(
-                     Project(
-                         Select(
-                             Cut(
-                                 TableScan(coi),
-                                 Ti),
-                             To,
-                             lambda order: order.order_date.startswith("2010/1/")),
-                         Tc,
-                         Tchn),
-                     To,
-                     Tohd),
-                 Tchn,
-                 Tohd,
-                 Thnd,
-                 INNER_JOIN),
-             Thnd,
-             Tnd)
-         )
+         Project
+         (Flatten
+          (Project
+           (Project
+            (Select
+             (Cut(TableScan(coi),
+                  Ti),
+              To,
+              lambda order: order.order_date.startswith("2010/1/")),
+             Tc,
+             Tchn),
+            To,
+            Tohd),
+           Tchn,
+           Tohd,
+           Thnd,
+           INNER_JOIN),
+          Thnd,
+          Tnd))
