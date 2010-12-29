@@ -89,6 +89,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
         startAndPut(new SchemaServiceImpl( store.getSchemaManager() ), jmxRegistry);
+        startAndPut(factory.memcacheService(), jmxRegistry);
         setServiceManager(this);
     }
 
