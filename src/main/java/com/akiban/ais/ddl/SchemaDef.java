@@ -86,6 +86,17 @@ public class SchemaDef {
         addPrimaryKeyColumn(currentColumn.getName());
     }
 
+    void inlineKey() {
+        addIndex(currentColumn.name);
+        addIndexColumn(currentColumn.name);
+    }
+
+    void inlineUniqueKey() {
+        IndexDef indexDef = addIndex(currentColumn.name);
+        indexDef.qualifiers.add(IndexQualifier.UNIQUE);
+        addIndexColumn(currentColumn.name);
+    }
+
     void startPrimaryKey() {
         checkPkEmpty();
     }
@@ -119,7 +130,7 @@ public class SchemaDef {
         currentConstraintName = null;
     }
 
-    void addIndex(final String name) {
+    IndexDef addIndex(final String name) {
         currentIndex = new IndexDef(name);
         IndexDefHandle handle = new IndexDefHandle(currentIndex);
 
@@ -129,6 +140,7 @@ public class SchemaDef {
         else {
             currentTable.indexHandles.add(handle);
         }
+        return currentIndex;
     }
 
     static boolean isAkiban(final IndexDef indexDef) {
