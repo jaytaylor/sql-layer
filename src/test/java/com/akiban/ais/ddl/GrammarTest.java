@@ -14,11 +14,11 @@ public class GrammarTest
     public void testBug695066_1() throws Exception
     {
         UserTable table = userTable("CREATE TABLE t1(c1 TINYINT AUTO_INCREMENT NULL KEY) AUTO_INCREMENT=10;");
-        assertNull(table.getPrimaryKey());
-        Index index = table.getIndex("c1");
+        assertNotNull(table.getPrimaryKey());
+        Index index = table.getPrimaryKey().getIndex();
         assertNotNull(index);
-        assertTrue(!index.isPrimaryKey());
-        assertTrue(!index.isUnique());
+        assertTrue(index.isPrimaryKey());
+        assertTrue(index.isUnique());
     }
 
     @Test
