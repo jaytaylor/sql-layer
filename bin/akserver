@@ -2,7 +2,9 @@
 #
 # OPTIONS:
 #   -f: start in foreground
+#   -g: start the persistit GUI
 #   -p <filename>: log the pid to a file (useful to kill it later)
+#   -j <filename>: jar file of server to use
 #
 # CONTROLLING STARTUP:
 # 
@@ -13,21 +15,7 @@
 #   AKIBAN_CONF -- Directory containing configuration files.
 #
 
-akiban_home=`dirname $0`/..
-
-# This can be the path to a jar file, or a directory containing the 
-# compiled classes. NOTE: This isn't needed by the startup script,
-# it's just used here in constructing the classpath.
-akiban_bin=$akiban_home/target/classes
-
-# the config file to use for the chunk server
-CONFIG_DIR="${akiban_home}/conf"
-
-# JAVA_HOME can optionally be set here
-#JAVA_HOME=/usr/local/jdk6
-
-# the JAR file we use to launch the akiban server
-JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+akiban_home=$(cd $(dirname $0)/..; pwd -P)
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -36,21 +24,29 @@ else
     JAVA=`which java`
 fi
 
-if [ -z $AKIBAN_CONF ]; then
-    # default AKIBAN_CONF dir
-    AKIBAN_CONF=$CONFIG_DIR
-fi
-
-if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
-    . "$AKIBAN_CONF/akiban-env.sh"
-fi
-
 launch_service()
 {
     foreground=$1
     props=$2
     usegui=$3
-    akiban_parms="-Dcom.akiban.config=$CONFIG_DIR -Dakiban.admin=$CONFIG_DIR"
+    pidpath=$4
+    JAR_FILE=$5
+    AKIBAN_CONF=$6
+
+    # the JAR file we use to launch the akiban server
+    if [ "x$JAR_FILE" == "x" ]; then
+        JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+    fi
+
+    if [ "x$AKIBAN_CONF" == "x" ]; then
+        # default AKIBAN_CONF dir
+        AKIBAN_CONF="${akiban_home}/conf"
+    fi
+    akiban_parms="-Dcom.akiban.config=$AKIBAN_CONF -Dakiban.admin=$AKIBAN_CONF"
+
+    if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
+        . "$AKIBAN_CONF/akiban-env.sh"
+    fi
 
     if [ "x$usegui" != "x" ]; then
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
@@ -60,7 +56,7 @@ launch_service()
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
     else
         # use log4j to log output
-        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$CONFIG_DIR/config/log4j.properties"
+        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
         [ ! -z $pidpath ] && printf "%d" $! > $pidpath
     fi
@@ -69,11 +65,23 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fghD: "$@"`
+args=`getopt fghj:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
     case "$1" in
+        -p)
+            pidfile="$2"
+            shift 2
+        ;;
+        -j)
+            jarfile="$2"
+            shift 2
+        ;;
+        -c)
+            conf="$2"
+            shift 2
+        ;;
         -f)
             foreground="yes"
             shift
@@ -83,9 +91,11 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-f] [-g] [-h]"
+            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile] [-j jarfile]"
             echo "-f launch the akiban server process in the foreground"
             echo "-g launch the persistit admin tool"
+            echo "-p specify a pid file"
+            echo "-j specify a jar file for the server to use"
             exit 0
         ;;
         -D)
@@ -104,7 +114,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$foreground" "$properties" "$gui"
+launch_service "$foreground" "$properties" "$gui" "$pidfile" "$jarfile" "$conf"
 
 exit $?
 
