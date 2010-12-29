@@ -34,7 +34,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 public class MemcacheService implements Service
 {
     // Service vars
-    private final ServiceManager serviceManager;
+    private final Store store;
     private static final Log log = LogFactory.getLog(MemcacheService.class);
 
     // Daemon vars
@@ -44,14 +44,9 @@ public class MemcacheService implements Service
     private ServerSocketChannelFactory channelFactory;
 
 
-    public MemcacheService()
+    public MemcacheService(final Store store)
     {
-        this.serviceManager = null;
-    }
-
-    public MemcacheService(final ServiceManager serviceManager)
-    {
-        this.serviceManager = serviceManager;
+        this.store = store;
     }
 
 
@@ -88,7 +83,6 @@ public class MemcacheService implements Service
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
 
         ChannelPipelineFactory pipelineFactory;
-        Store store = serviceManager.getStore();
 
         if(binary) {
             pipelineFactory = new BinaryPipelineFactory(store, verbose, idle_time, allChannels);
