@@ -43,9 +43,9 @@ chunkserver_rpm()
 publish()
 {
 if [ ${PUBLISH} -gt 0 ];then
-	ssh skeswani@172.16.20.117  " mkdir -p /var/www/rpms/${rev}"
-	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/${rev}
-	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/${rev}/* /var/www/latest/"
+	ssh skeswani@172.16.20.117  " mkdir -p /var/www/rpms/akiban-server/${rev}"
+	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${rev}
+	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${rev}/* /var/www/latest/"
 	ssh skeswani@172.16.20.117 /var/www/rpms/createrepo.sh
 fi
 }
