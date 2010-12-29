@@ -34,7 +34,8 @@ class Scan(Operator):
 class TableScan(Scan):
 
     def __init__(self, map):
-        Scan.__init__(self, iter(map))
+        iterator = iter(map)
+        Scan.__init__(self, iterator)
 
 class IndexScan(Scan):
 
