@@ -50,7 +50,7 @@ cp -p redhat/cluster.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/chunkserver.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
-cp -p target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/lib
+cp -p target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
 cp conf/akiban-env.sh ${RPM_BUILD_ROOT}/etc/%{username}/
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
