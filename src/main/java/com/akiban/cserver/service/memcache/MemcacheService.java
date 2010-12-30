@@ -1,19 +1,15 @@
 package com.akiban.cserver.service.memcache;
 
-import java.io.IOException;
-import java.util.List;
+
 import java.util.concurrent.Executors;
 import java.net.InetSocketAddress;
 
 import com.akiban.cserver.service.config.ConfigurationService;
-import com.akiban.cserver.service.jmx.JmxManageable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.service.Service;
-import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.memcache.AkibanCommandHandler;
 
 import com.thimbleware.jmemcached.protocol.SessionStatus;
 import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryCommandDecoder;
@@ -33,7 +29,7 @@ import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory; 
 
 
-public class MemcacheService implements Service
+public class MemcacheService implements Service<MemcacheService>
 {
     // Service vars
     private final Store store;
@@ -112,7 +108,7 @@ public class MemcacheService implements Service
         ChannelGroupFuture future = allChannels.close();
         future.awaitUninterruptibly();
 
-        if(future.isCompleteSuccess() == false) {
+        if(!future.isCompleteSuccess()) {
             log.error("Failed to close all network channels");
         }
         
