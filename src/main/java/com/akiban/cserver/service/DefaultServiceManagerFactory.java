@@ -85,7 +85,8 @@ public class DefaultServiceManagerFactory implements ServiceManagerFactory
         if (memcacheService == null)
         {
             Store store = storeService().cast();
-            memcacheService = new MemcacheService(store);
+            ConfigurationService config = configurationService().cast();
+            memcacheService = new MemcacheService(store, config);
         }
         return memcacheService;
     }

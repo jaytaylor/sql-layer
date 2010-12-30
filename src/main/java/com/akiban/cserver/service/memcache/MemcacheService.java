@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.net.InetSocketAddress;
 
+import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.jmx.JmxManageable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -35,27 +37,28 @@ public class MemcacheService implements Service
 {
     // Service vars
     private final Store store;
+    private final int port;
     private static final Log log = LogFactory.getLog(MemcacheService.class);
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
-    private boolean running = false;
+    private volatile boolean running = false;
     private DefaultChannelGroup allChannels;
     private ServerSocketChannelFactory channelFactory;
 
-
-    public MemcacheService(final Store store)
+    public MemcacheService(Store store, ConfigurationService config)
     {
         this.store = store;
+        
+        String portStr = config.getProperty("cserver", "memcached.port");
+        this.port = Integer.parseInt(portStr);
     }
-
 
     @Override
     public void start() throws Exception
     {
         log.info("Starting memcache service");
 
-        final int port = 11211;
         final InetSocketAddress addr = new InetSocketAddress(port);
         final int idle_timeout = -1;
         final boolean binary = false;
@@ -148,7 +151,6 @@ public class MemcacheService implements Service
             return Channels.pipeline(frameDecoder, commandDecoder, commandHandler, responseEncoder);
         }
     }
-
 
     private final class BinaryPipelineFactory implements ChannelPipelineFactory
     {
