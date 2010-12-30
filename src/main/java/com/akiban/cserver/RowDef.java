@@ -25,7 +25,7 @@ import com.akiban.cserver.util.RowDefNotFoundException;
  * @author peter
  * 
  */
-public class RowDef implements StorageLink {
+public class RowDef implements TreeLink {
 
     private final Table table;
 
@@ -104,7 +104,7 @@ public class RowDef implements StorageLink {
      */
     private final byte[][] varLenFieldMap;
 
-    private AtomicReference<Object> storageCache = new AtomicReference<Object>();
+    private AtomicReference<Object> treeCache = new AtomicReference<Object>();
 
     public RowDef(Table table) {
         this.table = table;
@@ -654,17 +654,12 @@ public class RowDef implements StorageLink {
     }
 
     @Override
-    public String getIndexName() {
-        return null;
+    public void setTreeCache(final Object cache) {
+        treeCache.set(cache);
     }
 
     @Override
-    public void setStorageCache(final Object cache) {
-        storageCache.set(cache);
-    }
-
-    @Override
-    public Object getStorageCache() {
-        return storageCache.get();
+    public Object getTreeCache() {
+        return treeCache.get();
     }
 }

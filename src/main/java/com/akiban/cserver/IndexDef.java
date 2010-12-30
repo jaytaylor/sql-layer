@@ -20,7 +20,7 @@ import com.akiban.ais.model.IndexColumn;
  * @author peter
  * 
  */
-public class IndexDef implements StorageLink {
+public class IndexDef implements TreeLink {
 
     private final Index index;
 
@@ -43,7 +43,7 @@ public class IndexDef implements StorageLink {
     // specifies the position within the index entry of the ith hkey field.
     private I2H[] hKeyFields;
 
-    private AtomicReference<Object> storageCache = new AtomicReference<Object>();
+    private AtomicReference<Object> treeCache = new AtomicReference<Object>();
     
     /*
      * Structure that determines how a field in a table binds to a key segment of an index key. An H2I defines
@@ -350,23 +350,13 @@ public class IndexDef implements StorageLink {
     }
 
     @Override
-    public String getTableName() {
-        return rowDef.getTableName();
+    public void setTreeCache(Object object) {
+       treeCache.set(object);
     }
 
     @Override
-    public String getIndexName() {
-        return getName();
-    }
-
-    @Override
-    public void setStorageCache(Object object) {
-       storageCache.set(object);
-    }
-
-    @Override
-    public Object getStorageCache() {
-        return storageCache.get();
+    public Object getTreeCache() {
+        return treeCache.get();
     }
 
 }

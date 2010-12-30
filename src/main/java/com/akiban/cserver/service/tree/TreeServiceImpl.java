@@ -7,16 +7,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.CServerUtil;
-import com.akiban.cserver.StorageLink;
+import com.akiban.cserver.TreeLink;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.store.PersistitStoreSchemaManager;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
@@ -25,10 +27,11 @@ import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
-public class TreeServiceImpl implements TreeService,
-        Service<TreeService> {
+public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private final static int MEGA = 1024 * 1024;
+
+    private final static int MAX_TABLES_PER_VOLUME = 100000;
 
     private static final Log LOG = LogFactory.getLog(TreeServiceImpl.class
             .getName());
@@ -65,6 +68,41 @@ public class TreeServiceImpl implements TreeService,
     private final static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
 
     private Persistit db;
+
+    int volumeOffsetCounter = 0;
+
+    final Map<Volume, Integer> translationMap = new WeakHashMap<Volume, Integer>();
+
+    private static class TreeCache {
+        private final Tree tree;
+        private int tableIdOffset = -1;
+
+        private TreeCache(final Tree tree) {
+            this.tree = tree;
+        }
+
+        /**
+         * @return the tableIdOffset
+         */
+        public int getTableIdOffset() {
+            return tableIdOffset;
+        }
+
+        /**
+         * @param tableIdOffset
+         *            the tableIdOffset to set
+         */
+        public void setTableIdOffset(int tableIdOffset) {
+            this.tableIdOffset = tableIdOffset;
+        }
+
+        /**
+         * @return the tree
+         */
+        public Tree getTree() {
+            return tree;
+        }
+    }
 
     public TreeServiceImpl(final ConfigurationService configService) {
         this.configService = configService;
@@ -188,14 +226,10 @@ public class TreeServiceImpl implements TreeService,
     }
 
     @Override
-    public Exchange getExchange(final Session session, final StorageLink link)
+    public Exchange getExchange(final Session session, final TreeLink link)
             throws PersistitException {
-        Tree tree = (Tree) link.getStorageCache();
-        if (tree == null) {
-            Volume volume = mappedVolume(link);
-            tree = volume.getTree(link.getTreeName(), true);
-            link.setStorageCache(tree);
-        }
+        final TreeCache cache = populateTreeCache(link);
+        Tree tree = cache.getTree();
         return getExchange(session, tree);
     }
 
@@ -229,9 +263,8 @@ public class TreeServiceImpl implements TreeService,
     }
 
     @Override
-    public void visitStorage(final Session session,
-            final TreeVisitor visitor, final String treeName)
-            throws Exception {
+    public void visitStorage(final Session session, final TreeVisitor visitor,
+            final String treeName) throws Exception {
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
@@ -246,20 +279,68 @@ public class TreeServiceImpl implements TreeService,
     }
 
     @Override
-    public int volumeHandle(final Exchange exchange) {
-        // TODO - implement this
-        return 0;
-    }
-
-    @Override
-    public boolean isContainer(final Exchange exchange,
-            final StorageLink storageLink) {
-        final Volume volume = mappedVolume(storageLink);
+    public boolean isContainer(final Exchange exchange, final TreeLink link) {
+        final Volume volume = mappedVolume(link.getSchemaName(),
+                link.getTreeName());
         return exchange.getVolume().equals(volume);
     }
 
-    private Volume mappedVolume(final StorageLink link) {
-        // TODO - Tablespace Mapping
+    @Override
+    public int aisToStore(final TreeLink link, final int tableId) throws PersistitException {
+        final TreeCache cache = populateTreeCache(link);
+        int offset = cache.getTableIdOffset();
+        if (offset < 0) {
+            offset = tableIdOffset(link);
+            cache.setTableIdOffset(offset);
+        }
+        return tableId - offset;
+    }
+
+    @Override
+    public int storeToAis(final TreeLink link, final int tableId) throws PersistitException {
+        final TreeCache cache = populateTreeCache(link);
+        int offset = cache.getTableIdOffset();
+        if (offset < 0) {
+            offset = tableIdOffset(link);
+            cache.setTableIdOffset(offset);
+        }
+        return tableId + offset;
+    }
+    
+    @Override
+    public synchronized int storeToAis(final Volume volume, final int tableId) {
+        final int offset = translationMap.get(volume).intValue();
+        return tableId + offset;
+    }
+    
+    private TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
+        TreeCache cache = (TreeCache) link.getTreeCache();
+        if (cache == null) {
+            Volume volume = mappedVolume(link.getSchemaName(),
+                    link.getTreeName());
+            final Tree tree = volume.getTree(link.getTreeName(), true);
+            cache = new TreeCache(tree);
+            link.setTreeCache(cache);
+        }
+        return cache;
+    }
+
+    private synchronized int tableIdOffset(final TreeLink link) {
+        final Volume volume = mappedVolume(link.getSchemaName(),
+                SCHEMA_TREE_NAME);
+        Integer offset = translationMap.get(volume);
+        if (offset == null) {
+            offset = Integer.valueOf(volumeOffsetCounter);
+            translationMap.put(volume, offset);
+            volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
+        }
+        return offset.intValue();
+    }
+
+    private Volume mappedVolume(final String schemaName, final String treeName) {
+        
+        // TODO - map it!
+        
         return db.getVolume(VOLUME_NAME);
     }
 

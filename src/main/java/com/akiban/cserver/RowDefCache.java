@@ -63,10 +63,6 @@ public class RowDefCache implements CServerConstants {
     public synchronized RowDef getRowDef(final int rowDefId)
             throws RowDefNotFoundException {
         RowDef rowDef = cacheMap.get(Integer.valueOf(rowDefId));
-        if (rowDef == null) {
-            rowDef = lookUpRowDef(rowDefId);
-            cacheMap.put(Integer.valueOf(rowDefId), rowDef);
-        }
         return rowDef;
     }
 

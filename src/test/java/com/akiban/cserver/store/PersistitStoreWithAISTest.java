@@ -17,7 +17,7 @@ import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.StorageLink;
+import com.akiban.cserver.TreeLink;
 import com.akiban.cserver.api.DDLFunctions;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.common.TableId;
@@ -879,7 +879,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         pw.flush();
     }
 
-    private boolean isGone(final StorageLink link) throws Exception {
+    private boolean isGone(final TreeLink link) throws Exception {
         Volume volume = getDb().getVolume(TreeService.VOLUME_NAME);
         final Tree tree = volume.getTree(link.getTreeName(), false);
         if (tree == null) {

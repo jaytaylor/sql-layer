@@ -112,7 +112,7 @@ public class PersistitStore implements CServerConstants, Store {
     private ServiceManager serviceManager;
 
     private TreeService treeService;
-    
+
     private SchemaManager schemaManager;
 
     private PersistitStoreIndexManager indexManager;
@@ -239,11 +239,13 @@ public class PersistitStore implements CServerConstants, Store {
                 Column column = segmentColumn.column();
                 if (column == null) {
                     // Must be a PK-less table. Use unique id from TableStatus.
-                    assert segmentColumn.pkLessTable().getTableId() == segmentRowDef.getRowDefId();
+                    assert segmentColumn.pkLessTable().getTableId() == segmentRowDef
+                            .getRowDefId();
                     TableStatus tableStatus = segmentRowDef.getTableStatus();
                     hKey.append(tableStatus.newUniqueId());
                 } else {
-                    appendKeyField(hKey, fieldDefs[column.getPosition()], rowData);
+                    appendKeyField(hKey, fieldDefs[column.getPosition()],
+                            rowData);
                 }
             }
         }
@@ -260,9 +262,11 @@ public class PersistitStore implements CServerConstants, Store {
             for (int j = 0; j < nKeyColumns[i]; j++) {
                 FieldDef fieldDef = hKeyFieldDefs[k];
                 if (fieldDef.isPKLessTableCounter()) {
-                    // TODO: Maintain a counter elsewhere, maybe in the FieldDef. At the end of the bulk load,
+                    // TODO: Maintain a counter elsewhere, maybe in the
+                    // FieldDef. At the end of the bulk load,
                     // TODO: assign the counter to TableStatus.
-                    TableStatus tableStatus = fieldDef.getRowDef().getTableStatus();
+                    TableStatus tableStatus = fieldDef.getRowDef()
+                            .getTableStatus();
                     hkey.append(tableStatus.newUniqueId());
                 } else {
                     appendKeyField(hkey, fieldDef, hKeyValues[k]);
@@ -397,7 +401,6 @@ public class PersistitStore implements CServerConstants, Store {
         return verbose;
     }
 
-
     /**
      * WRites a row
      * 
@@ -444,14 +447,8 @@ public class PersistitStore implements CServerConstants, Store {
                                 ErrorCode.DUPLICATE_KEY, "Non-unique key: %s",
                                 hEx.getKey());
                     }
-
-                    final int start = rowData.getInnerStart();
-                    final int size = rowData.getInnerSize();
-                    hEx.getValue().ensureFit(size);
-                    System.arraycopy(rowData.getBytes(), start, hEx.getValue()
-                            .getEncodedBytes(), 0, size);
-                    hEx.getValue().setEncodedSize(size);
-
+                    
+                    packRowData(hEx, rowDef, rowData);
                     // Store the h-row
                     hEx.store();
                     if (ts.isAutoIncrement()) {
@@ -524,11 +521,7 @@ public class PersistitStore implements CServerConstants, Store {
 
         constructHKey(hEx, rowDef, ordinals, nKeyColumns, hKeyFieldDefs,
                 hKeyValues);
-        final int start = rowData.getInnerStart();
-        final int size = rowData.getInnerSize();
-        hEx.getValue().ensureFit(size);
-        System.arraycopy(rowData.getBytes(), start, hEx.getValue().getEncodedBytes(), 0, size);
-        hEx.getValue().setEncodedSize(size);
+        packRowData(hEx, rowDef, rowData);
         // Store the h-row
         hEx.store();
         /*
@@ -542,7 +535,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     // TODO - remove - this is used only by the PersistitStoreAdapter in
-    // bulk loader. 
+    // bulk loader.
     @Override
     public void updateTableStats(final Session session, RowDef rowDef,
             long rowCount) throws Exception {
@@ -713,13 +706,7 @@ public class PersistitStore implements CServerConstants, Store {
                         deleteRow(session, oldRowData);
                         writeRow(session, newRowData);
                     } else {
-                        final int start = newRowData.getInnerStart();
-                        final int size = newRowData.getInnerSize();
-                        hEx.getValue().ensureFit(size);
-                        System.arraycopy(newRowData.getBytes(), start, hEx
-                                .getValue().getEncodedBytes(), 0, size);
-                        hEx.getValue().setEncodedSize(size);
-
+                        packRowData(hEx, rowDef, newRowData);
                         // Store the h-row
                         hEx.store();
                         ts.updated();
@@ -762,9 +749,8 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     /**
-     * Remove contents of entire group containing the specified
-     * table. TODO: remove user table data from within a
-     * group.
+     * Remove contents of entire group containing the specified table. TODO:
+     * remove user table data from within a group.
      */
     @Override
     public void truncateTable(final Session session, final int rowDefId)
@@ -809,7 +795,8 @@ public class PersistitStore implements CServerConstants, Store {
                 hEx.removeAll();
                 releaseExchange(session, hEx);
                 for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
-                    final RowDef childRowDef = groupRowDef.getUserTableRowDefs()[i];
+                    final RowDef childRowDef = groupRowDef
+                            .getUserTableRowDefs()[i];
                     final TableStatus ts1 = childRowDef.getTableStatus();
                     ts1.setRowCount(0);
                     ts1.deleted();
@@ -829,6 +816,7 @@ public class PersistitStore implements CServerConstants, Store {
             }
         }
     }
+
     // @Override
     // public long getAutoIncrementValue(final int rowDefId)
     // throws InvalidOperationException, PersistitException {
@@ -950,9 +938,9 @@ public class PersistitStore implements CServerConstants, Store {
         return list;
     }
 
-    private final RowDef checkRequest(final Session session, int rowDefId, RowData start, RowData end,
-            int indexId, int scanFlags) throws InvalidOperationException,
-            PersistitException {
+    private final RowDef checkRequest(final Session session, int rowDefId,
+            RowData start, RowData end, int indexId, int scanFlags)
+            throws InvalidOperationException, PersistitException {
         if (start != null && start.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException(
                     "Start and end RowData must specify the same rowDefId");
@@ -964,7 +952,8 @@ public class PersistitStore implements CServerConstants, Store {
         }
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         if (rowDef == null) {
-            throw new IllegalArgumentException("No RowDef for rowDefId " + rowDefId);
+            throw new IllegalArgumentException("No RowDef for rowDefId "
+                    + rowDefId);
         }
         return rowDef;
     }
@@ -980,8 +969,8 @@ public class PersistitStore implements CServerConstants, Store {
         int indexId = request.getIndexId();
         int scanFlags = request.getScanFlags();
         byte[] columnBitMap = request.getColumnBitMap();
-        final RowDef rowDef = checkRequest(session, rowDefId, start, end, indexId,
-                scanFlags);
+        final RowDef rowDef = checkRequest(session, rowDefId, start, end,
+                indexId, scanFlags);
         RowCollector rc = new PersistitStoreRowCollector(session, this,
                 scanFlags, start, end, columnBitMap, rowDef, indexId);
         NEW_COLLECTOR_TAP.out();
@@ -995,8 +984,8 @@ public class PersistitStore implements CServerConstants, Store {
             throws InvalidOperationException, PersistitException {
 
         NEW_COLLECTOR_TAP.in();
-        final RowDef rowDef = checkRequest(session, rowDefId, start, end, indexId,
-                scanFlags);
+        final RowDef rowDef = checkRequest(session, rowDefId, start, end,
+                indexId, scanFlags);
 
         final RowCollector rc = new PersistitStoreRowCollector(session, this,
                 scanFlags, start, end, columnBitMap, rowDef, indexId);
@@ -1226,7 +1215,8 @@ public class PersistitStore implements CServerConstants, Store {
         synchronized (deferredIndexKeys) {
             for (final Map.Entry<Tree, SortedSet<KeyState>> entry : deferredIndexKeys
                     .entrySet()) {
-                final Exchange iEx = treeService.getExchange(session, entry.getKey());
+                final Exchange iEx = treeService.getExchange(session,
+                        entry.getKey());
                 buildIndexAddKeys(entry.getValue(), iEx);
                 entry.getValue().clear();
             }
@@ -1292,17 +1282,21 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     public void packRowData(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData) {
+            final RowData rowData) throws PersistitException {
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
         hEx.getValue().ensureFit(size);
         System.arraycopy(rowData.getBytes(), start, hEx.getValue()
                 .getEncodedBytes(), 0, size);
+        int storedTableId = treeService.aisToStore(rowDef,
+                rowData.getRowDefId());
+        CServerUtil.putInt(hEx.getValue().getEncodedBytes(), RowData.O_ROW_DEF_ID
+                - RowData.LEFT_ENVELOPE_SIZE, storedTableId);
         hEx.getValue().setEncodedSize(size);
     }
 
     public void expandRowData(final Exchange exchange, final RowDef rowDef,
-            final RowData rowData) throws InvalidOperationException { // TODO
+            final RowData rowData) throws InvalidOperationException, PersistitException { // TODO
                                                                       // this
                                                                       // needs
                                                                       // to be a
@@ -1324,8 +1318,9 @@ public class PersistitStore implements CServerConstants, Store {
                     "Corrupt RowData at " + exchange.getKey());
         }
 
-        final int rowDefId = CServerUtil.getInt(valueBytes,
+        int rowDefId = CServerUtil.getInt(valueBytes,
                 RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+        rowDefId = treeService.storeToAis(exchange.getVolume(), rowDefId);
         if (rowDef != null) {
             final int expectedRowDefId = rowDef.getRowDefId();
             if (rowDefId != expectedRowDefId) {
@@ -1357,6 +1352,7 @@ public class PersistitStore implements CServerConstants, Store {
                 RowData.SIGNATURE_B);
         CServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
                 rowDataSize);
+        CServerUtil.putInt(rowDataBytes, RowData.O_ROW_DEF_ID, rowDefId);
         rowData.prepareRow(0);
     }
 
