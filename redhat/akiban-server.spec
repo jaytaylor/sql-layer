@@ -92,6 +92,6 @@ exit 0
 %postun
 # only delete alternative on removal, not upgrade
 if [ "$1" = "0" ]; then
-    alternatives --remove %{username} 
+    alternatives --remove %{username} /etc/%{username}/default.conf/
 fi
 exit 0
