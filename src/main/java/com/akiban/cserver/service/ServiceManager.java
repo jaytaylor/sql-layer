@@ -1,6 +1,7 @@
 package com.akiban.cserver.service;
 
 import com.akiban.cserver.CServer;
+import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.tree.TreeService;
@@ -13,6 +14,8 @@ public interface ServiceManager extends ServiceManagerMXBean {
 
     void stopServices() throws Exception;
 
+    ConfigurationService getConfigurationService();
+    
     CServer getCServer();
 
     Store getStore();
@@ -21,7 +24,7 @@ public interface ServiceManager extends ServiceManagerMXBean {
     
     SessionService getSessionService();
     
-    TreeService getPersistitService();
+    TreeService getTreeService();
     
     SchemaManager getSchemaManager();
 }

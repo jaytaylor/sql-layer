@@ -1,11 +1,13 @@
 package com.akiban.cserver.store;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerTestCase;
@@ -30,6 +32,7 @@ public class SimpleBlobTest extends CServerTestCase implements CServerConstants 
         super.tearDown();
     }
     
+    @Test
     public void testBlobs() throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef("test.blobtest");
         final RowData rowData =new RowData(new byte[5000000]);

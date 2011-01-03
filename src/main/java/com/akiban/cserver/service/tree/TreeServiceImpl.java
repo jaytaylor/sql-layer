@@ -6,9 +6,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,14 +20,16 @@ import org.apache.commons.logging.LogFactory;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.TreeLink;
 import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.store.PersistitStoreSchemaManager;
 import com.persistit.Exchange;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.Volume;
+import com.persistit.VolumeSpecification;
+import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 import com.persistit.logging.ApacheCommonsLogAdapter;
 
@@ -63,9 +69,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
-    private final ConfigurationService configService;
+    private ConfigurationService configService;
 
     private final static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
+
+    private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<String, SchemaNode>();
 
     private Persistit db;
 
@@ -104,11 +112,32 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         }
     }
 
-    public TreeServiceImpl(final ConfigurationService configService) {
-        this.configService = configService;
+    static class SchemaNode {
+        final Pattern pattern;
+        final String volumeString;
+
+        private SchemaNode(final Pattern pattern, final String volumeString) {
+            this.pattern = pattern;
+            this.volumeString = volumeString;
+        }
+
+        /**
+         * @return the pattern
+         */
+        public Pattern getPattern() {
+            return pattern;
+        }
+
+        /**
+         * @return the volumeSpec
+         */
+        public String getVolumeString() {
+            return volumeString;
+        }
     }
 
     public synchronized void start() throws Exception {
+        configService = ServiceManagerImpl.get().getConfigurationService();
         assert db == null;
         // TODO - remove this when sure we don't need it
         assert INSTANCE_COUNT.incrementAndGet() == 1;
@@ -150,13 +179,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         db = new Persistit();
         db.setPersistitLogger(new ApacheCommonsLogAdapter(LOG));
         db.initialize(properties);
+        buildSchemaMap();
 
         if (LOG.isInfoEnabled()) {
             LOG.info("PersistitStore datapath=" + db.getProperty("datapath")
                     + (bufferSize / 1024) + "k_buffers="
                     + db.getProperty("buffer.count." + bufferSize));
         }
-
     }
 
     /**
@@ -279,14 +308,16 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     @Override
-    public boolean isContainer(final Exchange exchange, final TreeLink link) {
+    public boolean isContainer(final Exchange exchange, final TreeLink link)
+            throws PersistitException {
         final Volume volume = mappedVolume(link.getSchemaName(),
                 link.getTreeName());
         return exchange.getVolume().equals(volume);
     }
 
     @Override
-    public int aisToStore(final TreeLink link, final int tableId) throws PersistitException {
+    public int aisToStore(final TreeLink link, final int tableId)
+            throws PersistitException {
         final TreeCache cache = populateTreeCache(link);
         int offset = cache.getTableIdOffset();
         if (offset < 0) {
@@ -297,7 +328,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     @Override
-    public int storeToAis(final TreeLink link, final int tableId) throws PersistitException {
+    public int storeToAis(final TreeLink link, final int tableId)
+            throws PersistitException {
         final TreeCache cache = populateTreeCache(link);
         int offset = cache.getTableIdOffset();
         if (offset < 0) {
@@ -306,14 +338,15 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         }
         return tableId + offset;
     }
-    
+
     @Override
     public synchronized int storeToAis(final Volume volume, final int tableId) {
         final int offset = translationMap.get(volume).intValue();
         return tableId + offset;
     }
-    
-    private TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
+
+    private TreeCache populateTreeCache(final TreeLink link)
+            throws PersistitException {
         TreeCache cache = (TreeCache) link.getTreeCache();
         if (cache == null) {
             Volume volume = mappedVolume(link.getSchemaName(),
@@ -325,7 +358,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         return cache;
     }
 
-    private synchronized int tableIdOffset(final TreeLink link) {
+    private synchronized int tableIdOffset(final TreeLink link)
+            throws PersistitException {
         final Volume volume = mappedVolume(link.getSchemaName(),
                 SCHEMA_TREE_NAME);
         Integer offset = translationMap.get(volume);
@@ -337,11 +371,15 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         return offset.intValue();
     }
 
-    private Volume mappedVolume(final String schemaName, final String treeName) {
-        
-        // TODO - map it!
-        
-        return db.getVolume(VOLUME_NAME);
+    public Volume mappedVolume(final String schemaName, final String treeName)
+            throws PersistitException {
+        try {
+            final String vstring = volumeForSchema(schemaName);
+            final Volume volume = db.loadVolume(vstring);
+            return volume;
+        } catch (InvalidVolumeSpecificationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private List<Exchange> exchangeList(final Session session, final Tree tree) {
@@ -360,5 +398,101 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             }
         }
         return list;
+    }
+
+    String volumeForSchema(final String schemaName)
+            throws InvalidVolumeSpecificationException {
+        SchemaNode defaultSchemaNode = null;
+        for (final Entry<String, SchemaNode> entry : schemaMap.entrySet()) {
+            if (".default".equals(entry.getKey())) {
+                defaultSchemaNode = entry.getValue();
+            } else {
+                if (entry.getValue().getPattern().matcher(schemaName).matches()) {
+                    String vs = entry.getValue().getVolumeString();
+                    db.setProperty(SCHEMA, schemaName);
+                    String vsFinal = db.substituteProperties(vs,
+                            db.getProperties());
+                    return vsFinal;
+                }
+            }
+        }
+        if (defaultSchemaNode != null) {
+            String vs = defaultSchemaNode.getVolumeString();
+            db.setProperty(SCHEMA, schemaName);
+            String vsFinal = db.substituteProperties(vs, db.getProperties());
+            return vsFinal;
+        }
+        return null;
+    }
+
+    void buildSchemaMap() {
+        final Properties properties = configService.getModuleConfiguration(
+                PERSISTIT_MODULE_NAME).getProperties();
+        for (final Entry<Object, Object> entry : properties.entrySet()) {
+            final String name = (String) entry.getKey();
+            final String value = (String) entry.getValue();
+            if (name.startsWith(TABLESPACE)) {
+                final String tsName = name.substring(TABLESPACE.length());
+                final String[] parts = value.split(":");
+                boolean valid = true;
+                final StringBuilder sb = new StringBuilder();
+                if (parts.length > 1) {
+                    valid &= parseSchemaExpr(parts[0], sb);
+                } else {
+                    valid = false;
+                }
+                if (!valid) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Invalid tablespace property " + entry
+                                + " ignored");
+                    }
+                    continue;
+                }
+                if (schemaMap.containsKey(tsName)) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Invalid duplicate tablespace property "
+                                + entry + " ignored");
+                    }
+                    continue;
+                }
+                final Pattern pattern = Pattern.compile(sb.toString());
+                final String vstring = value.substring(parts[0].length() + 1);
+                final VolumeSpecification volumeSpec;
+                try {
+                    volumeSpec = new VolumeSpecification(vstring);
+                } catch (InvalidVolumeSpecificationException e) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Invalid volumespecification in property "
+                                + entry + ": " + e);
+                    }
+                    continue;
+                }
+                schemaMap.put(tsName, new SchemaNode(pattern, vstring));
+            }
+        }
+    }
+
+    SortedMap<String, SchemaNode> getSchemaMap() {
+        return schemaMap;
+    }
+
+    private boolean parseSchemaExpr(final String expr, final StringBuilder sb) {
+        if (expr.length() == 0) {
+            return false;
+        }
+        for (int i = 0; i < expr.length(); i++) {
+            final char c = expr.charAt(i);
+            if (c == '*') {
+                sb.append(".*");
+            } else if (c == '?') {
+                sb.append(".");
+            } else if (Character.isLetter(c)) {
+                sb.append(c);
+            } else {
+                sb.append('\\');
+                sb.append(c);
+            }
+        }
+        return true;
     }
 }

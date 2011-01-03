@@ -1,6 +1,9 @@
 package com.akiban.cserver.api;
 
 import static com.akiban.cserver.api.DMLFunctionsImpl.doScan;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

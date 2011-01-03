@@ -1,4 +1,5 @@
 package com.akiban.cserver;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 

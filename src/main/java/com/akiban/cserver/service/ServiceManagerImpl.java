@@ -51,6 +51,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     {
         return instance.get();
     }
+    
+    @Override
+    public ConfigurationService getConfigurationService() {
+        return getService(ConfigurationService.class);
+    }
 
     @Override
     public CServer getCServer() {
@@ -73,7 +78,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     }
     
     @Override
-    public TreeService getPersistitService() {
+    public TreeService getTreeService() {
         return getService(TreeService.class);
     }
     

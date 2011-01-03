@@ -224,7 +224,7 @@ public class TableStatus {
     public void get(Value value) {
         value.setStreamMode(true);
         try {
-            final long version = value.getLong();
+            final long version = value.getInt();
             if (version != VERSION) {
                 // TODO - this is temporary until we've done the "transactional"
                 // table status.

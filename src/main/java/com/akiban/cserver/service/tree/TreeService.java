@@ -18,8 +18,6 @@ import com.persistit.exception.PersistitException;
  */
 public interface TreeService extends Service<TreeService> {
 
-    final static String VOLUME_NAME = "akiban_data";
-
     final static String SCHEMA_TREE_NAME = "_schema_";
 
     final static String STATUS_TREE_NAME = "_status_";
@@ -27,6 +25,10 @@ public interface TreeService extends Service<TreeService> {
     final static String BY_ID = "byId";
 
     final static String BY_NAME = "byName";
+    
+    final static String TABLESPACE="tablespace";
+    
+    final static String SCHEMA = "schema";
 
     Persistit getDb();
 
@@ -44,7 +46,7 @@ public interface TreeService extends Service<TreeService> {
 
     long getTimestamp(Session session);
 
-    boolean isContainer(Exchange exchange, TreeLink storageLink);
+    boolean isContainer(Exchange exchange, TreeLink storageLink) throws PersistitException;
 
     int aisToStore(final TreeLink link, final int logicalTableId)
             throws PersistitException;

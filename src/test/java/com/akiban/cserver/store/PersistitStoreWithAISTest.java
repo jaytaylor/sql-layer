@@ -1,4 +1,7 @@
 package com.akiban.cserver.store;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -8,9 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.IndexDef;
@@ -22,7 +26,6 @@ import com.akiban.cserver.api.DDLFunctions;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.ByteBufferFactory;
 import com.persistit.Exchange;
@@ -186,12 +189,14 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         }
     }
 
+    @Before
     @Override
     public void setUp() throws Exception {
         super.setUp();
         setUpAisForTests(DDL_FILE_NAME);
     }
 
+    @After
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
@@ -361,7 +366,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
     public void testDropTable() throws Exception {
         final TestData td = new TestData(5, 5, 5, 5);
         td.insertTestRows();
-        Volume volume = getDb().getVolume(TreeService.VOLUME_NAME);
+        Volume volume = getDefaultVolume();
         assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
@@ -880,12 +885,12 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
     }
 
     private boolean isGone(final TreeLink link) throws Exception {
-        Volume volume = getDb().getVolume(TreeService.VOLUME_NAME);
+        Volume volume = getDefaultVolume();
         final Tree tree = volume.getTree(link.getTreeName(), false);
         if (tree == null) {
             return true;
         }
-        final Exchange exchange = getPersistitService().getExchange(session,
+        final Exchange exchange = getTreeService().getExchange(session,
                 link);
         exchange.clear();
         return !exchange.hasChildren();

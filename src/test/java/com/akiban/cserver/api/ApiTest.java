@@ -1,5 +1,9 @@
 package com.akiban.cserver.api;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.cserver.CServerTestCase;
@@ -10,7 +14,6 @@ import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-
 public final class ApiTest extends CServerTestCase {
 
     private class ApiPair {
@@ -22,6 +25,18 @@ public final class ApiTest extends CServerTestCase {
             dml = new DMLFunctionsImpl(loggingService);
             ddl = new DDLFunctionsImpl();
         }
+    }
+    
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+    
+    @After
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
     }
 
     @Test

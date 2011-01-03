@@ -92,7 +92,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     public Service<TreeService> treeService() {
         if (treeService == null) {
             final ConfigurationService config = configurationService().cast();
-            treeService = new TreeServiceImpl(config);
+            treeService = new TreeServiceImpl();
         }
         return treeService;
     }

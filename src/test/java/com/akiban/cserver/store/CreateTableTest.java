@@ -1,4 +1,9 @@
 package com.akiban.cserver.store;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.cserver.CServerConstants;
@@ -19,10 +24,24 @@ public class CreateTableTest extends CServerTestCase implements CServerConstants
             + "PRIMARY KEY (a)"
             + ") ENGINE=AKIBANDB;";
 
+    
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+    
+    @After
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
+    
+    @Test
     public void testCreateTable() throws Exception {
         schemaManager.createTableDefinition(session, "foo", CREATE_TABLE_STATEMENT1);
-        final Exchange ex = serviceManager.getPersistitService().getDb().getExchange(
-                TreeService.VOLUME_NAME, TreeService.SCHEMA_TREE_NAME,
+        final Exchange ex = serviceManager.getTreeService().getDb().getExchange(
+                getDefaultVolume(), TreeService.SCHEMA_TREE_NAME,
                 false);
         assertEquals(DDLSource.canonicalStatement(CREATE_TABLE_STATEMENT1), ex
                 .clear().append(TreeService.BY_ID).append(1).fetch()

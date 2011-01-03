@@ -16,7 +16,7 @@ import com.akiban.cserver.store.PersistitStoreSchemaManager;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 
-public class CServerTestSuite {
+public abstract class CServerTestSuite {
 
     protected static Store store;
     protected static SchemaManager schemaManager;

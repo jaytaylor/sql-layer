@@ -129,7 +129,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public void createTableDefinition(final Session session,
             final String defaultSchemaName, final String statement)
             throws Exception {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         String canonical = DDLSource.canonicalStatement(statement);
         final SchemaDef.UserTableDef tableDef = parseTableStatement(
                 defaultSchemaName, canonical);
@@ -192,7 +192,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void deleteTableDefinition(Session session, final int tableId)
             throws Exception {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         treeService.visitStorage(session, new TreeVisitor() {
 
             @Override
@@ -261,7 +261,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private void deleteTableDefinitionList(final Session session,
             final List<TableName> tables) throws Exception {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
 
         for (final TableName tn : tables) {
             final String schemaName = tn.getSchemaName();
@@ -323,7 +323,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         Exchange ex1 = null;
         Exchange ex2 = null;
         try {
@@ -363,7 +363,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void deleteAllDefinitions(final Session session) throws Exception {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         treeService.visitStorage(session, new TreeVisitor() {
 
             @Override
@@ -395,7 +395,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return null;
         }
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         final Exchange ex = treeService.getExchange(session,
                 treeLink(schemaName, SCHEMA_TREE_NAME));
         try {
@@ -436,7 +436,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return result;
         }
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         final Exchange ex = treeService.getExchange(session,
                 treeLink(schemaName, SCHEMA_TREE_NAME));
         ex.clear().append(BY_NAME).append(schemaName).append(tableName)
@@ -472,7 +472,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             return result;
         }
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         final Exchange ex1 = treeService.getExchange(session,
                 treeLink(schemaName, SCHEMA_TREE_NAME));
         final Exchange ex2 = treeService.getExchange(session,
@@ -538,7 +538,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     assert rootId != null : "Group table with no root!";
                     entry.getValue().setTableId(rootId + GROUP_TABLE_ID_OFFSET);
                 }
-
 
             } catch (Exception e) {
                 // TODO - better handling
@@ -627,7 +626,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final boolean withGroupTables,
             final boolean withCreateSchemaStatements) throws Exception {
 
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         final Map<TableName, Integer> idMap = new HashMap<TableName, Integer>();
         // append the AIS table definitions
         if (withAisTables) {
@@ -720,7 +719,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public synchronized void forceNewTimestamp() {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         saveTimestamp = treeService.getTimestamp(new SessionImpl());
     }
 
@@ -761,7 +760,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         aisSchema = readAisSchema();
         this.serviceManager = ServiceManagerImpl.get();
         startTableStatusFlusher();
-        changed(serviceManager.getPersistitService(), new SessionImpl());
+        changed(serviceManager.getTreeService(), new SessionImpl());
     }
 
     @Override
@@ -780,7 +779,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     public void loadTableStatusRecords(final Session session)
             throws PersistitException {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
             final TableStatus ts = rowDef.getTableStatus();
             final TreeLink link = treeLink(rowDef.getSchemaName(),
@@ -812,7 +811,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void removeStaleTableStatusRecords(final Session session)
             throws Exception {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         treeService.visitStorage(session, new TreeVisitor() {
 
             @Override
@@ -834,7 +833,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void saveTableStatusRecords(final Session session)
             throws PersistitException {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
             final TableStatus ts = rowDef.getTableStatus();
             if (ts.isDirty()) {
@@ -858,7 +857,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     void saveStatus(final Session session, final TableStatus tableStatus)
             throws PersistitException {
-        final TreeService treeService = serviceManager.getPersistitService();
+        final TreeService treeService = serviceManager.getTreeService();
         final RowDef rowDef = getRowDefCache().getRowDef(
                 tableStatus.getRowDefId());
         final TreeLink link = treeLink(rowDef.getSchemaName(), STATUS_TREE_NAME);
@@ -998,8 +997,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, tableName, parentSchema, parentTableName,
                     statement);
         }
-
-        // Still TODO - verify that parent join columns are defined
+        final SchemaDef.UserTableDef parentTableDef = new DDLSource()
+                .parseCreateTable(naked(parentDef.getDDL()));
+        for (final String columnName : parentJoin.getParentColumns()) {
+            if (!parentTableDef.getColumnNames().contains(columnName)) {
+                throw new InvalidOperationException(
+                        ErrorCode.JOIN_TO_WRONG_COLUMNS,
+                        "Table %s.%s refers to undefined column %s in table %s.%s: %s",
+                        schemaName, tableName, columnName, parentSchema,
+                        parentTableName, statement);
+            }
+        }
     }
 
     private void changed(final TreeService treeService, final Session session) {

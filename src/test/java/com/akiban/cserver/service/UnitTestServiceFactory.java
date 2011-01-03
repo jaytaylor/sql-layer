@@ -2,6 +2,7 @@ package com.akiban.cserver.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,64 +21,75 @@ import com.akiban.cserver.service.network.NetworkServiceImpl;
 /**
  * Extension of DefaultServiceFactory that creates mock services for unit tests.
  * Specifically, this class is used by tests that need to run the CServer and
- * PersistitStore code methods, but which do not need the JmxRegistryService
- * and NetworkService implementations to be functional.
+ * PersistitStore code methods, but which do not need the JmxRegistryService and
+ * NetworkService implementations to be functional.
+ * 
  * @author peter
- *
+ * 
  */
-public class UnitTestServiceFactory extends DefaultServiceFactory
-{
+public class UnitTestServiceFactory extends DefaultServiceFactory {
     private final static File TESTDIR = new File("/tmp/cserver-junit");
     private final MockJmxRegistryService jmxRegistryService = new MockJmxRegistryService();
     private final TestConfigService configService = new TestConfigService();
-    private final MockNetworkService networkService = new MockNetworkService(configService);
-    
+    private final MockNetworkService networkService = new MockNetworkService(
+            configService);
+
     private final boolean withNetwork;
-    
+    private final Collection<Property> extraProperties;
+
     public static ServiceManager createServiceManager() {
         ServiceManagerImpl.setServiceManager(null);
-        return new ServiceManagerImpl(new UnitTestServiceFactory(false));
+        return new ServiceManagerImpl(new UnitTestServiceFactory(false, null));
     }
-    
+
     public static ServiceManager createServiceManagerWithNetworkService() {
         ServiceManagerImpl.setServiceManager(null);
-        return new ServiceManagerImpl(new UnitTestServiceFactory(true));
+        return new ServiceManagerImpl(new UnitTestServiceFactory(true, null));
     }
-    
+
+    public static ServiceManager createServiceManager(
+            final Collection<Property> properties) {
+        ServiceManagerImpl.setServiceManager(null);
+        return new ServiceManagerImpl(new UnitTestServiceFactory(true,
+                properties));
+    }
+
     public static ServiceManager getServiceManager() {
         return ServiceManagerImpl.get();
     }
-    
+
     private static class MockJmxRegistryService extends JmxRegistryServiceImpl {
         @Override
         public void register(JmxManageable service) {
             // ignore
         }
+
         @Override
         public void unregister(String serviceName) {
             // ignore
         }
-        
+
         @Override
         public void start() {
             // ignore
         }
-        
+
         @Override
         public void stop() {
             // ignore
         }
     }
-    
-    private static class MockNetworkService implements NetworkService, Service<NetworkService> {
+
+    private static class MockNetworkService implements NetworkService,
+            Service<NetworkService> {
 
         public MockNetworkService(ConfigurationService config) {
-            
+
         }
 
         @Override
         public String getNetworkHost() {
-          throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -112,37 +124,42 @@ public class UnitTestServiceFactory extends DefaultServiceFactory
 
         @Override
         public void start() throws Exception {
-           // do nothing
+            // do nothing
         }
 
         @Override
         public void stop() throws Exception {
-           // do nothing 
+            // do nothing
         }
-        
-
     }
-    
-    
-    private static class TestConfigService extends ConfigurationServiceImpl {
+
+    private class TestConfigService extends ConfigurationServiceImpl {
         File tmpDir;
-        
+
         @Override
         protected boolean shouldLoadAdminProperties() {
             return false;
         }
 
         @Override
-        protected Map<Property.Key, Property> loadProperties() throws IOException {
-            Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>(super.loadProperties());
+        protected Map<Property.Key, Property> loadProperties()
+                throws IOException {
+            Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>(
+                    super.loadProperties());
             tmpDir = makeTempDatapathDirectory();
             Property.Key datapathKey = new Property.Key("cserver", "datapath");
-            ret.put(datapathKey, new Property(datapathKey, tmpDir.getAbsolutePath()));
+            ret.put(datapathKey,
+                    new Property(datapathKey, tmpDir.getAbsolutePath()));
             Property.Key fixedKey = new Property.Key("cserver", "fixed");
             ret.put(fixedKey, new Property(fixedKey, "true"));
+            if (extraProperties != null) {
+                for (final Property property : extraProperties) {
+                    ret.put(property.getKey(), property);
+                }
+            }
             return ret;
         }
-        
+
         @Override
         protected void unloadProperties() throws IOException {
             CServerUtil.cleanUpDirectory(tmpDir);
@@ -152,14 +169,14 @@ public class UnitTestServiceFactory extends DefaultServiceFactory
         protected Set<Property.Key> getRequiredKeys() {
             return Collections.emptySet();
         }
-        
+
         private File makeTempDatapathDirectory() throws IOException {
             if (TESTDIR.exists()) {
                 if (!TESTDIR.isDirectory()) {
-                    throw new IOException(TESTDIR + " exists but isn't a directory");
+                    throw new IOException(TESTDIR
+                            + " exists but isn't a directory");
                 }
-            }
-            else {
+            } else {
                 if (!TESTDIR.mkdir()) {
                     throw new IOException("Couldn't create dir: " + TESTDIR);
                 }
@@ -177,21 +194,23 @@ public class UnitTestServiceFactory extends DefaultServiceFactory
             return tmpFile;
         }
     }
-    
-    private UnitTestServiceFactory(final boolean withNetwork) {
+
+    private UnitTestServiceFactory(final boolean withNetwork,
+            final Collection<Property> extraProperties) {
         this.withNetwork = withNetwork;
+        this.extraProperties = extraProperties;
     }
 
     @Override
     public Service<JmxRegistryService> jmxRegistryService() {
         return jmxRegistryService;
     }
-    
+
     @Override
     public Service<ConfigurationService> configurationService() {
         return configService;
     }
-    
+
     @Override
     public Service<NetworkService> networkService() {
         if (withNetwork) {

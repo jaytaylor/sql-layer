@@ -131,7 +131,7 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     public synchronized void start() throws Exception {
-        treeService = ServiceManagerImpl.get().getPersistitService();
+        treeService = ServiceManagerImpl.get().getTreeService();
         schemaManager = ServiceManagerImpl.get().getSchemaManager();
         this.rowDefCache = new RowDefCache();
         createManagers();
