@@ -22,13 +22,24 @@ AKIBAN_PROG=/usr/sbin/akserver
 
 case "$1" in
     start)
+        if [ -f $pid_file ]; then
+            status -p $pid_file akiban
+            exit 1
+        fi
         echo -n "Starting Akiban: "
         su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file -j $JAR_FILE -c $AKIBAN_CONF" > $log_file 2>&1
         echo "OK"
         ;;
     stop)
         echo -n "Shutdown Akiban: "
+        status -p $pid_file akiban > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "FAIL"
+            rm -f $pid_file
+            exit 1
+        fi
         su $AKIBAN_OWNR -c "kill `cat $pid_file`"
+        rm -f $pid_file
         echo "OK"
         ;;
     reload|restart)
