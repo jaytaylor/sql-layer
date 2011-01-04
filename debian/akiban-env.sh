@@ -1,6 +1,6 @@
 
 # path to where the Akiban Server will store its data files
-SERVER_DATAPATH="/tmp/server_data"
+SERVER_DATAPATH="/var/lib/akiban"
 
 # port on which to start the Akiban Server
 SERVER_PORT="5140"
