@@ -1,17 +1,15 @@
 package com.akiban.cserver.service.memcache;
 
-import java.io.IOException;
-import java.util.List;
+
 import java.util.concurrent.Executors;
 import java.net.InetSocketAddress;
 
+import com.akiban.cserver.service.config.ConfigurationService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.service.Service;
-import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.memcache.AkibanCommandHandler;
 
 import com.thimbleware.jmemcached.protocol.SessionStatus;
 import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryCommandDecoder;
@@ -31,36 +29,32 @@ import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory; 
 
 
-public class MemcacheService implements Service
+public class MemcacheService implements Service<MemcacheService>
 {
     // Service vars
-    private final ServiceManager serviceManager;
+    private final Store store;
+    private final int port;
     private static final Log log = LogFactory.getLog(MemcacheService.class);
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
-    private boolean running = false;
+    private volatile boolean running = false;
     private DefaultChannelGroup allChannels;
     private ServerSocketChannelFactory channelFactory;
 
-
-    public MemcacheService()
+    public MemcacheService(Store store, ConfigurationService config)
     {
-        this.serviceManager = null;
+        this.store = store;
+        
+        String portStr = config.getProperty("cserver", "memcached.port");
+        this.port = Integer.parseInt(portStr);
     }
-
-    public MemcacheService(final ServiceManager serviceManager)
-    {
-        this.serviceManager = serviceManager;
-    }
-
 
     @Override
     public void start() throws Exception
     {
         log.info("Starting memcache service");
 
-        final int port = 11211;
         final InetSocketAddress addr = new InetSocketAddress(port);
         final int idle_timeout = -1;
         final boolean binary = false;
@@ -88,7 +82,6 @@ public class MemcacheService implements Service
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
 
         ChannelPipelineFactory pipelineFactory;
-        Store store = serviceManager.getStore();
 
         if(binary) {
             pipelineFactory = new BinaryPipelineFactory(store, verbose, idle_time, allChannels);
@@ -115,7 +108,7 @@ public class MemcacheService implements Service
         ChannelGroupFuture future = allChannels.close();
         future.awaitUninterruptibly();
 
-        if(future.isCompleteSuccess() == false) {
+        if(!future.isCompleteSuccess()) {
             log.error("Failed to close all network channels");
         }
         
@@ -154,7 +147,6 @@ public class MemcacheService implements Service
             return Channels.pipeline(frameDecoder, commandDecoder, commandHandler, responseEncoder);
         }
     }
-
 
     private final class BinaryPipelineFactory implements ChannelPipelineFactory
     {

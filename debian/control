@@ -1,0 +1,16 @@
+Source: akiban-server
+Section: misc
+Priority: optional
+Maintainer: Padraig O'Sullivan <posullivan@akiban.com>
+Build-Depends: debhelper (>= 5), openjdk-6-jdk (>= 6b11) | java6-sdk
+Homepage: http://akiban.com
+Vcs-Bzr: http://bazaar.launchpad.net/~akiban-technologies/akiban-server/trunk
+Vcs-Browser: http://bazaar.launchpad.net/~akiban-technologies/akiban-server/trunk/files
+Standards-Version: 3.9.1
+
+Package: akiban-server
+Architecture: any
+Depends: openjdk-6-jre-headless (>= 6b11) | java6-runtime, adduser
+Recommends: libjna-java
+Description: Akiban Server 
+ Akiban Server is the primary interface for the Orthogonal architecture.

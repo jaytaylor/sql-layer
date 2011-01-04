@@ -84,11 +84,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
         startAndPut(new LoggingServiceImpl(), jmxRegistry);
         startAndPut(new SessionServiceImpl(), jmxRegistry);
-        Store store = new PersistitStore(configService);
-        startAndPut(store, jmxRegistry);
+        startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
-        startAndPut(new SchemaServiceImpl( store.getSchemaManager() ), jmxRegistry);
+        startAndPut(new SchemaServiceImpl( factory.storeService().cast().getSchemaManager() ), jmxRegistry);
+        startAndPut(factory.memcacheService(), jmxRegistry);
         setServiceManager(this);
     }
 
