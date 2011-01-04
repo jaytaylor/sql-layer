@@ -75,7 +75,7 @@ customer.name['ori']: {name: ori, hkey: [customer, [1]]}
 random: 1		sequential: 1		sort: 0
 --------------------------------------------------------------------------------
 Scan the customer name index for 'ori' and then find the row:
-[customer[[customer, [1]]]: {hkey: [customer, [1]], cid: 1, name: ori}]
+customer[[customer, [1]]]: {hkey: [customer, [1]], cid: 1, name: ori}
 random: 2		sequential: 1		sort: 0
 --------------------------------------------------------------------------------
 Keep only orders (drop customers, items):
