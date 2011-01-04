@@ -7,6 +7,11 @@ import com.persistit.exception.PersistitException;
 
 public class RowDefCacheFactory
 {
+    public RowDefCache rowDefCache(String ddl) throws Exception
+    {
+        return rowDefCache(new String[]{ddl});
+    }
+
     public RowDefCache rowDefCache(String[] ddl) throws Exception
     {
         StringBuilder buffer = new StringBuilder();

@@ -26,9 +26,9 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedCommandDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedFrameDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
 
-
-public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>
-{
+public class MemcacheServiceImpl implements MemcacheService,
+        Service<MemcacheService> {
+    
     // Service vars
     private final ServiceManager serviceManager;
     private static final Log log = LogFactory.getLog(MemcacheServiceImpl.class);
@@ -38,20 +38,20 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private boolean running = false;
     private DefaultChannelGroup allChannels;
     private ServerSocketChannelFactory channelFactory;
+    int port;
 
-
-    public MemcacheServiceImpl()
-    {
+    public MemcacheServiceImpl() {
         this.serviceManager = ServiceManagerImpl.get();
     }
 
-
     @Override
-    public void start() throws Exception
-    {
-        log.info("Starting memcache service");
+    public void start() throws Exception {
+        final String portString = serviceManager.getConfigurationService()
+                .getProperty("cserver", "memcached.port");
 
-        final int port = 11211;
+        log.info("Starting memcache service on port " + portString);
+
+        this.port = Integer.parseInt(portString);
         final InetSocketAddress addr = new InetSocketAddress(port);
         final int idle_timeout = -1;
         final boolean binary = false;
@@ -59,10 +59,9 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         startDaemon(addr, idle_timeout, binary, verbose);
     }
-    
+
     @Override
-    public void stop() throws Exception
-    {
+    public void stop() throws Exception {
         log.info("Stopping memcache service");
         stopDaemon();
     }
@@ -70,10 +69,11 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     //
     // start/stopDaemon inspired by com.thimbleware.jmemcached.MemCacheDaemon
     //
-    private void startDaemon(final InetSocketAddress addr, final int idle_time, final boolean binary, final boolean verbose) 
-    {
-        channelFactory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), 
-                                                           Executors.newCachedThreadPool());
+    private void startDaemon(final InetSocketAddress addr, final int idle_time,
+            final boolean binary, final boolean verbose) {
+        channelFactory = new NioServerSocketChannelFactory(
+                Executors.newCachedThreadPool(),
+                Executors.newCachedThreadPool());
 
         allChannels = new DefaultChannelGroup("memcacheServiceChannelGroup");
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
@@ -81,13 +81,14 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         ChannelPipelineFactory pipelineFactory;
         Store store = serviceManager.getStore();
 
-        if(binary) {
-            pipelineFactory = new BinaryPipelineFactory(store, verbose, idle_time, allChannels);
+        if (binary) {
+            pipelineFactory = new BinaryPipelineFactory(store, verbose,
+                    idle_time, allChannels);
+        } else {
+            pipelineFactory = new TextPipelineFactory(store, verbose,
+                    idle_time, text_frame_size, allChannels);
         }
-        else {
-            pipelineFactory = new TextPipelineFactory(store, verbose, idle_time, text_frame_size, allChannels);
-        }
-        
+
         bootstrap.setPipelineFactory(pipelineFactory);
         bootstrap.setOption("sendBufferSize", 65536);
         bootstrap.setOption("receiveBufferSize", 65536);
@@ -99,40 +100,36 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         running = true;
     }
 
-    private void stopDaemon()
-    {
+    private void stopDaemon() {
         log.info("Shutting down daemon");
 
         ChannelGroupFuture future = allChannels.close();
         future.awaitUninterruptibly();
 
-        if(future.isCompleteSuccess() == false) {
+        if (!future.isCompleteSuccess()) {
             log.error("Failed to close all network channels");
         }
-        
+
         channelFactory.releaseExternalResources();
 
         running = false;
     }
 
-    public MemcacheServiceImpl cast()
-    {
+    public MemcacheServiceImpl cast() {
         return this;
     }
 
-    public Class<MemcacheService> castClass()
-    {
+    public Class<MemcacheService> castClass() {
         return MemcacheService.class;
     }
 
-
-    private final class TextPipelineFactory implements ChannelPipelineFactory
-    {
+    private final class TextPipelineFactory implements ChannelPipelineFactory {
         private int frameSize;
         private final AkibanCommandHandler commandHandler;
         private final MemcachedResponseEncoder responseEncoder;
 
-        public TextPipelineFactory(Store store, boolean verbose, int idleTime, int frameSize, DefaultChannelGroup channelGroup) {
+        public TextPipelineFactory(Store store, boolean verbose, int idleTime,
+                int frameSize, DefaultChannelGroup channelGroup) {
             this.frameSize = frameSize;
             responseEncoder = new MemcachedResponseEncoder();
             commandHandler = new AkibanCommandHandler(store, channelGroup);
@@ -140,27 +137,30 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         public final ChannelPipeline getPipeline() throws Exception {
             SessionStatus status = new SessionStatus().ready();
-            MemcachedFrameDecoder frameDecoder = new MemcachedFrameDecoder(status, frameSize);
-            MemcachedCommandDecoder commandDecoder = new MemcachedCommandDecoder(status);
-            return Channels.pipeline(frameDecoder, commandDecoder, commandHandler, responseEncoder);
+            MemcachedFrameDecoder frameDecoder = new MemcachedFrameDecoder(
+                    status, frameSize);
+            MemcachedCommandDecoder commandDecoder = new MemcachedCommandDecoder(
+                    status);
+            return Channels.pipeline(frameDecoder, commandDecoder,
+                    commandHandler, responseEncoder);
         }
     }
 
-
-    private final class BinaryPipelineFactory implements ChannelPipelineFactory
-    {
+    private final class BinaryPipelineFactory implements ChannelPipelineFactory {
         private final AkibanCommandHandler commandHandler;
         private final MemcachedBinaryCommandDecoder commandDecoder;
         private final MemcachedBinaryResponseEncoder responseEncoder;
 
-        public BinaryPipelineFactory(Store store, boolean verbose, int idleTime, DefaultChannelGroup channelGroup) {
-            commandDecoder =  new MemcachedBinaryCommandDecoder();
+        public BinaryPipelineFactory(Store store, boolean verbose,
+                int idleTime, DefaultChannelGroup channelGroup) {
+            commandDecoder = new MemcachedBinaryCommandDecoder();
             responseEncoder = new MemcachedBinaryResponseEncoder();
             commandHandler = new AkibanCommandHandler(store, channelGroup);
         }
 
         public ChannelPipeline getPipeline() throws Exception {
-            return Channels.pipeline(commandDecoder, commandHandler, responseEncoder);
+            return Channels.pipeline(commandDecoder, commandHandler,
+                    responseEncoder);
         }
     }
 }

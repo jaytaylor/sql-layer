@@ -23,30 +23,29 @@ tarball()
 	rm -rf ${cdir} rpmbuild ../target ${name}.tar.gz
 	mkdir -p ${cdir}
 	cp -r ../*        ${cdir}
-	cp -r config        ${randir}
 	find ${cdir} -name .svn | xargs rm -rf
 	tar -C ${randir} -cf ${name}.tar . 
 	gzip ${name}.tar
 	mkdir -p rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
 	mv ${name}.tar.gz rpmbuild/SOURCES
 	rm -rf ${randir}
-	cat chunkserver.spec        | sed "s/REVISION/${rev}/g" > chunkserver-${rev}.spec 
+	cat akiban-server.spec        | sed "s/REVISION/${rev}/g" > akiban-server-${rev}.spec 
 }
 
 
 # create chunkserver rpm
 chunkserver_rpm()
 {
-	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild"   -ba chunkserver-${rev}.spec 
+	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild"   -ba akiban-server-${rev}.spec 
 }
 
 #update the yum repository
 publish()
 {
 if [ ${PUBLISH} -gt 0 ];then
-	ssh skeswani@172.16.20.117  " mkdir -p /var/www/rpms/${rev}"
-	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/${rev}
-	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/${rev}/* /var/www/latest/"
+	ssh skeswani@172.16.20.117  " mkdir -p /var/www/rpms/akiban-server/${rev}"
+	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${rev}
+	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${rev}/* /var/www/latest/"
 	ssh skeswani@172.16.20.117 /var/www/rpms/createrepo.sh
 fi
 }

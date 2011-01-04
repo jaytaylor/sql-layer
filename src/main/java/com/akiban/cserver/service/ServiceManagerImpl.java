@@ -113,6 +113,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
+        startAndPut(factory.memcacheService(), jmxRegistry);
     }
 
     private void servicesDebugHooks(ConfigurationService configService)

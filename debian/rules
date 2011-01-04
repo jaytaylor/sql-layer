@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+
+# Uncomment to enable verbose mode.
+#export DH_VERBOSE=1
+
+test:
+
+clean:
+	dh_testdir
+	dh_testroot
+	dh_clean
+
+build: 
+build-stamp:
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_installdirs
+	dh_install
+
+	# Copy in the jar and symlink to something stable
+	dh_install target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar \
+		usr/share/akiban
+	dh_link usr/share/akiban/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar \
+		usr/share/akiban/akiban-server.jar
+
+# Build architecture-independent files here.
+binary-indep: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installinit
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+# Build architecture-dependent files here.
+binary-arch: build install
+# We have nothing to do by default.
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install
