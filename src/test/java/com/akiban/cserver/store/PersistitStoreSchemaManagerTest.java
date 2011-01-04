@@ -1,5 +1,7 @@
 package com.akiban.cserver.store;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -29,6 +31,9 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.service.config.Property;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
 
@@ -44,6 +49,18 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
  
     @Before
     public void setUp() throws Exception {
+        // Set up multi-volume Tablespace policy so we can be sure schema is
+        // properly distributed.
+        final Collection<Property> properties = new ArrayList<Property>();
+        properties.add(property("persistit", "tablespace.a",
+                "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
+                        + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+        properties.add(property("persistit", "tablespace.b",
+                "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
+                        + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+        properties.add(property("persistit", "tablespace.default",
+                "*:akiban_data.v0,create,pageSize:8K,"
+                        + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         super.setUp();
         manager = getSchemaManager();
         base = manager.getAis(session).getUserTables().size();
@@ -348,6 +365,34 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         manager.deleteTableDefinition(session, "s3", "one");
         manager.deleteTableDefinition(session, "s1", "one");
     }
+    
+    @Test
+    public void testAddDropTwoTablesTwoVolumes() throws Exception {
+        AkibaInformationSchema ais;
+        Session session = new SessionImpl();
+        createTable("drupal_a", "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create schema if not exists `drupal_a`",
+                "create table `drupal_a`.one (id int, PRIMARY KEY (id)) engine=akibandb");
+        ais = manager.getAis(session);
+        assertNotNull( ais.getUserTable("drupal_a", "one"));
+        createTable("drupal_b", "create table two (id int, PRIMARY KEY (id)) engine=akibandb;");
+        assertDDLS("create schema if not exists `drupal_a`",
+                "create table `drupal_a`.one (id int, PRIMARY KEY (id)) engine=akibandb",
+                "create schema if not exists `drupal_b`",
+                "create table `drupal_b`.two (id int, PRIMARY KEY (id)) engine=akibandb");
+        ais = manager.getAis(session);
+        assertNotNull( ais.getUserTable("drupal_a", "one"));
+        assertNotNull( ais.getUserTable("drupal_b", "two"));
+        manager.deleteTableDefinition(session, "drupal_a", "one");
+        assertDDLS("create schema if not exists `drupal_b`",
+                "create table `drupal_b`.two (id int, PRIMARY KEY (id)) engine=akibandb");
+        ais = manager.getAis(session);
+        assertNull( ais.getUserTable("drupal_a", "one"));
+        assertNotNull( ais.getUserTable("drupal_b", "two"));
+        manager.deleteTableDefinition(session, "drupal_b", "two");
+    }
+
+
 
     private void assertTables(String message, String... expecteds) throws Exception {
         Collection<TableDefinition> definitions = schemaManager.getTableDefinitions(session, SCHEMA).values();

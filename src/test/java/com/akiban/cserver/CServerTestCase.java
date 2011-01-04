@@ -33,7 +33,7 @@ public abstract class CServerTestCase {
     protected SchemaManager schemaManager;
     protected ServiceManager serviceManager;
     protected RowDefCache rowDefCache;
-    protected final static Session session = new SessionImpl();
+    protected Session session = new SessionImpl();
 
     public void setUp() throws Exception {
         setUp(null);
@@ -45,12 +45,14 @@ public abstract class CServerTestCase {
         store = serviceManager.getStore();
         schemaManager = serviceManager.getSchemaManager();
         rowDefCache = store.getRowDefCache();
+        session = new SessionImpl();
     }
 
     public void tearDown() throws Exception {
         serviceManager.stopServices();
         store = null;
         rowDefCache = null;
+        session = null;
     }
     
     protected Persistit getDb() {

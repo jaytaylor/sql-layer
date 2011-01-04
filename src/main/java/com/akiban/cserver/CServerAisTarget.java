@@ -23,8 +23,6 @@ public class CServerAisTarget extends Target {
 
     private final Store store;
     
-    private final SchemaManager schemaManager;
-    
     private final Session session = new SessionImpl();
 
     // Target interface
@@ -58,9 +56,9 @@ public class CServerAisTarget extends Target {
     public void close() throws SQLException {
     }
 
-    public CServerAisTarget(final Store store, final SchemaManager schemaManager) {
+    public CServerAisTarget(final Store store) {
         this.store = store;
-        this.schemaManager = schemaManager;
+
     }
 
     // For use by this class

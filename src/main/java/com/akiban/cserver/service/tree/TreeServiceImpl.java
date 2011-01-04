@@ -230,13 +230,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     public synchronized void stop() throws Exception {
-        // TODO - remove this when sure we don't need it
-        assert INSTANCE_COUNT.decrementAndGet() == 0;
         if (db != null) {
             db.shutdownGUI();
             db.close();
             db = null;
         }
+        // TODO - remove this when sure we don't need it
+        assert INSTANCE_COUNT.decrementAndGet() == 0;
     }
 
     @Override

@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
@@ -31,6 +32,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.CServer;
+import com.akiban.cserver.CServerAisTarget;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
@@ -268,12 +270,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final String tableName = tn.getTableName();
             Exchange ex1 = null;
             Exchange ex2 = null;
+            Exchange ex3 = null;
             try {
                 ex1 = treeService.getExchange(session,
                         treeLink(schemaName, SCHEMA_TREE_NAME));
                 ex2 = treeService.getExchange(session,
                         treeLink(schemaName, SCHEMA_TREE_NAME));
-
+                ex3 = treeService.getExchange(session,
+                        treeLink(schemaName, STATUS_TREE_NAME));
                 ex1.clear().append(BY_NAME).append(schemaName)
                         .append(tableName);
                 final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
@@ -283,6 +287,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     final int tableId = ex1.getKey().indexTo(-1).decodeInt();
                     ex2.clear().append(BY_ID).append(tableId).remove();
                     ex1.remove();
+                    ex3.clear().append(tableId).remove();
                 }
                 changed(treeService, session);
             } catch (PersistitException e) {
@@ -295,6 +300,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }
                 if (ex2 != null) {
                     treeService.releaseExchange(session, ex2);
+                }
+                if (ex3 != null) {
+                    treeService.releaseExchange(session, ex3);
                 }
             }
         }
@@ -545,8 +553,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 return ais;
             }
             // Detect a race condition in which another schema change happened
-            // during
-            // creation of the AIS.
+            // during creation of the AIS. In that case, simple retru.
             synchronized (this) {
                 if (saveTimestamp == wasTimestamp
                         && aisTimestamp != saveTimestamp) {
@@ -560,6 +567,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         rowDefCache.fixUpOrdinals(this);
                     } catch (Exception e) {
                         LOG.error("Exception while building new AIS", e);
+                    }
+                    try {
+                        final Store store = serviceManager.getStore();
+                        new Writer(new CServerAisTarget(store)).save(newAis);
+                    } catch (Exception e) {
+                        LOG.warn("Exception while storing AIS tables", e);
                     }
                 }
             }
@@ -757,7 +770,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() throws Exception {
-        aisSchema = readAisSchema();
         this.serviceManager = ServiceManagerImpl.get();
         startTableStatusFlusher();
         changed(serviceManager.getTreeService(), new SessionImpl());
@@ -765,8 +777,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void stop() throws Exception {
-        aisSchema = null;
+        this.ais = null;
+        this.rowDefCache = null;
         this.serviceManager = null;
+        schemaLinkMap.clear();
+        statusLinkMap.clear();
         stopTableStatusFlusher();
     }
 

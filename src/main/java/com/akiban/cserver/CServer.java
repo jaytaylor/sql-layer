@@ -67,6 +67,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
         _shutdownHook = new Thread(new Runnable() {
             public void run() {
                 try {
+                    _shutdownHook = null;
                     ServiceManagerImpl.get().stopServices();
                 } catch (Exception e) {
                     LOG.warn("Caught exception while stopping services", e);
