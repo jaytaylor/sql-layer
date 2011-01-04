@@ -1,4 +1,4 @@
-package com.akiban.test.cserverapi;
+package com.akiban.cserver.itests;
 
 import com.akiban.ais.model.*;
 import com.akiban.cserver.InvalidOperationException;
