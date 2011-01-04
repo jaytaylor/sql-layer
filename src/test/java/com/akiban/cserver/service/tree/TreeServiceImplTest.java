@@ -73,13 +73,13 @@ public class TreeServiceImplTest extends CServerTestCase {
     public void buildValidSchemaMap() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
         properties.add(property("persistit", "tablespace.a",
-                "drupal*:${schema}.v0,create,pageSize:8K,"
+                "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("persistit", "tablespace.b",
-                "liveops*:${schema}.v0,create,pageSize:8K,"
+                "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("persistit", "tablespace.default",
-                "*:akiban_data.v0,create,pageSize:8K,"
+                "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         super.setUp(properties);
         try {
@@ -91,9 +91,9 @@ public class TreeServiceImplTest extends CServerTestCase {
             final String vs1 = treeService.volumeForSchema("drupalxx");
             final String vs2 = treeService.volumeForSchema("liveops");
             final String vs3 = treeService.volumeForSchema("tpcc");
-            assertTrue(vs1.startsWith("drupalxx.v0"));
-            assertTrue(vs2.startsWith("liveops.v0"));
-            assertTrue(vs3.startsWith("akiban_data"));
+            assertTrue(vs1.contains("drupalxx.v0"));
+            assertTrue(vs2.contains("liveops.v0"));
+            assertTrue(vs3.contains("akiban_data"));
         } finally {
             super.tearDown();
         }
@@ -130,7 +130,7 @@ public class TreeServiceImplTest extends CServerTestCase {
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("persistit", "tablespace.default",
-                "*:akiban_data.v0,create,pageSize:8K,"
+                "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         super.setUp(properties);
         try {
