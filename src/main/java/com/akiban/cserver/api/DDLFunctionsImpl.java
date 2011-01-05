@@ -7,6 +7,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.*;
@@ -181,6 +182,12 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
                     new_idx.addColumn(icol);
                 }
             }
+            
+            // Modify stored DDL statement
+            DDLGenerator gen = new DDLGenerator();
+            schemaManager().changeTableDDL(cur_utable.getName().getSchemaName(), 
+                                           cur_utable.getName().getTableName(),
+                                           gen.createTable(cur_utable));
         } 
         catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);

@@ -351,6 +351,38 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             store.releaseExchange(ex);
         }
     }
+    
+    public void changeTableDDL(String schemaName, String tableName, String DDL) throws Exception
+    {
+        Exchange ex = null;
+        
+        try {
+            String canonical = DDLSource.canonicalStatement(DDL);
+            ex = store.getExchange(SCHEMA_TREE_NAME);
+            
+            if(ex.clear().append(BY_NAME).append(schemaName).append(tableName).append(Key.AFTER).previous()) {
+                final int tableId = ex.getKey().indexTo(-1).decodeInt();
+                ex.clear().append(BY_ID).append(tableId).fetch();
+                final String previousValue = ex.getValue().getString();
+                ex.getValue().put(canonical);
+                ex.clear().append(BY_ID).append(tableId).store();
+                ex.getValue().putNull();
+                ex.clear().append(BY_NAME).append(schemaName).append(tableName).append(tableId).store();
+                
+                // Update AIS with new info
+                acquireAIS();
+                
+                // Bump as AIS changed
+                store.getPropertiesManager().incrementSchemaId();
+            }
+            else {
+                // No DDL stored for schemaName.tableName
+            }
+        }
+        finally {
+            store.releaseExchange(ex);
+        }
+    }
 
     /**
      * Removes the create table statement(s) for the specified schema/table
