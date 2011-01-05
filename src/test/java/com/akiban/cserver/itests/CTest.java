@@ -18,7 +18,7 @@ import java.util.*;
 
 import static junit.framework.Assert.*;
 
-public final class CTest extends com.akiban.test.cserverapi.ApiTestBase
+public final class CTest extends ApiTestBase
 {
 
     @Test
