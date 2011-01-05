@@ -427,7 +427,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     void buildSchemaMap() {
         final Properties properties = configService.getModuleConfiguration(
-                PERSISTIT_MODULE_NAME).getProperties();
+                SERVER_MODULE_NAME).getProperties();
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();

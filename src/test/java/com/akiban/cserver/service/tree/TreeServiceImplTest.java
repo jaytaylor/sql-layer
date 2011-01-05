@@ -72,13 +72,13 @@ public class TreeServiceImplTest extends CServerTestCase {
     @Test
     public void buildValidSchemaMap() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("persistit", "tablespace.a",
+        properties.add(property("cserver", "tablespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("persistit", "tablespace.b",
+        properties.add(property("cserver", "tablespace.b",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("persistit", "tablespace.default",
+        properties.add(property("cserver", "tablespace.default",
                 "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         super.setUp(properties);
@@ -102,9 +102,9 @@ public class TreeServiceImplTest extends CServerTestCase {
     @Test
     public void buildInvalidSchemaMaps() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("persistit", "tablespace.a", "drupal*"));
-        properties.add(property("persistit", "tablespace.b", "liveops*"));
-        properties.add(property("persistit", "tablespace.default",
+        properties.add(property("cserver", "tablespace.a", "drupal*"));
+        properties.add(property("cserver", "tablespace.b", "liveops*"));
+        properties.add(property("cserver", "tablespace.default",
                 "*:akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         super.setUp(properties);
@@ -123,13 +123,13 @@ public class TreeServiceImplTest extends CServerTestCase {
     @Test
     public void testCreateVolume() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("persistit", "tablespace.a",
+        properties.add(property("cserver", "tablespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("persistit", "tablespace.b",
+        properties.add(property("cserver", "tablespace.b",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("persistit", "tablespace.default",
+        properties.add(property("cserver", "tablespace.default",
                 "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         super.setUp(properties);
