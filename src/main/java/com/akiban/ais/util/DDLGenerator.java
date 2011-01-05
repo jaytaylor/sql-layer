@@ -94,9 +94,26 @@ public class DDLGenerator
         for (IndexColumn indexColumn : index.getColumns()) {
             indexColumnDeclarations.add(declaration(indexColumn));
         }
+        
+        // TODO: Complete hack until the AIS stores 1) constraint name 2) reference info for non akiban fkeys
+        if(index.getConstraint().equals("FOREIGN KEY") && index.getTable().isUserTable()) {
+            Join join = ((UserTable)index.getTable()).getParentJoin();
+            
+            if(join == null) {
+                return new String("");
+            }
+            
+            return String.format("CONSTRAINT __akiban_fk_%s FOREIGN KEY %s(%s) REFERENCES %s(%s)", 
+                                 index.getIndexId(),
+                                 quote(index.getIndexName().getName()),
+                                 commaSeparated(indexColumnDeclarations),
+                                 quote(join.getParent().getName().getTableName()),
+                                 commaSeparated(indexColumnDeclarations));
+        }
+        
         return String.format(INDEX_TEMPLATE,
-                             index.getConstraint(),
-                             index.getIndexName().getName(),
+                             index.isPrimaryKey() ? "PRIMARY KEY" : index.getConstraint(),
+                             index.isPrimaryKey() ? "" : quote(index.getIndexName().getName()),
                              commaSeparated(indexColumnDeclarations));
     }
 
@@ -136,7 +153,7 @@ public class DDLGenerator
     // - column declarations
     // - comma, if there are index declarations
     // - index declarations
-    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s %s %s) engine=akibandb";
+    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s%s%s) engine=akibandb";
     // index declaration in create table statement. Template arguments:
     // - constraint (primary key, key, or unique)
     // - index name
