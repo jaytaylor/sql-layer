@@ -50,7 +50,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
 
-    private static final String BUFFER_COUNT_PROP_NAME = "buffercount";
+    private static final String BUFFER_COUNT_PROP_NAME = "buffer.count.";
 
     private static final String DEFAULT_DATAPATH = "/tmp/chunkserver_data";
 
@@ -169,8 +169,9 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         }
         final int bufferSize = Integer.parseInt(properties
                 .getProperty(BUFFER_SIZE_PROP_NAME));
-        if (!properties.contains(BUFFER_COUNT_PROP_NAME)) {
-            properties.setProperty(BUFFER_COUNT_PROP_NAME,
+        final String bufferCountPropString = BUFFER_COUNT_PROP_NAME + bufferSize;
+        if (!properties.contains(bufferCountPropString)) {
+            properties.setProperty(bufferCountPropString,
                     String.valueOf(bufferCount(bufferSize, isFixedAllocation)));
         }
         //
@@ -340,8 +341,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     @Override
-    public synchronized int storeToAis(final Volume volume, final int tableId) {
-        final int offset = translationMap.get(volume).intValue();
+    public int storeToAis(final Volume volume, final int tableId) {
+        final int offset = tableIdOffset(volume);
         return tableId + offset;
     }
 
@@ -358,10 +359,14 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         return cache;
     }
 
-    private synchronized int tableIdOffset(final TreeLink link)
+    private int tableIdOffset(final TreeLink link)
             throws PersistitException {
         final Volume volume = mappedVolume(link.getSchemaName(),
                 SCHEMA_TREE_NAME);
+        return tableIdOffset(volume);
+    }
+    
+    private synchronized int tableIdOffset(final Volume volume) {
         Integer offset = translationMap.get(volume);
         if (offset == null) {
             offset = Integer.valueOf(volumeOffsetCounter);

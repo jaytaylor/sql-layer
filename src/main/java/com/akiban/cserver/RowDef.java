@@ -370,6 +370,15 @@ public class RowDef implements TreeLink {
     public FieldDef getFieldDef(final int index) {
         return fieldDefs[index];
     }
+    
+    public int getFieldIndex(final String fieldName) {
+        for (int index = 0; index < fieldDefs.length; index++) {
+            if (fieldDefs[index].getName().equals(fieldName)) {
+                return index;
+            }
+        }
+        return -1;
+    }
 
     public FieldDef[] getFieldDefs() {
         return fieldDefs;

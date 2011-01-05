@@ -28,15 +28,13 @@ public final class ApiTest extends CServerTestCase {
     }
     
     @Before
-    @Override
     public void setUp() throws Exception {
-        super.setUp();
+        super.baseSetUp();
     }
     
     @After
-    @Override
     public void tearDown() throws Exception {
-        super.tearDown();
+        super.baseTearDown();
     }
 
     @Test

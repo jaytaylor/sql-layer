@@ -1,6 +1,6 @@
 package com.akiban.cserver.store;
 
-import static com.akiban.ais.ddl.DDLSource.CREATE_TABLE;
+import static com.akiban.ais.ddl.SchemaDef.CREATE_TABLE;
 import static com.akiban.cserver.service.tree.TreeService.SCHEMA_TREE_NAME;
 import static com.akiban.cserver.service.tree.TreeService.STATUS_TREE_NAME;
 
@@ -21,8 +21,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Group;
@@ -39,6 +39,7 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.TableStatus;
 import com.akiban.cserver.TreeLink;
+import com.akiban.cserver.service.AfterStart;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
@@ -54,7 +55,7 @@ import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 
 public class PersistitStoreSchemaManager implements Service<SchemaManager>,
-        SchemaManager {
+        SchemaManager, AfterStart {
 
     static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
 
@@ -68,9 +69,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private final static String SEMI_COLON = ";";
 
-    private final static int AIS_BASE_TABLE_IDS = 2000000000;
+    private final static int AIS_BASE_TABLE_IDS = 1000000000;
 
-    private static final int GROUP_TABLE_ID_OFFSET = 1000000000;
+    private static final int GROUP_TABLE_ID_OFFSET = 100000000;
 
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiba_information_schema";
 
@@ -79,6 +80,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final static String BY_NAME = "byName";
 
     private static List<TableDefinition> aisSchema = readAisSchema();
+
+    private SchemaDef schemaDef;
 
     private AkibaInformationSchema ais;
 
@@ -132,7 +135,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final String defaultSchemaName, final String statement)
             throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
-        String canonical = DDLSource.canonicalStatement(statement);
+        String canonical = SchemaDef.canonicalStatement(statement);
         final SchemaDef.UserTableDef tableDef = parseTableStatement(
                 defaultSchemaName, canonical);
         String schemaName = tableDef.getCName().getSchema();
@@ -532,7 +535,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 final Map<TableName, Integer> idMap = assembleSchema(session,
                         sb, true, false, false);
                 final String schemaText = sb.toString();
-                newAis = new DDLSource().buildAISFromString(schemaText);
+                schemaDef = SchemaDef.parseSchema(schemaText);
+                newAis = new SchemaDefToAis(schemaDef, true).getAis();
                 // Reassign the table ID values.
                 for (final Map.Entry<TableName, Integer> entry : idMap
                         .entrySet()) {
@@ -552,8 +556,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 LOG.error("Exception while building new AIS", e);
                 return ais;
             }
+            
             // Detect a race condition in which another schema change happened
-            // during creation of the AIS. In that case, simple retru.
+            // during creation of the AIS. In that case, simple retry.
             synchronized (this) {
                 if (saveTimestamp == wasTimestamp
                         && aisTimestamp != saveTimestamp) {
@@ -590,7 +595,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         for (final TableDefinition tableStruct : aisSchema) {
             sb.append(tableStruct.getDDL()).append(CServerUtil.NEW_LINE);
         }
-        ais = new DDLSource().buildAISFromString(sb.toString());
+        schemaDef = SchemaDef.parseSchema(sb.toString());
+        ais = new SchemaDefToAis(schemaDef, true).getAis();
         forceNewTimestamp();
         aisTimestamp = saveTimestamp;
         return ais;
@@ -750,7 +756,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 throw new RuntimeException("couldn't match regex for: "
                         + statement);
             }
-            final String canonical = DDLSource.canonicalStatement(statement);
+            final String canonical = SchemaDef.canonicalStatement(statement);
             TableDefinition def = new TableDefinition(tableId++,
                     "akiba_information_schema", matcher.group(1), canonical);
             definitions.add(def);
@@ -770,9 +776,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() throws Exception {
-        this.serviceManager = ServiceManagerImpl.get();
+        serviceManager = ServiceManagerImpl.get();
         startTableStatusFlusher();
-        changed(serviceManager.getTreeService(), new SessionImpl());
+        final Session session = new SessionImpl();
+        final TreeService treeService = serviceManager.getTreeService();
+        changed(treeService, session);
+    }
+
+    @Override
+    public void afterStart() throws Exception {
+        getAis(new SessionImpl());
     }
 
     @Override
@@ -941,7 +954,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final String defaultSchemaName, final String canonical)
             throws InvalidOperationException {
         try {
-            return new DDLSource().parseCreateTable(naked(canonical));
+            return new SchemaDef().parseCreateTable(canonical);
         } catch (Exception e1) {
             throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
                     "[%s] %s: %s", defaultSchemaName, e1.getMessage(),
@@ -976,7 +989,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     "[%s] %s", schemaName, statement);
         }
 
-        final SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
+        final SchemaDef.IndexDef parentJoin = SchemaDef.getAkibanJoin(tableDef);
         if (parentJoin == null) {
             return;
         }
@@ -1012,8 +1025,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, tableName, parentSchema, parentTableName,
                     statement);
         }
-        final SchemaDef.UserTableDef parentTableDef = new DDLSource()
-                .parseCreateTable(naked(parentDef.getDDL()));
+        final SchemaDef.UserTableDef parentTableDef = new SchemaDef()
+                .parseCreateTable(parentDef.getDDL());
         for (final String columnName : parentJoin.getParentColumns()) {
             if (!parentTableDef.getColumnNames().contains(columnName)) {
                 throw new InvalidOperationException(

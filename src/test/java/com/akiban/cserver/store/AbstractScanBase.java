@@ -25,7 +25,6 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
 
     protected final static String SCHEMA = "scan_rows_test";
 
-    protected final static String GROUP_SCHEMA = "akiba_objects";
 
     protected final static boolean VERBOSE = false;
     
@@ -35,7 +34,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
     protected List<RowData> result = new ArrayList<RowData>();
 
     @BeforeClass
-    public static void setUpSuite() throws Exception {
+    public static void baseSetUpSuite() throws Exception {
         CServerTestSuite.setUpSuite();
         
         //rowDefCache.setAIS(ais0);
@@ -50,7 +49,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
     }
 
     @AfterClass
-    public static void tearDownSuite() throws Exception {
+    public static void baseTearDownSuite() throws Exception {
         CServerTestSuite.tearDownSuite();
         tableMap.clear();
     }
@@ -80,12 +79,8 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
         // output.close();
     }
 
-    protected RowDef userRowDef(final String name) {
+    protected RowDef rowDef(final String name) {
         return rowDefCache.getRowDef(SCHEMA + "." + name);
-    }
-
-    protected RowDef groupRowDef(final String name) {
-        return rowDefCache.getRowDef(GROUP_SCHEMA + "." + name);
     }
 
     protected int scanAllRows(final String test, final RowData start,

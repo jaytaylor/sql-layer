@@ -21,16 +21,14 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
     private AkibaInformationSchema ais;
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        super.setUp();
+        baseSetUp();
         ais = setUpAisForTests(DDL_FILE_NAME);
     }
 
     @After
-    @Override
     public void tearDown() throws Exception {
-        super.tearDown();
+        baseTearDown();
     }
 
     @Test

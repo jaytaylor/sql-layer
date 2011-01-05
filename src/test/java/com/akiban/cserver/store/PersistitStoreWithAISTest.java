@@ -1,4 +1,5 @@
 package com.akiban.cserver.store;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -40,27 +41,21 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
 
     private final static String SCHEMA = "data_dictionary_test";
 
-    private final static String GROUP_SCHEMA = "akiba_objects";
-
     private interface RowVisitor {
         void visit(final int depth) throws Exception;
     }
 
-    private RowDef userRowDef(final String name) {
+    private RowDef rowDef(final String name) {
         return rowDefCache.getRowDef(SCHEMA + "." + name);
     }
 
-    private RowDef groupRowDef(final String name) {
-        return rowDefCache.getRowDef(GROUP_SCHEMA + "." + name);
-    }
-
     class TestData {
-        final RowDef defC = userRowDef("customer");
-        final RowDef defO = userRowDef("order");
-        final RowDef defI = userRowDef("item");
-        final RowDef defA = userRowDef("address");
-        final RowDef defX = userRowDef("component");
-        final RowDef defCOI = groupRowDef("_akiba_customer");
+        final RowDef defC = rowDef("customer");
+        final RowDef defO = rowDef("order");
+        final RowDef defI = rowDef("item");
+        final RowDef defA = rowDef("address");
+        final RowDef defX = rowDef("component");
+        final RowDef defCOI = rowDef("_akiba_customer");
         final RowData rowC = new RowData(new byte[256]);
         final RowData rowO = new RowData(new byte[256]);
         final RowData rowI = new RowData(new byte[256]);
@@ -190,16 +185,14 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
     }
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        super.setUp();
+        baseSetUp();
         setUpAisForTests(DDL_FILE_NAME);
     }
 
     @After
-    @Override
     public void tearDown() throws Exception {
-        super.tearDown();
+        baseTearDown();
     }
 
     @Test
@@ -294,14 +287,15 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
             int scanCount = 0;
             final RowData start = new RowData(new byte[256]);
             final RowData end = new RowData(new byte[256]);
-            // C has 2 columns, A has 5 columns, O has 3 columns, I has 4
+            // C has 2 columns, O has 3 columns, A has 5 columns, I has 4
             // columns, CC has 5 columns
-            start.createRow(td.defCOI, new Object[] { null, null, null, null,
-                    null, null, null, 1004, null, null, null, null, null, null,
-                    null, null, null, null, null });
-            end.createRow(td.defCOI, new Object[] { null, null, null, null,
-                    null, null, null, 1007, null, null, null, null, null, null,
-                    null, null, null, null, null });
+            final Object[] values = new Object[td.defCOI.getFieldCount()];
+            final int order_id_field = td.defCOI
+                    .getFieldIndex("order$order_id");
+            values[order_id_field] = 1004;
+            start.createRow(td.defCOI, values);
+            values[order_id_field] = 1007;
+            end.createRow(td.defCOI, values);
             final byte[] columnBitMap = projection(new RowDef[] { td.defC,
                     td.defO, td.defI }, td.defCOI.getFieldCount());
 
@@ -371,32 +365,32 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
         final DDLFunctions ddlf = new DDLFunctionsImpl();
-        
+
         ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
         assertEquals(0, td.defO.getTableStatus().getRowCount());
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
-//
-// TODO -- add these values back in once truncate doesn't truncate
-//         all tables.
-//        ddlf.dropTable(session, TableId.of(td.defI.getRowDefId()));
-//        assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
-//        assertTrue(store.getTableManager()
-//                .getTableStatus(session, td.defI.getRowDefId()).isDeleted());
-//
-//        ddlf.dropTable(session, TableId.of(td.defA.getRowDefId()));
-//        assertTrue(store.getTableManager()
-//                .getTableStatus(session, td.defA.getRowDefId()).isDeleted());
-//
-//        ddlf.dropTable(session, TableId.of(td.defC.getRowDefId()));
-//        assertTrue(store.getTableManager()
-//                .getTableStatus(session, td.defC.getRowDefId()).isDeleted());
-//
-//        ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
-//        assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
-//        assertTrue(store.getTableManager()
-//                .getTableStatus(session, td.defO.getRowDefId()).isDeleted());
-//
-//        ddlf.dropTable(session, TableId.of(td.defX.getRowDefId()));
+        //
+        // TODO -- add these values back in once truncate doesn't truncate
+        // all tables.
+        // ddlf.dropTable(session, TableId.of(td.defI.getRowDefId()));
+        // assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defI.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defA.getRowDefId()));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defA.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defC.getRowDefId()));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defC.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
+        // assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defO.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defX.getRowDefId()));
 
         assertTrue(isGone(td.defCOI));
         assertTrue(isGone(td.defO));
@@ -890,8 +884,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         if (tree == null) {
             return true;
         }
-        final Exchange exchange = getTreeService().getExchange(session,
-                link);
+        final Exchange exchange = getTreeService().getExchange(session, link);
         exchange.clear();
         return !exchange.hasChildren();
     }

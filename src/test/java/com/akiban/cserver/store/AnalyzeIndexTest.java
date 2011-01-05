@@ -23,7 +23,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
 
     @Test
     public void testPopulateTableStatistics() throws Exception {
-        final RowDef rowDef = userRowDef("aa");
+        final RowDef rowDef = rowDef("aa");
         store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
         store.getIndexManager().populateTableStatistics(session, ts);
@@ -61,7 +61,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
 
     @Test
     public void testGroupTableStatistics() throws Exception {
-        final RowDef rowDef = groupRowDef("_akiba_a");
+        final RowDef rowDef = rowDef("_akiba_a");
         store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
         store.getIndexManager().populateTableStatistics(session, ts);
@@ -78,7 +78,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
     
     @Test
     public void testBug253() throws Exception {
-        final RowDef rowDef = userRowDef("bug253");
+        final RowDef rowDef = rowDef("bug253");
         final RowData rowData = new RowData(new byte[256]);
         rowData.createRow(rowDef, new Object[]{1, "blog"});
         store.writeRow(session, rowData);

@@ -57,17 +57,6 @@ public class TreeServiceImplTest extends CServerTestCase {
         }
     }
 
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        // super.setUp(Collection<Property>) is called within individual tests.
-    }
-
-    @After
-    @Override
-    public void tearDown() throws Exception {
-        // super.tearDown() is called within individual tests
-    }
 
     @Test
     public void buildValidSchemaMap() throws Exception {
@@ -81,7 +70,7 @@ public class TreeServiceImplTest extends CServerTestCase {
         properties.add(property("cserver", "tablespace.default",
                 "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        super.setUp(properties);
+        baseSetUp(properties);
         try {
             final TreeServiceImpl treeService = (TreeServiceImpl) ServiceManagerImpl
                     .get().getTreeService();
@@ -95,7 +84,7 @@ public class TreeServiceImplTest extends CServerTestCase {
             assertTrue(vs2.contains("liveops.v0"));
             assertTrue(vs3.contains("akiban_data"));
         } finally {
-            super.tearDown();
+            baseTearDown();
         }
     }
 
@@ -107,7 +96,7 @@ public class TreeServiceImplTest extends CServerTestCase {
         properties.add(property("cserver", "tablespace.default",
                 "*:akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        super.setUp(properties);
+        baseSetUp(properties);
         try {
             final TreeServiceImpl treeService = (TreeServiceImpl) ServiceManagerImpl
                     .get().getTreeService();
@@ -115,7 +104,7 @@ public class TreeServiceImplTest extends CServerTestCase {
                     .getSchemaMap();
             assertEquals(1, result.size());
         } finally {
-            super.tearDown();
+            baseTearDown();
         }
 
     }
@@ -132,7 +121,7 @@ public class TreeServiceImplTest extends CServerTestCase {
         properties.add(property("cserver", "tablespace.default",
                 "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        super.setUp(properties);
+        baseSetUp(properties);
         try {
             final TreeService treeService = ServiceManagerImpl.get()
                     .getTreeService();
@@ -161,7 +150,7 @@ public class TreeServiceImplTest extends CServerTestCase {
             assertTrue(d1 > d0);
             assertTrue(d2 > d1);
         } finally {
-            super.tearDown();
+            baseTearDown();
         }
 
     }

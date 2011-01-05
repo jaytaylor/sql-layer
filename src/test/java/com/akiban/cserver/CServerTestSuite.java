@@ -24,7 +24,7 @@ public abstract class CServerTestSuite {
     protected static RowDefCache rowDefCache;
     protected final static Session session = new SessionImpl();
 
-    public static void setUpSuite() throws Exception {
+    public final static void setUpSuite() throws Exception {
         serviceManager = UnitTestServiceFactory.createServiceManager();
         serviceManager.startServices();
         store = serviceManager.getStore();
@@ -32,7 +32,7 @@ public abstract class CServerTestSuite {
         rowDefCache = store.getRowDefCache();
     }
 
-    public static void tearDownSuite() throws Exception {
+    public final static void tearDownSuite() throws Exception {
         serviceManager.stopServices();
         store = null;
         rowDefCache = null;
@@ -42,6 +42,7 @@ public abstract class CServerTestSuite {
             throws Exception {
         final AkibaInformationSchema ais = ((PersistitStoreSchemaManager) schemaManager)
                 .getAisForTests(resourceName);
+        rowDefCache.clear();
         rowDefCache.setAIS(ais);
         markTableStatusClean(rowDefCache);
         rowDefCache.fixUpOrdinals(schemaManager);

@@ -34,15 +34,16 @@ import com.akiban.cserver.RowType;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.TableStatus;
 import com.akiban.cserver.message.ScanRowsRequest;
-import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyState;
+import com.persistit.Management.DisplayFilter;
 import com.persistit.Persistit;
 import com.persistit.Transaction;
 import com.persistit.Transaction.CommitListener;
@@ -57,21 +58,6 @@ public class PersistitStore implements CServerConstants, Store {
 
     private static final Log LOG = LogFactory.getLog(PersistitStore.class
             .getName());
-
-    private static final String EXPERIMENTAL_SCHEMA_FLAG = "schema";
-
-    // TODO -- this is a hack to enable setting/clearing the
-    // deferIndex flag
-    //
-    private static final String AKIBAN_SPECIAL_SCHEMA_FLAG = "__akiban";
-
-    private static final String AKIBAN_SPECIAL_DEFER_INDEXES_FLAG = "deferIndexes";
-
-    private static final String AKIBAN_SPECIAL_FLUSH_INDEXES_FLAG = "flushIndexes";
-
-    private static final String AKIBAN_SPECIAL_BUILD_INDEXES_FLAG = "buildIndexes";
-
-    private static final String AKIBAN_SPECIAL_DELETE_INDEXES_FLAG = "deleteIndexes";
 
     private static final Tap WRITE_ROW_TAP = Tap.add(new Tap.PerThread(
             "write: write_row"));
@@ -103,17 +89,15 @@ public class PersistitStore implements CServerConstants, Store {
 
     private boolean verbose = false;
 
-    private final String experimental = "schema";
-
     private boolean deferIndexes = false;
 
     private RowDefCache rowDefCache;
 
-    private ServiceManager serviceManager;
-
     private TreeService treeService;
 
     private SchemaManager schemaManager;
+
+    private DisplayFilter originalDisplayFilter;
 
     private PersistitStoreIndexManager indexManager;
 
@@ -126,24 +110,21 @@ public class PersistitStore implements CServerConstants, Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    private synchronized void createManagers() {
-        this.indexManager = new PersistitStoreIndexManager(this);
-    }
-
     public synchronized void start() throws Exception {
         treeService = ServiceManagerImpl.get().getTreeService();
         schemaManager = ServiceManagerImpl.get().getSchemaManager();
-        this.rowDefCache = new RowDefCache();
-        createManagers();
-    }
-
-    private synchronized void destroyManagers() throws Exception {
-        indexManager.shutDown();
-        indexManager = null;
+        indexManager = new PersistitStoreIndexManager(this);
+        rowDefCache = new RowDefCache();
+        originalDisplayFilter = getDb().getManagement().getDisplayFilter();
+        getDb().getManagement().setDisplayFilter(
+                new RowDataDisplayFilter(this, treeService,
+                        originalDisplayFilter));
     }
 
     public synchronized void stop() throws Exception {
-        destroyManagers();
+        indexManager.shutDown();
+        indexManager = null;
+        getDb().getManagement().setDisplayFilter(originalDisplayFilter);
     }
 
     @Override
@@ -447,7 +428,7 @@ public class PersistitStore implements CServerConstants, Store {
                                 ErrorCode.DUPLICATE_KEY, "Non-unique key: %s",
                                 hEx.getKey());
                     }
-                    
+
                     packRowData(hEx, rowDef, rowData);
                     // Store the h-row
                     hEx.store();
@@ -769,7 +750,6 @@ public class PersistitStore implements CServerConstants, Store {
             transaction.begin();
 
             try {
-                final TableStatus ts = rowDef.getTableStatus();
                 //
                 // Remove the index trees
                 //
@@ -1290,19 +1270,21 @@ public class PersistitStore implements CServerConstants, Store {
                 .getEncodedBytes(), 0, size);
         int storedTableId = treeService.aisToStore(rowDef,
                 rowData.getRowDefId());
-        CServerUtil.putInt(hEx.getValue().getEncodedBytes(), RowData.O_ROW_DEF_ID
-                - RowData.LEFT_ENVELOPE_SIZE, storedTableId);
+        CServerUtil.putInt(hEx.getValue().getEncodedBytes(),
+                RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
+                storedTableId);
         hEx.getValue().setEncodedSize(size);
     }
 
     public void expandRowData(final Exchange exchange, final RowDef rowDef,
-            final RowData rowData) throws InvalidOperationException, PersistitException { // TODO
-                                                                      // this
-                                                                      // needs
-                                                                      // to be a
-                                                                      // more
-                                                                      // specific
-                                                                      // exception
+            final RowData rowData) throws InvalidOperationException,
+            PersistitException { // TODO
+        // this
+        // needs
+        // to be a
+        // more
+        // specific
+        // exception
         final int size = exchange.getValue().getEncodedSize();
         final int rowDataSize = size + RowData.ENVELOPE_SIZE;
         final byte[] valueBytes = exchange.getValue().getEncodedBytes();
@@ -1318,8 +1300,8 @@ public class PersistitStore implements CServerConstants, Store {
                     "Corrupt RowData at " + exchange.getKey());
         }
 
-        int rowDefId = CServerUtil.getInt(valueBytes,
-                RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+        int rowDefId = CServerUtil.getInt(valueBytes, RowData.O_ROW_DEF_ID
+                - RowData.LEFT_ENVELOPE_SIZE);
         rowDefId = treeService.storeToAis(exchange.getVolume(), rowDefId);
         if (rowDef != null) {
             final int expectedRowDefId = rowDef.getRowDefId();

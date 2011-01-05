@@ -61,7 +61,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         properties.add(property("persistit", "tablespace.default",
                 "*:akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        super.setUp();
+        baseSetUp();
         manager = getSchemaManager();
         base = manager.getAis(session).getUserTables().size();
         assertTables("user tables");
@@ -75,7 +75,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
             assertTables("user tables");
             assertDDLS();
         } finally {
-            super.tearDown();
+            baseTearDown();
         }
     }
 

@@ -52,6 +52,12 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 
 /**
+ * TODO - remove this class.  As of 1/5/2011 this class is no longer used by
+ * server component. When studio and other components no longer need it, 
+ * this class should be deleted.  Its logic has been divided into (a)
+ * addition of parse capability in SchemaDef, and (b) new class
+ * SchemaDefToAis.
+ * 
  * This class reads the CREATE TABLE statements in a mysqldump file, plus
  * annotations to denote the group structure. There is neither an attempt to
  * fully parse the DDL, nor to handle syntactic variations. The purpose of this

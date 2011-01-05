@@ -439,7 +439,8 @@ public class Column implements Serializable, ModelNames
             : charsetAndCollation;
     }
 
-    void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
+    // Note: made public for AISBuilder -- peter.  TODO remove this comment.
+    public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
     {
         this.initialAutoIncrementValue = initialAutoIncrementValue;
     }

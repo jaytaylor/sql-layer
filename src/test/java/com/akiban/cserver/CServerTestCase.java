@@ -35,11 +35,11 @@ public abstract class CServerTestCase {
     protected RowDefCache rowDefCache;
     protected Session session = new SessionImpl();
 
-    public void setUp() throws Exception {
-        setUp(null);
+    public final void baseSetUp() throws Exception {
+        baseSetUp(null);
     }
 
-    public void setUp(final Collection<Property> extraProperties) throws Exception {
+    public final void baseSetUp(final Collection<Property> extraProperties) throws Exception {
         serviceManager = UnitTestServiceFactory.createServiceManager(extraProperties);
         serviceManager.startServices();
         store = serviceManager.getStore();
@@ -48,17 +48,13 @@ public abstract class CServerTestCase {
         session = new SessionImpl();
     }
 
-    public void tearDown() throws Exception {
+    public final void baseTearDown() throws Exception {
         serviceManager.stopServices();
         store = null;
         rowDefCache = null;
         session = null;
     }
     
-    protected Persistit getDb() {
-        return serviceManager.getTreeService().getDb();
-    }
-
     protected SchemaManager getSchemaManager() {
         return schemaManager;
     }
@@ -79,6 +75,7 @@ public abstract class CServerTestCase {
             throws Exception {
         final AkibaInformationSchema ais = ((PersistitStoreSchemaManager) schemaManager)
                 .getAisForTests(resourceName);
+        rowDefCache.clear();
         rowDefCache.setAIS(ais);
         CServerTestSuite.markTableStatusClean(rowDefCache);
         rowDefCache.fixUpOrdinals(schemaManager);

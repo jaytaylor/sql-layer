@@ -26,15 +26,13 @@ public class CreateTableTest extends CServerTestCase implements CServerConstants
 
     
     @Before
-    @Override
     public void setUp() throws Exception {
-        super.setUp();
+        baseSetUp();
     }
     
     @After
-    @Override
     public void tearDown() throws Exception {
-        super.tearDown();
+        baseTearDown();
     }
     
     @Test

@@ -20,16 +20,14 @@ public class SimpleBlobTest extends CServerTestCase implements CServerConstants 
 
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        super.setUp();
+        baseSetUp();
         final AkibaInformationSchema ais = setUpAisForTests(SIMPLE_BLOB_TEST_DDL);
     }
 
     @After
-    @Override
     public void tearDown() throws Exception {
-        super.tearDown();
+        baseTearDown();
     }
     
     @Test
