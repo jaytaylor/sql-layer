@@ -1,7 +1,12 @@
 package com.akiban.cserver.api;
 
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.*;
@@ -9,8 +14,17 @@ import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
+import com.akiban.ais.io.*;
 
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
     
@@ -121,5 +135,60 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
         } catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
         }
+    }
+
+    @Override
+    public void createIndexes(AkibaInformationSchema ais) throws InvalidOperationException {
+        try {
+            if(ais.getUserTables().size() != 1) {
+                throw new Exception("Too many user tables");
+            }
+            
+            Entry<TableName, UserTable> index_entry = ais.getUserTables().entrySet().iterator().next();
+            AkibaInformationSchema cur_ais = getAIS();
+            UserTable cur_utable = cur_ais.getUserTable(index_entry.getKey());
+            
+            if(cur_utable == null) {
+                throw new Exception("Uknown table");
+            }
+            
+            SortedSet<Integer> cur_ids = new TreeSet<Integer>();
+            Set<IndexName> cur_names = new HashSet<IndexName>();
+            for(Index i : cur_utable.getIndexes()) {
+                cur_ids.add(i.getIndexId());
+                cur_names.add(i.getIndexName());
+            }
+            
+            Integer id_start = cur_ids.last() + 1;
+            for(Index i: index_entry.getValue().getIndexes()) {
+                if(cur_names.contains(i.getIndexName())) {
+                    throw new Exception("Duplicate index name");
+                }
+                
+                i.setIndexId(id_start);
+                ++id_start;
+                
+                System.out.println("New index ok: " + i.getIndexName().getName() + ", id: " + i.getIndexId());
+            }
+            
+            // All were valid, add to current AIS
+            for(Index i: index_entry.getValue().getIndexes()) {
+                Index new_idx = Index.create(cur_ais, cur_utable, i.getIndexName().getName(), i.getIndexId(), i.isUnique(), i.getConstraint());
+                
+                for(IndexColumn c : i.getColumns()) {
+                    Column ref_col = cur_utable.getColumn(c.getColumn().getPosition());
+                    IndexColumn icol = new IndexColumn(new_idx, ref_col, c.getPosition(), c.isAscending(), c.getIndexedLength()); 
+                    new_idx.addColumn(icol);
+                }
+            }
+        } 
+        catch (Exception e) {
+            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
+        }
+    }
+
+    @Override
+    public void dropIndexes(TableId tableId, List<Integer> indexIds) throws InvalidOperationException {
+        // TODO Auto-generated method stub
     }
 }

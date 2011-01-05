@@ -118,4 +118,22 @@ public interface DDLFunctions {
      */
     @SuppressWarnings("unused") // meant to be used from JMX
     void forceGenerationUpdate() throws InvalidOperationException;
+    
+    /**
+     * Create new indexes on an existing table. The passed AIS shall contain a single, known user 
+     * table an associated data. Any indexes will be created as is with IDs being defined on 
+     * creation. Blocks until complete.
+     * @param ais the AIS containg the user table and new indexes.
+     * @throws InvalidOperationException 
+     */
+    void createIndexes(AkibaInformationSchema ais) throws InvalidOperationException;
+    
+    /**
+     * Drop indexes on an existing table. Removes them from the DDL, AIS, and deletes the indexes
+     * from the store. Blocks until complete.   
+     * @param tableId the table containing the indexes to drop
+     * @param indexIds list of indexes to drop
+     * @throws InvalidOperationException 
+     */
+    void dropIndexes(TableId tableId, List<Integer> indexIds) throws InvalidOperationException;
 }
