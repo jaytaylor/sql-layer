@@ -185,9 +185,12 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
             
             // Modify stored DDL statement
             DDLGenerator gen = new DDLGenerator();
-            schemaManager().changeTableDDL(cur_utable.getName().getSchemaName(), 
-                                           cur_utable.getName().getTableName(),
-                                           gen.createTable(cur_utable));
+            String schema_name = cur_utable.getName().getSchemaName();
+            String table_name = cur_utable.getName().getTableName();
+            schemaManager().changeTableDDL(schema_name, table_name, gen.createTable(cur_utable));
+            
+            // And trigger build of new indexes in this table
+            store().buildIndexes(String.format("table=(%s)", table_name));
         } 
         catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
