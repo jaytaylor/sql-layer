@@ -40,19 +40,17 @@ mvn -Dmaven.test.skip=true -B clean install
 rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{username}/
 mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}
-mkdir -p ${RPM_BUILD_ROOT}/etc/%{username}/config
+mkdir -p ${RPM_BUILD_ROOT}/etc/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 mkdir -p ${RPM_BUILD_ROOT}/etc/security/limits.d/
 mkdir -p ${RPM_BUILD_ROOT}/etc/default/
 mkdir -p ${RPM_BUILD_ROOT}/usr/sbin
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
-cp -p redhat/cluster.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
-cp -p redhat/chunkserver.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
-cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
+cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}
+cp -p redhat/akiban-env.sh ${RPM_BUILD_ROOT}/etc/%{username}
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 cp -p target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
-cp conf/akiban-env.sh ${RPM_BUILD_ROOT}/etc/%{username}/
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
@@ -86,7 +84,7 @@ fi
 %attr(755,%{username},%{username}) /var/run/%{username}*
 
 %post
-alternatives --install /etc/%{username}/config %{username} /etc/%{username}/default.conf/ 0
+alternatives --install /etc/%{username} %{username} /etc/%{username}/default.conf/ 0
 exit 0
 
 %postun
