@@ -17,11 +17,6 @@ public class ChunkserverConfig
         return verboseString == null ? null : Boolean.valueOf(verboseString);
     }
 
-    public String decisionEngine()
-    {
-        return properties.getProperty(PROPERTY_DECISION_ENGINE);
-    }
-
     public String mysqlInstallDir()
     {
         return properties.getProperty(PROPERTY_MYSQL_INSTALL_DIR, DEFAULT_MYSQL_INSTALL_DIR);
