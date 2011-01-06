@@ -293,7 +293,8 @@ public class BulkLoader extends Thread
             + "    artifact_schema varchar(64) not null, "
             + "    artifact_table varchar(64) not null, "
             + "    command varchar(10000) not null, "
-            + "    primary key(task_id)" + ")";
+            + "    primary key(task_id)" + ")"
+            + "    engine = myisam";
 
     // TODO: Once this is set, it is never unset. This enables tracking of
     // progress by BulkLoaderClient even after the

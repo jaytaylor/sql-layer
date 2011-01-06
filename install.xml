@@ -95,7 +95,7 @@
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"
-		file="${system.config}/config/chunkserver.properties" 
+		file="${system.config}/config/server.properties" 
 		todir="${cserver.configdir}/config" />
 
 	<copy  failonerror="true" overwrite="true"

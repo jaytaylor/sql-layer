@@ -423,10 +423,8 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     
     private static String readAisSchema() {
         final StringBuilder sb = new StringBuilder();
-        if (withCreateSchemaStatement) {
-            sb.append("create schema if not exists `akiba_information_schema`;");
+        sb.append("create schema if not exists `akiba_information_schema`;");
             sb.append(CServerUtil.NEW_LINE);
-        }
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 CServer.class.getClassLoader()
                         .getResourceAsStream(PersistitStoreSchemaManager.AIS_DDL_NAME)));
