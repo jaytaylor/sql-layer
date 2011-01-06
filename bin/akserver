@@ -42,7 +42,7 @@ launch_service()
         # default AKIBAN_CONF dir
         AKIBAN_CONF="${akiban_home}/conf"
     fi
-    akiban_parms="-Dakiban.admin=NONE"
+    akiban_parms="-Dakiban.admin=$AKIBAN_CONF"
 
     if [ -f "$AKIBAN_CONF/akiban-env.sh" ]; then
         . "$AKIBAN_CONF/akiban-env.sh"
@@ -56,7 +56,7 @@ launch_service()
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
     else
         # use log4j to log output
-        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/log4j.properties"
+        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
         [ ! -z $pidpath ] && printf "%d" $! > $pidpath
     fi
