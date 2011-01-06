@@ -39,7 +39,7 @@ import com.akiban.util.MySqlStatementSplitter;
 
 public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
 
-    private final static String AIS_CREATE_STATEMENTS = readAisSchema(true);
+    private final static String AIS_CREATE_STATEMENTS = readAisSchema();
     private final static String SCHEMA = "my_schema";
     private final static Pattern REGEX = Pattern.compile("create table `(\\w+)`\\.(\\w+)");
 
@@ -421,7 +421,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         assertEquals("DDLs", expected, actual);
     }
     
-    private static String readAisSchema(final boolean withCreateSchemaStatement) {
+    private static String readAisSchema() {
         final StringBuilder sb = new StringBuilder();
         if (withCreateSchemaStatement) {
             sb.append("create schema if not exists `akiba_information_schema`;");
