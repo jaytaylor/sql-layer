@@ -11,7 +11,7 @@
 #
 # processname: chunkserver
 # pidfile: /usr/local/chunkserver/logs/chunkserver.pid
-# config: /usr/local/chunkserver/conf/chunkserver.properties
+# config: /usr/local/chunkserver/conf/server.properties
 
 # Source function library.
 #. /etc/rc.d/init.d/functions
