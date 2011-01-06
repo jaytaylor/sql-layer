@@ -399,9 +399,8 @@ public class PersistitStore implements CServerConstants, Store {
             for (int c = 0; c < segmentColumns.size(); c++) {
                 HKeyColumn segmentColumn = segmentColumns.get(c);
                 Column column = segmentColumn.column();
-                if (column == null) {
+                if (column.getRealColumn()) {
                     // Must be a PK-less table. Use unique id from TableStatus.
-                    assert segmentColumn.pkLessTable().getTableId() == segmentRowDef.getRowDefId();
                     TableStatus tableStatus = tableManager.getTableStatus(segmentRowDef.getRowDefId());
                     hKey.append(tableStatus.newUniqueId());
                 } else {

@@ -17,6 +17,14 @@ public class PrimaryKey implements Serializable
         return index;
     }
 
+    public Boolean getRealPrimaryKey()
+    {
+        // A not-real primary key is one created by us for a table declared without a PK. We need a PK
+        // so that rows of the table can have hkey values. A not-real primary key has a single column
+        // that is not real.
+        return !(columns.size() == 1 && !columns.get(0).getRealColumn());
+    }
+
     public PrimaryKey()
     {
         // GWT: needs default constructor

@@ -121,7 +121,7 @@ public class Index implements Serializable, ModelNames, Traversable
 
     public boolean isPrimaryKey()
     {
-        return constraint.equals("PRIMARY");
+        return constraint.equals(PRIMARY_KEY_CONSTRAINT);
     }
 
     public Table getTable()
@@ -185,6 +185,8 @@ public class Index implements Serializable, ModelNames, Traversable
     {
         traversePreOrder(visitor);
     }
+
+    public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
 
     private Table table;
     private IndexName indexName;

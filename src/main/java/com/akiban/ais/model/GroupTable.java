@@ -125,11 +125,10 @@ public class GroupTable extends Table
                 }
             }
             if (ancestorJoinColumn != null) {
-                ancestorColumn = ancestorJoinColumn.getParent();
-                Column groupColumn = ancestorColumn.getGroupColumn();
+                Column groupColumn = ancestorJoinColumn.getParent().getGroupColumn();
                 assert groupColumn.getTable() == this;
                 matchingColumns.add(groupColumn);
-                findMatchingAncestorColumns(ancestorColumn, matchingColumns);
+                findMatchingAncestorColumns(ancestorJoinColumn.getParent(), matchingColumns);
             }
         }
     }
@@ -144,11 +143,10 @@ public class GroupTable extends Table
                 }
             }
             if (descendentJoinColumn != null) {
-                descendentColumn = descendentJoinColumn.getChild();
-                Column groupColumn = descendentColumn.getGroupColumn();
+                Column groupColumn = descendentJoinColumn.getChild().getGroupColumn();
                 assert groupColumn.getTable() == this;
                 matchingColumns.add(groupColumn);
-                findMatchingDescendentColumns(descendentColumn, matchingColumns);
+                findMatchingDescendentColumns(descendentJoinColumn.getChild(), matchingColumns);
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.akiban.ais.ddl;
 
+import com.akiban.ais.model.Column;
+
 import java.util.*;
 
 /**
@@ -294,7 +296,15 @@ public class SchemaDef {
         currentColumn.constraints.add(constraint);
     }
 
-    void finishTable() {
+    void finishTable()
+    {
+        if (currentTable.primaryKey.isEmpty()) {
+            // Add our own primary key
+            addColumn(Column.AKIBAN_PK_NAME, "BIGINT", null, null);
+            addIndex(Column.AKIBAN_PK_NAME);
+            addIndexColumn(Column.AKIBAN_PK_NAME);
+            addPrimaryKeyColumn(Column.AKIBAN_PK_NAME);
+        }
         currentColumn = null;
     }
     /**

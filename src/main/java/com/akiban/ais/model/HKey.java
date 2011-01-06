@@ -25,15 +25,9 @@ public class HKey
                 } else {
                     buffer.append(", ");
                 }
-                Column column = hKeyColumn.column();
-                if (column == null) {
-                    buffer.append(hKeyColumn.pkLessTable().getName().getTableName());
-                    buffer.append("<counter>");
-                } else {
-                    buffer.append(hKeyColumn.column().getTable().getName().getTableName());
-                    buffer.append('.');
-                    buffer.append(hKeyColumn.column().getName());
-                }
+                buffer.append(hKeyColumn.column().getTable().getName().getTableName());
+                buffer.append('.');
+                buffer.append(hKeyColumn.column().getName());
             }
             buffer.append(")");
         }

@@ -526,7 +526,8 @@ public class DDLSource extends Source {
                             // charset, the collation's default charset should be used.
                             // But to do this we need to add a charset/collation database.
                             def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
-                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
+                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate,
+                            true)); // realColumn
                     columnReceiver.receive(map(column, groupSchemaName(),
                             groupTableName, groupColumnName, def.gposition,
                             def.typeName, longValue(def.typeParam1),
@@ -537,7 +538,8 @@ public class DDLSource extends Source {
                             // charset, the collation's default charset should be used.
                             // But to do this we need to add a charset/collation database.
                             def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
-                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
+                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate,
+                            true)); // realColumn
                 }
             }
         }
@@ -621,7 +623,7 @@ public class DDLSource extends Source {
                         final String gtn = groupTableName(groupName);
                         indexColumnReceiver
                                 .receive(map(indexColumn, tableName.getSchema(),
-                                        tableName.getName(), "PRIMARY",
+                                        tableName.getName(), Index.PRIMARY_KEY_CONSTRAINT,
                                         columnDef.name, columnIndex, true, null));
                         indexColumnReceiver.receive(map(indexColumn,
                                 groupSchemaName(), gtn,
@@ -684,9 +686,9 @@ public class DDLSource extends Source {
                     indexReceiver.receive(map(index,
                                               tableName.getSchema(),
                                               tableName.getName(),
-                                              "PRIMARY",
+                                              Index.PRIMARY_KEY_CONSTRAINT,
                                               indexId,
-                                              "PRIMARY",
+                                              Index.PRIMARY_KEY_CONSTRAINT,
                                               true));
                     indexReceiver.receive(map(index,
                                               groupSchemaName(),
@@ -956,7 +958,7 @@ public class DDLSource extends Source {
             // pk index
             if (utDef.primaryKey.size() > 0)
             {
-                String pkIndexName = "PRIMARY";
+                String pkIndexName = Index.PRIMARY_KEY_CONSTRAINT;
                 Index pkIndex = Index.create(ais, ut, pkIndexName, indexIdGenerator++, true, pkIndexName);
 
                 columnIndex = 0;

@@ -413,6 +413,11 @@ public class Column implements Serializable, ModelNames
         return prefixSize;
     }
 
+    public Boolean getRealColumn()
+    {
+        return columnName.equals(AKIBAN_PK_NAME);
+    }
+
     /**
      * Compute the maximum character width.  This is used to determine how many bytes
      * will be reserved to encode the length in bytes of a VARCHAR or other text field.
@@ -479,6 +484,8 @@ public class Column implements Serializable, ModelNames
     }
 
     // State
+
+    public static final String AKIBAN_PK_NAME = "__akiban_pk";
 
     private String columnName;
     private Type type;
