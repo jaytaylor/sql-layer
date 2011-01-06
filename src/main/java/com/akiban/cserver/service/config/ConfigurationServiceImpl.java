@@ -15,7 +15,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private final static String AKIBAN_ADMIN = "akiban.admin";
     /** Chunkserver properties. Format specified by chunkserver. */
-    public static final String CONFIG_CHUNKSERVER = "/config/chunkserver.properties";
+    public static final String CONFIG_CHUNKSERVER = "/config/server.properties";
     private Map<Property.Key,Property> properties = null;
     private final Set<Property.Key> requiredKeys = new HashSet<Property.Key>();
 

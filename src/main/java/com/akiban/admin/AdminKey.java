@@ -11,7 +11,7 @@ public class AdminKey
     public static final String CONFIG_CLUSTER = "/config/cluster.properties";
 
     // Chunkserver properties. Format specified by chunkserver
-    public static final String CONFIG_CHUNKSERVER = "/config/chunkserver.properties";
+    public static final String CONFIG_CHUNKSERVER = "/config/server.properties";
 
     // Logging properties. log4j format.
     public static final String CONFIG_LOGGING = "/config/logging.properties";
