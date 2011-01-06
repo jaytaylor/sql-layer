@@ -20,7 +20,6 @@ import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.persistit.exception.PersistitException;
@@ -54,16 +53,32 @@ public class RowDefCache implements CServerConstants {
         return LATEST;
     }
 
+    public synchronized boolean contains(final int rowDefId) {
+        return cacheMap.containsKey(Integer.valueOf(rowDefId));
+    }
     /**
      * Look up and return a RowDef for a supplied rowDefId value.
      * 
      * @param rowDefId
      * @return the corresponding RowDef
+     * @throws RowDefNotFoundException if there is no such RowDef.
      */
     public synchronized RowDef getRowDef(final int rowDefId)
             throws RowDefNotFoundException {
-        RowDef rowDef = cacheMap.get(Integer.valueOf(rowDefId));
+        RowDef rowDef = rowDef(rowDefId);
+        if (rowDef == null) {
+            throw new RowDefNotFoundException(rowDefId);
+        }
         return rowDef;
+    }
+    
+    /**
+     * @param rowDefId
+     * @return  the corresponding RowDef object, or <code>null</code> if
+     * there is RowDef defined with the specified id
+     */
+    public synchronized RowDef rowDef(final int rowDefId) {
+        return cacheMap.get(Integer.valueOf(rowDefId));
     }
 
     public synchronized List<RowDef> getRowDefs() {

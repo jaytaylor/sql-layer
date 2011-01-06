@@ -195,7 +195,7 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
         }
     }
 
-    private UnitTestServiceFactory(final boolean withNetwork,
+    protected UnitTestServiceFactory(final boolean withNetwork,
             final Collection<Property> extraProperties) {
         this.withNetwork = withNetwork;
         this.extraProperties = extraProperties;

@@ -856,7 +856,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     int tableId = exchange.getKey().reset().decodeInt();
                     tableId = treeService.storeToAis(exchange.getVolume(),
                             tableId);
-                    final RowDef rowDef = getRowDefCache().getRowDef(tableId);
+                    final RowDef rowDef = getRowDefCache().rowDef(tableId);
                     if (rowDef == null) {
                         exchange.remove();
                     }
