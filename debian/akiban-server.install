@@ -1,5 +1,5 @@
 src/main/resources/ais_object_model.xml etc/akiban
 debian/log4j.properties etc/akiban/config
 debian/server.properties etc/akiban/config
-conf/config/jvm.properties etc/akiban/config
+conf/config/jvm.options etc/akiban/config
 bin/akserver usr/sbin

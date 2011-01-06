@@ -44,8 +44,8 @@ launch_service()
     fi
     akiban_parms="-Dakiban.admin=$AKIBAN_CONF"
 
-    if [ -f "$AKIBAN_CONF/config/jvm.properties" ]; then
-        . "$AKIBAN_CONF/config/jvm.properties"
+    if [ -f "$AKIBAN_CONF/config/jvm.options" ]; then
+        . "$AKIBAN_CONF/config/jvm.options"
     fi
 
     if [ "x$usegui" != "x" ]; then
