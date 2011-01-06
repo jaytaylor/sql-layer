@@ -34,10 +34,6 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<SchemaManager> schemaService;
     private Service<MemcacheService> memcacheService;
     
-    public static ServiceManager createServiceManager() {
-        return new ServiceManagerImpl(new DefaultServiceFactory());
-    }
-
     @Override
     public Service<ConfigurationService> configurationService() {
         if (configurationService == null) {
@@ -91,7 +87,6 @@ public class DefaultServiceFactory implements ServiceFactory {
     @Override
     public Service<TreeService> treeService() {
         if (treeService == null) {
-            final ConfigurationService config = configurationService().cast();
             treeService = new TreeServiceImpl();
         }
         return treeService;

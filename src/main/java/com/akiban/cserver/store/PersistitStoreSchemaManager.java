@@ -38,13 +38,14 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.TableStatus;
-import com.akiban.cserver.TreeLink;
 import com.akiban.cserver.service.AfterStart;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.tree.TreeCache;
+import com.akiban.cserver.service.tree.TreeLink;
 import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.cserver.service.tree.TreeVisitor;
 import com.akiban.message.ErrorCode;
@@ -58,6 +59,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         SchemaManager, AfterStart {
 
     static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
+
+    static final String BY_ID = "byId";
+
+    static final String BY_NAME = "byName";
 
     private static final Log LOG = LogFactory
             .getLog(PersistitStoreSchemaManager.class.getName());
@@ -74,10 +79,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private static final int GROUP_TABLE_ID_OFFSET = 100000000;
 
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiba_information_schema";
-
-    private final static String BY_ID = "byId";
-
-    private final static String BY_NAME = "byName";
 
     private static List<TableDefinition> aisSchema = readAisSchema();
 
@@ -556,7 +557,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 LOG.error("Exception while building new AIS", e);
                 return ais;
             }
-            
+
             // Detect a race condition in which another schema change happened
             // during creation of the AIS. In that case, simple retry.
             synchronized (this) {
@@ -784,11 +785,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public void afterStart() throws Exception {
-        getAis(new SessionImpl());
-    }
-
-    @Override
     public void stop() throws Exception {
         this.ais = null;
         this.rowDefCache = null;
@@ -796,6 +792,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         schemaLinkMap.clear();
         statusLinkMap.clear();
         stopTableStatusFlusher();
+    }
+
+    /**
+     * Create an AIS during the startup process so that the AIS tables are
+     * populated and a visible. This can't be done until both this Service and
+     * the PersistitStore service are fully initialized and registered, so it is
+     * done as an "afterStart" step.
+     */
+    @Override
+    public void afterStart() throws Exception {
+        getAis(new SessionImpl());
     }
 
     /**
@@ -910,7 +917,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             link = map.get(schemaName);
             if (link == null) {
                 link = new TreeLink() {
-                    Object cache;
+                    TreeCache cache;
 
                     @Override
                     public String getSchemaName() {
@@ -923,12 +930,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
 
                     @Override
-                    public void setTreeCache(Object object) {
-                        cache = object;
+                    public void setTreeCache(TreeCache cache) {
+                        this.cache = cache;
                     }
 
                     @Override
-                    public Object getTreeCache() {
+                    public TreeCache getTreeCache() {
                         return cache;
                     }
 

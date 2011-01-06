@@ -1,6 +1,5 @@
 package com.akiban.cserver.service.tree;
 
-import com.akiban.cserver.TreeLink;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
@@ -22,13 +21,11 @@ public interface TreeService extends Service<TreeService> {
 
     final static String STATUS_TREE_NAME = "_status_";
 
-    final static String BY_ID = "byId";
-
-    final static String BY_NAME = "byName";
-    
-    final static String TABLESPACE="tablespace";
+    final static String TREESPACE="treespace";
     
     final static String SCHEMA = "schema";
+    
+    final static String TREE = "tree";
 
     Persistit getDb();
 

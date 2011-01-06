@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.cserver.CServerTestCase;
-import com.akiban.cserver.TreeLink;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.config.Property;
 import com.akiban.cserver.service.session.Session;
@@ -29,7 +28,7 @@ public class TreeServiceImplTest extends CServerTestCase {
     private class TestLink implements TreeLink {
         final String schemaName;
         final String treeName;
-        Object cache;
+        TreeCache cache;
 
         TestLink(String s, String t) {
             schemaName = s;
@@ -47,28 +46,27 @@ public class TreeServiceImplTest extends CServerTestCase {
         }
 
         @Override
-        public void setTreeCache(Object object) {
-            cache = object;
+        public void setTreeCache(TreeCache cache) {
+            this.cache = cache;
         }
 
         @Override
-        public Object getTreeCache() {
+        public TreeCache getTreeCache() {
             return cache;
         }
     }
 
-
     @Test
     public void buildValidSchemaMap() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("cserver", "tablespace.a",
+        properties.add(property("cserver", "treespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "tablespace.b",
+        properties.add(property("cserver", "treespace.b",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "tablespace.default",
-                "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
+        properties.add(property("cserver", "treespace.c",
+                "test*/_schema_:${datapath}/${schema}${tree}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);
         try {
@@ -76,13 +74,17 @@ public class TreeServiceImplTest extends CServerTestCase {
                     .get().getTreeService();
             final SortedMap<String, SchemaNode> result = treeService
                     .getSchemaMap();
-            assertEquals(3, result.size());
-            final String vs1 = treeService.volumeForSchema("drupalxx");
-            final String vs2 = treeService.volumeForSchema("liveops");
-            final String vs3 = treeService.volumeForSchema("tpcc");
+            assertEquals(4, result.size()); // +1 for default in base properties
+            final String vs1 = treeService.volumeForSchema("drupalxx",
+                    "_schema_");
+            final String vs2 = treeService.volumeForSchema("liveops",
+                    "_schema_");
+            final String vs3 = treeService.volumeForSchema("tpcc", "_schema_");
+            final String vs4 = treeService.volumeForSchema("test42", "_schema_");
             assertTrue(vs1.contains("drupalxx.v0"));
             assertTrue(vs2.contains("liveops.v0"));
             assertTrue(vs3.contains("akiban_data"));
+            assertTrue(vs4.contains("test42_schema_.v0"));
         } finally {
             baseTearDown();
         }
@@ -91,11 +93,8 @@ public class TreeServiceImplTest extends CServerTestCase {
     @Test
     public void buildInvalidSchemaMaps() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("cserver", "tablespace.a", "drupal*"));
-        properties.add(property("cserver", "tablespace.b", "liveops*"));
-        properties.add(property("cserver", "tablespace.default",
-                "*:akiban_data.v0,create,pageSize:8K,"
-                        + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+        properties.add(property("cserver", "treespace.a", "drupal*"));
+        properties.add(property("cserver", "treespace.b", "liveops*"));
         baseSetUp(properties);
         try {
             final TreeServiceImpl treeService = (TreeServiceImpl) ServiceManagerImpl
@@ -106,20 +105,16 @@ public class TreeServiceImplTest extends CServerTestCase {
         } finally {
             baseTearDown();
         }
-
     }
 
     @Test
     public void testCreateVolume() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("cserver", "tablespace.a",
+        properties.add(property("cserver", "treespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "tablespace.b",
+        properties.add(property("cserver", "treespace.b",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
-                        + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "tablespace.default",
-                "*:${datapath}/akiban_data.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);
         try {

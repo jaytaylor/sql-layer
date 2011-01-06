@@ -18,7 +18,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.akiban.cserver.CServerUtil;
-import com.akiban.cserver.TreeLink;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.config.ConfigurationService;
@@ -77,40 +76,9 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private Persistit db;
 
-    int volumeOffsetCounter = 0;
+    private int volumeOffsetCounter = 0;
 
-    final Map<Volume, Integer> translationMap = new WeakHashMap<Volume, Integer>();
-
-    private static class TreeCache {
-        private final Tree tree;
-        private int tableIdOffset = -1;
-
-        private TreeCache(final Tree tree) {
-            this.tree = tree;
-        }
-
-        /**
-         * @return the tableIdOffset
-         */
-        public int getTableIdOffset() {
-            return tableIdOffset;
-        }
-
-        /**
-         * @param tableIdOffset
-         *            the tableIdOffset to set
-         */
-        public void setTableIdOffset(int tableIdOffset) {
-            this.tableIdOffset = tableIdOffset;
-        }
-
-        /**
-         * @return the tree
-         */
-        public Tree getTree() {
-            return tree;
-        }
-    }
+    private final Map<Volume, Integer> translationMap = new WeakHashMap<Volume, Integer>();
 
     static class SchemaNode {
         final Pattern pattern;
@@ -122,7 +90,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         }
 
         /**
-         * @return the pattern
+         * @return the tree pattern
          */
         public Pattern getPattern() {
             return pattern;
@@ -169,7 +137,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         }
         final int bufferSize = Integer.parseInt(properties
                 .getProperty(BUFFER_SIZE_PROP_NAME));
-        final String bufferCountPropString = BUFFER_COUNT_PROP_NAME + bufferSize;
+        final String bufferCountPropString = BUFFER_COUNT_PROP_NAME
+                + bufferSize;
         if (!properties.contains(bufferCountPropString)) {
             properties.setProperty(bufferCountPropString,
                     String.valueOf(bufferCount(bufferSize, isFixedAllocation)));
@@ -311,9 +280,9 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     @Override
     public boolean isContainer(final Exchange exchange, final TreeLink link)
             throws PersistitException {
-        final Volume volume = mappedVolume(link.getSchemaName(),
-                link.getTreeName());
-        return exchange.getVolume().equals(volume);
+        final TreeCache treeCache = populateTreeCache(link);
+        return exchange.getVolume().equals(
+                 treeCache.getTree().getVolume());
     }
 
     @Override
@@ -359,13 +328,12 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         return cache;
     }
 
-    private int tableIdOffset(final TreeLink link)
-            throws PersistitException {
+    private int tableIdOffset(final TreeLink link) throws PersistitException {
         final Volume volume = mappedVolume(link.getSchemaName(),
                 SCHEMA_TREE_NAME);
         return tableIdOffset(volume);
     }
-    
+
     private synchronized int tableIdOffset(final Volume volume) {
         Integer offset = translationMap.get(volume);
         if (offset == null) {
@@ -379,7 +347,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     public Volume mappedVolume(final String schemaName, final String treeName)
             throws PersistitException {
         try {
-            final String vstring = volumeForSchema(schemaName);
+            final String vstring = volumeForSchema(schemaName, treeName);
             final Volume volume = db.loadVolume(vstring);
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
@@ -405,16 +373,19 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         return list;
     }
 
-    String volumeForSchema(final String schemaName)
+    String volumeForSchema(final String schemaName, final String treeName)
             throws InvalidVolumeSpecificationException {
         SchemaNode defaultSchemaNode = null;
+        final String concatenatedName = schemaName + "/" + treeName;
         for (final Entry<String, SchemaNode> entry : schemaMap.entrySet()) {
             if (".default".equals(entry.getKey())) {
                 defaultSchemaNode = entry.getValue();
             } else {
-                if (entry.getValue().getPattern().matcher(schemaName).matches()) {
+                final SchemaNode node = entry.getValue();
+                if (node.getPattern().matcher(concatenatedName).matches()) {
                     String vs = entry.getValue().getVolumeString();
                     db.setProperty(SCHEMA, schemaName);
+                    db.setProperty(TREE, treeName);
                     String vsFinal = db.substituteProperties(vs,
                             db.getProperties());
                     return vsFinal;
@@ -436,8 +407,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();
-            if (name.startsWith(TABLESPACE)) {
-                final String tsName = name.substring(TABLESPACE.length());
+            if (name.startsWith(TREESPACE)) {
+                final String tsName = name.substring(TREESPACE.length());
                 final String[] parts = value.split(":");
                 boolean valid = true;
                 final StringBuilder sb = new StringBuilder();
@@ -448,23 +419,23 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
                 }
                 if (!valid) {
                     if (LOG.isErrorEnabled()) {
-                        LOG.error("Invalid tablespace property " + entry
+                        LOG.error("Invalid treespace property " + entry
                                 + " ignored");
                     }
                     continue;
                 }
                 if (schemaMap.containsKey(tsName)) {
                     if (LOG.isErrorEnabled()) {
-                        LOG.error("Invalid duplicate tablespace property "
+                        LOG.error("Invalid duplicate treespace property "
                                 + entry + " ignored");
                     }
                     continue;
                 }
                 final Pattern pattern = Pattern.compile(sb.toString());
                 final String vstring = value.substring(parts[0].length() + 1);
-                final VolumeSpecification volumeSpec;
                 try {
-                    volumeSpec = new VolumeSpecification(vstring);
+                    // Test for value Volume specification
+                    new VolumeSpecification(vstring);
                 } catch (InvalidVolumeSpecificationException e) {
                     if (LOG.isErrorEnabled()) {
                         LOG.error("Invalid volumespecification in property "

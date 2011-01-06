@@ -12,6 +12,8 @@ import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.cserver.service.tree.TreeCache;
+import com.akiban.cserver.service.tree.TreeLink;
 
 /**
  * Defines an Index within the Chunk Server
@@ -43,7 +45,7 @@ public class IndexDef implements TreeLink {
     // specifies the position within the index entry of the ith hkey field.
     private I2H[] hKeyFields;
 
-    private AtomicReference<Object> treeCache = new AtomicReference<Object>();
+    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
     
     /*
      * Structure that determines how a field in a table binds to a key segment of an index key. An H2I defines
@@ -350,12 +352,12 @@ public class IndexDef implements TreeLink {
     }
 
     @Override
-    public void setTreeCache(Object object) {
-       treeCache.set(object);
+    public void setTreeCache(TreeCache cache) {
+       treeCache.set(cache);
     }
 
     @Override
-    public Object getTreeCache() {
+    public TreeCache getTreeCache() {
         return treeCache.get();
     }
 

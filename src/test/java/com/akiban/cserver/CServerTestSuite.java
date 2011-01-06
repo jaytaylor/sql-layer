@@ -6,6 +6,14 @@ package com.akiban.cserver;
  * are configured by UnitTestServiceManagerFactory
  * to use a temporary directory that will be cleaned up when
  * the test ends.
+ * 
+ * 
+ * This class differs from CServerTestCase: this base
+ * class is intended for tests that start the services, load
+ * a fairly large amount of data, and then perform numerous
+ * tests on the same environment. CServerTestCase is 
+ * intended for tests that start and stop all the
+ * services once for each test.  
  */
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.service.ServiceManager;
@@ -38,8 +46,8 @@ public abstract class CServerTestSuite {
         rowDefCache = null;
     }
 
-    protected static AkibaInformationSchema setUpAisForTests(final String resourceName)
-            throws Exception {
+    protected static AkibaInformationSchema setUpAisForTests(
+            final String resourceName) throws Exception {
         final AkibaInformationSchema ais = ((PersistitStoreSchemaManager) schemaManager)
                 .getAisForTests(resourceName);
         rowDefCache.clear();
@@ -48,11 +56,12 @@ public abstract class CServerTestSuite {
         rowDefCache.fixUpOrdinals(schemaManager);
         return ais;
     }
-    
+
     /**
-     * This call marks all TableStatus records as flushed (not dirty)
-     * without actually trying to load save status records.  This is
-     * only for unit tests that start with empty storage.
+     * This call marks all TableStatus records as flushed (not dirty) without
+     * actually trying to load save status records. This is only for unit tests
+     * that start with empty storage.
+     * 
      * @param rowDefCache
      */
     static void markTableStatusClean(final RowDefCache rowDefCache) {

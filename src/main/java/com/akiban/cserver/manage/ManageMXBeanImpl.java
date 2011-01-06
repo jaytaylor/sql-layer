@@ -6,7 +6,7 @@ import java.net.URLClassLoader;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CustomQuery;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.PersistitStore;
+import com.akiban.cserver.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean
 {
@@ -122,8 +122,8 @@ public class ManageMXBeanImpl implements ManageMXBean
         }
     }
 
-    private PersistitStore getStore()
+    private Store getStore()
     {
-        return ((PersistitStore) cserver.getServiceManager().getStore());
+        return cserver.getServiceManager().getStore();
     }
 }

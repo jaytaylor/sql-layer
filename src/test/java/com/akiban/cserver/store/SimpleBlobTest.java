@@ -22,7 +22,7 @@ public class SimpleBlobTest extends CServerTestCase implements CServerConstants 
     @Before
     public void setUp() throws Exception {
         baseSetUp();
-        final AkibaInformationSchema ais = setUpAisForTests(SIMPLE_BLOB_TEST_DDL);
+        setUpAisForTests(SIMPLE_BLOB_TEST_DDL);
     }
 
     @After

@@ -6,6 +6,13 @@ package com.akiban.cserver;
  * are configured by UnitTestServiceManagerFactory
  * to use a temporary directory that will be cleaned up when
  * the test ends.
+ * 
+ * This class differs from CServerTestSuite: this base
+ * class is intended for tests that start and stop all the
+ * services once for each test.  CServerTestSuite
+ * is intended for tests that start the services, load
+ * a fairly large amount of data, and then perform numerous
+ * tests on the same environment.
  */
 
 import static com.akiban.cserver.service.tree.TreeService.SCHEMA_TREE_NAME;
@@ -23,7 +30,6 @@ import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.PersistitStoreSchemaManager;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
-import com.persistit.Persistit;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 

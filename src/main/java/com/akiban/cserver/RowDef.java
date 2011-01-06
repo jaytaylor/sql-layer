@@ -13,6 +13,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.service.tree.TreeCache;
+import com.akiban.cserver.service.tree.TreeLink;
 import com.akiban.cserver.util.RowDefNotFoundException;
 
 /**
@@ -104,7 +106,7 @@ public class RowDef implements TreeLink {
      */
     private final byte[][] varLenFieldMap;
 
-    private AtomicReference<Object> treeCache = new AtomicReference<Object>();
+    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
     public RowDef(Table table) {
         this.table = table;
@@ -370,7 +372,7 @@ public class RowDef implements TreeLink {
     public FieldDef getFieldDef(final int index) {
         return fieldDefs[index];
     }
-    
+
     public int getFieldIndex(final String fieldName) {
         for (int index = 0; index < fieldDefs.length; index++) {
             if (fieldDefs[index].getName().equals(fieldName)) {
@@ -512,9 +514,8 @@ public class RowDef implements TreeLink {
     }
 
     /*
-     * Populate various fields needed for autoincrement processing.
-     * Likely to change when server-side autoincrement support is
-     * implemented.
+     * Populate various fields needed for autoincrement processing. Likely to
+     * change when server-side autoincrement support is implemented.
      */
     private int setUpAutoIncrementStuff() {
         if (table.isGroupTable()) {
@@ -663,12 +664,12 @@ public class RowDef implements TreeLink {
     }
 
     @Override
-    public void setTreeCache(final Object cache) {
+    public void setTreeCache(TreeCache cache) {
         treeCache.set(cache);
     }
 
     @Override
-    public Object getTreeCache() {
+    public TreeCache getTreeCache() {
         return treeCache.get();
     }
 }

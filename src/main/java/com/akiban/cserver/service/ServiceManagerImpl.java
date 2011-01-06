@@ -114,12 +114,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
         startAndPut(factory.memcacheService(), jmxRegistry);
-        
-        for (final Service<?> service: services.values()) {
-            if (service instanceof AfterStart) {
-                ((AfterStart)service).afterStart();
-            }
-        }
+        afterStart();
     }
 
     private void servicesDebugHooks(ConfigurationService configService)
@@ -175,6 +170,22 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
                 throw exceptions.get(0);
             }
             throw new Exception("Failure(s) while shutting down services: " + exceptions, exceptions.get(0));
+        }
+    }
+    
+    // TODO - Review this.
+    // Need this to construct an AIS instance.  Both SchemaService
+    // and StoreService need to be started and registered in the
+    // services map before calling getAis().  There is no logical
+    // successor service to call this from, so I put the
+    // AfterStart interface back any.  Any alternative solution
+    // would also be fine.
+    //
+    private void afterStart() throws Exception {
+        for (final Service<?> service : services.values()) {
+            if (service instanceof AfterStart) {
+                ((AfterStart)service).afterStart();
+            }
         }
     }
 

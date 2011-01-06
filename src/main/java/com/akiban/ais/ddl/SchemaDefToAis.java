@@ -28,13 +28,12 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 
 /**
- * This class converts the SchemaDef object created by parsing DDL 
- * statements into an AIS instance.  The caller can choose whether
- * to include tables for all storage engine types, or just those
- * marked "engine=akibandb".  The latter choice is used by the
- * server component since it does not care about non-akibandb
- * tables.  However, the studio component needs to review tables
- * for other engines.
+ * This class converts the SchemaDef object created by parsing DDL statements
+ * into an AIS instance. The caller can choose whether to include tables for all
+ * storage engine types, or just those marked "engine=akibandb". The latter
+ * choice is used by the server component since it does not care about
+ * non-akibandb tables. However, the studio component needs to review tables for
+ * other engines.
  * 
  * @author peter
  * 
@@ -43,7 +42,7 @@ public class SchemaDefToAis {
 
     private static final Log LOG = LogFactory.getLog(SchemaDefToAis.class
             .getName());
-    
+
     private final static String AKIBANDB_ENGINE_NAME = "akibandb";
 
     private final SchemaDef schemaDef;
@@ -86,7 +85,6 @@ public class SchemaDefToAis {
             }
         }
     }
-
 
     /**
      * Return List of names of user tables in a specified group sorted by
@@ -202,18 +200,19 @@ public class SchemaDefToAis {
         return utDef;
     }
 
-    private AkibaInformationSchema buildAISFromBuilder(final boolean akibandbOnly)
-            throws RecognitionException, Exception {
+    private AkibaInformationSchema buildAISFromBuilder(
+            final boolean akibandbOnly) throws RecognitionException, Exception {
         addImpliedGroups();
         computeColumnMapAndPositions();
-        
+
         AISBuilder builder = new AISBuilder();
         AkibaInformationSchema ais = builder.akibaInformationSchema();
         int indexIdGenerator = 0;
 
         // loop through user tables and add to AIS
         for (UserTableDef utDef : schemaDef.getUserTableMap().values()) {
-            if (akibandbOnly && !AKIBANDB_ENGINE_NAME.equalsIgnoreCase(utDef.engine)) {
+            if (akibandbOnly
+                    && !AKIBANDB_ENGINE_NAME.equalsIgnoreCase(utDef.engine)) {
                 continue;
             }
             String schemaName = utDef.getCName().getSchema();
@@ -331,7 +330,9 @@ public class SchemaDefToAis {
 
         // loop through group tables and add to AIS
         for (CName group : schemaDef.getGroupMap().keySet()) {
-            LOG.info("Group = " + group.getName());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Group = " + group.getName());
+            }
             builder.createGroup(group.getName(), group.getSchema(),
                     groupTableName(group));
 
@@ -341,11 +342,15 @@ public class SchemaDefToAis {
                 IndexDef akibanFK = getAkibanJoin(tableDef);
                 if (akibanFK == null) {
                     // No FK: this is a root table so do nothing
-                    LOG.info("Group Root Table = " + table.getName());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Group Root Table = " + table.getName());
+                    }
                     builder.addTableToGroup(group.getName(), table.getSchema(),
                             table.getName());
                 } else {
-                    LOG.info("Group Child Table = " + table.getName());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Group Child Table = " + table.getName());
+                    }
                     if (akibanFK.referenceTable != null) {
                         String joinName = constructFKJoinName(tableDef,
                                 akibanFK);
