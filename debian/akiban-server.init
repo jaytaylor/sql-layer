@@ -23,10 +23,10 @@ AKIBAN_PROG=/usr/sbin/akserver
 DAEMON=/usr/sbin/akserver
 
 [ -e /usr/share/akiban/akiban-server.jar ] || exit 0
-[ -e /etc/akiban/akiban-env.sh ] || exit 0
+[ -e /etc/akiban/config/jvm.properties ] || exit 0
 
-# read akiban environment file
-. /etc/akiban/akiban-env.sh
+# read akiban JVM options
+. /etc/akiban/config/jvm.properties
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
