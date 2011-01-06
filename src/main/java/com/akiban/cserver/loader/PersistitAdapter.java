@@ -35,14 +35,9 @@ public class PersistitAdapter
             nKeyColumns[segmentCount] = segment.columns().size();
             for (HKeyColumn hKeyColumn : segment.columns()) {
                 Column column = hKeyColumn.column();
-                if (column == null) {
-                    // hKeyColumn's segment is a PK-less table
-                    hKeyFieldDefs[hKeyColumnCount] = FieldDef.pkLessTableCounter(segmentRowDef);
-                } else {
-                    Table columnTable = column.getTable();
-                    RowDef columnRowDef = rowDefCache.getRowDef(columnTable.getTableId());
-                    hKeyFieldDefs[hKeyColumnCount] = columnRowDef.getFieldDef(column.getPosition());
-                }
+                Table columnTable = column.getTable();
+                RowDef columnRowDef = rowDefCache.getRowDef(columnTable.getTableId());
+                hKeyFieldDefs[hKeyColumnCount] = columnRowDef.getFieldDef(column.getPosition());
                 hKeyColumnCount++;
             }
             segmentCount++;

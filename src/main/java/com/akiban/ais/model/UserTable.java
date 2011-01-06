@@ -272,12 +272,9 @@ public class UserTable extends Table
     {
         for (HKeySegment segment : hKey().segments()) {
             for (HKeyColumn hKeyColumn : segment.columns()) {
-                Column column = hKeyColumn.column();
-                if (column != null) {
-                    if (column.getTable() != this) {
-                        return false;
-                    }
-                } // else: PK-less table
+                if (hKeyColumn.column().getTable() != this) {
+                    return false;
+                }
             }
         }
         return true;
