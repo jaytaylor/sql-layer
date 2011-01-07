@@ -526,8 +526,7 @@ public class DDLSource extends Source {
                             // charset, the collation's default charset should be used.
                             // But to do this we need to add a charset/collation database.
                             def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
-                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate,
-                            true)); // realColumn
+                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
                     columnReceiver.receive(map(column, groupSchemaName(),
                             groupTableName, groupColumnName, def.gposition,
                             def.typeName, longValue(def.typeParam1),
@@ -538,8 +537,7 @@ public class DDLSource extends Source {
                             // charset, the collation's default charset should be used.
                             // But to do this we need to add a charset/collation database.
                             def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
-                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate,
-                            true)); // realColumn
+                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
                 }
             }
         }
