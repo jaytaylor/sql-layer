@@ -90,7 +90,8 @@ public class Tracker
                                                                  + "    event_id int auto_increment, "
                                                                  + "    time timestamp not null, "
                                                                  + "    event_time_sec double not null, "
-                                                                 + "    message varchar(500), " + "    primary key(event_id)" + ")";
+                                                                 + "    message varchar(500), " + "    primary key(event_id)" + ")"
+                                                                 + "    engine = myisam";
     private static final String TEMPLATE_LOG_PROGRESS = "insert into %s.progress(time, event_time_sec, message) values (now(), %s, '%s')";
     private static final String TEMPLATE_RECENT_EVENTS = "select event_id, time, event_time_sec, message "
                                                          + "from %s.progress " + "where event_id > %s";

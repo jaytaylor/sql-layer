@@ -1,19 +1,10 @@
 
-# path to where the Akiban Server will store its data files
-SERVER_DATAPATH="/tmp/server_data"
-
-# port on which to start the Akiban Server
-SERVER_PORT="5140"
-
 # Specifies the default port over which the akiban server will be available for
 # JMX connections.
 JMX_PORT="8080"
 
 # Here we create the arguments that will get passed to the jvm when
 # starting the akiban server.
-
-JVM_OPTS="$JVM_OPTS -Dcserver.datapath=$SERVER_DATAPATH"
-JVM_OPTS="$JVM_OPTS -Dcserver.port=$SERVER_PORT"
 
 # enable assertions.  what kind of difference to performance does this make?
 JVM_OPTS="$JVM_OPTS -ea"
