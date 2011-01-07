@@ -16,7 +16,7 @@ run_plan("Scan the customer name index for 'ori'",
          IndexScan(customer_name_index, ['ori']))
 
 run_plan("Scan the customer name index for 'ori' and then find the row",
-         Join(IndexScan(customer_name_index, ['ori']), ['hkey'], coi, Tc, KEEP_RIGHT))
+         TableFind(IndexScan(customer_name_index, ['ori']), ['hkey'], coi))
 
 run_plan("Keep only orders (drop customers, items)",
          Extract(Cut(TableScan(coi), Ti), To))

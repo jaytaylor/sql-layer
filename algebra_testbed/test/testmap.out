@@ -1,0 +1,316 @@
+--------------------------------------------------------------------------------
+Dump the entire group:
+order[[customer, [-1], order, [34]]]: {hkey: [customer, [-1], order, [34]], oid: 34, cid: -1, order_date: 2010/9/9}
+customer[[customer, [1]]]: {hkey: [customer, [1]], cid: 1, name: ori}
+order[[customer, [1], order, [11]]]: {hkey: [customer, [1], order, [11]], oid: 11, cid: 1, order_date: 2010/1/1}
+item[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+item[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+order[[customer, [1], order, [12]]]: {hkey: [customer, [1], order, [12]], oid: 12, cid: 1, order_date: 2010/1/2}
+item[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+item[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+order[[customer, [1], order, [13]]]: {hkey: [customer, [1], order, [13]], oid: 13, cid: 1, order_date: 2010/1/3}
+item[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+item[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+customer[[customer, [2]]]: {hkey: [customer, [2]], cid: 2, name: david}
+order[[customer, [2], order, [21]]]: {hkey: [customer, [2], order, [21]], oid: 21, cid: 2, order_date: 2010/2/1}
+item[[customer, [2], order, [21], item, [211]]]: {hkey: [customer, [2], order, [21], item, [211]], iid: 211, oid: 21, unit_price: 7.0, quantity: 7}
+item[[customer, [2], order, [21], item, [212]]]: {hkey: [customer, [2], order, [21], item, [212]], iid: 212, oid: 21, unit_price: 8.0, quantity: 8}
+order[[customer, [2], order, [22]]]: {hkey: [customer, [2], order, [22]], oid: 22, cid: 2, order_date: 2010/2/2}
+item[[customer, [2], order, [22], item, [221]]]: {hkey: [customer, [2], order, [22], item, [221]], iid: 221, oid: 22, unit_price: 9.0, quantity: 9}
+item[[customer, [2], order, [22], item, [222]]]: {hkey: [customer, [2], order, [22], item, [222]], iid: 222, oid: 22, unit_price: 10.0, quantity: 10}
+order[[customer, [2], order, [23]]]: {hkey: [customer, [2], order, [23]], oid: 23, cid: 2, order_date: 2010/2/3}
+item[[customer, [2], order, [23], item, [231]]]: {hkey: [customer, [2], order, [23], item, [231]], iid: 231, oid: 23, unit_price: 11.0, quantity: 11}
+item[[customer, [2], order, [23], item, [232]]]: {hkey: [customer, [2], order, [23], item, [232]], iid: 232, oid: 23, unit_price: 12.0, quantity: 12}
+customer[[customer, [3]]]: {hkey: [customer, [3]], cid: 3, name: tom}
+order[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], oid: 31, cid: 3, order_date: 2010/3/1}
+item[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+item[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+order[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], oid: 32, cid: 3, order_date: 2010/3/2}
+item[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+item[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+order[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], oid: 33, cid: 3, order_date: 2010/3/3}
+item[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+item[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+customer[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Scan the group, selecting customers named tom:
+customer[[customer, [3]]]: {hkey: [customer, [3]], cid: 3, name: tom}
+order[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], oid: 31, cid: 3, order_date: 2010/3/1}
+item[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+item[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+order[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], oid: 32, cid: 3, order_date: 2010/3/2}
+item[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+item[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+order[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], oid: 33, cid: 3, order_date: 2010/3/3}
+item[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+item[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Scan the group, selecting orders made in January:
+customer[[customer, [1]]]: {hkey: [customer, [1]], cid: 1, name: ori}
+order[[customer, [1], order, [11]]]: {hkey: [customer, [1], order, [11]], oid: 11, cid: 1, order_date: 2010/1/1}
+item[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+item[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+order[[customer, [1], order, [12]]]: {hkey: [customer, [1], order, [12]], oid: 12, cid: 1, order_date: 2010/1/2}
+item[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+item[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+order[[customer, [1], order, [13]]]: {hkey: [customer, [1], order, [13]], oid: 13, cid: 1, order_date: 2010/1/3}
+item[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+item[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+customer[[customer, [2]]]: {hkey: [customer, [2]], cid: 2, name: david}
+customer[[customer, [3]]]: {hkey: [customer, [3]], cid: 3, name: tom}
+customer[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Scan the customer name index:
+customer.name['david']: {name: david, hkey: [customer, [2]]}
+customer.name['jack']: {name: jack, hkey: [customer, [4]]}
+customer.name['ori']: {name: ori, hkey: [customer, [1]]}
+customer.name['tom']: {name: tom, hkey: [customer, [3]]}
+random: 1		sequential: 4		sort: 0
+--------------------------------------------------------------------------------
+Scan the customer name index for 'ori':
+customer.name['ori']: {name: ori, hkey: [customer, [1]]}
+random: 1		sequential: 1		sort: 0
+--------------------------------------------------------------------------------
+Scan the customer name index for 'ori' and then find the row:
+customer[[customer, [1]]]: {hkey: [customer, [1]], cid: 1, name: ori}
+random: 2		sequential: 1		sort: 0
+--------------------------------------------------------------------------------
+Keep only orders (drop customers, items):
+order[[customer, [-1], order, [34]]]: {hkey: [customer, [-1], order, [34]], oid: 34, cid: -1, order_date: 2010/9/9}
+order[[customer, [1], order, [11]]]: {hkey: [customer, [1], order, [11]], oid: 11, cid: 1, order_date: 2010/1/1}
+order[[customer, [1], order, [12]]]: {hkey: [customer, [1], order, [12]], oid: 12, cid: 1, order_date: 2010/1/2}
+order[[customer, [1], order, [13]]]: {hkey: [customer, [1], order, [13]], oid: 13, cid: 1, order_date: 2010/1/3}
+order[[customer, [2], order, [21]]]: {hkey: [customer, [2], order, [21]], oid: 21, cid: 2, order_date: 2010/2/1}
+order[[customer, [2], order, [22]]]: {hkey: [customer, [2], order, [22]], oid: 22, cid: 2, order_date: 2010/2/2}
+order[[customer, [2], order, [23]]]: {hkey: [customer, [2], order, [23]], oid: 23, cid: 2, order_date: 2010/2/3}
+order[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], oid: 31, cid: 3, order_date: 2010/3/1}
+order[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], oid: 32, cid: 3, order_date: 2010/3/2}
+order[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], oid: 33, cid: 3, order_date: 2010/3/3}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Flatten customer and order:
+co[[customer, [1], order, [11]]]: {hkey: [customer, [1], order, [11]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1}
+item[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+item[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+co[[customer, [1], order, [12]]]: {hkey: [customer, [1], order, [12]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2}
+item[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+item[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+co[[customer, [1], order, [13]]]: {hkey: [customer, [1], order, [13]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3}
+item[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+item[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+co[[customer, [2], order, [21]]]: {hkey: [customer, [2], order, [21]], cid: 2, name: david, oid: 21, order_date: 2010/2/1}
+item[[customer, [2], order, [21], item, [211]]]: {hkey: [customer, [2], order, [21], item, [211]], iid: 211, oid: 21, unit_price: 7.0, quantity: 7}
+item[[customer, [2], order, [21], item, [212]]]: {hkey: [customer, [2], order, [21], item, [212]], iid: 212, oid: 21, unit_price: 8.0, quantity: 8}
+co[[customer, [2], order, [22]]]: {hkey: [customer, [2], order, [22]], cid: 2, name: david, oid: 22, order_date: 2010/2/2}
+item[[customer, [2], order, [22], item, [221]]]: {hkey: [customer, [2], order, [22], item, [221]], iid: 221, oid: 22, unit_price: 9.0, quantity: 9}
+item[[customer, [2], order, [22], item, [222]]]: {hkey: [customer, [2], order, [22], item, [222]], iid: 222, oid: 22, unit_price: 10.0, quantity: 10}
+co[[customer, [2], order, [23]]]: {hkey: [customer, [2], order, [23]], cid: 2, name: david, oid: 23, order_date: 2010/2/3}
+item[[customer, [2], order, [23], item, [231]]]: {hkey: [customer, [2], order, [23], item, [231]], iid: 231, oid: 23, unit_price: 11.0, quantity: 11}
+item[[customer, [2], order, [23], item, [232]]]: {hkey: [customer, [2], order, [23], item, [232]], iid: 232, oid: 23, unit_price: 12.0, quantity: 12}
+co[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1}
+item[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+item[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+co[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2}
+item[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+item[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+co[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3}
+item[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+item[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+co[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack, oid: None, order_date: None}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Flatten customer and order, dropping customers with no orders:
+co[[customer, [1], order, [11]]]: {hkey: [customer, [1], order, [11]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1}
+item[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+item[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+co[[customer, [1], order, [12]]]: {hkey: [customer, [1], order, [12]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2}
+item[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+item[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+co[[customer, [1], order, [13]]]: {hkey: [customer, [1], order, [13]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3}
+item[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+item[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+co[[customer, [2], order, [21]]]: {hkey: [customer, [2], order, [21]], cid: 2, name: david, oid: 21, order_date: 2010/2/1}
+item[[customer, [2], order, [21], item, [211]]]: {hkey: [customer, [2], order, [21], item, [211]], iid: 211, oid: 21, unit_price: 7.0, quantity: 7}
+item[[customer, [2], order, [21], item, [212]]]: {hkey: [customer, [2], order, [21], item, [212]], iid: 212, oid: 21, unit_price: 8.0, quantity: 8}
+co[[customer, [2], order, [22]]]: {hkey: [customer, [2], order, [22]], cid: 2, name: david, oid: 22, order_date: 2010/2/2}
+item[[customer, [2], order, [22], item, [221]]]: {hkey: [customer, [2], order, [22], item, [221]], iid: 221, oid: 22, unit_price: 9.0, quantity: 9}
+item[[customer, [2], order, [22], item, [222]]]: {hkey: [customer, [2], order, [22], item, [222]], iid: 222, oid: 22, unit_price: 10.0, quantity: 10}
+co[[customer, [2], order, [23]]]: {hkey: [customer, [2], order, [23]], cid: 2, name: david, oid: 23, order_date: 2010/2/3}
+item[[customer, [2], order, [23], item, [231]]]: {hkey: [customer, [2], order, [23], item, [231]], iid: 231, oid: 23, unit_price: 11.0, quantity: 11}
+item[[customer, [2], order, [23], item, [232]]]: {hkey: [customer, [2], order, [23], item, [232]], iid: 232, oid: 23, unit_price: 12.0, quantity: 12}
+co[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1}
+item[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+item[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+co[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2}
+item[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+item[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+co[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3}
+item[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+item[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Flatten customer and order, keeping orders with no customers:
+co[[customer, [-1], order, [34]]]: {hkey: [customer, [-1], order, [34]], cid: -1, name: None, oid: 34, order_date: 2010/9/9}
+co[[customer, [1], order, [11]]]: {hkey: [customer, [1], order, [11]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1}
+item[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+item[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+co[[customer, [1], order, [12]]]: {hkey: [customer, [1], order, [12]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2}
+item[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+item[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+co[[customer, [1], order, [13]]]: {hkey: [customer, [1], order, [13]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3}
+item[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+item[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+co[[customer, [2], order, [21]]]: {hkey: [customer, [2], order, [21]], cid: 2, name: david, oid: 21, order_date: 2010/2/1}
+item[[customer, [2], order, [21], item, [211]]]: {hkey: [customer, [2], order, [21], item, [211]], iid: 211, oid: 21, unit_price: 7.0, quantity: 7}
+item[[customer, [2], order, [21], item, [212]]]: {hkey: [customer, [2], order, [21], item, [212]], iid: 212, oid: 21, unit_price: 8.0, quantity: 8}
+co[[customer, [2], order, [22]]]: {hkey: [customer, [2], order, [22]], cid: 2, name: david, oid: 22, order_date: 2010/2/2}
+item[[customer, [2], order, [22], item, [221]]]: {hkey: [customer, [2], order, [22], item, [221]], iid: 221, oid: 22, unit_price: 9.0, quantity: 9}
+item[[customer, [2], order, [22], item, [222]]]: {hkey: [customer, [2], order, [22], item, [222]], iid: 222, oid: 22, unit_price: 10.0, quantity: 10}
+co[[customer, [2], order, [23]]]: {hkey: [customer, [2], order, [23]], cid: 2, name: david, oid: 23, order_date: 2010/2/3}
+item[[customer, [2], order, [23], item, [231]]]: {hkey: [customer, [2], order, [23], item, [231]], iid: 231, oid: 23, unit_price: 11.0, quantity: 11}
+item[[customer, [2], order, [23], item, [232]]]: {hkey: [customer, [2], order, [23], item, [232]], iid: 232, oid: 23, unit_price: 12.0, quantity: 12}
+co[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1}
+item[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+item[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+co[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2}
+item[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+item[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+co[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3}
+item[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+item[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Flatten customer and order and drop items:
+co[[customer, [1], order, [11]]]: {hkey: [customer, [1], order, [11]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1}
+co[[customer, [1], order, [12]]]: {hkey: [customer, [1], order, [12]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2}
+co[[customer, [1], order, [13]]]: {hkey: [customer, [1], order, [13]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3}
+co[[customer, [2], order, [21]]]: {hkey: [customer, [2], order, [21]], cid: 2, name: david, oid: 21, order_date: 2010/2/1}
+co[[customer, [2], order, [22]]]: {hkey: [customer, [2], order, [22]], cid: 2, name: david, oid: 22, order_date: 2010/2/2}
+co[[customer, [2], order, [23]]]: {hkey: [customer, [2], order, [23]], cid: 2, name: david, oid: 23, order_date: 2010/2/3}
+co[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1}
+co[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2}
+co[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3}
+co[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack, oid: None, order_date: None}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Find the customer named 'jack' and flatten:
+co[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack, oid: None, order_date: None}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Find the customer named 'jack' and flatten, dropping jack if he has no orders (he doesn't):
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Flatten everything using left join:
+coi[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1, iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+coi[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1, iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+coi[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2, iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+coi[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2, iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+coi[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3, iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+coi[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3, iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+coi[[customer, [2], order, [21], item, [211]]]: {hkey: [customer, [2], order, [21], item, [211]], cid: 2, name: david, oid: 21, order_date: 2010/2/1, iid: 211, oid: 21, unit_price: 7.0, quantity: 7}
+coi[[customer, [2], order, [21], item, [212]]]: {hkey: [customer, [2], order, [21], item, [212]], cid: 2, name: david, oid: 21, order_date: 2010/2/1, iid: 212, oid: 21, unit_price: 8.0, quantity: 8}
+coi[[customer, [2], order, [22], item, [221]]]: {hkey: [customer, [2], order, [22], item, [221]], cid: 2, name: david, oid: 22, order_date: 2010/2/2, iid: 221, oid: 22, unit_price: 9.0, quantity: 9}
+coi[[customer, [2], order, [22], item, [222]]]: {hkey: [customer, [2], order, [22], item, [222]], cid: 2, name: david, oid: 22, order_date: 2010/2/2, iid: 222, oid: 22, unit_price: 10.0, quantity: 10}
+coi[[customer, [2], order, [23], item, [231]]]: {hkey: [customer, [2], order, [23], item, [231]], cid: 2, name: david, oid: 23, order_date: 2010/2/3, iid: 231, oid: 23, unit_price: 11.0, quantity: 11}
+coi[[customer, [2], order, [23], item, [232]]]: {hkey: [customer, [2], order, [23], item, [232]], cid: 2, name: david, oid: 23, order_date: 2010/2/3, iid: 232, oid: 23, unit_price: 12.0, quantity: 12}
+coi[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1, iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+coi[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1, iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+coi[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2, iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+coi[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2, iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+coi[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3, iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+coi[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3, iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+coi[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack, oid: None, order_date: None, iid: None, oid: None, unit_price: None, quantity: None}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Flatten everything using inner join:
+coi[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1, iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+coi[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1, iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+coi[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2, iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+coi[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2, iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+coi[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3, iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+coi[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3, iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+coi[[customer, [2], order, [21], item, [211]]]: {hkey: [customer, [2], order, [21], item, [211]], cid: 2, name: david, oid: 21, order_date: 2010/2/1, iid: 211, oid: 21, unit_price: 7.0, quantity: 7}
+coi[[customer, [2], order, [21], item, [212]]]: {hkey: [customer, [2], order, [21], item, [212]], cid: 2, name: david, oid: 21, order_date: 2010/2/1, iid: 212, oid: 21, unit_price: 8.0, quantity: 8}
+coi[[customer, [2], order, [22], item, [221]]]: {hkey: [customer, [2], order, [22], item, [221]], cid: 2, name: david, oid: 22, order_date: 2010/2/2, iid: 221, oid: 22, unit_price: 9.0, quantity: 9}
+coi[[customer, [2], order, [22], item, [222]]]: {hkey: [customer, [2], order, [22], item, [222]], cid: 2, name: david, oid: 22, order_date: 2010/2/2, iid: 222, oid: 22, unit_price: 10.0, quantity: 10}
+coi[[customer, [2], order, [23], item, [231]]]: {hkey: [customer, [2], order, [23], item, [231]], cid: 2, name: david, oid: 23, order_date: 2010/2/3, iid: 231, oid: 23, unit_price: 11.0, quantity: 11}
+coi[[customer, [2], order, [23], item, [232]]]: {hkey: [customer, [2], order, [23], item, [232]], cid: 2, name: david, oid: 23, order_date: 2010/2/3, iid: 232, oid: 23, unit_price: 12.0, quantity: 12}
+coi[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1, iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+coi[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1, iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+coi[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2, iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+coi[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2, iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+coi[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3, iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+coi[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3, iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Flatten everything, keeping customers with no orders, and orders with no customers:
+coi[[customer, [-1], order, [34]]]: {hkey: [customer, [-1], order, [34]], cid: -1, name: None, oid: 34, order_date: 2010/9/9, iid: None, oid: 34, unit_price: None, quantity: None}
+coi[[customer, [1], order, [11], item, [111]]]: {hkey: [customer, [1], order, [11], item, [111]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1, iid: 111, oid: 11, unit_price: 1.0, quantity: 1}
+coi[[customer, [1], order, [11], item, [112]]]: {hkey: [customer, [1], order, [11], item, [112]], cid: 1, name: ori, oid: 11, order_date: 2010/1/1, iid: 112, oid: 11, unit_price: 2.0, quantity: 2}
+coi[[customer, [1], order, [12], item, [121]]]: {hkey: [customer, [1], order, [12], item, [121]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2, iid: 121, oid: 12, unit_price: 3.0, quantity: 3}
+coi[[customer, [1], order, [12], item, [122]]]: {hkey: [customer, [1], order, [12], item, [122]], cid: 1, name: ori, oid: 12, order_date: 2010/1/2, iid: 122, oid: 12, unit_price: 4.0, quantity: 4}
+coi[[customer, [1], order, [13], item, [131]]]: {hkey: [customer, [1], order, [13], item, [131]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3, iid: 131, oid: 13, unit_price: 5.0, quantity: 5}
+coi[[customer, [1], order, [13], item, [132]]]: {hkey: [customer, [1], order, [13], item, [132]], cid: 1, name: ori, oid: 13, order_date: 2010/1/3, iid: 132, oid: 13, unit_price: 6.0, quantity: 6}
+coi[[customer, [2], order, [21], item, [211]]]: {hkey: [customer, [2], order, [21], item, [211]], cid: 2, name: david, oid: 21, order_date: 2010/2/1, iid: 211, oid: 21, unit_price: 7.0, quantity: 7}
+coi[[customer, [2], order, [21], item, [212]]]: {hkey: [customer, [2], order, [21], item, [212]], cid: 2, name: david, oid: 21, order_date: 2010/2/1, iid: 212, oid: 21, unit_price: 8.0, quantity: 8}
+coi[[customer, [2], order, [22], item, [221]]]: {hkey: [customer, [2], order, [22], item, [221]], cid: 2, name: david, oid: 22, order_date: 2010/2/2, iid: 221, oid: 22, unit_price: 9.0, quantity: 9}
+coi[[customer, [2], order, [22], item, [222]]]: {hkey: [customer, [2], order, [22], item, [222]], cid: 2, name: david, oid: 22, order_date: 2010/2/2, iid: 222, oid: 22, unit_price: 10.0, quantity: 10}
+coi[[customer, [2], order, [23], item, [231]]]: {hkey: [customer, [2], order, [23], item, [231]], cid: 2, name: david, oid: 23, order_date: 2010/2/3, iid: 231, oid: 23, unit_price: 11.0, quantity: 11}
+coi[[customer, [2], order, [23], item, [232]]]: {hkey: [customer, [2], order, [23], item, [232]], cid: 2, name: david, oid: 23, order_date: 2010/2/3, iid: 232, oid: 23, unit_price: 12.0, quantity: 12}
+coi[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1, iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+coi[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1, iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+coi[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2, iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+coi[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2, iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+coi[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3, iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+coi[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3, iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+coi[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack, oid: None, order_date: None, iid: None, oid: None, unit_price: None, quantity: None}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Sort customers by name:
+customer[[customer, [2]]]: {hkey: [customer, [2]], cid: 2, name: david}
+customer[[customer, [4]]]: {hkey: [customer, [4]], cid: 4, name: jack}
+customer[[customer, [1]]]: {hkey: [customer, [1]], cid: 1, name: ori}
+customer[[customer, [3]]]: {hkey: [customer, [3]], cid: 3, name: tom}
+random: 1		sequential: 32		sort: 4
+--------------------------------------------------------------------------------
+Project items twice:
+q: {quantity: 1}
+q: {quantity: 2}
+q: {quantity: 3}
+q: {quantity: 4}
+q: {quantity: 5}
+q: {quantity: 6}
+q: {quantity: 7}
+q: {quantity: 8}
+q: {quantity: 9}
+q: {quantity: 10}
+q: {quantity: 11}
+q: {quantity: 12}
+q: {quantity: 13}
+q: {quantity: 14}
+q: {quantity: 15}
+q: {quantity: 16}
+q: {quantity: 17}
+q: {quantity: 18}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+Select after Flatten:
+co[[customer, [3], order, [31]]]: {hkey: [customer, [3], order, [31]], cid: 3, name: tom, oid: 31, order_date: 2010/3/1}
+item[[customer, [3], order, [31], item, [311]]]: {hkey: [customer, [3], order, [31], item, [311]], iid: 311, oid: 31, unit_price: 13.0, quantity: 13}
+item[[customer, [3], order, [31], item, [312]]]: {hkey: [customer, [3], order, [31], item, [312]], iid: 312, oid: 31, unit_price: 14.0, quantity: 14}
+co[[customer, [3], order, [32]]]: {hkey: [customer, [3], order, [32]], cid: 3, name: tom, oid: 32, order_date: 2010/3/2}
+item[[customer, [3], order, [32], item, [321]]]: {hkey: [customer, [3], order, [32], item, [321]], iid: 321, oid: 32, unit_price: 15.0, quantity: 15}
+item[[customer, [3], order, [32], item, [322]]]: {hkey: [customer, [3], order, [32], item, [322]], iid: 322, oid: 32, unit_price: 16.0, quantity: 16}
+co[[customer, [3], order, [33]]]: {hkey: [customer, [3], order, [33]], cid: 3, name: tom, oid: 33, order_date: 2010/3/3}
+item[[customer, [3], order, [33], item, [331]]]: {hkey: [customer, [3], order, [33], item, [331]], iid: 331, oid: 33, unit_price: 17.0, quantity: 17}
+item[[customer, [3], order, [33], item, [332]]]: {hkey: [customer, [3], order, [33], item, [332]], iid: 332, oid: 33, unit_price: 18.0, quantity: 18}
+random: 1		sequential: 32		sort: 0
+--------------------------------------------------------------------------------
+select c.name, o.order_date from customer c, order o where o.cid = c.cid and o.order_date like '2010/1/%':
+nd: {name: ori, order_date: 2010/1/1}
+nd: {name: ori, order_date: 2010/1/2}
+nd: {name: ori, order_date: 2010/1/3}
+random: 1		sequential: 32		sort: 0
