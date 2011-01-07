@@ -301,6 +301,7 @@ public class SchemaDef {
         if (currentTable.primaryKey.isEmpty()) {
             // Add our own primary key
             addColumn(Column.AKIBAN_PK_NAME, "BIGINT", null, null);
+            currentColumn.nullable = false;
             addIndex(Column.AKIBAN_PK_NAME);
             addIndexColumn(Column.AKIBAN_PK_NAME);
             addPrimaryKeyColumn(Column.AKIBAN_PK_NAME);

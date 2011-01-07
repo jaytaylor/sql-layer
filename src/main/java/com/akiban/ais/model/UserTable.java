@@ -331,6 +331,7 @@ public class UserTable extends Table
                                       Column.AKIBAN_PK_NAME,
                                       getColumns().size(),
                                       Types.BIGINT); // adds column to table
+        pkColumn.setNullable(false);
         // Create an index for the PK column
         int maxIndexId = -1;
         for (Index index : getIndexes()) {

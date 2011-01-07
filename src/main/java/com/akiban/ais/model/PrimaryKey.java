@@ -2,7 +2,6 @@ package com.akiban.ais.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class PrimaryKey implements Serializable
@@ -22,7 +21,7 @@ public class PrimaryKey implements Serializable
         // A not-real primary key is one created by us for a table declared without a PK. We need a PK
         // so that rows of the table can have hkey values. A not-real primary key has a single column
         // that is not real.
-        return !(columns.size() == 1 && !columns.get(0).getRealColumn());
+        return !(columns.size() == 1 && !columns.get(0).isAkibanPKColumn());
     }
 
     public PrimaryKey()

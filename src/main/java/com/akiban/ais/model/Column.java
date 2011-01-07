@@ -413,7 +413,7 @@ public class Column implements Serializable, ModelNames
         return prefixSize;
     }
 
-    public Boolean getRealColumn()
+    public Boolean isAkibanPKColumn()
     {
         return columnName.equals(AKIBAN_PK_NAME);
     }
