@@ -95,8 +95,12 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @Override
     public String getDDLs(final Session session) throws InvalidOperationException {
         try {
+            // TODO - note: the boolean value determines whether the text
+            // of CREATE TABLE statements for group tables will be generated.
+            // Since Halo won't be used for queries, I'm setting this to false
+            // for now. -- Peter
             return schemaManager().schemaString(
-                    session, true);
+                    session, false);
         } catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
                     "Unexpected exception", e);

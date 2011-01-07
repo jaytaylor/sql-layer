@@ -75,12 +75,12 @@ public class TreeServiceImplTest extends CServerTestCase {
             final SortedMap<String, SchemaNode> result = treeService
                     .getSchemaMap();
             assertEquals(4, result.size()); // +1 for default in base properties
-            final String vs1 = treeService.volumeForSchema("drupalxx",
+            final String vs1 = treeService.volumeForTree("drupalxx",
                     "_schema_");
-            final String vs2 = treeService.volumeForSchema("liveops",
+            final String vs2 = treeService.volumeForTree("liveops",
                     "_schema_");
-            final String vs3 = treeService.volumeForSchema("tpcc", "_schema_");
-            final String vs4 = treeService.volumeForSchema("test42", "_schema_");
+            final String vs3 = treeService.volumeForTree("tpcc", "_schema_");
+            final String vs4 = treeService.volumeForTree("test42", "_schema_");
             assertTrue(vs1.contains("drupalxx.v0"));
             assertTrue(vs2.contains("liveops.v0"));
             assertTrue(vs3.contains("akiban_data"));

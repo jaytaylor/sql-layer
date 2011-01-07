@@ -36,8 +36,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private final static int MEGA = 1024 * 1024;
 
-    private final static int MAX_TABLES_PER_VOLUME = 100000;
-
     private static final Log LOG = LogFactory.getLog(TreeServiceImpl.class
             .getName());
 
@@ -347,8 +345,17 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     public Volume mappedVolume(final String schemaName, final String treeName)
             throws PersistitException {
         try {
-            final String vstring = volumeForSchema(schemaName, treeName);
+            final String vstring = volumeForTree(schemaName, treeName);
             final Volume volume = db.loadVolume(vstring);
+            if (SCHEMA_TREE_NAME.equals(treeName)) {
+                tableIdOffset(volume);
+            } else {
+                final Volume schemaVolume = mappedVolume(schemaName, SCHEMA_TREE_NAME);
+                int schemaTableId = tableIdOffset(schemaVolume);
+                synchronized(this) {
+                    translationMap.put(volume, schemaTableId);
+                }
+            }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
             throw new IllegalStateException(e);
@@ -373,7 +380,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         return list;
     }
 
-    String volumeForSchema(final String schemaName, final String treeName)
+    String volumeForTree(final String schemaName, final String treeName)
             throws InvalidVolumeSpecificationException {
         SchemaNode defaultSchemaNode = null;
         final String concatenatedName = schemaName + "/" + treeName;

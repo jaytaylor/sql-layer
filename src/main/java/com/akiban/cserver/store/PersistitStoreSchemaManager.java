@@ -1,6 +1,7 @@
 package com.akiban.cserver.store;
 
 import static com.akiban.ais.ddl.SchemaDef.CREATE_TABLE;
+import static com.akiban.cserver.service.tree.TreeService.AIS_BASE_TABLE_ID;
 import static com.akiban.cserver.service.tree.TreeService.SCHEMA_TREE_NAME;
 import static com.akiban.cserver.service.tree.TreeService.STATUS_TREE_NAME;
 
@@ -73,10 +74,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final static String CREATE_SCHEMA_IF_NOT_EXISTS = "create schema if not exists ";
 
     private final static String SEMI_COLON = ";";
-
-    private final static int AIS_BASE_TABLE_IDS = 1000000000;
-
-    private static final int GROUP_TABLE_ID_OFFSET = 100000000;
 
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiba_information_schema";
 
@@ -549,7 +546,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     final UserTable root = entry.getValue().getRoot();
                     final Integer rootId = idMap.get(root.getName());
                     assert rootId != null : "Group table with no root!";
-                    entry.getValue().setTableId(rootId + GROUP_TABLE_ID_OFFSET);
+                    entry.getValue().setTableId(
+                            TreeService.MAX_TABLES_PER_VOLUME - rootId);
                 }
 
             } catch (Exception e) {
@@ -557,9 +555,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 LOG.error("Exception while building new AIS", e);
                 return ais;
             }
-
+            //
             // Detect a race condition in which another schema change happened
             // during creation of the AIS. In that case, simple retry.
+            //
             synchronized (this) {
                 if (saveTimestamp == wasTimestamp
                         && aisTimestamp != saveTimestamp) {
@@ -703,7 +702,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final List<String> statements = new DDLGenerator()
                     .createAllGroupTables(ais);
             for (final String statement : statements) {
-                sb.append(statement).append(CServerUtil.NEW_LINE);
+                if (!statement.contains(AKIBAN_INFORMATION_SCHEMA)) {
+                    sb.append(statement).append(CServerUtil.NEW_LINE);
+                }
             }
         }
         return idMap;
@@ -745,7 +746,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static List<TableDefinition> readAisSchema() {
         List<TableDefinition> definitions = new ArrayList<TableDefinition>();
-        int tableId = AIS_BASE_TABLE_IDS;
+        int tableId = AIS_BASE_TABLE_ID;
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 CServer.class.getClassLoader()
                         .getResourceAsStream(AIS_DDL_NAME)));

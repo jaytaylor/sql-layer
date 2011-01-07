@@ -53,6 +53,7 @@ launch_service()
     fi
 
     if [ "x$foreground" != "x" ]; then
+        echo $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
     else
         # use log4j to log output
