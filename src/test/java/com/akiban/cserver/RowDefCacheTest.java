@@ -38,7 +38,7 @@ public class RowDefCacheTest
             "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`bb0`,`bb2`,`bb1`,`bb3`) REFERENCES `b` (`b3`,`b2`,`b4`,`b1`)",
             ") engine = akibandb;",
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef b = rowDefCache.getRowDef(tableName("b"));
         UserTable bTable = b.userTable();
         checkHKey(bTable.hKey(), bTable, bTable, "b3", bTable, "b2", bTable, "b4", bTable, "b1");
@@ -99,7 +99,7 @@ public class RowDefCacheTest
             "   constraint `__akiban_fk0` foreign key `akibafk` (id) references parent(id)",
             ") engine = akibandb;"
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef parent = rowDefCache.getRowDef(tableName("parent"));
         UserTable p = parent.userTable();
         checkHKey(p.hKey(), p, p, "id");
@@ -130,7 +130,7 @@ public class RowDefCacheTest
             "    unique key(d, b)",
             ");"
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef t = rowDefCache.getRowDef(tableName("t"));
         assertEquals(3, t.getHKeyDepth()); // t ordinal, c, a
         IndexDef index;
@@ -177,7 +177,7 @@ public class RowDefCacheTest
             "    constraint __akiban_io foreign key io(oid) references orders(oid)",
             ") engine = akibandb; "
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         IndexDef index;
         int[] fields;
         IndexDef.H2I[] indexKeyFields;
@@ -618,7 +618,7 @@ public class RowDefCacheTest
             "    constraint __akiban_io foreign key io(cid, oid) references orders(cid, oid)",
             ") engine = akibandb; "
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         IndexDef index;
         int[] fields;
         IndexDef.H2I[] indexKeyFields;
@@ -917,7 +917,7 @@ public class RowDefCacheTest
             "   constraint `__akiban_fk0` foreign key `akibafk` (b, a) references parent(b, a)",
             ") engine = akibandb;"
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef parent = rowDefCache.getRowDef(tableName("parent"));
         RowDef child = rowDefCache.getRowDef(tableName("child"));
         RowDef group = rowDefCache.getRowDef(parent.getGroupRowDefId());
@@ -1007,5 +1007,5 @@ public class RowDefCacheTest
     }
 
     private static final String SCHEMA = "schema";
-    private static final RowDefCacheFactory ROW_DEF_CACHE_FACTORY = new RowDefCacheFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
 }

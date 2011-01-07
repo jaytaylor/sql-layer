@@ -1,9 +1,8 @@
 import operator
-import db.map
 import db.row
 
-Operator = operator.Operator
-Map = db.map.Map
+Pending = operator.Pending
+UnaryOperator = operator.UnaryOperator
 Row = db.row.Row
 
 KEEP_PARENT = 0x01
@@ -13,41 +12,10 @@ LEFT_JOIN =   0x08
 RIGHT_JOIN =  0x10
 DEFAULT = LEFT_JOIN
 
-class _Node(object):
-
-    def __init__(self, object):
-        self.object = object
-        self.next = None
-
-class _Pending(object):
-
-    def __init__(self):
-        self.head = None
-        self.tail = None
-
-    def add(self, object):
-        node = _Node(object)
-        if self.head is None:
-            self.head = node
-            self.tail = node
-        else:
-            self.tail.next = node
-            self.tail = node
-
-    def take(self):
-        object = None
-        if self.head:
-            object = self.head.object
-            self.head = self.head.next
-            if self.head is None:
-                self.tail = None
-        return object
-
-class Flatten(Operator):
+class Flatten(UnaryOperator):
 
     def __init__(self, input, parent_type, child_type, flatten_type, flags = DEFAULT):
-        Operator.__init__(self)
-        self._input = input
+        UnaryOperator.__init__(self, input)
         self._parent_type = parent_type
         self._child_type = child_type
         self._parent = None
@@ -66,50 +34,12 @@ class Flatten(Operator):
         self._keep_child = (flags & KEEP_CHILD) != 0
         self._left_join = (flags & LEFT_JOIN) != 0
         self._right_join = (flags & RIGHT_JOIN) != 0
-        self._pending = _Pending()
-
-    def open(self):
-        self._input.open()
+        self._pending = Pending()
 
     def next(self):
         output_row = self.pending()
         if output_row is None:
-            input_row = self._input.next()
-            while output_row is None and input_row is not None:
-                if input_row.rowtype is self._parent_type:
-                    if self._keep_parent:
-                        self._pending.add(input_row)
-                    if self._parent:
-                        self.left_join_row()
-                    self._parent = input_row
-                    self._child = None
-                    self._childless_parent = True
-                elif input_row.rowtype is self._child_type:
-                    if self._keep_child:
-                        self._pending.add(input_row)
-                    self._child = input_row
-                    if self._parent and self._parent.ancestor_of(self._child):
-                        # child is not an orphan
-                        self._childless_parent = False
-                        self.inner_join_row()
-                    else:
-                        # child is an orphan
-                        self._parent = None
-                        self._childless_parent = None
-                        self.right_join_row()
-                else:
-                    self._pending.add(input_row)
-                    if self._parent_type.ancestor_of(input_row.rowtype):
-                        if self._parent and not self._parent.ancestor_of(input_row):
-                            self._parent = None
-                            self._childless_parent = None
-                        if (self._child_type.ancestor_of(input_row.rowtype) and
-                            self._child and
-                            not self._child.ancestor_of(input_row)):
-                            self._child = None
-                output_row = self.pending()
-                if output_row is None:
-                    input_row = self._input.next()
+            output_row = UnaryOperator.next(self)
         # child rows are processed immediately. parent rows are not, 
         # because when seen, we don't know if the next row will be another
         # parent, a child, a row of child type that is not actually a child,
@@ -124,12 +54,41 @@ class Flatten(Operator):
             self._child = None
             self._childless_parent = None
         return output_row
+        
 
-    def close(self):
-        self._input.close()
-
-    def stats(self):
-        return self._input.stats()
+    def handle_row(self, row):
+        if row.rowtype is self._parent_type:
+            if self._keep_parent:
+                self._pending.add(row)
+            if self._parent:
+                self.left_join_row()
+            self._parent = row
+            self._child = None
+            self._childless_parent = True
+        elif row.rowtype is self._child_type:
+            if self._keep_child:
+                self._pending.add(row)
+            self._child = row
+            if self._parent and self._parent.ancestor_of(self._child):
+                # child is not an orphan
+                self._childless_parent = False
+                self.inner_join_row()
+            else:
+                # child is an orphan
+                self._parent = None
+                self._childless_parent = None
+                self.right_join_row()
+        else:
+            self._pending.add(row)
+            if self._parent_type.ancestor_of(row.rowtype):
+                if self._parent and not self._parent.ancestor_of(row):
+                    self._parent = None
+                    self._childless_parent = None
+                if (self._child_type.ancestor_of(row.rowtype) and
+                    self._child and
+                    not self._child.ancestor_of(row)):
+                    self._child = None
+        return self.pending()
 
     def pending(self):
         return self._pending.take()

@@ -150,7 +150,7 @@ public class UserTable extends Table
 
     public synchronized PrimaryKey getPrimaryKey()
     {
-
+        // Creates a real PK if possible.
         if (primaryKey == null) {
             // Find primary key index
             Index primaryKeyIndex = null;
@@ -164,6 +164,25 @@ public class UserTable extends Table
             }
         }
         return primaryKey;
+    }
+
+    public synchronized void endTable()
+    {
+        // Creates a PK for a pk-less table.
+        if (getPrimaryKey() == null) {
+            // Find primary key index
+            Index primaryKeyIndex = null;
+            for (Index index : getIndexes()) {
+                if (index.isPrimaryKey()) {
+                    primaryKeyIndex = index;
+                }
+            }
+            if (primaryKeyIndex == null) {
+                primaryKeyIndex = createAkibanPrimaryKeyIndex();
+            }
+            assert primaryKeyIndex != null : this;
+            primaryKey = new PrimaryKey(primaryKeyIndex);
+        }
     }
 
     public Integer getDepth()
@@ -223,12 +242,7 @@ public class UserTable extends Table
             for (HKeySegment userHKeySegment : hKey().segments()) {
                 HKeySegment branchHKeySegment = branchHKey.addSegment(userHKeySegment.table());
                 for (HKeyColumn userHKeyColumn : userHKeySegment.columns()) {
-                    Column userColumn = userHKeyColumn.column();
-                    if (userColumn == null) {
-                        branchHKeySegment.addTableCounter(userHKeyColumn.pkLessTable());
-                    } else {
-                        branchHKeySegment.addColumn(userColumn.getGroupColumn());
-                    }
+                    branchHKeySegment.addColumn(userHKeyColumn.column().getGroupColumn());
                 }
             }
         }
@@ -258,12 +272,9 @@ public class UserTable extends Table
     {
         for (HKeySegment segment : hKey().segments()) {
             for (HKeyColumn hKeyColumn : segment.columns()) {
-                Column column = hKeyColumn.column();
-                if (column != null) {
-                    if (column.getTable() != this) {
-                        return false;
-                    }
-                } // else: PK-less table
+                if (hKeyColumn.column().getTable() != this) {
+                    return false;
+                }
             }
         }
         return true;
@@ -306,15 +317,37 @@ public class UserTable extends Table
         }
         // This table's hkey also includes any PK columns not already included.
         HKeySegment newSegment = hKey.addSegment(this);
-        if (getPrimaryKey() == null) {
-            newSegment.addTableCounter(this);
-        } else {
-            for (Column pkColumn : getPrimaryKey().getColumns()) {
-                if (!hKeyColumns.contains(pkColumn)) {
-                    newSegment.addColumn(pkColumn);
-                }
+        for (Column pkColumn : getPrimaryKey().getColumns()) {
+            if (!hKeyColumns.contains(pkColumn)) {
+                newSegment.addColumn(pkColumn);
             }
         }
+    }
+
+    private Index createAkibanPrimaryKeyIndex()
+    {
+        // Create a column for a PK
+        Column pkColumn = Column.create(this,
+                                      Column.AKIBAN_PK_NAME,
+                                      getColumns().size(),
+                                      Types.BIGINT); // adds column to table
+        pkColumn.setNullable(false);
+        // Create an index for the PK column
+        int maxIndexId = -1;
+        for (Index index : getIndexes()) {
+            if (index.getIndexId() > maxIndexId) {
+                maxIndexId = index.getIndexId();
+            }
+        }
+        Index pkIndex = Index.create(ais,
+                                     this,
+                                     Column.AKIBAN_PK_NAME,
+                                     maxIndexId + 1,
+                                     true,
+                                     Index.PRIMARY_KEY_CONSTRAINT);
+        IndexColumn pkIndexColumn = new IndexColumn(pkIndex, pkColumn, 0, true, null);
+        pkIndex.addColumn(pkIndexColumn);
+        return pkIndex;
     }
 
     // State

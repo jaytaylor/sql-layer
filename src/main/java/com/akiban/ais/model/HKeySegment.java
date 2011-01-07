@@ -43,14 +43,6 @@ public class HKeySegment
         return hKeyColumn;
     }
 
-    public HKeyColumn addTableCounter(UserTable table)
-    {
-        assert table != null;
-        HKeyColumn hKeyColumn = new HKeyColumn(this, table);
-        columns.add(hKeyColumn);
-        return hKeyColumn;
-    }
-
     public HKeySegment()
     {}
 

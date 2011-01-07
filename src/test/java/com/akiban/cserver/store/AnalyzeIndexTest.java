@@ -3,6 +3,7 @@ package com.akiban.cserver.store;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import com.akiban.ais.model.Index;
 import org.junit.Test;
 
 import com.akiban.cserver.IndexDef;
@@ -45,7 +46,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
         {
             // Checks an hkeyEquivalent index
             //
-            final int indexId = findIndexId(rowDef, "PRIMARY");
+            final int indexId = findIndexId(rowDef, Index.PRIMARY_KEY_CONSTRAINT);
             TableStatistics.Histogram histogram = null;
             for (TableStatistics.Histogram h : ts.getHistogramList()) {
                 if (h.getIndexId() == indexId) {

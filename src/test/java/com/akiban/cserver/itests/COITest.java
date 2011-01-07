@@ -42,7 +42,7 @@ public final class COITest extends ApiTestBase {
             PrimaryKey pk = cTable.getPrimaryKey();
             List<Column> expectedPkCols = Arrays.asList( cTable.getColumn("cid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
-            assertSame("pk index", cTable.getIndex("PRIMARY"), pk.getIndex());
+            assertSame("pk index", cTable.getIndex(Index.PRIMARY_KEY_CONSTRAINT), pk.getIndex());
             assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
 
             assertEquals("parent join", null, cTable.getParentJoin());
@@ -55,7 +55,7 @@ public final class COITest extends ApiTestBase {
             PrimaryKey pk = oTable.getPrimaryKey();
             List<Column> expectedPkCols = Arrays.asList( oTable.getColumn("oid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
-            assertSame("pk index", oTable.getIndex("PRIMARY"), pk.getIndex());
+            assertSame("pk index", oTable.getIndex(Index.PRIMARY_KEY_CONSTRAINT), pk.getIndex());
             assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
 
             assertNotNull("parent join is null", oTable.getParentJoin());
@@ -69,7 +69,7 @@ public final class COITest extends ApiTestBase {
             PrimaryKey pk = iTable.getPrimaryKey();
             List<Column> expectedPkCols = Arrays.asList( iTable.getColumn("iid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
-            assertSame("pk index", iTable.getIndex("PRIMARY"), pk.getIndex());
+            assertSame("pk index", iTable.getIndex(Index.PRIMARY_KEY_CONSTRAINT), pk.getIndex());
             assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
 
             assertNotNull("parent join is null", iTable.getParentJoin());

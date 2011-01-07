@@ -5,7 +5,7 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.store.PersistitStoreTableManager;
 import com.persistit.exception.PersistitException;
 
-public class RowDefCacheFactory
+public class SchemaFactory
 {
     public RowDefCache rowDefCache(String ddl) throws Exception
     {
@@ -14,15 +14,20 @@ public class RowDefCacheFactory
 
     public RowDefCache rowDefCache(String[] ddl) throws Exception
     {
+        AkibaInformationSchema ais = ais(ddl);
+        RowDefCache rowDefCache = new FakeRowDefCache();
+        rowDefCache.setAIS(ais);
+        rowDefCache.fixUpOrdinals(null);
+        return rowDefCache;
+    }
+
+    public AkibaInformationSchema ais(String[] ddl) throws Exception
+    {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
         }
-        RowDefCache rowDefCache = new FakeRowDefCache();
-        AkibaInformationSchema ais = new DDLSource().buildAISFromString(buffer.toString());
-        rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinals(null);
-        return rowDefCache;
+        return new DDLSource().buildAISFromString(buffer.toString());
     }
 
     private static class FakeRowDefCache extends RowDefCache

@@ -492,7 +492,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         // Store.truncate doesn't work well, so we have to actually scan the rows
         TableName tableName = tableId.getTableName(idResolver());
-        Index pkIndex = store().getAis().getTable(tableName).getIndex("PRIMARY");
+        Index pkIndex = store().getAis().getTable(tableName).getIndex(Index.PRIMARY_KEY_CONSTRAINT);
         assert pkIndex.isPrimaryKey() : pkIndex;
         Set<ColumnId> pkColumns = new HashSet<ColumnId>();
         for (IndexColumn column : pkIndex.getColumns()) {

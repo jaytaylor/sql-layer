@@ -1,6 +1,7 @@
 package com.akiban.ais.model.staticgrouping;
 
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.Index;
 import org.junit.Test;
 
 import java.util.List;
@@ -85,22 +86,22 @@ public class GroupsBuilderTest {
 
         aisBuilder.userTable("s", "customer");
         aisBuilder.column("s", "customer", "id", 0, "INT", 4L, null, false, true, null, null);
-        aisBuilder.index("s", "customer", "PRIMARY", true, "PRIMARY");
-        aisBuilder.indexColumn("s", "customer", "PRIMARY", "id", 0, true, null);
+        aisBuilder.index("s", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        aisBuilder.indexColumn("s", "customer", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
 
         aisBuilder.userTable("s", "order");
         aisBuilder.column("s", "order", "id", 0, "INT", 4L, null, false, true, null, null);
         aisBuilder.column("s", "order", "cid", 0, "INT", 4L, null, false, false, null, null);
-        aisBuilder.index("s", "order", "PRIMARY", true, "PRIMARY");
-        aisBuilder.indexColumn("s", "order", "PRIMARY", "id", 0, true, null);
+        aisBuilder.index("s", "order", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        aisBuilder.indexColumn("s", "order", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         aisBuilder.joinTables("join3", "s", "customer", "s", "order");
         aisBuilder.joinColumns("join3", "s", "customer", "id", "s", "order", "cid");
 
         aisBuilder.userTable("s", "item");
         aisBuilder.column("s", "item", "id", 0, "INT", 4L, null, false, true, null, null);
         aisBuilder.column("s", "item", "oid", 0, "INT", 4L, null, false, false, null, null);
-        aisBuilder.index("s", "item", "PRIMARY", true, "PRIMARY");
-        aisBuilder.indexColumn("s", "item", "PRIMARY", "id", 0, true, null);
+        aisBuilder.index("s", "item", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        aisBuilder.indexColumn("s", "item", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
         aisBuilder.joinTables("join2", "s", "order", "s", "item");
         aisBuilder.joinColumns("join2", "s", "order", "id", "s", "item", "oid");
 

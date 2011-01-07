@@ -88,8 +88,7 @@ public class PersistitStoreIndexManager {
                 // Remove previous analysis
                 //
                 try {
-                    store.constructHKey(analysisEx, indexAnalysisRowDef,
-                            rowData);
+                    store.constructHKey(analysisEx, indexAnalysisRowDef, rowData, false);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {
@@ -192,8 +191,7 @@ public class PersistitStoreIndexManager {
                     // Remove previous analysis
                     //
                     try {
-                        store.constructHKey(analysisEx, indexAnalysisRowDef,
-                                rowData);
+                        store.constructHKey(analysisEx, indexAnalysisRowDef, rowData, false);
                         analysisEx.getKey().cut();
                         analysisEx.remove(Key.GT);
                     } catch (PersistitException e) {

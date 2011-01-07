@@ -365,7 +365,7 @@ public class PersistitStore implements CServerConstants, Store {
      * @throws PersistitException
      * @throws InvalidOperationException
      */
-    void constructHKey(Exchange hEx, RowDef rowDef, RowData rowData)
+    void constructHKey(Exchange hEx, RowDef rowDef, RowData rowData, boolean insertingRow)
         throws PersistitException, InvalidOperationException
     {
         Key hKey = hEx.getKey();
@@ -399,13 +399,16 @@ public class PersistitStore implements CServerConstants, Store {
             for (int c = 0; c < segmentColumns.size(); c++) {
                 HKeyColumn segmentColumn = segmentColumns.get(c);
                 Column column = segmentColumn.column();
-                if (column == null) {
+                FieldDef fieldDef = fieldDefs[column.getPosition()];
+                if (insertingRow && column.isAkibanPKColumn()) {
                     // Must be a PK-less table. Use unique id from TableStatus.
-                    assert segmentColumn.pkLessTable().getTableId() == segmentRowDef.getRowDefId();
                     TableStatus tableStatus = tableManager.getTableStatus(segmentRowDef.getRowDefId());
-                    hKey.append(tableStatus.newUniqueId());
+                    long rowId = tableStatus.newUniqueId();
+                    hKey.append(rowId);
+                    // Write rowId into the value part of the row also.
+                    rowData.updateNonNullLong(fieldDef, rowId);
                 } else {
-                    appendKeyField(hKey, fieldDefs[column.getPosition()], rowData);
+                    appendKeyField(hKey, fieldDef, rowData);
                 }
             }
         }
@@ -750,7 +753,7 @@ public class PersistitStore implements CServerConstants, Store {
                     // Does the heavy lifting of looking up the full hkey in
                     // parent's primary index if necessary.
                     //
-                    constructHKey(hEx, rowDef, rowData);
+                    constructHKey(hEx, rowDef, rowData, true);
 
                     if (hEx.isValueDefined()) {
                         throw new InvalidOperationException(
@@ -887,7 +890,7 @@ public class PersistitStore implements CServerConstants, Store {
                 try {
                     final TableStatus ts = checkTableStatus(rowDefId);
 
-                    constructHKey(hEx, rowDef, rowData);
+                    constructHKey(hEx, rowDef, rowData, false);
                     hEx.fetch();
                     //
                     // Verify that the row exists
@@ -984,7 +987,7 @@ public class PersistitStore implements CServerConstants, Store {
                 transaction.begin();
                 try {
                     final TableStatus ts = checkTableStatus(rowDefId);
-                    constructHKey(hEx, rowDef, oldRowData);
+                    constructHKey(hEx, rowDef, oldRowData, false);
                     hEx.fetch();
                     //
                     // Verify that the row exists

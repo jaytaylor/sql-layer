@@ -32,13 +32,6 @@ public class RowDef {
     private int ordinal;
 
     /**
-     * Field(s) that constitute the primary key for this table. Must not be
-     * empty; will usually have one element. Multiple elements define a compound
-     * primary key.
-     */
-    private int[] pkFields;
-
-    /**
      * Field(s) that constitute the foreign key by which this row is joined to
      * its parent table.
      */
@@ -171,14 +164,6 @@ public class RowDef {
         for (int i = 0; i < fieldDefs.length; i++) {
             sb.append(i == 0 ? "[" : ",");
             sb.append(fieldDefs[i].getType());
-            if (pkFields != null) {
-                for (int j = 0; j < pkFields.length; j++) {
-                    if (pkFields[j] == i) {
-                        sb.append("*");
-                        break;
-                    }
-                }
-            }
             if (parentJoinFields != null) {
                 for (int j = 0; j < parentJoinFields.length; j++) {
                     if (parentJoinFields[j] == i) {
@@ -442,10 +427,6 @@ public class RowDef {
         this.parentJoinFields = parentJoinFields;
     }
 
-    public void setPkFields(int[] pkFields) {
-        this.pkFields = pkFields;
-    }
-
     public void setAutoIncrementField(int autoIncrementField) {
         this.autoIncrementField = autoIncrementField;
     }
@@ -608,7 +589,6 @@ public class RowDef {
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexDefs, def.indexDefs)
                 && ordinal == def.ordinal
-                && Arrays.equals(pkFields, def.pkFields)
                 && Arrays.equals(parentJoinFields, def.parentJoinFields);
 
     }
@@ -619,7 +599,6 @@ public class RowDef {
                 ^ table.getName().hashCode()
                 ^ CServerUtil.hashCode(treeName)
                 ^ Arrays.hashCode(fieldDefs)
-                ^ Arrays.hashCode(indexDefs) ^ Arrays.hashCode(pkFields)
                 ^ Arrays.hashCode(parentJoinFields);
     }
 }
