@@ -17,11 +17,6 @@ public class ChunkserverConfig
         return verboseString == null ? null : Boolean.valueOf(verboseString);
     }
 
-    public String decisionEngine()
-    {
-        return properties.getProperty(PROPERTY_DECISION_ENGINE);
-    }
-
     public String mysqlInstallDir()
     {
         return properties.getProperty(PROPERTY_MYSQL_INSTALL_DIR, DEFAULT_MYSQL_INSTALL_DIR);
@@ -44,7 +39,6 @@ public class ChunkserverConfig
 
     private static final String PROPERTY_DATAPATH = "cserver.datapath";
     private static final String PROPERTY_VERBOSE = "cserver.verbose";
-    private static final String PROPERTY_DECISION_ENGINE = "cserver.decision_engine";
     private static final String PROPERTY_MYSQL_INSTALL_DIR = "cserver.mysql_install_dir";
     private static final String PROPERTY_JAR_FILE = "cserver.jar_file";
     private static final String PROPERTY_MAX_HEAP_MB = "cserver.max_heap_mb";
