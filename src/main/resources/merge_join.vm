@@ -14,7 +14,7 @@ create table #quote_table_name($outputTableName)(
 #foreach ($column in $outputTableColumns)
     #comma_separator()$column.name $column.typeDescription
 #end
-) ~~
+) engine = myisam ~~
 
 drop procedure if exists `$procedureName` ~~
 
