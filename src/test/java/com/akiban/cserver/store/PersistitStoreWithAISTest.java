@@ -1,5 +1,9 @@
 package com.akiban.cserver.store;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
@@ -8,19 +12,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
-import junit.framework.TestCase;
-
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.api.DDLFunctions;
+import com.akiban.cserver.api.DDLFunctionsImpl;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.tree.TreeLink;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.ByteBufferFactory;
 import com.persistit.Exchange;
@@ -28,38 +34,28 @@ import com.persistit.KeyState;
 import com.persistit.Tree;
 import com.persistit.Volume;
 
-public class PersistitStoreWithAISTest extends TestCase implements
+public class PersistitStoreWithAISTest extends CServerTestCase implements
         CServerConstants {
 
-    private final static String DDL_FILE_NAME = "src/test/resources/data_dictionary_test.ddl";
+    private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
 
     private final static String SCHEMA = "data_dictionary_test";
-
-    private final static String GROUP_SCHEMA = "akiba_objects";
-
-    private PersistitStore store;
-
-    private RowDefCache rowDefCache;
 
     private interface RowVisitor {
         void visit(final int depth) throws Exception;
     }
 
-    private RowDef userRowDef(final String name) {
+    private RowDef rowDef(final String name) {
         return rowDefCache.getRowDef(SCHEMA + "." + name);
     }
 
-    private RowDef groupRowDef(final String name) {
-        return rowDefCache.getRowDef(GROUP_SCHEMA + "." + name);
-    }
-
     class TestData {
-        final RowDef defC = userRowDef("customer");
-        final RowDef defO = userRowDef("order");
-        final RowDef defI = userRowDef("item");
-        final RowDef defA = userRowDef("address");
-        final RowDef defX = userRowDef("component");
-        final RowDef defCOI = groupRowDef("_akiba_customer");
+        final RowDef defC = rowDef("customer");
+        final RowDef defO = rowDef("order");
+        final RowDef defI = rowDef("item");
+        final RowDef defA = rowDef("address");
+        final RowDef defX = rowDef("component");
+        final RowDef defCOI = rowDef("_akiba_customer");
         final RowData rowC = new RowData(new byte[256]);
         final RowData rowO = new RowData(new byte[256]);
         final RowData rowI = new RowData(new byte[256]);
@@ -93,24 +89,24 @@ public class PersistitStoreWithAISTest extends TestCase implements
                 cid = c;
                 rowC.reset(0, 256);
                 rowC.createRow(defC, new Object[] { cid, "Customer_" + cid });
-                store.writeRow(rowC);
+                store.writeRow(session, rowC);
                 for (int o = 0; ++o <= ordersPerCustomer;) {
                     oid = cid * 1000 + o;
                     rowO.reset(0, 256);
                     rowO.createRow(defO, new Object[] { oid, cid, 12345 });
-                    store.writeRow(rowO);
+                    store.writeRow(session, rowO);
                     for (int i = 0; ++i <= itemsPerOrder;) {
                         iid = oid * 1000 + i;
                         rowI.reset(0, 256);
                         rowI.createRow(defI, new Object[] { oid, iid, 123456,
                                 654321 });
-                        store.writeRow(rowI);
+                        store.writeRow(session, rowI);
                         for (int x = 0; ++x <= componentsPerItem;) {
                             xid = iid * 1000 + x;
                             rowX.reset(0, 256);
                             rowX.createRow(defX, new Object[] { iid, xid, c,
                                     ++unique, "Description_" + unique });
-                            store.writeRow(rowX);
+                            store.writeRow(session, rowX);
                         }
                     }
                 }
@@ -118,7 +114,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
                     rowA.reset(0, 256);
                     rowA.createRow(defA, new Object[] { c, a, "addr1_" + c,
                             "addr2_" + c, "addr3_" + c });
-                    store.writeRow(rowA);
+                    store.writeRow(session, rowA);
                 }
             }
             elapsed = System.nanoTime() - elapsed;
@@ -188,21 +184,15 @@ public class PersistitStoreWithAISTest extends TestCase implements
         }
     }
 
-    @Override
+    @Before
     public void setUp() throws Exception {
-        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
-        rowDefCache = store.getRowDefCache();
-        final AkibaInformationSchema ais = new DDLSource()
-                .buildAIS(DDL_FILE_NAME);
-        rowDefCache.setAIS(ais);
-        store.fixUpOrdinals();
+        baseSetUp();
+        setUpAisForTests(DDL_FILE_NAME);
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
-        store.stop();
-        store = null;
-        rowDefCache = null;
+        baseTearDown();
     }
 
     @Test
@@ -229,7 +219,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
             final byte[] columnBitMap = new byte[] { 0xF };
             final int indexId = 0;
 
-            final RowCollector rc = store.newRowCollector(
+            final RowCollector rc = store.newRowCollector(session,
                     td.defI.getRowDefId(), indexId, 0, td.rowI, td.rowI,
                     columnBitMap);
             final ByteBuffer payload = ByteBufferFactory.allocate(256);
@@ -265,7 +255,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
             final byte[] columnBitMap = new byte[] { (byte) 0x3 };
             final int indexId = td.defI.getPKIndexDef().getId();
 
-            final RowCollector rc = store.newRowCollector(
+            final RowCollector rc = store.newRowCollector(session,
                     td.defI.getRowDefId(), indexId, 0, td.rowI, td.rowI,
                     columnBitMap);
             final ByteBuffer payload = ByteBufferFactory.allocate(256);
@@ -297,19 +287,20 @@ public class PersistitStoreWithAISTest extends TestCase implements
             int scanCount = 0;
             final RowData start = new RowData(new byte[256]);
             final RowData end = new RowData(new byte[256]);
-            // C has 2 columns, A has 5 columns, O has 3 columns, I has 4
+            // C has 2 columns, O has 3 columns, A has 5 columns, I has 4
             // columns, CC has 5 columns
-            start.createRow(td.defCOI, new Object[] { null, null, null, null,
-                    null, null, null, 1004, null, null, null, null, null, null,
-                    null, null, null, null, null });
-            end.createRow(td.defCOI, new Object[] { null, null, null, null,
-                    null, null, null, 1007, null, null, null, null, null, null,
-                    null, null, null, null, null });
+            final Object[] values = new Object[td.defCOI.getFieldCount()];
+            final int order_id_field = td.defCOI
+                    .getFieldIndex("order$order_id");
+            values[order_id_field] = 1004;
+            start.createRow(td.defCOI, values);
+            values[order_id_field] = 1007;
+            end.createRow(td.defCOI, values);
             final byte[] columnBitMap = projection(new RowDef[] { td.defC,
                     td.defO, td.defI }, td.defCOI.getFieldCount());
 
             int indexId = findIndexId(td.defCOI, td.defO, 0);
-            final RowCollector rc = store.newRowCollector(
+            final RowCollector rc = store.newRowCollector(session,
                     td.defCOI.getRowDefId(), indexId, 0, start, end,
                     columnBitMap);
             final ByteBuffer payload = ByteBufferFactory.allocate(256);
@@ -369,41 +360,43 @@ public class PersistitStoreWithAISTest extends TestCase implements
     public void testDropTable() throws Exception {
         final TestData td = new TestData(5, 5, 5, 5);
         td.insertTestRows();
-        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
+        Volume volume = getDefaultVolume();
         assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
+        final DDLFunctions ddlf = new DDLFunctionsImpl();
 
-        store.dropTable(td.defO.getRowDefId());
-        assertTrue(store.getTableManager()
-                .getTableStatus(td.defO.getRowDefId()).isDeleted());
+        ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
+        assertEquals(0, td.defO.getTableStatus().getRowCount());
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
+        //
+        // TODO -- add these values back in once truncate doesn't truncate
+        // all tables.
+        // ddlf.dropTable(session, TableId.of(td.defI.getRowDefId()));
+        // assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defI.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defA.getRowDefId()));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defA.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defC.getRowDefId()));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defC.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
+        // assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
+        // assertTrue(store.getTableManager()
+        // .getTableStatus(session, td.defO.getRowDefId()).isDeleted());
+        //
+        // ddlf.dropTable(session, TableId.of(td.defX.getRowDefId()));
 
-        store.dropTable(td.defI.getRowDefId());
-        assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
-        assertTrue(store.getTableManager()
-                .getTableStatus(td.defI.getRowDefId()).isDeleted());
-
-        store.dropTable(td.defA.getRowDefId());
-        assertTrue(store.getTableManager()
-                .getTableStatus(td.defA.getRowDefId()).isDeleted());
-
-        store.dropTable(td.defC.getRowDefId());
-        assertTrue(store.getTableManager()
-                .getTableStatus(td.defC.getRowDefId()).isDeleted());
-
-        store.dropTable(td.defO.getRowDefId());
-        assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
-        assertTrue(store.getTableManager()
-                .getTableStatus(td.defO.getRowDefId()).isDeleted());
-
-        store.dropTable(td.defX.getRowDefId());
-
-        assertTrue(isGone(td.defCOI.getTreeName()));
-        assertTrue(isGone(td.defO.getPkTreeName()));
-        assertTrue(isGone(td.defI.getPkTreeName()));
-        assertTrue(isGone(td.defX.getPkTreeName()));
-        assertTrue(isGone(td.defA.getPkTreeName()));
+        assertTrue(isGone(td.defCOI));
+        assertTrue(isGone(td.defO));
+        assertTrue(isGone(td.defI));
+        assertTrue(isGone(td.defX));
+        assertTrue(isGone(td.defA));
     }
 
     // public void testDropSchema() throws Exception {
@@ -422,22 +415,19 @@ public class PersistitStoreWithAISTest extends TestCase implements
     @Test
     public void testBug47() throws Exception {
         //
-        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
-        for (int loop = 0; loop < 20; loop++) {
-            final TestData td = new TestData(10, 10, 10, 10);
+        for (int loop = 0; loop < 5; loop++) {
+            final TestData td = new TestData(5, 5, 5, 5);
             td.insertTestRows();
-            store.dropTable(td.defI.getRowDefId());
-            store.dropTable(td.defO.getRowDefId());
-            store.dropTable(td.defC.getRowDefId());
-            store.dropTable(td.defCOI.getRowDefId());
-            store.dropTable(td.defA.getRowDefId());
-            store.dropTable(td.defX.getRowDefId());
-            store.dropSchema(SCHEMA);
+            store.truncateTable(session, td.defI.getRowDefId());
+            store.truncateTable(session, td.defO.getRowDefId());
+            store.truncateTable(session, td.defC.getRowDefId());
+            store.truncateTable(session, td.defCOI.getRowDefId());
+            store.truncateTable(session, td.defA.getRowDefId());
+            store.truncateTable(session, td.defX.getRowDefId());
 
-            assertTrue(isGone(td.defCOI.getTreeName()));
-            assertTrue(isGone(td.defO.getPkTreeName()));
-            assertTrue(isGone(td.defI.getPkTreeName()));
-
+            assertTrue(isGone(td.defCOI));
+            assertTrue(isGone(td.defO));
+            assertTrue(isGone(td.defI));
         }
     }
 
@@ -449,14 +439,14 @@ public class PersistitStoreWithAISTest extends TestCase implements
                 "test1" });
         ErrorCode actual = null;
         try {
-            store.writeRow(td.rowX);
+            store.writeRow(session, td.rowX);
         } catch (InvalidOperationException e) {
             actual = e.getCode();
         }
         assertEquals(ErrorCode.DUPLICATE_KEY, actual);
         td.rowX.createRow(td.defX, new Object[] { 1002003, 23890345, 123,
                 44444, "test2" });
-        store.writeRow(td.rowX);
+        store.writeRow(session, td.rowX);
     }
 
     @Test
@@ -472,7 +462,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         final ByteBuffer payload = ByteBufferFactory.allocate(1024);
 
         RowCollector rc;
-        rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+        rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
         payload.clear();
         assertTrue(rc.collectNextRow(payload));
@@ -484,9 +474,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
         RowData newRowData = new RowData(new byte[256]);
         newRowData.createRow(td.defX, new Object[] { iid, xid, 4, 424242,
                 "Description_424242" });
-        store.updateRow(oldRowData, newRowData);
+        store.updateRow(session, oldRowData, newRowData);
 
-        rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+        rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
         payload.clear();
         assertTrue(rc.collectNextRow(payload));
@@ -503,15 +493,15 @@ public class PersistitStoreWithAISTest extends TestCase implements
         newRowData.createRow(td.defX, new Object[] { iid, -xid, 4, 545454,
                 "Description_545454" });
 
-        store.updateRow(updateRowData, newRowData);
+        store.updateRow(session, updateRowData, newRowData);
 
-        rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+        rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, updateRowData, updateRowData,
                 columnBitMap);
         payload.clear();
         assertTrue(!rc.collectNextRow(payload));
 
-        rc = store.newRowCollector(td.defX.getRowDefId(), td.defX
+        rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, newRowData, newRowData,
                 columnBitMap);
 
@@ -543,24 +533,24 @@ public class PersistitStoreWithAISTest extends TestCase implements
                         // TODO - for now we can't do cascading DELETE so we
                         // expect an error
                         expectedError = ErrorCode.FK_CONSTRAINT_VIOLATION;
-                        store.deleteRow(td.rowC);
+                        store.deleteRow(session, td.rowC);
                         break;
                     case 1:
                         // TODO - for now we can't do cascading DELETE so we
                         // expect an error
                         expectedError = ErrorCode.FK_CONSTRAINT_VIOLATION;
-                        store.deleteRow(td.rowO);
+                        store.deleteRow(session, td.rowO);
                         break;
                     case 2:
                         // TODO - for now we can't do cascading DELETE so we
                         // expect an error
                         expectedError = ErrorCode.FK_CONSTRAINT_VIOLATION;
-                        store.deleteRow(td.rowI);
+                        store.deleteRow(session, td.rowI);
                         break;
                     case 3:
                         expectedError = null;
                         if (td.xid % 2 == 0) {
-                            store.deleteRow(td.rowX);
+                            store.deleteRow(session, td.rowX);
                             td.count++;
                         }
                         break;
@@ -578,9 +568,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
         int scanCount = 0;
         td.rowX.createRow(td.defX, new Object[0]);
         final byte[] columnBitMap = new byte[] { (byte) 0x1F };
-        final RowCollector rc = store.newRowCollector(td.defX.getRowDefId(),
-                td.defX.getPKIndexDef().getId(), 0, td.rowX, td.rowX,
-                columnBitMap);
+        final RowCollector rc = store.newRowCollector(session,
+                td.defX.getRowDefId(), td.defX.getPKIndexDef().getId(), 0,
+                td.rowX, td.rowX, columnBitMap);
         final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
         while (rc.hasMore()) {
@@ -607,34 +597,39 @@ public class PersistitStoreWithAISTest extends TestCase implements
         final TestData td = new TestData(5, 5, 5, 5);
         td.insertTestRows();
         {
-            final List<RowData> list = store.fetchRows("data_dictionary_test",
-                    "item", "part_id", 1001001, 1001005, "item");
+            final List<RowData> list = store.fetchRows(session,
+                    "data_dictionary_test", "item", "part_id", 1001001,
+                    1001005, "item");
             assertEquals(5, list.size());
         }
 
         {
-            final List<RowData> list = store.fetchRows("data_dictionary_test",
-                    "customer", "customer_id", 1, 1, "item");
+            final List<RowData> list = store.fetchRows(session,
+                    "data_dictionary_test", "customer", "customer_id", 1, 1,
+                    "item");
             assertEquals(31, list.size());
             dump("c.cid = 1", list);
         }
 
         {
-            final List<RowData> list = store.fetchRows("data_dictionary_test",
-                    "order", "customer_id", 1, 1, "item");
+            final List<RowData> list = store.fetchRows(session,
+                    "data_dictionary_test", "order", "customer_id", 1, 1,
+                    "item");
             dump("o.cid = 1", list);
             assertEquals(30, list.size());
         }
 
         {
-            final List<RowData> list = store.fetchRows("data_dictionary_test",
-                    "customer", "customer_id", 1, 2, "address");
+            final List<RowData> list = store.fetchRows(session,
+                    "data_dictionary_test", "customer", "customer_id", 1, 2,
+                    "address");
             assertEquals(5, list.size());
         }
 
         {
-            final List<RowData> list = store.fetchRows("data_dictionary_test",
-                    "customer", "customer_id", 1, 1, null);
+            final List<RowData> list = store.fetchRows(session,
+                    "data_dictionary_test", "customer", "customer_id", 1, 1,
+                    null);
             for (final RowData rowData : list) {
                 System.out.println(rowData.toString(rowDefCache));
             }
@@ -642,8 +637,7 @@ public class PersistitStoreWithAISTest extends TestCase implements
         }
     }
 
-    private void dump(String label, List<RowData> rows)
-    {
+    private void dump(String label, List<RowData> rows) {
         System.out.println(label + ":");
         for (RowData row : rows) {
             System.out.println(row.toString(rowDefCache));
@@ -696,9 +690,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
         int scanCount = 0;
         td.rowX.createRow(td.defX, new Object[0]);
         final byte[] columnBitMap = new byte[] { (byte) 0x1F };
-        final RowCollector rc = store.newRowCollector(td.defX.getRowDefId(),
-                td.defX.getPKIndexDef().getId(), 0, td.rowX, td.rowX,
-                columnBitMap);
+        final RowCollector rc = store.newRowCollector(session,
+                td.defX.getRowDefId(), td.defX.getPKIndexDef().getId(), 0,
+                td.rowX, td.rowX, columnBitMap);
         final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
         while (rc.hasMore()) {
@@ -711,9 +705,9 @@ public class PersistitStoreWithAISTest extends TestCase implements
             for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
                 rowData.prepareRow(p);
                 if (scanCount++ % 2 == 0) {
-                    store.deleteRow(rowData);
+                    store.deleteRow(session, rowData);
                 } else {
-                    store.updateRow(rowData, rowData);
+                    store.updateRow(session, rowData, rowData);
                 }
                 p = rowData.getRowEnd();
             }
@@ -733,11 +727,11 @@ public class PersistitStoreWithAISTest extends TestCase implements
         td.insertTestRows();
         final StringWriter a, b, c, d;
         dumpIndexes(new PrintWriter(a = new StringWriter()));
-        store.flushIndexes();
+        store.flushIndexes(session);
         dumpIndexes(new PrintWriter(b = new StringWriter()));
-        store.deleteIndexes("");
+        store.deleteIndexes(new SessionImpl(), "");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
-        store.buildIndexes("");
+        store.buildIndexes(session, "");
         dumpIndexes(new PrintWriter(d = new StringWriter()));
         assertTrue(!a.toString().equals(b.toString()));
         assertEquals(a.toString(), c.toString());
@@ -750,115 +744,116 @@ public class PersistitStoreWithAISTest extends TestCase implements
         td.insertTestRows();
         final StringWriter a, b, c;
         dumpIndexes(new PrintWriter(a = new StringWriter()));
-        store.deleteIndexes("");
+        store.deleteIndexes(new SessionImpl(), "");
         dumpIndexes(new PrintWriter(b = new StringWriter()));
-        store.buildIndexes("");
+        store.buildIndexes(session, "");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
         assertTrue(!a.toString().equals(b.toString()));
         assertEquals(a.toString(), c.toString());
     }
 
-//    // Disabled pending Persistit commit
-//    //
-//    @Test
-//    public void testBug283() throws Exception {
-//        //
-//        // Creates the index tables ahead of the h-table. This
-//        // is contrived to affect the Transaction commit order.
-//        // 
-//        //
-//        store.getDb().getTransaction().run(new TransactionRunnable() {
-//            public void runTransaction() throws RollbackException {
-//                for (int index = 1; index < 13; index++) {
-//                    final String treeName = "_akiba_customer$$" + index;
-//                    try {
-//                        final Exchange exchange = store.getExchange(treeName);
-//                        exchange.to("testBug283").store();
-//                        store.releaseExchange(exchange);
-//                    } catch (Exception e) {
-//                        throw new RollbackException(e);
-//                    }
-//                }
-//            }
-//        });
-//        final TestData td = new TestData(1, 1, 1, 1);
-//        td.insertTestRows();
-//        final AtomicBoolean broken = new AtomicBoolean(false);
-//        final long expires = System.nanoTime() + 10000000000L; // 10 seconds
-//        final AtomicInteger lastInserted = new AtomicInteger();
-//        final AtomicInteger scanCount = new AtomicInteger();
-//        final Thread thread1 = new Thread(new Runnable() {
-//            public void run() {
-//                for (int xid = 1001001002; System.nanoTime() < expires
-//                        && !broken.get(); xid++) {
-//                    td.rowX.createRow(td.defX, new Object[] { 1001001, xid,
-//                            123, xid - 100100100, "part " + xid });
-//                    try {
-//                        store.writeRow(td.rowX);
-//                        lastInserted.set(xid);
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        broken.set(true);
-//                        break;
-//                    }
-//                }
-//            }
-//        }, "INSERTER");
-//
-//        final Thread thread2 = new Thread(new Runnable() {
-//            public void run() {
-//                final RowData start = new RowData(new byte[256]);
-//                final RowData end = new RowData(new byte[256]);
-//                final byte[] columnBitMap = new byte[] { (byte) 0xF };
-//                final ByteBuffer payload = ByteBufferFactory.allocate(100000);
-//                while (System.nanoTime() < expires && !broken.get()) {
-//                    int xid = lastInserted.get();
-//                    start.createRow(td.defX, new Object[] { 1001001, xid, null,
-//                            null });
-//                    end.createRow(td.defX, new Object[] { 1001001, xid + 10000,
-//                            null, null });
-//
-//                    final int indexId = td.defX.getPKIndexDef().getId();
-//
-//                    try {
-//                        final RowCollector rc = store.newRowCollector(
-//                                td.defX.getRowDefId(), indexId, 0, start, end,
-//                                columnBitMap);
-//                        while (rc.hasMore()) {
-//                            payload.clear();
-//                            while (rc.collectNextRow(payload))
-//                                ;
-//                            payload.flip();
-//                            RowData rowData = new RowData(payload.array(),
-//                                    payload.position(), payload.limit());
-//                            for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
-//                                rowData.prepareRow(p);
-//                                p = rowData.getRowEnd();
-//                                scanCount.incrementAndGet();
-//                            }
-//                        }
-//                        // } catch (InvalidOperationException ioe) {
-//                        // broken.set(true);
-//                        // break;
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        broken.set(true);
-//                        break;
-//                    }
-//
-//                }
-//            }
-//        }, "SCANNER");
-//
-//        thread1.start();
-//        thread2.start();
-//        thread1.join();
-//        thread2.join();
-//        // For some reason the @Ignore above isn't preventing this test from failing.
-//        // Am commenting out the assertTrue until but 283 is fixed.
-//        assertTrue(!broken.get());
-//
-//    }
+    // // Disabled pending Persistit commit
+    // //
+    // @Test
+    // public void testBug283() throws Exception {
+    // //
+    // // Creates the index tables ahead of the h-table. This
+    // // is contrived to affect the Transaction commit order.
+    // //
+    // //
+    // store.getDb().getTransaction().run(new TransactionRunnable() {
+    // public void runTransaction() throws RollbackException {
+    // for (int index = 1; index < 13; index++) {
+    // final String treeName = "_akiba_customer$$" + index;
+    // try {
+    // final Exchange exchange = store.getExchange(treeName);
+    // exchange.to("testBug283").store();
+    // store.releaseExchange(exchange);
+    // } catch (Exception e) {
+    // throw new RollbackException(e);
+    // }
+    // }
+    // }
+    // });
+    // final TestData td = new TestData(1, 1, 1, 1);
+    // td.insertTestRows();
+    // final AtomicBoolean broken = new AtomicBoolean(false);
+    // final long expires = System.nanoTime() + 10000000000L; // 10 seconds
+    // final AtomicInteger lastInserted = new AtomicInteger();
+    // final AtomicInteger scanCount = new AtomicInteger();
+    // final Thread thread1 = new Thread(new Runnable() {
+    // public void run() {
+    // for (int xid = 1001001002; System.nanoTime() < expires
+    // && !broken.get(); xid++) {
+    // td.rowX.createRow(td.defX, new Object[] { 1001001, xid,
+    // 123, xid - 100100100, "part " + xid });
+    // try {
+    // store.writeRow(td.rowX);
+    // lastInserted.set(xid);
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // broken.set(true);
+    // break;
+    // }
+    // }
+    // }
+    // }, "INSERTER");
+    //
+    // final Thread thread2 = new Thread(new Runnable() {
+    // public void run() {
+    // final RowData start = new RowData(new byte[256]);
+    // final RowData end = new RowData(new byte[256]);
+    // final byte[] columnBitMap = new byte[] { (byte) 0xF };
+    // final ByteBuffer payload = ByteBufferFactory.allocate(100000);
+    // while (System.nanoTime() < expires && !broken.get()) {
+    // int xid = lastInserted.get();
+    // start.createRow(td.defX, new Object[] { 1001001, xid, null,
+    // null });
+    // end.createRow(td.defX, new Object[] { 1001001, xid + 10000,
+    // null, null });
+    //
+    // final int indexId = td.defX.getPKIndexDef().getId();
+    //
+    // try {
+    // final RowCollector rc = store.newRowCollector(
+    // td.defX.getRowDefId(), indexId, 0, start, end,
+    // columnBitMap);
+    // while (rc.hasMore()) {
+    // payload.clear();
+    // while (rc.collectNextRow(payload))
+    // ;
+    // payload.flip();
+    // RowData rowData = new RowData(payload.array(),
+    // payload.position(), payload.limit());
+    // for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
+    // rowData.prepareRow(p);
+    // p = rowData.getRowEnd();
+    // scanCount.incrementAndGet();
+    // }
+    // }
+    // // } catch (InvalidOperationException ioe) {
+    // // broken.set(true);
+    // // break;
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // broken.set(true);
+    // break;
+    // }
+    //
+    // }
+    // }
+    // }, "SCANNER");
+    //
+    // thread1.start();
+    // thread2.start();
+    // thread1.join();
+    // thread2.join();
+    // // For some reason the @Ignore above isn't preventing this test from
+    // failing.
+    // // Am commenting out the assertTrue until but 283 is fixed.
+    // assertTrue(!broken.get());
+    //
+    // }
 
     private void dumpIndexes(final PrintWriter pw) throws Exception {
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
@@ -874,7 +869,8 @@ public class PersistitStoreWithAISTest extends TestCase implements
 
     private void dumpIndex(final IndexDef indexDef, final PrintWriter pw)
             throws Exception {
-        final Exchange ex = store.getExchange(indexDef.getRowDef(), indexDef);
+        final Exchange ex = getPersistitStore().getExchange(new SessionImpl(),
+                indexDef.getRowDef(), indexDef);
         ex.clear();
         while (ex.next(true)) {
             pw.println(ex.getKey());
@@ -882,13 +878,13 @@ public class PersistitStoreWithAISTest extends TestCase implements
         pw.flush();
     }
 
-    private boolean isGone(final String treeName) throws Exception {
-        Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
-        final Tree tree = volume.getTree(treeName, false);
+    private boolean isGone(final TreeLink link) throws Exception {
+        Volume volume = getDefaultVolume();
+        final Tree tree = volume.getTree(link.getTreeName(), false);
         if (tree == null) {
             return true;
         }
-        final Exchange exchange = store.getExchange(treeName);
+        final Exchange exchange = getTreeService().getExchange(session, link);
         exchange.clear();
         return !exchange.hasChildren();
     }

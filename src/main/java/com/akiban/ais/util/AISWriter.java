@@ -1,15 +1,15 @@
 package com.akiban.ais.util;
 
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+
 import com.akiban.ais.io.CSVTarget;
 import com.akiban.ais.io.MySQLTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Target;
-
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 
 public class AISWriter
 {

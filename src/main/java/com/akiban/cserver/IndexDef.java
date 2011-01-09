@@ -1,11 +1,19 @@
 package com.akiban.cserver;
 
-import com.akiban.ais.model.*;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.cserver.service.tree.TreeCache;
+import com.akiban.cserver.service.tree.TreeLink;
 
 /**
  * Defines an Index within the Chunk Server
@@ -14,7 +22,7 @@ import java.util.List;
  * @author peter
  * 
  */
-public class IndexDef {
+public class IndexDef implements TreeLink {
 
     private final Index index;
 
@@ -37,6 +45,8 @@ public class IndexDef {
     // specifies the position within the index entry of the ith hkey field.
     private I2H[] hKeyFields;
 
+    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+    
     /*
      * Structure that determines how a field in a table binds to a key segment of an index key. An H2I defines
      * the field's position in an hkey and/or an h-row. hKeyLoc is used only as a last resort.
@@ -326,6 +336,21 @@ public class IndexDef {
     public int hashCode()
     {
         return getName().hashCode() ^ treeName.hashCode() ^ getId() ^ Arrays.hashCode(fields);
+    }
+
+    @Override
+    public String getSchemaName() {
+        return rowDef.getSchemaName();
+    }
+
+    @Override
+    public void setTreeCache(TreeCache cache) {
+       treeCache.set(cache);
+    }
+
+    @Override
+    public TreeCache getTreeCache() {
+        return treeCache.get();
     }
 
 }

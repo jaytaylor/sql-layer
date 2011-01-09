@@ -1,13 +1,14 @@
 package com.akiban.admin;
 
-import com.akiban.message.Message;
-import com.akiban.message.Sendable;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.akiban.message.Message;
+import com.akiban.message.Sendable;
 
 public class Address implements Sendable
 {

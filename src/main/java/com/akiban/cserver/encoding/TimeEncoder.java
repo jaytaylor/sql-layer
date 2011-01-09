@@ -1,10 +1,9 @@
 package com.akiban.cserver.encoding;
 
-import com.akiban.ais.model.Type;
+import java.util.Date;
+
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
-
-import java.util.Date;
 
 public final class TimeEncoder extends AbstractDateEncoder {
     TimeEncoder() {

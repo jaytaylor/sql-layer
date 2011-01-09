@@ -12,22 +12,22 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
 
 public class AnalyzeIndexTest extends AbstractScanBase {
-
+    
     @Test
     public void testAnalyzeAllIndexes() throws Exception {
         for (final RowDef rowDef : rowDefCache.getRowDefs()) {
             for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-                store.getIndexManager().analyzeIndex(indexDef, 10);
+                store.getIndexManager().analyzeIndex(session, indexDef, 10);
             }
         }
     }
 
     @Test
     public void testPopulateTableStatistics() throws Exception {
-        final RowDef rowDef = userRowDef("aa");
-        store.analyzeTable(rowDef.getRowDefId());
+        final RowDef rowDef = rowDef("aa");
+        store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
-        store.getIndexManager().populateTableStatistics(ts);
+        store.getIndexManager().populateTableStatistics(session, ts);
         {
             // Checks a secondary index
             //
@@ -62,10 +62,10 @@ public class AnalyzeIndexTest extends AbstractScanBase {
 
     @Test
     public void testGroupTableStatistics() throws Exception {
-        final RowDef rowDef = groupRowDef("_akiba_a");
-        store.analyzeTable(rowDef.getRowDefId());
+        final RowDef rowDef = rowDef("_akiba_a");
+        store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
-        store.getIndexManager().populateTableStatistics(ts);
+        store.getIndexManager().populateTableStatistics(session, ts);
         final int indexId = findIndexId(rowDef, "aa$str");
         TableStatistics.Histogram histogram = null;
         for (TableStatistics.Histogram h : ts.getHistogramList()) {
@@ -79,14 +79,14 @@ public class AnalyzeIndexTest extends AbstractScanBase {
     
     @Test
     public void testBug253() throws Exception {
-        final RowDef rowDef = userRowDef("bug253");
+        final RowDef rowDef = rowDef("bug253");
         final RowData rowData = new RowData(new byte[256]);
         rowData.createRow(rowDef, new Object[]{1, "blog"});
-        store.writeRow(rowData);
+        store.writeRow(session, rowData);
         rowData.createRow(rowDef, new Object[]{1, "book"});
-        store.writeRow(rowData);
+        store.writeRow(session, rowData);
         try {
-        store.analyzeTable(rowDef.getRowDefId());
+        store.analyzeTable(session, rowDef.getRowDefId());
         } catch (NumberFormatException nfe) {
             fail("Bug 253 strikes again!");
         }

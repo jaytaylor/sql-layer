@@ -52,6 +52,12 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 
 /**
+ * TODO - remove this class.  As of 1/5/2011 this class is no longer used by
+ * server component. When studio and other components no longer need it, 
+ * this class should be deleted.  Its logic has been divided into (a)
+ * addition of parse capability in SchemaDef, and (b) new class
+ * SchemaDefToAis.
+ * 
  * This class reads the CREATE TABLE statements in a mysqldump file, plus
  * annotations to denote the group structure. There is neither an attempt to
  * fully parse the DDL, nor to handle syntactic variations. The purpose of this
@@ -75,6 +81,9 @@ public class DDLSource extends Source {
             super(cause.getMessage(), cause);
         }
     }
+
+    public final static String CREATE_TABLE = "create table ";
+    public final static String IF_NOT_EXISTS = "if not exists ";
 
     private static final Log LOG = LogFactory.getLog(DDLSource.class.getName());
 
@@ -861,9 +870,6 @@ public class DDLSource extends Source {
         return utDef;
     }
 
-    private final static String CREATE_TABLE = "CREATE TABLE ";
-    private final static String IF_NOT_EXISTS = "IF NOT EXISTS ";
-
     public static String canonicalStatement(final String s) {
         final StringBuilder sb = new StringBuilder();
         boolean sc = false;
@@ -888,6 +894,7 @@ public class DDLSource extends Source {
         }
         strip(sb, CREATE_TABLE);
         strip(sb, IF_NOT_EXISTS);
+        sb.insert(0, CREATE_TABLE);
         return sb.toString();
     }
 

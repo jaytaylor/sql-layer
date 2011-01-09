@@ -1,11 +1,14 @@
 package com.akiban.util;
 
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertSame;
+import static junit.framework.Assert.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
 
 public final class CacheMapTest {
 

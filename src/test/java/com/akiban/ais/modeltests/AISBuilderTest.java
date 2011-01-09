@@ -1,10 +1,19 @@
 package com.akiban.ais.modeltests;
 
-import com.akiban.ais.model.*;
+import java.util.List;
+
 import junit.framework.Assert;
+
 import org.junit.Test;
 
-import java.util.List;
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 
 public class AISBuilderTest
 {

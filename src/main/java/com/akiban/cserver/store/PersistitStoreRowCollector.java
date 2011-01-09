@@ -3,6 +3,15 @@
  */
 package com.akiban.cserver.store;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -10,19 +19,12 @@ import com.akiban.ais.model.HKeySegment;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
+import com.akiban.cserver.service.session.Session;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class PersistitStoreRowCollector implements RowCollector {
 
@@ -38,6 +40,8 @@ public class PersistitStoreRowCollector implements RowCollector {
     private long id;
 
     private final PersistitStore store;
+    
+    private final Session session;
 
     private final byte[] columnBitMap;
 
@@ -124,11 +128,12 @@ public class PersistitStoreRowCollector implements RowCollector {
         }
     }
 
-    PersistitStoreRowCollector(PersistitStore store, final int scanFlags,
+    PersistitStoreRowCollector(final Session session, PersistitStore store, final int scanFlags,
             final RowData start, final RowData end, final byte[] columnBitMap,
             RowDef rowDef, final int indexId) throws PersistitException {
         this.id = counter.incrementAndGet();
         this.store = store;
+        this.session = session;
         this.columnBitMap = columnBitMap;
         this.scanFlags = scanFlags;
         this.columnBitMapOffset = rowDef.getColumnOffset();
@@ -149,7 +154,7 @@ public class PersistitStoreRowCollector implements RowCollector {
             this.more = false;
         } else {
             this.pendingRowData = new RowData[this.projectedRowDefs.length];
-            this.hEx = store.getExchange(rowDef, null).append(Key.BEFORE);
+            this.hEx = store.getExchange(session, rowDef, null).append(Key.BEFORE);
             this.hFilter = computeHFilter(rowDef, start, end);
             this.lastKey = new Key(hEx.getKey());
 
@@ -164,7 +169,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                         prefixModeIndexField = rowDef.getColumnOffset()
                                 + def.getFields()[def.getFields().length - 1];
                     }
-                    this.iEx = store.getExchange(rowDef, indexDef).append(Key.BEFORE);
+                    this.iEx = store.getExchange(session, rowDef, indexDef).append(Key.BEFORE);
                     this.iFilter = computeIFilter(indexDef, rowDef, start, end);
 /* See bugs 344, 345
                     coveringFields = computeCoveringIndexFields(rowDef, def,
@@ -564,7 +569,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                         final int keySize = hKey.getEncodedSize();
                         hKey.setEncodedSize(hKey.getIndex());
                         hEx.fetch();
-                        prepareRow(hEx, level, rowDef.getRowDefId(),
+                        prepareRow(hEx, level, rowDef,
                                 rowDef.getColumnOffset());
                         hKey.setEncodedSize(keySize);
 
@@ -614,7 +619,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                         && depth > projectedRowDefs[projectedRowDefs.length - 1]
                                 .getHKeyDepth()) {
                     int level = pendingRowData.length - 1;
-                    prepareRow(hEx, level, 0, 0);
+                    prepareRow(hEx, level, null, 0);// TODO!!!
                     if (level < pendingFromLevel) {
                         pendingFromLevel = level;
                     }
@@ -623,7 +628,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                     for (int level = projectedRowDefs.length; --level >= 0;) {
                         if (depth == projectedRowDefs[level].getHKeyDepth()) {
                             prepareRow(hEx, level,
-                                    projectedRowDefs[level].getRowDefId(),
+                                    projectedRowDefs[level],
                                     projectedRowDefs[level].getColumnOffset());
                             hKey.copyTo(lastKey);
                             if (level < pendingFromLevel) {
@@ -642,12 +647,12 @@ public class PersistitStoreRowCollector implements RowCollector {
     }
 
     void prepareRow(final Exchange exchange, final int level,
-            final int expectedRowDefId, final int columnOffset)
+            final RowDef rowDef, final int columnOffset)
             throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Preparing row at " + exchange);
         }
-        store.expandRowData(exchange, expectedRowDefId, pendingRowData[level]);
+        store.expandRowData(exchange, rowDef, pendingRowData[level]);
         //
         // Remove unwanted columns
         //
@@ -745,11 +750,11 @@ public class PersistitStoreRowCollector implements RowCollector {
     @Override
     public void close() {
         if (hEx != null) {
-            store.releaseExchange(hEx);
+            store.releaseExchange(session, hEx);
             hEx = null;
         }
         if (iEx != null) {
-            store.releaseExchange(iEx);
+            store.releaseExchange(session, iEx);
             iEx = null;
         }
     }

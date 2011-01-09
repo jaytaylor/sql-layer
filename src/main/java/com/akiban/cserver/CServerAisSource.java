@@ -1,20 +1,24 @@
 package com.akiban.cserver;
 
-import com.akiban.ais.metamodel.MetaModel;
-import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.Source;
-import com.akiban.cserver.store.RowCollector;
-import com.akiban.cserver.store.Store;
-
 import java.nio.ByteBuffer;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.akiban.ais.metamodel.MetaModel;
+import com.akiban.ais.metamodel.ModelObject;
+import com.akiban.ais.model.Source;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.store.RowCollector;
+import com.akiban.cserver.store.Store;
+
 public class CServerAisSource extends Source {
 
     private final Store store;
 
+    private final Session session = new SessionImpl();
+    
     public CServerAisSource(final Store store) throws Exception {
         this.store = store;
     }
@@ -40,7 +44,7 @@ public class CServerAisSource extends Source {
         }
         final RowData nullBounds = new RowData(new byte[64]);
         nullBounds.createRow(rowDef, new Object[0]);
-        final RowCollector rowCollector = store.newRowCollector(rowDef
+        final RowCollector rowCollector = store.newRowCollector(session, rowDef
                 .getRowDefId(), 0, 0, nullBounds, nullBounds, new byte[] {
                 (byte) 0xFF, (byte) 0xFF });
         final ByteBuffer buffer = ByteBuffer.allocate(65536);

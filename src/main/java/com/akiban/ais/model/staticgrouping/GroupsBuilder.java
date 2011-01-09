@@ -1,8 +1,17 @@
 package com.akiban.ais.model.staticgrouping;
 
-import com.akiban.ais.model.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-import java.util.*;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 
 public final class GroupsBuilder
 {

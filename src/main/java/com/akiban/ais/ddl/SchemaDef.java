@@ -1,11 +1,25 @@
 package com.akiban.ais.ddl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CharStream;
+import org.antlr.runtime.CommonTokenStream;
+
 import com.akiban.ais.model.Column;
 
-import java.util.*;
-
 /**
- * Structures used to hold the results of DDLSource parse. DDLSource.g includes
+ * Structures used to hold the results of parsing DDL statements. DDLSource.g includes
  * productions that modify a SchemaDef in a peculiar and particular order. Other
  * clients should only read values from this class.
  * 
@@ -13,12 +27,8 @@ import java.util.*;
  */
 public class SchemaDef {
 
-    public static class SchemaDefException extends RuntimeException {
-        public SchemaDefException(String message) {
-            super(message);
-        }
-    }
-
+    public final static String CREATE_TABLE = "create table ";
+    public final static String IF_NOT_EXISTS = "if not exists ";
 
     public enum IndexQualifier {
         FOREIGN_KEY, UNIQUE
@@ -42,6 +52,14 @@ public class SchemaDef {
 
     private final List<IndexDefHandle> provisionalIndexes = new ArrayList<IndexDefHandle>();
 
+    public static class SchemaDefException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public SchemaDefException(String message) {
+            super(message);
+        }
+    }
+
     public void setMasterSchemaName(final String schemaName) {
         this.masterSchemaName = schemaName;
     }
@@ -63,9 +81,14 @@ public class SchemaDef {
     }
 
     void addTable(final CName tableName) {
-        // If ANTLR detects a problem, it'll try to push forward as much as it can. If this happens while there's
+        // If ANTLR detects a problem, it'll try to push forward as much as it
+        // can. If this happens while there's
         // a provisional index pending, we need to clear it.
         provisionalIndexes.clear();
+        // This method now supports incremental replacement of existing
+        // user table definitions; therefore we attempt to remove any
+        // prior definition.
+        userTableMap.remove(tableName);
         currentTable = getUserTableDef(tableName);
     }
 
@@ -81,7 +104,6 @@ public class SchemaDef {
     void addColumnComment(final String comment) {
         currentColumn.comment = comment;
     }
-
 
     void inlineColumnPK() {
         checkPkEmpty();
@@ -124,8 +146,8 @@ public class SchemaDef {
 
     void finishConstraint(IndexQualifier type) {
         if (type.equals(IndexQualifier.FOREIGN_KEY)) {
-            assert ! currentIndex.columns.isEmpty() : currentIndex;
-            assert ! currentIndex.referenceColumns.isEmpty() : currentIndex;
+            assert !currentIndex.columns.isEmpty() : currentIndex;
+            assert !currentIndex.referenceColumns.isEmpty() : currentIndex;
             assert null != currentIndex.referenceTable : currentIndex;
         }
         currentIndex = null;
@@ -138,8 +160,7 @@ public class SchemaDef {
 
         if (name == null) {
             provisionalIndexes.add(handle);
-        }
-        else {
+        } else {
             currentTable.indexHandles.add(handle);
         }
         return currentIndex;
@@ -155,12 +176,15 @@ public class SchemaDef {
     }
 
     void resolveProvisionalIndexes() {
-        // We'll go over each of our provisional indexes, each of which has a null name.
-        // If the current table doesn't already have an equivalent index, we'll just give this index a name
+        // We'll go over each of our provisional indexes, each of which has a
+        // null name.
+        // If the current table doesn't already have an equivalent index, we'll
+        // just give this index a name
         // and add it to the table.
-        // Otherwise, we'll add the provisional index's attributes to the existing index.
+        // Otherwise, we'll add the provisional index's attributes to the
+        // existing index.
 
-        Map<List<IndexColumnDef>,IndexDef> columnsToIndexes = new HashMap<List<IndexColumnDef>, IndexDef>();
+        Map<List<IndexColumnDef>, IndexDef> columnsToIndexes = new HashMap<List<IndexColumnDef>, IndexDef>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
             if (!columnsToIndexes.containsKey(handle.real.columns)) {
                 columnsToIndexes.put(handle.real.columns, handle.real);
@@ -174,29 +198,34 @@ public class SchemaDef {
                 real.name = String.format("_auto_generated_index_%d", id++);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
-            }
-            else {
+            } else {
                 if (real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
-                    assert real.columns.equals(equivalent.columns) : real + " " + equivalent;
+                    assert real.columns.equals(equivalent.columns) : real + " "
+                            + equivalent;
                     // two FK indexes, make sure they're compatible
-                    if (equivalent.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                    if (equivalent.qualifiers
+                            .contains(IndexQualifier.FOREIGN_KEY)) {
                         if (equivalent.referenceTable != null
-                                && !real.referenceTable.equals(equivalent.referenceTable)) {
-                            throw new IllegalStateException("incompatible reference tables between provisional "
-                                    + real + " and " + equivalent);
+                                && !real.referenceTable
+                                        .equals(equivalent.referenceTable)) {
+                            throw new IllegalStateException(
+                                    "incompatible reference tables between provisional "
+                                            + real + " and " + equivalent);
+                        } else if (!equivalent.referenceColumns.isEmpty()
+                                && !real.referenceColumns
+                                        .equals(equivalent.referenceColumns)) {
+                            throw new IllegalStateException(
+                                    "incompatible columns between provisional "
+                                            + real + " and " + equivalent);
                         }
-                        else if (!equivalent.referenceColumns.isEmpty()
-                                && ! real.referenceColumns.equals(equivalent.referenceColumns)) {
-                            throw new IllegalStateException("incompatible columns between provisional "
-                                    + real + " and " + equivalent);
-                        }
-                    }
-                    else {
-                        // Assert there's no FK-like stuff here already, then add it
+                    } else {
+                        // Assert there's no FK-like stuff here already, then
+                        // add it
                         assert equivalent.referenceTable == null : equivalent.referenceTable;
                         assert equivalent.referenceColumns.isEmpty() : equivalent.referenceColumns;
                         equivalent.referenceTable = real.referenceTable;
-                        equivalent.referenceColumns.addAll(real.referenceColumns);
+                        equivalent.referenceColumns
+                                .addAll(real.referenceColumns);
                     }
                 }
                 equivalent.qualifiers.addAll(real.qualifiers);
@@ -206,7 +235,7 @@ public class SchemaDef {
         }
         provisionalIndexes.clear();
 
-        // Finally, resolve all handles to their  real selves
+        // Finally, resolve all handles to their real selves
         HashSet<IndexDef> seenDefs = new HashSet<IndexDef>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
             if (seenDefs.add(handle.real)) {
@@ -256,7 +285,8 @@ public class SchemaDef {
 
     void autoIncrement() {
         if (currentTable.autoIncrementColumn != null) {
-            throw new SchemaDefException("AUTO_INCREMENT already defined: " + currentTable.autoIncrementColumn);
+            throw new SchemaDefException("AUTO_INCREMENT already defined: "
+                    + currentTable.autoIncrementColumn);
         }
         currentTable.autoIncrementColumn = currentColumn;
         currentColumn.autoincrement = 0L;
@@ -267,7 +297,7 @@ public class SchemaDef {
             currentTable.autoIncrementColumn.setAutoIncrement(value);
         }
     }
-    
+
     void addCharsetValue(final String charset) {
         if (currentColumn != null) {
             currentColumn.charset = charset;
@@ -308,15 +338,21 @@ public class SchemaDef {
         }
         currentColumn = null;
     }
+
     /**
-     * Checks (via assert) that the comment doesn't appear to be an old-style grouping.
-     * @param text the text of the comment, including slash-star and star-slash.
+     * Checks (via assert) that the comment doesn't appear to be an old-style
+     * grouping.
+     * 
+     * @param text
+     *            the text of the comment, including slash-star and star-slash.
      */
     void comment(final String text) {
         if (text != null) {
-            StringBuilder inner = new StringBuilder( text.substring(2, text.length()-2).trim() );
+            StringBuilder inner = new StringBuilder(text.substring(2,
+                    text.length() - 2).trim());
             inner.setLength("schema".length());
-            assert ! "schema".equals(inner.toString()) : "found grouping comment " + text;
+            assert !"schema".equals(inner.toString()) : "found grouping comment "
+                    + text;
         }
     }
 
@@ -347,14 +383,15 @@ public class SchemaDef {
             this.name = name;
         }
 
-        ColumnDef(final String name, String typeName, String param1, String param2, boolean nullable,
-                  String autoIncrement, String[] constraints) {
+        ColumnDef(final String name, String typeName, String param1,
+                String param2, boolean nullable, String autoIncrement,
+                String[] constraints) {
             this.name = name;
             this.typeName = typeName;
             this.typeParam1 = param1;
             this.typeParam2 = param2;
             this.nullable = nullable;
-            this.constraints.addAll( Arrays.asList(constraints));
+            this.constraints.addAll(Arrays.asList(constraints));
             setAutoIncrement(autoIncrement);
         }
 
@@ -366,7 +403,8 @@ public class SchemaDef {
             try {
                 this.autoincrement = Long.parseLong(autoIncrement);
             } catch (NumberFormatException e) {
-                throw new SchemaDefException("Not a valid AUTO_INCREMENT value: " + autoIncrement);
+                throw new SchemaDefException(
+                        "Not a valid AUTO_INCREMENT value: " + autoIncrement);
             }
         }
 
@@ -390,25 +428,34 @@ public class SchemaDef {
             if (nullable != columnDef.nullable) {
                 return false;
             }
-            if (autoincrement != null ? !autoincrement.equals(columnDef.autoincrement) : columnDef.autoincrement != null) {
+            if (autoincrement != null ? !autoincrement
+                    .equals(columnDef.autoincrement)
+                    : columnDef.autoincrement != null) {
                 return false;
             }
-            if (comment != null ? !comment.equals(columnDef.comment) : columnDef.comment != null) {
+            if (comment != null ? !comment.equals(columnDef.comment)
+                    : columnDef.comment != null) {
                 return false;
             }
-            if (constraints != null ? !constraints.equals(columnDef.constraints) : columnDef.constraints != null) {
+            if (constraints != null ? !constraints
+                    .equals(columnDef.constraints)
+                    : columnDef.constraints != null) {
                 return false;
             }
-            if (name != null ? !name.equals(columnDef.name) : columnDef.name != null) {
+            if (name != null ? !name.equals(columnDef.name)
+                    : columnDef.name != null) {
                 return false;
             }
-            if (typeName != null ? !typeName.equals(columnDef.typeName) : columnDef.typeName != null) {
+            if (typeName != null ? !typeName.equals(columnDef.typeName)
+                    : columnDef.typeName != null) {
                 return false;
             }
-            if (typeParam1 != null ? !typeParam1.equals(columnDef.typeParam1) : columnDef.typeParam1 != null) {
+            if (typeParam1 != null ? !typeParam1.equals(columnDef.typeParam1)
+                    : columnDef.typeParam1 != null) {
                 return false;
             }
-            if (typeParam2 != null ? !typeParam2.equals(columnDef.typeParam2) : columnDef.typeParam2 != null) {
+            if (typeParam2 != null ? !typeParam2.equals(columnDef.typeParam2)
+                    : columnDef.typeParam2 != null) {
                 return false;
             }
             return true;
@@ -418,19 +465,24 @@ public class SchemaDef {
         public int hashCode() {
             int result = name != null ? name.hashCode() : 0;
             result = 31 * result + (typeName != null ? typeName.hashCode() : 0);
-            result = 31 * result + (typeParam1 != null ? typeParam1.hashCode() : 0);
-            result = 31 * result + (typeParam2 != null ? typeParam2.hashCode() : 0);
+            result = 31 * result
+                    + (typeParam1 != null ? typeParam1.hashCode() : 0);
+            result = 31 * result
+                    + (typeParam2 != null ? typeParam2.hashCode() : 0);
             result = 31 * result + (nullable ? 1 : 0);
-            result = 31 * result + (autoincrement != null ? autoincrement.hashCode() : 0);
-            result = 31 * result + (constraints != null ? constraints.hashCode() : 0);
+            result = 31 * result
+                    + (autoincrement != null ? autoincrement.hashCode() : 0);
+            result = 31 * result
+                    + (constraints != null ? constraints.hashCode() : 0);
             result = 31 * result + (comment != null ? comment.hashCode() : 0);
             return result;
         }
 
         @Override
         public String toString() {
-            return "ColumnDef[" + name + ' ' + typeName + '(' + typeParam1 + ',' + typeParam2
-                    + ") nullable=" + nullable + " autoinc=" + autoincrement + " constraints" + constraints;
+            return "ColumnDef[" + name + ' ' + typeName + '(' + typeParam1
+                    + ',' + typeParam2 + ") nullable=" + nullable + " autoinc="
+                    + autoincrement + " constraints" + constraints;
         }
     }
 
@@ -453,13 +505,13 @@ public class SchemaDef {
         List<IndexDef> indexes = new ArrayList<IndexDef>();
         UserTableDef parent;
         String engine = "akibandb";
-        int id;
+//        int id;
         private final List<IndexDefHandle> indexHandles = new ArrayList<IndexDefHandle>();
         private ColumnDef autoIncrementColumn = null;
 
         UserTableDef(final CName name, int id) {
             this.name = name;
-            this.id = id;
+//            this.id = id;
         }
 
         public CName getCName() {
@@ -473,7 +525,8 @@ public class SchemaDef {
         public List<String> getColumnNames() {
             List<String> ret = new ArrayList<String>(columns.size());
             for (ColumnDef col : columns) {
-                assert !ret.contains(col.getName()) : col + " already in " + ret;
+                assert !ret.contains(col.getName()) : col + " already in "
+                        + ret;
                 ret.add(col.getName());
             }
             return ret;
@@ -487,9 +540,9 @@ public class SchemaDef {
             return Collections.unmodifiableList(primaryKey);
         }
 
-        public int id() {
-            return id;
-        }
+//        public int id() {
+//            return id;
+//        }
     }
 
     public static class IndexDef {
@@ -505,8 +558,9 @@ public class SchemaDef {
             this.name = name;
         }
 
-        public IndexDef(String name, Set<IndexQualifier> qualifiers, List<IndexColumnDef> columns, CName referenceTable,
-                        List<String> referenceColumns, List<String> constraints) {
+        public IndexDef(String name, Set<IndexQualifier> qualifiers,
+                List<IndexColumnDef> columns, CName referenceTable,
+                List<String> referenceColumns, List<String> constraints) {
             this.name = name;
             this.qualifiers = qualifiers;
             this.columns = columns;
@@ -517,16 +571,21 @@ public class SchemaDef {
 
         /**
          * Gets the parent schema
+         * 
          * @return the parsed schema name, or null if there was no parsed schema
          */
         public String getParentSchema() {
             return getParentSchema(null);
         }
-        
+
         /**
-         * Gets the parent schema, or the specified default if the parent schema is null
-         * @param defaultSchema the specified default
-         * @return the parsed schema name, or defaultSchema if there was no parsed schema
+         * Gets the parent schema, or the specified default if the parent schema
+         * is null
+         * 
+         * @param defaultSchema
+         *            the specified default
+         * @return the parsed schema name, or defaultSchema if there was no
+         *         parsed schema
          */
         public String getParentSchema(String defaultSchema) {
             String ret = referenceTable.getSchema();
@@ -551,8 +610,9 @@ public class SchemaDef {
 
         @Override
         public String toString() {
-            return "IndexDef[name=" + name + "; columns=" + columns + "; qualifiers=" + qualifiers
-                    + "; references=" + referenceTable + " parent columns " + referenceColumns
+            return "IndexDef[name=" + name + "; columns=" + columns
+                    + "; qualifiers=" + qualifiers + "; references="
+                    + referenceTable + " parent columns " + referenceColumns
                     + "; contraints=" + constraints + ']';
         }
 
@@ -565,25 +625,34 @@ public class SchemaDef {
                 return false;
             }
             IndexDef indexDef = (IndexDef) o;
-            if (columns != null ? !columns.equals(indexDef.columns) : indexDef.columns != null) {
+            if (columns != null ? !columns.equals(indexDef.columns)
+                    : indexDef.columns != null) {
                 return false;
             }
-            if (comment != null ? !comment.equals(indexDef.comment) : indexDef.comment != null) {
+            if (comment != null ? !comment.equals(indexDef.comment)
+                    : indexDef.comment != null) {
                 return false;
             }
-            if (constraints != null ? !constraints.equals(indexDef.constraints) : indexDef.constraints != null) {
+            if (constraints != null ? !constraints.equals(indexDef.constraints)
+                    : indexDef.constraints != null) {
                 return false;
             }
-            if (name != null ? !name.equals(indexDef.name) : indexDef.name != null) {
+            if (name != null ? !name.equals(indexDef.name)
+                    : indexDef.name != null) {
                 return false;
             }
-            if (qualifiers != null ? !qualifiers.equals(indexDef.qualifiers) : indexDef.qualifiers != null) {
+            if (qualifiers != null ? !qualifiers.equals(indexDef.qualifiers)
+                    : indexDef.qualifiers != null) {
                 return false;
             }
-            if (referenceColumns != null ? !referenceColumns.equals(indexDef.referenceColumns) : indexDef.referenceColumns != null) {
+            if (referenceColumns != null ? !referenceColumns
+                    .equals(indexDef.referenceColumns)
+                    : indexDef.referenceColumns != null) {
                 return false;
             }
-            if (referenceTable != null ? !referenceTable.equals(indexDef.referenceTable) : indexDef.referenceTable != null) {
+            if (referenceTable != null ? !referenceTable
+                    .equals(indexDef.referenceTable)
+                    : indexDef.referenceTable != null) {
                 return false;
             }
             return true;
@@ -592,11 +661,17 @@ public class SchemaDef {
         @Override
         public int hashCode() {
             int result = name != null ? name.hashCode() : 0;
-            result = 31 * result + (qualifiers != null ? qualifiers.hashCode() : 0);
+            result = 31 * result
+                    + (qualifiers != null ? qualifiers.hashCode() : 0);
             result = 31 * result + (columns != null ? columns.hashCode() : 0);
-            result = 31 * result + (referenceTable != null ? referenceTable.hashCode() : 0);
-            result = 31 * result + (referenceColumns != null ? referenceColumns.hashCode() : 0);
-            result = 31 * result + (constraints != null ? constraints.hashCode() : 0);
+            result = 31 * result
+                    + (referenceTable != null ? referenceTable.hashCode() : 0);
+            result = 31
+                    * result
+                    + (referenceColumns != null ? referenceColumns.hashCode()
+                            : 0);
+            result = 31 * result
+                    + (constraints != null ? constraints.hashCode() : 0);
             result = 31 * result + (comment != null ? comment.hashCode() : 0);
             return result;
         }
@@ -612,9 +687,13 @@ public class SchemaDef {
         }
 
         /**
-         * Returns true if o is an IndexColumnDef that describes the same column.
-         * @param o the other object
-         * @return whether the other object is an IndexColumn with the same column name
+         * Returns true if o is an IndexColumnDef that describes the same
+         * column.
+         * 
+         * @param o
+         *            the other object
+         * @return whether the other object is an IndexColumn with the same
+         *         column name
          */
         @Override
         public boolean equals(Object o) {
@@ -625,7 +704,8 @@ public class SchemaDef {
                 return false;
             }
             IndexColumnDef that = (IndexColumnDef) o;
-            return !(columnName != null ? !columnName.equals(that.columnName) : that.columnName != null);
+            return !(columnName != null ? !columnName.equals(that.columnName)
+                    : that.columnName != null);
         }
 
         @Override
@@ -694,7 +774,8 @@ public class SchemaDef {
             if (!name.equals(cName.name)) {
                 return false;
             }
-            if (schema != null ? !schema.equals(cName.schema) : cName.schema != null) {
+            if (schema != null ? !schema.equals(cName.schema)
+                    : cName.schema != null) {
                 return false;
             }
             return true;
@@ -720,4 +801,110 @@ public class SchemaDef {
             return name;
         }
     }
+
+    public static class StringStream extends ANTLRStringStream {
+
+        public StringStream(final String string) {
+            super(string);
+        }
+
+        @Override
+        public int LA(int i) {
+            if (i == 0) {
+                return 0; // undefined
+            }
+            if (i < 0) {
+                i++; // e.g., translate LA(-1) to use offset 0
+                if ((p + i - 1) < 0) {
+                    return CharStream.EOF; // invalid; no char
+                    // before first
+                    // char
+                }
+            }
+
+            if ((p + i - 1) >= n) {
+
+                return CharStream.EOF;
+            }
+            return Character.toLowerCase(data[p + i - 1]);
+        }
+    }
+
+    /**
+     * Incrementally adds a new table to the SchemaDef.
+     * @param createTableStatement
+     * @return
+     * @throws Exception
+     */
+    public UserTableDef parseCreateTable(final String createTableStatement)
+            throws Exception {
+        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(
+                createTableStatement));
+        CommonTokenStream tokens = new CommonTokenStream(lex);
+        final DDLSourceParser tsparser = new DDLSourceParser(tokens);
+        tsparser.table(this);
+        if (tsparser.getNumberOfSyntaxErrors() > 0) {
+            throw new RuntimeException("DDLSource reported a syntax error in: "
+                    + createTableStatement);
+        }
+        return getCurrentTable();
+    }
+
+    public static SchemaDef parseSchema(final String schema) throws Exception {
+        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(
+                schema));
+        CommonTokenStream tokens = new CommonTokenStream(lex);
+        final DDLSourceParser tsparser = new DDLSourceParser(tokens);
+        final SchemaDef schemaDef = new SchemaDef();
+        tsparser.schema(schemaDef);
+        return schemaDef;
+    }
+    
+    public static String canonicalStatement(final String s) {
+        final StringBuilder sb = new StringBuilder();
+        boolean sc = false;
+        boolean ws = false;
+        for (int i = 0; i < s.length(); i++) {
+            final char c = s.charAt(i);
+            if (c > ' ') {
+                if (ws) {
+                    if (sb.length() > 0) {
+                        sb.append(' ');
+                    }
+                    ws = false;
+                }
+                sb.append(c);
+                sc = c == ';';
+            } else {
+                ws = true;
+            }
+        }
+        if (!sc) {
+            sb.append(';');
+        }
+        strip(sb, CREATE_TABLE);
+        strip(sb, IF_NOT_EXISTS);
+        sb.insert(0, CREATE_TABLE);
+        return sb.toString();
+    }
+    
+    public static IndexDef getAkibanJoin(UserTableDef table) {
+        IndexDef annotatedFK = null;
+        for (final IndexDef indexDef : table.indexes) {
+            if (isAkiban(indexDef)) {
+                // TODO: Fragile - could be two or nore of these
+                assert annotatedFK == null : "previous annotated FK: "
+                        + annotatedFK;
+                annotatedFK = indexDef;
+            }
+        }
+        return annotatedFK;
+    }
+
+    private static void strip(StringBuilder sb, final String s) {
+        if (sb.substring(0, s.length()).equalsIgnoreCase(s)) {
+            sb.delete(0, s.length());
+        }
+    }
+
 }

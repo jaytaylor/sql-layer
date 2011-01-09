@@ -1,10 +1,11 @@
 package com.akiban.ais.util;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 
-import static junit.framework.Assert.*;
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
 
 public final class DDLGeneratorTest {
 
@@ -22,7 +23,7 @@ public final class DDLGeneratorTest {
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",
-                "create table `akiba_objects`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint ,  key group_index_0(`table$__akiban_pk`)) engine=akibandb",
+                "create table `akiba_objects`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint ,  key table$__akiban_pk(`table$__akiban_pk`)) engine=akibandb",
                 generator.createTable(ais.getGroup("myGroup").getGroupTable()));
     }
 }

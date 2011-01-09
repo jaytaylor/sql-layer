@@ -1,13 +1,17 @@
 package com.akiban.cserver.api.common;
 
-import com.akiban.ais.model.*;
+import java.util.Collection;
+
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.manage.SchemaManager;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
-
-import java.util.Collection;
 
 public final class IdResolverImpl implements IdResolver {
     final SchemaManager schemaManager;
@@ -15,13 +19,13 @@ public final class IdResolverImpl implements IdResolver {
 
     public IdResolverImpl(Store store) {
         ArgumentValidation.notNull("store", store);
-        this.schemaManager = store.getSchemaManager();
+        this.schemaManager = ServiceManagerImpl.get().getSchemaManager();
         this.store = store;
     }
 
     @Override
     public int tableId(TableName tableName) throws NoSuchTableException {
-        final AkibaInformationSchema ais = schemaManager.getAisCopy();
+        final AkibaInformationSchema ais = schemaManager.getAis(new SessionImpl());
         final Table aisTable = ais.getTable(tableName);
         if (aisTable == null) {
             throw new NoSuchTableException(tableName);
@@ -31,7 +35,7 @@ public final class IdResolverImpl implements IdResolver {
 
     @Override
     public TableName tableName(int id) throws NoSuchTableException {
-        AkibaInformationSchema ais = schemaManager.getAisCopy();
+        AkibaInformationSchema ais = schemaManager.getAis(new SessionImpl());
         Table found = tableById(ais.getUserTables().values(), id);
         if (found == null) {
             found = tableById(ais.getGroupTables().values(), id);
@@ -57,7 +61,7 @@ public final class IdResolverImpl implements IdResolver {
     private Table tableById(Collection<? extends Table> tables, int needle) {
         for (Table table : tables) {
             final Integer tableId = table.getTableId();
-            if ( (tableId != null) && tableId == needle) {
+            if ((tableId != null) && tableId == needle) {
                 return table;
             }
         }

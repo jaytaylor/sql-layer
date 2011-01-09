@@ -1,8 +1,8 @@
 package com.akiban.admin.config;
 
-import com.akiban.admin.AdminValue;
-
 import java.util.Properties;
+
+import com.akiban.admin.AdminValue;
 
 public class ChunkserverConfig
 {

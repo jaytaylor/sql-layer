@@ -1,13 +1,24 @@
 package com.akiban.cserver.service.config;
 
-import com.akiban.cserver.service.ServiceNotStartedException;
-import com.akiban.cserver.service.ServiceStartupException;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
+
+import com.akiban.cserver.service.ServiceNotStartedException;
+import com.akiban.cserver.service.ServiceStartupException;
 
 public final class ConfigurationServiceImplTest {
 
@@ -58,21 +69,21 @@ public final class ConfigurationServiceImplTest {
     }
 
     @Test(expected= ServiceNotStartedException.class)
-    public void stoppedGetProperties() {
+    public void stoppedGetProperties() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
         service.getProperties();
     }
 
     @Test(expected= ServiceNotStartedException.class)
-    public void stoppedGetPropertyDefault() {
+    public void stoppedGetPropertyDefault() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
         service.getProperty("mod1", "key1", "default1");
     }
 
     @Test(expected=ServiceNotStartedException.class)
-    public void stoppedGetProperty() {
+    public void stoppedGetProperty() throws Exception {
         ConfigurationServiceImpl service = createAndStart();
         service.stop();
         service.getProperty("mod1", "key1");

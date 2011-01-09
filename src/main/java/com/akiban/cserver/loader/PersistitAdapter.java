@@ -1,14 +1,25 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.ais.model.*;
-import com.akiban.cserver.*;
-import com.akiban.cserver.store.PersistitStore;
-import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
-
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.FieldDef;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.store.PersistitStore;
+import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
 public class PersistitAdapter
 {
@@ -46,7 +57,7 @@ public class PersistitAdapter
         columnPositions = task.columnPositions();
         dbRow = new Object[leafTable.getColumns().size()];
         rowData = new RowData(new byte[ROW_DATA_BUFFER_SIZE]);
-        exchange = store.getExchange(leafRowDef, null);
+        exchange = store.getExchange(session, leafRowDef, null);
         logState();
     }
 
@@ -71,13 +82,14 @@ public class PersistitAdapter
             i++;
         }
         // Insert row
-        store.writeRowForBulkLoad(exchange, leafRowDef, rowData, ordinals, nKeyColumns, hKeyFieldDefs, hKey);
+        store.writeRowForBulkLoad(session, exchange, leafRowDef, rowData, ordinals, nKeyColumns, hKeyFieldDefs, hKey);
     }
 
-    public void close() throws InvalidOperationException, PersistitException
+    public void close() throws Exception
     {
-        store.updateTableStats(leafRowDef, rowCount);
-        store.releaseExchange(exchange);
+        store.flushIndexes(session);
+        store.updateTableStats(session, leafRowDef, rowCount);
+        store.releaseExchange(session, exchange);
     }
 
     // parentColumns are columns that may be present in
@@ -146,4 +158,5 @@ public class PersistitAdapter
     private final Exchange exchange;
     private final Tracker tracker;
     private long rowCount = 0;
+    private Session session = new SessionImpl();
 }

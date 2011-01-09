@@ -1,13 +1,13 @@
 package com.akiban.cserver.encoding;
 
+import java.nio.ByteBuffer;
+
 import com.akiban.ais.model.Type;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
 import com.persistit.Key;
-
-import java.nio.ByteBuffer;
 
 public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
     VarBinaryEncoder() {

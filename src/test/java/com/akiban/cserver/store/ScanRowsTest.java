@@ -22,7 +22,7 @@ public class ScanRowsTest extends AbstractScanBase {
 
     @Test
     public void testScanRows() throws Exception {
-        final RowDef rowDef = groupRowDef("_akiba_a");
+        final RowDef rowDef = rowDef("_akiba_a");
         final int fc = rowDef.getFieldCount();
         final RowData start = new RowData(new byte[256]);
         final RowData end = new RowData(new byte[256]);
@@ -123,7 +123,7 @@ public class ScanRowsTest extends AbstractScanBase {
         // Test querying join columns within a group table, on both sides of the join
         // parent side
         {
-            final RowDef userRowDef = userRowDef("aaa");
+            final RowDef userRowDef = rowDef("aaa");
             RowDef parentRowDef = rowDefCache.getRowDef(userRowDef.getParentRowDefId());
             int pkcol = findFieldIndex(rowDef, "aa$aa1");
             assertTrue(pkcol >= 0);
@@ -141,7 +141,7 @@ public class ScanRowsTest extends AbstractScanBase {
         }
         // child side
         {
-            final RowDef userRowDef = userRowDef("aaa");
+            final RowDef userRowDef = rowDef("aaa");
             int fkcol = findFieldIndex(rowDef, "aaa$aa1");
             assertTrue(fkcol >= 0);
             Object[] startValue = new Object[fc];
@@ -157,12 +157,12 @@ public class ScanRowsTest extends AbstractScanBase {
                             bitMap, findIndexId(rowDef, userRowDef, 0))); // position of aa1 in the aaa table
         }
 
-        store.deleteIndexes("");
+        store.deleteIndexes(session, "");
 
         {
-            final RowDef userRowDef = userRowDef("aaaa");
+            final RowDef userRowDef = rowDef("aaaa");
             int col = findFieldIndex(rowDef, "aa$aa1");
-            int indexId = userRowDef("aa").getPKIndexDef().getId();
+            int indexId = rowDef("aa").getPKIndexDef().getId();
             Object[] startValue = new Object[fc];
             Object[] endValue = new Object[fc];
             startValue[col] = 1;
@@ -176,12 +176,12 @@ public class ScanRowsTest extends AbstractScanBase {
                             bitMap, indexId));
         }
 
-        store.buildIndexes("");
+        store.buildIndexes(session, "");
 
         {
-            final RowDef userRowDef = userRowDef("aaaa");
+            final RowDef userRowDef = rowDef("aaaa");
             int col = findFieldIndex(rowDef, "aa$aa1");
-            int indexId = userRowDef("aa").getPKIndexDef().getId();
+            int indexId = rowDef("aa").getPKIndexDef().getId();
             Object[] startValue = new Object[fc];
             Object[] endValue = new Object[fc];
             startValue[col] = 1;
@@ -198,14 +198,14 @@ public class ScanRowsTest extends AbstractScanBase {
 
     @Test
     public void testScanFlags() throws Exception {
-        final RowDef rowDef = groupRowDef("_akiba_a");
+        final RowDef rowDef = rowDef("_akiba_a");
         final int fc = rowDef.getFieldCount();
         final RowData start = new RowData(new byte[256]);
         final RowData end = new RowData(new byte[256]);
         byte[] bitMap;
 
         {
-            final RowDef userRowDef = userRowDef("a");
+            final RowDef userRowDef = rowDef("a");
             bitMap = bitsToRoot(userRowDef, rowDef);
             assertEquals(
                     10,
@@ -256,7 +256,7 @@ public class ScanRowsTest extends AbstractScanBase {
         }
 
         {
-            final RowDef userRowDef = userRowDef("aaaa");
+            final RowDef userRowDef = rowDef("aaaa");
             bitMap = bitsToRoot(userRowDef, rowDef);
             assertEquals(
                     11110,
@@ -272,7 +272,7 @@ public class ScanRowsTest extends AbstractScanBase {
                             bitMap, findIndexId(rowDef, userRowDef, 1)));
         }
         {
-            final RowDef userRowDef = userRowDef("aa");
+            final RowDef userRowDef = rowDef("aa");
             int col = findFieldIndex(rowDef, "aa$aa4");
             int indexId = findIndexId(rowDef, "aa$str");
             Object[] startValue = new Object[fc];
@@ -326,7 +326,7 @@ public class ScanRowsTest extends AbstractScanBase {
 
     @Test
     public void testCoveringIndex() throws Exception {
-        final RowDef rowDef = userRowDef("aaab");
+        final RowDef rowDef = rowDef("aaab");
         final int indexId = findIndexId(rowDef, "aaab3aaab1");
         final byte[] columnBitMap = new byte[1];
         columnBitMap[0] |= 1 << findFieldIndex(rowDef, "aaab1");
@@ -342,8 +342,8 @@ public class ScanRowsTest extends AbstractScanBase {
     public void testBug234() throws Exception {
         // Populates the a, aa and aaa tables, but inserts no
         // aaaa rows.
-        final RowDef rowDef = groupRowDef("_akiba_a");
-        final RowDef userRowDef = userRowDef("aaaa");
+        final RowDef rowDef = rowDef("_akiba_a");
+        final RowDef userRowDef = rowDef("aaaa");
         int col = findFieldIndex(rowDef, "aaaa$aaaa1");
 
         final int fc = rowDef.getFieldCount();
@@ -359,7 +359,7 @@ public class ScanRowsTest extends AbstractScanBase {
         
         bitMap = bitsToRoot(userRowDef, rowDef);
 
-        final RowCollector rc = store.newRowCollector(start.getRowDefId(), 0,
+        final RowCollector rc = store.newRowCollector(session, start.getRowDefId(), 0,
                 0, start, end, bitMap);
         final ByteBuffer payload = ByteBuffer.allocate(65536);
         // Since there are no aaaa rows, we should get no results
@@ -395,7 +395,7 @@ public class ScanRowsTest extends AbstractScanBase {
 
         final RowData start = new RowData(new byte[256]);
         final RowData end = new RowData(new byte[256]);
-        final RowDef rowDef = userRowDef("aaaa");
+        final RowDef rowDef = rowDef("aaaa");
         start.createRow(rowDef, new Object[] { null, 123 });
         end.createRow(rowDef, new Object[] { null, 132 });
         final int indexId = findIndexId(rowDef, rowDef, 1);

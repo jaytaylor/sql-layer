@@ -1,41 +1,55 @@
 package com.akiban.cserver.itests;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.TableStatistics;
-import com.akiban.cserver.api.*;
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.scan.*;
-import com.akiban.cserver.service.Service;
-import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.ServiceManagerImpl;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
-import com.akiban.cserver.service.network.NetworkService;
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
-import org.junit.After;
-import org.junit.Before;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static junit.framework.Assert.*;
-import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.After;
+import org.junit.Before;
+
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.CServerTestCase;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.api.DDLFunctions;
+import com.akiban.cserver.api.DDLFunctionsImpl;
+import com.akiban.cserver.api.DMLFunctions;
+import com.akiban.cserver.api.DMLFunctionsImpl;
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.NoSuchTableException;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.scan.CursorId;
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.api.dml.scan.NiceRow;
+import com.akiban.cserver.api.dml.scan.RowOutput;
+import com.akiban.cserver.api.dml.scan.ScanAllRequest;
+import com.akiban.cserver.api.dml.scan.ScanRequest;
+import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.service.UnitTestServiceFactory;
+import com.akiban.cserver.service.logging.LoggingServiceImpl;
+import com.akiban.cserver.service.network.NetworkService;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
  * various convenience testing methods.</p>
  */
-public class ApiTestBase {
+public class ApiTestBase extends CServerTestCase {
 
     static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
@@ -50,8 +64,12 @@ public class ApiTestBase {
         }
     }
 
-    private static class TestServiceManagerFactory extends UnitTestServiceManagerFactory {
+    private static class TestServiceServiceFactory extends UnitTestServiceFactory {
 
+        private TestServiceServiceFactory() {
+            super(false, null);
+        }
+        
         @Override
         public Service<NetworkService> networkService() {
             return new Service<NetworkService>() {
@@ -86,7 +104,7 @@ public class ApiTestBase {
 
     private static class TestServiceManager extends ServiceManagerImpl {
         private TestServiceManager() {
-            super(new TestServiceManagerFactory());
+            super(new TestServiceServiceFactory());
         }
     }
 
@@ -101,8 +119,8 @@ public class ApiTestBase {
     public void setUp() throws Exception {
         sm = new TestServiceManager( );
         sm.startServices();
-        dml = new DMLFunctionsImpl(sm.getStore(), new LoggingServiceImpl());
-        ddl = new DDLFunctionsImpl(sm.getStore());
+        dml = new DMLFunctionsImpl(new LoggingServiceImpl());
+        ddl = new DDLFunctionsImpl();
     }
 
     @After
@@ -119,7 +137,7 @@ public class ApiTestBase {
     }
 
     protected final TableId createTable(String schema, String table, String definition) throws InvalidOperationException {
-        ddl().createTable(schema, String.format("CREATE TABLE %s (%s)", table, definition));
+        ddl().createTable(session, schema, String.format("CREATE TABLE %s (%s)", table, definition));
         return getTableId(schema, table);
     }
 
@@ -131,13 +149,13 @@ public class ApiTestBase {
      * @throws InvalidOperationException for various reasons :)
      */
     protected void expectRowCount(TableId tableId, long rowsExpected) throws InvalidOperationException {
-        TableStatistics tableStats = dml().getTableStatistics(tableId, true);
+        TableStatistics tableStats = dml().getTableStatistics(session, tableId, true);
         assertEquals("table ID", tableId.getTableId(null), tableStats.getRowDefId());
         assertEquals("rows by TableStatistics", rowsExpected, tableStats.getRowCount());
     }
 
     protected final TableId getTableId(String schema, String table) {
-        AkibaInformationSchema ais = ddl().getAIS();
+        AkibaInformationSchema ais = ddl().getAIS(session);
         assertNotNull("ais was null", ais);
         UserTable uTable = ais.getUserTable(schema, table);
         assertNotNull("utable was null", uTable);
@@ -162,18 +180,18 @@ public class ApiTestBase {
     protected List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
         Session session = new SessionImpl();
         ListRowOutput output = new ListRowOutput();
-        CursorId cursorId = dml().openCursor(request, session);
+        CursorId cursorId = dml().openCursor(session, request);
 
-        while(dml().scanSome(cursorId, session, output, -1))
+        while(dml().scanSome(session, cursorId, output, -1))
         {}
-        dml().closeCursor(cursorId, session);
+        dml().closeCursor(session, cursorId);
 
         return output.getRows();
     }
 
     protected void writeRows(NewRow... rows) throws InvalidOperationException {
         for (NewRow row : rows) {
-            dml().writeRow(row);
+            dml().writeRow(session, row);
         }
     }
 
@@ -182,7 +200,7 @@ public class ApiTestBase {
     }
 
     protected void expectFullRows(TableId tableId, NewRow... expectedRows) throws InvalidOperationException {
-        Table uTable = ddl().getAIS().getTable( ddl().getTableName(tableId) );
+        Table uTable = ddl().getAIS(session).getTable( ddl().getTableName(tableId) );
         Set<ColumnId> allCols = new HashSet<ColumnId>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add( ColumnId.of(i) );

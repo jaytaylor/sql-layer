@@ -1,9 +1,9 @@
 package com.akiban.cserver.loader;
 
+import java.util.List;
+
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
-
-import java.util.List;
 
 public abstract class GenerateParentTask extends Task
 {

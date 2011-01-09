@@ -5,7 +5,8 @@ import java.net.URLClassLoader;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CustomQuery;
-import com.akiban.cserver.store.PersistitStore;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean
 {
@@ -77,31 +78,20 @@ public class ManageMXBeanImpl implements ManageMXBean
 
     @Override
     public void buildIndexes(final String arg) {
-        getStore().buildIndexes(arg);
+        getStore().buildIndexes(new SessionImpl(), arg);
     }
 
     @Override
     public void deleteIndexes(final String arg) {
-        getStore().deleteIndexes(arg);
+        getStore().deleteIndexes(new SessionImpl(), arg);
     }
 
     @Override
     public void flushIndexes() {
-        getStore().flushIndexes();
+        getStore().flushIndexes(new SessionImpl());
     }
 
-    // TODO - temporary
-    @Override
-    public String copyBackPages() {
-        try {
-            getStore().getDb().copyBackPages();
-        } catch (Exception e) {
-            return e.toString();
-        }
-        return "done";
-    }
-    
-    
+   
     public String loadCustomQuery(final String className) {
         try {
             customClass = null;
@@ -132,8 +122,8 @@ public class ManageMXBeanImpl implements ManageMXBean
         }
     }
 
-    private PersistitStore getStore()
+    private Store getStore()
     {
-        return ((PersistitStore) cserver.getServiceManager().getStore());
+        return cserver.getServiceManager().getStore();
     }
 }

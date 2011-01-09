@@ -1,7 +1,5 @@
 package com.akiban.cserver.api.common;
 
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.message.ErrorCode;
 
 public final class ResolutionException extends RuntimeException {
     public ResolutionException() {

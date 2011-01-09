@@ -1,12 +1,12 @@
 package com.akiban.ais.io;
 
-import com.akiban.ais.metamodel.MetaModel;
-import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.Source;
-
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.akiban.ais.metamodel.MetaModel;
+import com.akiban.ais.metamodel.ModelObject;
+import com.akiban.ais.model.Source;
 
 public class MessageSource extends Source
 {

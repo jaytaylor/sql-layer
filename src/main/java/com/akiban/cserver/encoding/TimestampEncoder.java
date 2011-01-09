@@ -1,11 +1,11 @@
 package com.akiban.cserver.encoding;
 
+import java.text.ParseException;
+import java.util.Date;
+
 import com.akiban.ais.model.Type;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
-
-import java.text.ParseException;
-import java.util.Date;
 
 public final class TimestampEncoder extends DateTimeEncoder {
     TimestampEncoder() {

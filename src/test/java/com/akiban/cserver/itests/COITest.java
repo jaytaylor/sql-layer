@@ -1,17 +1,25 @@
 package com.akiban.cserver.itests;
 
-import com.akiban.ais.model.*;
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.scan.NewRow;
-import com.akiban.cserver.api.dml.scan.NewRowBuilder;
-import org.junit.Ignore;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertSame;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static junit.framework.Assert.*;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.PrimaryKey;
+import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.api.dml.scan.NewRowBuilder;
 
 public final class COITest extends ApiTestBase {
     private static class TableIds {
@@ -32,7 +40,7 @@ public final class COITest extends ApiTestBase {
         TableId cId = createTable("coi", "c", "cid int key, name varchar(32)");
         TableId oId = createTable("coi", "o", "oid int key, c_id int, CONSTRAINT __akiban_fk_o FOREIGN KEY index1 (c_id) REFERENCES c(cid)");
         TableId iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY index2 (o_id) REFERENCES o(oid)");
-        AkibaInformationSchema ais = ddl().getAIS();
+        AkibaInformationSchema ais = ddl().getAIS(session);
 
         // Lots of checking, the more the merrier
         final UserTable cTable = ais.getUserTable( ddl().getTableName(cId) );
@@ -42,7 +50,7 @@ public final class COITest extends ApiTestBase {
             PrimaryKey pk = cTable.getPrimaryKey();
             List<Column> expectedPkCols = Arrays.asList( cTable.getColumn("cid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
-            assertSame("pk index", cTable.getIndex(Index.PRIMARY_KEY_CONSTRAINT), pk.getIndex());
+            assertSame("pk index", cTable.getIndex("PRIMARY"), pk.getIndex());
             assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
 
             assertEquals("parent join", null, cTable.getParentJoin());
@@ -55,7 +63,7 @@ public final class COITest extends ApiTestBase {
             PrimaryKey pk = oTable.getPrimaryKey();
             List<Column> expectedPkCols = Arrays.asList( oTable.getColumn("oid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
-            assertSame("pk index", oTable.getIndex(Index.PRIMARY_KEY_CONSTRAINT), pk.getIndex());
+            assertSame("pk index", oTable.getIndex("PRIMARY"), pk.getIndex());
             assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
 
             assertNotNull("parent join is null", oTable.getParentJoin());
@@ -69,7 +77,7 @@ public final class COITest extends ApiTestBase {
             PrimaryKey pk = iTable.getPrimaryKey();
             List<Column> expectedPkCols = Arrays.asList( iTable.getColumn("iid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
-            assertSame("pk index", iTable.getIndex(Index.PRIMARY_KEY_CONSTRAINT), pk.getIndex());
+            assertSame("pk index", iTable.getIndex("PRIMARY"), pk.getIndex());
             assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
 
             assertNotNull("parent join is null", iTable.getParentJoin());

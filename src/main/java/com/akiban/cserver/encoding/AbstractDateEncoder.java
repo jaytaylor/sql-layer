@@ -1,13 +1,13 @@
 package com.akiban.cserver.encoding;
 
+import java.text.ParseException;
+import java.util.Date;
+
 import com.akiban.ais.model.Type;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
 import com.persistit.Key;
-
-import java.text.ParseException;
-import java.util.Date;
 
 abstract class AbstractDateEncoder extends EncodingBase<Date> {
     AbstractDateEncoder() {

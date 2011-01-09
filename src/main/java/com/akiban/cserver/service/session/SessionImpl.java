@@ -1,9 +1,9 @@
 package com.akiban.cserver.service.session;
 
-import com.akiban.util.ArgumentValidation;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.akiban.util.ArgumentValidation;
 
 public final class SessionImpl implements Session
 {
@@ -37,8 +37,10 @@ public final class SessionImpl implements Session
     @Override
     public void close()
     {
-        // For now do nothing.
+        // For now do nothing to any cached resources.
         // Later, we'll close any "resource" that is added to the session.
+        //
+        map.clear();
     }
     
     private static class Key

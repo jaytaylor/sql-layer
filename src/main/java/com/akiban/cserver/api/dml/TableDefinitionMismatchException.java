@@ -1,6 +1,5 @@
 package com.akiban.cserver.api.dml;
 
-import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.message.ErrorCode;
 

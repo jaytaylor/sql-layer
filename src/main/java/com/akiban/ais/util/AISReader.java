@@ -1,16 +1,20 @@
 package com.akiban.ais.util;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+
 import com.akiban.ais.io.CSVSource;
 import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MySQLSource;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Source;
-
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 
 public class AISReader
 {

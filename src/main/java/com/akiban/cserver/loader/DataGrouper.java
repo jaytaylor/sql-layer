@@ -1,12 +1,12 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.util.Command;
-
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.IdentityHashMap;
+
+import com.akiban.ais.model.UserTable;
+import com.akiban.util.Command;
 
 public class DataGrouper
 {

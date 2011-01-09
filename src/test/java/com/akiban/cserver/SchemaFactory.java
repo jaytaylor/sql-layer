@@ -2,7 +2,7 @@ package com.akiban.cserver;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.store.PersistitStoreTableManager;
+import com.akiban.cserver.store.SchemaManager;
 import com.persistit.exception.PersistitException;
 
 public class SchemaFactory
@@ -33,9 +33,9 @@ public class SchemaFactory
     private static class FakeRowDefCache extends RowDefCache
     {
         @Override
-        public void fixUpOrdinals(PersistitStoreTableManager tableManager) throws PersistitException
+        public void fixUpOrdinals(SchemaManager schemaManager) throws PersistitException
         {
-            assert tableManager == null;
+            assert schemaManager == null;
             for (RowDef groupRowDef : getRowDefs()) {
                 if (groupRowDef.isGroupTable()) {
                     groupRowDef.setOrdinal(0);
