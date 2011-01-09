@@ -45,13 +45,6 @@ public class RowDef implements TreeLink {
     private int ordinal;
 
     /**
-     * Field(s) that constitute the primary key for this table. Must not be
-     * empty; will usually have one element. Multiple elements define a compound
-     * primary key.
-     */
-    private int[] pkFields;
-
-    /**
      * Field(s) that constitute the foreign key by which this row is joined to
      * its parent table.
      */
@@ -65,7 +58,7 @@ public class RowDef implements TreeLink {
     /**
      * Field index of the auto-increment column; -1 if none.
      */
-    private final int autoIncrementField;
+    private int autoIncrementField;
 
     /**
      * RowDefs of constituent user tables. Populated only if this is the RowDef
@@ -186,14 +179,6 @@ public class RowDef implements TreeLink {
         for (int i = 0; i < fieldDefs.length; i++) {
             sb.append(i == 0 ? "[" : ",");
             sb.append(fieldDefs[i].getType());
-            if (pkFields != null) {
-                for (int j = 0; j < pkFields.length; j++) {
-                    if (pkFields[j] == i) {
-                        sb.append("*");
-                        break;
-                    }
-                }
-            }
             if (parentJoinFields != null) {
                 for (int j = 0; j < parentJoinFields.length; j++) {
                     if (parentJoinFields[j] == i) {
@@ -472,8 +457,8 @@ public class RowDef implements TreeLink {
         this.parentJoinFields = parentJoinFields;
     }
 
-    public void setPkFields(int[] pkFields) {
-        this.pkFields = pkFields;
+    public void setAutoIncrementField(int autoIncrementField) {
+        this.autoIncrementField = autoIncrementField;
     }
 
     public void setTreeName(final String treeName) {
@@ -650,16 +635,16 @@ public class RowDef implements TreeLink {
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexDefs, def.indexDefs)
                 && ordinal == def.ordinal
-                && Arrays.equals(pkFields, def.pkFields)
                 && Arrays.equals(parentJoinFields, def.parentJoinFields);
 
     }
 
     @Override
     public int hashCode() {
-        return getRowDefId() ^ table.getName().hashCode()
-                ^ CServerUtil.hashCode(treeName) ^ Arrays.hashCode(fieldDefs)
-                ^ Arrays.hashCode(indexDefs) ^ Arrays.hashCode(pkFields)
+        return getRowDefId()
+                ^ table.getName().hashCode()
+                ^ CServerUtil.hashCode(treeName)
+                ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(parentJoinFields);
     }
 

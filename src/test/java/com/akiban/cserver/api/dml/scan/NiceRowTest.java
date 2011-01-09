@@ -13,7 +13,7 @@ import org.junit.Test;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.RowDefCacheFactory;
+import com.akiban.cserver.SchemaFactory;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 
@@ -135,7 +135,7 @@ public final class NiceRowTest {
             ddl[i++] = String.format(", field_%s int", c);
         }
         ddl[i] = ") engine = akibandb;";
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         return rowDefCache.getRowDef("test_schema.test_table");
     }
 
@@ -171,5 +171,5 @@ public final class NiceRowTest {
         return bytesList;
     }
 
-    private static final RowDefCacheFactory ROW_DEF_CACHE_FACTORY = new RowDefCacheFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
 }

@@ -263,23 +263,15 @@ public class IndexDef implements TreeLink {
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
                 Column column = hKeyColumn.column();
                 H2I h2i;
-                if (column == null) {
-                    // hkey column is a pk-less table counter
-                    h2i = H2I.fromHKeyField(hKeyColumn.positionInHKey());
-                    h2iList.add(h2i);
-                    indexColumns.add(null);
-                } else {
-                    // hkey column is a real column
-                    if (!indexColumns.contains(column)) {
-                        if (index.getTable().getColumns().contains(hKeyColumn.column())) {
-                            h2i = H2I.fromField(hKeyColumn.column().getPosition());
-                        } else {
-                            assert rowDef.isUserTable();
-                            h2i = H2I.fromHKeyField(hKeyColumn.positionInHKey());
-                        }
-                        h2iList.add(h2i);
-                        indexColumns.add(hKeyColumn.column());
+                if (!indexColumns.contains(column)) {
+                    if (index.getTable().getColumns().contains(hKeyColumn.column())) {
+                        h2i = H2I.fromField(hKeyColumn.column().getPosition());
+                    } else {
+                        assert rowDef.isUserTable();
+                        h2i = H2I.fromHKeyField(hKeyColumn.positionInHKey());
                     }
+                    h2iList.add(h2i);
+                    indexColumns.add(hKeyColumn.column());
                 }
             }
         }

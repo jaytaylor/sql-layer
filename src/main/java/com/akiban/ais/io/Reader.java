@@ -181,6 +181,13 @@ public class Reader
 
     protected void close() throws Exception
     {
+        // Need to call UserTable.endTable to get PKs created properly (in the case that no PK was declared). This isn't
+        // so easy from DDLSource, at least with DDLSource in its current form. It should be harmless to call
+        // endTable here, if a PK exists (possibly due to a prior call of endTable). But if it hasn't been called,
+        // this is a good time to do it.
+        for (UserTable userTable : ais.getUserTables().values()) {
+            userTable.endTable();
+        }
         source.close();
     }
 

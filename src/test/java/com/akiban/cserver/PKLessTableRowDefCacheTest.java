@@ -30,11 +30,11 @@ public class PKLessTableRowDefCacheTest
             "    unique key(d, b)",
             ");"
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef test = rowDefCache.getRowDef(tableName("test"));
         UserTable t = (UserTable)test.table();
         assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
-        checkHKey(t.hKey(), t, t, null);
+        checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
         IndexDef index;
         IndexDef.H2I[] indexKeyFields;
         IndexDef.I2H[] hKeyFields;
@@ -45,8 +45,7 @@ public class PKLessTableRowDefCacheTest
         indexKeyFields = index.indexKeyFields();
         assertEquals(4, indexKeyFields[0].fieldIndex()); // test.e
         assertEquals(3, indexKeyFields[1].fieldIndex()); // test.d
-        assertEquals(-1, indexKeyFields[2].fieldIndex()); // test row counter is not a real counter
-        assertEquals(1, indexKeyFields[2].hKeyLoc()); // test row counter position in hkey
+        assertEquals(5, indexKeyFields[2].fieldIndex()); // Akiban PK
         hKeyFields = index.hkeyFields();
         assertEquals(test.getOrdinal(), hKeyFields[0].ordinal()); // test ordinal
         assertEquals(2, hKeyFields[1].indexKeyLoc()); // test row counter
@@ -57,8 +56,7 @@ public class PKLessTableRowDefCacheTest
         indexKeyFields = index.indexKeyFields();
         assertEquals(3, indexKeyFields[0].fieldIndex()); // test.d
         assertEquals(1, indexKeyFields[1].fieldIndex()); // test.b
-        assertEquals(-1, indexKeyFields[2].fieldIndex()); // test row counter is not a real counter
-        assertEquals(1, indexKeyFields[2].hKeyLoc()); // test row counter position in hkey
+        assertEquals(5, indexKeyFields[2].fieldIndex()); // test row counter is not a real counter
         hKeyFields = index.hkeyFields();
         assertEquals(test.getOrdinal(), hKeyFields[0].ordinal()); // test ordinal
         assertEquals(2, hKeyFields[1].indexKeyLoc()); // test row counter
@@ -82,7 +80,7 @@ public class PKLessTableRowDefCacheTest
             "    key(c2, c1)",
             ");"
         };
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         IndexDef index;
         IndexDef.H2I[] indexKeyFields;
         IndexDef.I2H[] hKeyFields;
@@ -107,7 +105,7 @@ public class PKLessTableRowDefCacheTest
         assertEquals(2, parent.getHKeyDepth()); // child ordinal, child row counter
         checkHKey(c.hKey(),
                   p, c, "p1",
-                  c, c, null);
+                  c, c, Column.AKIBAN_PK_NAME);
         // c2, c1 index
         index = index(child, "c2", "c1");
         assertTrue(!index.isPkIndex());
@@ -158,20 +156,13 @@ public class PKLessTableRowDefCacheTest
                 Object expectedTable = elements[e++];
                 String expectedColumnName = (String) elements[e++];
                 Column column = hKeyColumn.column();
-                if (expectedColumnName == null) {
-                    // hkey column from pkless table
-                    Assert.assertEquals(expectedTable, segment.table());
-                    Assert.assertNull(column);
-                } else {
-                    // hkey column is a real column
-                    Assert.assertEquals(expectedTable, column.getTable());
-                    Assert.assertEquals(expectedColumnName, hKeyColumn.column().getName());
-                }
+                Assert.assertEquals(expectedTable, column.getTable());
+                Assert.assertEquals(expectedColumnName, hKeyColumn.column().getName());
             }
         }
         Assert.assertEquals(elements.length, e);
     }
 
     private static final String SCHEMA = "schema";
-    private static final RowDefCacheFactory ROW_DEF_CACHE_FACTORY = new RowDefCacheFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
 }

@@ -186,8 +186,10 @@ public class AISBuilder {
 
     public void basicSchemaIsComplete() {
         LOG.info("basicSchemaIsComplete");
-        for (ForwardTableReference forwardTableReference : forwardReferences
-                .values()) {
+        for (UserTable userTable : ais.getUserTables().values()) {
+            userTable.endTable();
+        }
+        for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
             UserTable childTable = forwardTableReference.childTable();
             UserTable parentTable = ais.getUserTable(forwardTableReference
                     .parentTableName().getSchemaName(), forwardTableReference

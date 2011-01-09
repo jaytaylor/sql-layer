@@ -237,42 +237,6 @@ public class RowDefCache implements CServerConstants {
             parentJoinFields = new int[0];
         }
 
-        // pkFields - The columns from this table, contributing to the hkey,
-        // that don't have matching
-        // columns in the parent.
-        int[] pkFields = null;
-        final PrimaryKey primaryKey = table.getPrimaryKey();
-        if (primaryKey != null) {
-            Index pkIndex = primaryKey.getIndex();
-            assert pkIndex != null : primaryKey;
-            if (pkFields != null) {
-                throw new IllegalStateException(
-                        "Can't handle two PK indexes on "
-                                + table.getName().getTableName());
-            }
-            final List<IndexColumn> indexColumns = pkIndex.getColumns();
-            final List<Integer> pkFieldList = new ArrayList<Integer>(1);
-            for (final IndexColumn indexColumn : indexColumns) {
-                final int position = indexColumn.getColumn().getPosition();
-                boolean isParentJoin = false;
-                for (int i = 0; i < parentJoinFields.length; i++) {
-                    if (position == parentJoinFields[i]) {
-                        isParentJoin = true;
-                        break;
-                    }
-                }
-                if (!isParentJoin) {
-                    pkFieldList.add(position);
-                }
-            }
-
-            int pkField = 0;
-            pkFields = new int[pkFieldList.size()];
-            for (final Integer position : pkFieldList) {
-                pkFields[pkField++] = position;
-            }
-        }
-
         // root table
         UserTable root = table;
         while (root.getParentJoin() != null) {
@@ -303,7 +267,6 @@ public class RowDefCache implements CServerConstants {
               // no fields.
         }
         rowDef.setTreeName(groupTableName);
-        rowDef.setPkFields(pkFields);
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
                 .size()]));
@@ -343,7 +306,6 @@ public class RowDefCache implements CServerConstants {
               // IndeDef that has no fields.
         }
         rowDef.setTreeName(groupTableName);
-        rowDef.setPkFields(new int[0]);
         rowDef.setUserTableRowDefs(userTableRowDefs);
         rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
                 .size()]));

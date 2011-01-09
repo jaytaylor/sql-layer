@@ -1,10 +1,8 @@
 import operator
-import db.map
 
 Operator = operator.Operator
 RANDOM_ACCESS = operator.RANDOM_ACCESS
 SEQUENTIAL_ACCESS = operator.SEQUENTIAL_ACCESS
-Map = db.map.Map
 
 class Scan(Operator):
 
@@ -33,8 +31,9 @@ class Scan(Operator):
 
 class TableScan(Scan):
 
-    def __init__(self, map):
-        Scan.__init__(self, iter(map))
+    def __init__(self, table):
+        iterator = iter(table)
+        Scan.__init__(self, iterator)
 
 class IndexScan(Scan):
 

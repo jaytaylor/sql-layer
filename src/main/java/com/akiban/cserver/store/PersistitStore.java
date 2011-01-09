@@ -179,7 +179,7 @@ public class PersistitStore implements CServerConstants, Store {
      * @throws InvalidOperationException
      */
     void constructHKey(final Session session, Exchange hEx, RowDef rowDef,
-            RowData rowData) throws PersistitException,
+            RowData rowData, boolean insertingRow) throws PersistitException,
             InvalidOperationException {
         Key hKey = hEx.getKey();
         hKey.clear();
@@ -218,15 +218,16 @@ public class PersistitStore implements CServerConstants, Store {
             for (int c = 0; c < segmentColumns.size(); c++) {
                 HKeyColumn segmentColumn = segmentColumns.get(c);
                 Column column = segmentColumn.column();
-                if (column == null) {
+                FieldDef fieldDef = fieldDefs[column.getPosition()];
+                if (insertingRow && column.isAkibanPKColumn()) {
                     // Must be a PK-less table. Use unique id from TableStatus.
-                    assert segmentColumn.pkLessTable().getTableId() == segmentRowDef
-                            .getRowDefId();
                     TableStatus tableStatus = segmentRowDef.getTableStatus();
-                    hKey.append(tableStatus.newUniqueId());
+                    long rowId = tableStatus.newUniqueId();
+                    hKey.append(rowId);
+                    // Write rowId into the value part of the row also.
+                    rowData.updateNonNullLong(fieldDef, rowId);
                 } else {
-                    appendKeyField(hKey, fieldDefs[column.getPosition()],
-                            rowData);
+                    appendKeyField(hKey, fieldDef, rowData);
                 }
             }
         }
@@ -421,8 +422,7 @@ public class PersistitStore implements CServerConstants, Store {
                     // Does the heavy lifting of looking up the full hkey in
                     // parent's primary index if necessary.
                     //
-                    constructHKey(session, hEx, rowDef, rowData);
-
+                    constructHKey(session, hEx, rowDef, rowData, true);
                     if (hEx.isValueDefined()) {
                         throw new InvalidOperationException(
                                 ErrorCode.DUPLICATE_KEY, "Non-unique key: %s",
@@ -542,7 +542,7 @@ public class PersistitStore implements CServerConstants, Store {
                 try {
                     final TableStatus ts = rowDef.getTableStatus();
 
-                    constructHKey(session, hEx, rowDef, rowData);
+                    constructHKey(session, hEx, rowDef, rowData, false);
                     hEx.fetch();
                     //
                     // Verify that the row exists
@@ -643,7 +643,7 @@ public class PersistitStore implements CServerConstants, Store {
                 transaction.begin();
                 try {
                     final TableStatus ts = rowDef.getTableStatus();
-                    constructHKey(session, hEx, rowDef, oldRowData);
+                    constructHKey(session, hEx, rowDef, oldRowData, false);
                     hEx.fetch();
                     //
                     // Verify that the row exists

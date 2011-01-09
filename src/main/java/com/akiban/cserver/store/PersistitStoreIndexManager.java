@@ -115,7 +115,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 //
                 try {
                     store.constructHKey(session, analysisEx, indexAnalysisRowDef,
-                            rowData);
+                            rowData, false);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {
@@ -223,7 +223,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                     //
                     try {
                         store.constructHKey(session, analysisEx, indexAnalysisRowDef,
-                                rowData);
+                                rowData, false);
                         analysisEx.getKey().cut();
                         analysisEx.remove(Key.GT);
                     } catch (PersistitException e) {

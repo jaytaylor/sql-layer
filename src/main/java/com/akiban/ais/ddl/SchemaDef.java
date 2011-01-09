@@ -16,6 +16,8 @@ import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 
+import com.akiban.ais.model.Column;
+
 /**
  * Structures used to hold the results of parsing DDL statements. DDLSource.g includes
  * productions that modify a SchemaDef in a peculiar and particular order. Other
@@ -324,7 +326,16 @@ public class SchemaDef {
         currentColumn.constraints.add(constraint);
     }
 
-    void finishTable() {
+    void finishTable()
+    {
+        if (currentTable.primaryKey.isEmpty()) {
+            // Add our own primary key
+            addColumn(Column.AKIBAN_PK_NAME, "BIGINT", null, null);
+            currentColumn.nullable = false;
+            addIndex(Column.AKIBAN_PK_NAME);
+            addIndexColumn(Column.AKIBAN_PK_NAME);
+            addPrimaryKeyColumn(Column.AKIBAN_PK_NAME);
+        }
         currentColumn = null;
     }
 

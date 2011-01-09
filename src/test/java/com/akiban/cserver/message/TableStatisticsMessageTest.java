@@ -9,7 +9,7 @@ import org.junit.Test;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.RowDefCacheFactory;
+import com.akiban.cserver.SchemaFactory;
 import com.akiban.cserver.TableStatistics;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -27,8 +27,8 @@ public class TableStatisticsMessageTest {
             "    c smallint, ",
             "    unique index(b));"
         };
-        RowDefCacheFactory rowDefCacheFactory = new RowDefCacheFactory();
-        RowDefCache rowDefCache = rowDefCacheFactory.rowDefCache(DDL);
+        SchemaFactory schemaFactory = new SchemaFactory();
+        RowDefCache rowDefCache = schemaFactory.rowDefCache(DDL);
         RowDef rowDef = rowDefCache.getRowDef("schema.test");
         final TableStatistics ts = new TableStatistics(123);
         ts.setAutoIncrementValue(999);

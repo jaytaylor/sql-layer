@@ -412,6 +412,13 @@ public class RowData {
         rowEnd = offset;
     }
 
+    public void updateNonNullLong(FieldDef fieldDef, long rowId)
+    {
+        // Offset is in low 32 bits of fieldLocation return value
+        int offset = (int) fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
+        CServerUtil.putLong(bytes, offset, rowId);
+    }
+
     /**
      * Debug-only: returns a hex-dump of the backing buffer.
      */

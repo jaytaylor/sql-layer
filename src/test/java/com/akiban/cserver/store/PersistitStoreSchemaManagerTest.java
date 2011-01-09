@@ -198,7 +198,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         assertEquals("ais size", base + 2, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "two");
         assertEquals("number of index", 2, table.getIndexes().size());
-        Index primaryIndex = table.getIndex("PRIMARY");
+        Index primaryIndex = table.getIndex(Index.PRIMARY_KEY_CONSTRAINT);
         assertTrue("index isn't primary: " + primaryIndex + " in " + table.getIndexes(), primaryIndex.isPrimaryKey());
         Index fkIndex = table.getIndex("__akiban_fk_a");
         assertEquals("fk index name" + " in " + table.getIndexes(), "__akiban_fk_a", fkIndex.getIndexName().getName());
