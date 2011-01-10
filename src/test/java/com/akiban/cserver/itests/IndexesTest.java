@@ -10,7 +10,7 @@ public final class IndexesTest extends ApiTestBase {
     @Test
     public void createSingleIndex() throws InvalidOperationException {
         TableId tbl_id = createTable("test", "tbl", "id int primary key, name varchar(255)");
-        AkibaInformationSchema full_ais = ddl().getAIS();
+        AkibaInformationSchema full_ais = ddl().getAIS(session);
         
         AkibaInformationSchema index_ais = new AkibaInformationSchema();
         UserTable index_tbl = UserTable.create(index_ais, "test", "tbl", ddl().resolveTableId(tbl_id).getTableId(null));
@@ -21,7 +21,7 @@ public final class IndexesTest extends ApiTestBase {
 
         DDLGenerator gen = new DDLGenerator();
         System.out.println(gen.createTable(full_ais.getUserTable("test", "tbl")));
-        ddl().createIndexes(index_ais);
+        ddl().createIndexes(session, index_ais);
         System.out.println(gen.createTable(full_ais.getUserTable("test", "tbl")));
     }
 }
