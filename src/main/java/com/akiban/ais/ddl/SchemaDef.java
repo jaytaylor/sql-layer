@@ -195,7 +195,7 @@ public class SchemaDef {
             final IndexDef real = handle.real;
             final IndexDef equivalent = columnsToIndexes.get(real.columns);
             if (equivalent == null) {
-                real.name = String.format("_auto_generated_index_%d", id++);
+                real.name = String.format("_HELLO_%d", id++);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
             } else {

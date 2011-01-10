@@ -1,5 +1,6 @@
 package com.akiban.cserver.itests.bugs.bug695495;
 
+import com.akiban.admin.Admin;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
@@ -15,7 +16,7 @@ public final class IndexNamesIT extends ApiTestBase {
     private static final String BASE_DDL = "CREATE TABLE t1( c1 tinyint(4) not null, c2 int(11) DEFAULT NULL, ";
 
     @Test
-    public void oneCustomNamedIndex() throws InvalidOperationException {
+    public void oneCustomNamedIndex() {
         UserTable userTable = createTableWithIndexes("PRIMARY KEY (c1), KEY myNamedKey(c2)");
         assertIndexes(userTable, "PRIMARY", "myNamedKey");
         assertIndexColumns(userTable, "PRIMARY", "c1");
@@ -23,7 +24,7 @@ public final class IndexNamesIT extends ApiTestBase {
     }
 
     @Test
-    public void oneStandardNamedIndex() throws InvalidOperationException {
+    public void oneStandardNamedIndex() {
         UserTable userTable = createTableWithIndexes("PRIMARY KEY (`c1`), KEY `c2` (`c2`)");
         assertIndexes(userTable, "PRIMARY", "c2");
         assertIndexColumns(userTable, "PRIMARY", "c1");
@@ -31,7 +32,7 @@ public final class IndexNamesIT extends ApiTestBase {
     }
 
     @Test
-    public void oneUnnamedIndex() throws InvalidOperationException {
+    public void oneUnnamedIndex() {
         UserTable userTable = createTableWithIndexes("PRIMARY KEY (c1), KEY (c2)");
 
         assertIndexes(userTable, "PRIMARY", "c2");
@@ -40,7 +41,7 @@ public final class IndexNamesIT extends ApiTestBase {
     }
 
     @Test
-    public void twoIndexesNoConflict() throws InvalidOperationException {
+    public void twoIndexesNoConflict() {
         UserTable userTable = createTableWithIndexes("PRIMARY KEY (c1), KEY (c2), KEY multiColumnIndex(c2, c1)");
 
         assertIndexes(userTable, "PRIMARY", "c2", "multiColumnIndex");
@@ -50,7 +51,7 @@ public final class IndexNamesIT extends ApiTestBase {
     }
 
     @Test
-    public void twoUnnamedIndexes() throws InvalidOperationException {
+    public void twoUnnamedIndexes() {
         UserTable userTable = createTableWithIndexes("PRIMARY KEY (c1), KEY (c2), KEY (c2, c1)");
 
         assertIndexes(userTable, "PRIMARY", "c2", "c2_2");
@@ -59,9 +60,102 @@ public final class IndexNamesIT extends ApiTestBase {
         assertIndexColumns(userTable, "c2_2", "c2", "c1");
     }
 
-    protected UserTable createTableWithIndexes(String indexDDL) throws InvalidOperationException {
-        ddl().createTable(session, "s1", BASE_DDL + indexDDL + ");");
+    @Test
+    public void fkFullyNamed() {
+        UserTable userTable = createTableWithFK("fk_constraint_1", "fk_index_1", null);
+        assertIndexes(userTable, "PRIMARY", "fk_constraint_1");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "fk_constraint_1", "c2");
+    }
+
+    @Test
+    public void fkOnlyConstraintNamed() {
+        UserTable userTable = createTableWithFK("fk_constraint_1", null, null);
+        assertIndexes(userTable, "PRIMARY", "fk_constraint_1");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "fk_constraint_1", "c2");
+    }
+
+    @Test
+    public void fkOnlyIndexNamed() {
+        UserTable userTable = createTableWithFK(null, "fk_index_1", null);
+        assertIndexes(userTable, "PRIMARY", "fk_index_1");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "fk_index_1", "c2");
+    }
+
+    @Test
+    public void fkNeitherNamed() {
+        UserTable userTable = createTableWithFK(null, null, null);
+        assertIndexes(userTable, "PRIMARY", "c2");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "c2", "c2");
+    }
+
+    @Test
+    public void fkWithSingleColumnKeyUnnamed() {
+        UserTable userTable = createTableWithFK(null, null, "key (c2)");
+        assertIndexes(userTable, "PRIMARY", "c2");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "c2", "c2");
+    }
+
+    @Test
+    public void fkWithSingleColumnKeyNamed() {
+        UserTable userTable = createTableWithFK(null, null, "key `index_2` (c2)");
+        assertIndexes(userTable, "PRIMARY", "index_2");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "index_2", "c2");
+    }
+
+    @Test
+    public void fkWithTwoColumnKeyUnnamed() {
+        UserTable userTable = createTableWithFK(null, null, "key (c2, c1)");
+        assertIndexes(userTable, "PRIMARY", "c2");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "c2", "c2");
+    }
+
+    @Test
+    public void fkWithTwoColumnKeyNamed() {
+        UserTable userTable = createTableWithFK(null, null, "key `index_twocol` (c2, c1)");
+        assertIndexes(userTable, "PRIMARY", "index_twocol");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "index_twocol", "c2");
+    }
+
+    protected UserTable createTableWithIndexes(String indexDDL) {
+        final String ddl = BASE_DDL + indexDDL + ");";
+        try {
+            ddl().createTable(session, "s1", ddl);
+        } catch (InvalidOperationException e) {
+            throw new RuntimeException("creating DDL: " + ddl, e);
+        }
         return ddl().getAIS(session).getUserTable("s1", "t1");
+    }
+
+    protected UserTable createTableWithFK(String constraintName, String indexName, String additionalIndexes) {
+        try {
+            ddl().createTable(session, "s1", "CREATE TABLE p1(id int key)");
+        } catch (InvalidOperationException e) {
+            throw new RuntimeException(e);
+        }
+
+        StringBuilder builder = new StringBuilder();
+        if (additionalIndexes != null) {
+            builder.append(additionalIndexes).append(", ");
+        }
+        builder.append("CONSTRAINT ");
+        if (constraintName != null) {
+            builder.append(constraintName).append(' ');
+        }
+        builder.append("FOREIGN KEY ");
+        if (indexName != null) {
+            builder.append(indexName).append(' ');
+        }
+        builder.append("(c2) REFERENCES p1(c1)");
+
+        return createTableWithIndexes(builder.toString());
     }
 
     protected static void assertIndexes(UserTable table, String... expectedIndexNames) {
