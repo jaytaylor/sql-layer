@@ -134,6 +134,7 @@ public final class IndexNamesIT extends ApiTestBase {
     @Test
     public void fkUsingExplicitKeyConflicting() throws InvalidOperationException {
         createTableWithFK("my_constraint", "my_key", "key my_constraint(c1)");
+        fail("should have failed at the above line!");
     }
 
     protected UserTable createTableWithIndexes(String indexDDL) {
