@@ -136,12 +136,12 @@ public final class IndexNamesIT extends ApiTestBase {
 
     protected UserTable createTableWithFK(String constraintName, String indexName, String additionalIndexes) {
         try {
-            ddl().createTable(session, "s1", "CREATE TABLE p1(id int key)");
+            ddl().createTable(session, "s1", "CREATE TABLE p1(parentc1 int key)");
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
 
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder("PRIMARY KEY (c1), ");
         if (additionalIndexes != null) {
             builder.append(additionalIndexes).append(", ");
         }
@@ -153,7 +153,7 @@ public final class IndexNamesIT extends ApiTestBase {
         if (indexName != null) {
             builder.append(indexName).append(' ');
         }
-        builder.append("(c2) REFERENCES p1(c1)");
+        builder.append("(c2) REFERENCES p1(parentc1)");
 
         return createTableWithIndexes(builder.toString());
     }
