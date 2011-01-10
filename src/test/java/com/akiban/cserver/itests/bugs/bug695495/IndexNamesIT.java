@@ -112,7 +112,7 @@ public final class IndexNamesIT extends ApiTestBase {
         UserTable userTable = createTableWithFK(null, null, "key (c2, c1)");
         assertIndexes(userTable, "PRIMARY", "c2");
         assertIndexColumns(userTable, "PRIMARY", "c1");
-        assertIndexColumns(userTable, "c2", "c2");
+        assertIndexColumns(userTable, "c2", "c2", "c1");
     }
 
     @Test
@@ -120,7 +120,7 @@ public final class IndexNamesIT extends ApiTestBase {
         UserTable userTable = createTableWithFK(null, null, "key `index_twocol` (c2, c1)");
         assertIndexes(userTable, "PRIMARY", "index_twocol");
         assertIndexColumns(userTable, "PRIMARY", "c1");
-        assertIndexColumns(userTable, "index_twocol", "c2");
+        assertIndexColumns(userTable, "index_twocol", "c2", "c1");
     }
 
     @Test
@@ -137,8 +137,16 @@ public final class IndexNamesIT extends ApiTestBase {
         fail("should have failed at the above line!");
     }
 
+    protected static void debug(String formatter, Object... args) {
+        if(Boolean.getBoolean("IndexNamesIT.debug")) {
+            System.out.print("\tIndexNamesIT: ");
+            System.out.println(String.format(formatter, args));
+        }
+    }
+
     protected UserTable createTableWithIndexes(String indexDDL) {
         final String ddl = BASE_DDL + indexDDL + ");";
+        debug(ddl);
         try {
             ddl().createTable(session, "s1", ddl);
         } catch (InvalidOperationException e) {
@@ -173,6 +181,7 @@ public final class IndexNamesIT extends ApiTestBase {
 
     protected static void assertIndexes(UserTable table, String... expectedIndexNames) {
         Set<String> expectedIndexesSet = new TreeSet<String>(Arrays.asList(expectedIndexNames));
+        debug("for table %s, expecting indexes %s", table, expectedIndexesSet);
         Set<String> actualIndexes = new TreeSet<String>();
         for (Index index : table.getIndexes()) {
             String indexName = index.getIndexName().getName();
@@ -183,12 +192,14 @@ public final class IndexNamesIT extends ApiTestBase {
     }
 
     protected static void assertIndexColumns(UserTable table, String indexName, String... expectedColumns) {
+        List<String> expectedColumnsList = Arrays.asList(expectedColumns);
+        debug("for index %s.%s, expecting columns %s", table, indexName, expectedColumnsList);
         Index index = table.getIndex(indexName);
         assertNotNull(indexName + " was null", index);
         List<String> actualColumns = new ArrayList<String>();
         for (IndexColumn indexColumn : index.getColumns()) {
             actualColumns.add(indexColumn.getColumn().getName());
         }
-        assertEquals(indexName + " columns", actualColumns, Arrays.asList(expectedColumns));
+        assertEquals(indexName + " columns", actualColumns, expectedColumnsList);
     }
 }
