@@ -1,16 +1,6 @@
 package com.akiban.ais.ddl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeMap;
+import java.util.*;
 
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
@@ -166,6 +156,14 @@ public class SchemaDef {
         return currentIndex;
     }
 
+    IndexDef addIndex(final String name, IndexQualifier qualifier) {
+        String actualName = name;
+        if (IndexQualifier.FOREIGN_KEY.equals(qualifier) && (currentConstraintName != null) ) {
+            actualName = currentConstraintName;
+        }
+        return addIndex(actualName);
+    }
+
     static boolean isAkiban(final IndexDef indexDef) {
         for (String constraint : indexDef.constraints) {
             if (constraint.startsWith("__akiban")) {
@@ -190,12 +188,12 @@ public class SchemaDef {
                 columnsToIndexes.put(handle.real.columns, handle.real);
             }
         }
-        int id = 0;
+        IndexNameGenerator indexNameGenerator = new IndexNameGenerator(currentTable.indexes);
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
             final IndexDef equivalent = columnsToIndexes.get(real.columns);
             if (equivalent == null) {
-                real.name = String.format("_auto_generated_index_%d", id++);
+                real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
             } else {
@@ -543,6 +541,31 @@ public class SchemaDef {
 //        public int id() {
 //            return id;
 //        }
+    }
+
+    private static final class IndexNameGenerator {
+        private final Set<String> indexNames;
+
+        public IndexNameGenerator(Collection<IndexDef> knownIndexes) {
+            indexNames = new HashSet<String>();
+            for (IndexDef knownIndex : knownIndexes) {
+                boolean added = indexNames.add(knownIndex.name);
+                assert added : knownIndex.name;
+            }
+        }
+
+        public String generateName(IndexDef forIndex) {
+            // Brute strength. For the low number of collisions we expect, this is simpler, and probably as fast,
+            // as maintaining a Map<String,Integer> which to generate names, which we'd have to double-check are
+            // actually unique.
+            String baseName = forIndex.columns.get(0).columnName;
+            String name = baseName;
+            for(int suffixNum=2; indexNames.contains(name); ++suffixNum) {
+                name = String.format("%s_%d", baseName, suffixNum);
+            }
+            indexNames.add(name);
+            return name;
+        }
     }
 
     public static class IndexDef {
