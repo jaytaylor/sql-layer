@@ -1,5 +1,12 @@
 package com.akiban.cserver.api;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
@@ -7,39 +14,36 @@ import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
-import com.akiban.cserver.store.Store;
-import org.junit.Test;
+public final class ApiTest extends CServerTestCase {
 
-import static junit.framework.Assert.*;
-
-public final class ApiTest {
-
-    private static class ApiPair {
+    private class ApiPair {
         final DMLFunctionsImpl dml;
         final DDLFunctionsImpl ddl;
-
+        
         private ApiPair() {
-            final Session session = new SessionImpl();
-            final Store store;
-            try {
-                store = UnitTestServiceManagerFactory.getStoreForUnitTests();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
             LoggingService loggingService = new LoggingServiceImpl();
-            dml = new DMLFunctionsImpl(store, loggingService);
-            ddl = new DDLFunctionsImpl(store);
-
+            dml = new DMLFunctionsImpl(loggingService);
+            ddl = new DDLFunctionsImpl();
         }
+    }
+    
+    @Before
+    public void setUp() throws Exception {
+        super.baseSetUp();
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        super.baseTearDown();
     }
 
     @Test
     public void testAutoIncrement() throws InvalidOperationException {
         ApiPair apiPair = new ApiPair();
         final TableId tableId = TableId.of("sc1", "t1");
-        apiPair.ddl.createTable("sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
-        TableStatistics tableStats = apiPair.dml.getTableStatistics(tableId, false);
+        final Session session = new SessionImpl();
+        apiPair.ddl.createTable(session, "sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
+        TableStatistics tableStats = apiPair.dml.getTableStatistics(session, tableId, false);
         assertEquals("autoinc value", 10L, tableStats.getAutoIncrementValue());
     }
 }

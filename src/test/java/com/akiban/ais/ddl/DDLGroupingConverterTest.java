@@ -1,8 +1,6 @@
 package com.akiban.ais.ddl;
 
-import com.akiban.ais.ddl.DDLGroupingConverter.FFResult;
-import com.akiban.util.Strings;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,10 +9,12 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
+
+import com.akiban.ais.ddl.DDLGroupingConverter.FFResult;
+import com.akiban.util.Strings;
 
 public final class DDLGroupingConverterTest {
 

@@ -1,16 +1,19 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import junit.framework.Assert;
-import junit.framework.TestCase;
-import org.junit.Test;
-
 import java.sql.SQLException;
 import java.util.IdentityHashMap;
 import java.util.List;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.junit.Test;
+
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 
 // Check task details for bulk load of COI schema
 
@@ -30,14 +33,14 @@ public class BulkLoaderCOITest extends TestCase
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "c_name", 1, "varchar", 100L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", "pk", "cid", 0, true, 0);
         // order(oid, cid) pk: oid, fk: cid
         builder.userTable("schema", "order");
         builder.column("schema", "order", "oid", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "cid", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "o_date", 2, "varchar", 50L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, "PRIMARY");
+        builder.index("schema", "order", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "order", "pk", "oid", 0, true, 0);
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "cid", "schema", "order", "cid");
@@ -47,7 +50,7 @@ public class BulkLoaderCOITest extends TestCase
         builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "item", "unit_price", 3, "double", 0L, 0L, false, false, null, null);
-        builder.index("schema", "item", "pk", true, "PRIMARY");
+        builder.index("schema", "item", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "item", "pk", "iid", 0, true, 0);
         builder.joinTables("oi", "schema", "order", "schema", "item");
         builder.joinColumns("oi", "schema", "order", "oid", "schema", "item", "oid");

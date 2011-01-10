@@ -4,9 +4,19 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.ddl.*;
+import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
+import com.akiban.cserver.api.ddl.DuplicateTableNameException;
+import com.akiban.cserver.api.ddl.ForeignConstraintDDLException;
+import com.akiban.cserver.api.ddl.GroupWithProtectedTableException;
+import com.akiban.cserver.api.ddl.JoinToUnknownTableException;
+import com.akiban.cserver.api.ddl.JoinToWrongColumnsException;
+import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
+import com.akiban.cserver.api.ddl.ParseException;
+import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
+import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.store.SchemaId;
 
 import java.util.List;
 
@@ -32,7 +42,7 @@ public interface DDLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      * exists
      */
-    void createTable(String schema, String ddlText)
+    void createTable(Session session, String schema, String ddlText)
     throws ParseException,
             UnsupportedCharsetException,
             ProtectedTableDDLException,
@@ -54,7 +64,7 @@ public interface DDLFunctions {
      * @throws ForeignConstraintDDLException if dropping this table would create a foreign key violation
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void dropTable(TableId tableId)
+    void dropTable(Session session, TableId tableId)
     throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
             GenericInvalidOperationException;
@@ -69,7 +79,7 @@ public interface DDLFunctions {
      * @throws ForeignConstraintDDLException if dropping this schema would create a foreign key violation
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void dropSchema(String schemaName)
+    void dropSchema(Session session, String schemaName)
             throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
             GenericInvalidOperationException;
@@ -78,7 +88,7 @@ public interface DDLFunctions {
      * Gets the AIS from the Store.
      * @return returns the store's AIS.
      */
-    AkibaInformationSchema getAIS();
+    AkibaInformationSchema getAIS(Session session);
 
     /**
      * Resolves the given TableId to its table's name. As a side effect, the tableId will be resolved.
@@ -108,7 +118,7 @@ public interface DDLFunctions {
      * @throws InvalidOperationException if an exception occurred
      * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to the chunkserver's known tables
      */
-    List<String> getDDLs() throws InvalidOperationException;
+    String getDDLs(Session session) throws InvalidOperationException;
 
     SchemaId getSchemaID() throws InvalidOperationException;
 
@@ -126,7 +136,7 @@ public interface DDLFunctions {
      * @param ais the AIS containg the user table and new indexes.
      * @throws InvalidOperationException 
      */
-    void createIndexes(AkibaInformationSchema ais) throws InvalidOperationException;
+    void createIndexes(Session session, AkibaInformationSchema ais) throws InvalidOperationException;
     
     /**
      * Drop indexes on an existing table. Removes them from the DDL, AIS, and deletes the indexes
@@ -135,5 +145,5 @@ public interface DDLFunctions {
      * @param indexIds list of indexes to drop
      * @throws InvalidOperationException 
      */
-    void dropIndexes(TableId tableId, List<Integer> indexIds) throws InvalidOperationException;
+    void dropIndexes(Session session, TableId tableId, List<Integer> indexIds) throws InvalidOperationException;
 }

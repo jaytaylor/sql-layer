@@ -1,11 +1,13 @@
 package com.akiban.ais.gwtutilstests;
 
-import com.akiban.ais.gwtutils.SerializableEnumSet;
-import junit.framework.Assert;
-import org.junit.Test;
-
 import java.util.EnumSet;
 import java.util.Set;
+
+import junit.framework.Assert;
+
+import org.junit.Test;
+
+import com.akiban.ais.gwtutils.SerializableEnumSet;
 
 public class SerializableEnumSetTest
 {

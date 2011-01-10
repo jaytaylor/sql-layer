@@ -10,7 +10,14 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
@@ -42,7 +49,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         table.migrationUsage = MigrationUsage.values()[(Integer) map.get(table_migrationUsage)];
         return table;
     }
-    
+
     public final Map<String, Object> map()
     {
         Map<String, Object> map = new HashMap<String, Object>();
@@ -66,7 +73,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     {
         return ais;
     }
-    
+
     public boolean isGroupTable()
     {
         return !isUserTable();
@@ -76,14 +83,16 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     {
         return tableId;
     }
-    
+
     /**
      * Temporary mutator so that prototype AIS management can renumber all
      * the tables once created.  Longer term we want to give the table
      * its ID when generated.
+     *
      * @param tableId
      */
-    public void setTableId(final int tableId) {
+    public void setTableId(final int tableId)
+    {
         this.tableId = tableId;
     }
 
@@ -135,7 +144,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     {
         return indexMap.values();
     }
-    
+
     public Index getIndex(String indexName)
     {
         return indexMap.get(indexName.toLowerCase());
@@ -185,7 +194,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     /**
      * <p>Our intended migration policy; the grouping algorithm must also take these values into account.</p>
-     *
+     * <p/>
      * <p>The enums {@linkplain #KEEP_ENGINE} and {@linkplain #INCOMPATIBLE} have similar effects on grouping and
      * migration: tables marked with these values will not be included in any groups, and during migration, their
      * storage engine is not changed to AkibanDb. The difference between the two enums is that {@linkplain #KEEP_ENGINE}
@@ -196,17 +205,26 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
      */
     public enum MigrationUsage
     {
-        /** Migrate this table to AkibanDb, grouping it as a standard user table. This is just a normal migration. */
+        /**
+         * Migrate this table to AkibanDb, grouping it as a standard user table. This is just a normal migration.
+         */
         AKIBAN_STANDARD,
-        /** Migrate this table to AkibanDb, but as a lookup table. Lookup tables are grouped alone. */
+        /**
+         * Migrate this table to AkibanDb, but as a lookup table. Lookup tables are grouped alone.
+         */
         AKIBAN_LOOKUP_TABLE,
-        /** User wants to keep this table's engine as-is; don't migrate it to AkibanDb. */
+        /**
+         * User wants to keep this table's engine as-is; don't migrate it to AkibanDb.
+         */
         KEEP_ENGINE,
-        /** This table can't be migrated to AkibanDb. */
+        /**
+         * This table can't be migrated to AkibanDb.
+         */
         INCOMPATIBLE;
 
         /**
          * Returns whether this usage requires an AkibanDB engine.
+         *
          * @return whether this enum is one that requires AkibanDB
          */
         public boolean isAkiban()
@@ -216,9 +234,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
         /**
          * <p>Returns whether this usage requires that the table participate in grouping.</p>
-         *
+         * <p/>
          * <p>Tables participate in grouping if they're AkibanDB (see {@linkplain #isAkiban()} <em>and</em>
          * are not lookups.</p>
+         *
          * @return
          */
         public boolean includeInGrouping()
@@ -233,16 +252,14 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         if (tableName == null) {
             out.add("table had null table name" + table);
         }
-        for (Map.Entry<String,Column> entry : columnMap.entrySet()) {
+        for (Map.Entry<String, Column> entry : columnMap.entrySet()) {
             String name = entry.getKey();
             Column column = entry.getValue();
             if (column == null) {
                 out.add("null column for name: " + name);
-            }
-            else if (name == null) {
+            } else if (name == null) {
                 out.add("null name for column: " + column);
-            }
-            else if (!name.equals(column.getName())) {
+            } else if (!name.equals(column.getName())) {
                 out.add("name mismatch, expected <" + name + "> for column " + column);
             }
         }
@@ -250,37 +267,37 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
             for (Column column : columns) {
                 if (column == null) {
                     out.add("null column in columns list");
-                }
-                if (!columnMap.containsKey(column.getName())) {
+                } else if (!columnMap.containsKey(column.getName())) {
                     out.add("columns not stale, but map didn't contain column: " + column.getName());
                 }
             }
         }
-        for (Map.Entry<String,Index> entry : indexMap.entrySet()) {
+        for (Map.Entry<String, Index> entry : indexMap.entrySet()) {
             String name = entry.getKey();
             Index index = entry.getValue();
             if (name == null) {
                 out.add("null name for index: " + index);
-            }
-            else if (index == null) {
+            } else if (index == null) {
                 out.add("null index for name: " + name);
-            }
-            else if (index.getTable() != this) {
+            } else if (index.getTable() != this) {
                 out.add("table's index.getTable() wasn't the table" + index + " <--> " + this);
             }
-            for (IndexColumn indexColumn : index.getColumns()) {
-                if (!index.equals(indexColumn.getIndex())) {
-                    out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
-                }
-                Column column = indexColumn.getColumn();
-                if (!columnMap.containsKey(column.getName())) {
-                    out.add("index referenced a column not in the table: " + column);
+            if (index != null) {
+                for (IndexColumn indexColumn : index.getColumns()) {
+                    if (!index.equals(indexColumn.getIndex())) {
+                        out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
+                    }
+                    Column column = indexColumn.getColumn();
+                    if (!columnMap.containsKey(column.getName())) {
+                        out.add("index referenced a column not in the table: " + column);
+                    }
                 }
             }
         }
     }
-    
-    public String getEngine(){
+
+    public String getEngine()
+    {
         return engine;
     }
 

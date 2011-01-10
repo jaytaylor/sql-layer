@@ -1,101 +1,97 @@
 package com.akiban.cserver.api;
 
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.ddl.*;
 import com.akiban.cserver.api.common.NoSuchTableException;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
+import com.akiban.cserver.api.ddl.DuplicateTableNameException;
+import com.akiban.cserver.api.ddl.ForeignConstraintDDLException;
+import com.akiban.cserver.api.ddl.GroupWithProtectedTableException;
+import com.akiban.cserver.api.ddl.JoinToUnknownTableException;
+import com.akiban.cserver.api.ddl.JoinToWrongColumnsException;
+import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
+import com.akiban.cserver.api.ddl.ParseException;
+import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
+import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
-import com.akiban.cserver.store.Store;
 import com.akiban.message.ErrorCode;
-import com.akiban.ais.io.*;
 
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedSet;
+import java.util.HashSet;
 import java.util.TreeSet;
+import java.util.SortedSet;
+import java.util.Map.Entry;
 
-public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
-    
+public final class DDLFunctionsImpl extends ClientAPIBase implements
+        DDLFunctions {
+
     public static DDLFunctions instance() {
-        return new DDLFunctionsImpl(getDefaultStore());
-    }
-
-    public DDLFunctionsImpl(Store store) {
-        super(store);
+        return new DDLFunctionsImpl();
     }
 
     @Override
-    public void createTable(String schema, String ddlText)
-    throws ParseException,
-            UnsupportedCharsetException,
-            ProtectedTableDDLException,
-            DuplicateTableNameException,
-            GroupWithProtectedTableException,
-            JoinToUnknownTableException,
-            JoinToWrongColumnsException,
-            NoPrimaryKeyException,
-            DuplicateColumnNameException,
-            GenericInvalidOperationException
-    {
+    public void createTable(Session session, String schema, String ddlText)
+            throws ParseException, UnsupportedCharsetException,
+            ProtectedTableDDLException, DuplicateTableNameException,
+            GroupWithProtectedTableException, JoinToUnknownTableException,
+            JoinToWrongColumnsException, NoPrimaryKeyException,
+            DuplicateColumnNameException, GenericInvalidOperationException {
         try {
-            schemaManager().createTable(schema, ddlText);
+            schemaManager().createTableDefinition(session, schema, ddlText);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    public void dropTable(TableId tableId)
-    throws  ProtectedTableDDLException,
-            ForeignConstraintDDLException,
-            GenericInvalidOperationException
-    {
+    public void dropTable(Session session, TableId tableId)
+            throws ProtectedTableDDLException, ForeignConstraintDDLException,
+            GenericInvalidOperationException {
         final TableName tableName;
+        final int rowDefId;
         try {
             tableName = tableId.getTableName(idResolver());
-        }
-        catch (NoSuchTableException e) {
+            rowDefId = tableId.getTableId(idResolver());
+        } catch (NoSuchTableException e) {
             return; // dropping a nonexistent table is a no-op
         }
-        
+
         try {
-            schemaManager().dropTable(tableName.getSchemaName(), tableName.getTableName());
-        }
-        catch (Exception e) {
+            // TODO - reconsider the API for truncateTable.
+            // TODO - needs to be wrapped in a Transaction
+            store().truncateTable(session, rowDefId);
+            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(),
+                    tableName.getTableName());
+        } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    public void dropSchema(String schemaName)
-            throws  ProtectedTableDDLException,
-            ForeignConstraintDDLException,
-            GenericInvalidOperationException
-    {
+    public void dropSchema(Session session, String schemaName)
+            throws ProtectedTableDDLException, ForeignConstraintDDLException,
+            GenericInvalidOperationException {
         try {
-            schemaManager().dropSchema(schemaName);
-        }
-        catch (Exception e) {
+            schemaManager().deleteSchemaDefinition(session, schemaName);
+        } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    public AkibaInformationSchema getAIS() {
-        return store().getAis();
+    public AkibaInformationSchema getAIS(final Session session) {
+        return schemaManager().getAis(session);
     }
 
     @Override
@@ -111,42 +107,41 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
     }
 
     @Override
-    public List<String> getDDLs() throws InvalidOperationException {
+    public String getDDLs(final Session session) throws InvalidOperationException {
         try {
-            return schemaManager().getDDLs();
+            // TODO - note: the boolean value determines whether the text
+            // of CREATE TABLE statements for group tables will be generated.
+            // Since Halo won't be used for queries, I'm setting this to false
+            // for now. -- Peter
+            return schemaManager().schemaString(
+                    session, false);
         } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
+            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
+                    "Unexpected exception", e);
         }
     }
 
     @Override
     public SchemaId getSchemaID() throws InvalidOperationException {
-        try {
-            return schemaManager().getSchemaID();
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
-        }
+        return new SchemaId(schemaManager().getSchemaGeneration());
     }
 
     @Override
-    @SuppressWarnings("unused") // meant to be used from JMX
+    @SuppressWarnings("unused")
+    // meant to be used from JMX
     public void forceGenerationUpdate() throws InvalidOperationException {
-        try {
-            schemaManager().forceSchemaGenerationUpdate();
-        } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
-        }
+        schemaManager().forceNewTimestamp();
     }
 
     @Override
-    public void createIndexes(AkibaInformationSchema ais) throws InvalidOperationException {
+    public void createIndexes(final Session session, AkibaInformationSchema ais) throws InvalidOperationException {
         try {
             if(ais.getUserTables().size() != 1) {
                 throw new Exception("Too many user tables");
             }
             
             Entry<TableName, UserTable> index_entry = ais.getUserTables().entrySet().iterator().next();
-            AkibaInformationSchema cur_ais = getAIS();
+            AkibaInformationSchema cur_ais = getAIS(session);
             UserTable cur_utable = cur_ais.getUserTable(index_entry.getKey());
             
             if(cur_utable == null) {
@@ -185,20 +180,18 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunction
             
             // Modify stored DDL statement
             DDLGenerator gen = new DDLGenerator();
-            String schema_name = cur_utable.getName().getSchemaName();
-            String table_name = cur_utable.getName().getTableName();
-            schemaManager().changeTableDDL(schema_name, table_name, gen.createTable(cur_utable));
+            schemaManager().changeTableDefinition(session, cur_utable.getTableId(), gen.createTable(cur_utable));
             
             // And trigger build of new indexes in this table
-            store().buildIndexes(String.format("table=(%s)", table_name));
+            store().buildIndexes(session, String.format("table=(%s)", cur_utable.getName().getTableName()));
         } 
-        catch (Exception e) {
+        catch(Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
         }
     }
 
     @Override
-    public void dropIndexes(TableId tableId, List<Integer> indexIds) throws InvalidOperationException {
+    public void dropIndexes(final Session session, TableId tableId, List<Integer> indexIds) throws InvalidOperationException {
         // TODO Auto-generated method stub
     }
 }

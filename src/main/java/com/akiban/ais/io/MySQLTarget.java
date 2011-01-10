@@ -1,11 +1,16 @@
 package com.akiban.ais.io;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.Map;
+
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
-
-import java.sql.*;
-import java.util.Map;
 
 public class MySQLTarget extends Target
 {

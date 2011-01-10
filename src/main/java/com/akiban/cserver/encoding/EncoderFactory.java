@@ -1,12 +1,12 @@
 package com.akiban.cserver.encoding;
 
-import com.akiban.ais.model.Type;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.akiban.ais.model.Type;
 
 @SuppressWarnings("unused")
 public final class EncoderFactory {

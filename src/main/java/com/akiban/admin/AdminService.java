@@ -1,5 +1,12 @@
 package com.akiban.admin;
 
+import java.io.IOException;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.mortbay.jetty.Server;
+
 import com.akiban.admin.action.ClearConfig;
 import com.akiban.admin.action.StartChunkservers;
 import com.akiban.admin.action.StopChunkservers;
@@ -14,12 +21,6 @@ import com.akiban.message.NettyAkibanConnectionImpl;
 import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.mortbay.jetty.Server;
-
-import java.io.IOException;
-import java.util.Map;
 
 public class AdminService
 {

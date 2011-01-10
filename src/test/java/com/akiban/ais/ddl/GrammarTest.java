@@ -1,9 +1,10 @@
 package com.akiban.ais.ddl;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.RowDefCacheFactory;
+import com.akiban.cserver.SchemaFactory;
 import org.junit.Test;
 
 import static junit.framework.Assert.*;
@@ -36,11 +37,17 @@ public class GrammarTest
     public void testBug695066_3() throws Exception
     {
         UserTable table = userTable("CREATE TABLE t1(c1 TINYINT AUTO_INCREMENT NULL UNIQUE KEY) AUTO_INCREMENT=10;");
-        assertNull(table.getPrimaryKey());
         Index index = table.getIndex("c1");
         assertNotNull(index);
         assertTrue(!index.isPrimaryKey());
         assertTrue(index.isUnique());
+        // We should have generated our own PK
+        assertNotNull(table.getPrimaryKey());
+        index = table.getPrimaryKey().getIndex();
+        assertNotNull(index);
+        assertTrue(index.isPrimaryKey());
+        assertTrue(index.isUnique());
+        assertEquals(Column.AKIBAN_PK_NAME, table.getPrimaryKey().getColumns().get(0).getName());
     }
 
     @Test
@@ -52,9 +59,9 @@ public class GrammarTest
     private UserTable userTable(String tableDeclaration) throws Exception
     {
         String ddl = String.format("use schema; %s", tableDeclaration);
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         return rowDefCache.getRowDef("schema.t1").userTable();
     }
 
-    private static final RowDefCacheFactory ROW_DEF_CACHE_FACTORY = new RowDefCacheFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
 }

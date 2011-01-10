@@ -1,14 +1,21 @@
 package com.akiban.cserver.loader;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.sql.SQLException;
-import java.util.*;
 
 public class BulkLoader extends Thread
 {
@@ -286,7 +293,8 @@ public class BulkLoader extends Thread
             + "    artifact_schema varchar(64) not null, "
             + "    artifact_table varchar(64) not null, "
             + "    command varchar(10000) not null, "
-            + "    primary key(task_id)" + ")";
+            + "    primary key(task_id)" + ")"
+            + "    engine = myisam";
 
     // TODO: Once this is set, it is never unset. This enables tracking of
     // progress by BulkLoaderClient even after the

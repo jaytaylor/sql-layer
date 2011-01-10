@@ -1,10 +1,11 @@
 package com.akiban.cserver.manage;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.cserver.store.SchemaId;
-
 import java.util.List;
 import java.util.Map;
+
+import com.akiban.ais.model.TableName;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.store.SchemaId;
 
 @SuppressWarnings("unused")
 public interface SchemaMXBean {
@@ -46,7 +47,7 @@ public interface SchemaMXBean {
      * @throws Exception
      *             if there was a problem in creating the table
      */
-    void createTable(String schemaName, String DDL) throws Exception;
+    void createTable(final Session session, String schemaName, String DDL) throws Exception;
 
     /**
      * Drops a table by name.
@@ -59,9 +60,9 @@ public interface SchemaMXBean {
      * @throws Exception
      *             if the table wasn't found
      */
-    void dropTable(String schema, String tableName) throws Exception;
+    void dropTable(final Session session, String schema, String tableName) throws Exception;
 
-    void dropAllTables() throws Exception;
+//    void dropAllTables(final Session session) throws Exception;
 
     /**
      * Drops a schema and all of its tables.
@@ -72,7 +73,7 @@ public interface SchemaMXBean {
      * @throws Exception
      *             if there was a problem in dropping the schema
      */
-    void dropSchema(String schemaName) throws Exception;
+    void dropSchema(final Session session, String schemaName) throws Exception;
 
     /**
      * Gets the current schema's grouping description.
@@ -92,7 +93,7 @@ public interface SchemaMXBean {
      *             if there was a problem in getting the info
      */
     public List<String> getDDLs() throws Exception;
-    
+
     /**
      * Change the stored DDL statement for a table that already exists. Does not change the tableid. 
      * 

@@ -1,19 +1,17 @@
 package com.akiban.cserver.store;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.List;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.TableStatistics;
-import com.akiban.cserver.manage.SchemaManager;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
 
 /**
@@ -30,29 +28,29 @@ public interface Store extends Service<Store> {
 
     void setVerbose(final boolean verbose);
 
-    void createTable(final String schemaName, final String createTableStatement)
+    void writeRow(final Session session, final RowData rowData)
             throws Exception;
 
-    void writeRow(final RowData rowData) throws Exception;
-
-    void writeRowForBulkLoad(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData, final int[] ordinals,
+    void writeRowForBulkLoad(final Session session, final Exchange hEx,
+            final RowDef rowDef, final RowData rowData, final int[] ordinals,
             final int[] nKeyColumns, final FieldDef[] fieldDefs,
             final Object[] hKey) throws Exception;
 
-    void updateTableStats(final RowDef rowDef, long rowCount) throws Exception;
+    void updateTableStats(final Session session, final RowDef rowDef,
+            long rowCount) throws Exception;
 
-    void deleteRow(final RowData rowData) throws Exception;
-
-    void updateRow(final RowData oldRowData, final RowData newRowData)
+    void deleteRow(final Session session, final RowData rowData)
             throws Exception;
+
+    void updateRow(final Session session, final RowData oldRowData,
+            final RowData newRowData) throws Exception;
 
     /**
      * @param scanRowsRequest
      * @return The RowCollector that will generated the requested rows
      */
-    RowCollector newRowCollector(ScanRowsRequest scanRowsRequest)
-            throws Exception;
+    RowCollector newRowCollector(final Session session,
+            ScanRowsRequest scanRowsRequest) throws Exception;
 
     /**
      * Version of newRowCollector used in tests and a couple of sites local to
@@ -68,9 +66,9 @@ public interface Store extends Service<Store> {
      * @return
      * @throws Exception
      */
-    RowCollector newRowCollector(final int rowDefId, final int indexId,
-            final int scanFlags, final RowData start, final RowData end,
-            final byte[] columnBitMap) throws Exception;
+    RowCollector newRowCollector(final Session session, final int rowDefId,
+            final int indexId, final int scanFlags, final RowData start,
+            final RowData end, final byte[] columnBitMap) throws Exception;
 
     /**
      * Get the previously saved RowCollector for the specified tableId. Used in
@@ -79,7 +77,7 @@ public interface Store extends Service<Store> {
      * @param tableId
      * @return
      */
-    RowCollector getSavedRowCollector(final int tableId)
+    RowCollector getSavedRowCollector(final Session session, final int tableId)
             throws InvalidOperationException;
 
     /**
@@ -88,7 +86,7 @@ public interface Store extends Service<Store> {
      * 
      * @param rc
      */
-    void addSavedRowCollector(final RowCollector rc);
+    void addSavedRowCollector(final Session session, final RowCollector rc);
 
     /***
      * Remove a previously saved RowCollector. Must the the most recently added
@@ -96,50 +94,18 @@ public interface Store extends Service<Store> {
      * 
      * @param rc
      */
-    void removeSavedRowCollector(final RowCollector rc)
+    void removeSavedRowCollector(final Session session, final RowCollector rc)
             throws InvalidOperationException;
 
-    long getRowCount(final boolean exact, final RowData start,
-            final RowData end, final byte[] columnBitMap) throws Exception;
+    long getRowCount(final Session session, final boolean exact,
+            final RowData start, final RowData end, final byte[] columnBitMap)
+            throws Exception;
 
-    TableStatistics getTableStatistics(final int tableId) throws Exception;
+    TableStatistics getTableStatistics(final Session session, final int tableId)
+            throws Exception;
 
-    /**
-     * Drops a single table, identified by ID.
-     * 
-     * This is a no-op if the rowDefID corresponds to a group table.
-     * 
-     * @param rowDefId
-     *            the ID of the table to drop
-     * @return the result of the drop; OK or an error.
-     * @throws Exception
-     *             if the rowDef couldn't be looked up, or if the transaction
-     *             failed
-     */
-    void dropTable(final int rowDefId) throws Exception;
-
-    /**
-     * Drops several tables as a single transaction. Each table's drop is
-     * handled equivalently to {@link #dropTable(int)}, but if any fail, the
-     * transaction is rolled back and the failed drop's status is returned.
-     * 
-     * The given Collection, and all of its elements, must be non-null. Any null
-     * values will result in a NPE being thrown and the transaction atomically
-     * failing.
-     * 
-     * @param rowDefIds
-     *            the list of rowDefs to return. This list will not be modified.
-     * @return the result of the drop; OK or the first error
-     * @throws Exception
-     *             see {@linkplain #dropTable(int)}
-     */
-    void dropTables(final Collection<Integer> rowDefIds) throws Exception;
-
-    void truncateTable(final int rowDefId) throws Exception;
-
-    void dropSchema(final String schemaName) throws Exception;
-
-    void fixUpOrdinals() throws Exception;
+    void truncateTable(final Session session, final int rowDefId)
+            throws Exception;
 
     /**
      * <p>
@@ -214,8 +180,9 @@ public interface Store extends Service<Store> {
      * @return List of RowData objects containing the result
      * @throws Exception
      */
-    List<RowData> fetchRows(final String schemaName, final String tableName,
-            final String columnName, final Object least, final Object greatest,
+    List<RowData> fetchRows(final Session session, final String schemaName,
+            final String tableName, final String columnName,
+            final Object least, final Object greatest,
             final String leafTableName) throws Exception;
 
     /**
@@ -244,8 +211,9 @@ public interface Store extends Service<Store> {
      * @return List of RowData objects containing the result
      * @throws Exception
      */
-    List<RowData> fetchRows(final String schemaName, final String tableName,
-            final String columnName, final Object least, final Object greatest,
+    List<RowData> fetchRows(final Session session, final String schemaName,
+            final String tableName, final String columnName,
+            final Object least, final Object greatest,
             final String leafTableName, final ByteBuffer payload)
             throws Exception;
 
@@ -256,7 +224,7 @@ public interface Store extends Service<Store> {
      * @param tableId
      * @throws Exception
      */
-    void analyzeTable(int tableId) throws Exception;
+    void analyzeTable(final Session session, int tableId) throws Exception;
 
     /**
      * Register a CommittedUpdateListener to handle update events.
@@ -274,17 +242,17 @@ public interface Store extends Service<Store> {
      */
     void removeCommittedUpdateListener(final CommittedUpdateListener listener);
 
-    SchemaId getSchemaId();
-
-    AkibaInformationSchema getAis();
-
     boolean isDeferIndexes();
 
     void setDeferIndexes(final boolean b);
     
-    void buildIndexes(final String arg);
-
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
-    SchemaManager getSchemaManager();
+    IndexManager getIndexManager();
+
+    void deleteIndexes(Session session, String string);
+
+    void buildIndexes(Session session, String string);
+    
+    void flushIndexes(Session session);
 }

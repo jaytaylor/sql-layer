@@ -1,11 +1,11 @@
 package com.akiban.ais.ddl;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 
 public class FKMaker extends GroupingVisitorStub<Map<TableName,String>> {
     private Map<TableName,String> ret = new HashMap<TableName, String>();

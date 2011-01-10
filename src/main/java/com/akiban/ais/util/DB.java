@@ -1,12 +1,12 @@
 package com.akiban.ais.util;
 
-import com.akiban.util.Command;
-
 import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import com.akiban.util.Command;
 
 public class DB
 {

@@ -1,16 +1,21 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.ais.model.Types;
-import com.akiban.cserver.*;
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
+
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.SchemaFactory;
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
 
 public final class NiceRowTest {
     @Test
@@ -130,7 +135,7 @@ public final class NiceRowTest {
             ddl[i++] = String.format(", field_%s int", c);
         }
         ddl[i] = ") engine = akibandb;";
-        RowDefCache rowDefCache = ROW_DEF_CACHE_FACTORY.rowDefCache(ddl);
+        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         return rowDefCache.getRowDef("test_schema.test_table");
     }
 
@@ -166,5 +171,5 @@ public final class NiceRowTest {
         return bytesList;
     }
 
-    private static final RowDefCacheFactory ROW_DEF_CACHE_FACTORY = new RowDefCacheFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
 }

@@ -25,9 +25,9 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
-        dml().writeRow( createNewRow(tableId, 1, "foo bear") );
+        dml().writeRow( session, createNewRow(tableId, 1, "foo bear") );
         expectRowCount(tableId, 2);
 
         Session session = new SessionImpl();
@@ -35,20 +35,20 @@ public final class CTest extends ApiTestBase {
         ListRowOutput output = new ListRowOutput();
 
         assertEquals("cursors", cursorSet(), dml().getCursors(session));
-        CursorId cursorId = dml().openCursor(request, session);
+        CursorId cursorId = dml().openCursor(session, request);
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(cursorId, session));
+        assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
 
-        boolean hasMore1 = dml().scanSome(cursorId, session, output, 1);
+        boolean hasMore1 = dml().scanSome(session, cursorId, output, 1);
         assertTrue("more rows expected", hasMore1);
-        assertEquals("state", CursorState.SCANNING, dml().getCursorState(cursorId, session));
+        assertEquals("state", CursorState.SCANNING, dml().getCursorState(session, cursorId));
 
-        boolean hasMore2 = dml().scanSome(cursorId, session, output, -1);
+        boolean hasMore2 = dml().scanSome(session, cursorId, output, -1);
         assertFalse("more rows found", hasMore2);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(cursorId, session));
+        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
 
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        dml().closeCursor(cursorId, session);
+        dml().closeCursor(session, cursorId);
         assertEquals("cursors", cursorSet(), dml().getCursors(session));
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
@@ -62,7 +62,7 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0));
@@ -78,17 +78,17 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
 
         Session session = new SessionImpl();
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0)); // partial scan requested
         LegacyRowOutput output = new WrappingRowOutput(ByteBuffer.allocate(1024 * 1024));
-        CursorId cursorId = dml().openCursor(request, session);
+        CursorId cursorId = dml().openCursor(session, request);
 
-        dml().scanSome(cursorId, session, output, 1);
+        dml().scanSome(session, cursorId, output, 1);
         assertEquals("rows read", 1, output.getRowsCount());
-        dml().closeCursor(cursorId, session);
+        dml().closeCursor(session, cursorId);
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
         expectedRows.add( createNewRow(tableId, 0L, "hello world") ); // full scan expected
@@ -102,15 +102,15 @@ public final class CTest extends ApiTestBase {
     @Test
     public void testDropTable() throws InvalidOperationException {
         final TableId tableId1 = createTable("testSchema", "customer", "id int key");
-        ddl().dropTable(TableId.of("testSchema", "customer"));
+        ddl().dropTable(session, TableId.of("testSchema", "customer"));
 
-        AkibaInformationSchema ais = ddl().getAIS();
+        AkibaInformationSchema ais = ddl().getAIS(session);
         assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
-        ddl().dropTable(tableId1); // should be a no-op, just testing it doesn't fail
+        ddl().dropTable(session, tableId1); // should be a no-op, just testing it doesn't fail
 
         NoSuchTableException caught = null;
         try {
-            dml().openCursor(new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)), new SessionImpl());
+            dml().openCursor(session, new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
         } catch (NoSuchTableException e) {
             caught = e;
         }
@@ -126,24 +126,24 @@ public final class CTest extends ApiTestBase {
         ListRowOutput output = new ListRowOutput();
 
         assertEquals("cursors", cursorSet(), dml().getCursors(session));
-        CursorId cursorId = dml().openCursor(request, session);
+        CursorId cursorId = dml().openCursor(session, request);
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(cursorId, session));
+        assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
 
-        boolean hasMore = dml().scanSome(cursorId, session, output, 1);
+        boolean hasMore = dml().scanSome(session, cursorId, output, 1);
         assertFalse("no more rows expected", hasMore);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(cursorId, session));
+        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
 
         CursorIsFinishedException caught = null;
         try {
-            dml().scanSome(cursorId, session, output, 0);
+            dml().scanSome(session, cursorId, output, 0);
         } catch (CursorIsFinishedException e) {
             caught = e;
         }
         assertNotNull("expected an exception", caught);
 
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        dml().closeCursor(cursorId, session);
+        dml().closeCursor(session, cursorId);
         assertEquals("cursors", cursorSet(), dml().getCursors(session));
 
         assertEquals("rows scanned", Collections.<NewRow>emptyList(), output.getRows());
@@ -154,13 +154,13 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( createNewRow(tableId, 0, "hello world"), createNewRow(tableId, 0, "goodbye cruel world") );
+        dml().updateRow( session, createNewRow(tableId, 0, "hello world"), createNewRow(tableId, 0, "goodbye cruel world") );
         expectRowCount(tableId, 1);
         expectRows(request, createNewRow(tableId, 0L, "goodbye cruel world") );
     }
@@ -170,13 +170,13 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow(session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world") );
+        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world") );
         expectRowCount(tableId, 1);
         expectRows(request, createNewRow(tableId, 1L, "goodbye cruel world") );
     }
@@ -188,7 +188,7 @@ public final class CTest extends ApiTestBase {
             tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
             expectRowCount(tableId, 0);
-            dml().writeRow( createNewRow(tableId, 0, "hello world") );
+            dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
             expectRowCount(tableId, 1);
 
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -200,7 +200,7 @@ public final class CTest extends ApiTestBase {
         try {
             NiceRow old = new NiceRow(tableId);
             old.put(ColumnId.of(1), "hello world");
-            dml().updateRow( old, createNewRow(tableId, 1, "goodbye cruel world") );
+            dml().updateRow( session, old, createNewRow(tableId, 1, "goodbye cruel world") );
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "hello world") );
@@ -219,13 +219,13 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( createNewRow(tableId, 0), createNewRow(tableId, 1) );
+        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1) );
         expectRowCount(tableId, 1);
         expectRows(new ScanAllRequest(tableId, ColumnSet.ofPositions(0)), createNewRow(tableId, 1L) );
     }
@@ -237,7 +237,7 @@ public final class CTest extends ApiTestBase {
             tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
             expectRowCount(tableId, 0);
-            dml().writeRow( createNewRow(tableId, 0, "hello world") );
+            dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
             expectRowCount(tableId, 1);
 
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -248,7 +248,7 @@ public final class CTest extends ApiTestBase {
 
         try {
             dml().updateRow(
-                    createNewRow(tableId, 0, "hello world"),
+                    session, createNewRow(tableId, 0, "hello world"),
                     createNewRow(tableId, "zero", "1234") );
         } catch (TableDefinitionMismatchException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -269,7 +269,7 @@ public final class CTest extends ApiTestBase {
         }
 
         try {
-            dml().writeRow( createNewRow(tableId, "zero", 123) );
+            dml().writeRow( session, createNewRow(tableId, "zero", 123) );
         } catch (TableDefinitionMismatchException e) {
             expectRowCount(tableId, 0);
             expectRows(new ScanAllRequest(tableId, null));
@@ -289,7 +289,7 @@ public final class CTest extends ApiTestBase {
         }
 
         try {
-            dml().writeRow( createNewRow(tableId, 0, "this string is longer than five characters") );
+            dml().writeRow( session, createNewRow(tableId, 0, "this string is longer than five characters") );
         } catch (TableDefinitionMismatchException e) {
             expectRowCount(tableId, 0);
             expectRows(new ScanAllRequest(tableId, null));
@@ -303,13 +303,13 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world") );
+        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world") );
         expectRowCount(tableId, 1);
         expectRows(request, createNewRow(tableId, 1L, "goodbye cruel world") );
     }
@@ -319,9 +319,9 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "doomed row") );
+        dml().writeRow( session, createNewRow(tableId, 0, "doomed row") );
         expectRowCount(tableId, 1);
-        dml().writeRow( createNewRow(tableId, 1, "also doomed") );
+        dml().writeRow( session, createNewRow(tableId, 1, "also doomed") );
         expectRowCount(tableId, 2);
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -329,12 +329,12 @@ public final class CTest extends ApiTestBase {
                 createNewRow(tableId, 0L, "doomed row"),
                 createNewRow(tableId, 1L, "also doomed"));
 
-        dml().deleteRow( createNewRow(tableId, 0L, "doomed row") );
+        dml().deleteRow( session, createNewRow(tableId, 0L, "doomed row") );
         expectRowCount(tableId, 1);
         expectRows(request,
                 createNewRow(tableId, 1L, "also doomed"));
 
-        dml().deleteRow( createNewRow(tableId, 1L) );
+        dml().deleteRow( session, createNewRow(tableId, 1L) );
         expectRowCount(tableId, 0);
         expectRows(request);
     }
@@ -346,7 +346,7 @@ public final class CTest extends ApiTestBase {
             tableId = createTable("theschema", "c", "id int key, name varchar(32)");
 
             expectRowCount(tableId, 0);
-            dml().writeRow( createNewRow(tableId, 0, "the customer's name") );
+            dml().writeRow( session, createNewRow(tableId, 0, "the customer's name") );
             expectRowCount(tableId, 1);
 
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -358,7 +358,7 @@ public final class CTest extends ApiTestBase {
         try {
             NiceRow deleteAttempt = new NiceRow(tableId);
             deleteAttempt.put(ColumnId.of(1), "the customer's name");
-            dml().deleteRow(deleteAttempt);
+            dml().deleteRow(session, deleteAttempt);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "the customer's name"));
@@ -378,7 +378,7 @@ public final class CTest extends ApiTestBase {
         try {
             NiceRow deleteAttempt = new NiceRow(tableId);
             deleteAttempt.put(ColumnId.of(1), "the customer's name");
-            dml().deleteRow( createNewRow(tableId, 0, "this row doesn't exist"));
+            dml().deleteRow( session, createNewRow(tableId, 0, "this row doesn't exist"));
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request);
@@ -400,9 +400,9 @@ public final class CTest extends ApiTestBase {
         final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
-        dml().writeRow( createNewRow(tableId, 0, "hello world") );
+        dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
-        dml().truncateTable(tableId);
+        dml().truncateTable(session, tableId);
         expectRowCount(tableId, 0);
     }
 }

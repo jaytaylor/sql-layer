@@ -1,11 +1,15 @@
 package com.akiban.ais.util;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
 
 public class Schemapedia
 {

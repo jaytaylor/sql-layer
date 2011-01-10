@@ -1,11 +1,12 @@
 package com.akiban.ais.util;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import java.io.StringWriter;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
-import java.io.StringWriter;
+import com.akiban.ais.model.AkibaInformationSchema;
 
 public class AISTextGenerator
 {

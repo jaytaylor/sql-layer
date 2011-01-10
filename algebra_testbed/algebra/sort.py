@@ -1,9 +1,7 @@
 import operator
-import db.map
 
 Operator = operator.Operator
 SORT = operator.SORT
-Map = db.map.Map
 
 class Sort(Operator):
 

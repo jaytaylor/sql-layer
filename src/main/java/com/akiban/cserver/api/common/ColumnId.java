@@ -1,9 +1,9 @@
 package com.akiban.cserver.api.common;
 
+import java.nio.ByteBuffer;
+
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.CacheMap;
-
-import java.nio.ByteBuffer;
 
 public final class ColumnId extends ByteBufferWriter implements Comparable<ColumnId> {
 

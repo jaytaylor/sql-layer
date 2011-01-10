@@ -1,8 +1,8 @@
 package com.akiban.util;
 
-import com.akiban.util.Tap.TimeAndCount;
-
 import java.beans.ConstructorProperties;
+
+import com.akiban.util.Tap.TimeAndCount;
 
 /**
  * A structure to return {@link TimeAndCount} results. May be extended for use

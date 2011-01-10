@@ -1,11 +1,11 @@
 package com.akiban.cserver.loader;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class GenerateChildTask extends Task
 {
@@ -51,7 +51,7 @@ public class GenerateChildTask extends Task
         loader.tracker().info("%s %s order: %s", artifactTableName(), type(), order());
     }
 
-    private static final String SQL_TEMPLATE = "create table %s(%s) select %s from %s order by %s";
+    private static final String SQL_TEMPLATE = "create table %s(%s) engine = myisam select %s from %s order by %s";
 
     protected final UserTable table;
     protected final List<Column> fkColumns = new ArrayList<Column>();

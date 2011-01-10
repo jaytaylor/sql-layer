@@ -1,10 +1,14 @@
 package com.akiban.cserver.service.logging;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.jmx.JmxManageable;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class LoggingServiceImpl implements LoggingService, JmxManageable, Service<LoggingService> {
     private final List<LoggingError> internalErrors = Collections.synchronizedList( new ArrayList<LoggingError>() );

@@ -1,14 +1,14 @@
 package com.akiban.jni;
 
-import com.akiban.message.AkibanConnection;
-import com.akiban.message.Message;
-import com.akiban.message.MessageRegistry;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import com.akiban.message.AkibanConnection;
+import com.akiban.message.Message;
+import com.akiban.message.MessageRegistry;
 
 public final class InMemoryAkibanConnection implements AkibanConnection {
     private static final int MESSAGE_BUFFER_SIZE = 1 << 20;

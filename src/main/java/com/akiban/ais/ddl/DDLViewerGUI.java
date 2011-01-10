@@ -1,19 +1,39 @@
 package com.akiban.ais.ddl;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.staticgrouping.Grouping;
-import com.akiban.ais.model.staticgrouping.GroupsBuilder;
-import com.akiban.util.MySqlStatementSplitter;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.io.*;
+
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.staticgrouping.Grouping;
+import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import com.akiban.util.MySqlStatementSplitter;
 
 public class DDLViewerGUI {
     private final String STATUS_FORMATTER = "%d table%s in %d group%s";

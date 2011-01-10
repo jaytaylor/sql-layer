@@ -65,25 +65,10 @@
             <version>1.4</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.10</version>
-        </dependency>
-        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.9</version>
         </dependency>    
-        <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
-            <version>1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.help</groupId>
-            <artifactId>javahelp</artifactId>
-            <version>2.0.02</version>
-        </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit</artifactId>
@@ -125,6 +110,10 @@
             <version>0.9.1</version>
         </dependency>
     </dependencies>
+    
+    <properties>
+        <akiban.test.extraJvmArgs></akiban.test.extraJvmArgs>
+    </properties>
 
     <build>
         <plugins>
@@ -224,7 +213,7 @@ ZUUn]]></license>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
-                    <argLine>-Xmx512m -Xms128m -Dcserver.port=${cserver.port}</argLine>
+                    <argLine>-Xmx512m -Xms128m -Dcserver.port=${cserver.port} ${akiban.test.extraJvmArgs}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>

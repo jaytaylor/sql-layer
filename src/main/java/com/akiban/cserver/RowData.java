@@ -1,11 +1,11 @@
 package com.akiban.cserver;
 
-import com.akiban.cserver.encoding.EncodingException;
-import com.akiban.cserver.util.RowDefNotFoundException;
-
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
+
+import com.akiban.cserver.encoding.EncodingException;
+import com.akiban.cserver.util.RowDefNotFoundException;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -410,6 +410,13 @@ public class RowData {
         CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
         CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
         rowEnd = offset;
+    }
+
+    public void updateNonNullLong(FieldDef fieldDef, long rowId)
+    {
+        // Offset is in low 32 bits of fieldLocation return value
+        int offset = (int) fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
+        CServerUtil.putLong(bytes, offset, rowId);
     }
 
     /**

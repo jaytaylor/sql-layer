@@ -1,326 +1,163 @@
 package com.akiban.cserver.store;
 
-import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.staticgrouping.*;
-import com.akiban.ais.util.AISPrinter;
-import com.akiban.ais.util.DDLGenerator;
-import com.akiban.cserver.*;
-import com.akiban.cserver.manage.SchemaManager;
-import com.akiban.message.ErrorCode;
-import com.akiban.util.MySqlStatementSplitter;
-import com.persistit.*;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import static com.akiban.ais.ddl.SchemaDef.CREATE_TABLE;
+import static com.akiban.cserver.service.tree.TreeService.AIS_BASE_TABLE_ID;
+import static com.akiban.cserver.service.tree.TreeService.SCHEMA_TREE_NAME;
+import static com.akiban.cserver.service.tree.TreeService.STATUS_TREE_NAME;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class PersistitStoreSchemaManager implements CServerConstants,
-        SchemaManager {
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.ais.ddl.SchemaDefToAis;
+import com.akiban.ais.io.Writer;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.util.DDLGenerator;
+import com.akiban.cserver.CServer;
+import com.akiban.cserver.CServerAisTarget;
+import com.akiban.cserver.CServerUtil;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.TableStatus;
+import com.akiban.cserver.service.AfterStart;
+import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.tree.TreeCache;
+import com.akiban.cserver.service.tree.TreeLink;
+import com.akiban.cserver.service.tree.TreeService;
+import com.akiban.cserver.service.tree.TreeVisitor;
+import com.akiban.message.ErrorCode;
+import com.akiban.util.MySqlStatementSplitter;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.KeyFilter;
+import com.persistit.exception.PersistitException;
+
+public class PersistitStoreSchemaManager implements Service<SchemaManager>,
+        SchemaManager, AfterStart {
+
+    static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
+
+    static final String BY_ID = "byId";
+
+    static final String BY_NAME = "byName";
 
     private static final Log LOG = LogFactory
             .getLog(PersistitStoreSchemaManager.class.getName());
 
-    private final static int AIS_BASE_TABLE_IDS = 100000;
+    // TODO - replace with transactional cache implementation
+    private final static long DELAY = 10000L;
 
-    private static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
+    private final static String CREATE_SCHEMA_IF_NOT_EXISTS = "create schema if not exists ";
 
-    private static final int GROUP_TABLE_ID_OFFSET = 1000000000;
+    private final static String SEMI_COLON = ";";
 
-    private final static String SCHEMA_TREE_NAME = "_schema_";
+    private final static String AKIBAN_INFORMATION_SCHEMA = "akiba_information_schema";
 
-    private final static String AKIBA_INFORMATION_SCHEMA = "akiba_information_schema";
+    private static List<TableDefinition> aisSchema = readAisSchema();
 
-    private final static String BY_ID = "byId";
+    private SchemaDef schemaDef;
 
-    private final static String BY_NAME = "byName";
-
-    private final PersistitStore store;
-
-    private final Set<ColumnName> knownColumns = new HashSet<ColumnName>(100);
-
-    // TODO -Initialize as an empty AIS - needed for a unit test
     private AkibaInformationSchema ais;
 
-    private List<CreateTableStruct> aisSchemaStructs;
+    private long aisTimestamp;
 
-    private List<String> aisSchemaDdls;
+    private ServiceManager serviceManager;
 
-    public void startUp() throws Exception {
-        acquireAIS();
-    }
+    private RowDefCache rowDefCache;
 
-    private static class ColumnName {
-        private final String tableName;
-        private final String columnName;
+    private long saveTimestamp;
 
-        private ColumnName(String tableName, String columnName) {
-            assert tableName != null : "null tablename";
-            assert columnName != null : "null columnName";
-            this.tableName = tableName;
-            this.columnName = columnName;
-        }
+    private final Map<String, TreeLink> schemaLinkMap = new HashMap<String, TreeLink>();
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ColumnName that = (ColumnName) o;
-            if (!columnName.equals(that.columnName)) {
-                return false;
-            }
-            if (!tableName.equals(that.tableName)) {
-                return false;
-            }
-            return true;
-        }
+    private final Map<String, TreeLink> statusLinkMap = new HashMap<String, TreeLink>();
 
-        @Override
-        public int hashCode() {
-            int result = tableName.hashCode();
-            result = 31 * result + columnName.hashCode();
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("(%s,%s)", tableName, columnName);
-        }
-    }
-
-    public static class CreateTableStruct {
-        final int tableId;
-        final String schemaName;
-        final String tableName;
-        final String ddl;
-
-        public CreateTableStruct(int tableId, String schemaName,
-                String tableName, String ddl) {
-            this.tableId = tableId;
-            this.schemaName = schemaName;
-            this.tableName = tableName;
-            this.ddl = ddl;
-        }
-
-        public String getDdl() {
-            return ddl;
-        }
-
-        public String getSchemaName() {
-            return schemaName;
-        }
-
-        public String getTableName() {
-            return tableName;
-        }
-
-        public int getTableId() {
-            return tableId;
-        }
-
-        @Override
-        public String toString() {
-            return "CreateTableStruct[" + tableId + ": "
-                    + TableName.create(schemaName, tableName) + ']';
-        }
-    }
-
-    public PersistitStoreSchemaManager(final PersistitStore store) {
-        this.store = store;
-        this.aisSchemaDdls = readAisDdls();
-        this.aisSchemaStructs = readAisSchemaDdls(aisSchemaDdls);
-        this.ais = createEmptyAIS();
-    }
-
-    private void populateSchema(final List<CreateTableStruct> result)
-            throws PersistitException {
-        Exchange ex1 = null;
-        Exchange ex2 = null;
-
-        try {
-            ex1 = store.getExchange(SCHEMA_TREE_NAME);
-            ex2 = store.getExchange(SCHEMA_TREE_NAME);
-            ex1.clear().append(BY_NAME);
-            final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
-
-            ex1.clear();
-            while (ex1.next(keyFilter)) {
-                // Traverse to the largest tableId (most recent)
-                if (!ex1.to(Key.AFTER).previous()) {
-                    continue;
-                }
-                final String schemaName = ex1.getKey().indexTo(1)
-                        .decodeString();
-                final String tableName = ex1.getKey().indexTo(2).decodeString();
-                final int tableId = ex1.getKey().indexTo(3).decodeInt();
-
-                ex2.clear().append(BY_ID).append(tableId).fetch();
-                if (!ex2.getValue().isDefined()) {
-                    if (LOG.isWarnEnabled()) {
-                        LOG.warn("No table definition for " + ex1.getKey());
-                    }
-                }
-                final String ddl = ex2.getValue().getString();
-                result.add(new CreateTableStruct(tableId, schemaName,
-                        tableName, ddl));
-            }
-
-        } catch (Throwable t) {
-            LOG.error("createTable failed", t);
-        } finally {
-            store.releaseExchange(ex1);
-            store.releaseExchange(ex2);
-        }
-    }
-
-    private boolean checkForDuplicateColumns(SchemaDef.UserTableDef tableDef) {
-        Set<ColumnName> tmp = new HashSet<ColumnName>(knownColumns);
-        for (SchemaDef.ColumnDef cDef : tableDef.getColumns()) {
-            ColumnName cName = new ColumnName(tableDef.getCName().getName(),
-                    cDef.getName());
-            if (!tmp.add(cName)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("table/column pair already exists: " + cName
-                            + " -- abandoning createTable");
-                }
-                return false;
-            }
-        }
-        knownColumns.addAll(tmp);
-        assert knownColumns.size() == tmp.size() : String.format(
-                "union not of equal size: %s after adding %s", knownColumns,
-                tmp);
-        return true;
-    }
-
-    public void forgetTableColumns(String tableName) {
-        Iterator<ColumnName> iter = knownColumns.iterator();
-        while (iter.hasNext()) {
-            if (tableName.equals(iter.next().tableName)) {
-                iter.remove();
-            }
-        }
-    }
+    private final Timer timer = new Timer("TableStatus_Flusher", true);
 
     /**
-     * Attempts to create a table.
+     * Create or update a table definition given a schema name, table name and a
+     * CREATE TABLE statement supplied by the client. The CREATE TABLE
+     * statement, if correctly formed, supplies the table name. It optionally
+     * specifies a schema name, and if so, that name overrides the supplied
+     * default schema name.
      * 
-     * @param useSchemaName
-     *            the table's schema name
-     * @param ddl
-     *            the table's raw DDL
-     * @param rowDefCache
-     *            the existing RowDefCache. Used to validate parent columns.
-     * @param result
-     *            the result object to be populated
-     * @return CServerConstants.OK iff everything worked
+     * This method verifies the integrity of the supplied statement as follows:
+     * <ul>
+     * <li>it must be valid DDL syntax</li>
+     * <li>it does not have a schema name reserved by Akiban</li>
+     * <li>any references to other tables and columns must be valid</li>
+     * <li>TODO: any previously existing table definition having the same name
+     * is compatible, meaning that rows already stored under a previously
+     * existing definition of a table having the same schema name and table name
+     * can be transformed to a row of the new format.</li>
+     * </ul>
+     * 
+     * @param session
+     * @param defaultSchemaName
+     *            default schema name (as supplied by a USE statement in the
+     *            client) to be used in case the statement does not explicitly
+     *            specify a schema name.
+     * @param statement
+     *            a CREATE TABLE statement
      * @throws InvalidOperationException
-     *             if the table isn't valid (or can't be parsed)
+     *             if the statement does not match these criteria
+     * @throws PersistitException
+     *             if any of the underlying B-Tree operations caused an
+     *             exception
      */
-    void createTable(final String useSchemaName, final String ddl, RowDefCache rowDefCache, CreateTableResult result)
-            throws InvalidOperationException, PersistitException {
-        Exchange ex = null;
+    @Override
+    public void createTableDefinition(final Session session,
+            final String defaultSchemaName, final String statement)
+            throws Exception {
+        final TreeService treeService = serviceManager.getTreeService();
+        String canonical = SchemaDef.canonicalStatement(statement);
+        final SchemaDef.UserTableDef tableDef = parseTableStatement(
+                defaultSchemaName, canonical);
+        String schemaName = tableDef.getCName().getSchema();
+        if (schemaName == null) {
+            final StringBuilder sb = new StringBuilder(CREATE_TABLE);
+            schemaName = defaultSchemaName;
+            TableName.escape(schemaName, sb);
+            sb.append(".");
+            sb.append(naked(canonical));
+            canonical = sb.toString();
+        }
+        final String tableName = tableDef.getCName().getName();
 
-        String canonical = DDLSource.canonicalStatement(ddl);
-        final SchemaDef.UserTableDef tableDef;
-        try {
-            tableDef = new DDLSource().parseCreateTable(canonical);
-        } catch (Exception e1) {
-            throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
-                    "[%s] %s: %s", useSchemaName, e1.getMessage(), canonical);
-        }
-        if (AKIBA_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())
-                || "akiba_objects".equals(tableDef.getCName().getSchema())) {
-            throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
-                    "[%s] %s is protected: %s", useSchemaName,
-                    AKIBA_INFORMATION_SCHEMA, ddl);
-        }
-        SchemaDef.IndexDef parentJoin = DDLSource.getAkibanJoin(tableDef);
-        if (parentJoin != null) {
-            if (AKIBA_INFORMATION_SCHEMA.equals(parentJoin.getParentSchema())
-                    || "akiba_objects".equals(parentJoin.getParentSchema())) {
-                throw new InvalidOperationException(
-                        ErrorCode.JOIN_TO_PROTECTED_TABLE, "[%s] to %s.*: %s",
-                        useSchemaName, parentJoin.getParentSchema(), ddl);
-            }
-            String parentSchema = parentJoin.getParentSchema();
-            if (parentSchema == null) {
-                parentSchema = (tableDef.getCName().getSchema() == null) ? useSchemaName
-                        : tableDef.getCName().getSchema();
-            }
-            final String parentName = RowDefCache.nameOf(
-                    parentJoin.getParentSchema(useSchemaName),
-                    parentJoin.getParentTable());
-            final RowDef parentDef = rowDefCache.getRowDef(parentName);
-            if (parentDef == null) {
-                throw new InvalidOperationException(
-                        ErrorCode.JOIN_TO_UNKNOWN_TABLE, "[%s] to %s: %s",
-                        useSchemaName, parentName, ddl);
-            }
-            IndexDef parentPK = parentDef.getPKIndexDef();
-            List<String> parentPKColumns = new ArrayList<String>(
-                    parentPK.getFields().length);
-            for (int fieldIndex : parentPK.getFields()) {
-                parentPKColumns
-                        .add(parentDef.getFieldDef(fieldIndex).getName());
-            }
-            if (!parentPKColumns.equals(parentJoin.getParentColumns())) {
-                throw new InvalidOperationException(
-                        ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                        "children must join to parent's PK columns. [%s] %s%s references %s%s: %s", useSchemaName,
-                        tableDef.getCName(), parentJoin.getParentColumns(),
-                        parentName, parentPKColumns, ddl);
-            }
-        }
-
-        // TODO: For now, we can't handle situations in which a
-        // tablename+columnname already exist
-        // This is because group table columns are qualified only by
-        // (uTable,uTableCol) so there
-        // is a collision if we have (s1, tbl, col) and (s2, tbl, col)
-        if (!checkForDuplicateColumns(tableDef)) {
-            throw new InvalidOperationException(
-                    ErrorCode.DUPLICATE_COLUMN_NAMES,
-                    "[%s] knownColumns=%s  ddl=%s", useSchemaName,
-                    knownColumns, ddl);
-        }
+        validateTableDefinition(session, schemaName, statement, tableDef);
+        final Exchange ex = treeService.getExchange(session,
+                treeLink(schemaName, SCHEMA_TREE_NAME));
 
         try {
-            ex = store.getExchange(SCHEMA_TREE_NAME);
-
-            String schemaName = tableDef.getCName().getSchema();
-            if (schemaName == null) {
-                schemaName = useSchemaName;
-                canonical = '`' + useSchemaName + "`." + canonical;
-            }
-            final String tableName = tableDef.getCName().getName();
-
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
                 final int tableId = ex.getKey().indexTo(-1).decodeInt();
                 ex.clear().append(BY_ID).append(tableId).fetch();
                 final String previousValue = ex.getValue().getString();
                 if (canonical.equals(previousValue)) {
-                    if (result != null) {
-                        result.fillInInfo(tableDef, tableId);
-                    }
                     return;
                 }
             }
@@ -336,78 +173,202 @@ public class PersistitStoreSchemaManager implements CServerConstants,
             ex.getValue().putNull();
             ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(tableId).store();
-
-            if (result != null) {
-                result.fillInInfo(tableDef, tableId);
-            }
+            changed(treeService, session);
+            saveTableStatusRecords(session);
             return;
-
-            // } catch (StoreException e) {
-            // if (verbose && LOG.isInfoEnabled()) {
-            // LOG.info("createTable error " + e.getResult(), e);
-            // }
-            // return e.getResult();
         } finally {
-            store.releaseExchange(ex);
+            treeService.releaseExchange(session, ex);
         }
     }
-    
-    public void changeTableDDL(String schemaName, String tableName, String DDL) throws Exception
+
+    public void changeTableDefinition(final Session session, final int tableId, 
+            final String DDL) throws Exception
     {
-        Exchange ex = null;
-        
-        try {
-            String canonical = DDLSource.canonicalStatement(DDL);
-            ex = store.getExchange(SCHEMA_TREE_NAME);
-            
-            if(ex.clear().append(BY_NAME).append(schemaName).append(tableName).append(Key.AFTER).previous()) {
-                final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                ex.clear().append(BY_ID).append(tableId).fetch();
-                final String previousValue = ex.getValue().getString();
-                ex.getValue().put(canonical);
-                ex.clear().append(BY_ID).append(tableId).store();
-                ex.getValue().putNull();
-                ex.clear().append(BY_NAME).append(schemaName).append(tableName).append(tableId).store();
-                
-                // Update AIS with new info
-                acquireAIS();
-                
-                // Bump as AIS changed
-                store.getPropertiesManager().incrementSchemaId();
+        final String canonical = SchemaDef.canonicalStatement(DDL);
+        final TreeService treeService = serviceManager.getTreeService();
+
+        treeService.visitStorage(session, new TreeVisitor() {
+            @Override
+            public void visit(Exchange exchange) throws Exception {
+                exchange.clear().append(BY_ID).append(tableId).fetch();
+                if(exchange.isValueDefined()) {
+                    final String prevCanonical = exchange.getValue().getString();
+                    SchemaDef.CName cname = cname(prevCanonical);
+                    exchange.getValue().put(canonical);
+                    exchange.clear().append(BY_ID).append(tableId).store();
+                    exchange.getValue().putNull();
+                    exchange.clear().append(BY_NAME).append(cname.getSchema())
+                        .append(cname.getName()).append(tableId).store();
+                }
             }
-            else {
-                // No DDL stored for schemaName.tableName
+        }, SCHEMA_TREE_NAME);
+
+        // Mark as changed
+        changed(treeService, session);
+        saveTableStatusRecords(session);
+    }
+
+
+    /**
+     * Delete a table definition version specified by tableId. There is no
+     * validity checking for this call; the definition is simply removed. DROP
+     * TABLE should use the
+     * {@link #deleteTableDefinition(Session, String, String)} method to ensure
+     * integrity.
+     * 
+     * @param session
+     * @param tableId
+     *            tableId of a table definition version to be deleted
+     */
+    @Override
+    public void deleteTableDefinition(Session session, final int tableId)
+            throws Exception {
+        final TreeService treeService = serviceManager.getTreeService();
+        treeService.visitStorage(session, new TreeVisitor() {
+
+            @Override
+            public void visit(Exchange exchange) throws Exception {
+                exchange.clear().append(BY_ID).append(tableId).fetch();
+                if (exchange.isValueDefined()) {
+                    final String canonical = exchange.getValue().getString();
+                    SchemaDef.CName cname = cname(canonical);
+                    exchange.remove();
+                    exchange.clear().append(BY_NAME).append(cname.getSchema())
+                            .append(cname.getName()).append(tableId).remove();
+                }
+            }
+
+        }, SCHEMA_TREE_NAME);
+        removeStaleTableStatusRecords(session);
+        saveTableStatusRecords(session);
+    }
+
+    /**
+     * Delete all table definition versions for a table specified by schema name
+     * and table name. This removes the entire history of the table, and is
+     * intended to implement part of the DROP TABLE operation. (The other part
+     * is truncating the data.)
+     * 
+     * TODO: This method verifies that no other tables refer to this table
+     * definition before removing it. An attempt to remove a table definition
+     * that would render other tables invalid is rejected.
+     * 
+     * @param session
+     * @param schemaName
+     * @param tableName
+     * @throws InvalidOperationException
+     *             if removing this table would cause other table definitions to
+     *             become invalid.
+     */
+    @Override
+    public void deleteTableDefinition(final Session session,
+            final String schemaName, final String tableName) throws Exception {
+        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+            return;
+        }
+        // TODO - This is temporary. this method finds all the members of the
+        // group containing specified table, and deletes them all. Note - this
+        // implementation requires an up-to-date AIS, which is created lazily as
+        // a side-effect.
+        //
+        final AkibaInformationSchema ais = getAis(session);
+        final Table table = ais.getTable(schemaName, tableName);
+        if (table == null) {
+            return;
+        }
+
+        final List<TableName> tables = new ArrayList<TableName>();
+        final Group group = table.getGroup();
+        tables.add(group.getGroupTable().getName());
+        for (final Table t : ais.getUserTables().values()) {
+            if (t.getGroup().equals(group)) {
+                tables.add(t.getName());
             }
         }
-        finally {
-            store.releaseExchange(ex);
+        deleteTableDefinitionList(session, tables);
+        removeStaleTableStatusRecords(session);
+        saveTableStatusRecords(session);
+    }
+
+    private void deleteTableDefinitionList(final Session session,
+            final List<TableName> tables) throws Exception {
+        final TreeService treeService = serviceManager.getTreeService();
+
+        for (final TableName tn : tables) {
+            final String schemaName = tn.getSchemaName();
+            final String tableName = tn.getTableName();
+            Exchange ex1 = null;
+            Exchange ex2 = null;
+            Exchange ex3 = null;
+            try {
+                ex1 = treeService.getExchange(session,
+                        treeLink(schemaName, SCHEMA_TREE_NAME));
+                ex2 = treeService.getExchange(session,
+                        treeLink(schemaName, SCHEMA_TREE_NAME));
+                ex3 = treeService.getExchange(session,
+                        treeLink(schemaName, STATUS_TREE_NAME));
+                ex1.clear().append(BY_NAME).append(schemaName)
+                        .append(tableName);
+                final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
+
+                ex1.clear();
+                while (ex1.next(keyFilter)) {
+                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
+                    ex2.clear().append(BY_ID).append(tableId).remove();
+                    ex1.remove();
+                    ex3.clear().append(tableId).remove();
+                }
+                changed(treeService, session);
+            } catch (PersistitException e) {
+                LOG.error("Failed to delete table " + schemaName + "."
+                        + tableName, e);
+                throw e;
+            } finally {
+                if (ex1 != null) {
+                    treeService.releaseExchange(session, ex1);
+                }
+                if (ex2 != null) {
+                    treeService.releaseExchange(session, ex2);
+                }
+                if (ex3 != null) {
+                    treeService.releaseExchange(session, ex3);
+                }
+            }
         }
     }
 
     /**
-     * Removes the create table statement(s) for the specified schema/table
+     * Delete all table definition versions for all tables contained in a named
+     * schema. This removes the entire history of all tables in the schema, and
+     * is intended to implement part of the DROP SCHEMA operation. (The other
+     * part is truncating the data.)
      * 
+     * This method verifies that no other tables refer to these table
+     * definitions before removing them. An attempt to remove a table definition
+     * that would render other tables invalid is rejected.
+     * 
+     * @param session
      * @param schemaName
-     *            the table's schema
      * @param tableName
-     *            the table's name
      * @throws InvalidOperationException
-     *             if the table is protected
+     *             if removing a table in this schema would cause other table
+     *             definitions to become invalid.
      */
-    void dropCreateTable(final String schemaName, final String tableName)
-            throws PersistitException {
-
-        if (AKIBA_INFORMATION_SCHEMA.equals(schemaName)
-                || "akiba_objects".equals(schemaName)) {
+    @Override
+    public void deleteSchemaDefinition(final Session session,
+            final String schemaName) throws Exception {
+        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
-
+        final TreeService treeService = serviceManager.getTreeService();
         Exchange ex1 = null;
         Exchange ex2 = null;
         try {
-            ex1 = store.getExchange(SCHEMA_TREE_NAME);
-            ex2 = store.getExchange(SCHEMA_TREE_NAME);
-            ex1.clear().append(BY_NAME).append(schemaName).append(tableName);
+            ex1 = treeService.getExchange(session,
+                    treeLink(schemaName, SCHEMA_TREE_NAME));
+            ex2 = treeService.getExchange(session,
+                    treeLink(schemaName, SCHEMA_TREE_NAME));
+            ex1.clear().append(BY_NAME).append(schemaName);
             final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
 
             ex1.clear();
@@ -416,550 +377,745 @@ public class PersistitStoreSchemaManager implements CServerConstants,
                 ex2.clear().append(BY_ID).append(tableId).remove();
                 ex1.remove();
             }
+            changed(treeService, session);
         } catch (PersistitException e) {
-            LOG.error(TableName.create(schemaName, tableName).toString(), e);
+            LOG.error("Failed to delete schema " + schemaName, e);
             throw e;
         } finally {
             if (ex1 != null) {
-                store.releaseExchange(ex1);
+                treeService.releaseExchange(session, ex1);
             }
             if (ex2 != null) {
-                store.releaseExchange(ex2);
+                treeService.releaseExchange(session, ex2);
             }
+        }
+
+    }
+
+    /**
+     * Remove all table definitions. This visits all volumes and deletes the
+     * schema trees from all of them. Use with care!
+     * 
+     * @param session
+     */
+    @Override
+    public void deleteAllDefinitions(final Session session) throws Exception {
+        final TreeService treeService = serviceManager.getTreeService();
+        treeService.visitStorage(session, new TreeVisitor() {
+
+            @Override
+            public void visit(final Exchange exchange) throws Exception {
+                exchange.clear().removeAll();
+            }
+
+        }, SCHEMA_TREE_NAME);
+        changed(treeService, session);
+    }
+
+    /**
+     * Get the most recent version of a table definition identified by schema
+     * and table names. If there is no such table this method returns
+     * <code>null</code>.
+     * 
+     * @param session
+     * @param schemaName
+     * @param tableName
+     */
+    @Override
+    public TableDefinition getTableDefinition(Session session,
+            String schemaName, String tableName) throws Exception {
+        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+            for (final TableDefinition td : aisSchema) {
+                if (td.getTableName().equals(tableName)) {
+                    return td;
+                }
+            }
+            return null;
+        }
+        final TreeService treeService = serviceManager.getTreeService();
+        final Exchange ex = treeService.getExchange(session,
+                treeLink(schemaName, SCHEMA_TREE_NAME));
+        try {
+            if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
+                    .append(Key.AFTER).previous()) {
+                final int tableId = ex.getKey().indexTo(-1).decodeInt();
+                ex.clear().append(BY_ID).append(tableId).fetch();
+                return new TableDefinition(tableId, schemaName, tableName, ex
+                        .getValue().getString());
+            } else {
+                return null;
+            }
+
+        } finally {
+            treeService.releaseExchange(session, ex);
         }
     }
 
-    private List<CreateTableStruct> getSchemaStructs() throws Exception {
-        Transaction transaction = store.getDb().getTransaction();
-        final List<CreateTableStruct> result = new ArrayList<CreateTableStruct>();
-        transaction.run(new TransactionRunnable() {
-
-            @Override
-            public void runTransaction() throws PersistitException,
-                    RollbackException {
-                populateSchema(result);
+    /**
+     * Get a list containing all versions of table definitions for a specified
+     * schema and table name. The list is arranged in forward-chronological
+     * order, which is determined by increasing values of tableId. If there is
+     * no such table, this method returns an empty list.
+     * 
+     * @param session
+     * @param schemaName
+     * @param tableName
+     */
+    @Override
+    public List<TableDefinition> getTableDefinitionHistory(Session session,
+            String schemaName, String tableName) throws Exception {
+        final List<TableDefinition> result = new ArrayList<TableDefinition>();
+        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+            for (final TableDefinition td : aisSchema) {
+                if (td.getTableName().equals(tableName)) {
+                    result.add(td);
+                }
             }
-        });
+            return result;
+        }
+        final TreeService treeService = serviceManager.getTreeService();
+        final Exchange ex = treeService.getExchange(session,
+                treeLink(schemaName, SCHEMA_TREE_NAME));
+        ex.clear().append(BY_NAME).append(schemaName).append(tableName)
+                .append(Key.BEFORE);
+        try {
+            while (ex.next()) {
+                final int tableId = ex.getKey().indexTo(-1).decodeInt();
+                ex.clear().append(BY_ID).append(tableId).fetch();
+                result.add(new TableDefinition(tableId, schemaName, tableName,
+                        ex.getValue().getString()));
+            }
+        } finally {
+            treeService.releaseExchange(session, ex);
+        }
         return result;
     }
 
     /**
-     * Intended for testing. Creates a new AIS with only the a_i_s tables as its
-     * user tables.
+     * Get a map sorted by table name of all table definitions having the
+     * specified schema name. The most recent definition for each name is
+     * returned.
      * 
-     * @return a new AIS instance
-     * @throws Exception
-     *             if there's a problem
+     * @param session
+     * @param schemaName
      */
-    public AkibaInformationSchema createEmptyAIS() {
+    @Override
+    public SortedMap<String, TableDefinition> getTableDefinitions(
+            Session session, String schemaName) throws Exception {
+        final SortedMap<String, TableDefinition> result = new TreeMap<String, TableDefinition>();
+        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+            for (final TableDefinition td : aisSchema) {
+                result.put(td.getTableName(), td);
+            }
+            return result;
+        }
+        final TreeService treeService = serviceManager.getTreeService();
+        final Exchange ex1 = treeService.getExchange(session,
+                treeLink(schemaName, SCHEMA_TREE_NAME));
+        final Exchange ex2 = treeService.getExchange(session,
+                treeLink(schemaName, SCHEMA_TREE_NAME));
+        ex1.clear().append(BY_NAME).append(schemaName).append(Key.BEFORE);
         try {
-            return createFreshAIS(new ArrayList<CreateTableStruct>());
-        } catch (Exception e) {
-            // TODO - I suspect this mechanism for pre-loading the AIS
-            // may not last, so this is a sloppy temporary thing.
-            // DDLSource shouldn't throw anything on an empty schema.
-            //
-            throw new RuntimeException(e);
+            while (ex1.next()) {
+                final String tableName = ex1.getKey().indexTo(-1)
+                        .decodeString();
+                if (ex1.append(Key.AFTER).previous()) {
+                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
+                    ex2.clear().append(BY_ID).append(tableId).fetch();
+                    result.put(tableName, new TableDefinition(tableId,
+                            schemaName, tableName, ex2.getValue().getString()));
+                }
+                ex1.cut();
+            }
+            return result;
+        } finally {
+            treeService.releaseExchange(session, ex1);
         }
     }
 
     /**
-     * Creates a fresh AIS, using as its source the default AIS schema DDLs as
-     * well as any stored schemata.
+     * Get the Akiban Information Schema created from the the current set of
+     * table definitions. This structure contains an internal representation of
+     * most recent version of each table defined in the schema database, plus a
+     * representation of the akiban_information_schema itself.
      * 
-     * @param schema
-     *            the stored schema to add to the default AIS schema.
-     * @return a new AIS
-     * @throws Exception
-     *             if there's a problem
+     * This method returns an existing instance of the AIS object of it is up to
+     * date. If not it creates and returns a new up-to-date instance.
+     * 
+     * @param session
      */
-    private AkibaInformationSchema createFreshAIS(
-            final List<CreateTableStruct> schema) throws Exception {
-        schema.addAll(0, aisSchemaStructs);
-        assert !schema.isEmpty() : "schema list is empty";
-        final StringBuilder sb = new StringBuilder();
-        for (final CreateTableStruct tableStruct : schema) {
-            sb.append("CREATE TABLE ").append(tableStruct.ddl)
-                    .append(CServerUtil.NEW_LINE);
-        }
-        final String schemaText = sb.toString();
-        if (store.isVerbose() && LOG.isInfoEnabled()) {
-            LOG.info("Acquiring AIS from schema: " + CServerUtil.NEW_LINE
-                    + schemaText);
-        }
+    @Override
+    public AkibaInformationSchema getAis(final Session session) {
+        // TODO - make this transactional
+        while (true) {
+            long wasTimestamp;
+            synchronized (this) {
+                if (aisTimestamp == saveTimestamp) {
+                    return ais;
+                }
+                wasTimestamp = saveTimestamp;
+            }
+            AkibaInformationSchema newAis;
+            try {
+                final StringBuilder sb = new StringBuilder();
+                final Map<TableName, Integer> idMap = assembleSchema(session,
+                        sb, true, false, false);
+                final String schemaText = sb.toString();
+                schemaDef = SchemaDef.parseSchema(schemaText);
+                newAis = new SchemaDefToAis(schemaDef, true).getAis();
+                // Reassign the table ID values.
+                for (final Map.Entry<TableName, Integer> entry : idMap
+                        .entrySet()) {
+                    Table table = newAis.getTable(entry.getKey());
+                    table.setTableId(entry.getValue().intValue());
+                }
+                for (final Map.Entry<TableName, GroupTable> entry : newAis
+                        .getGroupTables().entrySet()) {
+                    final UserTable root = entry.getValue().getRoot();
+                    final Integer rootId = idMap.get(root.getName());
+                    assert rootId != null : "Group table with no root!";
+                    entry.getValue().setTableId(
+                            TreeService.MAX_TABLES_PER_VOLUME - rootId);
+                }
 
-        AkibaInformationSchema ret = new DDLSource()
-                .buildAISFromString(schemaText);
-        for (final CreateTableStruct tableStruct : schema) {
-            final UserTable table = ret.getUserTable(tableStruct.schemaName,
-                    tableStruct.tableName);
-            assert table != null : tableStruct + " in " + schema;
-            assert table.getGroup() != null : "table "
-                    + table
-                    + " has no group; should be in a single-table group at least";
-            table.setTableId(tableStruct.tableId);
-            if (table.getParentJoin() == null) {
-                final GroupTable groupTable = table.getGroup().getGroupTable();
-                if (groupTable != null) {
-                    groupTable.setTableId(tableStruct.tableId
-                            + GROUP_TABLE_ID_OFFSET);
+            } catch (Exception e) {
+                // TODO - better handling
+                LOG.error("Exception while building new AIS", e);
+                return ais;
+            }
+            //
+            // Detect a race condition in which another schema change happened
+            // during creation of the AIS. In that case, simple retry.
+            //
+            synchronized (this) {
+                if (saveTimestamp == wasTimestamp
+                        && aisTimestamp != saveTimestamp) {
+                    aisTimestamp = saveTimestamp;
+                    ais = newAis;
+                    final RowDefCache rowDefCache = getRowDefCache();
+                    rowDefCache.clear();
+                    rowDefCache.setAIS(ais);
+                    try {
+                        loadTableStatusRecords(session);
+                        rowDefCache.fixUpOrdinals(this);
+                    } catch (Exception e) {
+                        LOG.error("Exception while building new AIS", e);
+                    }
+                    try {
+                        final Store store = serviceManager.getStore();
+                        new Writer(new CServerAisTarget(store)).save(newAis);
+                    } catch (Exception e) {
+                        LOG.warn("Exception while storing AIS tables", e);
+                    }
                 }
             }
         }
-        return ret;
     }
 
-    /**
-     * Acquire an AkibaInformationSchema from MySQL and install it into the
-     * local RowDefCache.
-     * 
-     * This method always refreshes the locally cached AkibaInformationSchema to
-     * support schema modifications at the MySQL head.
-     * 
-     * @return an AkibaInformationSchema
-     * @throws Exception
-     */
-    public synchronized void acquireAIS() throws Exception {
-        if (!store.isExperimentalSchema()) {
-            throw new UnsupportedOperationException(
-                    "non-experimental mode is deprecated.");
-        }
-
-        this.ais = createFreshAIS(getSchemaStructs());
-        installAIS();
-        new Writer(new CServerAisTarget(store)).save(ais);
-    }
-
-    private synchronized void installAIS() throws Exception {
-        if (LOG.isInfoEnabled()) {
-            LOG.info("Installing " + ais.getDescription() + " in ChunkServer");
-            LOG.debug(AISPrinter.toString(ais));
-        }
-        final RowDefCache rowDefCache = store.getRowDefCache();
-        rowDefCache.clear();
-        rowDefCache.setAIS(ais);
-        store.fixUpOrdinals();
-        if (false) {
-            // TODO: Use this when we support multiple chunkservers
-            // if (isLeader()) {
-            // assert aisDistributor != null;
-            // aisDistributor.distribute(ais);
-            // }
-        }
-    }
-
-    private List<CreateTableStruct> readAisSchemaDdls(List<String> ddls) {
-        final Pattern regex = Pattern.compile("create table (\\w+)",
-                Pattern.CASE_INSENSITIVE);
-        List<CreateTableStruct> tmp = new ArrayList<CreateTableStruct>();
-        int tableId = AIS_BASE_TABLE_IDS;
-        for (String ddl : ddls) {
-            Matcher matcher = regex.matcher(ddl);
-            if (!matcher.find()) {
-                throw new RuntimeException("couldn't match regex for: " + ddl);
-            }
-            String hackedDdl = "`akiba_information_schema`." + matcher.group(1)
-                    + ddl.substring(matcher.end());
-            CreateTableStruct struct = new CreateTableStruct(tableId++,
-                    "akiba_information_schema", matcher.group(1), hackedDdl);
-            tmp.add(struct);
-        }
-        return Collections.unmodifiableList(tmp);
-    }
-
-    private List<String> readAisDdls() {
-        final List<String> ret = new ArrayList<String>();
+    public AkibaInformationSchema getAisForTests(final String schema)
+            throws Exception {
+        final StringBuilder sb = new StringBuilder();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CServer.class.getClassLoader()
-                        .getResourceAsStream(AIS_DDL_NAME)));
-        for (String ddl : (new MySqlStatementSplitter(reader))) {
-            ret.add(ddl);
+                CServer.class.getClassLoader().getResourceAsStream(schema)));
+        for (String statement : (new MySqlStatementSplitter(reader))) {
+            sb.append(statement).append(CServerUtil.NEW_LINE);
         }
-        return Collections.unmodifiableList(ret);
-    }
-
-    public AkibaInformationSchema getAis() {
+        for (final TableDefinition tableStruct : aisSchema) {
+            sb.append(tableStruct.getDDL()).append(CServerUtil.NEW_LINE);
+        }
+        schemaDef = SchemaDef.parseSchema(sb.toString());
+        ais = new SchemaDefToAis(schemaDef, true).getAis();
+        forceNewTimestamp();
+        aisTimestamp = saveTimestamp;
         return ais;
     }
 
     /**
-     * Returns an unmodifiable list of AIS DDLs.
+     * Generates a string version of the entire schema database suitable for the
+     * Akiban "schemectomy" operation. The intention is for the returned string
+     * to replace all existing akibandb table definitions.
      * 
-     * @return
+     * @param session
+     * @param withGroupTables
+     *            if <code>true</code> this method will define synthetic group
+     *            tables to accompany the user table actually defined in the
+     *            schema database. The group tables enable Akiban query rewrite
+     *            to create queries with fewer joins.
      */
-    public List<String> getAisDdls() {
-        return aisSchemaDdls;
+    @Override
+    public String schemaString(final Session session,
+            final boolean withGroupTables) throws Exception {
+        final StringBuilder sb = new StringBuilder();
+        assembleSchema(session, sb, true, withGroupTables, true);
+        return sb.toString();
     }
 
     /**
-     * Gets a copy of the AIS.
-     * @return a copy of the currently installed AIS, minus all a_i_s.* tables
-     *         and their associated group tables.
+     * Assembles string forms of the Schema in a supplied StringBuilder. This
+     * method provides various forms of output for different purposes.
+     * 
+     * @param session
+     * @param sb
+     *            The StringBuilder to which statements are written
+     * @param withAisTables
+     *            <code>true</code> if the akiban_information_schema tables
+     *            should be included
+     * @param withGroupTables
+     *            <code>true</code> if the generated group tables should be
+     *            included
+     * @param withCreateSchemaStatements
+     *            <code>true</code> if create schema statements should be
+     *            included.
+     * @throws Exception
      */
-    public AkibaInformationSchema getAisCopy() {
-        //assert getAisCopyCallerIsOkay();
-        AkibaInformationSchema ret = new AkibaInformationSchema(ais);
-        List<TableName> uTablesToRemove = new ArrayList<TableName>();
-        for (Map.Entry<TableName, UserTable> entries : ret.getUserTables()
-                .entrySet()) {
-            TableName tableName = entries.getKey();
-            if (tableName.getSchemaName().equals("akiba_information_schema")
-                    || tableName.getSchemaName().equals("akiba_objects")) {
-                uTablesToRemove.add(tableName);
-                UserTable uTable = entries.getValue();
-                com.akiban.ais.model.Group group = uTable.getGroup();
-                if (group != null) {
-                    ret.getGroups().remove(group.getName());
-                    ret.getGroupTables()
-                            .remove(group.getGroupTable().getName());
+    private Map<TableName, Integer> assembleSchema(final Session session,
+            final StringBuilder sb, final boolean withAisTables,
+            final boolean withGroupTables,
+            final boolean withCreateSchemaStatements) throws Exception {
+
+        final TreeService treeService = serviceManager.getTreeService();
+        final Map<TableName, Integer> idMap = new HashMap<TableName, Integer>();
+        // append the AIS table definitions
+        if (withAisTables) {
+            if (withCreateSchemaStatements) {
+                sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
+                TableName.escape(AKIBAN_INFORMATION_SCHEMA, sb);
+                sb.append(SEMI_COLON).append(CServerUtil.NEW_LINE);
+            }
+            for (final TableDefinition td : aisSchema) {
+                sb.append(td.getDDL()).append(CServerUtil.NEW_LINE);
+                idMap.put(new TableName(td.getSchemaName(), td.getTableName()),
+                        td.getTableId());
+            }
+        }
+
+        // append the User Table definitions
+        treeService.visitStorage(session, new TreeVisitor() {
+
+            @Override
+            public void visit(Exchange ex) throws Exception {
+                ex.clear().append(BY_NAME).append(Key.BEFORE);
+                while (ex.next()) {
+                    final String schemaName = ex.getKey().indexTo(-1)
+                            .decodeString();
+                    ex.append(Key.BEFORE);
+                    final TreeLink link = treeLink(schemaName, SCHEMA_TREE_NAME);
+                    if (treeService.isContainer(ex, link)) {
+                        if (withCreateSchemaStatements) {
+                            sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
+                            TableName.escape(schemaName, sb);
+                            sb.append(SEMI_COLON).append(CServerUtil.NEW_LINE);
+                        }
+                        while (ex.next()) {
+                            final String tableName = ex.getKey().indexTo(-1)
+                                    .decodeString();
+                            final TableDefinition td = getTableDefinition(
+                                    session, schemaName, tableName);
+                            sb.append(td.getDDL()).append(CServerUtil.NEW_LINE);
+                            int tableId = treeService.storeToAis(link,
+                                    td.getTableId());
+                            idMap.put(
+                                    new TableName(td.getSchemaName(), td
+                                            .getTableName()), tableId);
+                        }
+                    }
+                    ex.cut();
+                }
+            }
+        }, SCHEMA_TREE_NAME);
+
+        // append the Group table definitions
+        if (withGroupTables) {
+            final AkibaInformationSchema ais = getAis(session);
+            final List<String> statements = new DDLGenerator()
+                    .createAllGroupTables(ais);
+            for (final String statement : statements) {
+                if (!statement.contains(AKIBAN_INFORMATION_SCHEMA)) {
+                    sb.append(statement).append(CServerUtil.NEW_LINE);
                 }
             }
         }
-        for (TableName removeMe : uTablesToRemove) {
-            ret.getUserTables().remove(removeMe);
-        }
-        return ret;
+        return idMap;
     }
 
     /**
-     * Asserts that the caller of getAisCopy()
+     * Timestamp at or after the last schema change. The timestamp is a
+     * universal, monotonically increasing counter maintained by Persistit.
+     * Usually the value returned by this method is the timestamp associated
+     * with the last schema change. However, when the Akiban Server starts up,
+     * the timestamp is a value guaranteed to be greater than that of any schema
+     * change. Clients can use the timestamp to determine whether locally cached
+     * schema information is stale.
      * 
-     * @return <tt>true</tt>, always; if there's an error, this method will
-     *         raise the assertion.
+     * @return timestamp at or after last update
      */
-    private static boolean getAisCopyCallerIsOkay() {
-        StackTraceElement callerStack = Thread.currentThread().getStackTrace()[2];
-        final Class<?> callerClass;
-        try {
-            callerClass = Class.forName(callerStack.getClassName());
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("couldn't load class "
-                    + callerStack.getClassName(), e);
-        }
-        assert SchemaManager.class.isAssignableFrom(callerClass) : "invalid calling class "
-                + callerClass;
-        return true;
-    }
-
-    // --------------- Stuff from SchemaMXBeanImpl
-
     @Override
-    public Map<TableName, String> getUserTables() throws Exception {
-        return getTables(true);
+    public synchronized long getUpdateTimestamp() {
+        return saveTimestamp;
     }
 
     @Override
-    public boolean isProtectedTable(int rowDefId) {
-        return (rowDefId >= 100000 && rowDefId < 100100);
-    }
-
-    @Override
-    public boolean isProtectedTable(String schema, String table) {
-        return schema.equals("akiba_information_schema")
-                || schema.equals("akiba_objects");
+    public int getSchemaGeneration() {
+        final long ts = getUpdateTimestamp();
+        return (int) ts ^ (int) (ts >>> 32);
     }
 
     /**
-     * Gets the DDLs for tables. Eventually we may want to distinguish between
-     * user and group tables.
+     * Updates the current timestamp to a new value greater than any previously
+     * returned value. This method can be used to force clients that rely on a
+     * timestamp value to determine staleness to refresh their cached schema
+     * data.
+     */
+    @Override
+    public synchronized void forceNewTimestamp() {
+        final TreeService treeService = serviceManager.getTreeService();
+        saveTimestamp = treeService.getTimestamp(new SessionImpl());
+    }
+
+    private static List<TableDefinition> readAisSchema() {
+        List<TableDefinition> definitions = new ArrayList<TableDefinition>();
+        int tableId = AIS_BASE_TABLE_ID;
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(
+                CServer.class.getClassLoader()
+                        .getResourceAsStream(AIS_DDL_NAME)));
+        final Pattern pattern = Pattern.compile("create table "
+                + AKIBAN_INFORMATION_SCHEMA + ".(\\w+).*");
+        for (String statement : (new MySqlStatementSplitter(reader))) {
+            Matcher matcher = pattern.matcher(statement);
+            if (!matcher.find()) {
+                throw new RuntimeException("couldn't match regex for: "
+                        + statement);
+            }
+            final String canonical = SchemaDef.canonicalStatement(statement);
+            TableDefinition def = new TableDefinition(tableId++,
+                    "akiba_information_schema", matcher.group(1), canonical);
+            definitions.add(def);
+        }
+        return Collections.unmodifiableList(definitions);
+    }
+
+    @Override
+    public SchemaManager cast() {
+        return this;
+    }
+
+    @Override
+    public Class castClass() {
+        return SchemaManager.class;
+    }
+
+    @Override
+    public void start() throws Exception {
+        serviceManager = ServiceManagerImpl.get();
+        startTableStatusFlusher();
+        final Session session = new SessionImpl();
+        final TreeService treeService = serviceManager.getTreeService();
+        changed(treeService, session);
+    }
+
+    @Override
+    public void stop() throws Exception {
+        this.ais = null;
+        this.rowDefCache = null;
+        this.serviceManager = null;
+        schemaLinkMap.clear();
+        statusLinkMap.clear();
+        stopTableStatusFlusher();
+    }
+
+    /**
+     * Create an AIS during the startup process so that the AIS tables are
+     * populated and a visible. This can't be done until both this Service and
+     * the PersistitStore service are fully initialized and registered, so it is
+     * done as an "afterStart" step.
+     */
+    @Override
+    public void afterStart() throws Exception {
+        getAis(new SessionImpl());
+    }
+
+    /**
+     * Load TableStatus records from backing store. This happens only when
+     * creating a new AIS due to a schema change or upon system startup.
      * 
-     * @param userTables
-     *            whether to include user tables (as opposed to group tables)
-     * @return a table -> ddl mapping
+     * @param session
      * @throws Exception
-     *             if there's any problem
      */
-    private Map<TableName, String> getTables(boolean userTables)
+    public void loadTableStatusRecords(final Session session)
+            throws PersistitException {
+        final TreeService treeService = serviceManager.getTreeService();
+        for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
+            final TableStatus ts = rowDef.getTableStatus();
+            final TreeLink link = treeLink(rowDef.getSchemaName(),
+                    STATUS_TREE_NAME);
+            final Exchange exchange = treeService.getExchange(session, link);
+            try {
+                int tableId = treeService
+                        .aisToStore(link, rowDef.getRowDefId());
+                exchange.clear().append(tableId).fetch();
+                if (exchange.isValueDefined()) {
+                    ts.get(exchange.getValue());
+                }
+                // Either there is no stored record, or we loaded it. In either
+                // case the TableStatus is no longer dirty.
+                ts.flushed();
+            } finally {
+                treeService.releaseExchange(session, exchange);
+            }
+        }
+    }
+
+    /**
+     * Remove any TableStatus records belonging to tables that no longer exist.
+     * This method should be called by deleteTableDefinition.
+     * 
+     * @param session
+     * @throws PersistitException
+     */
+    @Override
+    public void removeStaleTableStatusRecords(final Session session)
             throws Exception {
-        Map<TableName, String> ret = new TreeMap<TableName, String>();
+        final TreeService treeService = serviceManager.getTreeService();
+        treeService.visitStorage(session, new TreeVisitor() {
 
-        StringBuilder builder = new StringBuilder();
-
-        for (CreateTableStruct table : getSchemaStructs()) {
-            if (table.getSchemaName().equals("akiba_information_schema")) {
-                continue;
+            @Override
+            public void visit(Exchange exchange) throws Exception {
+                exchange.clear().to(Key.BEFORE);
+                while (exchange.next()) {
+                    int tableId = exchange.getKey().reset().decodeInt();
+                    tableId = treeService.storeToAis(exchange.getVolume(),
+                            tableId);
+                    final RowDef rowDef = getRowDefCache().rowDef(tableId);
+                    if (rowDef == null) {
+                        exchange.remove();
+                    }
+                }
             }
-            if (table.getSchemaName().equals("akiba_objects") == userTables) {
-                continue;
-            }
+        }, STATUS_TREE_NAME);
+    }
 
-            TableName tableName = new TableName(table.getSchemaName(),
-                    table.getTableName());
-            String createDdl = builder.append("CREATE TABLE ")
-                    .append(table.getDdl()).toString();
-            ret.put(tableName, createDdl);
-            builder.setLength(0);
+    @Override
+    public void saveTableStatusRecords(final Session session)
+            throws PersistitException {
+        final TreeService treeService = serviceManager.getTreeService();
+        for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
+            final TableStatus ts = rowDef.getTableStatus();
+            if (ts.isDirty()) {
+                final TreeLink link = treeLink(rowDef.getSchemaName(),
+                        STATUS_TREE_NAME);
+                final Exchange exchange = treeService
+                        .getExchange(session, link);
+                try {
+                    final int tableId = treeService.aisToStore(link,
+                            rowDef.getRowDefId());
+                    exchange.clear().append(tableId);
+                    ts.put(exchange.getValue());
+                    exchange.store();
+                    ts.flushed();
+                } finally {
+                    treeService.releaseExchange(session, exchange);
+                }
+            }
         }
-
-        return ret;
     }
 
-    @Override
-    public SchemaId getSchemaID() throws Exception {
-        return store.getPropertiesManager().getSchemaId();
-    }
-
-    @Override
-    public void forceSchemaGenerationUpdate() throws Exception {
-        store.getPropertiesManager().incrementSchemaId();
-    }
-
-    @Override
-    public void createTable(String schemaName, String DDL) throws Exception {
-        store.createTable(schemaName, DDL);
-        store.getPropertiesManager().incrementSchemaId();
-        acquireAIS();
-    }
-
-    @Override
-    public void dropTable(String schema, String tableName) throws Exception {
-        dropGroups(Arrays.asList(TableName.create(schema, tableName)));
-    }
-
-    /**
-     * Drops all tables. If this succeeds, the schema generation will be
-     * incremented.
-     * 
-     * @return the drop result
-     * @throws Exception
-     */
-    @Override
-    public void dropAllTables() throws Exception {
+    void saveStatus(final Session session, final TableStatus tableStatus)
+            throws PersistitException {
+        final TreeService treeService = serviceManager.getTreeService();
+        final RowDef rowDef = getRowDefCache().getRowDef(
+                tableStatus.getRowDefId());
+        final TreeLink link = treeLink(rowDef.getSchemaName(), STATUS_TREE_NAME);
+        final Exchange exchange = treeService.getExchange(session, link);
         try {
-            final Collection<Integer> dropTables = getTablesToRefIds().values();
-            store.dropTables(dropTables);
-            store.getPropertiesManager().incrementSchemaId();
+            final int tableId = treeService.aisToStore(link,
+                    rowDef.getRowDefId());
+            exchange.clear().append(tableId);
+            tableStatus.put(exchange.getValue());
+            exchange.store();
+            tableStatus.flushed();
         } finally {
-            acquireAIS();
+            treeService.releaseExchange(session, exchange);
         }
     }
 
-    private void dropGroups(Collection<TableName> containingTables)
-            throws Exception {
-        for (TableName containingTable : containingTables) {
-            if (containingTable.getSchemaName().equals("akiba_objects")
-                    || containingTable.getSchemaName().equals(
-                            "akiba_information_schema")) {
-                throw new Exception("cannot drop tables in schema "
-                        + containingTable.getSchemaName());
+    private TreeLink treeLink(final String schemaName, final String treeName) {
+        final Map<String, TreeLink> map = treeName == STATUS_TREE_NAME ? statusLinkMap
+                : schemaLinkMap;
+        TreeLink link;
+        synchronized (map) {
+            link = map.get(schemaName);
+            if (link == null) {
+                link = new TreeLink() {
+                    TreeCache cache;
+
+                    @Override
+                    public String getSchemaName() {
+                        return schemaName;
+                    }
+
+                    @Override
+                    public String getTreeName() {
+                        return treeName;
+                    }
+
+                    @Override
+                    public void setTreeCache(TreeCache cache) {
+                        this.cache = cache;
+                    }
+
+                    @Override
+                    public TreeCache getTreeCache() {
+                        return cache;
+                    }
+
+                };
+                map.put(schemaName, link);
             }
+        }
+        return link;
+    }
+
+    static long now() {
+        return System.nanoTime() / 1000L;
+    }
+
+    private RowDefCache getRowDefCache() {
+        if (rowDefCache == null) {
+            rowDefCache = serviceManager.getStore().getRowDefCache();
+        }
+        return rowDefCache;
+    }
+
+    private SchemaDef.UserTableDef parseTableStatement(
+            final String defaultSchemaName, final String canonical)
+            throws InvalidOperationException {
+        try {
+            return new SchemaDef().parseCreateTable(canonical);
+        } catch (Exception e1) {
+            throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
+                    "[%s] %s: %s", defaultSchemaName, e1.getMessage(),
+                    canonical);
+        }
+    }
+
+    private SchemaDef.CName cname(final String canonical)
+            throws InvalidOperationException {
+        final SchemaDef.UserTableDef def = parseTableStatement(null, canonical);
+        final SchemaDef.CName cname = def.getCName();
+        if (cname == null || cname.getSchema() == null
+                || cname.getName() == null) {
+            throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
+                    "[%s] %s: %s", cname.getSchema(),
+                    "Null schema or table name", canonical);
+        }
+        return cname;
+    }
+
+    private void validateTableDefinition(final Session session,
+            final String schemaName, final String statement,
+            final SchemaDef.UserTableDef tableDef) throws Exception {
+
+        if (AKIBAN_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
+            throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
+                    "[%s] %s is protected: %s", schemaName,
+                    AKIBAN_INFORMATION_SCHEMA, statement);
+        }
+        if (tableDef.getPrimaryKey().size() == 0) {
+            throw new InvalidOperationException(ErrorCode.NO_PRIMARY_KEY,
+                    "[%s] %s", schemaName, statement);
         }
 
-        Grouping grouping = GroupsBuilder.fromAis(getAisCopy(), null);
-        final Set<String> groupsToDrop = new HashSet<String>();
-        final Map<TableName, Integer> tablesToRefIds = getTablesToRefIds();
-        for (TableName containingTable : containingTables) {
-            if (grouping.containsTable(containingTable)) {
-                groupsToDrop.add(grouping.getGroupFor(containingTable)
-                        .getGroupName());
-            }
-        }
-        if (groupsToDrop.isEmpty()) {
+        final SchemaDef.IndexDef parentJoin = SchemaDef.getAkibanJoin(tableDef);
+        if (parentJoin == null) {
             return;
         }
 
-        GroupingVisitor<List<Integer>> visitor = new GroupingVisitorStub<List<Integer>>() {
-            private final List<Integer> dropTables = new ArrayList<Integer>();
-            private boolean shouldDrop;
+        String parentSchema = parentJoin.getParentSchema();
+        if (parentSchema == null) {
+            parentSchema = (tableDef.getCName().getSchema() == null) ? schemaName
+                    : tableDef.getCName().getSchema();
+        }
 
-            @Override
-            public void visitGroup(Group group, TableName rootTable) {
-                shouldDrop = groupsToDrop.contains(group.getGroupName());
-                if (shouldDrop) {
-                    dropTable(rootTable);
-                }
+        if (AKIBAN_INFORMATION_SCHEMA.equals(parentSchema)) {
+            throw new InvalidOperationException(
+                    ErrorCode.JOIN_TO_PROTECTED_TABLE, "[%s] to %s.*: %s",
+                    schemaName, parentJoin.getParentSchema(), statement);
+        }
+
+        final String tableName = tableDef.getCName().getName();
+        final String parentTableName = parentJoin.getParentTable();
+        if (schemaName.equals(parentSchema)
+                && tableName.equals(parentTableName)) {
+            throw new InvalidOperationException(
+                    ErrorCode.JOIN_TO_UNKNOWN_TABLE,
+                    "Table %s.%s refers to undefined table %s.%s: %s",
+                    schemaName, tableName, parentSchema, parentTableName,
+                    statement);
+        }
+        final TableDefinition parentDef = getTableDefinition(session,
+                parentSchema, parentTableName);
+        if (parentDef == null) {
+            throw new InvalidOperationException(
+                    ErrorCode.JOIN_TO_UNKNOWN_TABLE,
+                    "Table %s.%s refers to undefined table %s.%s: %s",
+                    schemaName, tableName, parentSchema, parentTableName,
+                    statement);
+        }
+        final SchemaDef.UserTableDef parentTableDef = new SchemaDef()
+                .parseCreateTable(parentDef.getDDL());
+        for (final String columnName : parentJoin.getParentColumns()) {
+            if (!parentTableDef.getColumnNames().contains(columnName)) {
+                throw new InvalidOperationException(
+                        ErrorCode.JOIN_TO_WRONG_COLUMNS,
+                        "Table %s.%s refers to undefined column %s in table %s.%s: %s",
+                        schemaName, tableName, columnName, parentSchema,
+                        parentTableName, statement);
             }
-
-            @Override
-            public boolean startVisitingChildren() {
-                return shouldDrop;
-            }
-
-            @Override
-            public void visitChild(TableName parentName,
-                    List<String> parentColumns, TableName childName,
-                    List<String> childColumns) {
-                assert shouldDrop : String.format("%s (%s) references %s (%s)",
-                        childName, childColumns, parentName, parentColumns);
-                dropTable(childName);
-            }
-
-            private void dropTable(TableName tableName) {
-                dropTables.add(tablesToRefIds.get(tableName));
-            }
-
-            @Override
-            public List<Integer> end() {
-                return dropTables;
-            }
-        };
-
-        List<Integer> dropTables = grouping.traverse(visitor);
-        try {
-            store.dropTables(dropTables);
-            store.getPropertiesManager().incrementSchemaId();
-        } finally {
-            acquireAIS();
         }
     }
 
-    private Map<TableName, Integer> getTablesToRefIds() {
-        List<RowDef> rowDefs = store.getRowDefCache().getRowDefs();
-        Map<TableName, Integer> ret = new HashMap<TableName, Integer>(
-                rowDefs.size());
-        for (RowDef rowDef : rowDefs) {
-            TableName tableName = TableName.create(rowDef.getSchemaName(),
-                    rowDef.getTableName());
-            int id = rowDef.getRowDefId();
-            Integer oldId = ret.put(tableName, id);
-            assert oldId == null : "duplicate " + oldId + " for " + tableName;
-        }
-        return ret;
-    }
-
-    @Override
-    public void dropSchema(String schemaName) throws Exception {
-        store.dropSchema(schemaName);
-    }
-
-    public String getGrouping() throws Exception {
-        AkibaInformationSchema ais = getAisCopy();
-        String defaultSchema = null;
-
-        for (UserTable userTable : ais.getUserTables().values()) {
-            if (!userTable.getName().getSchemaName()
-                    .equalsIgnoreCase("akiba_information_schema")) {
-                defaultSchema = userTable.getName().getSchemaName();
-                break;
-            }
-        }
-
-        Grouping grouping = GroupsBuilder.fromAis(ais, defaultSchema);
-
-        List<String> groupsToDrop = grouping
-                .traverse(new GroupingVisitorStub<List<String>>() {
-                    private final List<String> groups = new ArrayList<String>();
-
-                    @Override
-                    public void visitGroup(Group group, TableName rootTable) {
-                        if (rootTable.getSchemaName().equalsIgnoreCase(
-                                "akiba_information_schema")) {
-                            groups.add(group.getGroupName());
-                        }
-                    }
-
-                    @Override
-                    public List<String> end() {
-                        return groups;
-                    }
-                });
-
-        GroupsBuilder builder = new GroupsBuilder(grouping);
-        for (String groupToDrop : groupsToDrop) {
-            builder.dropGroup(groupToDrop);
-        }
-
-        return grouping.toString();
-    }
-
-    @Override
-    public List<String> getDDLs() throws Exception {
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(stringWriter);
-        writeAIS(printWriter);
-        printWriter.flush();
-        // StringWriter.flush() is a no-op
-        stripSemicolons(stringWriter.getBuffer());
-        String asString = stringWriter.toString();
-
-        List<String> ret = new ArrayList<String>();
-        ret.add("set default_storage_engine = akibandb");
-        ret.add("create database if not exists `akiba_information_schema`");
-        ret.add("use `akiba_information_schema`");
-
-        final int schemaDdlsIndex = ret.size();
-        ret.addAll(aisSchemaDdls);
-        
-        ListIterator<String> iter = ret.listIterator(schemaDdlsIndex);
-        while (iter.hasNext()) {
-            final String full = iter.next();
-            assert full.charAt(full.length() - 1) == ';' : full;
-            final String noSemi = full.substring(0, full.length() - 1);
-            iter.set(noSemi.replaceAll("\n", ""));
-        }
-        ret.add("create schema if not exists `akiba_objects`");
-
-        if (asString.length() > 0) {
-            ret.addAll(Arrays.asList(stringWriter.toString().split("\n")));
-        }
-        return ret;
-    }
-
-    protected void writeAIS(PrintWriter writer) throws Exception {
-        AkibaInformationSchema ais = getAisCopy();
-        addGroupTables(writer, ais);
-        addUserTables(writer);
-    }
-
-    private void addGroupTables(PrintWriter writer, AkibaInformationSchema ais) {
-        ArrayList<String> ddls = new ArrayList<String>(
-                new DDLGenerator().createAllGroupTables(ais));
-        Collections.sort(ddls);
-
-        for (String ddl : ddls) {
-            writer.println(ddl);
+    private void changed(final TreeService treeService, final Session session) {
+        synchronized (this) {
+            // TODO - this is good enough for now (mostly single-threaded)
+            // but when we have transactional cache, should use that
+            // instead.
+            saveTimestamp = Math.max(saveTimestamp,
+                    treeService.getTimestamp(session));
         }
     }
 
-    private void addUserTables(PrintWriter writer) throws Exception {
-        Map<TableName, String> tables = getUserTables();
-
-        String used = null;
-        Set<String> createdSchemas = new HashSet<String>(tables.size());
-
-        StringBuilder builder = new StringBuilder();
-
-        for (Map.Entry<TableName, String> ddlEntry : tables.entrySet()) {
-            String schema = ddlEntry.getKey().getSchemaName();
-            String ddl = ddlEntry.getValue().trim();
-
-            if (!schema.equals(used)) {
-                if (createdSchemas.add(schema)) {
-                    builder.append("create database if not exists ");
-                    TableName.escape(schema, builder);
-                    builder.append('\n');
-                }
-                builder.append("use ");
-                TableName.escape(schema, builder);
-                writer.println(builder.toString());
-                builder.setLength(0);
-                used = schema;
-            }
-
-            if (ddl.charAt(ddl.length() - 1) == ';') {
-                ddl = ddl.substring(0, ddl.length() - 1);
-            }
-
-            writer.println(ddl);
-        }
+    private static String naked(final String canonical) {
+        return canonical.substring(CREATE_TABLE.length());
     }
 
     /**
-     * Strips out any semicolon that's immediately followed by a \n.
+     * Start a Timer that periodically flushes any changed TableStatus records
+     * to backing store. TODO: remove this and instead implement
+     * "transactional cache".
      * 
-     * @param buffer
-     *            the io buffer
+     * @throws Exception
      */
-    private void stripSemicolons(StringBuffer buffer) {
-        for (int index = 0, len = buffer.length(); index < len; ++index) {
-            if (buffer.charAt(index) == ';' && (index + 1) < len
-                    && buffer.charAt(index + 1) == '\n') {
-                buffer.deleteCharAt(index);
-                --len;
-                --index; // so that it stays the same after for's increment
-                         // expression
+    private void startTableStatusFlusher() throws Exception {
+        //
+        // Schedule Timer to flush every DELAY milliseconds.
+        //
+        final Session session = new SessionImpl();
+        timer.schedule(new TimerTask() {
+
+            @Override
+            public void run() {
+                try {
+                    saveTableStatusRecords(session);
+                } catch (Exception e) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Failed to updateTableState", e);
+                    }
+                }
             }
-        }
+        }, DELAY, DELAY);
     }
 
+    private void stopTableStatusFlusher() {
+        timer.cancel();
+    }
 }

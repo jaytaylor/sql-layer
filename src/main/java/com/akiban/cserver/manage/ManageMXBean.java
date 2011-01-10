@@ -28,8 +28,7 @@ public interface ManageMXBean {
     void flushIndexes();
 
     // TODO - temporary
-    String copyBackPages();
-
+    //
     String loadCustomQuery(final String className);
 
     String runCustomQuery();

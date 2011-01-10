@@ -10,7 +10,12 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class Index implements Serializable, ModelNames, Traversable
 {
@@ -121,7 +126,7 @@ public class Index implements Serializable, ModelNames, Traversable
 
     public boolean isPrimaryKey()
     {
-        return constraint.equals("PRIMARY");
+        return constraint.equals(PRIMARY_KEY_CONSTRAINT);
     }
 
     public Table getTable()
@@ -185,6 +190,8 @@ public class Index implements Serializable, ModelNames, Traversable
     {
         traversePreOrder(visitor);
     }
+
+    public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
 
     private Table table;
     private IndexName indexName;

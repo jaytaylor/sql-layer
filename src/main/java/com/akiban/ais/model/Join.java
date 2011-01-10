@@ -9,10 +9,16 @@
 
 package com.akiban.ais.model;
 
-import com.akiban.ais.gwtutils.SerializableEnumSet;
-
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.akiban.ais.gwtutils.SerializableEnumSet;
 
 public class Join implements Serializable, ModelNames, Traversable, HasGroup
 {

@@ -1,10 +1,15 @@
 package com.akiban.ais.model.staticgrouping;
 
+import static junit.framework.Assert.assertEquals;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import org.junit.Test;
-
-import java.io.*;
-
-import static junit.framework.Assert.*;
 
 public class VisitToStringTest {
     private final static String SCHEMA = "test_schema";

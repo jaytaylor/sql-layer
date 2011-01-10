@@ -1,10 +1,10 @@
 package com.akiban.ais.model.staticgrouping;
 
-import com.akiban.ais.model.TableName;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import com.akiban.ais.model.TableName;
 
 /**
  * Describes a join in terms of its child. The parent's columns are mentioned, but not the parent itself. This
