@@ -124,6 +124,19 @@ public final class IndexNamesIT extends ApiTestBase {
         assertIndexColumns(userTable, "index_twocol", "c2");
     }
 
+    @Test
+    public void fkUsingExplicitKey() {
+        UserTable userTable = createTableWithFK("my_constraint", "my_key", "key my_constraint(c2)");
+        assertIndexes(userTable, "PRIMARY", "my_constraint");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "my_constraint", "c2");
+    }
+
+    @Test
+    public void fkUsingExplicitKeyConflicting() throws InvalidOperationException {
+        createTableWithFK("my_constraint", "my_key", "key my_constraint(c1)");
+    }
+
     protected UserTable createTableWithIndexes(String indexDDL) {
         final String ddl = BASE_DDL + indexDDL + ");";
         try {
