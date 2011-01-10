@@ -1,6 +1,5 @@
 package com.akiban.cserver.itests.bugs.bug695495;
 
-import com.akiban.admin.Admin;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
