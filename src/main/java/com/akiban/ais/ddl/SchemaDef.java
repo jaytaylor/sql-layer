@@ -191,7 +191,7 @@ public class SchemaDef {
         IndexNameGenerator indexNameGenerator = new IndexNameGenerator(currentTable.indexes);
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
-            final IndexDef equivalent = columnsToIndexes.get(real.columns);
+            final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
             if (equivalent == null) {
                 real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
@@ -240,6 +240,23 @@ public class SchemaDef {
                 currentTable.indexes.add(handle.real);
             }
         }
+    }
+
+    private static IndexDef findEquivalentIndex(Map<List<IndexColumnDef>, IndexDef> columnsToIndexes,
+                                                IndexDef index) {
+        List<IndexColumnDef> columns = index.columns;
+        IndexDef exact = columnsToIndexes.get(columns);
+        if (exact != null) {
+            return exact;
+        }
+        if (index.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+            for (Map.Entry<List<IndexColumnDef>, IndexDef> entry : columnsToIndexes.entrySet()) {
+                if (entry.getKey().containsAll(columns)) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     void addIndexQualifier(final IndexQualifier qualifier) {
