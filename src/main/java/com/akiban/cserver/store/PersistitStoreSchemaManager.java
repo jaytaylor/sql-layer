@@ -181,33 +181,32 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    public void changeTableDefinition(final Session session, final int tableId, 
-            final String DDL) throws Exception
-    {
+    /**
+     * Change the stored DDL statement for a table that already exists. 
+     * Does not change the tableId.
+     */
+    public void changeTableDefinition(final Session session, final int tableId, final String DDL)
+            throws Exception {
         final String canonical = SchemaDef.canonicalStatement(DDL);
+        SchemaDef.CName cname = cname(canonical);
         final TreeService treeService = serviceManager.getTreeService();
+        final Exchange ex = treeService.getExchange(session,
+                treeLink(cname.getSchema(), SCHEMA_TREE_NAME));
 
-        treeService.visitStorage(session, new TreeVisitor() {
-            @Override
-            public void visit(Exchange exchange) throws Exception {
-                exchange.clear().append(BY_ID).append(tableId).fetch();
-                if(exchange.isValueDefined()) {
-                    final String prevCanonical = exchange.getValue().getString();
-                    SchemaDef.CName cname = cname(prevCanonical);
-                    exchange.getValue().put(canonical);
-                    exchange.clear().append(BY_ID).append(tableId).store();
-                    exchange.getValue().putNull();
-                    exchange.clear().append(BY_NAME).append(cname.getSchema())
-                        .append(cname.getName()).append(tableId).store();
-                }
+        try {
+            ex.clear().append(BY_ID).append(tableId).fetch();
+            if (ex.isValueDefined()) {
+                ex.getValue().put(canonical);
+                ex.clear().append(BY_ID).append(tableId).store();
+
+                changed(treeService, session);
+                saveTableStatusRecords(session);
+                getAis(session);
             }
-        }, SCHEMA_TREE_NAME);
-
-        // Mark as changed
-        changed(treeService, session);
-        saveTableStatusRecords(session);
+        } finally {
+            treeService.releaseExchange(session, ex);
+        }
     }
-
 
     /**
      * Delete a table definition version specified by tableId. There is no
