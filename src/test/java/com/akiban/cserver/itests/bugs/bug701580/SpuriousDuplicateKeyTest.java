@@ -55,8 +55,10 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
      * Confirm that the given table has sequential index IDs starting from the given number, and that its
      * group table has all those indexes as well.
      * @param tableName the table to start at
-     * @param  startingAt the index to start at
-     * @throws Exception
+     * @param startingAt the index to start at
+     * @param expectedUIndexes how many indexes you expect on the user table
+     * @param expectedGIndexes how many indexes you expect on the group table
+     * @throws Exception if there's a problem!
      */
     private void confirmIds(String tableName, int startingAt, int expectedUIndexes, int expectedGIndexes)
             throws Exception {
