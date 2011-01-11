@@ -138,6 +138,14 @@ public final class IndexNamesIT extends ApiTestBase {
         assertIndexColumns(userTable, "my_constraint", "c2");
     }
 
+    @Test
+    public void fkWithExplicitKeyAndFullName() {
+        UserTable userTable = createTableWithFK("bravo", "charlie", "key alpha(c2)");
+        assertIndexes(userTable, "PRIMARY", "alpha");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "alpha", "c2");
+    }
+
     @Test(expected=ParseException.class)
     public void fkUsingExplicitKeyConflicting() throws InvalidOperationException {
         try {
