@@ -207,9 +207,6 @@ public class SchemaDef {
             }
         }
         for (IndexDefHandle handle : fkIndexHandles) {
-            if (!handle.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
-                continue;
-            }
             List<IndexColumnDef> columns = handle.real.columns;
             IndexDef equivalent = findEquivalentIndex(columnsToIndexes, handle.real);
             if (equivalent != null) {
