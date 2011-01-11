@@ -9,10 +9,13 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 
@@ -226,5 +229,20 @@ public class ApiTestBase extends CServerTestCase {
             row.put(ColumnId.of(i), columns[i] );
         }
         return row;
+    }
+
+    protected final void dropAllTables() throws InvalidOperationException {
+        for (TableName tableName : ddl().getAIS(session).getUserTables().keySet()) {
+            if (!"akiba_information_schema".equals(tableName.getSchemaName())) {
+                ddl().dropTable(session, TableId.of(tableName.getSchemaName(), tableName.getTableName()));
+            }
+        }
+        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
+        for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
+            if ("akiba_information_schema".equals(iter.next().getSchemaName())) {
+                iter.remove();
+            }
+        }
+        Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
     }
 }
