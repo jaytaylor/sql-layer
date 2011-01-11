@@ -1,5 +1,3 @@
-use drupal;
-
 DROP TABLE IF EXISTS `access`;
 CREATE TABLE `access` (
   `aid` int(11) NOT NULL AUTO_INCREMENT,

@@ -1,6 +1,5 @@
 package com.akiban.cserver.itests.bugs.bug701580;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
@@ -19,7 +18,7 @@ import static org.junit.Assert.*;
 
 public final class SpuriousDuplicateKeyTest extends ApiTestBase {
 
-    @Test
+    @org.junit.Ignore @Test // see bug701614
     public void passWithConfirmation() throws Exception {
         doPass(true);
     }
@@ -35,18 +34,34 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
         doPass(false);
     }
 
-    private void doPass(boolean confirmWrites) throws Exception {
-        TableId tableId = loadBlocksTable();
-        loadData(tableId, confirmWrites);
-        dropBlocksTable(tableId);
+    @Test
+    public void loadAllThenTest() throws Exception {
+        loadAllTables();
+        TableId blocksTable1 = getTableId("drupal", "blocks");
+        loadData(blocksTable1, false);
+        dropAllTables();
+
+        loadAllTables();
+        TableId blocksTable2 = getTableId("drupal", "blocks");
+        loadData(blocksTable2, false);
+        dropAllTables();
     }
 
-    private TableId loadBlocksTable() throws Exception {
-        final String blocksDDL = Strings.readResource("blocks-table.ddl", getClass());
+    private void doPass(boolean confirmWrites) throws Exception {
+        loadTable("batch");
+        TableId tableId = loadTable("blocks");
+        loadData(tableId, confirmWrites);
+        dropAllTables();
+    }
+
+    private TableId loadTable(String which) throws Exception {
+        final String blocksDDL = Strings.readResource(which + "-table.ddl", getClass());
         ddl().createTable(session, "drupal", blocksDDL);
-        AkibaInformationSchema ais = ddl().getAIS(session);
-        assertNotNull("drupal.blocks missing from " + ais.getUserTables(), ais.getUserTable("drupal", "blocks"));
-        return getTableId("drupal", "blocks");
+        return getTableId("drupal", which);
+    }
+
+    private void loadAllTables() throws Exception {
+        createTablesFromResource("blocks-table.ddl", "drupal");
     }
 
     private NewRow[] rows(TableId tableId) {
@@ -62,16 +77,5 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
         if (confirm) {
             expectFullRows(tableId, rows(tableId));
         }
-    }
-
-    private void dropBlocksTable(TableId tableId) throws Exception {
-        ddl().dropTable(session, tableId);
-        Map<TableName, UserTable> uTables = ddl().getAIS(session).getUserTables();
-        for(Iterator<TableName> iter=uTables.keySet().iterator(); iter.hasNext(); ) {
-            if("akiba_information_schema".equals(iter.next().getSchemaName())) {
-                iter.remove();
-            }
-        }
-        assertEquals("user tables", Collections.<TableName, UserTable>emptyMap(), ddl().getAIS(session).getUserTables());
     }
 }
