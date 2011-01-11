@@ -1,41 +1,17 @@
 package com.akiban.cserver.itests.bugs.bug701580;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.itests.ApiTestBase;
-import com.akiban.util.Strings;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
-
 public final class SpuriousDuplicateKeyTest extends ApiTestBase {
-
-    @org.junit.Ignore @Test // see bug701614
-    public void passWithConfirmation() throws Exception {
-        doPass(true);
-    }
-
-    @Test
-    @org.junit.Ignore
-    public void onePass() throws Exception {
-        doPass(false);
-    }
-
-    @Test
-    @org.junit.Ignore
-    public void twoPasses() throws Exception {
-        doPass(false);
-        doPass(false);
-    }
-
     @Test
     public void simpleOnce() throws Exception {
         simpleTestCase();
@@ -47,23 +23,13 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
         simpleTestCase();
     }
 
-    @Test
-    @org.junit.Ignore
-    public void loadAllThenTest() throws Exception {
-        loadAllTables();
-        TableId blocksTable1 = getTableId("drupal", "blocks");
-        loadData(blocksTable1, false);
-        dropAllTables();
-
-        loadAllTables();
-        TableId blocksTable2 = getTableId("drupal", "blocks");
-        loadData(blocksTable2, false);
-        dropAllTables();
-    }
-
     private void simpleTestCase() throws Exception {
         createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
         TableId t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
+
+        confirmIds("t1", 0, 2, 2);
+        confirmIds("t2", 0, 2, 2);
+
         writeRows(
                 createNewRow(t2, 1, "0"),
                 createNewRow(t2, 2, "1"),
@@ -72,35 +38,50 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
         dropAllTables();
     }
 
-    private void doPass(boolean confirmWrites) throws Exception {
-        loadTable("batch");
-        TableId tableId = loadTable("blocks");
-        loadData(tableId, confirmWrites);
-        dropAllTables();
+    @Test
+    public void indexIdsLocalToGroup() throws Exception {
+        createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
+
+        createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
+        createTable("test", "t3", "id int key, bid_id int, "
+                +"CONSTRAINT __akiban_fk FOREIGN KEY (bid_id) REFERENCES t2 (bid)");
+
+        confirmIds("t1", 0, 2, 2);
+        confirmIds("t2", 0, 2, 4);
+        confirmIds("t3", 2, 2, 4);
     }
 
-    private TableId loadTable(String which) throws Exception {
-        final String blocksDDL = Strings.readResource(which + "-table.ddl", getClass());
-        ddl().createTable(session, "drupal", blocksDDL);
-        return getTableId("drupal", which);
-    }
+    /**
+     * Confirm that the given table has sequential index IDs starting from the given number, and that its
+     * group table has all those indexes as well.
+     * @param tableName the table to start at
+     * @param  startingAt the index to start at
+     * @throws Exception
+     */
+    private void confirmIds(String tableName, int startingAt, int expectedUIndexes, int expectedGIndexes)
+            throws Exception {
+        UserTable uTable = ddl().getAIS(session).getUserTable("test", tableName);
 
-    private void loadAllTables() throws Exception {
-        createTablesFromResource("blocks-table.ddl", "drupal");
-    }
-
-    private NewRow[] rows(TableId tableId) {
-        return new NewRow[] {
-                createNewRow(tableId, 1L, "user", "0", "garland", 1L, 0L, "left", 0L, 0L, 0L, "", "", -1L),
-                createNewRow(tableId, 2L, "user", "1", "garland", 1L, 0L, "left", 0L, 0L, 0L, "", "", -1L),
-                createNewRow(tableId, 3L, "system", "0", "garland", 1L, 10L, "footer", 0L, 0L, 0L, "", "", -1L)
-        };
-    }
-
-    private void loadData(TableId tableId, boolean confirm) throws InvalidOperationException {
-        writeRows(rows(tableId));
-        if (confirm) {
-            expectFullRows(tableId, rows(tableId));
+        Set<Integer> expectedUTableIds = new HashSet<Integer>();
+        Set<Integer> actualUTableIds = new HashSet<Integer>();
+        for (Index index : uTable.getIndexes()) {
+            actualUTableIds.add(index.getIndexId());
+            expectedUTableIds.add( expectedUTableIds.size() + startingAt );
         }
+
+        Set<Integer> actualGTableIds = new HashSet<Integer>();
+        for(Index index : uTable.getGroup().getGroupTable().getIndexes()) {
+            actualGTableIds.add(index.getIndexId());
+        }
+
+        assertEquals("uTable index count", expectedUIndexes, actualUTableIds.size());
+        assertEquals("actualUTableIds", actualUTableIds, expectedUTableIds);
+
+        if(!actualGTableIds.containsAll(actualUTableIds)) {
+            Set<Integer> missing = new HashSet<Integer>(actualUTableIds);
+            missing.removeAll(actualGTableIds);
+            fail(String.format("missing %s: %s doesn't contain all of %s", missing, actualGTableIds, actualUTableIds));
+        }
+        assertEquals("uTable index count", expectedGIndexes, actualGTableIds.size());
     }
 }
