@@ -4,6 +4,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Test;
 
@@ -131,9 +132,13 @@ public final class IndexNamesIT extends ApiTestBase {
         assertIndexColumns(userTable, "my_constraint", "c2");
     }
 
-    @Test
+    @Test(expected=ParseException.class)
     public void fkUsingExplicitKeyConflicting() throws InvalidOperationException {
-        createTableWithFK("my_constraint", "my_key", "key my_constraint(c1)");
+        try {
+            createTableWithFK("my_constraint", "my_key", "key my_constraint(c1)");
+        } catch (TestException e) {
+            throw e.getCause();
+        }
         fail("should have failed at the above line!");
     }
 
@@ -150,7 +155,7 @@ public final class IndexNamesIT extends ApiTestBase {
         try {
             ddl().createTable(session, "s1", ddl);
         } catch (InvalidOperationException e) {
-            throw new RuntimeException("creating DDL: " + ddl, e);
+            throw new TestException("creating DDL: " + ddl, e);
         }
         return ddl().getAIS(session).getUserTable("s1", "t1");
     }
@@ -159,7 +164,7 @@ public final class IndexNamesIT extends ApiTestBase {
         try {
             ddl().createTable(session, "s1", "CREATE TABLE p1(parentc1 int key)");
         } catch (InvalidOperationException e) {
-            throw new RuntimeException(e);
+            throw new TestException("CREATE TABLE p1(parentc1 int key)", e);
         }
 
         StringBuilder builder = new StringBuilder("PRIMARY KEY (c1), ");
@@ -201,5 +206,20 @@ public final class IndexNamesIT extends ApiTestBase {
             actualColumns.add(indexColumn.getColumn().getName());
         }
         assertEquals(indexName + " columns", actualColumns, expectedColumnsList);
+    }
+
+    private static class TestException extends RuntimeException {
+        private final InvalidOperationException cause;
+
+        private TestException(String message, InvalidOperationException cause) {
+            super(message, cause);
+            this.cause = cause;
+        }
+
+        @Override
+        public InvalidOperationException getCause() {
+            assert super.getCause() == cause;
+            return cause;
+        }
     }
 }

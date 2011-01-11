@@ -234,10 +234,15 @@ public class SchemaDef {
         provisionalIndexes.clear();
 
         // Finally, resolve all handles to their real selves
-        HashSet<IndexDef> seenDefs = new HashSet<IndexDef>();
+        Map<String,IndexDef> seenDefs = new HashMap<String,IndexDef>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
-            if (seenDefs.add(handle.real)) {
-                currentTable.indexes.add(handle.real);
+            IndexDef index = handle.real;
+            IndexDef oldIndex = seenDefs.put(index.name, index);
+            if (oldIndex == null) {
+                currentTable.indexes.add(index);
+            }
+            else {
+                index.addIndexAttributes(oldIndex);
             }
         }
     }
@@ -714,6 +719,28 @@ public class SchemaDef {
                     + (constraints != null ? constraints.hashCode() : 0);
             result = 31 * result + (comment != null ? comment.hashCode() : 0);
             return result;
+        }
+
+        void addIndexAttributes(IndexDef otherIndex) {
+            assert name.equals(otherIndex.name) : String.format("%s != %s", name, otherIndex.name);
+            
+            if (!columns.equals(otherIndex.columns)) {
+                throw new SchemaDefException(String.format("duplicate index: %s listed with columns %s and %s",
+                        name, columns, otherIndex.columns));
+            }
+            if (referenceTable == null) {
+                referenceTable = otherIndex.referenceTable;
+                referenceColumns = otherIndex.referenceColumns;
+            }
+            else if (otherIndex.referenceTable != null) {
+                throw new SchemaDefException(String.format("duplicate index: %s references both %s and %s",
+                        name, referenceTable, otherIndex.referenceTable));
+            }
+            if (comment == null) {
+                comment = otherIndex.comment;
+            }
+            qualifiers.addAll(otherIndex.qualifiers);
+
         }
     }
 
