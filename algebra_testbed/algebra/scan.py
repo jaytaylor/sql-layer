@@ -1,45 +1,29 @@
 import operator
 
 Operator = operator.Operator
-RANDOM_ACCESS = operator.RANDOM_ACCESS
-SEQUENTIAL_ACCESS = operator.SEQUENTIAL_ACCESS
 
 class Scan(Operator):
 
-    def __init__(self, iterator):
+    def __init__(self, cursor):
         Operator.__init__(self)
-        self._iterator = iterator
-        self._stats[RANDOM_ACCESS] = 1
+        self._cursor = cursor
+        self._done = False
+        self.count_random_access()
 
     def open(self):
         pass
 
     def next(self):
         output_row = None
-        try:
-            output_row = self._iterator.next()
-            self._stats[SEQUENTIAL_ACCESS] += 1
-        except StopIteration:
-            pass
+        if not self._done:
+            output_row = self._cursor.next()
+            self.count_sequential_access()
+            if output_row is None:
+                self._done = True
         return output_row
 
     def close(self):
-        pass
+        self._done = True
     
     def stats(self):
         return self._stats
-
-class TableScan(Scan):
-
-    def __init__(self, table):
-        iterator = iter(table)
-        Scan.__init__(self, iterator)
-
-class IndexScan(Scan):
-
-    def __init__(self, index, key = None):
-        if key:
-            iterator = iter(index.lookup(key))
-        else:
-            iterator = iter(index)
-        Scan.__init__(self, iterator)
