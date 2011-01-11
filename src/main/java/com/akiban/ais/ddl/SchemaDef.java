@@ -194,11 +194,33 @@ public class SchemaDef {
         // existing index.
 
         Map<List<IndexColumnDef>, IndexDef> columnsToIndexes = new HashMap<List<IndexColumnDef>, IndexDef>();
+        // We have to add in two passes: first, adding only non-FK, and then adding only FKs
+        List<IndexDefHandle> fkIndexHandles = new ArrayList<IndexDefHandle>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
-            if (!columnsToIndexes.containsKey(handle.real.columns)) {
-                columnsToIndexes.put(handle.real.columns, handle.real);
+            if (handle.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                fkIndexHandles.add(handle);
+                continue;
+            }
+            List<IndexColumnDef> columns = handle.real.columns;
+            if (!columnsToIndexes.containsKey(columns)) {
+                columnsToIndexes.put(columns, handle.real);
             }
         }
+        for (IndexDefHandle handle : fkIndexHandles) {
+            if (!handle.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                continue;
+            }
+            List<IndexColumnDef> columns = handle.real.columns;
+            IndexDef equivalent = findEquivalentIndex(columnsToIndexes, handle.real);
+            if (equivalent != null) {
+                equivalent.addIndexAttributes(handle.real);
+                currentTable.indexHandles.remove(handle);
+            }
+            else if (!columnsToIndexes.containsKey(columns)) {
+                columnsToIndexes.put(columns, handle.real);
+            }
+        }
+
         IndexNameGenerator indexNameGenerator = new IndexNameGenerator(currentTable.indexes);
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
