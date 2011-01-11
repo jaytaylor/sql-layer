@@ -6,6 +6,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.itests.ApiTestBase;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.*;
@@ -13,7 +14,12 @@ import java.util.*;
 import static junit.framework.Assert.*;
 
 public final class IndexNamesIT extends ApiTestBase {
-    private static final String BASE_DDL = "CREATE TABLE t1( c1 tinyint(4) not null, c2 int(11) DEFAULT NULL, ";
+    private static final String BASE_DDL = "CREATE TABLE t1(\n\tc1 tinyint(4) not null, c2 int(11) DEFAULT NULL, ";
+
+    @After
+    public void myTearDown() {
+        debug("------------------------------------");
+    }
 
     @Test
     public void oneCustomNamedIndex() {
@@ -144,13 +150,18 @@ public final class IndexNamesIT extends ApiTestBase {
 
     protected static void debug(String formatter, Object... args) {
         if(Boolean.getBoolean("IndexNamesIT.debug")) {
-            System.out.print("\tIndexNamesIT: ");
-            System.out.println(String.format(formatter, args));
+            String[] lines = String.format(formatter, args).split("\n");
+            for (String line : lines) {
+                System.out.print("\tIndexNamesIT: ");
+                System.out.println(line);
+            }
         }
     }
 
     protected UserTable createTableWithIndexes(String indexDDL) {
-        final String ddl = BASE_DDL + indexDDL + ");";
+        String ddl = BASE_DDL + indexDDL;
+        ddl = ddl.replaceAll(", *", ",\n\t");
+        ddl += "\n);";
         debug(ddl);
         try {
             ddl().createTable(session, "s1", ddl);
