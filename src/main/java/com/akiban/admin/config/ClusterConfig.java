@@ -1,11 +1,11 @@
 package com.akiban.admin.config;
 
-import com.akiban.admin.Address;
-import com.akiban.admin.AdminValue;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.akiban.admin.Address;
+import com.akiban.admin.AdminValue;
 
 public class ClusterConfig
 {

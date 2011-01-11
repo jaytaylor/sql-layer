@@ -1,27 +1,28 @@
 package com.akiban.cserver.service;
 
-import com.akiban.cserver.CServer;
-import com.akiban.cserver.service.config.ConfigurationService;
-import com.akiban.cserver.service.jmx.JmxRegistryService;
-import com.akiban.cserver.service.logging.LoggingService;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
-import com.akiban.cserver.service.schema.SchemaServiceImpl;
-import com.akiban.cserver.service.session.SessionService;
-import com.akiban.cserver.service.session.SessionServiceImpl;
-import com.akiban.cserver.service.jmx.JmxManageable;
-import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
-import com.akiban.cserver.store.PersistitStore;
-import com.akiban.cserver.store.Store;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.akiban.cserver.CServer;
+import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.jmx.JmxManageable;
+import com.akiban.cserver.service.jmx.JmxRegistryService;
+import com.akiban.cserver.service.logging.LoggingService;
+import com.akiban.cserver.service.session.SessionService;
+import com.akiban.cserver.service.tree.TreeService;
+import com.akiban.cserver.store.SchemaManager;
+import com.akiban.cserver.store.Store;
 
 public class ServiceManagerImpl implements ServiceManager, JmxManageable
 {
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
     // TODO: Supply the factory externally.
-    private final ServiceManagerFactory factory;
+    private final ServiceFactory factory;
     private Map<Class<?>, Service<?>> services; // for each key-val, the ? should be the same; (T.class -> Service<T>)
 
     private final CountDownLatch blockerLatch = new CountDownLatch(1);
@@ -40,7 +41,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
      * This constructor is made protected for unit testing.
      * @param factory the factory that creates the services this instance manages
      */
-    protected ServiceManagerImpl(ServiceManagerFactory factory)
+    public ServiceManagerImpl(ServiceFactory factory)
     {
         this.factory = factory;
         services = new LinkedHashMap<Class<?>, Service<?>>();
@@ -49,6 +50,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     public static ServiceManager get()
     {
         return instance.get();
+    }
+    
+    @Override
+    public ConfigurationService getConfigurationService() {
+        return getService(ConfigurationService.class);
     }
 
     @Override
@@ -70,26 +76,45 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     public SessionService getSessionService() {
         return getService(SessionService.class);
     }
+    
+    @Override
+    public TreeService getTreeService() {
+        return getService(TreeService.class);
+    }
+    
+    @Override
+    public SchemaManager getSchemaManager() {
+        return getService(SchemaManager.class);
+    }
 
     public void startServices() throws Exception {
 
-        JmxRegistryServiceImpl jmxRegistry = new JmxRegistryServiceImpl();
-        startAndPut(jmxRegistry, jmxRegistry);
+        Service<JmxRegistryService> jmxRegistryService = factory.jmxRegistryService();
+        JmxRegistryService jmxRegistry = jmxRegistryService.cast();
+        
+        startAndPut(jmxRegistryService, jmxRegistry);
         startAndPut(factory.configurationService(), jmxRegistry);
 
         jmxRegistry.register(this);
         ConfigurationService configService = getServiceAsService(ConfigurationService.class).cast();
         servicesDebugHooks(configService);
-
-        // TODO: CServerConfig setup is still a mess. Clean up and move to DefaultServiceManagerFactory.
-        startAndPut(new LoggingServiceImpl(), jmxRegistry);
-        startAndPut(new SessionServiceImpl(), jmxRegistry);
+        
+        // TODO -
+        // Temporarily I moved this so that services can refer to their predecessors
+        // during their start() methods.  I think this is natural and appropriate, but
+        // it also means the order of the following method calls is fragile.
+        // I'd like to brainstorm a better approach. -- Peter
+        
+        setServiceManager(this);
+        startAndPut(factory.loggingService(), jmxRegistry);
+        startAndPut(factory.sessionService(), jmxRegistry);
+        startAndPut(factory.treeService(), jmxRegistry);
+        startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
-        startAndPut(new SchemaServiceImpl( factory.storeService().cast().getSchemaManager() ), jmxRegistry);
         startAndPut(factory.memcacheService(), jmxRegistry);
-        setServiceManager(this);
+        afterStart();
     }
 
     private void servicesDebugHooks(ConfigurationService configService)
@@ -147,6 +172,22 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
             throw new Exception("Failure(s) while shutting down services: " + exceptions, exceptions.get(0));
         }
     }
+    
+    // TODO - Review this.
+    // Need this to construct an AIS instance.  Both SchemaService
+    // and StoreService need to be started and registered in the
+    // services map before calling getAis().  There is no logical
+    // successor service to call this from, so I put the
+    // AfterStart interface back any.  Any alternative solution
+    // would also be fine.
+    //
+    private void afterStart() throws Exception {
+        for (final Service<?> service : services.values()) {
+            if (service instanceof AfterStart) {
+                ((AfterStart)service).afterStart();
+            }
+        }
+    }
 
     private <T> T getService(Class<T> ofClass) {
         Service<T> serviceT = getServiceAsService(ofClass);
@@ -195,8 +236,8 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
      *            ignored
      */
     public static void main(String[] ignored) throws Exception {
-        final DefaultServiceManagerFactory serviceManagerFactory = new DefaultServiceManagerFactory();
-        ServiceManager sm = serviceManagerFactory.serviceManager();
+        final DefaultServiceFactory serviceFactory = new DefaultServiceFactory();
+        ServiceManager sm = new ServiceManagerImpl(serviceFactory);
         sm.startServices();
         Object foo = new Object();
         synchronized (foo) {

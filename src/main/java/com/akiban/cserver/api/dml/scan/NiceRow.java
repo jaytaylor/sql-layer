@@ -1,12 +1,17 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import com.akiban.cserver.FieldDef;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.encoding.Encoding;
 import com.akiban.util.ArgumentValidation;
-
-import java.util.*;
 
 public class NiceRow implements NewRow {
     private final Map<ColumnId,Object> fields;

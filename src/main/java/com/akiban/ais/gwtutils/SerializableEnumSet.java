@@ -1,7 +1,11 @@
 package com.akiban.ais.gwtutils;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * <p>A version of EnumSet that can be serialized over GWT.</p>

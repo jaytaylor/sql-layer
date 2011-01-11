@@ -1,10 +1,20 @@
 package com.akiban.ais.util;
 
-import com.akiban.ais.model.*;
-
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.Visitor;
 
 public class AISPrinter
 {

@@ -1,12 +1,14 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.api.common.ColumnId;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
+
+import com.akiban.cserver.api.common.ColumnId;
 
 public final class ColumnSetTest {
 

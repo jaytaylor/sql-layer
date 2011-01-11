@@ -1,13 +1,13 @@
 package com.akiban.cserver.encoding;
 
+import java.math.BigDecimal;
+
 import com.akiban.ais.model.Type;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
 import com.persistit.Key;
-
-import java.math.BigDecimal;
 
 public final class DecimalEncoder extends EncodingBase<BigDecimal> {
     public DecimalEncoder() {

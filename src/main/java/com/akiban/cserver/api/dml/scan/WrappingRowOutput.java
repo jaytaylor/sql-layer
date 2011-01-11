@@ -1,8 +1,8 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.util.ArgumentValidation;
-
 import java.nio.ByteBuffer;
+
+import com.akiban.util.ArgumentValidation;
 
 public class WrappingRowOutput implements LegacyRowOutput {
     protected final ByteBuffer wrapped;

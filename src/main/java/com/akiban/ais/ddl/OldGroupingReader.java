@@ -1,8 +1,9 @@
 package com.akiban.ais.ddl;
 
-import com.akiban.ais.model.staticgrouping.Grouping;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
+
+import com.akiban.ais.model.staticgrouping.Grouping;
 
 public final class OldGroupingReader {
 

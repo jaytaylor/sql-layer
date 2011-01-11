@@ -1,10 +1,10 @@
 package com.akiban.ais.io;
 
-import com.akiban.ais.model.Source;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.akiban.ais.model.Source;
 
 public class ArraySource extends Source
 {

@@ -1,26 +1,33 @@
 package com.akiban.ais.model;
 
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertSame;
+import static junit.framework.Assert.assertTrue;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
+
+import com.akiban.cserver.SchemaFactory;
 
 public class AISTest
 {
     @Test
-    public void testTableColumnsReturnedInOrder()
+    public void testTableColumnsReturnedInOrder() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable("schema", "table");
-        builder.column("schema", "table", "col2", 2, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.basicSchemaIsComplete();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
-        UserTable table = ais.getUserTable("schema", "table");
+        String[] ddl = {
+            "use s; ",
+            "create table s.t(",
+            "    col2 int not null, ",
+            "    col1 int not null, ",
+            "    col0 int not null ",
+            ") engine = akibandb;"
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        UserTable table = ais.getUserTable("s", "t");
         int expectedPosition = 0;
         for (Column column : table.getColumns()) {
             assertEquals(expectedPosition, column.getPosition().intValue());
@@ -29,25 +36,23 @@ public class AISTest
     }
 
     @Test
-    public void testIndexColumnsReturnedInOrder()
+    public void testIndexColumnsReturnedInOrder() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable("schema", "table");
-        builder.column("schema", "table", "col0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col2", 2, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col3", 3, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col4", 4, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col5", 5, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "table", "index", false, "KEY");
-        // Create index on (col5, col4, col3), adding index columns backwards
-        builder.indexColumn("schema", "table", "index", "col3", 2, true, 0);
-        builder.indexColumn("schema", "table", "index", "col4", 1, true, 0);
-        builder.indexColumn("schema", "table", "index", "col5", 0, true, 0);
-        builder.basicSchemaIsComplete();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
-        UserTable table = ais.getUserTable("schema", "table");
-        Index index = table.getIndex("index");
+        String[] ddl = {
+            "use s; ",
+            "create table s.t(",
+            "    col0 int not null, ",
+            "    col1 int not null, ",
+            "    col2 int not null, ",
+            "    col3 int not null, ",
+            "    col4 int not null, ",
+            "    col5 int not null, ",
+            "    key i(col5, col4, col3) ",
+            ") engine = akibandb;"
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        UserTable table = ais.getUserTable("s", "t");
+        Index index = table.getIndex("i");
         Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
         IndexColumn indexColumn = indexColumnScan.next();
         assertEquals(5, indexColumn.getColumn().getPosition().intValue());
@@ -62,24 +67,22 @@ public class AISTest
     }
 
     @Test
-    public void testPKColumnsReturnedInOrder()
+    public void testPKColumnsReturnedInOrder() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable("schema", "table");
-        builder.column("schema", "table", "col0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col2", 2, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col3", 3, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col4", 4, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "table", "col5", 5, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "table", "index", false, "PRIMARY");
-        // Create index on (col5, col4, col3), adding index columns backwards
-        builder.indexColumn("schema", "table", "index", "col3", 2, true, 0);
-        builder.indexColumn("schema", "table", "index", "col4", 1, true, 0);
-        builder.indexColumn("schema", "table", "index", "col5", 0, true, 0);
-        builder.basicSchemaIsComplete();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
-        UserTable table = ais.getUserTable("schema", "table");
+        String[] ddl = {
+            "use s; ",
+            "create table s.t(",
+            "    col0 int not null, ",
+            "    col1 int not null, ",
+            "    col2 int not null, ",
+            "    col3 int not null, ",
+            "    col4 int not null, ",
+            "    col5 int not null, ",
+            "    primary key (col5, col4, col3) ",
+            ") engine = akibandb;"
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        UserTable table = ais.getUserTable("s", "t");
         PrimaryKey pk = table.getPrimaryKey();
         Iterator<Column> indexColumnScan = pk.getColumns().iterator();
         Column pkColumn = indexColumnScan.next();
@@ -92,30 +95,24 @@ public class AISTest
     }
 
     @Test
-    public void testJoinColumnsReturnedInOrder()
+    public void testJoinColumnsReturnedInOrder() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        // parent(p0, p1), pk is (p1, p0)
-        builder.userTable("schema", "parent");
-        builder.column("schema", "parent", "p0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "parent", "p1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "parent", "pk", false, "PRIMARY");
-        builder.indexColumn("schema", "parent", "pk", "p1", 0, true, 0);
-        builder.indexColumn("schema", "parent", "pk", "p0", 1, true, 0);
-        // child(c0, c1), fk to parent is (c0, c1). Add them backwards so we can make sure that join.getColumns()
-        // fixes the ordering.
-        builder.userTable("schema", "child");
-        builder.column("schema", "child", "c0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "child", "c1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "child", "pk", false, "PRIMARY");
-        builder.indexColumn("schema", "child", "pk", "c0", 0, true, 0);
-        builder.indexColumn("schema", "child", "pk", "c1", 1, true, 0);
-        builder.joinTables("join", "schema", "parent", "schema", "child");
-        builder.joinColumns("join", "schema", "parent", "p0", "schema", "child", "c1");
-        builder.joinColumns("join", "schema", "parent", "p1", "schema", "child", "c0");
-        builder.basicSchemaIsComplete();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
-        Join join = ais.getJoin("join");
+        String[] ddl = {
+            "use s; ",
+            "create table s.parent(",
+            "    p0 int not null, ",
+            "    p1 int not null, ",
+            "    primary key (p1, p0) ",
+            ") engine = akibandb;",
+            "create table s.child(",
+            "    c0 int not null, ",
+            "    c1 int not null, ",
+            "    primary key (c0, c1), ",
+            "   constraint `__akiban_fk` foreign key (c0, c1) references parent(p1, p0)",
+            ") engine = akibandb;",
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        Join join = ais.getUserTable("s", "child").getParentJoin();
         Iterator<JoinColumn> joinColumns = join.getJoinColumns().iterator();
         JoinColumn joinColumn = joinColumns.next();
         assertEquals("p1", joinColumn.getParent().getName());
@@ -127,51 +124,41 @@ public class AISTest
     }
 
     @Test
-    public void testHKeyNonCascadingPKs()
+    public void testHKeyNonCascadingPKs() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        // customer(cid) pk: cid
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "customer", "pk", "cid", 0, true, 0);
-        // order(oid, cid) pk: oid, fk: cid
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "oid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "cid", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "order", "pk", "oid", 0, true, 0);
-        builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "cid", "schema", "order", "cid");
-        // item(iid, oid) pk: iid, fk: oid
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "iid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "item", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "item", "pk", "iid", 0, true, 0);
-        builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "oid", "schema", "item", "oid");
-        builder.basicSchemaIsComplete();
-        // Create group
-        builder.createGroup("coi", "coi", "coi");
-        builder.addJoinToGroup("coi", "co", 0);
-        builder.addJoinToGroup("coi", "oi", 0);
-        builder.groupingIsComplete();
-        // get ready to test
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        String[] ddl = {
+            "use s; ",
+            "create table s.customer(",
+            "    cid int not null, ",
+            "    primary key (cid) ",
+            ") engine = akibandb;",
+            "create table s.`order`(",
+            "    oid int not null, ",
+            "    cid int not null, ",
+            "    primary key (oid), ",
+            "   constraint `__akiban_fk_oc` foreign key (cid) references customer(cid)",
+            ") engine = akibandb;",
+            "create table s.item(",
+            "    iid int not null, ",
+            "    oid int not null, ",
+            "    primary key (iid), ",
+            "   constraint `__akiban_fk_io` foreign key (oid) references `order`(oid)",
+            ") engine = akibandb;",
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("schema", "customer");
+        UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("schema", "order");
+        UserTable order = ais.getUserTable("s", "order");
         assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("schema", "item");
+        UserTable item = ais.getUserTable("s", "item");
         assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, order, "cid",
@@ -196,61 +183,46 @@ public class AISTest
     }
 
     @Test
-    public void testHKeyNonCascadingMultiColumnPKs()
+    public void testHKeyNonCascadingMultiColumnPKs() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        // customer(cid) pk: cid
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "cid0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "customer", "cid1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "customer", "pk", "cid0", 0, true, 0);
-        builder.indexColumn("schema", "customer", "pk", "cid1", 1, true, 0);
-        // order(oid, cid) pk: oid, fk: cid
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "oid0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "oid1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "cid0", 2, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "cid1", 3, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "order", "pk", "oid0", 0, true, 0);
-        builder.indexColumn("schema", "order", "pk", "oid1", 1, true, 0);
-        builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "cid0", "schema", "order", "cid0");
-        builder.joinColumns("co", "schema", "customer", "cid1", "schema", "order", "cid1");
-        // item(iid, oid) pk: iid, fk: oid
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "iid0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "iid1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "oid0", 2, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "oid1", 3, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "item", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "item", "pk", "iid0", 0, true, 0);
-        builder.indexColumn("schema", "item", "pk", "iid1", 1, true, 0);
-        builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "oid0", "schema", "item", "oid0");
-        builder.joinColumns("oi", "schema", "order", "oid1", "schema", "item", "oid1");
-        builder.basicSchemaIsComplete();
-        // Create group
-        builder.createGroup("coi", "coi", "coi");
-        builder.addJoinToGroup("coi", "co", 0);
-        builder.addJoinToGroup("coi", "oi", 0);
-        builder.groupingIsComplete();
-        // get ready to test
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        String[] ddl = {
+            "use s; ",
+            "create table s.customer(",
+            "    cid0 int not null, ",
+            "    cid1 int not null, ",
+            "    primary key (cid0, cid1) ",
+            ") engine = akibandb;",
+            "create table s.`order`(",
+            "    oid0 int not null, ",
+            "    oid1 int not null, ",
+            "    cid0 int not null, ",
+            "    cid1 int not null, ",
+            "    primary key (oid0, oid1), ",
+            "   constraint `__akiban_fk_oc` foreign key (cid0, cid1) references customer(cid0, cid1)",
+            ") engine = akibandb;",
+            "create table s.item(",
+            "    iid0 int not null, ",
+            "    iid1 int not null, ",
+            "    oid0 int not null, ",
+            "    oid1 int not null, ",
+            "    primary key (iid0, iid1), ",
+            "   constraint `__akiban_fk_io` foreign key (oid0, oid1) references `order`(oid0, oid1)",
+            ") engine = akibandb;",
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("schema", "customer");
+        UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid0", customer, "cid1");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("schema", "order");
+        UserTable order = ais.getUserTable("s", "order");
         assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, order, "oid0", order, "oid1");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("schema", "item");
+        UserTable item = ais.getUserTable("s", "item");
         assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, order, "cid0", order, "cid1",
@@ -287,56 +259,42 @@ public class AISTest
     }
 
     @Test
-    public void testHKeyCascadingPKs()
+    public void testHKeyCascadingPKs() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        // customer(cid) pk: cid
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "customer", "pk", "cid", 0, true, 0);
-        // order(cid, oid) pk: cid, oid, fk: cid
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "cid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "oid", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "order", "pk", "cid", 0, true, 0);
-        builder.indexColumn("schema", "order", "pk", "oid", 1, true, 0);
-        builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "cid", "schema", "order", "cid");
-        // item(cid, oid, iid) pk: cid, oid, iid, fk: cid, oid
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "cid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "iid", 2, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "item", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "item", "pk", "cid", 0, true, 0);
-        builder.indexColumn("schema", "item", "pk", "oid", 1, true, 0);
-        builder.indexColumn("schema", "item", "pk", "iid", 2, true, 0);
-        builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "cid", "schema", "item", "cid");
-        builder.joinColumns("oi", "schema", "order", "oid", "schema", "item", "oid");
-        builder.basicSchemaIsComplete();
-        // Create group
-        builder.createGroup("coi", "coi", "coi");
-        builder.addJoinToGroup("coi", "co", 0);
-        builder.addJoinToGroup("coi", "oi", 0);
-        builder.groupingIsComplete();
-        // get ready to test
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        String[] ddl = {
+            "use s; ",
+            "create table s.customer(",
+            "    cid int not null, ",
+            "    primary key (cid) ",
+            ") engine = akibandb;",
+            "create table s.`order`(",
+            "    cid int not null, ",
+            "    oid int not null, ",
+            "    primary key (cid, oid), ",
+            "   constraint `__akiban_fk_oc` foreign key (cid) references customer(cid)",
+            ") engine = akibandb;",
+            "create table s.item(",
+            "    cid int not null, ",
+            "    oid int not null, ",
+            "    iid int not null, ",
+            "    primary key (cid, oid, iid), ",
+            "   constraint `__akiban_fk_io` foreign key (cid, oid) references `order`(cid, oid)",
+            ") engine = akibandb;",
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("schema", "customer");
+        UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("schema", "order");
+        UserTable order = ais.getUserTable("s", "order");
         assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("schema", "item");
+        UserTable item = ais.getUserTable("s", "item");
         assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, item, "cid",
@@ -361,71 +319,48 @@ public class AISTest
     }
 
     @Test
-    public void testHKeyCascadingMultiColumnPKs()
+    public void testHKeyCascadingMultiColumnPKs() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        // customer(cid) pk: cid
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "cid0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "customer", "cid1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "customer", "pk", "cid0", 0, true, 0);
-        builder.indexColumn("schema", "customer", "pk", "cid1", 1, true, 0);
-        // order(cid, oid) pk: cid, oid, fk: cid
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "cid0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "cid1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "oid0", 2, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "oid1", 3, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "order", "pk", "cid0", 0, true, 0);
-        builder.indexColumn("schema", "order", "pk", "cid1", 1, true, 0);
-        builder.indexColumn("schema", "order", "pk", "oid0", 2, true, 0);
-        builder.indexColumn("schema", "order", "pk", "oid1", 3, true, 0);
-        builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "cid0", "schema", "order", "cid0");
-        builder.joinColumns("co", "schema", "customer", "cid1", "schema", "order", "cid1");
-        // item(cid, oid, iid) pk: cid, oid, iid, fk: cid, oid
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "cid0", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "cid1", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "oid0", 2, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "oid1", 3, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "iid0", 4, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "iid1", 5, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "item", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "item", "pk", "cid0", 0, true, 0);
-        builder.indexColumn("schema", "item", "pk", "cid1", 1, true, 0);
-        builder.indexColumn("schema", "item", "pk", "oid0", 2, true, 0);
-        builder.indexColumn("schema", "item", "pk", "oid1", 3, true, 0);
-        builder.indexColumn("schema", "item", "pk", "iid0", 4, true, 0);
-        builder.indexColumn("schema", "item", "pk", "iid1", 5, true, 0);
-        builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "cid0", "schema", "item", "cid0");
-        builder.joinColumns("oi", "schema", "order", "cid1", "schema", "item", "cid1");
-        builder.joinColumns("oi", "schema", "order", "oid0", "schema", "item", "oid0");
-        builder.joinColumns("oi", "schema", "order", "oid1", "schema", "item", "oid1");
-        builder.basicSchemaIsComplete();
-        // Create group
-        builder.createGroup("coi", "coi", "coi");
-        builder.addJoinToGroup("coi", "co", 0);
-        builder.addJoinToGroup("coi", "oi", 0);
-        builder.groupingIsComplete();
-        // get ready to test
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        String[] ddl = {
+            "use s; ",
+            "create table s.customer(",
+            "    cid0 int not null, ",
+            "    cid1 int not null, ",
+            "    primary key (cid0, cid1) ",
+            ") engine = akibandb;",
+            "create table s.`order`(",
+            "    cid0 int not null, ",
+            "    cid1 int not null, ",
+            "    oid0 int not null, ",
+            "    oid1 int not null, ",
+            "    primary key (cid0, cid1, oid0, oid1), ",
+            "   constraint `__akiban_fk_oc` foreign key (cid0, cid1) references customer(cid0, cid1)",
+            ") engine = akibandb;",
+            "create table s.item(",
+            "    cid0 int not null, ",
+            "    cid1 int not null, ",
+            "    oid0 int not null, ",
+            "    oid1 int not null, ",
+            "    iid0 int not null, ",
+            "    iid1 int not null, ",
+            "    primary key (cid0, cid1, oid0, oid1, iid0, iid1), ",
+            "   constraint `__akiban_fk_io` foreign key (cid0, cid1, oid0, oid1) references `order`(cid0, cid1, oid0, oid1)",
+            ") engine = akibandb;",
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("schema", "customer");
+        UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid0", customer, "cid1");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("schema", "order");
+        UserTable order = ais.getUserTable("s", "order");
         assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, order, "oid0", order, "oid1");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("schema", "item");
+        UserTable item = ais.getUserTable("s", "item");
         assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, item, "cid0", item, "cid1",
@@ -462,67 +397,54 @@ public class AISTest
     }
 
     @Test
-    public void testHKeyWithBranches()
+    public void testHKeyWithBranches() throws Exception
     {
-        AISBuilder builder = new AISBuilder();
-        // customer(cid) pk: cid
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "cid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "customer", "pk", "cid", 0, true, 0);
-        // order(oid, cid) pk: oid, fk: cid
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "oid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "cid", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "order", "pk", "oid", 0, true, 0);
-        builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "cid", "schema", "order", "cid");
-        // item(iid, oid) pk: iid, fk: oid
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "iid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "oid", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "item", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "item", "pk", "iid", 0, true, 0);
-        builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "oid", "schema", "item", "oid");
-        builder.basicSchemaIsComplete();
-        // address(aid, cid) pk: aid, fk: cid
-        builder.userTable("schema", "address");
-        builder.column("schema", "address", "aid", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "address", "cid", 1, "int", 0L, 0L, false, false, null, null);
-        builder.index("schema", "address", "pk", true, "PRIMARY");
-        builder.indexColumn("schema", "address", "pk", "aid", 0, true, 0);
-        builder.joinTables("ca", "schema", "customer", "schema", "address");
-        builder.joinColumns("ca", "schema", "customer", "cid", "schema", "address", "cid");
-        // Create group
-        builder.createGroup("coi", "coi", "coi");
-        builder.addJoinToGroup("coi", "co", 0);
-        builder.addJoinToGroup("coi", "oi", 0);
-        builder.addJoinToGroup("coi", "ca", 0);
-        builder.groupingIsComplete();
-        // get ready to test
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        String[] ddl = {
+            "use s; ",
+            "create table s.customer(",
+            "    cid int not null, ",
+            "    primary key (cid) ",
+            ") engine = akibandb;",
+            "create table s.`order`(",
+            "    oid int not null, ",
+            "    cid int not null, ",
+            "    primary key (oid), ",
+            "   constraint `__akiban_fk_oc` foreign key (cid) references customer(cid)",
+            ") engine = akibandb;",
+            "create table s.item(",
+            "    iid int not null, ",
+            "    oid int not null, ",
+            "    primary key (iid), ",
+            "   constraint `__akiban_fk_io` foreign key (oid) references `order`(oid)",
+            ") engine = akibandb;",
+            "create table s.address(",
+            "    aid int not null, ",
+            "    cid int not null, ",
+            "    primary key (aid), ",
+            "   constraint `__akiban_fk_ac` foreign key (cid) references customer(cid)",
+            ") engine = akibandb;",
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
-        UserTable customer = ais.getUserTable("schema", "customer");
+        UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
-        UserTable order = ais.getUserTable("schema", "order");
+        UserTable order = ais.getUserTable("s", "order");
         assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
-        UserTable item = ais.getUserTable("schema", "item");
+        UserTable item = ais.getUserTable("s", "item");
         assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, order, "cid",
                   order, item, "oid",
                   item, item, "iid");
-        // ---------------- Item -------------------------------------
-        UserTable address = ais.getUserTable("schema", "address");
+        // ---------------- Address -------------------------------------
+        UserTable address = ais.getUserTable("s", "address");
         assertSame(coi, address.getGroup().getGroupTable());
         checkHKey(address.hKey(),
                   customer, address, "cid",
@@ -530,7 +452,7 @@ public class AISTest
         // ---------------- Branch hkeys -------------------------------------
         // customer
         checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid", "order$cid");
+                              customer, "customer$cid", "order$cid", "address$cid");
         // order
         checkBranchHKeyColumn(order.branchHKey(), coi,
                               customer, "order$cid", "customer$cid");
@@ -598,4 +520,6 @@ public class AISTest
         }
         assertEquals(expected, actual);
     }
+
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
 }

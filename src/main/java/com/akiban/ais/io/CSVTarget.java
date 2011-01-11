@@ -1,13 +1,13 @@
 package com.akiban.ais.io;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.util.Map;
+
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Target;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-import java.util.Map;
 
 public class CSVTarget extends Target
 {

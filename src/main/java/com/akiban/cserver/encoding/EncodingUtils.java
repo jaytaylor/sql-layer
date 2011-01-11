@@ -1,13 +1,13 @@
 package com.akiban.cserver.encoding;
 
+import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.persistit.Key;
-
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.Map;
 
 abstract class EncodingUtils {
     private EncodingUtils() {

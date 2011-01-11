@@ -1,10 +1,11 @@
 package com.akiban.ais.ddl;
 
-import com.akiban.ais.model.staticgrouping.Grouping;
-import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import static junit.framework.Assert.assertEquals;
+
 import org.junit.Test;
 
-import static junit.framework.Assert.*;
+import com.akiban.ais.model.staticgrouping.Grouping;
+import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 
 public final class OldGroupingReaderTest {
 

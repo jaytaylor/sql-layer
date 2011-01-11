@@ -1,8 +1,8 @@
 package com.akiban.ais.model.staticgrouping;
 
-import com.akiban.ais.model.TableName;
-
 import java.util.List;
+
+import com.akiban.ais.model.TableName;
 
 public abstract class GroupingVisitorStub<T> implements GroupingVisitor<T> {
     @Override

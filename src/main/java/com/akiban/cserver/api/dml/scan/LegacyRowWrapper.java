@@ -1,11 +1,11 @@
 package com.akiban.cserver.api.dml.scan;
 
+import java.util.Map;
+
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
-
-import java.util.Map;
 
 public final class LegacyRowWrapper implements NewRow {
     private RowData rowData;

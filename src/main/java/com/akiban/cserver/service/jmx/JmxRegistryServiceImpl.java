@@ -1,12 +1,17 @@
 package com.akiban.cserver.service.jmx;
 
-import com.akiban.cserver.service.Service;
+import java.lang.management.ManagementFactory;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.*;
+
+import com.akiban.cserver.service.Service;
 
 public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable, Service<JmxRegistryService> {
     private static final String FORMATTER = "com.akiban:type=%s";

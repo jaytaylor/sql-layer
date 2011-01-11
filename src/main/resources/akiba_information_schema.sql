@@ -69,7 +69,7 @@ create table columns (
     group_column_name   varchar(64),
     max_storage_size    bigint not null,
     prefix_size         int not null,
-    character_set             varchar(32) not null,
+    character_set       varchar(32) not null,
     collation           varchar(32) not null,
     primary key(schema_name, table_name, column_name),
     foreign key(schema_name, table_name) references tables(schema_name, table_name),

@@ -1,14 +1,22 @@
 package com.akiban.ais.io;
 
-import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.model.AkibaInformationSchema;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
+
+import com.akiban.ais.ddl.DDLSource;
+import com.akiban.ais.model.AkibaInformationSchema;
 
 public final class CSVTest {
     private static class TestBufferedReader extends BufferedReader {

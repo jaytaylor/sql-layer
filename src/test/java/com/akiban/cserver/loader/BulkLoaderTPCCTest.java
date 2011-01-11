@@ -1,16 +1,19 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import junit.framework.Assert;
-import junit.framework.TestCase;
-import org.junit.Test;
-
 import java.sql.SQLException;
 import java.util.IdentityHashMap;
 import java.util.List;
+
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.junit.Test;
+
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 
 // Check task details for bulk load of TPCC schema -- just part of the customer group: customer-order-order_line.
 
@@ -32,7 +35,7 @@ public class BulkLoaderTPCCTest extends TestCase
         builder.column("schema", "customer", "d", 1, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "c", 2, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "cx", 3, "varchar", 100L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "pk", true, "PRIMARY");
+        builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", "pk", "w", 0, true, 0);
         builder.indexColumn("schema", "customer", "pk", "d", 1, true, 0);
         builder.indexColumn("schema", "customer", "pk", "c", 2, true, 0);
@@ -43,7 +46,7 @@ public class BulkLoaderTPCCTest extends TestCase
         builder.column("schema", "order", "o", 2, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "c", 3, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order", "ox", 4, "varchar", 50L, 0L, false, false, null, null);
-        builder.index("schema", "order", "pk", true, "PRIMARY");
+        builder.index("schema", "order", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "order", "pk", "w", 0, true, 0);
         builder.indexColumn("schema", "order", "pk", "d", 1, true, 0);
         builder.indexColumn("schema", "order", "pk", "o", 2, true, 0);
@@ -58,7 +61,7 @@ public class BulkLoaderTPCCTest extends TestCase
         builder.column("schema", "order_line", "o", 2, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order_line", "n", 3, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "order_line", "olx", 4, "double", 0L, 0L, false, false, null, null);
-        builder.index("schema", "order_line", "pk", true, "PRIMARY");
+        builder.index("schema", "order_line", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "order_line", "pk", "w", 0, true, 0);
         builder.indexColumn("schema", "order_line", "pk", "d", 1, true, 0);
         builder.indexColumn("schema", "order_line", "pk", "o", 2, true, 0);

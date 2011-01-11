@@ -1,11 +1,11 @@
 package com.akiban.admin.state;
 
-import com.akiban.admin.Admin;
-import com.akiban.admin.AdminValue;
-
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Properties;
+
+import com.akiban.admin.Admin;
+import com.akiban.admin.AdminValue;
 
 public class ChunkserverState
 {

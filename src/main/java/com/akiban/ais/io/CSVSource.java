@@ -1,15 +1,16 @@
 package com.akiban.ais.io;
 
-import com.akiban.ais.metamodel.MetaModel;
-import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.Source;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.akiban.ais.metamodel.MetaModel;
+import com.akiban.ais.metamodel.ModelObject;
+import com.akiban.ais.model.Source;
 
 public class CSVSource extends Source
 {

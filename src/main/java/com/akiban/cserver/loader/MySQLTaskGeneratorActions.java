@@ -1,10 +1,10 @@
 package com.akiban.cserver.loader;
 
+import java.util.IdentityHashMap;
+
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-
-import java.util.IdentityHashMap;
 
 public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
 {

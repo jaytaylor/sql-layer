@@ -1,21 +1,33 @@
 package com.akiban.cserver.store;
 
-import com.akiban.cserver.*;
-import com.akiban.cserver.IndexDef.I2H;
-import com.akiban.cserver.TableStatistics.Histogram;
-import com.akiban.cserver.TableStatistics.HistogramSample;
-import com.persistit.*;
-import com.persistit.KeyHistogram.KeyCount;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class PersistitStoreIndexManager {
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.IndexDef.I2H;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.TableStatistics.Histogram;
+import com.akiban.cserver.TableStatistics.HistogramSample;
+import com.akiban.cserver.service.session.Session;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.KeyFilter;
+import com.persistit.KeyHistogram;
+import com.persistit.KeyHistogram.KeyCount;
+import com.persistit.Persistit;
+import com.persistit.Transaction;
+import com.persistit.TransactionRunnable;
+import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
+
+public class PersistitStoreIndexManager implements IndexManager {
 
     private static final Log LOG = LogFactory
             .getLog(PersistitStoreIndexManager.class.getName());
@@ -45,29 +57,43 @@ public class PersistitStoreIndexManager {
     private final static int SAMPLE_SIZE_MULTIPLIER = 32;
 
     private final PersistitStore store;
-
+    
     public PersistitStoreIndexManager(final PersistitStore store) {
         this.store = store;
     }
 
     public void startUp() {
+        
     }
-
+    
     public void shutDown() {
+        
     }
 
-    public void analyzeTable(final RowDef rowDef) throws Exception {
-        analyzeTable(rowDef, DEFAULT_SAMPLE_SIZE - 1);
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#analyzeTable(com.akiban.cserver.service.session.Session, com.akiban.cserver.RowDef)
+     */
+    @Override
+    public void analyzeTable(final Session session, final RowDef rowDef) throws Exception {
+        analyzeTable(session, rowDef, DEFAULT_SAMPLE_SIZE - 1);
     }
 
-    public void analyzeTable(final RowDef rowDef, final int sampleSize)
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#analyzeTable(com.akiban.cserver.service.session.Session, com.akiban.cserver.RowDef, int)
+     */
+    @Override
+    public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize)
             throws Exception {
         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
-            analyzeIndex(indexDef, sampleSize);
+            analyzeIndex(session, indexDef, sampleSize);
         }
     }
 
-    public void deleteIndexAnalysis(final IndexDef indexDef) throws PersistitException {
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#deleteIndexAnalysis(com.akiban.cserver.service.session.Session, com.akiban.cserver.IndexDef)
+     */
+    @Override
+    public void deleteIndexAnalysis(final Session session, final IndexDef indexDef) throws PersistitException {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
         if (indexAnalysisRowDef == null) {
@@ -75,7 +101,7 @@ public class PersistitStoreIndexManager {
             return;
         }
         final Exchange analysisEx = store
-                .getExchange(indexAnalysisRowDef, null);
+                .getExchange(session, indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
         transaction.run(new TransactionRunnable() {
             @Override
@@ -88,8 +114,8 @@ public class PersistitStoreIndexManager {
                 // Remove previous analysis
                 //
                 try {
-                    store.constructHKey(analysisEx, indexAnalysisRowDef,
-                            rowData);
+                    store.constructHKey(session, analysisEx, indexAnalysisRowDef,
+                            rowData, false);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {
@@ -102,7 +128,11 @@ public class PersistitStoreIndexManager {
         });
     }
 
-    public void analyzeIndex(final IndexDef indexDef, final int sampleSize)
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#analyzeIndex(com.akiban.cserver.service.session.Session, com.akiban.cserver.IndexDef, int)
+     */
+    @Override
+    public void analyzeIndex(final Session session, final IndexDef indexDef, final int sampleSize)
             throws InvalidOperationException, PersistitException {
 
         final Exchange probeEx;
@@ -112,7 +142,7 @@ public class PersistitStoreIndexManager {
         KeyFilter keyFilter = null;
 
         if (indexDef.isHKeyEquivalent()) {
-            probeEx = store.getExchange(indexDef.getRowDef(), null);
+            probeEx = store.getExchange(session, indexDef.getRowDef(), null);
             startKey = new Key(store.getDb());
             endKey = new Key(store.getDb());
             final IndexDef.I2H[] i2hFields = indexDef.hkeyFields();
@@ -130,7 +160,7 @@ public class PersistitStoreIndexManager {
             keyFilter = new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
 
         } else {
-            probeEx = store.getExchange(indexDef.getRowDef(), indexDef);
+            probeEx = store.getExchange(session, indexDef.getRowDef(), indexDef);
             startKey = Key.LEFT_GUARD_KEY;
             endKey = Key.RIGHT_GUARD_KEY;
             keyDepth = indexDef.getFields().length;
@@ -167,7 +197,7 @@ public class PersistitStoreIndexManager {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
         final Exchange analysisEx = store
-                .getExchange(indexAnalysisRowDef, null);
+                .getExchange(session, indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
         final Date now = new Date();
         final KeyHistogram keyHistogram0 = keyHistogram;
@@ -192,8 +222,8 @@ public class PersistitStoreIndexManager {
                     // Remove previous analysis
                     //
                     try {
-                        store.constructHKey(analysisEx, indexAnalysisRowDef,
-                                rowData);
+                        store.constructHKey(session, analysisEx, indexAnalysisRowDef,
+                                rowData, false);
                         analysisEx.getKey().cut();
                         analysisEx.remove(Key.GT);
                     } catch (PersistitException e) {
@@ -246,7 +276,7 @@ public class PersistitStoreIndexManager {
                                         key.toString(), indexRowBytes,
                                         keyCount.getCount() * multiplier });
                         try {
-                            store.writeRow(rowData);
+                            store.writeRow(session, rowData);
                         }
                         catch (InvalidOperationException e) {
                             throw new RollbackException(e);
@@ -268,7 +298,7 @@ public class PersistitStoreIndexManager {
                             keyHistogram0.getKeyCount() * multiplier });
 
                     try {
-                        store.writeRow(rowData);
+                        store.writeRow(session, rowData);
                     }
                     catch (InvalidOperationException e) {
                         throw new RollbackException(e);
@@ -285,7 +315,11 @@ public class PersistitStoreIndexManager {
         }
     }
 
-    public void populateTableStatistics(final TableStatistics tableStatistics)
+    /* (non-Javadoc)
+     * @see com.akiban.cserver.store.IndexManager#populateTableStatistics(com.akiban.cserver.service.session.Session, com.akiban.cserver.TableStatistics)
+     */
+    @Override
+    public void populateTableStatistics(final Session session, final TableStatistics tableStatistics)
             throws Exception {
         final int tableId = tableStatistics.getRowDefId();
         final RowDef rowDef = store.getRowDefCache().getRowDef(tableId);
@@ -301,7 +335,7 @@ public class PersistitStoreIndexManager {
             final Histogram histogram = new Histogram(indexDef.getId());
             final RowDef indexAnalysisRowDef = store.getRowDefCache()
                     .getRowDef(ANALYSIS_TABLE_NAME);
-            final Exchange exchange = store.getExchange(indexAnalysisRowDef,
+            final Exchange exchange = store.getExchange(session, indexAnalysisRowDef,
                     null);
             exchange.clear().append(indexAnalysisRowDef.getOrdinal())
                     .append((long) tableId).append((long) indexDef.getId())
@@ -311,7 +345,7 @@ public class PersistitStoreIndexManager {
                 final RowData rowData = new RowData(new byte[exchange
                         .getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
                 store.expandRowData(exchange,
-                        indexAnalysisRowDef.getRowDefId(), rowData);
+                        indexAnalysisRowDef, rowData);
                 rows.add(rowData);
             }
 

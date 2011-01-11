@@ -16,6 +16,7 @@
 #
 
 akiban_home=$(cd $(dirname $0)/..; pwd -P)
+echo "akiban_home: $akiban_home"
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -53,8 +54,10 @@ launch_service()
     fi
 
     if [ "x$foreground" != "x" ]; then
+        echo $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
     else
+        echo ${akiban_home}
         # use log4j to log output
         akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
         exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &

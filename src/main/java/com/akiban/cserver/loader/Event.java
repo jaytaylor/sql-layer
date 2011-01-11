@@ -1,10 +1,10 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.message.Message;
-import com.akiban.message.Sendable;
-
 import java.nio.ByteBuffer;
 import java.sql.Date;
+
+import com.akiban.message.Message;
+import com.akiban.message.Sendable;
 
 public class Event implements Sendable
 {

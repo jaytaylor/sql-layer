@@ -1,13 +1,13 @@
 package com.akiban.cserver.service.session;
 
-import com.akiban.cserver.service.Service;
-import com.akiban.cserver.service.jmx.JmxManageable;
-import com.akiban.util.ArgumentValidation;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import com.akiban.cserver.service.Service;
+import com.akiban.cserver.service.jmx.JmxManageable;
+import com.akiban.util.ArgumentValidation;
 
 public final class SessionServiceImpl implements SessionService, JmxManageable, Service<SessionService>, SessionFactory
 {

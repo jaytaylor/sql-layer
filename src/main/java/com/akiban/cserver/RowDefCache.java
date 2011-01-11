@@ -1,14 +1,28 @@
 package com.akiban.cserver;
 
-import com.akiban.ais.model.*;
-import com.akiban.cserver.store.PersistitStoreTableManager;
-import com.akiban.cserver.store.TableStatus;
-import com.akiban.cserver.util.RowDefNotFoundException;
-import com.persistit.exception.PersistitException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.*;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.PrimaryKey;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.store.SchemaManager;
+import com.akiban.cserver.util.RowDefNotFoundException;
+import com.persistit.exception.PersistitException;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
@@ -35,31 +49,44 @@ public class RowDefCache implements CServerConstants {
         LATEST = this;
     }
 
-    public static RowDefCache latest()
-    {
+    public static RowDefCache latest() {
         return LATEST;
     }
 
+    public synchronized boolean contains(final int rowDefId) {
+        return cacheMap.containsKey(Integer.valueOf(rowDefId));
+    }
     /**
      * Look up and return a RowDef for a supplied rowDefId value.
      * 
      * @param rowDefId
      * @return the corresponding RowDef
+     * @throws RowDefNotFoundException if there is no such RowDef.
      */
-    public synchronized RowDef getRowDef(final int rowDefId) throws RowDefNotFoundException {
-        RowDef rowDef = cacheMap.get(Integer.valueOf(rowDefId));
+    public synchronized RowDef getRowDef(final int rowDefId)
+            throws RowDefNotFoundException {
+        RowDef rowDef = rowDef(rowDefId);
         if (rowDef == null) {
-            rowDef = lookUpRowDef(rowDefId);
-            cacheMap.put(Integer.valueOf(rowDefId), rowDef);
+            throw new RowDefNotFoundException(rowDefId);
         }
         return rowDef;
+    }
+    
+    /**
+     * @param rowDefId
+     * @return  the corresponding RowDef object, or <code>null</code> if
+     * there is RowDef defined with the specified id
+     */
+    public synchronized RowDef rowDef(final int rowDefId) {
+        return cacheMap.get(Integer.valueOf(rowDefId));
     }
 
     public synchronized List<RowDef> getRowDefs() {
         return new ArrayList<RowDef>(cacheMap.values());
     }
 
-    public synchronized RowDef getRowDef(final String tableName) throws RowDefNotFoundException {
+    public synchronized RowDef getRowDef(final String tableName)
+            throws RowDefNotFoundException {
         final Integer key = nameMap.get(tableName);
         if (key == null) {
             return null;
@@ -68,10 +95,13 @@ public class RowDefCache implements CServerConstants {
     }
 
     /**
-     * Given a schema and table name, gets a string that uniquely identifies a table. This string can then be
-     * passed to {@link #getRowDef(String)}.
-     * @param schema the schema
-     * @param table the table name
+     * Given a schema and table name, gets a string that uniquely identifies a
+     * table. This string can then be passed to {@link #getRowDef(String)}.
+     * 
+     * @param schema
+     *            the schema
+     * @param table
+     *            the table name
      * @return a unique form
      */
     public static String nameOf(String schema, String table) {
@@ -108,54 +138,80 @@ public class RowDefCache implements CServerConstants {
         hashCode = cacheMap.hashCode();
     }
 
-    public synchronized void fixUpOrdinals(PersistitStoreTableManager tableManager) throws PersistitException
-    {
+    /**
+     * Assign "ordinal" values to user table RowDef instances. An ordinal the
+     * integer used to identify a user table subtree within an hkey. This method
+     * Assigned unique integers where needed to any tables that have not already
+     * received non-zero ordinal values. Once a table is populated, its ordinal
+     * is written as part of the TableStatus record, and on subsequent server
+     * start-ups, that value is loaded and reused from the status tree.
+     * 
+     * Consequently it is necessary to invoke
+     * {@link SchemaManager#loadTableStatusRecords(Session)} before this method
+     * is called; otherwise the wrong ordinal values are likely to be assigned.
+     * This sequence is validated by asserting that the TableStatus whose
+     * ordinal is to be assigned may not be "dirty". A newly constructed
+     * TableStatus is dirty; one that has been validated through the
+     * loadTableStatusRecords method is not dirty.
+     * 
+     * @param schemaManager
+     * @throws PersistitException
+     */
+    public synchronized void fixUpOrdinals(SchemaManager schemaManager)
+            throws PersistitException {
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
                 // groupTable has no ordinal
-                groupRowDef.setOrdinal(0);
                 final HashSet<Integer> assigned = new HashSet<Integer>();
                 // First pass: merge already assigned values
-                for (final RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                    final TableStatus tableStatus = tableManager.getTableStatus(userRowDef.getRowDefId());
-                    if (tableStatus.getOrdinal() != 0 &&
-                        userRowDef.getOrdinal() != 0 &&
-                        tableStatus.getOrdinal() != userRowDef.getOrdinal()) {
-                        throw new IllegalStateException(
-                            String.format("Mismatched ordinals: %s and %s",
-                                          userRowDef.getOrdinal(),
-                                          tableStatus.getOrdinal()));
+                for (final RowDef userRowDef : groupRowDef
+                        .getUserTableRowDefs()) {
+                    final TableStatus tableStatus = userRowDef.getTableStatus();
+                    // Ensure that the loadTableStatusRecords method was called
+                    // before this.
+                    assert !tableStatus.isDirty();
+                    int ordinal = tableStatus == null ? 0 : tableStatus
+                            .getOrdinal();
+                    if (ordinal != 0
+                            && userRowDef.getOrdinal() != 0
+                            && tableStatus.getOrdinal() != userRowDef
+                                    .getOrdinal()) {
+                        throw new IllegalStateException(String.format(
+                                "Mismatched ordinals: %s and %s",
+                                userRowDef.getOrdinal(),
+                                tableStatus.getOrdinal()));
                     }
-                    int ordinal = 0;
-                    if (tableStatus.getOrdinal() != 0) {
-                        ordinal = tableStatus.getOrdinal();
+                    if (ordinal != 0) {
                         userRowDef.setOrdinal(ordinal);
-                    } else if (userRowDef.getOrdinal() != 0 && tableStatus.getOrdinal() == 0) {
+                    } else if (userRowDef.getOrdinal() != 0
+                            && tableStatus.getOrdinal() == 0) {
                         ordinal = userRowDef.getOrdinal();
                         tableStatus.setOrdinal(ordinal);
                     }
                     if (ordinal != 0 && !assigned.add(ordinal)) {
-                        throw new IllegalStateException(
-                            String.format("Non-unique ordinal value %s added to %s", ordinal, assigned));
+                        throw new IllegalStateException(String.format(
+                                "Non-unique ordinal value %s added to %s",
+                                ordinal, assigned));
                     }
                 }
                 int nextOrdinal = 1;
-                for (final RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                    final TableStatus tableStatus = tableManager.getTableStatus(userRowDef.getRowDefId());
+                for (final RowDef userRowDef : groupRowDef
+                        .getUserTableRowDefs()) {
                     if (userRowDef.getOrdinal() == 0) {
-                        // find an unassigned value. Here we could try to optimize layout
+                        // find an unassigned value. Here we could try to
+                        // optimize layout
                         // by assigning "bushy" values in some optimal pattern
                         // (if we knew that was...)
                         for (; assigned.contains(nextOrdinal); nextOrdinal++) {
                         }
-                        tableStatus.setOrdinal(nextOrdinal);
                         userRowDef.setOrdinal(nextOrdinal);
                         assigned.add(nextOrdinal);
                     }
                 }
                 if (assigned.size() != groupRowDef.getUserTableRowDefs().length) {
-                    throw new IllegalStateException(
-                        String.format("Inconsistent ordinal number assignments: %s", assigned));
+                    throw new IllegalStateException(String.format(
+                            "Inconsistent ordinal number assignments: %s",
+                            assigned));
                 }
             }
         }
@@ -163,15 +219,10 @@ public class RowDefCache implements CServerConstants {
 
     private RowDef createUserTableRowDef(AkibaInformationSchema ais, UserTable table) {
         RowDef rowDef = new RowDef(table);
-        int autoIncrementField =
-            table.getAutoIncrementColumn() == null
-            ? -1
-            : table.getAutoIncrementColumn().getPosition();
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
             final Join join = table.getParentJoin();
-            final UserTable parentTable = join.getParent();
             //
             // parentJoinFields - TODO - not sure this is right.
             //
@@ -210,18 +261,20 @@ public class RowDefCache implements CServerConstants {
                 } else {
                     indexDefList.add(indexDef);
                 }
-            } // else: Don't create an index for an artificial IndexDef that has no fields.
+            } // else: Don't create an index for an artificial IndexDef that has
+              // no fields.
         }
         rowDef.setTreeName(groupTableName);
         rowDef.setParentJoinFields(parentJoinFields);
-        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
+        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
+                .size()]));
         rowDef.setOrdinal(0);
-        rowDef.setAutoIncrementField(autoIncrementField);
         return rowDef;
 
     }
 
-    private RowDef createGroupTableRowDef(AkibaInformationSchema ais, GroupTable table) {
+    private RowDef createGroupTableRowDef(AkibaInformationSchema ais,
+            GroupTable table) {
         RowDef rowDef = new RowDef(table);
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();
         for (Column column : table.getColumns()) {
@@ -247,12 +300,13 @@ public class RowDefCache implements CServerConstants {
                 String treeName = groupTableName + "$$" + index.getIndexId();
                 IndexDef indexDef = new IndexDef(treeName, rowDef, index);
                 indexDefList.add(indexDef);
-            } // else: Don't create a group table index for an artificial IndeDef that has no fields.
+            } // else: Don't create a group table index for an artificial
+              // IndeDef that has no fields.
         }
         rowDef.setTreeName(groupTableName);
         rowDef.setUserTableRowDefs(userTableRowDefs);
-        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
-        rowDef.setOrdinal(0);
+        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
+                .size()]));
         return rowDef;
     }
 
@@ -268,7 +322,8 @@ public class RowDefCache implements CServerConstants {
      */
     public synchronized void putRowDef(final RowDef rowDef) {
         final Integer key = rowDef.getRowDefId();
-        final String name = nameOf(rowDef.getSchemaName(), rowDef.getTableName());
+        final String name = nameOf(rowDef.getSchemaName(),
+                rowDef.getTableName());
         if (cacheMap.containsKey(key) || nameMap.containsKey(name)) {
             throw new IllegalStateException("RowDef " + rowDef
                     + " already exists");
@@ -300,8 +355,7 @@ public class RowDefCache implements CServerConstants {
         rowDef.computeFieldAssociations(this);
     }
 
-    RowDef rowDef(Table table)
-    {
+    RowDef rowDef(Table table) {
         for (RowDef rowDef : cacheMap.values()) {
             if (rowDef.table() == table) {
                 return rowDef;

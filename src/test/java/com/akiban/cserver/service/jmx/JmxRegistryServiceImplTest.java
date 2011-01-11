@@ -1,14 +1,14 @@
 package com.akiban.cserver.service.jmx;
 
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
 
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
 import java.util.HashSet;
 import java.util.Set;
 
-import static junit.framework.Assert.*;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+
+import org.junit.Test;
 
 public final class JmxRegistryServiceImplTest {
     private interface TestMXBean {

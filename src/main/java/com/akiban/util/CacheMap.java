@@ -1,6 +1,10 @@
 package com.akiban.util;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>A caching map based on a LRU algorithm. In addition to providing caches, this map also lets you define default

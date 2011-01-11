@@ -1,73 +1,56 @@
 package com.akiban.cserver.store;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerTestSuite;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
 import com.akiban.util.ByteBufferFactory;
 
-public abstract class AbstractScanBase implements CServerConstants {
+public abstract class AbstractScanBase extends CServerTestSuite implements CServerConstants {
 
-    protected final static String DDL_FILE_NAME = "src/test/resources/scan_rows_test.ddl";
+    protected final static String DDL_FILE_NAME = "scan_rows_test.ddl";
 
     protected final static String SCHEMA = "scan_rows_test";
 
-    protected final static String GROUP_SCHEMA = "akiba_objects";
 
     protected final static boolean VERBOSE = false;
-
-    protected static PersistitStore store;
-
-    protected static RowDefCache rowDefCache;
+    
 
     protected static SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
 
     protected List<RowData> result = new ArrayList<RowData>();
 
     @BeforeClass
-    public static void setUpSuite() throws Exception {
-        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
-        rowDefCache = store.getRowDefCache();
-        // initially empty
-        final AkibaInformationSchema ais0 = store.getAis();
+    public static void baseSetUpSuite() throws Exception {
+        CServerTestSuite.setUpSuite();
         
         //rowDefCache.setAIS(ais0);
-        final AkibaInformationSchema ais = new DDLSource()
-                .buildAIS(DDL_FILE_NAME);
-        rowDefCache.setAIS(ais);
+        final AkibaInformationSchema ais = setUpAisForTests(DDL_FILE_NAME);
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getName().getTableName().startsWith("a")) {
                 tableMap.put(table.getName().getSchemaName() + "."
                         + table.getName().getTableName(), table);
             }
         }
-        store.fixUpOrdinals();
         populateTables();
     }
 
     @AfterClass
-    public static void tearDownSuite() throws Exception {
-        store.stop();
-        store = null;
-        rowDefCache = null;
+    public static void baseTearDownSuite() throws Exception {
+        CServerTestSuite.tearDownSuite();
         tableMap.clear();
     }
 
@@ -86,7 +69,7 @@ public abstract class AbstractScanBase implements CServerConstants {
                         i + "X" });
                 // output.println(rowData.toString(rowDefCache));
                 try {
-                    store.writeRow(rowData);
+                    store.writeRow(session, rowData);
                 }
                 catch (Throwable t) {
                     throw new Exception(t);
@@ -96,12 +79,8 @@ public abstract class AbstractScanBase implements CServerConstants {
         // output.close();
     }
 
-    protected RowDef userRowDef(final String name) {
+    protected RowDef rowDef(final String name) {
         return rowDefCache.getRowDef(SCHEMA + "." + name);
-    }
-
-    protected RowDef groupRowDef(final String name) {
-        return rowDefCache.getRowDef(GROUP_SCHEMA + "." + name);
     }
 
     protected int scanAllRows(final String test, final RowData start,
@@ -116,7 +95,7 @@ public abstract class AbstractScanBase implements CServerConstants {
             final byte[] columnBitMap, final int indexId) throws Exception {
         int scanCount = 0;
         result.clear();
-        final RowCollector rc = store.newRowCollector(rowDefId, indexId,
+        final RowCollector rc = store.newRowCollector(session, rowDefId, indexId,
                 scanFlags, start, end, columnBitMap);
         if (VERBOSE) {
             System.out.println("Test " + test);

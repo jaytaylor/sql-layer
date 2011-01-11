@@ -1,14 +1,15 @@
 package com.akiban.cserver.loader;
 
-import com.akiban.util.Command;
-import org.apache.commons.logging.Log;
-import org.apache.log4j.Level;
-
 import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import org.apache.commons.logging.Log;
+import org.apache.log4j.Level;
+
+import com.akiban.util.Command;
 
 public class DB
 {

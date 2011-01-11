@@ -1,20 +1,28 @@
 package com.akiban.cserver.service.config;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+
 import com.akiban.admin.Admin;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceNotStartedException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.jmx.JmxManageable;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-
-public class ConfigurationServiceImpl implements ConfigurationService, ConfigurationServiceMXBean, JmxManageable, Service<ConfigurationService>
-{
+public class ConfigurationServiceImpl implements ConfigurationService,
+        ConfigurationServiceMXBean, JmxManageable,
+        Service<ConfigurationService> {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private final static String AKIBAN_ADMIN = "akiban.admin";
     /** Chunkserver properties. Format specified by chunkserver. */
+
     public static final String CONFIG_CHUNKSERVER = "/config/server.properties";
     private Map<Property.Key,Property> properties = null;
     private final Set<Property.Key> requiredKeys = new HashSet<Property.Key>();
@@ -22,13 +30,15 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     private final Object INTERNAL_LOCK = new Object();
 
     @Override
-    public final String getProperty(String module, String propertyName, String defaultValue) {
+    public final String getProperty(String module, String propertyName,
+            String defaultValue) {
         Property property = internalGetProperty(module, propertyName);
         return (property == null) ? defaultValue : property.getValue();
     }
 
     @Override
-    public final String getProperty(String module, String propertyName) throws PropertyNotDefinedException {
+    public final String getProperty(String module, String propertyName)
+            throws PropertyNotDefinedException {
         Property property = internalGetProperty(module, propertyName);
         if (property == null) {
             throw new PropertyNotDefinedException(module, propertyName);
@@ -37,7 +47,7 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     }
 
     private Property internalGetProperty(String module, String propertyName) {
-        final Map<Property.Key,Property> map = internalGetProperties();
+        final Map<Property.Key, Property> map = internalGetProperties();
         Property.Key key = new Property.Key(module, propertyName);
         return map.get(key);
     }
@@ -53,20 +63,25 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return new ModuleConfiguration() {
             @Override
             public String getProperty(String propertyName, String defaultValue) {
-                return ConfigurationServiceImpl.this.getProperty(moduleString, propertyName, defaultValue);
+                return ConfigurationServiceImpl.this.getProperty(moduleString,
+                        propertyName, defaultValue);
             }
 
             @Override
-            public String getProperty(String propertyName) throws PropertyNotDefinedException {
-                return ConfigurationServiceImpl.this.getProperty(moduleString, propertyName);
+            public String getProperty(String propertyName)
+                    throws PropertyNotDefinedException {
+                return ConfigurationServiceImpl.this.getProperty(moduleString,
+                        propertyName);
             }
 
             @Override
             public Properties getProperties() {
                 Properties ret = new Properties();
-                for (Map.Entry<Property.Key, Property> entry : internalGetProperties().entrySet()) {
+                for (Map.Entry<Property.Key, Property> entry : internalGetProperties()
+                        .entrySet()) {
                     if (moduleString.equals(entry.getKey().getModule())) {
-                        ret.setProperty(entry.getKey().getName(), entry.getValue().getValue());
+                        ret.setProperty(entry.getKey().getName(), entry
+                                .getValue().getValue());
                     }
                 }
                 return ret;
@@ -76,15 +91,19 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
 
     @Override
     public final void start() throws IOException, ServiceStartupException {
-        synchronized(INTERNAL_LOCK) {
+        // TODO - consider whether we really need to synchronize here - the
+        // calls to service start methods are currently single-threaded.
+        synchronized (INTERNAL_LOCK) {
             if (properties == null) {
                 properties = null;
-                Map<Property.Key,Property> newMap = internalLoadProperties();
-                for (Map.Entry<Property.Key, Property> entry : newMap.entrySet()) {
-                    if(!entry.getKey().equals(entry.getValue().getKey())) {
-                        throw new ServiceStartupException(String.format(
-                                "Invalidly constructed key-value pair: %s -> %s",
-                                entry.getKey(), entry.getValue()));
+                Map<Property.Key, Property> newMap = internalLoadProperties();
+                for (Map.Entry<Property.Key, Property> entry : newMap
+                        .entrySet()) {
+                    if (!entry.getKey().equals(entry.getValue().getKey())) {
+                        throw new ServiceStartupException(
+                                String.format(
+                                        "Invalidly constructed key-value pair: %s -> %s",
+                                        entry.getKey(), entry.getValue()));
                     }
                 }
                 properties = Collections.unmodifiableMap(newMap);
@@ -94,15 +113,20 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     }
 
     @Override
-    public final void stop() {
-        synchronized (INTERNAL_LOCK) {
-            properties = null;
+    public final void stop() throws IOException {
+        try {
+            unloadProperties();
+        } finally {
+            synchronized (INTERNAL_LOCK) {
+                properties = null;
+            }
         }
     }
 
     @Override
     public final JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Configuration", this, ConfigurationServiceMXBean.class);
+        return new JmxObjectInfo("Configuration", this,
+                ConfigurationServiceMXBean.class);
     }
 
     @Override
@@ -115,8 +139,9 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return ConfigurationService.class;
     }
 
-    private Map<Property.Key, Property> internalLoadProperties() throws IOException, ServiceStartupException {
-        Map<Property.Key,  Property> ret = loadProperties();
+    private Map<Property.Key, Property> internalLoadProperties()
+            throws IOException, ServiceStartupException {
+        Map<Property.Key, Property> ret = loadProperties();
 
         Set<Property.Key> missingKeys = new HashSet<Property.Key>();
         for (Property.Key required : getRequiredKeys()) {
@@ -125,16 +150,26 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
             }
         }
         if (!missingKeys.isEmpty()) {
-            throw new ServiceStartupException(String.format("Required %s not set: %s",
-                    missingKeys.size() == 1 ? "property" : "properties", missingKeys));
+            throw new ServiceStartupException(String.format(
+                    "Required %s not set: %s",
+                    missingKeys.size() == 1 ? "property" : "properties",
+                    missingKeys));
         }
 
         return ret;
     }
 
+    /**
+     * Load and return a set of configuration properties. Override this method
+     * for customization in unit tests. For example, some unit tests create data
+     * files in a temporary directory. These should also override
+     * {@link #unloadProperties()} to clean them up.
+     * 
+     * @return the configuration properties
+     */
     protected Map<Property.Key, Property> loadProperties() throws IOException {
         Properties props = null;
-        
+
         props = loadResourceProperties(props);
         props = loadSystemProperties(props);
         if (shouldLoadAdminProperties()) {
@@ -142,6 +177,17 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         }
 
         return propetiesToMap(props);
+    }
+
+    /**
+     * Override this method in unit tests to clean up any temporary files, etc.
+     * A class that overrides {@link #loadProperties()} should probably also
+     * override this method.
+     * 
+     * @throws IOException
+     */
+    protected void unloadProperties() throws IOException {
+
     }
 
     protected boolean shouldLoadAdminProperties() {
@@ -152,8 +198,9 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return requiredKeys;
     }
 
-    private static Map<Property.Key, Property> propetiesToMap(Properties properties) {
-        Map<Property.Key,Property> ret = new HashMap<Property.Key, Property>();
+    private static Map<Property.Key, Property> propetiesToMap(
+            Properties properties) {
+        Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>();
         for (String keyStr : properties.stringPropertyNames()) {
             String value = properties.getProperty(keyStr);
             Property.Key propKey = Property.parseKey(keyStr);
@@ -166,9 +213,11 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return defaults == null ? new Properties() : new Properties(defaults);
     }
 
-    private Properties loadResourceProperties(Properties defaults) throws IOException {
+    private Properties loadResourceProperties(Properties defaults)
+            throws IOException {
         Properties resourceProps = chainProperties(defaults);
-        InputStream resourceIs = ConfigurationServiceImpl.class.getResourceAsStream(CONFIG_DEFAULTS_RESOURCE);
+        InputStream resourceIs = ConfigurationServiceImpl.class
+                .getResourceAsStream(CONFIG_DEFAULTS_RESOURCE);
         try {
             resourceProps.load(resourceIs);
         } finally {
@@ -178,7 +227,8 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         return resourceProps;
     }
 
-    static void stripRequiredProperties(Properties properties, Set<Property.Key> toSet) {
+    static void stripRequiredProperties(Properties properties,
+            Set<Property.Key> toSet) {
         Set<String> requiredKeyStrings = new HashSet<String>();
         for (String key : properties.stringPropertyNames()) {
             if (key.startsWith("REQUIRED.")) {
@@ -199,13 +249,15 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
         final Properties actualSystemProps = System.getProperties();
         for (String key : actualSystemProps.stringPropertyNames()) {
             if (keyIsInteresting(key)) {
-                loadedSystemProps.setProperty(key, actualSystemProps.getProperty(key));
+                loadedSystemProps.setProperty(key,
+                        actualSystemProps.getProperty(key));
             }
         }
         return loadedSystemProps;
     }
 
-    private static Properties loadAdminProperties(Properties defaults) throws IOException {
+    private static Properties loadAdminProperties(Properties defaults)
+            throws IOException {
         Properties adminProps = chainProperties(defaults);
         final String akibanAdmin = adminProps.getProperty(AKIBAN_ADMIN);
         if (akibanAdmin != null && !"NONE".equals(akibanAdmin)) {
@@ -216,7 +268,8 @@ public class ConfigurationServiceImpl implements ConfigurationService, Configura
     }
 
     private static boolean keyIsInteresting(String key) {
-        return key.startsWith("akiban") || key.startsWith("persistit") || key.startsWith("cserver");
+        return key.startsWith("akiban") || key.startsWith("persistit")
+                || key.startsWith("cserver");
     }
 
     private Map<Property.Key, Property> internalGetProperties() {

@@ -1,10 +1,15 @@
 package com.akiban.cserver.api.dml.scan;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
+
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
 import org.junit.Test;
-
-import java.util.*;
-
-import static junit.framework.Assert.*;
 
 public final class ScanFlagTest {
 

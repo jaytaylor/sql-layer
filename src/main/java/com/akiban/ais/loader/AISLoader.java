@@ -7,12 +7,16 @@
  */
 package com.akiban.ais.loader;
 
-import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.ddl.SqlTextTarget;
-import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -20,6 +24,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
+
+import com.akiban.ais.ddl.DDLSource;
+import com.akiban.ais.ddl.SqlTextTarget;
+import com.akiban.ais.io.Writer;
+import com.akiban.ais.model.AkibaInformationSchema;
 
 
 /**

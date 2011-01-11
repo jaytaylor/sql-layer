@@ -1,46 +1,36 @@
 package com.akiban.cserver.store;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.cserver.service.session.UnitTestServiceManagerFactory;
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
+import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
 
-public class SimpleBlobTest extends TestCase implements CServerConstants {
+public class SimpleBlobTest extends CServerTestCase implements CServerConstants {
 
-    private final static String CREATE_TABLE_STATEMENT1 = "CREATE TABLE `test`.`blobtest` ("
-            + "`a` int,"
-            + "`b` blob,"
-            + "`c` blob,"
-            + "PRIMARY KEY (a)"
-            + ") ENGINE=AKIBANDB;";
+    private final static String SIMPLE_BLOB_TEST_DDL = "simple_blob_test.ddl";
 
-    private PersistitStore store;
 
-    private RowDefCache rowDefCache;
-
-    @Override
+    @Before
     public void setUp() throws Exception {
-        store = UnitTestServiceManagerFactory.getStoreForUnitTests();
-        rowDefCache = store.getRowDefCache();
-        final AkibaInformationSchema ais = new DDLSource().buildAISFromString(CREATE_TABLE_STATEMENT1);
-        rowDefCache.setAIS(ais);
-        store.fixUpOrdinals();
+        baseSetUp();
+        setUpAisForTests(SIMPLE_BLOB_TEST_DDL);
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
-        store.stop();
-        store = null;
-        rowDefCache = null;
+        baseTearDown();
     }
     
+    @Test
     public void testBlobs() throws Exception {
         final RowDef rowDef = rowDefCache.getRowDef("test.blobtest");
         final RowData rowData =new RowData(new byte[5000000]);
@@ -50,10 +40,10 @@ public class SimpleBlobTest extends TestCase implements CServerConstants {
             int csize = (int)Math.pow(10, i);
             rowData.createRow(rowDef, new Object[]{i, bigString(bsize), bigString(csize)});
             expected[i] = rowData.toString(rowDefCache);
-            store.writeRow(rowData);
+            store.writeRow(session, rowData);
         }
         
-        final RowCollector rc = store.newRowCollector(rowDef.getRowDefId(), 0, 0, null, null, new byte[]{7});
+        final RowCollector rc = store.newRowCollector(session, rowDef.getRowDefId(), 0, 0, null, null, new byte[]{7});
         final ByteBuffer bb = ByteBuffer.allocate(5000000);
         for (int i = 1; i <= 6; i++) {
             assertTrue(rc.hasMore());

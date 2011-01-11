@@ -1,13 +1,15 @@
 package com.akiban.ais.model.staticgrouping;
 
-import com.akiban.ais.model.TableName;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static junit.framework.Assert.*;
+import org.junit.Test;
+
+import com.akiban.ais.model.TableName;
 
 public class GroupingTest {
     private final static String SCHEMA = "test_schema";

@@ -1,15 +1,14 @@
 package com.akiban.cserver.api.dml.scan;
 
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.IdResolver;
-import com.akiban.util.ArgumentValidation;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.util.ArgumentValidation;
 
 public final class ColumnSet {
 

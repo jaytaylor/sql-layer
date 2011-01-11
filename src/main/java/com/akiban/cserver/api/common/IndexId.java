@@ -1,8 +1,8 @@
 package com.akiban.cserver.api.common;
 
-import com.akiban.util.CacheMap;
-
 import java.nio.ByteBuffer;
+
+import com.akiban.util.CacheMap;
 
 public final class IndexId extends ByteBufferWriter {
 

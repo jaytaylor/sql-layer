@@ -1,12 +1,16 @@
 package com.akiban.ais.io;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Source;
-
-import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MySQLSource extends Source
 {

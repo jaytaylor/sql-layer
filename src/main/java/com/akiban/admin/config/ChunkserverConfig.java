@@ -1,8 +1,8 @@
 package com.akiban.admin.config;
 
-import com.akiban.admin.AdminValue;
-
 import java.util.Properties;
+
+import com.akiban.admin.AdminValue;
 
 public class ChunkserverConfig
 {
@@ -15,11 +15,6 @@ public class ChunkserverConfig
     {
         String verboseString = properties.getProperty(PROPERTY_VERBOSE);
         return verboseString == null ? null : Boolean.valueOf(verboseString);
-    }
-
-    public String decisionEngine()
-    {
-        return properties.getProperty(PROPERTY_DECISION_ENGINE);
     }
 
     public String mysqlInstallDir()
@@ -44,7 +39,6 @@ public class ChunkserverConfig
 
     private static final String PROPERTY_DATAPATH = "cserver.datapath";
     private static final String PROPERTY_VERBOSE = "cserver.verbose";
-    private static final String PROPERTY_DECISION_ENGINE = "cserver.decision_engine";
     private static final String PROPERTY_MYSQL_INSTALL_DIR = "cserver.mysql_install_dir";
     private static final String PROPERTY_JAR_FILE = "cserver.jar_file";
     private static final String PROPERTY_MAX_HEAP_MB = "cserver.max_heap_mb";

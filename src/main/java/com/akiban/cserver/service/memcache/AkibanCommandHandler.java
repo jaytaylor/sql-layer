@@ -1,30 +1,36 @@
 package com.akiban.cserver.service.memcache;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
+
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.store.Store;
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
-import com.thimbleware.jmemcached.MemCacheDaemon;
 import com.thimbleware.jmemcached.LocalCacheElement;
+import com.thimbleware.jmemcached.MemCacheDaemon;
 import com.thimbleware.jmemcached.protocol.Command;
 import com.thimbleware.jmemcached.protocol.CommandMessage;
 import com.thimbleware.jmemcached.protocol.ResponseMessage;
 import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
-
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.nio.ByteBuffer;
-
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.store.Store;
 
 
 /**
@@ -243,7 +249,8 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
                 try {
                     StringBuilder sb = new StringBuilder();
-                    List<RowData> list = store.fetchRows(schema, table, colkey, min_val, max_val, null, payload);
+                    // TODO - probably want an existing Session
+                    List<RowData> list = store.fetchRows(new SessionImpl(), schema, table, colkey, min_val, max_val, null, payload);
                     
                     int current_def_id = -1;
                     List<Integer> def_id_stack = new ArrayList<Integer>();
