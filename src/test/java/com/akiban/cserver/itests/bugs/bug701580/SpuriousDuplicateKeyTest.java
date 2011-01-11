@@ -35,6 +35,17 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
     }
 
     @Test
+    public void simpleOnce() throws Exception {
+        simpleTestCase();
+    }
+
+    @Test
+    public void simpleTwice() throws Exception {
+        simpleTestCase();
+        simpleTestCase();
+    }
+
+    @Test
     public void loadAllThenTest() throws Exception {
         loadAllTables();
         TableId blocksTable1 = getTableId("drupal", "blocks");
@@ -44,6 +55,17 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
         loadAllTables();
         TableId blocksTable2 = getTableId("drupal", "blocks");
         loadData(blocksTable2, false);
+        dropAllTables();
+    }
+
+    private void simpleTestCase() throws Exception {
+        createTable("test", "t1", "bid int, token varchar(64), primary key(bid), key (token)");
+        TableId t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
+        writeRows(
+                createNewRow(t2, 1, "0"),
+                createNewRow(t2, 2, "1"),
+                createNewRow(t2, 3, "2")
+        );
         dropAllTables();
     }
 
