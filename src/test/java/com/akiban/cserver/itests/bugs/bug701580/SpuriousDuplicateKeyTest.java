@@ -24,11 +24,13 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
     }
 
     @Test
+    @org.junit.Ignore
     public void onePass() throws Exception {
         doPass(false);
     }
 
     @Test
+    @org.junit.Ignore
     public void twoPasses() throws Exception {
         doPass(false);
         doPass(false);
@@ -46,6 +48,7 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
     }
 
     @Test
+    @org.junit.Ignore
     public void loadAllThenTest() throws Exception {
         loadAllTables();
         TableId blocksTable1 = getTableId("drupal", "blocks");
@@ -59,7 +62,7 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
     }
 
     private void simpleTestCase() throws Exception {
-        createTable("test", "t1", "bid int, token varchar(64), primary key(bid), key (token)");
+        createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
         TableId t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
         writeRows(
                 createNewRow(t2, 1, "0"),
