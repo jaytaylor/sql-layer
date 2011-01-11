@@ -146,6 +146,22 @@ public final class IndexNamesIT extends ApiTestBase {
         assertIndexColumns(userTable, "alpha", "c2");
     }
 
+    @org.junit.Ignore @Test
+    public void uniqueWithExplicitKeyAndFullName() {
+        try {
+            ddl().createTable(session, "s1", "CREATE TABLE p1(parentc1 int key)");
+        } catch (InvalidOperationException e) {
+            throw new TestException("CREATE TABLE p1(parentc1 int key)", e);
+        }
+
+        UserTable userTable = createTableWithIndexes("PRIMARY KEY (c1), KEY alpha (c2), "
+                +"CONSTRAINT bravo UNIQUE KEY charlie (c2)");
+        assertIndexes(userTable, "PRIMARY", "alpha", "charlie");
+        assertIndexColumns(userTable, "PRIMARY", "c1");
+        assertIndexColumns(userTable, "alpha", "c2");
+        assertIndexColumns(userTable, "charlie", "c2");
+    }
+
     @Test(expected=ParseException.class)
     public void fkUsingExplicitKeyConflicting() throws InvalidOperationException {
         try {
