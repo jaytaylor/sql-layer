@@ -1,5 +1,6 @@
 package com.akiban.util;
 
+import java.io.*;
 import java.util.List;
 
 /**
@@ -47,5 +48,27 @@ public abstract class Strings {
         }
         builder.setLength(builder.length() - delimiter.length());
         return builder.toString();
+    }
+
+    public static String readResource(String resourceName, Class<?> forClass) throws IOException {
+        InputStream stream = forClass.getResourceAsStream(resourceName);
+        if (stream == null) {
+            throw new FileNotFoundException(resourceName);
+        }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+        try {
+            StringBuilder builder = new StringBuilder();
+            final String NL = nl();
+            for(String line=reader.readLine(); line != null; line=reader.readLine()) {
+                builder.append(line).append(NL);
+            }
+            return builder.toString();
+        } finally {
+            reader.close();
+        }
+    }
+
+    public static String readResource(String resourceName) throws IOException {
+        return readResource(resourceName, Strings.class);
     }
 }
