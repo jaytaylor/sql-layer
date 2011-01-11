@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.akiban.ais.model.*;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,6 +18,13 @@ import com.akiban.ais.ddl.SchemaDef.CName;
 import com.akiban.ais.ddl.SchemaDef.ColumnDef;
 import com.akiban.ais.ddl.SchemaDef.IndexDef;
 import com.akiban.ais.ddl.SchemaDef.UserTableDef;
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 
 /**
