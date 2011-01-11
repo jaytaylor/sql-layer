@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.akiban.ais.model.*;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -18,13 +19,6 @@ import com.akiban.ais.ddl.SchemaDef.CName;
 import com.akiban.ais.ddl.SchemaDef.ColumnDef;
 import com.akiban.ais.ddl.SchemaDef.IndexDef;
 import com.akiban.ais.ddl.SchemaDef.UserTableDef;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 
 /**
@@ -200,6 +194,32 @@ public class SchemaDefToAis {
         return utDef;
     }
 
+    private static class IdGenerator {
+        private final Map<CName,CName> groupPerTable = new HashMap<CName, CName>();
+        private final Map<CName,Integer> idPerGroup = new HashMap<CName, Integer>();
+
+        IdGenerator(Map<CName,? extends Set<CName>> groupMap) {
+            for(Map.Entry<CName, ? extends Set<CName>> entry : groupMap.entrySet()) {
+                CName group = entry.getKey();
+                for(CName uTable : entry.getValue()) {
+                    groupPerTable.put(uTable, group);
+                }
+            }
+        }
+
+        public int allocateId(CName uTableName) {
+            CName groupTableName = groupPerTable.get(uTableName);
+            Integer prevId = idPerGroup.get(groupTableName);
+            if (prevId == null) {
+                idPerGroup.put(groupTableName, 0);
+                return 0;
+            }
+            int id = prevId + 1;
+            idPerGroup.put(groupTableName, id);
+            return id;
+        }
+    }
+
     private AkibaInformationSchema buildAISFromBuilder(
             final boolean akibandbOnly) throws RecognitionException, Exception {
         addImpliedGroups();
@@ -207,7 +227,7 @@ public class SchemaDefToAis {
 
         AISBuilder builder = new AISBuilder();
         AkibaInformationSchema ais = builder.akibaInformationSchema();
-        int indexIdGenerator = 0;
+        IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
 
         // loop through user tables and add to AIS
         for (UserTableDef utDef : schemaDef.getUserTableMap().values()) {
@@ -255,7 +275,7 @@ public class SchemaDefToAis {
             if (utDef.primaryKey.size() > 0) {
                 String pkIndexName = "PRIMARY";
                 Index pkIndex = Index.create(ais, ut, pkIndexName,
-                        indexIdGenerator++, true, pkIndexName);
+                        indexIdGenerator.allocateId(utDef.name), true, pkIndexName);
 
                 columnIndex = 0;
                 for (String pkName : utDef.primaryKey) {
@@ -312,7 +332,7 @@ public class SchemaDefToAis {
                 {
                     // indexes
                     Index fkIndex = Index.create(ais, ut, indexDef.name,
-                            indexIdGenerator++, unique, indexType);
+                            indexIdGenerator.allocateId(utDef.name), unique, indexType);
 
                     columnIndex = 0;
                     for (SchemaDef.IndexColumnDef indexColumnDef : indexDef.columns) {
@@ -325,7 +345,6 @@ public class SchemaDefToAis {
                 }
             }
         }
-
         builder.basicSchemaIsComplete();
 
         // loop through group tables and add to AIS
