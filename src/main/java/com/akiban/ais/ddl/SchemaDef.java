@@ -228,8 +228,6 @@ public class SchemaDef {
                 columnsToIndexes.put(real.columns, real);
             } else {
                 if (real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
-                    assert real.columns.equals(equivalent.columns) : real + " "
-                            + equivalent;
                     // two FK indexes, make sure they're compatible
                     if (equivalent.qualifiers
                             .contains(IndexQualifier.FOREIGN_KEY)) {
@@ -757,8 +755,6 @@ public class SchemaDef {
         }
 
         void addIndexAttributes(IndexDef otherIndex) {
-            assert name.equals(otherIndex.name) : String.format("%s != %s", name, otherIndex.name);
-            
             if(!columnListsAreSubset(columns, otherIndex.columns)) {
                 throw new SchemaDefException(String.format("duplicate index: %s listed with columns %s and %s",
                         name, columns, otherIndex.columns));
@@ -766,8 +762,10 @@ public class SchemaDef {
             if (referenceTable == null) {
                 referenceTable = otherIndex.referenceTable;
                 referenceColumns = otherIndex.referenceColumns;
-            }
-            else if (otherIndex.referenceTable != null) {
+            } else if (otherIndex.referenceTable != null
+                    && !(
+                    referenceTable.equals(otherIndex.referenceTable)
+                            && referenceColumns.equals(otherIndex.referenceColumns))) {
                 throw new SchemaDefException(String.format("duplicate index: %s references both %s and %s",
                         name, referenceTable, otherIndex.referenceTable));
             }
