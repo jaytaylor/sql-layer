@@ -143,7 +143,7 @@ public class SchemaDefToAisTest {
         assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
-        assertEquals("index[0] name", "_auto_generated_index_0",
+        assertEquals("index[0] name", "__akiban_fk",
                 tableDef.indexes.get(0).name);
         assertEquals("index[0] constraints", 1,
                 tableDef.indexes.get(0).constraints.size());
@@ -206,7 +206,7 @@ public class SchemaDefToAisTest {
         assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
-        assertEquals("index[0] name", "__akiban_index",
+        assertEquals("index[0] name", "__akiban_fk",
                 tableDef.indexes.get(0).name);
         assertEquals("index[0] constraints", 1,
                 tableDef.indexes.get(0).constraints.size());
