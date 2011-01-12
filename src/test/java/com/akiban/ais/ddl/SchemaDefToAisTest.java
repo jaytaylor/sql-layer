@@ -273,34 +273,6 @@ public class SchemaDefToAisTest {
     }
 
     @Test
-    public void fKFullDescription() throws Exception {
-        SchemaDef def = parseCO(true, "my_constraint0", "my_index0");
-        testCOCommon(def);
-        testOrder(def, "my_constraint0", "my_index0");
-    }
-
-    @Test
-    public void fKHasConstraintNoIndex() throws Exception {
-        SchemaDef def = parseCO(true, "my_constraint0", null);
-        testCOCommon(def);
-        testOrder(def, "my_constraint0", null);
-    }
-
-    @Test
-    public void fKNoConstraintHasIndex() throws Exception {
-        SchemaDef def = parseCO(true, null, "my_index1");
-        testCOCommon(def);
-        testOrder(def, null, "my_index1");
-    }
-
-    @Test
-    public void fKNoConstraintOrIndex() throws Exception {
-        SchemaDef def = parseCO(true, null, null);
-        testCOCommon(def);
-        testOrder(def, null, null);
-    }
-
-    @Test
     public void charsetAndCollate() throws Exception {
         AkibaInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
 

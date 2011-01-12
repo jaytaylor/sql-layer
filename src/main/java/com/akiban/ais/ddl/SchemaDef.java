@@ -277,6 +277,9 @@ public class SchemaDef {
 
     private static IndexDef findEquivalentIndex(Map<List<IndexColumnDef>, IndexDef> columnsToIndexes,
                                                 IndexDef index) {
+        if(index.name != null && index.name.startsWith("__akiban")) {
+            return null;
+        }
         List<IndexColumnDef> columns = index.columns;
         IndexDef exact = columnsToIndexes.get(columns);
         if (exact != null) {

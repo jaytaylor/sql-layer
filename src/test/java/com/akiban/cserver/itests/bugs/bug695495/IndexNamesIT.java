@@ -200,9 +200,10 @@ public final class IndexNamesIT extends ApiTestBase {
                 "KEY key1 (c1, c2)",
                 "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c1) REFERENCES p1 (parentc1)"
         );
-        assertIndexes(userTable, "PRIMARY", "key1");
+        assertIndexes(userTable, "PRIMARY", "key1", "__akiban_fk_1");
         assertIndexColumns(userTable, "PRIMARY", "id");
         assertIndexColumns(userTable, "key1", "c1", "c2");
+        assertIndexColumns(userTable, "__akiban_fk_1", "c1");
     }
 
     @Test
@@ -216,9 +217,10 @@ public final class IndexNamesIT extends ApiTestBase {
                 "KEY key1 (c1, c2, c3)",
                 "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c1,c2) REFERENCES p2 (parentc1, parentc2)"
         );
-        assertIndexes(userTable, "PRIMARY", "key1");
+        assertIndexes(userTable, "PRIMARY", "key1", "__akiban_fk_1");
         assertIndexColumns(userTable, "PRIMARY", "id");
         assertIndexColumns(userTable, "key1", "c1", "c2", "c3");
+        assertIndexColumns(userTable, "__akiban_fk_1", "c1", "c2");
     }
 
     @Test
