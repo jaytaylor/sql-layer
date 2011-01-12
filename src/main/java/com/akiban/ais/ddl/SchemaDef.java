@@ -286,12 +286,17 @@ public class SchemaDef {
         }
         if (index.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
             for (Map.Entry<List<IndexColumnDef>, IndexDef> entry : columnsToIndexes.entrySet()) {
-                if (entry.getKey().containsAll(columns)) {
+                List<IndexColumnDef> testList = entry.getKey();
+                if (columnListsAreSubset(testList, columns)) {
                     return entry.getValue();
                 }
             }
         }
         return null;
+    }
+
+    private static boolean columnListsAreSubset(List<IndexColumnDef> larger, List<IndexColumnDef> smaller) {
+        return larger.size() >= smaller.size() && larger.subList(0, smaller.size()).equals(smaller);
     }
 
     void addIndexQualifier(final IndexQualifier qualifier) {
@@ -754,7 +759,7 @@ public class SchemaDef {
         void addIndexAttributes(IndexDef otherIndex) {
             assert name.equals(otherIndex.name) : String.format("%s != %s", name, otherIndex.name);
             
-            if (!columns.equals(otherIndex.columns)) {
+            if(!columnListsAreSubset(columns, otherIndex.columns)) {
                 throw new SchemaDefException(String.format("duplicate index: %s listed with columns %s and %s",
                         name, columns, otherIndex.columns));
             }

@@ -7,6 +7,7 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.util.Strings;
+import com.sun.xml.internal.messaging.saaj.util.FinalArrayList;
 import org.junit.After;
 import org.junit.Test;
 
@@ -174,19 +175,84 @@ public final class IndexNamesIT extends ApiTestBase {
     }
 
     @Test
-    public void fkSharesColumnWithKey() throws Exception {
-        createParentTable();
-        String ddl = Strings.join(
-                "CREATE TABLE test.c1(",
-                "id INT NOT NULL AUTO_INCREMENT,",
-                "c1 INT,",
-                "c2 INT,",
-                "KEY key1 (c1, c2),",
-                "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c2) REFERENCES p1 (parentc1)",
-                ")"
+    public void fkAndKeySingleColumnSeparate() throws Exception {
+        createParentTables();
+        UserTable userTable = createTablePlain("c1",
+                "id INT KEY",
+                "c1 INT",
+                "c2 INT",
+                "KEY key1 (c1, c2)",
+                "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c2) REFERENCES p1 (parentc1)"
         );
-        debug(ddl);
-        ddl().createTable(session, "test", ddl);
+        assertIndexes(userTable, "PRIMARY", "key1", "__akiban_fk_1");
+        assertIndexColumns(userTable, "PRIMARY", "id");
+        assertIndexColumns(userTable, "key1", "c1", "c2");
+        assertIndexColumns(userTable, "__akiban_fk_1", "c2");
+    }
+
+    @Test
+    public void fkAndKeySingleColumnSame() throws Exception {
+        createParentTables();
+        UserTable userTable = createTablePlain("c1",
+                "id INT KEY",
+                "c1 INT",
+                "c2 INT",
+                "KEY key1 (c1, c2)",
+                "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c1) REFERENCES p1 (parentc1)"
+        );
+        assertIndexes(userTable, "PRIMARY", "key1");
+        assertIndexColumns(userTable, "PRIMARY", "id");
+        assertIndexColumns(userTable, "key1", "c1", "c2");
+    }
+
+    @Test
+    public void fkAndKeyMultiColumnSame() throws Exception {
+        createParentTables();
+        UserTable userTable = createTablePlain("c1",
+                "id INT KEY",
+                "c1 INT",
+                "c2 INT",
+                "c3 INT",
+                "KEY key1 (c1, c2, c3)",
+                "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c1,c2) REFERENCES p2 (parentc1, parentc2)"
+        );
+        assertIndexes(userTable, "PRIMARY", "key1");
+        assertIndexColumns(userTable, "PRIMARY", "id");
+        assertIndexColumns(userTable, "key1", "c1", "c2", "c3");
+    }
+
+    @Test
+    public void fkAndKeyMultiColumnDifferent() throws Exception {
+        createParentTables();
+        UserTable userTable = createTablePlain("c1",
+                "id INT KEY",
+                "c1 INT",
+                "c2 INT",
+                "c3 INT",
+                "KEY key1 (c1, c2, c3)",
+                "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c2,c3) REFERENCES p2 (parentc1, parentc2)"
+        );
+        assertIndexes(userTable, "PRIMARY", "key1", "__akiban_fk_1");
+        assertIndexColumns(userTable, "PRIMARY", "id");
+        assertIndexColumns(userTable, "key1", "c1", "c2", "c3");
+        assertIndexColumns(userTable, "__akiban_fk_1", "c2", "c3");
+    }
+
+    @Test
+    public void fkAndKeyMultiColumnWrongOrder() throws Exception {
+        createParentTables();
+        UserTable userTable = createTablePlain("c1",
+                "id INT KEY",
+                "c1 INT",
+                "c2 INT",
+                "c3 INT",
+                "KEY key1 (c1, c2, c3)",
+                "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c2,c1) REFERENCES p2 (parentc1, parentc2)"
+        );
+        assertIndexes(userTable, "PRIMARY", "key1", "__akiban_fk_1");
+        assertIndexColumns(userTable, "PRIMARY", "id");
+        assertIndexColumns(userTable, "key1", "c1", "c2", "c3");
+        assertIndexColumns(userTable, "__akiban_fk_1", "c2", "c1");
     }
 
     protected static void debug(String formatter, Object... args) {
@@ -197,6 +263,20 @@ public final class IndexNamesIT extends ApiTestBase {
                 System.out.println(line);
             }
         }
+    }
+
+    protected UserTable createTablePlain(String tableName, String... definition) {
+        StringBuilder ddlBuilder = new StringBuilder("CREATE TABLE s1.").append(tableName).append("(\n\t");
+        ddlBuilder.append(Strings.join(Arrays.asList(definition), ",\n\t"));
+        ddlBuilder.append("\n)");
+        String ddl = ddlBuilder.toString();
+        debug(ddl);
+        try {
+            ddl().createTable(session, "s1", ddl);
+        } catch (InvalidOperationException e) {
+            throw new TestException("creating DDL: " + ddl, e);
+        }
+        return ddl().getAIS(session).getUserTable("s1", tableName);
     }
 
     protected UserTable createTableWithIndexes(String indexDDL) {
@@ -212,16 +292,23 @@ public final class IndexNamesIT extends ApiTestBase {
         return ddl().getAIS(session).getUserTable("s1", "t1");
     }
 
-    protected void createParentTable() {
+    protected void createParentTables() {
+        final String p1 = "CREATE TABLE p1(parentc1 int key)";
+        final String p2 = "CREATE TABLE p2(parentc1 int, parentc2 int, PRIMARY KEY (parentc1, parentc2))";
         try {
-            ddl().createTable(session, "s1", "CREATE TABLE p1(parentc1 int key)");
+            ddl().createTable(session, "s1", p1);
         } catch (InvalidOperationException e) {
-            throw new TestException("CREATE TABLE p1(parentc1 int key)", e);
+            throw new TestException(p1, e);
+        }
+        try {
+            ddl().createTable(session, "s1", p2);
+        } catch (InvalidOperationException e) {
+            throw new TestException(p2, e);
         }
     }
 
     protected UserTable createTableWithFK(String constraintName, String indexName, String additionalIndexes) {
-        createParentTable();
+        createParentTables();
         
         StringBuilder builder = new StringBuilder("PRIMARY KEY (c1), ");
         if (additionalIndexes != null) {
