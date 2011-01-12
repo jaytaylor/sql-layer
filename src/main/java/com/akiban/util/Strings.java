@@ -1,5 +1,6 @@
 package com.akiban.util;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -47,5 +48,9 @@ public abstract class Strings {
         }
         builder.setLength(builder.length() - delimiter.length());
         return builder.toString();
+    }
+
+    public static String join(String... strings) {
+        return join(Arrays.asList(strings));
     }
 }

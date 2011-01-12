@@ -6,6 +6,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.itests.ApiTestBase;
+import com.akiban.util.Strings;
 import org.junit.After;
 import org.junit.Test;
 
@@ -172,6 +173,22 @@ public final class IndexNamesIT extends ApiTestBase {
         fail("should have failed at the above line!");
     }
 
+    @Test
+    public void fkSharesColumnWithKey() throws Exception {
+        createParentTable();
+        String ddl = Strings.join(
+                "CREATE TABLE test.c1(",
+                "id INT NOT NULL AUTO_INCREMENT,",
+                "c1 INT,",
+                "c2 INT,",
+                "KEY key1 (c1, c2),",
+                "CONSTRAINT __akiban_fk_1 FOREIGN KEY __akiban_fk_5 (c2) REFERENCES p1 (parentc1)",
+                ")"
+        );
+        debug(ddl);
+        ddl().createTable(session, "test", ddl);
+    }
+
     protected static void debug(String formatter, Object... args) {
         if(Boolean.getBoolean("IndexNamesIT.debug")) {
             String[] lines = String.format(formatter, args).split("\n");
@@ -195,13 +212,17 @@ public final class IndexNamesIT extends ApiTestBase {
         return ddl().getAIS(session).getUserTable("s1", "t1");
     }
 
-    protected UserTable createTableWithFK(String constraintName, String indexName, String additionalIndexes) {
+    protected void createParentTable() {
         try {
             ddl().createTable(session, "s1", "CREATE TABLE p1(parentc1 int key)");
         } catch (InvalidOperationException e) {
             throw new TestException("CREATE TABLE p1(parentc1 int key)", e);
         }
+    }
 
+    protected UserTable createTableWithFK(String constraintName, String indexName, String additionalIndexes) {
+        createParentTable();
+        
         StringBuilder builder = new StringBuilder("PRIMARY KEY (c1), ");
         if (additionalIndexes != null) {
             builder.append(additionalIndexes).append(", ");
