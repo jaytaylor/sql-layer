@@ -74,13 +74,11 @@ public class SchemaDefToAis {
             int gposition = 0;
             final List<CName> tableList = depthFirstSortedUserTables(groupName);
             for (final CName tableName : tableList) {
-                int uposition = 0;
                 final UserTableDef utdef = schemaDef.getUserTableMap().get(
                         tableName);
                 List<ColumnDef> columns = utdef.columns;
                 for (final ColumnDef def : columns) {
                     def.gposition = gposition++;
-                    def.uposition = uposition++;
                 }
             }
         }
@@ -306,7 +304,6 @@ public class SchemaDefToAis {
                 }
 
                 if (indexType.equalsIgnoreCase("FOREIGN KEY")) {
-                    indexType = "KEY";
                     // foreign keys (aka candidate joins)
                     CName childTable = utDef.name;
                     CName parentTable = indexDef.referenceTable;

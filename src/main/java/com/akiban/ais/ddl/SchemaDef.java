@@ -19,9 +19,9 @@ import org.antlr.runtime.CommonTokenStream;
 import com.akiban.ais.model.Column;
 
 /**
- * Structures used to hold the results of parsing DDL statements. DDLSource.g includes
- * productions that modify a SchemaDef in a peculiar and particular order. Other
- * clients should only read values from this class.
+ * Structures used to hold the results of parsing DDL statements. DDLSource.g
+ * includes productions that modify a SchemaDef in a peculiar and particular
+ * order. Other clients should only read values from this class.
  * 
  * @author peter
  */
@@ -90,14 +90,18 @@ public class SchemaDef {
         // prior definition.
         userTableMap.remove(tableName);
         currentTable = getUserTableDef(tableName);
+        currentColumn = null;
     }
 
     void addColumn(final String columnName, final String typeName,
             final String param1, final String param2) {
+        final int uposition = currentColumn == null ? 0
+                : currentColumn.uposition + 1;
         currentColumn = new ColumnDef(columnName);
         currentColumn.typeName = typeName;
         currentColumn.typeParam1 = param1;
         currentColumn.typeParam2 = param2;
+        currentColumn.uposition = uposition;
         currentTable.columns.add(currentColumn);
     }
 
@@ -326,8 +330,7 @@ public class SchemaDef {
         currentColumn.constraints.add(constraint);
     }
 
-    void finishTable()
-    {
+    void finishTable() {
         if (currentTable.primaryKey.isEmpty()) {
             // Add our own primary key
             addColumn(Column.AKIBAN_PK_NAME, "BIGINT", null, null);
@@ -505,13 +508,13 @@ public class SchemaDef {
         List<IndexDef> indexes = new ArrayList<IndexDef>();
         UserTableDef parent;
         String engine = "akibandb";
-//        int id;
+        // int id;
         private final List<IndexDefHandle> indexHandles = new ArrayList<IndexDefHandle>();
         private ColumnDef autoIncrementColumn = null;
 
         UserTableDef(final CName name, int id) {
             this.name = name;
-//            this.id = id;
+            // this.id = id;
         }
 
         public CName getCName() {
@@ -540,9 +543,9 @@ public class SchemaDef {
             return Collections.unmodifiableList(primaryKey);
         }
 
-//        public int id() {
-//            return id;
-//        }
+        // public int id() {
+        // return id;
+        // }
     }
 
     public static class IndexDef {
@@ -832,6 +835,7 @@ public class SchemaDef {
 
     /**
      * Incrementally adds a new table to the SchemaDef.
+     * 
      * @param createTableStatement
      * @return
      * @throws Exception
@@ -851,15 +855,14 @@ public class SchemaDef {
     }
 
     public static SchemaDef parseSchema(final String schema) throws Exception {
-        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(
-                schema));
+        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(schema));
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
         final SchemaDef schemaDef = new SchemaDef();
         tsparser.schema(schemaDef);
         return schemaDef;
     }
-    
+
     public static String canonicalStatement(final String s) {
         final StringBuilder sb = new StringBuilder();
         boolean sc = false;
@@ -887,7 +890,7 @@ public class SchemaDef {
         sb.insert(0, CREATE_TABLE);
         return sb.toString();
     }
-    
+
     public static IndexDef getAkibanJoin(UserTableDef table) {
         IndexDef annotatedFK = null;
         for (final IndexDef indexDef : table.indexes) {
