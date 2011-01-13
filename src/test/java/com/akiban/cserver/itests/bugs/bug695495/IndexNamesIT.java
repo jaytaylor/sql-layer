@@ -7,7 +7,6 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.util.Strings;
-import com.sun.xml.internal.messaging.saaj.util.FinalArrayList;
 import org.junit.After;
 import org.junit.Test;
 
