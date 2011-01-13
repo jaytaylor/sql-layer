@@ -1,4 +1,4 @@
-package com.akiban.cserver.itests.bugs.bug687049;
+package com.akiban.cserver.itests.bugs.bug702555;
 
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
