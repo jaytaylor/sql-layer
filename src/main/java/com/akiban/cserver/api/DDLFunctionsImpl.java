@@ -36,6 +36,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
         try {
             schemaManager().createTableDefinition(session, schema, ddlText);
         } catch (Exception e) {
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(ParseException.class, ioe);
             throw new GenericInvalidOperationException(e);
         }
     }

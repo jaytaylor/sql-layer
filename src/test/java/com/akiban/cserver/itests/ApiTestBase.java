@@ -1,8 +1,6 @@
 package com.akiban.cserver.itests;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -142,6 +140,16 @@ public class ApiTestBase extends CServerTestCase {
     protected final TableId createTable(String schema, String table, String definition) throws InvalidOperationException {
         ddl().createTable(session, schema, String.format("CREATE TABLE %s (%s)", table, definition));
         return getTableId(schema, table);
+    }
+
+    protected final TableId createTable(String schema, String table, String... definitions) throws InvalidOperationException {
+        assertTrue("must have at least one definition element", definitions.length >= 1);
+        StringBuilder unifiedDef = new StringBuilder();
+        for (String definition : definitions) {
+            unifiedDef.append(definition).append(',');
+        }
+        unifiedDef.setLength( unifiedDef.length() - 1);
+        return createTable(schema, table, unifiedDef.toString());
     }
 
     /**

@@ -2,6 +2,7 @@ package com.akiban.ais.ddl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -170,6 +171,14 @@ public class SchemaDef {
         return currentIndex;
     }
 
+    IndexDef addIndex(final String name, IndexQualifier qualifier) {
+        String actualName = name;
+        if (IndexQualifier.FOREIGN_KEY.equals(qualifier) && (currentConstraintName != null) ) {
+            actualName = currentConstraintName;
+        }
+        return addIndex(actualName);
+    }
+
     static boolean isAkiban(final IndexDef indexDef) {
         for (String constraint : indexDef.constraints) {
             if (constraint.startsWith("__akiban")) {
@@ -189,23 +198,40 @@ public class SchemaDef {
         // existing index.
 
         Map<List<IndexColumnDef>, IndexDef> columnsToIndexes = new HashMap<List<IndexColumnDef>, IndexDef>();
+        // We have to add in two passes: first, adding only non-FK, and then adding only FKs
+        List<IndexDefHandle> fkIndexHandles = new ArrayList<IndexDefHandle>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
-            if (!columnsToIndexes.containsKey(handle.real.columns)) {
-                columnsToIndexes.put(handle.real.columns, handle.real);
+            if (handle.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                fkIndexHandles.add(handle);
+                continue;
+            }
+            List<IndexColumnDef> columns = handle.real.columns;
+            if (!columnsToIndexes.containsKey(columns)) {
+                columnsToIndexes.put(columns, handle.real);
             }
         }
-        int id = 0;
+        for (IndexDefHandle handle : fkIndexHandles) {
+            List<IndexColumnDef> columns = handle.real.columns;
+            IndexDef equivalent = findEquivalentIndex(columnsToIndexes, handle.real);
+            if (equivalent != null) {
+                equivalent.addIndexAttributes(handle.real);
+                currentTable.indexHandles.remove(handle);
+            }
+            else if (!columnsToIndexes.containsKey(columns)) {
+                columnsToIndexes.put(columns, handle.real);
+            }
+        }
+
+        IndexNameGenerator indexNameGenerator = new IndexNameGenerator(currentTable.indexes);
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
-            final IndexDef equivalent = columnsToIndexes.get(real.columns);
+            final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
             if (equivalent == null) {
-                real.name = String.format("_auto_generated_index_%d", id++);
+                real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
             } else {
                 if (real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
-                    assert real.columns.equals(equivalent.columns) : real + " "
-                            + equivalent;
                     // two FK indexes, make sure they're compatible
                     if (equivalent.qualifiers
                             .contains(IndexQualifier.FOREIGN_KEY)) {
@@ -240,12 +266,42 @@ public class SchemaDef {
         provisionalIndexes.clear();
 
         // Finally, resolve all handles to their real selves
-        HashSet<IndexDef> seenDefs = new HashSet<IndexDef>();
+        Map<String,IndexDef> seenDefs = new HashMap<String,IndexDef>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
-            if (seenDefs.add(handle.real)) {
-                currentTable.indexes.add(handle.real);
+            IndexDef index = handle.real;
+            IndexDef oldIndex = seenDefs.put(index.name, index);
+            if (oldIndex == null) {
+                currentTable.indexes.add(index);
+            }
+            else {
+                index.addIndexAttributes(oldIndex);
             }
         }
+    }
+
+    private static IndexDef findEquivalentIndex(Map<List<IndexColumnDef>, IndexDef> columnsToIndexes,
+                                                IndexDef index) {
+        if(index.name != null && index.name.startsWith("__akiban")) {
+            return null;
+        }
+        List<IndexColumnDef> columns = index.columns;
+        IndexDef exact = columnsToIndexes.get(columns);
+        if (exact != null) {
+            return exact;
+        }
+        if (index.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+            for (Map.Entry<List<IndexColumnDef>, IndexDef> entry : columnsToIndexes.entrySet()) {
+                List<IndexColumnDef> testList = entry.getKey();
+                if (columnListsAreSubset(testList, columns)) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean columnListsAreSubset(List<IndexColumnDef> larger, List<IndexColumnDef> smaller) {
+        return larger.size() >= smaller.size() && larger.subList(0, smaller.size()).equals(smaller);
     }
 
     void addIndexQualifier(final IndexQualifier qualifier) {
@@ -548,6 +604,31 @@ public class SchemaDef {
         // }
     }
 
+    private static final class IndexNameGenerator {
+        private final Set<String> indexNames;
+
+        public IndexNameGenerator(Collection<IndexDef> knownIndexes) {
+            indexNames = new HashSet<String>();
+            for (IndexDef knownIndex : knownIndexes) {
+                boolean added = indexNames.add(knownIndex.name);
+                assert added : knownIndex.name;
+            }
+        }
+
+        public String generateName(IndexDef forIndex) {
+            // Brute strength. For the low number of collisions we expect, this is simpler, and probably as fast,
+            // as maintaining a Map<String,Integer> which to generate names, which we'd have to double-check are
+            // actually unique.
+            String baseName = forIndex.columns.get(0).columnName;
+            String name = baseName;
+            for(int suffixNum=2; indexNames.contains(name); ++suffixNum) {
+                name = String.format("%s_%d", baseName, suffixNum);
+            }
+            indexNames.add(name);
+            return name;
+        }
+    }
+
     public static class IndexDef {
         String name;
         Set<IndexQualifier> qualifiers = EnumSet.noneOf(IndexQualifier.class);
@@ -677,6 +758,28 @@ public class SchemaDef {
                     + (constraints != null ? constraints.hashCode() : 0);
             result = 31 * result + (comment != null ? comment.hashCode() : 0);
             return result;
+        }
+
+        void addIndexAttributes(IndexDef otherIndex) {
+            if(!columnListsAreSubset(columns, otherIndex.columns)) {
+                throw new SchemaDefException(String.format("duplicate index: %s listed with columns %s and %s",
+                        name, columns, otherIndex.columns));
+            }
+            if (referenceTable == null) {
+                referenceTable = otherIndex.referenceTable;
+                referenceColumns = otherIndex.referenceColumns;
+            } else if (otherIndex.referenceTable != null
+                    && !(
+                    referenceTable.equals(otherIndex.referenceTable)
+                            && referenceColumns.equals(otherIndex.referenceColumns))) {
+                throw new SchemaDefException(String.format("duplicate index: %s references both %s and %s",
+                        name, referenceTable, otherIndex.referenceTable));
+            }
+            if (comment == null) {
+                comment = otherIndex.comment;
+            }
+            qualifiers.addAll(otherIndex.qualifiers);
+
         }
     }
 
