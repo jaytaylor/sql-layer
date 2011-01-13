@@ -70,7 +70,7 @@ public class ApiTestBase extends CServerTestCase {
         private TestServiceServiceFactory() {
             super(false, null);
         }
-        
+
         @Override
         public Service<NetworkService> networkService() {
             return new Service<NetworkService>() {
@@ -117,7 +117,7 @@ public class ApiTestBase extends CServerTestCase {
     private ServiceManager sm;
 
     @Before
-    public void setUp() throws Exception {
+    public final void startTestServices() throws Exception {
         sm = new TestServiceManager( );
         sm.startServices();
         dml = new DMLFunctionsImpl(new LoggingServiceImpl());
@@ -125,8 +125,11 @@ public class ApiTestBase extends CServerTestCase {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public final void stopTestServices() throws Exception {
         sm.stopServices();
+        ddl = null;
+        dml = null;
+        sm = null;
     }
 
     protected final DMLFunctions dml() {
@@ -159,7 +162,7 @@ public class ApiTestBase extends CServerTestCase {
      * @param rowsExpected how many rows we expect
      * @throws InvalidOperationException for various reasons :)
      */
-    protected void expectRowCount(TableId tableId, long rowsExpected) throws InvalidOperationException {
+    protected final void expectRowCount(TableId tableId, long rowsExpected) throws InvalidOperationException {
         TableStatistics tableStats = dml().getTableStatistics(session, tableId, true);
         assertEquals("table ID", tableId.getTableId(null), tableStats.getRowDefId());
         assertEquals("rows by TableStatistics", rowsExpected, tableStats.getRowCount());
@@ -188,7 +191,7 @@ public class ApiTestBase extends CServerTestCase {
         return new RuntimeException("unexpected exception", cause);
     }
 
-    protected List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
+    protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
         Session session = new SessionImpl();
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, request);
@@ -200,17 +203,17 @@ public class ApiTestBase extends CServerTestCase {
         return output.getRows();
     }
 
-    protected void writeRows(NewRow... rows) throws InvalidOperationException {
+    protected final void writeRows(NewRow... rows) throws InvalidOperationException {
         for (NewRow row : rows) {
             dml().writeRow(session, row);
         }
     }
 
-    protected void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
+    protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
 
-    protected void expectFullRows(TableId tableId, NewRow... expectedRows) throws InvalidOperationException {
+    protected final void expectFullRows(TableId tableId, NewRow... expectedRows) throws InvalidOperationException {
         Table uTable = ddl().getAIS(session).getTable( ddl().getTableName(tableId) );
         Set<ColumnId> allCols = new HashSet<ColumnId>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
