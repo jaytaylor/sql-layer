@@ -27,6 +27,44 @@ public final class TableAndColumnDuplicationIT extends ApiTestBase {
         doTest("tbl1", "id1", "tbl2", "id2");
     }
 
+    /**
+     * A potentially more subtle problem. No duplicate key exceptions are thrown, because the two tables have
+     * inherently incompatible primary keys. But data gets written to the same tree, and thus a read stumbles
+     * across rows it shouldn't see
+     * @throws InvalidOperationException if any CRUD operation fails
+     */
+    @Test
+    public void noDuplicateKeyButIncompatibleRows() throws InvalidOperationException {
+        final TableId schema1Table
+                = createTable("schema1", "table1", "id int key");
+        final TableId schema2Table =
+                createTable("schema2","table1", "name varchar(32) key");
+
+        writeRows(
+                createNewRow(schema1Table, 0L),
+                createNewRow(schema1Table, 1L),
+                createNewRow(schema1Table, 2L)
+        );
+
+        writeRows(
+                createNewRow(schema2Table, "first row"),
+                createNewRow(schema2Table, "second row"),
+                createNewRow(schema2Table, "third row")
+        );
+
+        expectFullRows(schema1Table,
+                createNewRow(schema1Table, 0L),
+                createNewRow(schema1Table, 1L),
+                createNewRow(schema1Table, 2L)
+        );
+        
+        expectFullRows(schema2Table,
+                createNewRow(schema2Table, "first row"),
+                createNewRow(schema2Table, "second row"),
+                createNewRow(schema2Table, "third row")
+        );
+    }
+
     private void doTest(String schema1TableName, String schema1TableKeyCol,
                         String schema2TableName, String schema2TableKeyCol) throws InvalidOperationException
     {
