@@ -227,11 +227,7 @@
             <configuration>
                 <generateHistorical>true</generateHistorical>
                 <historyDir>/clover/history</historyDir>
-                <license><![CDATA[PpMOqBXixXwmrECcCXcNWMiPdoNUxGimeeaAxQLAHXjuxGq
-                    mj2L00k1BlPcP>5lr6tcyjP5U2KJ>74Tfqpr3R>yJZm5IOW
-                    rqortTONOOQqqprRPqnuVOQmPNRMMqqnnnVVTXusxXowuUx
-                    xMnmnmUUnotqnmqummmmmUUnotqnmqummmmmUUXhfYXkWfk
-                    ZUUn]]></license>
+                <license>${clover.license}</license>
                 <generateXml>true</generateXml>
             </configuration>
         </plugin>
