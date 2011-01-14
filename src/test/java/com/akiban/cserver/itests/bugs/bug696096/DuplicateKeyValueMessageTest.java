@@ -28,36 +28,44 @@ public final class DuplicateKeyValueMessageTest extends ApiTestBase {
     }
 
     @Test(expected=DuplicateKeyException.class)
-    public void primaryDuplicate() throws DuplicateKeyException {
+    public void primaryDuplicate() {
         expectDuplicateKeyException("PRIMARY", 0, 11, 12, 13);
     }
 
     @Test(expected=DuplicateKeyException.class)
-    public void twoColumnKeyDuplicate() throws DuplicateKeyException {
+    public void twoColumnKeyDuplicate() {
         expectDuplicateKeyException("c1", 10, 1, 2, 13);
     }
 
     @Test(expected=DuplicateKeyException.class)
-    public void oneColumnKeyDuplicate() throws DuplicateKeyException {
+    public void oneColumnKeyDuplicate() {
         expectDuplicateKeyException("my_key", 10, 11, 12, 3);
     }
 
     @Test(expected=DuplicateKeyException.class)
-    public void multipleDuplications() throws DuplicateKeyException {
+    public void multipleDuplications() {
         expectDuplicateKeyException("PRIMARY", 0, 1, 2, 3);
     }
 
-    private void expectDuplicateKeyException(String indexName, int c0, int c1, int c2, int c3)
-            throws DuplicateKeyException
-    {
-        try{
+    private static boolean dupMessageValid(DuplicateKeyException e, String indexName) {
+        return e.getMessage().contains(indexName);
+    }
+
+    private void expectDuplicateKeyException(String indexName, int c0, int c1, int c2, int c3) {
+        try {
             writeRows(createNewRow(tableId, c0, c1, c2, c3));
         } catch (DuplicateKeyException e) {
-            assertTrue(String.format("expected message to contain <%s>, but was <%s>", indexName, e.getMessage()),
-                    e.getMessage().contains(indexName));
-            throw e;
+            if (!dupMessageValid(e, indexName)) {
+                String errString = String.format("expected message to contain <%s>, but was <%s>",
+                        indexName, e.getMessage()
+                );
+                e.printStackTrace();
+                fail(errString);
+            }
+            return;
         } catch (InvalidOperationException e) {
             throw new TestException("unexpected exception", e);
         }
+        fail("Excpected DuplicateKeyExcepton");
     }
 }
