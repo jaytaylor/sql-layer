@@ -14,6 +14,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.PrimaryKey;
@@ -220,6 +221,32 @@ public class RowDefCache implements CServerConstants {
     private static String getTreeName(GroupTable groupTable) {
         return groupTable.getName().toString();
     }
+    
+    private static String getTreeName(String groupName, Index index) {
+        IndexName iname = index.getIndexName();
+        String schemaName = iname.getSchemaName();
+        String tableName = iname.getTableName();
+        String indexName = iname.getName();
+
+        // Tree names for identical indexes on the group and user table must match.
+        // Check if this index originally came from a user table and, if so, use their
+        // names instead.
+        if (index.getTable().isGroupTable()) {
+            Column c = index.getColumns().get(0).getColumn().getUserColumn();
+            if (c != null) {
+                UserTable table = c.getUserTable();
+                for(Index i : table.getIndexes()) {
+                    if(i.getIndexId() == index.getIndexId()) {
+                        tableName = table.getName().getTableName();
+                        indexName = i.getIndexName().getName();
+                        break;
+                    }
+                }
+            }
+        }
+
+        return String.format("%s$$%s$$%s$$%s", groupName, schemaName, tableName, indexName);
+    }
 
     private RowDef createUserTableRowDef(AkibaInformationSchema ais,
             UserTable table) {
@@ -264,7 +291,7 @@ public class RowDefCache implements CServerConstants {
         for (Index index : table.getIndexes()) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (!indexColumns.isEmpty()) {
-                String treeName = groupTableName + "$$" + index.getIndexId();
+                String treeName = getTreeName(groupTableName, index);
                 IndexDef indexDef = new IndexDef(treeName, rowDef, index);
                 if (index.isPrimaryKey()) {
                     indexDefList.add(0, indexDef);
@@ -308,7 +335,7 @@ public class RowDefCache implements CServerConstants {
         for (Index index : table.getIndexes()) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (!indexColumns.isEmpty()) {
-                String treeName = groupTableName + "$$" + index.getIndexId();
+                String treeName = getTreeName(groupTableName, index);
                 IndexDef indexDef = new IndexDef(treeName, rowDef, index);
                 indexDefList.add(indexDef);
             } // else: Don't create a group table index for an artificial
