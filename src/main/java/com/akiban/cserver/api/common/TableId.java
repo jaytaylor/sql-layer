@@ -1,5 +1,7 @@
 package com.akiban.cserver.api.common;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.TableName;
@@ -25,12 +27,14 @@ import com.akiban.util.CacheMap;
 public class TableId {
 
     @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-    private final static CacheMap<Integer,TableId> cache = new CacheMap<Integer, TableId>(new CacheMap.Allocator<Integer,TableId>() {
-        @Override
-        public TableId allocateFor(Integer key) {
-            return new TableId(key);
-        }
-    });
+    private final static Map<Integer, TableId> cache = Collections.synchronizedMap(
+            new CacheMap<Integer, TableId>(new CacheMap.Allocator<Integer, TableId>() {
+                @Override
+                public TableId allocateFor(Integer key) {
+                    return new TableId(key);
+                }
+            })
+    );
     
     private final AtomicReference<Integer> tableId = new AtomicReference<Integer>();
     private final TableName tableName;
