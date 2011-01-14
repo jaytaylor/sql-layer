@@ -523,6 +523,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
+            throwIfInstanceOf(DuplicateKeyException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }
