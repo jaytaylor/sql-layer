@@ -256,4 +256,19 @@ public class ApiTestBase extends CServerTestCase {
         }
         Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
     }
+
+    protected static class TestException extends RuntimeException {
+        private final InvalidOperationException cause;
+
+        public TestException(String message, InvalidOperationException cause) {
+            super(message, cause);
+            this.cause = cause;
+        }
+
+        @Override
+        public InvalidOperationException getCause() {
+            assert super.getCause() == cause;
+            return cause;
+        }
+    }
 }
