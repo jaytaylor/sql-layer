@@ -496,7 +496,7 @@ public class RowData {
                 sb.append("\" : ");
 
                 if(location != 0) {
-                    fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.DOUBLE_QUOTE);
+                    fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
                 }   
                 else {
                     sb.append("null");

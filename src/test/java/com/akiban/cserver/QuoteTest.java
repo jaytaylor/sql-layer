@@ -5,7 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class QuoteTest {
-    private static final String TEST_STRING = "world\\ isn't this \" a quote?";
+    private static final String TEST_STRING = "world\\ isn't this \" a quote?\u0001";
     @Test
     public void testNoneEncoding() {
         StringBuilder sb = new StringBuilder("hello ");
@@ -20,7 +20,7 @@ public class QuoteTest {
         StringBuilder sb = new StringBuilder("hello ");
         Quote.DOUBLE_QUOTE.append(sb, TEST_STRING);
 
-        assertEquals("encoded string", "hello \"world\\\\ isn't this \\\" a quote?\"", sb.toString());
+        assertEquals("encoded string", "hello \"world\\\\ isn't this \\\" a quote?\u0001\"", sb.toString());
     }
 
     @Test
@@ -28,6 +28,14 @@ public class QuoteTest {
         StringBuilder sb = new StringBuilder("hello ");
         Quote.SINGLE_QUOTE.append(sb, TEST_STRING);
 
-        assertEquals("encoded string", "hello 'world\\\\ isn\\'t this \" a quote?'", sb.toString());
+        assertEquals("encoded string", "hello 'world\\\\ isn\\'t this \" a quote?\u0001'", sb.toString());
+    }
+
+    @Test
+    public void testJSONEncoding() {
+        StringBuilder sb = new StringBuilder("hello ");
+        Quote.JSON_QUOTE.append(sb, TEST_STRING);
+
+        assertEquals("encoded string", "hello \"world\\\\ isn't this \\\" a quote?\\u0001\"", sb.toString());
     }
 }
