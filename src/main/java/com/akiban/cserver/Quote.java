@@ -17,7 +17,7 @@ public enum Quote {
             sb.append('\'');
             for (int i = 0; i < s.length(); i++) {
                 char ch = s.charAt(i);
-                if (ch == '\"') {
+                if (ch == '\"' || ch == '\\') {
                     sb.append('\\');
                 }
                 sb.append(ch);
@@ -35,7 +35,7 @@ public enum Quote {
             sb.append('\"');
             for (int i = 0; i < s.length(); i++) {
                 char ch = s.charAt(i);
-                if (ch == '\"') {
+                if (ch == '\"' || ch == '\\') {
                     sb.append('\\');
                 }
                 sb.append(ch);
