@@ -1,18 +1,22 @@
 package com.akiban.cserver.api.common;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.Map;
 
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.CacheMap;
 
 public final class ColumnId extends ByteBufferWriter implements Comparable<ColumnId> {
 
-    private final static CacheMap<Integer,ColumnId> cache = new CacheMap<Integer, ColumnId>(new CacheMap.Allocator<Integer,ColumnId>() {
-        @Override
-        public ColumnId allocateFor(Integer key) {
-            return new ColumnId(key);
-        }
-    });
+    private final static Map<Integer, ColumnId> cache = Collections.synchronizedMap(
+            new CacheMap<Integer, ColumnId>(new CacheMap.Allocator<Integer, ColumnId>() {
+                @Override
+                public ColumnId allocateFor(Integer key) {
+                    return new ColumnId(key);
+                }
+            })
+    );
 
     private final int columnPosition;
 

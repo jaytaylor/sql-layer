@@ -52,6 +52,7 @@ public final class CacheMapTest {
         assertEquals("map[1]", "allocated key 1", result);
         assertEquals("allocations", 1, map.allocations);
         assertSame("second call", result, map.get(1));
+        assertEquals("allocations", 1, map.allocations);
         assertSame("removing", result, map.remove(1));
 
         final String result2 = map.get(1);
