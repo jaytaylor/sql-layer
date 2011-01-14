@@ -31,10 +31,6 @@ public final class CacheMapTest {
             super(size, kvAllocator);
         }
 
-        private HookedCacheMap(int size, Allocator<K, V> kvAllocator, Map<K, V> backingMap) {
-            super(size, kvAllocator, backingMap);
-        }
-
         @Override
         protected void allocatorHook() {
             ++allocations;
@@ -114,6 +110,7 @@ public final class CacheMapTest {
 
         Map<Integer,String> expectedMap = new HashMap<Integer, String>();
         expectedMap.put(2, "allocated key 2");
+        assertEquals("size", 1, map.size());
         assertEquals("map values", expectedMap, map);
         assertEquals("allocations", 1, map.allocations);
     }
@@ -124,16 +121,18 @@ public final class CacheMapTest {
         assertNull("expected null", map.get(1));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void nullKey() {
         CacheMap<Integer,String> map = new CacheMap<Integer, String>(null);
         map.put(null, "hello");
+        assertEquals("get(null)", "hello", map.get(null));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void nullValue() {
         CacheMap<Integer,String> map = new CacheMap<Integer, String>(null);
         map.put(1, null);
+        assertEquals("null value", null, map.get(1));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -144,11 +143,6 @@ public final class CacheMapTest {
     @Test(expected=IllegalArgumentException.class)
     public void sizeIsNegative() {
         new CacheMap<Integer, String>(-10);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void nullBackingMap() {
-        new CacheMap<Integer, String>(1, null, null);
     }
 
     @Test(expected=ClassCastException.class)
