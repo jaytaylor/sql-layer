@@ -1,10 +1,7 @@
 package com.akiban.util;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * <p>A caching map based on a LRU algorithm. In addition to providing caches, this map also lets you define default
@@ -22,7 +19,7 @@ import java.util.Set;
  * @param <K>
  * @param <V>
  */
-public class CacheMap<K,V> implements Map<K,V> {
+public class CacheMap<K,V> extends LinkedHashMap<K,V> {
     /**
      * Creates a value V for a key K, if needed.
      * @param <K> the key type
@@ -34,8 +31,6 @@ public class CacheMap<K,V> implements Map<K,V> {
 
     private final int maxSize;
     private final Allocator<K,V> allocator;
-    private final Map<K,V> intern;
-    private final ArrayDeque<K> lruList;
 
     public CacheMap() {
         this(null);
@@ -50,44 +45,18 @@ public class CacheMap<K,V> implements Map<K,V> {
     }
 
     public CacheMap(int size, Allocator<K,V> allocator) {
-        this(size, allocator, new HashMap<K,V>(size, 1.0f));
-    }
-
-    public CacheMap(int size, Allocator<K,V> allocator, Map<K,V> backingMap) {
+        super(size, .75f, true);
         ArgumentValidation.isGTE("size", size, 1);
-        ArgumentValidation.notNull("backing map", backingMap);
         
         this.maxSize = size;
         this.allocator = allocator;
-        this.intern = backingMap;
-        this.lruList = new ArrayDeque<K>(size);
-    }
-
-    @Override
-    public int size() {
-        return intern.size();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return intern.isEmpty();
-    }
-
-    @Override
-    public boolean containsKey(Object key) {
-        return intern.containsKey(key);
-    }
-
-    @Override
-    public boolean containsValue(Object value) {
-        return intern.containsValue(value);
     }
 
     @Override
     public V get(Object key) {
-        V ret = intern.get(key);
+        V ret = super.get(key);
         if ( (ret == null) && (allocator != null) ) {
-            @SuppressWarnings("unchecked") K kKey = (K)key;
+            @SuppressWarnings("unchecked") K kKey = (K)key; // should throw ClassCastException if invalid type
             ret = allocator.allocateFor(kKey);
             allocatorHook();
             V shouldBeNull = put(kKey, ret);
@@ -100,65 +69,7 @@ public class CacheMap<K,V> implements Map<K,V> {
     {}
 
     @Override
-    public V put(K key, V value) {
-        ArgumentValidation.notNull("CacheMap key", key);
-        ArgumentValidation.notNull("CacheMap value", value);
-        final V old = intern.put(key, value);
-        lruList.addFirst(key);
-        if (intern.size() > maxSize) {
-            K removeMe = lruList.removeLast();
-            V removed = intern.remove(removeMe);
-            assert removed != null : removeMe;
-        }
-
-        return old;
-    }
-
-    @Override
-    public V remove(Object key) {
-        return intern.remove(key);
-    }
-
-    @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
-        for (Map.Entry<? extends K,? extends V> entry : m.entrySet()) {
-            put(entry.getKey(), entry.getValue());
-        }
-    }
-
-    @Override
-    public void clear() {
-        intern.clear();
-    }
-
-    @Override
-    public Set<K> keySet() {
-        return intern.keySet();
-    }
-
-    @Override
-    public Collection<V> values() {
-        return intern.values();
-    }
-
-    @Override
-    public Set<Entry<K, V>> entrySet() {
-        return intern.entrySet();
-    }
-
-    @Override
-    public int hashCode() {
-        return intern.hashCode();
-    }
-
-    @SuppressWarnings({"EqualsWhichDoesntCheckParameterClass"})
-    @Override
-    public boolean equals(Object obj) {
-        return intern.equals(obj);
-    }
-
-    @Override
-    public String toString() {
-        return intern.toString();
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return size() > maxSize;
     }
 }
