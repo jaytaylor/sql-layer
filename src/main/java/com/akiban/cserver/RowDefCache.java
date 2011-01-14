@@ -228,8 +228,9 @@ public class RowDefCache implements CServerConstants {
         String tableName = iname.getTableName();
         String indexName = iname.getName();
 
-        // Tree names for identical indexes on the group and user table must match
-        // Change to the user table and index names if this is really a user index
+        // Tree names for identical indexes on the group and user table must match.
+        // Check if this index originally came from a user table and, if so, use their
+        // names instead.
         if (index.getTable().isGroupTable()) {
             Column c = index.getColumns().get(0).getColumn().getUserColumn();
             if (c != null) {
