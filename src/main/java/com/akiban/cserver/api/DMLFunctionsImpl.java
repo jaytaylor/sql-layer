@@ -473,6 +473,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             store().writeRow(session, rowData);
             return null;
         } catch (Exception e) {
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(DuplicateKeyException.class, ioe);
             throw new GenericInvalidOperationException(e);
         }
     }
