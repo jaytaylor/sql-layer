@@ -81,11 +81,12 @@ public final class DuplicateKeyValueMessageTest extends ApiTestBase {
     }
 
     private static void dupMessageValid(DuplicateKeyException e, String indexName) {
-        boolean messageIsValid = e.getMessage().contains(indexName);
+        final String expectedMessagePrefix = "DUPLICATE_KEY: Non-unique key for index " + indexName;
+        boolean messageIsValid = e.getMessage().startsWith(expectedMessagePrefix);
 
         if (!messageIsValid) {
-            String errString = String.format("expected message to contain <%s>, but was <%s>",
-                    indexName, e.getMessage()
+            String errString = String.format("expected message to start with <%s>, but was <%s>",
+                    expectedMessagePrefix, e.getMessage()
             );
             e.printStackTrace();
             fail(errString);
