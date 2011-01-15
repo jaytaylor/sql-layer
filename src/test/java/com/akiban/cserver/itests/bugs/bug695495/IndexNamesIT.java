@@ -351,19 +351,4 @@ public final class IndexNamesIT extends ApiTestBase {
         }
         assertEquals(indexName + " columns", actualColumns, expectedColumnsList);
     }
-
-    private static class TestException extends RuntimeException {
-        private final InvalidOperationException cause;
-
-        private TestException(String message, InvalidOperationException cause) {
-            super(message, cause);
-            this.cause = cause;
-        }
-
-        @Override
-        public InvalidOperationException getCause() {
-            assert super.getCause() == cause;
-            return cause;
-        }
-    }
 }

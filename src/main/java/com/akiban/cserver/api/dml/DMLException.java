@@ -5,7 +5,7 @@ import com.akiban.message.ErrorCode;
 
 public class DMLException extends InvalidOperationException {
     protected DMLException(InvalidOperationException cause) {
-        super(cause.getCode(), cause.getMessage(), cause);
+        super(cause.getCode(), cause.getShortMessage(), cause);
     }
 
     protected DMLException(ErrorCode code, String message) {
