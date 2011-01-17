@@ -147,24 +147,29 @@ public class SchemaDef {
                 nextPrevious = null;
             }
         }
-        else switch (currColumnOption) {
-            case KEY:
-                if (prevColumnOption == ColumnOption.UNIQUE) {
-                    inlineUniqueKey(); // UNIQUE KEY
-                }
-                else {
-                    inlineColumnPK(); // Foo KEY or PRIMARY KEY
-                }
-                nextPrevious = null;
-                break;
-            case PRIMARY:
-                nextPrevious = ColumnOption.PRIMARY;
-                break;
-            case UNIQUE:
-                nextPrevious = ColumnOption.UNIQUE;
-                break;
-            default:
-                throw new SchemaDefException("Unknown option: " + currColumnOption);
+        else {
+            switch (currColumnOption) {
+                case KEY:
+                    if (prevColumnOption == ColumnOption.UNIQUE) {
+                        inlineUniqueKey(); // UNIQUE KEY
+                    }
+                    else {
+                        inlineColumnPK(); // Foo KEY or PRIMARY KEY
+                    }
+                    nextPrevious = null;
+                    break;
+                case PRIMARY:
+                    nextPrevious = ColumnOption.PRIMARY;
+                    break;
+                case UNIQUE:
+                    nextPrevious = ColumnOption.UNIQUE;
+                    break;
+                default:
+                    throw new SchemaDefException("Unknown option: " + currColumnOption);
+            }
+            if(prevColumnOption == ColumnOption.PRIMARY && currColumnOption != ColumnOption.KEY) {
+                throw new SchemaDefException("PRIMARY must be followed by KEY");
+            }
         }
         prevColumnOption = nextPrevious;
         currColumnOption = null;

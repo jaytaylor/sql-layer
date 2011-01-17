@@ -1,7 +1,9 @@
 package com.akiban.cserver.itests.bugs.bug695544;
 
+import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.After;
@@ -36,11 +38,40 @@ public final class ParsingUNIQUETest extends ApiTestBase {
     }
 
     @Test
-    public void UNIQUE_PRIMARY_KEY() throws InvalidOperationException {
+    public void UNIQUE_KEY_UNIQUE_UNIQUE() throws InvalidOperationException {
+        create( "id int key",
+                "c1 int UNIQUE KEY UNIQUE UNIQUE");
+        testInserts();
+        testIndex("c1");
+    }
+
+    @Test
+    public void KEY_KEY_KEY_UNIQUE() throws InvalidOperationException {
         create( "id int",
+                "c1 int KEY KEY KEY UNIQUE");
+        testInserts();
+        expectIndexes(tableId, "PRIMARY", "c1");
+        expectIndexColumns(tableId, "PRIMARY", "c1");
+        expectIndexColumns(tableId, "c1", "c1");
+    }
+
+    @Test
+    public void UNIQUE_PRIMARY_KEY() throws InvalidOperationException {
+        create("id int",
                 "c1 int UNIQUE PRIMARY KEY");
         testInserts();
-        testIndex("PRIMARY");
+        expectIndexes(tableId, "PRIMARY");
+        expectIndexColumns(tableId, "PRIMARY", "c1");
+    }
+
+    @Test(expected=ParseException.class)
+    public void fail_PRIMARY() throws InvalidOperationException {
+        create("id int primary");
+    }
+
+    @Test(expected=ParseException.class)
+    public void fail_PRIMARY_UNIQUE_KEY() throws InvalidOperationException {
+        create("id int primary unique key");
     }
 
     @Test
@@ -98,13 +129,8 @@ public final class ParsingUNIQUETest extends ApiTestBase {
     }
 
     private void testIndex(String indexName) {
-        if("PRIMARY".equals(indexName)) {
-            expectIndexes(tableId, "PRIMARY");
-        }
-        else {
-            expectIndexes(tableId, "PRIMARY", indexName);
-            expectIndexColumns(tableId, "PRIMARY", "id");
-        }
+        expectIndexes(tableId, "PRIMARY", indexName);
+        expectIndexColumns(tableId, "PRIMARY", "id");
         expectIndexColumns(tableId, indexName, "c1");
     }
 }
