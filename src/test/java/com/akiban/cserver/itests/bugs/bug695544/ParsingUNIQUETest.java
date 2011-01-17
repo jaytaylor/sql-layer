@@ -46,10 +46,28 @@ public final class ParsingUNIQUETest extends ApiTestBase {
     }
 
     @Test
-    public void fullerConstraintUNIQUE() throws InvalidOperationException {
+    public void fullerConstraintUNIQUE_INDEX() throws InvalidOperationException {
         create( "id int key",
                 "c1 int",
                 "CONSTRAINT my_uniqueness_constraint UNIQUE INDEX my_uniqueness_index (c1)");
+        testInserts();
+        testIndex("my_uniqueness_index");
+    }
+
+    @Test
+    public void fullerConstraintUNIQUE_KEY() throws InvalidOperationException {
+        create( "id int key",
+                "c1 int",
+                "CONSTRAINT my_uniqueness_constraint UNIQUE KEY my_uniqueness_index (c1)");
+        testInserts();
+        testIndex("my_uniqueness_index");
+    }
+
+    @Test
+    public void fullerConstraintUNIQUE() throws InvalidOperationException {
+        create( "id int key",
+                "c1 int",
+                "CONSTRAINT my_uniqueness_constraint UNIQUE my_uniqueness_index (c1)");
         testInserts();
         testIndex("my_uniqueness_index");
     }
