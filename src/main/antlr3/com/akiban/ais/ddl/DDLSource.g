@@ -189,7 +189,7 @@ other_key_specification[SchemaDef schema]
 	;
 
 foreign_key_specification[SchemaDef schema]
-	: FOREIGN KEY qn1=qname? {$schema.addIndex($qn1.name);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.FOREIGN_KEY);} 
+	: FOREIGN KEY qn1=qname? {$schema.addIndex($qn1.name, SchemaDef.IndexQualifier.FOREIGN_KEY);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.FOREIGN_KEY);} 
 		index_type[$schema]?
 	    LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 		REFERENCES refTable=cname[$schema] {$schema.setIndexReference(refTable);}

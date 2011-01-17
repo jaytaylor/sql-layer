@@ -1,0 +1,1 @@
+${project.version}.${BZR_REVISION}

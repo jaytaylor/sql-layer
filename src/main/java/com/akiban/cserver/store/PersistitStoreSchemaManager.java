@@ -992,8 +992,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             return new SchemaDef().parseCreateTable(canonical);
         } catch (Exception e1) {
             throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
-                    "[%s] %s: %s", defaultSchemaName, e1.getMessage(),
-                    canonical);
+                    String.format("[%s] %s: %s", defaultSchemaName, e1.getMessage(), canonical),
+                    e1);
         }
     }
 

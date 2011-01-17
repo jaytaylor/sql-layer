@@ -1,6 +1,7 @@
 akiban-cserver.iml
 akiban-cserver.ipr
 akiban-cserver.iws
+src/main/antlr3/com/akiban/ais/ddl/output/
 target
 velocity.log
 debian/debhelper.log
