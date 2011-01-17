@@ -1,18 +1,19 @@
 package com.akiban.cserver.itests;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 
@@ -69,7 +70,7 @@ public class ApiTestBase extends CServerTestCase {
         private TestServiceServiceFactory() {
             super(false, null);
         }
-        
+
         @Override
         public Service<NetworkService> networkService() {
             return new Service<NetworkService>() {
@@ -116,7 +117,7 @@ public class ApiTestBase extends CServerTestCase {
     private ServiceManager sm;
 
     @Before
-    public void setUp() throws Exception {
+    public final void startTestServices() throws Exception {
         sm = new TestServiceManager( );
         sm.startServices();
         dml = new DMLFunctionsImpl(new LoggingServiceImpl());
@@ -124,8 +125,11 @@ public class ApiTestBase extends CServerTestCase {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public final void stopTestServices() throws Exception {
         sm.stopServices();
+        ddl = null;
+        dml = null;
+        sm = null;
     }
 
     protected final DMLFunctions dml() {
@@ -141,6 +145,16 @@ public class ApiTestBase extends CServerTestCase {
         return getTableId(schema, table);
     }
 
+    protected final TableId createTable(String schema, String table, String... definitions) throws InvalidOperationException {
+        assertTrue("must have at least one definition element", definitions.length >= 1);
+        StringBuilder unifiedDef = new StringBuilder();
+        for (String definition : definitions) {
+            unifiedDef.append(definition).append(',');
+        }
+        unifiedDef.setLength( unifiedDef.length() - 1);
+        return createTable(schema, table, unifiedDef.toString());
+    }
+
     /**
      * Expects an exact number of rows. This checks both the countRowExactly and countRowsApproximately
      * methods on DMLFunctions.
@@ -148,7 +162,7 @@ public class ApiTestBase extends CServerTestCase {
      * @param rowsExpected how many rows we expect
      * @throws InvalidOperationException for various reasons :)
      */
-    protected void expectRowCount(TableId tableId, long rowsExpected) throws InvalidOperationException {
+    protected final void expectRowCount(TableId tableId, long rowsExpected) throws InvalidOperationException {
         TableStatistics tableStats = dml().getTableStatistics(session, tableId, true);
         assertEquals("table ID", tableId.getTableId(null), tableStats.getRowDefId());
         assertEquals("rows by TableStatistics", rowsExpected, tableStats.getRowCount());
@@ -177,7 +191,7 @@ public class ApiTestBase extends CServerTestCase {
         return new RuntimeException("unexpected exception", cause);
     }
 
-    protected List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
+    protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
         Session session = new SessionImpl();
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, request);
@@ -189,17 +203,17 @@ public class ApiTestBase extends CServerTestCase {
         return output.getRows();
     }
 
-    protected void writeRows(NewRow... rows) throws InvalidOperationException {
+    protected final void writeRows(NewRow... rows) throws InvalidOperationException {
         for (NewRow row : rows) {
             dml().writeRow(session, row);
         }
     }
 
-    protected void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
+    protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
 
-    protected void expectFullRows(TableId tableId, NewRow... expectedRows) throws InvalidOperationException {
+    protected final void expectFullRows(TableId tableId, NewRow... expectedRows) throws InvalidOperationException {
         Table uTable = ddl().getAIS(session).getTable( ddl().getTableName(tableId) );
         Set<ColumnId> allCols = new HashSet<ColumnId>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
@@ -226,5 +240,20 @@ public class ApiTestBase extends CServerTestCase {
             row.put(ColumnId.of(i), columns[i] );
         }
         return row;
+    }
+
+    protected final void dropAllTables() throws InvalidOperationException {
+        for (TableName tableName : ddl().getAIS(session).getUserTables().keySet()) {
+            if (!"akiba_information_schema".equals(tableName.getSchemaName())) {
+                ddl().dropTable(session, TableId.of(tableName.getSchemaName(), tableName.getTableName()));
+            }
+        }
+        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
+        for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
+            if ("akiba_information_schema".equals(iter.next().getSchemaName())) {
+                iter.remove();
+            }
+        }
+        Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
     }
 }

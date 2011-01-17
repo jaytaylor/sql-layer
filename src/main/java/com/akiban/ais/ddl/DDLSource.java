@@ -432,7 +432,7 @@ public class DDLSource extends Source {
      * @param indexDef
      * @return
      */
-    private String generateIndexName(
+    private static String generateIndexName(
             final Map<String, AtomicInteger> namingMap, final IndexDef indexDef) {
         final String firstColumnName = indexDef.columns.get(0).columnName;
         AtomicInteger count = namingMap.get(firstColumnName);

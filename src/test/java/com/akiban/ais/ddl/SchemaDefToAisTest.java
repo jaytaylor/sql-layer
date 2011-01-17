@@ -143,7 +143,7 @@ public class SchemaDefToAisTest {
         assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
-        assertEquals("index[0] name", "_auto_generated_index_0",
+        assertEquals("index[0] name", "__akiban_fk",
                 tableDef.indexes.get(0).name);
         assertEquals("index[0] constraints", 1,
                 tableDef.indexes.get(0).constraints.size());
@@ -206,7 +206,7 @@ public class SchemaDefToAisTest {
         assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
-        assertEquals("index[0] name", "__akiban_index",
+        assertEquals("index[0] name", "__akiban_fk",
                 tableDef.indexes.get(0).name);
         assertEquals("index[0] constraints", 1,
                 tableDef.indexes.get(0).constraints.size());
@@ -270,34 +270,6 @@ public class SchemaDefToAisTest {
         SchemaDef.ColumnDef expected = new SchemaDef.ColumnDef(name, typeName,
                 param1, param2, nullable, autoIncrement, constraints);
         assertEquals("column " + which, expected, actual);
-    }
-
-    @Test
-    public void fKFullDescription() throws Exception {
-        SchemaDef def = parseCO(true, "my_constraint0", "my_index0");
-        testCOCommon(def);
-        testOrder(def, "my_constraint0", "my_index0");
-    }
-
-    @Test
-    public void fKHasConstraintNoIndex() throws Exception {
-        SchemaDef def = parseCO(true, "my_constraint0", null);
-        testCOCommon(def);
-        testOrder(def, "my_constraint0", null);
-    }
-
-    @Test
-    public void fKNoConstraintHasIndex() throws Exception {
-        SchemaDef def = parseCO(true, null, "my_index1");
-        testCOCommon(def);
-        testOrder(def, null, "my_index1");
-    }
-
-    @Test
-    public void fKNoConstraintOrIndex() throws Exception {
-        SchemaDef def = parseCO(true, null, null);
-        testCOCommon(def);
-        testOrder(def, null, null);
     }
 
     @Test

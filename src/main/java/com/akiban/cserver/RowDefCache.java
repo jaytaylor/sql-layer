@@ -217,6 +217,10 @@ public class RowDefCache implements CServerConstants {
         }
     }
 
+    private static String getTreeName(GroupTable groupTable) {
+        return groupTable.getName().toString();
+    }
+
     private RowDef createUserTableRowDef(AkibaInformationSchema ais, UserTable table) {
         RowDef rowDef = new RowDef(table);
         // parentRowDef
@@ -243,11 +247,15 @@ public class RowDefCache implements CServerConstants {
 
         // group table name
         String groupTableName = null;
+        String groupTableTreeName = null;
         for (final GroupTable groupTable : ais.getGroupTables().values()) {
             if (groupTable.getRoot().equals(root)) {
                 groupTableName = groupTable.getName().getTableName();
+                groupTableTreeName = getTreeName(groupTable);
             }
         }
+        assert groupTableName != null : root;
+        assert groupTableTreeName != null : root;
 
         // Secondary indexes
         List<IndexDef> indexDefList = new ArrayList<IndexDef>();
@@ -264,7 +272,7 @@ public class RowDefCache implements CServerConstants {
             } // else: Don't create an index for an artificial IndexDef that has
               // no fields.
         }
-        rowDef.setTreeName(groupTableName);
+        rowDef.setTreeName(groupTableTreeName);
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
                 .size()]));
@@ -292,6 +300,7 @@ public class RowDefCache implements CServerConstants {
             userTableRowDefs[i++] = cacheMap.get(userTableRowDefId);
         }
         final String groupTableName = table.getName().getTableName();
+        final String groupTableTreeName = getTreeName(table);
         // Secondary indexes
         final List<IndexDef> indexDefList = new ArrayList<IndexDef>();
         for (Index index : table.getIndexes()) {
@@ -303,7 +312,7 @@ public class RowDefCache implements CServerConstants {
             } // else: Don't create a group table index for an artificial
               // IndeDef that has no fields.
         }
-        rowDef.setTreeName(groupTableName);
+        rowDef.setTreeName(groupTableTreeName);
         rowDef.setUserTableRowDefs(userTableRowDefs);
         rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
                 .size()]));

@@ -1,5 +1,6 @@
 package com.akiban.util;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
