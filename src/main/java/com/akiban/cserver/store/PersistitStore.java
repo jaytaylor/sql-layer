@@ -424,9 +424,7 @@ public class PersistitStore implements CServerConstants, Store {
                     //
                     constructHKey(session, hEx, rowDef, rowData, true);
                     if (hEx.isValueDefined()) {
-                        throw new InvalidOperationException(
-                                ErrorCode.DUPLICATE_KEY, "Non-unique key: %s",
-                                hEx.getKey());
+                        complainAboutDuplicateKey("PRIMARY", hEx.getKey());
                     }
 
                     packRowData(hEx, rowDef, rowData);
@@ -489,6 +487,13 @@ public class PersistitStore implements CServerConstants, Store {
             releaseExchange(session, hEx);
             WRITE_ROW_TAP.out();
         }
+    }
+
+    private void complainAboutDuplicateKey(String indexName, Key hkey) throws InvalidOperationException {
+        throw new InvalidOperationException(
+                ErrorCode.DUPLICATE_KEY, "Non-unique key for index %s: %s",
+                indexName,
+                hkey);
     }
 
     @Override
@@ -1166,8 +1171,7 @@ public class PersistitStore implements CServerConstants, Store {
             int saveSize = key.getEncodedSize();
             key.setDepth(indexDef.getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
-                throw new InvalidOperationException(ErrorCode.DUPLICATE_KEY,
-                        "Non-unique index key: %s", key);
+                complainAboutDuplicateKey(indexDef.getName(), key);
             }
             key.setEncodedSize(saveSize);
         }

@@ -3,6 +3,7 @@ package com.akiban.cserver.api;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.ddl.ParseException;
+import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.api.dml.NoSuchRowException;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
@@ -66,6 +67,8 @@ abstract class ClientAPIBase {
                 return new NoSuchRowException(ioe);
             case PARSE_EXCEPTION:
                 return new ParseException(ioe);
+            case DUPLICATE_KEY:
+                return new DuplicateKeyException(ioe);
             default:
                 return ioe;
             }
