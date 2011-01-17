@@ -74,6 +74,11 @@ public final class ParsingUNIQUETest extends ApiTestBase {
         create("id int primary unique key");
     }
 
+    @Test(expected=ParseException.class)
+    public void fail_twoColsWithKEY() throws InvalidOperationException {
+        create("id1 int key, id2 int key");
+    }
+
     @Test
     public void constraintUNIQUE() throws InvalidOperationException {
         create( "id int key",

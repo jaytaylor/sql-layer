@@ -191,6 +191,12 @@ public class SchemaDef {
         if(currentTable.primaryKey.isEmpty()) {
             addPrimaryKeyColumn(currentColumn.getName());
         }
+        else {
+            assert currentTable.primaryKey.size() == 1 : currentTable.primaryKey;
+            if (!currentColumn.getName().equals(currentTable.primaryKey.get(0))) {
+                throw new SchemaDefException("only one column may be marked as PRIMARY KEY");
+            }
+        }
     }
 
     void inlineUniqueKey() {
