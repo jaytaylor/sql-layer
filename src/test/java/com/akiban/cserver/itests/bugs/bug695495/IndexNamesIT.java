@@ -149,7 +149,7 @@ public final class IndexNamesIT extends ApiTestBase {
         assertIndexColumns(userTable, "alpha", "c2");
     }
 
-    @org.junit.Ignore @Test
+    @Test
     public void uniqueWithExplicitKeyAndFullName() {
         try {
             ddl().createTable(session, "s1", "CREATE TABLE p1(parentc1 int key)");
