@@ -143,6 +143,7 @@ table_element[SchemaDef schema]
 	: column_specification[$schema]
 	| key_constraint[$schema]? primary_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
 	| key_constraint[$schema]? foreign_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.FOREIGN_KEY); }
+	| key_constraint[$schema]? unique__key_specification[$schema] index_option[$schema]*{ $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
 	| other_key_specification[$schema] index_option[$schema]*
 	;
 	
@@ -185,9 +186,7 @@ primary_key_column[SchemaDef schema]
 	;
 	
 other_key_specification[SchemaDef schema]
-	: ( unique__key_specification[$schema]
-	  | nonunique_key_specification[$schema]
-	  ) 
+	: nonunique_key_specification[$schema]
 	index_type[$schema]?
 	LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 	;
@@ -207,6 +206,8 @@ fk_cascade_clause
 
 unique__key_specification[SchemaDef schema]
 	: UNIQUE (KEY | INDEX)? qname? {$schema.addIndex($qname.name);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.UNIQUE);}
+		index_type[$schema]?
+	  LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 	;
 
 nonunique_key_specification[SchemaDef schema]
