@@ -40,23 +40,11 @@ public interface SchemaManager {
      * @param schemaName
      * @param tableName
      * @param statement
+     * @param useOldId
      * @throws Exception
      */
     void createTableDefinition(Session session, String schemaName,
-            String statement) throws Exception;
-
-    /**
-     * Change the stored DDL statement for a table that already exists. 
-     * Does not change the tableId.
-     *
-     * @param session
-     * @param schemaName
-     * @param tableName
-     * @param DDL
-     * @throws Exception
-     */
-    void changeTableDefinition(Session session, final int tableId, String DDL) 
-            throws Exception;
+            String statement, boolean useOldId) throws Exception;
     
     /**
      * Delete the table definition for the specified tableId. This method does

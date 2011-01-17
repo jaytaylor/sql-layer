@@ -130,7 +130,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void createTableDefinition(final Session session,
-            final String defaultSchemaName, final String statement)
+            final String defaultSchemaName, final String statement, final boolean useOldId)
             throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
@@ -164,7 +164,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
             final int tableId;
             if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
-                tableId = ex.getKey().indexTo(1).decodeInt() + 1;
+                tableId = ex.getKey().indexTo(1).decodeInt() + (useOldId ? 0 : 1);
             } else {
                 tableId = 1;
             }
@@ -176,33 +176,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             changed(treeService, session);
             saveTableStatusRecords(session);
             return;
-        } finally {
-            treeService.releaseExchange(session, ex);
-        }
-    }
-
-    /**
-     * Change the stored DDL statement for a table that already exists. 
-     * Does not change the tableId.
-     */
-    public void changeTableDefinition(final Session session, final int tableId, final String DDL)
-            throws Exception {
-        final String canonical = SchemaDef.canonicalStatement(DDL);
-        SchemaDef.CName cname = cname(canonical);
-        final TreeService treeService = serviceManager.getTreeService();
-        final Exchange ex = treeService.getExchange(session,
-                treeLink(cname.getSchema(), SCHEMA_TREE_NAME));
-
-        try {
-            ex.clear().append(BY_ID).append(tableId).fetch();
-            if (ex.isValueDefined()) {
-                ex.getValue().put(canonical);
-                ex.clear().append(BY_ID).append(tableId).store();
-
-                changed(treeService, session);
-                saveTableStatusRecords(session);
-                getAis(session);
-            }
         } finally {
             treeService.releaseExchange(session, ex);
         }

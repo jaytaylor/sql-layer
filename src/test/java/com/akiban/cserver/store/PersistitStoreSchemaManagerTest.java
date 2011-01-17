@@ -79,7 +79,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     private void createTable(ErrorCode expectedCode, String schema, String ddl) throws Exception {
         ErrorCode actualCode  = null;
         try {
-            manager.createTableDefinition(session, schema, ddl);
+            manager.createTableDefinition(session, schema, ddl, false);
         }
         catch (InvalidOperationException e) {
             actualCode = e.getCode();
@@ -88,7 +88,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     }
     
     private void createTable(String schema, String ddl) throws Exception {
-        manager.createTableDefinition(session, schema, ddl);
+        manager.createTableDefinition(session, schema, ddl, false);
     }
 
     

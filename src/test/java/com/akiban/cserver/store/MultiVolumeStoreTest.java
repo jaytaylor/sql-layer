@@ -55,7 +55,7 @@ public class MultiVolumeStoreTest extends CServerTestCase {
                 for (final String schemaName : new String[] { DEFAULT_SCHEMA,
                         TEST1_SCHEMA, TEST2_SCHEMA }) {
                     schemaManager.createTableDefinition(session, schemaName,
-                            statement);
+                            statement, false);
                 }
             }
         }

@@ -46,7 +46,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             JoinToWrongColumnsException, NoPrimaryKeyException,
             DuplicateColumnNameException, GenericInvalidOperationException {
         try {
-            schemaManager().createTableDefinition(session, schema, ddlText);
+            schemaManager().createTableDefinition(session, schema, ddlText, false);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ParseException.class, ioe);
@@ -134,63 +134,67 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
-    public void createIndexes(final Session session, AkibaInformationSchema ais) throws InvalidOperationException {
+    public void createIndexes(final Session session, AkibaInformationSchema ais)
+            throws InvalidOperationException {
+        if (ais.getUserTables().size() != 1) {
+            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                    "Can only add indexes to one table at a time");
+        }
+
+        final AkibaInformationSchema curAIS = getAIS(session);
+        final Entry<TableName, UserTable> newIndexes = ais.getUserTables().entrySet().iterator()
+                .next();
+        final UserTable table = curAIS.getUserTable(newIndexes.getKey());
+
+        if (table == null) {
+            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Unkown table: "
+                    + newIndexes.getKey().getTableName());
+        }
+
+        for (Index i : newIndexes.getValue().getIndexes()) {
+            // AIS Reader.close() adds a pkey to all UserTables that get instantiated.
+            // This interface does not do pkey additions so skip it.
+            if (i.isPrimaryKey()) continue;
+
+            final String indexName = i.getIndexName().getName();
+
+            if (table.getIndex(indexName) != null) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                        "Index already exists: " + indexName);
+            }
+        }
+
+        // All were valid, add to current AIS
+        for (Index i : newIndexes.getValue().getIndexes()) {
+            // Same reason as in above loop
+            if (i.isPrimaryKey()) continue;
+
+            Index newIndex = Index.create(curAIS, table, i.getIndexName().getName(), -1,
+                    i.isUnique(), i.getConstraint());
+
+            for (IndexColumn c : i.getColumns()) {
+                Column refCol = table.getColumn(c.getColumn().getPosition());
+                IndexColumn indexCol = new IndexColumn(newIndex, refCol, c.getPosition(),
+                        c.isAscending(), c.getIndexedLength());
+                newIndex.addColumn(indexCol);
+            }
+        }
+
+        // Modify stored DDL statement
         try {
-            if(ais.getUserTables().size() != 1) {
-                throw new Exception("Too many user tables");
-            }
-            
-            AkibaInformationSchema cur_ais = getAIS(session);
-            Entry<TableName, UserTable> newIndexesEntry = ais.getUserTables().entrySet().iterator().next();
-            UserTable cur_utable = cur_ais.getUserTable(newIndexesEntry.getKey());
-            
-            if(cur_utable == null) {
-                throw new Exception("Uknown table");
-            }
-            
-            int max_id = 0;
-            Set<IndexName> cur_names = new HashSet<IndexName>();
-            for(Index i : cur_utable.getIndexes()) {
-                max_id = Math.max(max_id, i.getIndexId().intValue());
-                cur_names.add(i.getIndexName());
-            }
-            
-            for(Index i: newIndexesEntry.getValue().getIndexes()) {
-                // AIS Reader.close() adds a pkey to all UserTables that get instantiated.
-                // This interface does not do pkey additions so skip it.
-                if(i.isPrimaryKey()) continue;
-                
-                if(cur_names.contains(i.getIndexName())) {
-                    throw new Exception("Duplicate index name");
-                }
-                
-                i.setIndexId(++max_id);
-                System.out.println(String.format("DDLFunctionsImpl.createIndexes: %s:%d", i.getIndexName().getName(), i.getIndexId()));
-            }
-            
-            // All were valid, add to current AIS
-            for(Index i: newIndexesEntry.getValue().getIndexes()) {
-                // Same reason as in above loop
-                if(i.isPrimaryKey()) continue;
-                
-                Index new_idx = Index.create(cur_ais, cur_utable, i.getIndexName().getName(), i.getIndexId(), i.isUnique(), i.getConstraint());
-                
-                for(IndexColumn c : i.getColumns()) {
-                    Column ref_col = cur_utable.getColumn(c.getColumn().getPosition());
-                    IndexColumn icol = new IndexColumn(new_idx, ref_col, c.getPosition(), c.isAscending(), c.getIndexedLength()); 
-                    new_idx.addColumn(icol);
-                }
-            }
-            
-            // Modify stored DDL statement
-            DDLGenerator gen = new DDLGenerator();
-            schemaManager().changeTableDefinition(session, cur_utable.getTableId(), gen.createTable(cur_utable));
-            
+            final DDLGenerator gen = new DDLGenerator();
+            final TableName tableName = table.getName();
+            final String newDDL = gen.createTable(table);
+            schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+
+            // Trigger recreation
+            schemaManager().getAis(session);
+
             // And trigger build of new indexes in this table
-            store().buildIndexes(session, String.format("table=(%s)", cur_utable.getName().getTableName()));
-        } 
-        catch(Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION, "Unexpected exception", e);
+            store().buildIndexes(session, String.format("table=(%s)", tableName.getTableName()));
+        } catch (Exception e) {
+            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
+                    "Unexpected exception", e);
         }
     }
 
