@@ -2,8 +2,10 @@ package com.akiban.cserver.itests.bugs.bug695495;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.util.Strings;
@@ -328,27 +330,18 @@ public final class IndexNamesIT extends ApiTestBase {
         return createTableWithIndexes(builder.toString());
     }
 
-    protected static void assertIndexes(UserTable table, String... expectedIndexNames) {
-        Set<String> expectedIndexesSet = new TreeSet<String>(Arrays.asList(expectedIndexNames));
-        debug("for table %s, expecting indexes %s", table, expectedIndexesSet);
-        Set<String> actualIndexes = new TreeSet<String>();
-        for (Index index : table.getIndexes()) {
-            String indexName = index.getIndexName().getName();
-            boolean added = actualIndexes.add(indexName);
-            assertTrue("duplicate index name: " + indexName, added);
-        }
-        assertEquals("indexes in " + table.getName(), expectedIndexesSet, actualIndexes);
+    private void assertIndexes(UserTable table, String... expectedIndexNames) {
+        // TODO convenience method for ApiTestBase call. This method, and assertIndexColumns below,
+        // were designed before the ApiTestBase methods. These convenience methods are here to make the transition
+        // to the new ApiTestBase methods less invasive to this class.
+        TableName tableName = table.getName();
+        TableId tableId = TableId.of(tableName.getSchemaName(), tableName.getTableName());
+        expectIndexes(tableId, expectedIndexNames);
     }
 
-    protected static void assertIndexColumns(UserTable table, String indexName, String... expectedColumns) {
-        List<String> expectedColumnsList = Arrays.asList(expectedColumns);
-        debug("for index %s.%s, expecting columns %s", table, indexName, expectedColumnsList);
-        Index index = table.getIndex(indexName);
-        assertNotNull(indexName + " was null", index);
-        List<String> actualColumns = new ArrayList<String>();
-        for (IndexColumn indexColumn : index.getColumns()) {
-            actualColumns.add(indexColumn.getColumn().getName());
-        }
-        assertEquals(indexName + " columns", actualColumns, expectedColumnsList);
+    private void assertIndexColumns(UserTable table, String indexName, String... expectedColumns) {
+        TableName tableName = table.getName();
+        TableId tableId = TableId.of(tableName.getSchemaName(), tableName.getTableName());
+        expectIndexColumns(tableId, indexName, expectedColumns);
     }
 }
