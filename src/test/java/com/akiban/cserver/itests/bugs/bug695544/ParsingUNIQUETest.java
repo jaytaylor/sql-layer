@@ -4,7 +4,6 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.itests.ApiTestBase;
-import com.sun.java.help.search.Schema;
 import org.junit.After;
 import org.junit.Test;
 
