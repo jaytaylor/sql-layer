@@ -148,7 +148,11 @@ table_element[SchemaDef schema]
 	
 column_specification[SchemaDef schema]
 	:  qname data_type_def {$schema.addColumn($qname.name, $data_type_def.type, $data_type_def.len1, $data_type_def.len2);}
-	   (column_constraint[$schema])*
+	   (column_constraints[$schema])
+	;
+
+column_constraints[SchemaDef schema]
+	: ({schema.startColumnOption(); } column_constraint[schema] {schema.endColumnOption(); }) * {schema.endColumnOption(); }
 	;
 
 column_constraint[SchemaDef schema]
@@ -161,9 +165,9 @@ column_constraint[SchemaDef schema]
 	| character_set[$schema]
 	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
-	| KEY {$schema.inlineColumnPK();}
-	| PRIMARY KEY {$schema.inlineColumnPK();}
-	| UNIQUE KEY {$schema.inlineUniqueKey();}
+	| KEY {$schema.seeKEY();}
+	| PRIMARY {$schema.seePRIMARY();}
+	| UNIQUE {$schema.seeUNIQUE();}
 	;
 
 key_constraint[SchemaDef schema]

@@ -110,14 +110,82 @@ public class SchemaDef {
         currentColumn.comment = comment;
     }
 
-    void inlineColumnPK() {
-        checkPkEmpty();
-        addPrimaryKeyColumn(currentColumn.getName());
+    private enum ColumnOption {
+        PRIMARY, UNIQUE, KEY
     }
 
-    void inlineKey() {
-        addIndex(currentColumn.name);
-        addIndexColumn(currentColumn.name);
+    private ColumnOption prevColumnOption;
+    private ColumnOption currColumnOption;
+
+    void startColumnOption() {
+    }
+
+    void endColumnOption() {
+        // The following will examine the grammar at different points, assuming options of:
+        //      Foo [UNIQUE [KEY] | [PRIMARY] KEY] Bar
+        // where Foo and Bar are some column option keyword other than UNIQUE/PRIMARY/KEY
+
+        // At the end of this method, we'll set the next iteration's prevColumnOption. To help ensure that
+        // we do this explicitly in all code paths, we'll do it via a local "final" var.
+        final ColumnOption nextPrevious;
+
+        if (currColumnOption == null) { // current option is Bar
+            if (prevColumnOption == null) {
+                nextPrevious = null; // Foo Bar -- nothing to do
+            }
+            else { // if prev is Foo, nothing to do
+                switch (prevColumnOption) {
+                    case UNIQUE: // Foo UNIQUE Bar -- unique key
+                        inlineUniqueKey();
+                        break;
+                    case KEY: // Foo KEY Bar -- primary key
+                        inlineColumnPK();
+                        break;
+                    default: // Foo PRIMARY Bar -- invalid
+                        throw new SchemaDefException(prevColumnOption.toString());
+                }
+                nextPrevious = null;
+            }
+        }
+        else switch (currColumnOption) {
+            case KEY:
+                if (prevColumnOption == ColumnOption.UNIQUE) {
+                    inlineUniqueKey(); // UNIQUE KEY
+                }
+                else {
+                    inlineColumnPK(); // Foo KEY or PRIMARY KEY
+                }
+                nextPrevious = null;
+                break;
+            case PRIMARY:
+                nextPrevious = ColumnOption.PRIMARY;
+                break;
+            case UNIQUE:
+                nextPrevious = ColumnOption.UNIQUE;
+                break;
+            default:
+                throw new SchemaDefException("Unknown option: " + currColumnOption);
+        }
+        prevColumnOption = nextPrevious;
+        currColumnOption = null;
+    }
+
+    void seeKEY() {
+        currColumnOption = ColumnOption.KEY;
+    }
+
+    void seePRIMARY() {
+        currColumnOption = ColumnOption.PRIMARY;
+    }
+
+    void seeUNIQUE() {
+        currColumnOption = ColumnOption.UNIQUE;
+    }
+
+    void inlineColumnPK() {
+        if(currentTable.primaryKey.isEmpty()) {
+            addPrimaryKeyColumn(currentColumn.getName());
+        }
     }
 
     void inlineUniqueKey() {

@@ -37,6 +37,14 @@ public final class ParsingUNIQUETest extends ApiTestBase {
     }
 
     @Test
+    public void UNIQUE_PRIMARY_KEY() throws InvalidOperationException {
+        create( "id int",
+                "c1 int UNIQUE PRIMARY KEY");
+        testInserts();
+        testIndex("PRIMARY");
+    }
+
+    @Test
     public void constraintUNIQUE() throws InvalidOperationException {
         create( "id int key",
                 "c1 int",
@@ -91,8 +99,13 @@ public final class ParsingUNIQUETest extends ApiTestBase {
     }
 
     private void testIndex(String indexName) {
-        expectIndexes(tableId, "PRIMARY", indexName);
-        expectIndexColumns(tableId, "PRIMARY", "id");
+        if("PRIMARY".equals(indexName)) {
+            expectIndexes(tableId, "PRIMARY");
+        }
+        else {
+            expectIndexes(tableId, "PRIMARY", indexName);
+            expectIndexColumns(tableId, "PRIMARY", "id");
+        }
         expectIndexColumns(tableId, indexName, "c1");
     }
 }
