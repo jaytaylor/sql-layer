@@ -8,6 +8,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Join;
@@ -41,18 +42,31 @@ public class DDLGenerator
         List<String> columnDeclarations = new ArrayList<String>();
         for (Column column : table.getColumns()) {
             columnDeclarations.add(declaration(column));
-        } // indexes
-        List<String> indexDeclarations = new ArrayList<String>();
+        } 
+        // indexes
+        String pkeyDecl = null;
+        List<String> indexDecls = new ArrayList<String>();
+        List<String> fkeyDecls = new ArrayList<String>();
         for (Index index : table.getIndexes()) {
-            indexDeclarations.add(declaration(index));
+            String decl = declaration(index);
+            if(index.isPrimaryKey())  {
+                pkeyDecl = decl;
+            }
+            else if(index.getConstraint().equals("FOREIGN KEY")) {
+                fkeyDecls.add(decl);
+            }
+            else {
+                indexDecls.add(decl);
+            }
         }
         // generate ddl
         return String.format(CREATE_TABLE_TEMPLATE,
                              quote(table.getName().getSchemaName()),
                              quote(table.getName().getTableName()),
                              commaSeparated(columnDeclarations),
-                             indexDeclarations.isEmpty() ? "" : ", ",
-                             commaSeparated(indexDeclarations));
+                             pkeyDecl == null ? "" : ", " + pkeyDecl,
+                             indexDecls.isEmpty() ? "" : ", " + commaSeparated(indexDecls),
+                             fkeyDecls.isEmpty() ? "" : ", " + commaSeparated(fkeyDecls));
     }
 
     public String dropTable(Table table)
@@ -98,12 +112,11 @@ public class DDLGenerator
 
     private String declaration(Index index)
     {
-        List<String> indexColumnDeclarations = new ArrayList<String>();
+        List<String> columnDecls = new ArrayList<String>();
         for (IndexColumn indexColumn : index.getColumns()) {
-            indexColumnDeclarations.add(declaration(indexColumn));
+            columnDecls.add(declaration(indexColumn));
         }
         
-        // TODO: Complete hack until the AIS stores 1) constraint name 2) reference info for non akiban fkeys
         if(index.getConstraint().equals("FOREIGN KEY") && index.getTable().isUserTable()) {
             Join join = ((UserTable)index.getTable()).getParentJoin();
             
@@ -111,18 +124,23 @@ public class DDLGenerator
                 return new String("");
             }
             
-            return String.format("CONSTRAINT __akiban_fk_%s FOREIGN KEY %s(%s) REFERENCES %s(%s)", 
-                                 index.getIndexId(),
+            List<String> parentColumnDecls = new ArrayList<String>();
+            for (JoinColumn joinColumn : join.getJoinColumns()) {
+                parentColumnDecls.add(quote(joinColumn.getParent().getName()));
+            }
+            
+            return String.format("CONSTRAINT %s FOREIGN KEY %s(%s) REFERENCES %s(%s)", 
+                                 quote(index.getIndexName().getName()),             
                                  quote(index.getIndexName().getName()),
-                                 commaSeparated(indexColumnDeclarations),
+                                 commaSeparated(columnDecls),
                                  quote(join.getParent().getName().getTableName()),
-                                 commaSeparated(indexColumnDeclarations));
+                                 commaSeparated(parentColumnDecls));
         }
         
         return String.format(INDEX_TEMPLATE,
                              index.isPrimaryKey() ? "PRIMARY KEY" : index.getConstraint(),
-                             index.isPrimaryKey() ? "" : quote(index.getIndexName().getName()),
-                             commaSeparated(indexColumnDeclarations));
+                             index.isPrimaryKey() ? "" : " " + quote(index.getIndexName().getName()),
+                             commaSeparated(columnDecls));
     }
 
     private String declaration(IndexColumn indexColumn)
@@ -160,13 +178,15 @@ public class DDLGenerator
     // - table name
     // - column declarations
     // - comma, if there are index declarations
+    // - primary key declarations
     // - index declarations
-    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s%s%s) engine=akibandb";
+    // - foreign key declarations
+    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s%s%s%s) engine=akibandb";
     // index declaration in create table statement. Template arguments:
     // - constraint (primary key, key, or unique)
     // - index name
     // - index column declarations (each column may have a 'desc' specifier) 
-    private static final String INDEX_TEMPLATE = "%s %s(%s)";
+    private static final String INDEX_TEMPLATE = "%s%s(%s)";
     // drop table. Template arguments:
     // - schema name
     // - table name

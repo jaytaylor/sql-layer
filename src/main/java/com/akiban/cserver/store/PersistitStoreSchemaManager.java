@@ -160,19 +160,25 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 if (canonical.equals(previousValue)) {
                     return;
                 }
+                else if(useOldId == true) {
+                    ex.getValue().put(canonical);
+                    ex.clear().append(BY_ID).append(tableId).store();
+                }
+            }
+            else {
+                final int tableId;
+                if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
+                    tableId = ex.getKey().indexTo(1).decodeInt() + 1;
+                } else {
+                    tableId = 1;
+                }
+                ex.getValue().put(canonical);
+                ex.clear().append(BY_ID).append(tableId).store();
+                ex.getValue().putNull();
+                ex.clear().append(BY_NAME).append(schemaName).append(tableName)
+                        .append(tableId).store();
             }
 
-            final int tableId;
-            if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
-                tableId = ex.getKey().indexTo(1).decodeInt() + (useOldId ? 0 : 1);
-            } else {
-                tableId = 1;
-            }
-            ex.getValue().put(canonical);
-            ex.clear().append(BY_ID).append(tableId).store();
-            ex.getValue().putNull();
-            ex.clear().append(BY_NAME).append(schemaName).append(tableName)
-                    .append(tableId).store();
             changed(treeService, session);
             saveTableStatusRecords(session);
             return;

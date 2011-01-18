@@ -136,36 +136,44 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @Override
     public void createIndexes(final Session session, AkibaInformationSchema ais)
             throws InvalidOperationException {
+        // Can only add index to single table at a time
         if (ais.getUserTables().size() != 1) {
             throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
                     "Can only add indexes to one table at a time");
         }
 
         final AkibaInformationSchema curAIS = getAIS(session);
-        final Entry<TableName, UserTable> newIndexes = ais.getUserTables().entrySet().iterator()
-                .next();
-        final UserTable table = curAIS.getUserTable(newIndexes.getKey());
+        final Entry<TableName, UserTable> newEntry = ais.getUserTables().entrySet().iterator().next();
+        final UserTable table = curAIS.getUserTable(newEntry.getKey());
 
+        // Require existing table to modify
         if (table == null) {
             throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Unkown table: "
-                    + newIndexes.getKey().getTableName());
+                    + newEntry.getKey().getTableName());
         }
 
-        for (Index i : newIndexes.getValue().getIndexes()) {
+        // Require ids match for current and proposed (some other DDL may have happend)
+        if (table.getTableId().equals(newEntry.getValue().getTableId()) == false) {
+            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
+                    "TableId does not match current");
+        }
+
+        for (Index i : newEntry.getValue().getIndexes()) {
             // AIS Reader.close() adds a pkey to all UserTables that get instantiated.
             // This interface does not do pkey additions so skip it.
             if (i.isPrimaryKey()) continue;
 
             final String indexName = i.getIndexName().getName();
-
             if (table.getIndex(indexName) != null) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
                         "Index already exists: " + indexName);
             }
         }
 
+        StringBuilder namesSB = new StringBuilder();
+        
         // All were valid, add to current AIS
-        for (Index i : newIndexes.getValue().getIndexes()) {
+        for (Index i : newEntry.getValue().getIndexes()) {
             // Same reason as in above loop
             if (i.isPrimaryKey()) continue;
 
@@ -178,6 +186,10 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
                         c.isAscending(), c.getIndexedLength());
                 newIndex.addColumn(indexCol);
             }
+            
+            namesSB.append("index=(");
+            namesSB.append(i.getIndexName());
+            namesSB.append(")");
         }
 
         // Modify stored DDL statement
@@ -191,7 +203,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             schemaManager().getAis(session);
 
             // And trigger build of new indexes in this table
-            store().buildIndexes(session, String.format("table=(%s)", tableName.getTableName()));
+            store().buildIndexes(session,
+                    String.format("table=(%s) %s", tableName.getTableName(), namesSB.toString()));
         } catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
                     "Unexpected exception", e);
