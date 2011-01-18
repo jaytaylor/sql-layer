@@ -55,22 +55,16 @@ STRING
   	; 
 
 fragment
-HEX_DIGIT	: ('0'..'9'|'a'..'f'|'A'..'F') ;
-
-fragment
 S_CHAR 	: ('0'..'9'|'a'..'z'|'A'..'Z');
 
 fragment
-Q_CHAR
-	: ESC_SEQ | ~('\\'|'\''|' ');
+Q_CHAR	: S_CHAR | URL_CHAR | URL_ESC;
 
 fragment
-ESC_SEQ
-	:   '\\' ('b'|'t'|'n'|'f'|'r'|'\''|'\\')
-	|   UNICODE_ESC
-	;
+URL_CHAR: '.'|'-'|'_';
 
 fragment
-UNICODE_ESC
-	:   '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
-	;
+URL_ESC	: '%' HEX_DIGIT HEX_DIGIT;
+
+fragment
+HEX_DIGIT	: ('0'..'9'|'a'..'f'|'A'..'F') ;
