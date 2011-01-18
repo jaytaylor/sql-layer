@@ -1,7 +1,7 @@
 
 # Specifies the default port over which the akiban server will be available for
 # JMX connections.
-JMX_PORT="8081"
+JMX_PORT="8082"
 
 # Here we create the arguments that will get passed to the jvm when
 # starting the akiban server.
