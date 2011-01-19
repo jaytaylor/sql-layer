@@ -39,6 +39,7 @@ get_request returns[HapiGetRequest request]
 	COLON
 	predicate_using[request] ?
 	predicate[request] (COMMA predicate[request])*
+	{ request.validate(); }
 	;
 
 predicate_using[HapiGetRequest request]

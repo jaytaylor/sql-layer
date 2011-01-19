@@ -52,11 +52,35 @@ public final class HapiGetRequest {
 
         public StringBuilder appendToSB(StringBuilder builder, TableName usingTable) {
             if (usingTable == null || !usingTable.equals(tableName)) {
-                tableName.escape(builder, usingTable.getSchemaName());
+                tableName.escape(builder, usingTable == null ? null : usingTable.getSchemaName());
                 builder.append('.');
             }
             builder.append(columnName).append(op).append(value);
             return builder;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Predicate predicate = (Predicate) o;
+
+            if (!columnName.equals(predicate.columnName)) return false;
+            if (op != predicate.op) return false;
+            if (!tableName.equals(predicate.tableName)) return false;
+            if (!value.equals(predicate.value)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = tableName.hashCode();
+            result = 31 * result + columnName.hashCode();
+            result = 31 * result + op.hashCode();
+            result = 31 * result + value.hashCode();
+            return result;
         }
     }
 
