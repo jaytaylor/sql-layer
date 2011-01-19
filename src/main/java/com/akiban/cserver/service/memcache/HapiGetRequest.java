@@ -2,12 +2,19 @@ package com.akiban.cserver.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.util.ArgumentValidation;
+import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public final class HapiGetRequest {
+
+    public interface ParseErrorReporter {
+        public void reportError(String error);
+    }
 
     public static class Predicate {
         public enum Operator {
@@ -38,7 +45,6 @@ public final class HapiGetRequest {
             ArgumentValidation.notNull("table name", tableName);
             ArgumentValidation.notNull("column name", columnName);
             ArgumentValidation.notNull("operator", op);
-            ArgumentValidation.notNull("value", value);
             this.tableName = tableName;
             this.columnName = columnName;
             this.op = op;
@@ -69,7 +75,7 @@ public final class HapiGetRequest {
             if (!columnName.equals(predicate.columnName)) return false;
             if (op != predicate.op) return false;
             if (!tableName.equals(predicate.tableName)) return false;
-            if (!value.equals(predicate.value)) return false;
+            if (value != null ? !value.equals(predicate.value) : predicate.value != null) return false;
 
             return true;
         }
@@ -79,13 +85,37 @@ public final class HapiGetRequest {
             int result = tableName.hashCode();
             result = 31 * result + columnName.hashCode();
             result = 31 * result + op.hashCode();
-            result = 31 * result + value.hashCode();
+            result = 31 * result + (value != null ? value.hashCode() : 0);
             return result;
         }
     }
 
     HapiGetRequest()
     {}
+
+    public static class HapiParseException extends RuntimeException {
+        HapiParseException(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    public static HapiGetRequest parse(String query) {
+        return parse(query, null);
+    }
+    
+    public static HapiGetRequest parse(String query, ParseErrorReporter errorReporter) {
+        hapiLexer lexer = new hapiLexer( new ANTLRStringStream(query) );
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        hapiParser parser = new hapiParser(tokens);
+        parser.setErrorReporter(errorReporter);
+        try {
+            return parser.get_request();
+        } catch (hapiLexer.HapiLexerException e) {
+            throw new HapiParseException(e);
+        } catch (RecognitionException e) {
+            throw new HapiParseException(e);
+        }
+    }
 
     private String schema;
     private String table;
@@ -143,6 +173,32 @@ public final class HapiGetRequest {
         builder.setLength(builder.length()-1);
         builder.append(" ]");
         return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        HapiGetRequest that = (HapiGetRequest) o;
+
+        if (!predicates.equals(that.predicates)) return false;
+        if (!schema.equals(that.schema)) return false;
+        if (!table.equals(that.table)) return false;
+        if (!usingTable.equals(that.usingTable)) return false;
+        if (!usingTableName.equals(that.usingTableName)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = schema.hashCode();
+        result = 31 * result + table.hashCode();
+        result = 31 * result + usingTable.hashCode();
+        result = 31 * result + usingTableName.hashCode();
+        result = 31 * result + predicates.hashCode();
+        return result;
     }
 
     void validate() {
