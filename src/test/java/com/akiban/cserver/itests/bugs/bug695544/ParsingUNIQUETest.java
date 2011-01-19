@@ -1,6 +1,5 @@
 package com.akiban.cserver.itests.bugs.bug695544;
 
-import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.ParseException;
@@ -49,6 +48,16 @@ public final class ParsingUNIQUETest extends ApiTestBase {
     public void KEY_KEY_KEY_UNIQUE() throws InvalidOperationException {
         create( "id int",
                 "c1 int KEY KEY KEY UNIQUE");
+        testInserts();
+        expectIndexes(tableId, "PRIMARY", "c1");
+        expectIndexColumns(tableId, "PRIMARY", "c1");
+        expectIndexColumns(tableId, "c1", "c1");
+    }
+
+    @Test
+    public void UNIQUE_NOT_NULL_KEY() throws InvalidOperationException {
+        create( "c0 int",
+                "c1 int UNIQUE NOT NULL KEY");
         testInserts();
         expectIndexes(tableId, "PRIMARY", "c1");
         expectIndexColumns(tableId, "PRIMARY", "c1");
