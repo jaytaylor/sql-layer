@@ -186,7 +186,7 @@ primary_key_column[SchemaDef schema]
 	;
 	
 other_key_specification[SchemaDef schema]
-	: nonunique_key_specification[$schema]
+	: (FULLTEXT | SPATIAL)? (KEY | INDEX)? qname? {$schema.addIndex($qname.name);}
 	index_type[$schema]?
 	LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 	;
@@ -208,10 +208,6 @@ unique__key_specification[SchemaDef schema]
 	: UNIQUE (KEY | INDEX)? qname? {$schema.addIndex($qname.name);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.UNIQUE);}
 		index_type[$schema]?
 	  LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
-	;
-
-nonunique_key_specification[SchemaDef schema]
-	: (FULLTEXT | SPATIAL)? (KEY | INDEX)? qname? {$schema.addIndex($qname.name);}
 	;
 	
 index_key_column[SchemaDef schema]
