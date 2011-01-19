@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 
+import com.akiban.ais.model.Index;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -391,8 +392,6 @@ public class SchemaDef {
             // Add our own primary key
             addColumn(Column.AKIBAN_PK_NAME, "BIGINT", null, null);
             currentColumn.nullable = false;
-            addIndex(Column.AKIBAN_PK_NAME);
-            addIndexColumn(Column.AKIBAN_PK_NAME);
             addPrimaryKeyColumn(Column.AKIBAN_PK_NAME);
         }
         currentColumn = null;

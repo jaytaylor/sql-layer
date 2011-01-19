@@ -2,11 +2,13 @@ package com.akiban.ais.model;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
@@ -472,6 +474,31 @@ public class AISTest
                               address, "address$aid");
     }
 
+    @Test
+    public void testAkibanPKColumn() throws Exception
+    {
+        String[] ddl = {
+            "use s; ",
+            "create table s.t(",
+            "    a int, ",
+            "    b int",
+            ") engine = akibandb;"
+        };
+        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        UserTable table = (UserTable) ais.getTable("s", "t");
+        // check columns
+        checkColumns(table.getColumns(), "a", "b");
+        checkColumns(table.getColumnsIncludingInternal(), "a", "b", Column.AKIBAN_PK_NAME);
+        // check indexes
+        assertTrue(table.getIndexes().isEmpty());
+        assertEquals(1, table.getIndexesIncludingInternal().size());
+        Index index = table.getIndexesIncludingInternal().iterator().next();
+        assertEquals(Column.AKIBAN_PK_NAME, index.getColumns().get(0).getColumn().getName());
+        // check PK
+        assertNull(table.getPrimaryKey());
+        assertSame(table.getIndexesIncludingInternal().iterator().next(), table.getPrimaryKeyIncludingInternal().getIndex());
+    }
+
     private void checkHKey(HKey hKey, Object ... elements)
     {
         int e = 0;
@@ -519,6 +546,14 @@ public class AISTest
             actual.add((String) m);
         }
         assertEquals(expected, actual);
+    }
+
+    private void checkColumns(List<Column> actual, String ... expected)
+    {
+        assertEquals(expected.length, actual.size());
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i], actual.get(i).getName());
+        }
     }
 
     private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();

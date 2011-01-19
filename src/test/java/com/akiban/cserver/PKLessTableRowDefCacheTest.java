@@ -45,7 +45,7 @@ public class PKLessTableRowDefCacheTest
         indexKeyFields = index.indexKeyFields();
         assertEquals(4, indexKeyFields[0].fieldIndex()); // test.e
         assertEquals(3, indexKeyFields[1].fieldIndex()); // test.d
-        assertEquals(5, indexKeyFields[2].fieldIndex()); // Akiban PK
+        assertEquals(1, indexKeyFields[2].hKeyLoc()); // Akiban PK
         hKeyFields = index.hkeyFields();
         assertEquals(test.getOrdinal(), hKeyFields[0].ordinal()); // test ordinal
         assertEquals(2, hKeyFields[1].indexKeyLoc()); // test row counter
@@ -56,10 +56,10 @@ public class PKLessTableRowDefCacheTest
         indexKeyFields = index.indexKeyFields();
         assertEquals(3, indexKeyFields[0].fieldIndex()); // test.d
         assertEquals(1, indexKeyFields[1].fieldIndex()); // test.b
-        assertEquals(5, indexKeyFields[2].fieldIndex()); // test row counter is not a real counter
+        assertEquals(1, indexKeyFields[2].hKeyLoc()); // Akiban PK
         hKeyFields = index.hkeyFields();
         assertEquals(test.getOrdinal(), hKeyFields[0].ordinal()); // test ordinal
-        assertEquals(2, hKeyFields[1].indexKeyLoc()); // test row counter
+        assertEquals(2, hKeyFields[1].indexKeyLoc()); // Akiban PK
     }
 
     @Test

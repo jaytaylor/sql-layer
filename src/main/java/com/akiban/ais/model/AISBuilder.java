@@ -529,7 +529,7 @@ public class AISBuilder {
             Group group = userTable.getGroup();
             if (group != null) {
                 GroupTable groupTable = group.getGroupTable();
-                for (Index userIndex : userTable.getIndexes()) {
+                for (Index userIndex : userTable.getIndexesIncludingInternal()) {
                     Index groupIndex = Index.create(ais, groupTable,
                             nameGenerator.generateGroupIndexName(userIndex),
                             userIndex.getIndexId(), false, "key");
@@ -553,7 +553,7 @@ public class AISBuilder {
         ais.getGroupTables().clear();
         for (UserTable table : ais.getUserTables().values()) {
             table.setGroup(null);
-            for (Column column : table.getColumns()) {
+            for (Column column : table.getColumnsIncludingInternal()) {
                 column.setGroupColumn(null);
             }
         }
@@ -604,11 +604,12 @@ public class AISBuilder {
             UserTable userTable) {
         LOG.debug("generating group table columns for group table "
                 + groupTable + " and user table " + userTable);
-        for (Column userColumn : userTable.getColumns()) {
-            String groupColumnName = nameGenerator
-                    .generateColumnName(userColumn);
-            Column groupColumn = Column.create(groupTable, groupColumnName,
-                    groupTable.getColumns().size(), userColumn.getType());
+        for (Column userColumn : userTable.getColumnsIncludingInternal()) {
+            String groupColumnName = nameGenerator.generateColumnName(userColumn);
+            Column groupColumn = Column.create(groupTable,
+                                               groupColumnName,
+                                               groupTable.getColumns().size(),
+                                               userColumn.getType());
             groupColumn.setNullable(userColumn.getNullable());
             int nTypeParameters = userColumn.getType().nTypeParameters();
             if (nTypeParameters >= 1) {
