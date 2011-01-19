@@ -124,12 +124,10 @@ public class HApiImpl implements HApi {
                     return sb.toString();
                 }
                 catch(Exception e) {
-                	System.out.print(e.getMessage());
                  return ("read error: " + e.getMessage());
                 }
             }
             else {
-            	System.out.print(request);
                 return ("invalid key: " + request);
             }
             
