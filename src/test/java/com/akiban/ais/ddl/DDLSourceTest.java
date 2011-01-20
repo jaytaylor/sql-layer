@@ -142,7 +142,7 @@ public class DDLSourceTest {
     @Test
     public void tableHasTwoPrimaryColumns() throws Exception {
         createTableWithError(DDLSource.ParseException.class,
-                "too many primary keys",
+                "only one column may be marked as [PRIMARY] KEY",
                 "id int primary key, sid int primary key");
     }
 

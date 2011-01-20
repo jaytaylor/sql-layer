@@ -1,0 +1,1 @@
+See bug695544. This bug is related, and the regression is tested there.

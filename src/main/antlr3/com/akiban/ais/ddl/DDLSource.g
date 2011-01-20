@@ -143,12 +143,17 @@ table_element[SchemaDef schema]
 	: column_specification[$schema]
 	| key_constraint[$schema]? primary_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
 	| key_constraint[$schema]? foreign_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.FOREIGN_KEY); }
+	| key_constraint[$schema]? unique__key_specification[$schema] index_option[$schema]*{ $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
 	| other_key_specification[$schema] index_option[$schema]*
 	;
 	
 column_specification[SchemaDef schema]
 	:  qname data_type_def {$schema.addColumn($qname.name, $data_type_def.type, $data_type_def.len1, $data_type_def.len2);}
-	   (column_constraint[$schema])*
+	   (column_constraints[$schema])
+	;
+
+column_constraints[SchemaDef schema]
+	: ({schema.startColumnOption(); } column_constraint[schema] {schema.endColumnOption(); }) * {schema.endColumnOption(); }
 	;
 
 column_constraint[SchemaDef schema]
@@ -161,9 +166,9 @@ column_constraint[SchemaDef schema]
 	| character_set[$schema]
 	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
-	| KEY {$schema.inlineColumnPK();}
-	| PRIMARY KEY {$schema.inlineColumnPK();}
-	| UNIQUE KEY {$schema.inlineUniqueKey();}
+	| KEY {$schema.seeKEY();}
+	| PRIMARY {$schema.seePRIMARY();}
+	| UNIQUE {$schema.seeUNIQUE();}
 	;
 
 key_constraint[SchemaDef schema]
@@ -181,9 +186,7 @@ primary_key_column[SchemaDef schema]
 	;
 	
 other_key_specification[SchemaDef schema]
-	: ( unique__key_specification[$schema]
-	  | nonunique_key_specification[$schema]
-	  ) 
+	: (FULLTEXT | SPATIAL)? (KEY | INDEX)? qname? {$schema.addIndex($qname.name);}
 	index_type[$schema]?
 	LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 	;
@@ -203,10 +206,8 @@ fk_cascade_clause
 
 unique__key_specification[SchemaDef schema]
 	: UNIQUE (KEY | INDEX)? qname? {$schema.addIndex($qname.name);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.UNIQUE);}
-	;
-
-nonunique_key_specification[SchemaDef schema]
-	: (FULLTEXT | SPATIAL)? (KEY | INDEX)? qname? {$schema.addIndex($qname.name);}
+		index_type[$schema]?
+	  LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 	;
 	
 index_key_column[SchemaDef schema]

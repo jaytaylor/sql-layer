@@ -80,7 +80,7 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
     {
-        LOG.warn("exceptionCaught: " + e);
+        LOG.error("Command handler caught exception: " + e, e.getCause());
     }
 
     /**
