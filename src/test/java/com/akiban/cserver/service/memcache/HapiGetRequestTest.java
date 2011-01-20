@@ -1,5 +1,6 @@
 package com.akiban.cserver.service.memcache;
 
+import com.akiban.ais.model.TableName;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -11,6 +12,7 @@ import java.util.List;
 
 import static com.akiban.cserver.service.memcache.HapiGetRequest.Predicate.Operator.*;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(org.junit.runners.Parameterized.class)
 // TODO Migrate to Yuval's named-parameterized runner as soon as it's available
@@ -26,7 +28,21 @@ public final class HapiGetRequestTest {
         HapiGetRequestBuilder predicate(
                 String columnName, HapiGetRequest.Predicate.Operator operator, String value
        ) {
+            int oldsize = request.getPredicates().size();
             request.addPredicate(columnName, operator, value);
+            assertEquals("predicates.size()", oldsize+1, request.getPredicates().size());
+
+            HapiGetRequest.Predicate actual = request.getPredicates().get(oldsize);
+            HapiGetRequest.Predicate expected
+                    = new HapiGetRequest.Predicate(request.getUsingTable(), columnName, operator, value);
+
+            assertEquals("predicate", expected, actual);
+            assertEquals("predicate hash", expected.hashCode(), actual.hashCode());
+
+            assertEquals("predicate table", request.getUsingTable(), actual.getTableName());
+            assertEquals("predicate column", columnName, actual.getColumnName());
+            assertEquals("predicate op", operator, actual.getOp());
+            assertEquals("predicate value", value, actual.getValue());
             return this;
         }
     }
@@ -43,6 +59,12 @@ public final class HapiGetRequestTest {
             request.setSchema(schema);
             request.setTable(table);
             request.setUsingTable(usingTable);
+
+
+            assertEquals(queryString + " schema", schema, request.getSchema());
+            assertEquals(queryString + " table", table, request.getTable());
+            assertEquals(queryString + " usingTable", new TableName(schema, usingTable), request.getUsingTable());
+
             params.add( new Object[] {queryString, request} );
             return new HapiGetRequestBuilder(request);
         }
@@ -127,6 +149,12 @@ public final class HapiGetRequestTest {
 
     private void testWorking() {
         HapiGetRequest actual = HapiGetRequest.parse(query, ERROR_REPORTER);
-        assertEquals(query + "request", expectedRequest, actual);
+        assertEquals(query + " request", expectedRequest, actual);
+        assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
+
+        assertEquals(query + " schema", expectedRequest.getSchema(), actual.getSchema());
+        assertEquals(query + " table", expectedRequest.getTable(), actual.getTable());
+        assertEquals(query + " usingtable", expectedRequest.getUsingTable(), actual.getUsingTable());
+        assertEquals(query + " predicates", expectedRequest.getPredicates(), actual.getPredicates());
     }
 }

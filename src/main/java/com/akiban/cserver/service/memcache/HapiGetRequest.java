@@ -41,7 +41,7 @@ public final class HapiGetRequest {
         private final Operator op;
         private final String value;
 
-        public Predicate(TableName tableName, String columnName, Operator op, String value) {
+        Predicate(TableName tableName, String columnName, Operator op, String value) {
             ArgumentValidation.notNull("table name", tableName);
             ArgumentValidation.notNull("column name", columnName);
             ArgumentValidation.notNull("operator", op);
@@ -49,6 +49,22 @@ public final class HapiGetRequest {
             this.columnName = columnName;
             this.op = op;
             this.value = value;
+        }
+
+        public TableName getTableName() {
+            return tableName;
+        }
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+        public Operator getOp() {
+            return op;
+        }
+
+        public String getValue() {
+            return value;
         }
 
         @Override
@@ -202,7 +218,42 @@ public final class HapiGetRequest {
     }
 
     void validate() {
-        //TODO
+        List<String> errors = null;
+        if (schema == null) {
+            errors = error("schema is null", errors);
+        }
+        if (table == null) {
+            errors = error("table is null", errors);
+        }
+        if (usingTable == null) {
+            errors = error("usingTable is null", errors);
+        }
+        if(usingTableName == null) {
+            errors = error("usingTableName is null", errors);
+        }
+        else if( usingTable != null && schema != null ) {
+            if (!(usingTableName.getSchemaName().equals(schema) && usingTableName.getTableName().equals(usingTable))) {
+                errors = error(usingTableName + "!=" + new TableName(schema, usingTable), errors);
+            }
+        }
+        if(predicates.isEmpty()) {
+            errors = error("predicates are empty", errors);
+        }
+        if (errors != null) {
+            StringBuilder err = new StringBuilder("internal error");
+            if (errors.size() != 1) {
+                err.append('s');
+            }
+            err.append(": ").append(errors);
+            throw new IllegalStateException(err.toString());
+        }
+    }
 
+    private static List<String> error(String error, List<String> errors) {
+        if (errors == null) {
+            errors = new ArrayList<String>();
+        }
+        errors.add(error);
+        return errors;
     }
 }
