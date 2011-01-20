@@ -1,16 +1,12 @@
 package com.akiban.cserver.itests.ddl;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
