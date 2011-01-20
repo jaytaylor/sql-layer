@@ -15,8 +15,8 @@ import java.util.Map;
 
 public class Column implements Serializable, ModelNames
 {
-//    private static final int DECIMAL_DEFAULT_PRECISION = 10;
-//    private static final int DECIMAL_DEFAULT_SCALE = 0;
+    private static final Long DECIMAL_DEFAULT_PRECISION = 10L;
+    private static final Long DECIMAL_DEFAULT_SCALE = 0L;
 
     public static Column create(AkibaInformationSchema ais, Map<String, Object> map)
     {
@@ -321,7 +321,7 @@ public class Column implements Serializable, ModelNames
     public Long getTypeParameter1()
     {
         if (typeParameter1 == null && (type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL))) {
-            return 10L;
+            return DECIMAL_DEFAULT_PRECISION;
         }
         return typeParameter1;
     }
@@ -329,7 +329,7 @@ public class Column implements Serializable, ModelNames
     public Long getTypeParameter2()
     {
         if (typeParameter2 == null && (type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL))) {
-            return 0L;
+            return DECIMAL_DEFAULT_SCALE;
         }
         return typeParameter2;
     }
