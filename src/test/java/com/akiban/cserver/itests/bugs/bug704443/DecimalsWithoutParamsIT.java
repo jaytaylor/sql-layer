@@ -1,4 +1,4 @@
-package com.akiban.cserver.itests.ddl;
+package com.akiban.cserver.itests.bugs.bug704443;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 import static junit.framework.Assert.*;
 
-public final class BadCreatesIT extends ApiTestBase {
+public final class DecimalsWithoutParamsIT extends ApiTestBase {
     @Test
     public void bug704443() throws InvalidOperationException {
         TableId t1Id = createTable("schema", "t1",
