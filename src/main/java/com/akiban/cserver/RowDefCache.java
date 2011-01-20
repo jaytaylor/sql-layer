@@ -312,7 +312,7 @@ public class RowDefCache implements CServerConstants {
             GroupTable table) {
         RowDef rowDef = new RowDef(table);
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();
-        for (Column column : table.getColumns()) {
+        for (Column column : table.getColumnsIncludingInternal()) {
             Column userColumn = column.getUserColumn();
             if (userColumn.getPosition() == 0) {
                 int userRowDefId = userColumn.getTable().getTableId();
