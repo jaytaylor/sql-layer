@@ -10,10 +10,10 @@ import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.store.Store;
 import com.akiban.cserver.service.session.SessionImpl;
 
-public class HApiImpl implements HApi {
+public class HapiProcessorImpl implements HapiProcessor {
 
 	private final Store store;
-	public HApiImpl(Store store) {
+	public HapiProcessorImpl(Store store) {
 		this.store = store;
 	}
 	

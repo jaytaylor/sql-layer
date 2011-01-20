@@ -28,8 +28,8 @@ import com.akiban.cserver.api.DDLFunctions;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.DMLFunctionsImpl;
-import com.akiban.cserver.api.HApi;
-import com.akiban.cserver.api.HApiImpl;
+import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiProcessorImpl;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
@@ -118,7 +118,7 @@ public class ApiTestBase extends CServerTestCase {
     private DMLFunctions dml;
     private DDLFunctions ddl;
     private ServiceManager sm;
-    private HApi hapi;
+    private HapiProcessor hapi;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -126,7 +126,7 @@ public class ApiTestBase extends CServerTestCase {
         sm.startServices();
         dml = new DMLFunctionsImpl(new LoggingServiceImpl());
         ddl = new DDLFunctionsImpl();
-        hapi = new HApiImpl(sm.getStore());
+        hapi = new HapiProcessorImpl(sm.getStore());
     }
 
     @After
@@ -138,7 +138,7 @@ public class ApiTestBase extends CServerTestCase {
         sm = null;
     }
 
-    protected final HApi hapi() {
+    protected final HapiProcessor hapi() {
         return hapi;
     }
     

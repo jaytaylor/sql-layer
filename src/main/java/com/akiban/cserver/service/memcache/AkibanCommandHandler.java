@@ -21,8 +21,8 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.api.HApi;
-import com.akiban.cserver.api.HApiImpl;
+import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiProcessorImpl;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.Store;
 import com.thimbleware.jmemcached.Cache;
@@ -47,13 +47,13 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
      */
-    private HApi hApi;
+    private HapiProcessor hapi;
     private final DefaultChannelGroup channelGroup;
     private static final Log LOG = LogFactory.getLog(MemcacheService.class);
     
 
     public AkibanCommandHandler(Store store, DefaultChannelGroup channelGroup) {
-        hApi = new HApiImpl(store);
+        hapi = new HapiProcessorImpl(store);
         this.channelGroup = channelGroup;
     }
 
@@ -229,7 +229,7 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         byte[] key = keys[0].getBytes();
         String request = new String(key);
-        String result_string =hApi.processRequest(request,(ByteBuffer) context.getAttachment()) ;
+        String result_string =hapi.processRequest(request,(ByteBuffer) context.getAttachment()) ;
         byte[] result_bytes = result_string.getBytes();
         
         CacheElement[] results = null;
