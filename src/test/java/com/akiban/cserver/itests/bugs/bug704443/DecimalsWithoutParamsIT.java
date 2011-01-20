@@ -43,7 +43,7 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
     @Test
     public void decimalHasOneParams() throws InvalidOperationException {
         TableId t1Id = createTable("schema", "t1",
-                "c1(17) DECIMAL NOT NULL,PRIMARY KEY(c1)"
+                "c1 DECIMAL(17) NOT NULL,PRIMARY KEY(c1)"
         );
 
         Set<TableName> t1TableNameSet = new HashSet<TableName>();
@@ -53,10 +53,10 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
         assertEquals("group tables size", 1, getGroupTables().size());
 
         writeRows(
-                createNewRow(t1Id, "10", "10", "10")
+                createNewRow(t1Id, "27")
         );
         expectFullRows( t1Id,
-                createNewRow(t1Id, new BigDecimal("10"), new BigDecimal("10"), new BigDecimal("10"))
+                createNewRow(t1Id, new BigDecimal("27"))
         );
         for(Column column : getUserTable(t1Id).getColumns()) {
             assertEquals("param[0] for column " + column, Long.valueOf(17), column.getTypeParameter1());
