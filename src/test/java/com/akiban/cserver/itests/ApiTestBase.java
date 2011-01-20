@@ -11,12 +11,15 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import junit.framework.Assert;
@@ -283,13 +286,31 @@ public class ApiTestBase extends CServerTestCase {
         }
     }
 
-    protected UserTable getUserTable(TableId tableId) {
+    protected final UserTable getUserTable(TableId tableId) {
         try {
             TableName tableName = ddl().getTableName(tableId);
             return ddl().getAIS(session).getUserTable(tableName);
         } catch (NoSuchTableException e) {
             throw new TestException(e);
         }
+    }
+
+    protected final Map<TableName,UserTable> getUserTables() {
+        return stripAISTables(ddl().getAIS(session).getUserTables());
+    }
+
+    protected final Map<TableName,GroupTable> getGroupTables() {
+        return stripAISTables(ddl().getAIS(session).getGroupTables());
+    }
+
+    private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
+        final Map<TableName,T> ret = new HashMap<TableName, T>(map);
+        for(Iterator<TableName> iter=ret.keySet().iterator(); iter.hasNext(); ) {
+            if("akiba_information_schema".equals(iter.next().getSchemaName())) {
+                iter.remove();
+            }
+        }
+        return ret;
     }
 
     protected void expectIndexes(TableId tableId, String... expectedIndexNames) {
