@@ -1,6 +1,8 @@
 package com.akiban.cserver.api;
 
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.common.NoSuchTableException;
+import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,5 +65,17 @@ public final class ClientAPIBaseLaundryTest {
         if(ioeLaundered.getClass().equals(InvalidOperationException.class)) {
             fail(errorCode.name());
         }
+    }
+
+    // TODO: once we switch to the NamedParameterizedRunner, it should be improved to allow for non-parameterized tests,
+    // and we should convert this to one of those
+    @Test
+    public void rowDefNotFoundLaundry() {
+        InvalidOperationException ioe = ClientAPIBase.launder(new RowDefNotFoundException(5));
+        assertTrue("Wrong exception type: " + ioe.getClass() + " " + ioe,
+                NoSuchTableException.class.isInstance(ioe)
+        );
+        NoSuchTableException noSuchTableException = (NoSuchTableException) ioe;
+        assertTrue(noSuchTableException.getShortMessage(), noSuchTableException.getShortMessage().contains("5"));
     }
 }
