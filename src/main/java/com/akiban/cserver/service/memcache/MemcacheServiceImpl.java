@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.cserver.service.ServiceStartupException;
-import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.session.Session;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -49,13 +49,13 @@ public class MemcacheServiceImpl implements MemcacheService,
     }
 
     @Override
-    public String processRequest(String request) {
+    public String processRequest(Session session, String request) {
         ByteBuffer buffer = ByteBuffer.allocate(65536);
         Store storeLocal = store.get();
         if (storeLocal == null) {
             storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
         }
-        return HapiProcessorImpl.processRequest(storeLocal, new SessionImpl(), request, buffer);
+        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer);
     }
 
     @Override
