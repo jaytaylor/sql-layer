@@ -1,4 +1,4 @@
-package com.akiban.cserver.api;
+package com.akiban.cserver.service.memcache;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -7,23 +7,12 @@ import java.util.List;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.Store;
-import com.akiban.cserver.service.session.SessionImpl;
 
-public class HapiProcessorImpl implements HapiProcessor {
+final class HapiProcessorImpl{
 
-	private final Store store;
-	public HapiProcessorImpl(Store store) {
-		this.store = store;
-	}
-	
-	@Override
-	public String processRequest(String request)  {
-    	 return processRequest(request,  ByteBuffer.allocate(65536));
-    }    
-    
-	@Override
-	public String processRequest(String request, ByteBuffer byteBuffer)  {   
+	static String processRequest(Store store, Session session, String request, ByteBuffer byteBuffer)  {
             String[] tokens = request.split(":");        
             
             if(tokens.length == 3 || tokens.length == 4) {
@@ -42,9 +31,7 @@ public class HapiProcessorImpl implements HapiProcessor {
                 final RowDefCache cache = store.getRowDefCache();
 
                 try {
-                   
-                    // TODO - probably want an existing Session
-                    List<RowData> list = store.fetchRows(new SessionImpl(), schema, table, colkey, min_val, max_val, null, byteBuffer);
+                    List<RowData> list = store.fetchRows(session, schema, table, colkey, min_val, max_val, null, byteBuffer);
                     
                     int current_def_id = -1;
                     List<Integer> def_id_stack = new ArrayList<Integer>();

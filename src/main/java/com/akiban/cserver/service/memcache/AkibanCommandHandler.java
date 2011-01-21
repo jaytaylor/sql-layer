@@ -1,11 +1,11 @@
 package com.akiban.cserver.service.memcache;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.channel.Channel;
@@ -18,12 +18,7 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiProcessor;
-import com.akiban.cserver.api.HapiProcessorImpl;
-import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.Store;
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
@@ -41,20 +36,22 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
  * Inspried by: com.thimbleware.jmemcached.protocol.MemcachedCommandHandler
  */
 @ChannelHandler.Sharable
-public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler 
+final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
+    private final Session session;
     /**
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
      */
-    private HapiProcessor hapi;
+    private final Store store;
     private final DefaultChannelGroup channelGroup;
     private static final Log LOG = LogFactory.getLog(MemcacheService.class);
     
 
     public AkibanCommandHandler(Store store, DefaultChannelGroup channelGroup) {
-        hapi = new HapiProcessorImpl(store);
+        this.store = store;
         this.channelGroup = channelGroup;
+        this.session = new SessionImpl();
     }
 
     /**
@@ -229,7 +226,12 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         byte[] key = keys[0].getBytes();
         String request = new String(key);
-        String result_string =hapi.processRequest(request,(ByteBuffer) context.getAttachment()) ;
+        String result_string = HapiProcessorImpl.processRequest(
+                store,
+                session,
+                request,
+                (ByteBuffer) context.getAttachment()
+        ) ;
         byte[] result_bytes = result_string.getBytes();
         
         CacheElement[] results = null;

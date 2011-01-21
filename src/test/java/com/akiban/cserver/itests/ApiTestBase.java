@@ -38,7 +38,6 @@ import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.DMLFunctionsImpl;
 import com.akiban.cserver.api.HapiProcessor;
-import com.akiban.cserver.api.HapiProcessorImpl;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
@@ -56,7 +55,6 @@ import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.store.Store;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -127,7 +125,6 @@ public class ApiTestBase extends CServerTestCase {
     private DMLFunctions dml;
     private DDLFunctions ddl;
     private ServiceManager sm;
-    private HapiProcessor hapi;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -135,7 +132,6 @@ public class ApiTestBase extends CServerTestCase {
         sm.startServices();
         dml = new DMLFunctionsImpl(new LoggingServiceImpl());
         ddl = new DDLFunctionsImpl();
-        hapi = new HapiProcessorImpl(sm.getStore());
     }
 
     @After
@@ -143,12 +139,11 @@ public class ApiTestBase extends CServerTestCase {
         sm.stopServices();
         ddl = null;
         dml = null;
-        hapi=null;
         sm = null;
     }
 
     protected final HapiProcessor hapi() {
-        return hapi;
+        return sm.getMemcacheService();
     }
     
     protected final DMLFunctions dml() {
