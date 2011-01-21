@@ -62,7 +62,7 @@ import com.akiban.cserver.service.session.SessionImpl;
  */
 public class ApiTestBase extends CServerTestCase {
 
-    static class ListRowOutput implements RowOutput {
+    public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
 
         @Override
