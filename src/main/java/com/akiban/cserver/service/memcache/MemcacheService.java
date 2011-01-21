@@ -1,6 +1,6 @@
 package com.akiban.cserver.service.memcache;
 
-public interface MemcacheService
-{
+import com.akiban.cserver.api.HapiProcessor;
 
+public interface MemcacheService extends HapiProcessor {
 }
