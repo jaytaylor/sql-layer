@@ -60,10 +60,10 @@ public class MemcacheServiceImpl implements MemcacheService,
 
     @Override
     public void start() throws ServiceStartupException {
+        if (!store.compareAndSet(null, serviceManager.getStore())) {
+            throw new ServiceStartupException("already started");
+        }
         try {
-            if (!store.compareAndSet(null, serviceManager.getStore())) {
-                throw new ServiceStartupException("already started");
-            }
             final String portString = serviceManager.getConfigurationService()
                     .getProperty("cserver", "memcached.port");
 
@@ -77,8 +77,6 @@ public class MemcacheServiceImpl implements MemcacheService,
 
             startDaemon(addr, idle_timeout, binary, verbose);
         } catch (RuntimeException e) {
-            assert !ServiceStartupException.class.isInstance(e)
-                    : "ServiceStartupException has been chnaged to a RuntimeException";
             store.set(null);
             throw e;
         }
