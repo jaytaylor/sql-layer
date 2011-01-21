@@ -54,13 +54,13 @@ public final class ClientAPIBaseLaundryTest {
         this.errorCode = errorCode;
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Test
     public void isLaundered() {
         InvalidOperationException ioeBasic = new InvalidOperationException(errorCode, "my message");
         InvalidOperationException ioeLaundered = ClientAPIBase.launder(ioeBasic);
-        
+
         if(ioeLaundered.getClass().equals(InvalidOperationException.class)) {
-//            System.err.println(errorCode);
             fail(errorCode.name());
         }
     }

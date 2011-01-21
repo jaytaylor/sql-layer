@@ -14,7 +14,6 @@ import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
 import com.akiban.cserver.api.dml.NoSuchColumnException;
 import com.akiban.cserver.api.dml.NoSuchIndexException;
 import com.akiban.cserver.api.dml.NoSuchRowException;
-import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
 import com.akiban.cserver.api.dml.UnsupportedModificationException;
 import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
 import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
@@ -22,6 +21,7 @@ import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
+import com.akiban.cserver.util.RowDefNotFoundException;
 
 abstract class ClientAPIBase {
 
@@ -46,18 +46,6 @@ abstract class ClientAPIBase {
 
     final public IdResolverImpl idResolver() {
         return resolver;
-    }
-
-    static Store getDefaultStore() {
-        ServiceManager serviceManager = ServiceManagerImpl.get();
-        if (serviceManager == null) {
-            throw new RuntimeException("ServiceManager was not installed");
-        }
-        Store store = serviceManager.getStore();
-        if (store == null) {
-            throw new RuntimeException("ServiceManager had no Store");
-        }
-        return store;
     }
 
     /**
@@ -114,6 +102,9 @@ abstract class ClientAPIBase {
                 default:
                     return ioe;
             }
+        }
+        if (e instanceof RowDefNotFoundException) {
+            return new NoSuchTableException( ((RowDefNotFoundException)e).getId() );
         }
         return new GenericInvalidOperationException(e);
     }
