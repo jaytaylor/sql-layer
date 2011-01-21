@@ -13,6 +13,7 @@ import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.logging.LoggingService;
+import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.cserver.store.SchemaManager;
@@ -81,7 +82,12 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     public TreeService getTreeService() {
         return getService(TreeService.class);
     }
-    
+
+    @Override
+    public MemcacheService getMemcacheService() {
+        return getService(MemcacheService.class);
+    }
+
     @Override
     public SchemaManager getSchemaManager() {
         return getService(SchemaManager.class);
