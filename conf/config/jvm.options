@@ -1,21 +1,4 @@
 
-# Specifies the default port over which the akiban server will be available for
-# JMX connections.
-JMX_PORT="8082"
-
-# Here we create the arguments that will get passed to the jvm when
-# starting the akiban server.
-
-# enable assertions.  what kind of difference to performance does this make?
-JVM_OPTS="$JVM_OPTS -ea"
-
-# enable thread priorities, primarily so we can give periodic tasks
-# a lower priority to avoid interfering with client workload
-JVM_OPTS="$JVM_OPTS -XX:+UseThreadPriorities"
-# allows lowering thread priority without being root.  see
-# http://tech.stolsvik.com/2010/01/linux-java-thread-priorities-workaround.html
-JVM_OPTS="$JVM_OPTS -XX:ThreadPriorityPolicy=42"
-
 calculate_heap_size()
 {
     case "`uname`" in
@@ -39,9 +22,9 @@ if [ "x$MAX_HEAP_SIZE" = "x" ]; then
     calculate_heap_size
 fi
 
-# Specifies the default port over which the akiban server will be available for
-# JMX connections.
-JMX_PORT="8080"
+# specify path to the MySQL base directory on this machine
+# this is needed for the Akiban bulk loader.
+JVM_OPTS="$JVM_OPTS -Dmysql.install.dir=/usr/local/mysql"
 
 # Here we create the arguments that will get passed to the jvm when
 # starting the akiban server.
@@ -55,6 +38,7 @@ JVM_OPTS="$JVM_OPTS -XX:+UseThreadPriorities"
 # allows lowering thread priority without being root.  see
 # http://tech.stolsvik.com/2010/01/linux-java-thread-priorities-workaround.html
 JVM_OPTS="$JVM_OPTS -XX:ThreadPriorityPolicy=42"
+
 
 # min and max heap sizes should be set to the same value to avoid
 # stop-the-world GC pauses during resize, and so that we can lock the
@@ -78,6 +62,7 @@ JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
 # http://blogs.sun.com/jmxetc/entry/troubleshooting_connection_problems_in_jconsole
 # for more on configuring JMX through firewalls, etc. (Short version:
 # get it working with no firewall first.)
+JMX_PORT="8082"
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=$JMX_PORT" 
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.ssl=false" 
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false" 
