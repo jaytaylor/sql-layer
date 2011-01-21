@@ -18,6 +18,21 @@ import static org.junit.Assert.*;
 public final class ClientAPIBaseLaundryTest {
     private static final ErrorCode[] IGNORED_CODES = {
 
+            ErrorCode.MULTIGENERATIONAL_TABLE, // shouldn't (yet!) be possible to even get to this
+
+            ErrorCode.UNKNOWN, // generic case, so we should throw a generic error
+            ErrorCode.INTERNAL_ERROR, // generic case, so we should throw a generic error
+            ErrorCode.INTERNAL_CORRUPTION, // generic case, so we should throw a generic error
+            ErrorCode.UNEXPECTED_EXCEPTION, // generic case, so we should throw a generic error
+            ErrorCode.UNSUPPORTED_OPERATION, // generic case, so we should throw a generic error
+
+            ErrorCode.SERVER_SHUTDOWN, // shouldn't happen from D*LFunctions layer
+            ErrorCode.STALE_AIS, // shouldn't happen from D*LFunctions layer
+            ErrorCode.MALFORMED_REQUEST, // shouldn't happen from D*LFunctions layer
+            ErrorCode.TABLEDEF_MISMATCH, // D*LFunctions layer will throw TableDefinitionMismatchException directly
+            ErrorCode.ROW_OUTPUT, // D*LFunctions layer will throw RowOutputException directly
+
+            ErrorCode.NO_REFERENCED_ROW, // TODO: not sure what this means!
     };
 
     @Parameterized.Parameters

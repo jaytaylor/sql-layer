@@ -321,7 +321,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * 
      * @param session
      * @param schemaName
-     * @param tableName
      * @throws InvalidOperationException
      *             if removing a table in this schema would cause other table
      *             definitions to become invalid.
@@ -991,10 +990,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
                     "[%s] %s is protected: %s", schemaName,
                     AKIBAN_INFORMATION_SCHEMA, statement);
-        }
-        if (tableDef.getPrimaryKey().size() == 0) {
-            throw new InvalidOperationException(ErrorCode.NO_PRIMARY_KEY,
-                    "[%s] %s", schemaName, statement);
         }
 
         final SchemaDef.IndexDef parentJoin = SchemaDef.getAkibanJoin(tableDef);
