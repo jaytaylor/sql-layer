@@ -23,6 +23,86 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
+/**
+ * <p>Generalized test that's parameterized by .json files.</p>
+ *
+ * <p>You can write a Hapi sql-and-memcache test by creating a .json file in this directory.
+ * Any <tt>*.json</tt> file is considered a test. Files whose names start with "<tt>disabled_</tt>" will be recognized
+ * as tests that expect to fail. This is analogous to JUnit's <tt>@Ignore</tt>. A disabled_ file will not even be read;
+ * a single test parameterization will be created (and marked as ignored by the runner) with the name
+ * "<tt>file: *</tt>". For instance, <tt>disabled_foo.json</tt> will result in an ignored test named "<tt>foo: *</tt>".
+ * </>
+ *
+ * <h2>JSON test file overview</h2>
+ *
+ * <p>For non-ignored tests, each file must consist of a single JSON object. This may have the following keys (and
+ * no other keys):
+ * <ul>
+ *  <li><b>comment</b> (optional) : value is completely ignored</li>
+ *  <li><b>setup</b> : defines a setup common to all tests in this file</li>
+ *  <li><b>tests</b> : defines the individual tests</li>
+ * </ul>
+ *
+ * <h2>Setup section</h2>
+ *
+ * The "setup" key defines setup. It must have the following structure:
+ * <ul>
+ *  <li><b>tables</b> : a json object that defines tables' DDLs:
+ *      <ul>
+ *          <li>key is table's name</li>
+ *          <li>value is an array of strings to be concatenated to create that table
+ *          <ul>
+ *              <li>ommit the <tt>CREATE TABLE foo(</tt> and closing parenthesis</li>
+ *              <li>do not put commas at the end of each string; they will be appended automatically</li>
+ *          </ul>
+ *          </li>
+ *      </ul>
+ *  </li>
+ *  <li><b>write_rows</b> : a json object that defines rows to be written before each test (see below).
+ *      <ul>
+ *          <li>key is table name</li>
+ *          <li>value is an array of rows, where each row is an array of column values</li>
+ *      </ul>
+ *  </li>
+ *  <li><b>schema</b> (optional string, default "test") : the schema name to be used for all tables
+ * </ul>
+ *
+ * <h2>Tests section</h2>
+ *
+ * The "tests" key defines individual tests. It must have the following structure:
+ * <ul>
+ *  <li>key is test name</li>
+ *  <li>value is a json object that defines the test (see "test execution" below for more on each of the following):
+ *      <ul>
+ *          <li><b>passing</b> (optional boolean, default true) : whether the test should be run </li>
+ *          <li><b>write_row</b> (boolean) : whether rows should be written before the test</li>
+ *          <li><b>get</b> (string) : the memcache GET request string (without "<tt>GET </tt>")</li>
+ *          <li><b>expect</b> (any value) : the json element you expect to get back
+ *      </ul>
+ *  </li>
+ * </ul>
+ *
+ * <h2>Test execution</h2>
+ *
+ * <p>The runner will create a parameterization for each of the above tests with a name "<tt>file: test</tt>".
+ * For instance, if <tt>my_test.json</tt> defines a test "<tt>hello</tt>", the JUnit test name would be
+ * "<tt>my_test: hello</tt>".</p>
+ *
+ * <p>Tests with <tt>passing=false</tt> will be registered with JUnit, but ignored (like JUnit's <tt>@Ignore</tt>).
+ * For those tests, the rest of the test's specification is ignored (so you don't need the other required fields,
+ * you can have extra fields, etc).</p>
+ *
+ * <p>Non-ignored tests must have the fields specified above, and no others. For each test, the following will happen:
+ * <ol>
+ *  <li>the tables will be created</li>
+ *  <li>if <tt>test.write_rows</tt> is true, the rows defined in <tt>setup.write_rows</tt> will be written</li>
+ *  <li>the <tt>GET</tt> will be issued to
+ *      {@link com.akiban.cserver.service.memcache.MemcacheService#processRequest(
+ *      com.akiban.cserver.service.session.Session, String)}</li>
+ *  <li>the result will be compared against <tt>test.expected</tt>
+ * </ol>
+ * </p>
+ */
 @RunWith(NamedParameterizedRunner.class)
 public final class JsonHapiIT extends ApiTestBase {
     private static final String SUFFIX_JSON = ".json";
