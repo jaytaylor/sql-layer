@@ -12,6 +12,8 @@ import com.akiban.util.Strings;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONString;
+import org.json.JSONTokener;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -158,7 +160,12 @@ public final class JsonHapiIT extends ApiTestBase {
 
         JSONObject tableDDLsJSON = testPlan.getJSONObject(SETUP_TABLES);
         for(String tableName : JSONObject.getNames(tableDDLsJSON)) {
-            String definition = tableDDLsJSON.getJSONArray(tableName).join(", ");
+            List<String> ddlPortion = new ArrayList<String>();
+            JSONArray ddlArray = tableDDLsJSON.getJSONArray(tableName);
+            for(int i=0, MAX=ddlArray.length(); i < MAX; ++i) {
+                ddlPortion.add(ddlArray.getString(i));
+            }
+            String definition = Strings.join(ddlPortion, ", ");
             ddls.add(String.format("CREATE TABLE %s (%s)", tableName, definition));
         }
 
@@ -225,24 +232,24 @@ public final class JsonHapiIT extends ApiTestBase {
         assertNotNull("null result", result);
         assertTrue("empty result: >" + result + "< ", result.trim().length() > 1);
 
-        final JSONObject actual;
-        try {
-            actual = new JSONObject(result);
-        } catch (JSONException e) {
-            throw new RuntimeException("result text: " + result, e);
-        }
+        final Object actual = new JSONTokener(result).nextValue();
 
-        final String expectedString;
-        if (runInfo.expect instanceof JSONObject) {
-            expectedString = ((JSONObject)runInfo.expect).toString(4);
-        }
-        else if (runInfo.expect instanceof JSONArray) {
-            expectedString = ((JSONArray)runInfo.expect).toString(4);
-        }
-        else {
-            throw new AssertionError("Expected string was " + runInfo.expect.getClass() + ": " + runInfo.expect);
-        }
+        assertEquals("GET response", jsonString(runInfo.expect), jsonString(actual));
+    }
 
-        assertEquals("GET response", expectedString, actual.toString(4));
+    private static String jsonString(Object object) throws JSONException {
+        if (object == null) {
+            return null;
+        }
+        if (object instanceof JSONObject) {
+            return ((JSONObject)object).toString(4);
+        }
+        if (object instanceof JSONArray) {
+            return ((JSONArray)object).toString(4);
+        }
+        if (object instanceof JSONString) {
+            return ((JSONString)object).toJSONString();
+        }
+        return object.toString();
     }
 }
