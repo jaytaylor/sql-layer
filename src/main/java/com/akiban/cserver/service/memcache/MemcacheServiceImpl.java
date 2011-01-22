@@ -3,9 +3,10 @@ package com.akiban.cserver.service.memcache;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.cserver.service.ServiceStartupException;
-import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.session.Session;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -35,11 +36,10 @@ public class MemcacheServiceImpl implements MemcacheService,
     // Service vars
     private final ServiceManager serviceManager;
     private static final Log log = LogFactory.getLog(MemcacheServiceImpl.class);
-    private final Object MONITOR = new Object();
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
-    private Store __store; // do not use this directly, even within this class. Always use the get/set/unset methods
+    private final AtomicReference<Store> store = new AtomicReference<Store>();
     private DefaultChannelGroup allChannels;
     private ServerSocketChannelFactory channelFactory;
     int port;
@@ -48,55 +48,22 @@ public class MemcacheServiceImpl implements MemcacheService,
         this.serviceManager = ServiceManagerImpl.get();
     }
 
-    /**
-     * Gets the current Store. If this is non-null, it means the service is running
-     * @return the current Store
-     */
-    private Store getStore() {
-        synchronized (MONITOR) {
-            return __store;
-        }
-    }
-
-    /**
-     * Sets the current store from the service manager, unless the current store is already set.
-     * @return whether the Store has been set (that is, whether it was coming in)
-     */
-    private boolean setStore() {
-        synchronized (MONITOR) {
-            if (__store != null) {
-                return false;
-            }
-            __store = serviceManager.getStore();
-            return true;
-        }
-    }
-
-    /**
-     * Un-sets the current store; nulls it.
-     */
-    private void unsetStore() {
-        synchronized (MONITOR) {
-            __store = null;
-        }
-    }
-
     @Override
-    public String processRequest(String request) {
+    public String processRequest(Session session, String request) {
         ByteBuffer buffer = ByteBuffer.allocate(65536);
-        Store storeLocal = getStore();
+        Store storeLocal = store.get();
         if (storeLocal == null) {
             storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
         }
-        return HapiProcessorImpl.processRequest(getStore(), new SessionImpl(), request, buffer);
+        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer);
     }
 
     @Override
     public void start() throws ServiceStartupException {
+        if (!store.compareAndSet(null, serviceManager.getStore())) {
+            throw new ServiceStartupException("already started");
+        }
         try {
-            if (!setStore()) {
-                throw new ServiceStartupException("already started");
-            }
             final String portString = serviceManager.getConfigurationService()
                     .getProperty("cserver", "memcached.port");
 
@@ -110,9 +77,7 @@ public class MemcacheServiceImpl implements MemcacheService,
 
             startDaemon(addr, idle_timeout, binary, verbose);
         } catch (RuntimeException e) {
-            assert !ServiceStartupException.class.isInstance(e)
-                    : "ServiceStartupException has been chnaged to a RuntimeException";
-            unsetStore();
+            store.set(null);
             throw e;
         }
     }
@@ -121,7 +86,7 @@ public class MemcacheServiceImpl implements MemcacheService,
     public void stop() {
         log.info("Stopping memcache service");
         stopDaemon();
-        unsetStore();
+        store.set(null);
     }
 
     //
@@ -139,10 +104,10 @@ public class MemcacheServiceImpl implements MemcacheService,
         final ChannelPipelineFactory pipelineFactory;
 
         if (binary) {
-            pipelineFactory = new BinaryPipelineFactory(getStore(), verbose,
+            pipelineFactory = new BinaryPipelineFactory(store.get(), verbose,
                     idle_time, allChannels);
         } else {
-            pipelineFactory = new TextPipelineFactory(getStore(), verbose,
+            pipelineFactory = new TextPipelineFactory(store.get(), verbose,
                     idle_time, text_frame_size, allChannels);
         }
 
