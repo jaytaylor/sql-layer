@@ -1,0 +1,36 @@
+{
+"comment" : [   "This simple example is actually out of spec, but passes the current implementation.",
+                "I'm providing it just to give a taste of what tests might look like."
+],
+
+"setup" : {
+    "tables" : {
+        "customer" :    ["id int key, name varchar(32)"]
+    },
+    "write_rows" : {
+        "customer" : [  [1, "person1"]  ]
+    }
+},
+
+"tests" : {
+    "no rows" : {
+        "write_rows"    : false,
+        "passing"       : false,
+        "get"           : "test:customer:id:1",
+        "expect"        : []
+    },
+
+    "with rows" : {
+        "write_rows"    : true,
+        "get"           : "test:customer:id:1",
+        "expect"        : {
+            "customer" :
+                {
+                    "id" : 1,
+                    "name" : "person1"
+                }
+        }
+    }
+}
+
+}

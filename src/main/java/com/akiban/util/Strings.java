@@ -1,6 +1,7 @@
 package com.akiban.util;
 
-import java.util.Arrays;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,5 +49,23 @@ public abstract class Strings {
         }
         builder.setLength(builder.length() - delimiter.length());
         return builder.toString();
+    }
+
+    public static List<String> dumpResource(Class<?> forClass, String path) throws IOException {
+        InputStream is = forClass.getResourceAsStream(path);
+        if (is == null) {
+            throw new FileNotFoundException("For class " + forClass + ": " + path);
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            List<String> ret = new ArrayList<String>();
+            String line;
+            while ((line=reader.readLine()) != null) {
+                ret.add(line);
+            }
+            return ret;
+        } finally {
+            is.close();
+        }
     }
 }
