@@ -2,13 +2,26 @@ package com.akiban.cserver.api;
 
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.IdResolverImpl;
+import com.akiban.cserver.api.common.NoSuchTableException;
+import com.akiban.cserver.api.ddl.DuplicateTableNameException;
+import com.akiban.cserver.api.ddl.JoinToUnknownTableException;
+import com.akiban.cserver.api.ddl.JoinToWrongColumnsException;
 import com.akiban.cserver.api.ddl.ParseException;
+import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
+import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
+import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
+import com.akiban.cserver.api.dml.NoSuchColumnException;
+import com.akiban.cserver.api.dml.NoSuchIndexException;
 import com.akiban.cserver.api.dml.NoSuchRowException;
+import com.akiban.cserver.api.dml.UnsupportedModificationException;
+import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
+import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.store.SchemaManager;
 import com.akiban.cserver.store.Store;
+import com.akiban.cserver.util.RowDefNotFoundException;
 
 abstract class ClientAPIBase {
 
@@ -35,18 +48,6 @@ abstract class ClientAPIBase {
         return resolver;
     }
 
-    static Store getDefaultStore() {
-        ServiceManager serviceManager = ServiceManagerImpl.get();
-        if (serviceManager == null) {
-            throw new RuntimeException("ServiceManager was not installed");
-        }
-        Store store = serviceManager.getStore();
-        if (store == null) {
-            throw new RuntimeException("ServiceManager had no Store");
-        }
-        return store;
-    }
-
     /**
      * Returns an exception as an InvalidOperationException. If the given
      * exception is one that we know how to turn into a specific
@@ -63,15 +64,47 @@ abstract class ClientAPIBase {
         if (e instanceof InvalidOperationException) {
             final InvalidOperationException ioe = (InvalidOperationException) e;
             switch (ioe.getCode()) {
-            case NO_SUCH_RECORD:
-                return new NoSuchRowException(ioe);
-            case PARSE_EXCEPTION:
-                return new ParseException(ioe);
-            case DUPLICATE_KEY:
-                return new DuplicateKeyException(ioe);
-            default:
-                return ioe;
+                case NO_SUCH_RECORD:
+                    return new NoSuchRowException(ioe);
+                case PARSE_EXCEPTION:
+                    return new ParseException(ioe);
+                case DUPLICATE_KEY:
+                    return new DuplicateKeyException(ioe);
+
+                case UNSUPPORTED_CHARSET:
+                    return new UnsupportedCharsetException(ioe);
+                case PROTECTED_TABLE:
+                    return new ProtectedTableDDLException(ioe);
+                case JOIN_TO_PROTECTED_TABLE:
+                    return new ProtectedTableDDLException(ioe);
+                case JOIN_TO_UNKNOWN_TABLE:
+                    return new JoinToUnknownTableException(ioe);
+                case JOIN_TO_WRONG_COLUMNS:
+                    return new JoinToWrongColumnsException(ioe);
+                case DUPLICATE_TABLE:
+                    return new DuplicateTableNameException(ioe);
+                case NO_SUCH_TABLE:
+                    return new NoSuchTableException(ioe);
+                case NO_SUCH_COLUMN:
+                    return new NoSuchColumnException(ioe);
+                case NO_INDEX:
+                    return new NoSuchIndexException(ioe);
+                case FK_CONSTRAINT_VIOLATION:
+                    return new ForeignKeyConstraintDMLException(ioe);
+                case NO_SUCH_ROW:
+                    return new NoSuchRowException(ioe);
+                case CURSOR_IS_FINISHED:
+                    return new CursorIsFinishedException(ioe);
+                case CURSOR_IS_UNKNOWN:
+                    return new CursorIsUnknownException(ioe);
+                case UNSUPPORTED_MODIFICATION:
+                    return new UnsupportedModificationException(ioe);
+                default:
+                    return ioe;
             }
+        }
+        if (e instanceof RowDefNotFoundException) {
+            return new NoSuchTableException( ((RowDefNotFoundException)e).getId() );
         }
         return new GenericInvalidOperationException(e);
     }
