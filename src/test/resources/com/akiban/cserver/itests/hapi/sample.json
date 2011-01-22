@@ -1,5 +1,5 @@
 {
-"comment" : [   "This simple example is actually out of spec, but passes the current implementation.",
+"comment" : [   "This test suite is actually wrong according to spec, but passes the current implementation.",
                 "I'm providing it just to give a taste of what tests might look like."
 ],
 
