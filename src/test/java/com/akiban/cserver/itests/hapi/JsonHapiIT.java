@@ -212,7 +212,11 @@ public final class JsonHapiIT extends ApiTestBase {
         final TestSetupInfo setupInfo = extractTestSetupInfo(testPlan.getJSONObject(SETUP));
 
         final JSONObject tests = testPlan.getJSONObject(TESTS);
-        for(String testName : JSONObject.getNames(tests)) {
+        String[] testNames = JSONObject.getNames(tests);
+        if (testNames == null) {
+            throw new RuntimeException("no tests defined");
+        }
+        for(String testName : testNames) {
             try {
                 JSONObject test = tests.getJSONObject(testName);
                 final boolean passing = test.optBoolean(TEST_PASSING, TEST_PASSING_DEFAULT);
