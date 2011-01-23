@@ -126,7 +126,7 @@ public final class NamedParameterizedRunner extends Suite
         @Override
         public String getName()
         {
-            return String.format("%s [%s]", getTestClass().getName(), parameterization.getName());
+            return parameterization.getName();
         }
 
         @Override
