@@ -47,10 +47,11 @@ import static org.junit.Assert.*;
  *
  * The "setup" key defines setup. It must have the following structure:
  * <ul>
- *  <li><b>tables</b> : a json object that defines tables' DDLs:
+ *  <li><b>tables</b> : a json array that defines tables' DDLs.:
  *      <ul>
- *          <li>key is table's name</li>
- *          <li>value is an array of strings to be concatenated to create that table
+ *          <li>each table is defined as an array of strings</li>
+ *          <li>the first element is the table's name</li>
+ *          <li>subsequent elements will be concatenated to create the table's DDL
  *          <ul>
  *              <li>ommit the <tt>CREATE TABLE foo(</tt> and closing parenthesis</li>
  *              <li>do not put commas at the end of each string; they will be appended automatically</li>
@@ -66,6 +67,14 @@ import static org.junit.Assert.*;
  *  </li>
  *  <li><b>schema</b> (optional string, default "test") : the schema name to be used for all tables
  * </ul>
+ *
+ * <p>When defining tables, the order matters: tables will be created in the order you specify. When rows are written
+ * to those tables, they'll be written one table at a time, in that same order. Within each table, rows will be written
+ * in the order they appear in the json.</p>
+ *
+ * <p>(In case you're wondering why tables are defined in somewhat awkward array-of-arrays style (and not, say, as
+ * a map of tablename-to-DDLs), it's because JSON objects' keys are unordered, and we need to preserve order so that
+ * tables aren't created before their parents.)</p>
  *
  * <h2>Tests section</h2>
  *
@@ -259,15 +268,22 @@ public final class JsonHapiIT extends ApiTestBase {
 
         schema = setupJSON.optString(SETUP_SCHEMA, SETUP_SCHEMA_DEFAULT);
 
-        JSONObject tableDDLsJSON = setupJSON.getJSONObject(SETUP_TABLES);
-        for(String tableName : JSONObject.getNames(tableDDLsJSON)) {
-            List<String> ddlPortion = new ArrayList<String>();
-            JSONArray ddlArray = tableDDLsJSON.getJSONArray(tableName);
-            for(int i=0, MAX=ddlArray.length(); i < MAX; ++i) {
-                ddlPortion.add(ddlArray.getString(i));
+        final JSONArray ddlArrays = setupJSON.getJSONArray(SETUP_TABLES);
+
+        LinkedHashSet<String> tableNames = new LinkedHashSet<String>();
+        List<String> ddlComponents = new ArrayList<String>();
+        for(int i=0, MAX = ddlArrays.length(); i < MAX; ++i) {
+            JSONArray tableDefinition = ddlArrays.getJSONArray(i);
+            String tableName = tableDefinition.getString(0);
+            tableNames.add(tableName);
+            if (tableDefinition.length() < 2) {
+                throw new RuntimeException("table " + tableName + " has no DDLs");
             }
-            String definition = Strings.join(ddlPortion, ", ");
-            ddls.add(String.format("CREATE TABLE %s (%s)", tableName, definition));
+            ddlComponents.clear();
+            for(int j=1, MAX2 = tableDefinition.length(); j < MAX2; ++j) {
+                ddlComponents.add(tableDefinition.getString(j));
+            }
+            ddls.add(String.format("CREATE TABLE %s (%s)", tableName, Strings.join(ddlComponents, ", ")));
         }
 
         final JSONObject writeRowsJSON = setupJSON.optJSONObject(SETUP_WRITE_ROWS);
@@ -276,7 +292,15 @@ public final class JsonHapiIT extends ApiTestBase {
         }
         else {
             List<NewRow> writeRowsTmp = new ArrayList<NewRow>();
-            for (String tableName : JSONObject.getNames(writeRowsJSON)) {
+            Set<String> writeRowTables = new TreeSet<String>(Arrays.asList(JSONObject.getNames(writeRowsJSON)));
+            if (!tableNames.equals(writeRowTables)) {
+                throw new RuntimeException(String.format("write_row tables expected %s but was %s",
+                        tableNames, writeRowTables
+                ));
+            }
+            // We iterate over tableNames rather than the writeRowsJSON names so that we can ensure
+            // correct ordering of child rows after parent rows.
+            for (String tableName : tableNames) {
                 // rows is an array of arrays, each sub-array being a row's columns
                 JSONArray rows = writeRowsJSON.getJSONArray(tableName);
                 final TableId tableId = TableId.of(schema, tableName);
@@ -322,7 +346,7 @@ public final class JsonHapiIT extends ApiTestBase {
         }
         if (runInfo.writeRows) {
             for (NewRow row : setupInfo.writeRows) {
-                dml().writeRow(session, row);
+                dml().writeRow(session, copyRow(row));
             }
         }
     }

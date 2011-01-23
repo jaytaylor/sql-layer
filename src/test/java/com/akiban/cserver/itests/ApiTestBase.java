@@ -170,6 +170,29 @@ public class ApiTestBase extends CServerTestCase {
     }
 
     /**
+     * Creates a new NewRow by copying the old one. This creates a new TableId for the new row using the incoming
+     * row's table name, which means that any ID resolution that's done on one NewRow won't affect the other. The
+     * incoming row must be resolvable to TableName without a resolver.
+     * @param row the row to copy
+     * @return a new NewRow, with a new TableId
+     */
+    protected final NewRow copyRow(NewRow row) {
+        final TableName tableName;
+        try {
+            tableName = ddl().resolveTableId(row.getTableId()).getTableName(null);
+        } catch (NoSuchTableException e) {
+            throw new TestException(e);
+        }
+
+        TableId tableId = TableId.of(tableName.getSchemaName(), tableName.getTableName());
+        NewRow ret = new NiceRow(tableId);
+        for (Map.Entry<ColumnId,Object> field : row.getFields().entrySet()) {
+            ret.put(field.getKey(), field.getValue());
+        }
+        return ret;
+    }
+
+    /**
      * Expects an exact number of rows. This checks both the countRowExactly and countRowsApproximately
      * methods on DMLFunctions.
      * @param tableId the table to count

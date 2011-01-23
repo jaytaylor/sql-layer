@@ -5,9 +5,10 @@
 
 "setup" : {
     "schema" : "coi_optional_schema",
-    "tables" : {
-        "customer" :    ["id int key, name varchar(32)"]
-    },
+    "tables" : [
+        [ "customer",
+            "id int key, name varchar(32)"]
+    ],
     "write_rows" : {
         "customer" : [  [1, "person1"]  ]
     }
