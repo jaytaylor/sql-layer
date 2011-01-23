@@ -301,10 +301,10 @@ public final class JsonHapiIT extends ApiTestBase {
     private final TestRunInfo runInfo;
 
 
-    public JsonHapiIT(Throwable testSetupErr, TestSetupInfo setupInfo, TestRunInfo runInfo)
+    public JsonHapiIT(Exception testSetupErr, TestSetupInfo setupInfo, TestRunInfo runInfo) throws Exception
     {
         if (testSetupErr != null) {
-            throw new RuntimeException("During setup", testSetupErr);
+            throw testSetupErr;
         }
         this.setupInfo = setupInfo;
         this.runInfo = runInfo;
