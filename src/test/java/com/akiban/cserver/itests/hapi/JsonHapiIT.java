@@ -75,7 +75,7 @@ import static org.junit.Assert.*;
  *  <li>value is a json object that defines the test (see "test execution" below for more on each of the following):
  *      <ul>
  *          <li><b>passing</b> (optional boolean, default true) : whether the test should be run </li>
- *          <li><b>write_row</b> (boolean) : whether rows should be written before the test</li>
+ *          <li><b>write_row</b> (optional boolean, default true) : whether rows should be written before the test</li>
  *          <li><b>get</b> (string) : the memcache GET request string (without "<tt>GET </tt>")</li>
  *          <li><b>expect</b> (any value) : the json element you expect to get back
  *      </ul>
@@ -118,12 +118,13 @@ public final class JsonHapiIT extends ApiTestBase {
 
     private static final String TESTS = "tests";
     private static final String TEST_WRITE_ROWS = "write_rows";
+    private static final boolean TEST_WRITE_ROWS_DEFAULT = true;
     private static final String TEST_PASSING = "passing";
     private static final boolean TEST_PASSING_DEFAULT = true;
     private static final String TEST_GET = "get";
     private static final String TEST_EXPECT = "expect";
-    private static final String[] TEST_KEYS_REQUIRED = {TEST_WRITE_ROWS, TEST_GET, TEST_EXPECT};
-    private static final String[] TEST_KEYS_OPTIONAL = {TEST_PASSING};
+    private static final String[] TEST_KEYS_REQUIRED = {TEST_GET, TEST_EXPECT};
+    private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING};
 
     private static final String COMMENT = "comment";
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
@@ -244,9 +245,9 @@ public final class JsonHapiIT extends ApiTestBase {
     }
 
     private static TestRunInfo extractTestRunInfo(JSONObject test) throws JSONException{
-        final boolean writeRows = test.getBoolean(TEST_WRITE_ROWS);
+        final boolean writeRows = test.optBoolean(TEST_WRITE_ROWS, TEST_WRITE_ROWS_DEFAULT);
         final String get = test.getString(TEST_GET);
-        final Object expect = test.getJSONObject(TEST_EXPECT);
+        final Object expect = test.get(TEST_EXPECT);
         return new TestRunInfo(writeRows, get, expect);
     }
 
