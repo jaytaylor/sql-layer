@@ -113,6 +113,8 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String SETUP_SCHEMA_DEFAULT = "test";
     private static final String SETUP_TABLES = "tables";
     private static final String SETUP_WRITE_ROWS = "write_rows";
+    private static final String[] SETUP_KEYS_REQUIRED = {SETUP_TABLES, SETUP_WRITE_ROWS};
+    private static final String[] SETUP_KEYS_OPTIONAL = {SETUP_SCHEMA};
 
     private static final String TESTS = "tests";
     private static final String TEST_WRITE_ROWS = "write_rows";
@@ -120,13 +122,12 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final boolean TEST_PASSING_DEFAULT = true;
     private static final String TEST_GET = "get";
     private static final String TEST_EXPECT = "expect";
+    private static final String[] TEST_KEYS_REQUIRED = {TEST_WRITE_ROWS, TEST_GET, TEST_EXPECT};
+    private static final String[] TEST_KEYS_OPTIONAL = {TEST_PASSING};
 
-    private static final Set<String> TEST_PLAN_SECTIONS = Collections.unmodifiableSet(
-            new HashSet<String>(Arrays.asList(SETUP, TESTS))
-    );
-    private static final Set<String> TEST_PLAN_OPTIONAL_SECTIONS = Collections.unmodifiableSet(
-            new HashSet<String>(Arrays.asList("comment"))
-    );
+    private static final String COMMENT = "comment";
+    private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
+    private static final String[] SECTIONS_OPTIONAL = {COMMENT};
 
     @NamedParameterizedRunner.TestParameters
     public static List<Parameterization> params() throws IOException {
@@ -142,7 +143,8 @@ public final class JsonHapiIT extends ApiTestBase {
                     params.add(test);
                 }
             } catch (Throwable e) {
-                params.add( Parameterization.create(file + " initialization error", e, null, null));
+                String name = file.substring(0, file.length() - SUFFIX_JSON.length());
+                params.add( Parameterization.create(name + ": initialization error", e, null, null));
             }
         }
         return params;
@@ -182,6 +184,17 @@ public final class JsonHapiIT extends ApiTestBase {
         }
     }
 
+    private static void validateKeys(String description, JSONObject json, String[] required, String[] optional) {
+        Set<String> keys = new HashSet<String>(Arrays.asList(JSONObject.getNames(json)));
+        keys.removeAll(Arrays.asList(optional));
+        Set<String> requiredSet = new HashSet<String>(Arrays.asList(required));
+        if (!requiredSet.equals(keys)) {
+            throw new RuntimeException(String.format("%s: required keys %s but found %s",
+                    description, requiredSet, keys
+            ));
+        }
+    }
+
     private static List<Parameterization> processFile(String file) throws IOException, JSONException {
         final String name = file.substring(0, file.length() - SUFFIX_JSON.length());
         final List<Parameterization> params = new ArrayList<Parameterization>();
@@ -194,29 +207,31 @@ public final class JsonHapiIT extends ApiTestBase {
         }
 
         final JSONObject testPlan = new JSONObject(Strings.join(Strings.dumpResource(JsonHapiIT.class, file)));
-        Set<String> sections = new HashSet<String>(Arrays.asList(JSONObject.getNames(testPlan)));
-        sections.removeAll(TEST_PLAN_OPTIONAL_SECTIONS); // including an optional section shouldn't fail the assert
-        assertEquals("sections", TEST_PLAN_SECTIONS, sections);
+        validateKeys("test plan", testPlan, SECTIONS_REQUIRED, SECTIONS_OPTIONAL);
 
         final TestSetupInfo setupInfo = extractTestSetupInfo(testPlan.getJSONObject(SETUP));
 
         final JSONObject tests = testPlan.getJSONObject(TESTS);
         for(String testName : JSONObject.getNames(tests)) {
             try {
-                TestRunInfo runInfo = null;
                 JSONObject test = tests.getJSONObject(testName);
                 final boolean passing = test.optBoolean(TEST_PASSING, TEST_PASSING_DEFAULT);
-                JSONException exception = null;
-                try {
-                    runInfo = extractTestRunInfo(test);
-                } catch (JSONException e) {
-                    if (passing) {
-                        exception = e;
+                final Parameterization param;
+                if (passing) {
+                    validateKeys("test \"" + testName +'"', test, TEST_KEYS_REQUIRED, TEST_KEYS_OPTIONAL);
+                    TestRunInfo runInfo = null;
+                    JSONException exception = null;
+                    try {
+                        runInfo = extractTestRunInfo(test);
+                    } catch (JSONException e) {
+                            exception = e;
                     }
+                    param = Parameterization.create(paramName(name, testName), exception, setupInfo, runInfo);
                 }
-                params.add(
-                        new Parameterization(paramName(name, testName), passing, exception, setupInfo, runInfo)
-                );
+                else {
+                    param = Parameterization.failing(paramName(name, testName), null, null, null);
+                }
+                params.add(param);
             } catch (JSONException e) {
                 params.add( Parameterization.create(paramName(name, testName), e, null, null) );
             }
@@ -231,14 +246,15 @@ public final class JsonHapiIT extends ApiTestBase {
         return new TestRunInfo(writeRows, get, expect);
     }
 
-    private static TestSetupInfo extractTestSetupInfo(JSONObject testPlan) throws JSONException {
+    private static TestSetupInfo extractTestSetupInfo(JSONObject setupJSON) throws JSONException {
+        validateKeys("setup", setupJSON, SETUP_KEYS_REQUIRED, SETUP_KEYS_OPTIONAL);
         final String schema;
         final List<NewRow> writeRows;
         final List<String> ddls = new ArrayList<String>();
 
-        schema = testPlan.optString(SETUP_SCHEMA, SETUP_SCHEMA_DEFAULT);
+        schema = setupJSON.optString(SETUP_SCHEMA, SETUP_SCHEMA_DEFAULT);
 
-        JSONObject tableDDLsJSON = testPlan.getJSONObject(SETUP_TABLES);
+        JSONObject tableDDLsJSON = setupJSON.getJSONObject(SETUP_TABLES);
         for(String tableName : JSONObject.getNames(tableDDLsJSON)) {
             List<String> ddlPortion = new ArrayList<String>();
             JSONArray ddlArray = tableDDLsJSON.getJSONArray(tableName);
@@ -249,7 +265,7 @@ public final class JsonHapiIT extends ApiTestBase {
             ddls.add(String.format("CREATE TABLE %s (%s)", tableName, definition));
         }
 
-        final JSONObject writeRowsJSON = testPlan.optJSONObject(SETUP_WRITE_ROWS);
+        final JSONObject writeRowsJSON = setupJSON.optJSONObject(SETUP_WRITE_ROWS);
         if (writeRowsJSON == null) {
             writeRows = Collections.emptyList();
         }
