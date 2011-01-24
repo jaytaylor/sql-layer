@@ -1,15 +1,24 @@
 package com.akiban.cserver.itests.bugs.bug704443;
 
+import com.akiban.ais.io.CSVTarget;
+import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Test;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static junit.framework.Assert.*;
 
@@ -38,6 +47,8 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
             assertEquals("param[1] for column " + column, Long.valueOf(0), column.getTypeParameter2());
         }
         assertEquals("columns.size()", 3, getUserTable(t1Id).getColumns().size());
+        
+        columnSerializationTest(t1Id);
     }
 
     @Test
@@ -63,5 +74,48 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
             assertEquals("param[1] for column " + column, Long.valueOf(0), column.getTypeParameter2());
         }
         assertEquals("columns.size()", 1, getUserTable(t1Id).getColumns().size());
+
+        columnSerializationTest(t1Id);
+    }
+
+    /**
+     * Bug 706315. For each column in the given table, compares the column's values to the values of its map.
+     * @param tableId the table whose columns we should compare
+     */
+    private void columnSerializationTest(TableId tableId) throws InvalidOperationException {
+        TableName tableName = ddl().getTableName(tableId);
+        UserTable uTable = ddl().getAIS(session).getUserTable(tableName);
+        assertNotNull("no table " + tableName, uTable);
+
+        for (Column column : uTable.getColumns()) {
+            Set<String> keysChecked = new TreeSet<String>();
+            Map<String,Object> map = Collections.unmodifiableMap(new TreeMap<String,Object>(column.map()));
+
+            checkKey(keysChecked, map, "charset", column.getCharsetAndCollation().charset());
+            checkKey(keysChecked, map, "collation", column.getCharsetAndCollation().collation());
+            checkKey(keysChecked, map, "columnName", column.getName());
+            checkKey(keysChecked, map, "groupColumnName", column.getGroupColumn().getName());
+            checkKey(keysChecked, map, "groupSchemaName", column.getGroupColumn().getTable().getName().getSchemaName());
+            checkKey(keysChecked, map, "groupTableName", column.getGroupColumn().getTable().getName().getTableName());
+            checkKey(keysChecked, map, "initialAutoIncrementValue", column.getInitialAutoIncrementValue());
+            checkKey(keysChecked, map, "maxStorageSize", column.getMaxStorageSize());
+            checkKey(keysChecked, map, "nullable", column.getNullable());
+            checkKey(keysChecked, map, "position", column.getPosition());
+            checkKey(keysChecked, map, "prefixSize", column.getPrefixSize());
+            checkKey(keysChecked, map, "schemaName", column.getTable().getName().getSchemaName());
+            checkKey(keysChecked, map, "tableName", column.getTable().getName().getTableName());
+            checkKey(keysChecked, map, "typename", column.getType().name());
+            checkKey(keysChecked, map, "typeParam1", column.getTypeParameter1());
+            checkKey(keysChecked, map, "typeParam2", column.getTypeParameter2());
+            
+            assertEquals("keys checked", map.keySet(), keysChecked);
+        }
+    }
+
+    private static void checkKey(Set<String> checkedKeys, Map<String,Object> map, String key, Object value) {
+        boolean added = checkedKeys.add(key);
+        assertTrue(key + " already checked", added);
+        assertTrue(key + " not in map: " + map, map.containsKey(key));
+        assertEquals(key, value, map.get(key));
     }
 }
