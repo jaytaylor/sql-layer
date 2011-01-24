@@ -478,8 +478,8 @@ public class Column implements Serializable, ModelNames
         
         if(type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL))
         {
-            setTypeParameter1(10L);
-            setTypeParameter2(0L);
+            setTypeParameter1(DECIMAL_DEFAULT_PRECISION);
+            setTypeParameter2(DECIMAL_DEFAULT_SCALE);
         }
     }
 
