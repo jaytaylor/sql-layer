@@ -324,7 +324,7 @@ public class Column implements Serializable, ModelNames
         return nullable;
     }
 
-    private boolean isDecimalType() {
+    private /* final */ boolean isDecimalType() { // Called in ctor; if you make this non-private, make it final!
         return type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL);
     }
 
@@ -476,7 +476,7 @@ public class Column implements Serializable, ModelNames
         this.type = type;
         this.table.addColumn(this);
         
-        if(type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL))
+        if(isDecimalType())
         {
             setTypeParameter1(DECIMAL_DEFAULT_PRECISION);
             setTypeParameter2(DECIMAL_DEFAULT_SCALE);
