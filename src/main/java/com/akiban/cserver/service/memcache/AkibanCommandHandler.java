@@ -1,11 +1,11 @@
 package com.akiban.cserver.service.memcache;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.channel.Channel;
@@ -18,10 +18,7 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.store.Store;
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
@@ -39,8 +36,9 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
  * Inspried by: com.thimbleware.jmemcached.protocol.MemcachedCommandHandler
  */
 @ChannelHandler.Sharable
-public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
+final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
+    private final Session session;
     /**
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
@@ -48,11 +46,12 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     private final Store store;
     private final DefaultChannelGroup channelGroup;
     private static final Log LOG = LogFactory.getLog(MemcacheService.class);
-
+    
 
     public AkibanCommandHandler(Store store, DefaultChannelGroup channelGroup) {
         this.store = store;
         this.channelGroup = channelGroup;
+        this.session = new SessionImpl();
     }
 
     /**
@@ -224,120 +223,18 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         String[] keys = new String[command.keys.size()];
         keys = command.keys.toArray(keys);
-        CacheElement[] results = null;
 
         byte[] key = keys[0].getBytes();
-        byte[] result_bytes = null;
-
-        if(key != null) {
-            String request = new String(key);
-            String[] tokens = request.split(":");
-
-            if(tokens.length == 3 || tokens.length == 4) {
-                String schema = tokens[0];
-                String table = tokens[1];
-                String colkey = tokens[2];
-                String min_val = null;
-                String max_val = null;
-                ByteBuffer payload = (ByteBuffer) context.getAttachment();
-
-                if(tokens.length == 4) {
-                    min_val = max_val = tokens[3];
-                }
-
-                final RowDefCache cache = store.getRowDefCache();
-
-                try {
-                    StringBuilder sb = new StringBuilder();
-                    // TODO - probably want an existing Session
-                    List<RowData> list = store.fetchRows(new SessionImpl(), schema, table, colkey, min_val, max_val, null, payload);
-                    
-                    int current_def_id = -1;
-                    List<Integer> def_id_stack = new ArrayList<Integer>();
-
-                    for(RowData data : list) {
-                        final int def_id = data.getRowDefId();
-                        final RowDef def = cache.getRowDef(def_id);
-                        final int parent_def_id = def.getParentRowDefId();
-
-                        if(def_id_stack.isEmpty()) {
-                            current_def_id = def_id;
-                            def_id_stack.add(parent_def_id);
-                            sb.append("{ \"");
-                            sb.append(def.getTableName());
-                            sb.append("\" : ");
-                            if(min_val == null) {
-                                sb.append(" [ ");
-                            }
-                        }
-                        else if(def_id == current_def_id) {
-                            // another leaf on current branch (add to current open array)
-                            sb.append(" }, ");
-                        }
-                        else if(parent_def_id == current_def_id) {
-                            // down the tree, new branch (new open array)
-                            current_def_id = def_id;
-                            def_id_stack.add(parent_def_id);
-                            
-                            sb.append(", \"");
-                            sb.append(def.getTableName());
-                            sb.append("\" : [ ");
-                        }
-                        else {
-                            // a) sibling branch or b) up the tree to an old branch (close array for each step up)
-                            current_def_id = def_id;
-                            int pop_count = 0;
-                            int last = def_id_stack.size() - 1;
-
-                            sb.append(" } ]");
-                            while(!def_id_stack.get(last).equals(parent_def_id)) {
-                                if(pop_count++ > 0) {
-                                    sb.append(" ]");
-                                }
-                                sb.append(" }");
-                                def_id_stack.remove(last--);
-                            }
-                            
-                            if(pop_count == 0) {
-                                // Was sibling
-                                sb.append(", \"");
-                                sb.append(def.getTableName());
-                                sb.append("\" : [ ");
-                            }
-                            else {
-                                // Was child
-                                sb.append(", ");
-                            }
-                        }
-
-                        String json_row = data.toJSONString(cache);
-                        sb.append("{ ");
-                        sb.append(json_row);
-                    }
-
-                    if(sb.length() > 0) {
-                        int last = def_id_stack.size() - 1;
-                        while(last > 0) {
-                            sb.append(" } ]");
-                            def_id_stack.remove(last--);
-                        }
-                        sb.append(" }");
-                        if(min_val == null) {
-                            sb.append(" ]");
-                        }
-                        sb.append(" }");
-                        result_bytes = sb.toString().getBytes();
-                    }
-                }
-                catch(Exception e) {
-                    result_bytes = ("read error: " + e.getMessage()).getBytes();
-                }
-            }
-            else {
-                result_bytes = ("invalid key: " + request).getBytes();
-            }
-        }
-
+        String request = new String(key);
+        String result_string = HapiProcessorImpl.processRequest(
+                store,
+                session,
+                request,
+                (ByteBuffer) context.getAttachment()
+        ) ;
+        byte[] result_bytes = result_string.getBytes();
+        
+        CacheElement[] results = null;
         if(result_bytes != null) {
             LocalCacheElement element = new LocalCacheElement(keys[0]);
             element.setData(result_bytes);
@@ -347,4 +244,6 @@ public final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
     }
+
+    
 }

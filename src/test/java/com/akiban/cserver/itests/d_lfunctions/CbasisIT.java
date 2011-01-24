@@ -1,4 +1,4 @@
-package com.akiban.cserver.itests;
+package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.InvalidOperationException;
@@ -9,6 +9,7 @@ import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.NoSuchRowException;
 import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
 import com.akiban.cserver.api.dml.scan.*;
+import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import org.junit.Test;
@@ -18,7 +19,7 @@ import java.util.*;
 
 import static junit.framework.Assert.*;
 
-public final class CTest extends ApiTestBase {
+public final class CbasisIT extends ApiTestBase {
 
     @Test
     public void simpleScan() throws InvalidOperationException {

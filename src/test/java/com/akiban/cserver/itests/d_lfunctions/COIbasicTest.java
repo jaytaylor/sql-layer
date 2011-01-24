@@ -1,4 +1,4 @@
-package com.akiban.cserver.itests;
+package com.akiban.cserver.itests.d_lfunctions;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -7,6 +7,7 @@ import static junit.framework.Assert.assertSame;
 import java.util.Arrays;
 import java.util.List;
 
+import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -21,7 +22,7 @@ import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NewRowBuilder;
 
-public final class COITest extends ApiTestBase {
+public final class COIbasicTest extends ApiTestBase {
     private static class TableIds {
         public final TableId c;
         public final TableId o;
