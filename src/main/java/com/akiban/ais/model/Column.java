@@ -225,11 +225,17 @@ public class Column implements Serializable, ModelNames
     
     public void setTypeParameter1(Long typeParameter1)
     {
+        if ( (typeParameter1 == null && isDecimalType()) ) {
+            return;
+        }
         this.typeParameter1 = typeParameter1;
     }
 
     public void setTypeParameter2(Long typeParameter2)
     {
+        if ( (typeParameter2 == null && isDecimalType()) ) {
+            return;
+        }
         this.typeParameter2 = typeParameter2;
     }
 
@@ -318,19 +324,19 @@ public class Column implements Serializable, ModelNames
         return nullable;
     }
 
+    private boolean isDecimalType() {
+        return type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL);
+    }
+
     public Long getTypeParameter1()
     {
-        if (typeParameter1 == null && (type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL))) {
-            return DECIMAL_DEFAULT_PRECISION;
-        }
+        assert ! ((typeParameter1 == null) && isDecimalType()) : type;
         return typeParameter1;
     }
 
     public Long getTypeParameter2()
     {
-        if (typeParameter2 == null && (type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL))) {
-            return DECIMAL_DEFAULT_SCALE;
-        }
+        assert ! ((typeParameter2 == null) && isDecimalType()) : type;
         return typeParameter2;
     }
 
