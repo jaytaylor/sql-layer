@@ -87,10 +87,16 @@ import static org.junit.Assert.*;
  *          <li><b>passing</b> (optional boolean, default true) : whether the test should be run </li>
  *          <li><b>write_row</b> (optional boolean, default true) : whether rows should be written before the test</li>
  *          <li><b>get</b> (string) : the memcache GET request string (without "<tt>GET </tt>")</li>
- *          <li><b>expect</b> (any value) : the json element you expect to get back
+ *          <li><b>expect result</b> (semi-optional any value) : the json element you expect to get back</li>
+ *          <li><b>expect error</b> (semi-optional string) : the error code name you expect to be thrown</li>
+ *          <li><b>comment</b> (optional) : whatever you want; this key-value pair is ignored</li>
  *      </ul>
  *  </li>
  * </ul>
+ *
+ * The keys <tt>expect result</tt> and <tt>expect error</tt> are semi-optional in that exactly one of them must be
+ * specified per test. As you may expect, the not only sets up expected-against-actual comparisons, but also dictates
+ * whether the given <tt>GET</tt> request is expected to succeed.
  *
  * <h2>Test execution</h2>
  *
@@ -118,6 +124,8 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String SUFFIX_JSON = ".json";
     private static final String PREFIX_DISABLED = "disabled_";
 
+    private static final String COMMENT = "comment";
+
     private static final String SETUP = "setup";
     private static final String SETUP_SCHEMA = "schema";
     private static final String SETUP_SCHEMA_DEFAULT = "test";
@@ -135,9 +143,9 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String TEST_EXPECT = "expect result";
     private static final String TEST_ERROR = "expect error";
     private static final String[] TEST_KEYS_REQUIRED = {TEST_GET};
-    private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING, TEST_EXPECT, TEST_ERROR};
+    private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING, TEST_EXPECT, TEST_ERROR,
+                                                        COMMENT};
 
-    private static final String COMMENT = "comment";
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
     private static final String[] SECTIONS_OPTIONAL = {COMMENT};
 
