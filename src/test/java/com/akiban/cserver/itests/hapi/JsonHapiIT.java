@@ -1,6 +1,7 @@
 package com.akiban.cserver.itests.hapi;
 
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
@@ -53,7 +54,7 @@ import static org.junit.Assert.*;
  *          <li>the first element is the table's name</li>
  *          <li>subsequent elements will be concatenated to create the table's DDL
  *          <ul>
- *              <li>ommit the <tt>CREATE TABLE foo(</tt> and closing parenthesis</li>
+ *              <li>omit the <tt>CREATE TABLE foo(</tt> and closing parenthesis</li>
  *              <li>do not put commas at the end of each string; they will be appended automatically</li>
  *          </ul>
  *          </li>
@@ -131,9 +132,10 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String TEST_PASSING = "passing";
     private static final boolean TEST_PASSING_DEFAULT = true;
     private static final String TEST_GET = "get";
-    private static final String TEST_EXPECT = "expect";
-    private static final String[] TEST_KEYS_REQUIRED = {TEST_GET, TEST_EXPECT};
-    private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING};
+    private static final String TEST_EXPECT = "expect result";
+    private static final String TEST_ERROR = "expect error";
+    private static final String[] TEST_KEYS_REQUIRED = {TEST_GET};
+    private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING, TEST_EXPECT, TEST_ERROR};
 
     private static final String COMMENT = "comment";
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
@@ -181,11 +183,13 @@ public final class JsonHapiIT extends ApiTestBase {
         final boolean writeRows;
         final String getQuery;
         final Object expect;
+        final HapiRequestException.ReasonCode errorExpect;
 
-        private TestRunInfo(boolean writeRows, String getQuery, Object expect) {
+        private TestRunInfo(boolean writeRows, String getQuery, Object expect, String errorExpect) {
             this.writeRows = writeRows;
             this.getQuery = getQuery;
             this.expect = expect;
+            this.errorExpect = errorExpect == null ? null : HapiRequestException.ReasonCode.valueOf(errorExpect);
         }
 
         @Override
@@ -234,10 +238,10 @@ public final class JsonHapiIT extends ApiTestBase {
                 if (passing) {
                     validateKeys("test \"" + testName +'"', test, TEST_KEYS_REQUIRED, TEST_KEYS_OPTIONAL);
                     TestRunInfo runInfo = null;
-                    JSONException exception = null;
+                    Exception exception = null;
                     try {
-                        runInfo = extractTestRunInfo(test);
-                    } catch (JSONException e) {
+                        runInfo = extractTestRunInfo(testName, test);
+                    } catch (Exception e) {
                             exception = e;
                     }
                     param = Parameterization.create(paramName(name, testName), exception, setupInfo, runInfo);
@@ -253,11 +257,17 @@ public final class JsonHapiIT extends ApiTestBase {
         return params;
     }
 
-    private static TestRunInfo extractTestRunInfo(JSONObject test) throws JSONException{
+    private static TestRunInfo extractTestRunInfo(String testName, JSONObject test) throws JSONException{
         final boolean writeRows = test.optBoolean(TEST_WRITE_ROWS, TEST_WRITE_ROWS_DEFAULT);
         final String get = test.getString(TEST_GET);
-        final Object expect = test.get(TEST_EXPECT);
-        return new TestRunInfo(writeRows, get, expect);
+        final Object expect = test.opt(TEST_EXPECT);
+        final String error = test.optString(TEST_ERROR, null);
+        if ( (expect == null) == (error == null) ) {
+            throw new RuntimeException(String.format("test '%s': you must set one (and only one) of '%s' or '%s'",
+                    testName, TEST_EXPECT, TEST_ERROR
+            ));
+        }
+        return new TestRunInfo(writeRows, get, expect, error);
     }
 
     private static TestSetupInfo extractTestSetupInfo(JSONObject setupJSON) throws JSONException {
@@ -351,14 +361,30 @@ public final class JsonHapiIT extends ApiTestBase {
     }
 
     @Test
-    public void get() throws JSONException {
-        String result = hapi().processRequest(session, runInfo.getQuery);
-        assertNotNull("null result", result);
-        assertTrue("empty result: >" + result + "< ", result.trim().length() > 1);
+    public void get() throws JSONException, HapiRequestException {
+        try {
+            String result = hapi().processRequest(session, runInfo.getQuery);
+            assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);
+            assertNotNull("null result", result);
+            assertTrue("empty result: >" + result + "< ", result.trim().length() > 1);
+            final Object actual = new JSONTokener(result).nextValue();
+            assertEquals("GET response", jsonString(runInfo.expect), jsonString(actual));
+        } catch (HapiRequestException e) {
+            if(runInfo.expect != null) {
+                throw e;
+            }
+            if(runInfo.errorExpect.equals(e.getReasonCode())) {
+                String message = String.format("Error reason code expected <%s> but was <%s>",
+                        runInfo.errorExpect, e.getReasonCode()
+                );
+                System.err.println(message);
+                e.printStackTrace();
+                fail(message);
+            }
+            assertEquals("error reason code", runInfo.errorExpect, e.getReasonCode());
+        }
 
-        final Object actual = new JSONTokener(result).nextValue();
 
-        assertEquals("GET response", jsonString(runInfo.expect), jsonString(actual));
     }
 
     private static String jsonString(Object object) throws JSONException {

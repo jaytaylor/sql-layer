@@ -36,16 +36,16 @@
         ]
     ],
     "write_rows" : {
-        "customer"  : [ [1, "Alpha"],
-                        [9, "Bravo"]
+        "customer"  : [ [11, "Alpha"],
+                        [19, "Bravo"]
         ],
-        "orders"    : [ [1, 1, "1/1/2001"],
-                        [2, 1, "2/2/2002"]
+        "orders"    : [ [21, 11, "1/1/2001"],
+                        [22, 11, "2/2/2002"]
         ],
-        "item"      : [ [1, 1, 1111]
+        "item"      : [ [31, 21, 1111]
         ],
-        "address"   : [ [1, 1, "500 Harrison"],
-                        [2, 9, "1 Akiban Way"]
+        "address"   : [ [41, 11, "500 Harrison"],
+                        [42, 19, "1 Akiban Way"]
         ]
     }
 },
@@ -53,13 +53,13 @@
 "tests" : {
     "from root" : {
         "get"           : "coi:customer:cid=1",
-        "expect"        :
+        "expect result" :
         {
             "customer" :
             [
                 {
                     "data"  :
-                    {   "cid"   : 1,
+                    {   "cid"   : 11,
                         "name"  : "Alpha"
                     },
                     "children" :
@@ -69,8 +69,8 @@
                             {
                                 "data" :
                                 {
-                                    "oid"   : 1,
-                                    "c_id"  : 1,
+                                    "oid"   : 21,
+                                    "c_id"  : 11,
                                     "when"  : "1/1/2001"
                                 },
                                 "children" :
@@ -79,8 +79,8 @@
                                         {
                                             "data" :
                                             {
-                                                "iid"   : 1,
-                                                "o_id"  : 1,
+                                                "iid"   : 31,
+                                                "o_id"  : 21,
                                                 "sku"   : 1111
                                             }
                                         }
@@ -90,8 +90,8 @@
                             {
                                 "data" :
                                 {
-                                    "oid"   : 2,
-                                    "c_id"  : 1,
+                                    "oid"   : 22,
+                                    "c_id"  : 11,
                                     "when"  : "2/2/2002"
                                 },
                                 "children" :
@@ -105,8 +105,8 @@
                             {
                                 "data" :
                                 {
-                                    "aid"   : 1,
-                                    "c_id"  : 1,
+                                    "aid"   : 41,
+                                    "c_id"  : 11,
                                     "street": "500 Harrison"
                                 },
                                 "children" : {}
@@ -120,12 +120,15 @@
 
     "from child" : {
         "get"           : "coi:order:oid=2",
-        "expect"        : "TBD"
+        "expect result" :
+        {
+            "customer" : []
+        }
     },
 
     "from predicate's child" : {
-        "get"           : "coi:order:(customer)name=bob",
-        "expect"        : "ERROR"
+        "get"           : "coi:orders:(customer)id=11",
+        "expect error"  : "PREDICATE_IS_PARENT"
     }
 }
 
