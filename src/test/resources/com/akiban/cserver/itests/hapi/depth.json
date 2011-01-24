@@ -11,16 +11,17 @@
     "tables" : [
         [ "customer",
             "cid int key",
-            "name varchar(32)"
+            "name varchar(32)",
+            "address char(4)"
         ],
-                        
+
         [ "orders",
             "oid int key",
             "c_id int",
             "when varchar(10)",
             "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
         ],
-                        
+
         [ "item",
             "iid int key",
             "o_id int",
@@ -36,9 +37,9 @@
         ]
     ],
     "write_rows" : {
-        "customer"  : [ [11, "Alpha"],
-                        [19, "Bravo"],
-                        [18, "Charlie"]
+        "customer"  : [ [11, "Alpha", "Mrs"],
+                        [19, "Bravo", "Miss"],
+                        [18, "Charlie", "Mr"]
         ],
         "orders"    : [ [21, 11, "1/1/2001"],
                         [22, 11, "2/2/2002"],
@@ -57,64 +58,41 @@
         "get"           : "coi:customer:cid=1",
         "expect result" :
         {
-            "customer" :
+            "@customer" :
             [
                 {
-                    "data"  :
-                    {   "cid"   : 11,
-                        "name"  : "Alpha"
-                    },
-                    "children" :
-                    {
-                        "orders" :
-                        [
-                            {
-                                "data" :
+                    "cid"   : 11,
+                    "name"  : "Alpha",
+                    "address" : "Mrs",
+                    "@orders" :
+                    [
+                        {
+                            "oid"   : 21,
+                            "c_id"  : 11,
+                            "when"  : "1/1/2001",
+                            "@item" : [
                                 {
-                                    "oid"   : 21,
-                                    "c_id"  : 11,
-                                    "when"  : "1/1/2001"
-                                },
-                                "children" :
-                                {
-                                    "item" : [
-                                        {
-                                            "data" :
-                                            {
-                                                "iid"   : 31,
-                                                "o_id"  : 21,
-                                                "sku"   : 1111
-                                            }
-                                        }
-                                    ]
+                                    "iid"   : 31,
+                                    "o_id"  : 21,
+                                    "sku"   : 1111
                                 }
-                            },
-                            {
-                                "data" :
-                                {
-                                    "oid"   : 22,
-                                    "c_id"  : 11,
-                                    "when"  : "2/2/2002"
-                                },
-                                "children" :
-                                {
-                                    "item" : []
-                                }
-                            }
-                        ],
-                        "address" :
-                        [
-                            {
-                                "data" :
-                                {
-                                    "aid"   : 41,
-                                    "c_id"  : 11,
-                                    "street": "500 Harrison"
-                                },
-                                "children" : {}
-                            }
-                        ]
-                    }
+                            ]
+                        },
+                        {
+                            "oid"   : 22,
+                            "c_id"  : 11,
+                            "when"  : "2/2/2002",
+                            "@item" : []
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "aid"   : 41,
+                            "c_id"  : 11,
+                            "street": "500 Harrison"
+                        }
+                    ]
                 }
             ]
         }
@@ -124,28 +102,19 @@
         "get"           : "coi:order:oid=21",
         "expect result" :
         {
-            "orders" :
+            "@orders" :
             [
                 {
-                    "data" :
-                    {
-                        "oid"   : 21,
-                        "c_id"  : 11,
-                        "when"  : "1/1/2001"
-                    },
-                    "children" :
-                    {
-                        "item" : [
-                            {
-                                "data" :
-                                {
-                                    "iid"   : 31,
-                                    "o_id"  : 21,
-                                    "sku"   : 1111
-                                }
-                            }
-                        ]
-                    }
+                    "oid"   : 21,
+                    "c_id"  : 11,
+                    "when"  : "1/1/2001",
+                    "@item" : [
+                        {
+                            "iid"   : 31,
+                            "o_id"  : 21,
+                            "sku"   : 1111
+                        }
+                    ]
                 }
             ]
         }
@@ -160,44 +129,32 @@
         "get"           : "coi:customer:(orders)oid=22",
         "expect result" :
         {
-            "customer" :
+            "@customer" :
             [
                 {
                     "data" :
                     {
                         "cid" : 11,
+                        "address" : "Mrs",
                         "name" : "Alpha"
                     },
-                    "children" :
-                    {
-                        "order" :
-                        [
-                            {
-                                "data" :
-                                {
-                                    "oid" : 22,
-                                    "c_id" : 11,
-                                    "when" : "2/2/2002"
-                                },
-                                "children" :
-                                {
-                                    "item" : []
-                                }
-                            }
-                        ],
-                        "address" :
-                        [
-                            {
-                                "data" :
-                                {
-                                    "aid" : 41,
-                                    "c_id" : 11,
-                                    "street" : "500 Harrison"
-                                },
-                                "children" : {}
-                            }
-                        ]
-                    }
+                    "@order" :
+                    [
+                        {
+                            "oid" : 22,
+                            "c_id" : 11,
+                            "when" : "2/2/2002",
+                            "@item": []
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "aid" : 41,
+                            "c_id" : 11,
+                            "street" : "500 Harrison"
+                        }
+                    ]
                 }
             ]
         }
@@ -207,73 +164,47 @@
         "get"           : "coi:customer:(orders)when='1%2F1%2F2001'",
         "expect result" :
         {
-            "customer" :
+            "@customer" :
             [
                 {
-                    "data" :
-                    {
-                        "cid" : 11,
-                        "name" : "Alpha"
-                    },
-                    "children" :
-                    {
-                        "order" :
-                        [
-                            {
-                                "data" :
-                                {
-                                    "oid" : 22,
-                                    "c_id" : 11,
-                                    "when" : "2/2/2002"
-                                },
-                                "children" :
-                                {
-                                    "item" : []
-                                }
-                            }
-                        ],
-                        "address" :
-                        [
-                            {
-                                "data" :
-                                {
-                                    "aid" : 41,
-                                    "c_id" : 11,
-                                    "street" : "500 Harrison"
-                                },
-                                "children" : {}
-                            }
-                        ]
-                    }
+                    "address" : "Mrs",
+                    "cid" : 11,
+                    "name" : "Alpha",
+                    "@order" :
+                    [
+                        {
+                            "oid" : 22,
+                            "c_id" : 11,
+                            "when" : "2/2/2002",
+                            "@item" : []
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "aid" : 41,
+                            "c_id" : 11,
+                            "street" : "500 Harrison"
+                        }
+                    ]
                 },
                 {
-                    "data" :
-                    {
-                        "cid" : 18,
-                        "name" : "Charlie"
-                    },
-                    "children" :
-                    {
-                        "order" :
-                        [
-                            {
-                                "data" :
-                                {
-                                    "oid" : 23,
-                                    "c_id" : 18,
-                                    "when" : "2/2/2002"
-                                },
-                                "children" :
-                                {
-                                    "item" : []
-                                }
-                            }
-                        ]
-                    }
+                    "cid" : 18,
+                    "name" : "Charlie",
+                    "address" : "Mr",
+                    "@order" :
+                    [
+                        {
+                            "oid" : 23,
+                            "c_id" : 18,
+                            "when" : "2/2/2002",
+                            "@item" : []
+                        }
+                    ]
                 }
             ]
         }
-    },
+    }
 }
 
 }
