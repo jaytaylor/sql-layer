@@ -329,7 +329,6 @@ public final class JsonHapiIT extends ApiTestBase {
     private final TestSetupInfo setupInfo;
     private final TestRunInfo runInfo;
 
-
     public JsonHapiIT(Exception testSetupErr, TestSetupInfo setupInfo, TestRunInfo runInfo) throws Exception
     {
         if (testSetupErr != null) {
@@ -352,7 +351,7 @@ public final class JsonHapiIT extends ApiTestBase {
     }
 
     @Test
-    public void doGet() throws JSONException {
+    public void get() throws JSONException {
         String result = hapi().processRequest(session, runInfo.getQuery);
         assertNotNull("null result", result);
         assertTrue("empty result: >" + result + "< ", result.trim().length() > 1);
