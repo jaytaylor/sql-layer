@@ -38,6 +38,9 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
+    interface FormatGetter {
+        HapiProcessor.Outputter<byte[]> getFormat();
+    }
     private final Session session;
     /**
      * State variables that are universal for entire service.
@@ -46,12 +49,14 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     private final Store store;
     private final DefaultChannelGroup channelGroup;
     private static final Log LOG = LogFactory.getLog(MemcacheService.class);
-    
+    private final FormatGetter formatGetter;
 
-    public AkibanCommandHandler(Store store, DefaultChannelGroup channelGroup) {
+    public AkibanCommandHandler(Store store, DefaultChannelGroup channelGroup, FormatGetter formatGetter)
+    {
         this.store = store;
         this.channelGroup = channelGroup;
         this.session = new SessionImpl();
+        this.formatGetter = formatGetter;
     }
 
     /**
@@ -226,13 +231,13 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         byte[] key = keys[0].getBytes();
         String request = new String(key);
-        String result_string = HapiProcessorImpl.processRequest(
+        byte[] result_bytes = HapiProcessorImpl.processRequest(
                 store,
                 session,
                 request,
-                (ByteBuffer) context.getAttachment()
-        ) ;
-        byte[] result_bytes = result_string.getBytes();
+                (ByteBuffer) context.getAttachment(),
+                formatGetter.getFormat()
+        );
         
         CacheElement[] results = null;
         if(result_bytes != null) {
