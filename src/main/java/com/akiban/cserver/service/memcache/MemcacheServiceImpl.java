@@ -1,8 +1,12 @@
 package com.akiban.cserver.service.memcache;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.cserver.service.ServiceStartupException;
+import com.akiban.cserver.service.session.Session;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -35,7 +39,7 @@ public class MemcacheServiceImpl implements MemcacheService,
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
-    private boolean running = false;
+    private final AtomicReference<Store> store = new AtomicReference<Store>();
     private DefaultChannelGroup allChannels;
     private ServerSocketChannelFactory channelFactory;
     int port;
@@ -45,25 +49,44 @@ public class MemcacheServiceImpl implements MemcacheService,
     }
 
     @Override
-    public void start() throws Exception {
-        final String portString = serviceManager.getConfigurationService()
-                .getProperty("cserver", "memcached.port");
-
-        log.info("Starting memcache service on port " + portString);
-
-        this.port = Integer.parseInt(portString);
-        final InetSocketAddress addr = new InetSocketAddress(port);
-        final int idle_timeout = -1;
-        final boolean binary = false;
-        final boolean verbose = false;
-
-        startDaemon(addr, idle_timeout, binary, verbose);
+    public String processRequest(Session session, String request) {
+        ByteBuffer buffer = ByteBuffer.allocate(65536);
+        Store storeLocal = store.get();
+        if (storeLocal == null) {
+            storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
+        }
+        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer);
     }
 
     @Override
-    public void stop() throws Exception {
+    public void start() throws ServiceStartupException {
+        if (!store.compareAndSet(null, serviceManager.getStore())) {
+            throw new ServiceStartupException("already started");
+        }
+        try {
+            final String portString = serviceManager.getConfigurationService()
+                    .getProperty("cserver", "memcached.port");
+
+            log.info("Starting memcache service on port " + portString);
+
+            this.port = Integer.parseInt(portString);
+            final InetSocketAddress addr = new InetSocketAddress(port);
+            final int idle_timeout = -1;
+            final boolean binary = false;
+            final boolean verbose = false;
+
+            startDaemon(addr, idle_timeout, binary, verbose);
+        } catch (RuntimeException e) {
+            store.set(null);
+            throw e;
+        }
+    }
+
+    @Override
+    public void stop() {
         log.info("Stopping memcache service");
         stopDaemon();
+        store.set(null);
     }
 
     //
@@ -78,14 +101,13 @@ public class MemcacheServiceImpl implements MemcacheService,
         allChannels = new DefaultChannelGroup("memcacheServiceChannelGroup");
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
 
-        ChannelPipelineFactory pipelineFactory;
-        Store store = serviceManager.getStore();
+        final ChannelPipelineFactory pipelineFactory;
 
         if (binary) {
-            pipelineFactory = new BinaryPipelineFactory(store, verbose,
+            pipelineFactory = new BinaryPipelineFactory(store.get(), verbose,
                     idle_time, allChannels);
         } else {
-            pipelineFactory = new TextPipelineFactory(store, verbose,
+            pipelineFactory = new TextPipelineFactory(store.get(), verbose,
                     idle_time, text_frame_size, allChannels);
         }
 
@@ -97,7 +119,6 @@ public class MemcacheServiceImpl implements MemcacheService,
         allChannels.add(serverChannel);
 
         log.info("Listening on " + addr);
-        running = true;
     }
 
     private void stopDaemon() {
@@ -111,8 +132,6 @@ public class MemcacheServiceImpl implements MemcacheService,
         }
 
         channelFactory.releaseExternalResources();
-
-        running = false;
     }
 
     public MemcacheServiceImpl cast() {
@@ -123,7 +142,7 @@ public class MemcacheServiceImpl implements MemcacheService,
         return MemcacheService.class;
     }
 
-    private final class TextPipelineFactory implements ChannelPipelineFactory {
+    private final static class TextPipelineFactory implements ChannelPipelineFactory {
         private int frameSize;
         private final AkibanCommandHandler commandHandler;
         private final MemcachedResponseEncoder responseEncoder;
@@ -146,7 +165,7 @@ public class MemcacheServiceImpl implements MemcacheService,
         }
     }
 
-    private final class BinaryPipelineFactory implements ChannelPipelineFactory {
+    private final static class BinaryPipelineFactory implements ChannelPipelineFactory {
         private final AkibanCommandHandler commandHandler;
         private final MemcachedBinaryCommandDecoder commandDecoder;
         private final MemcachedBinaryResponseEncoder responseEncoder;

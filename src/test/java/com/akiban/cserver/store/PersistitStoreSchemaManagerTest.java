@@ -317,51 +317,6 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         manager.deleteTableDefinition(session, "this_schema_never_existed", "it_really_didnt");
         manager.deleteTableDefinition(session, "this_schema_never_existed", "it_really_didnt");
     }
-
-    @Ignore
-    // @Test
-    public void overloadTableAndColumn() throws Exception {
-        // we don't allow two tables s1.foo and s2.foo to have any identical columns
-        // But we do want to allow same-name tables in different schemas if they don't share any columns
-        List<String> expectedDDLs = Collections.unmodifiableList(Arrays.asList(
-                "create schema if not exists `s1`",
-                "create table `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb"));
-
-        createTable("s1", "create table one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;");
-        assertTables("user tables",
-                "create table `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;");
-        assertDDLS(expectedDDLs.toArray(new String[expectedDDLs.size()]));
-
-        List<String> expectedDDLs2 = new ArrayList<String>(expectedDDLs);
-        expectedDDLs2.add("create schema if not exists `s2`");
-        expectedDDLs2.add("create table `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-        createTable("s2", "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertTables("user tables",
-                "create table `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;",
-                "create table `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS(expectedDDLs2.toArray(new String[expectedDDLs.size()]));
-
-        // No changes when trying to add a table like s2.one
-        createTable(ErrorCode.DUPLICATE_COLUMN_NAMES, "s3", "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        manager.getAis(session);
-        assertTables("user tables",
-                "create table `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;",
-                "create table `s2`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS(expectedDDLs2.toArray(new String[expectedDDLs.size()]));
-
-        manager.deleteTableDefinition(session, "s2", "one");
-        List<String> expectedDDLs3 = new ArrayList<String>(expectedDDLs);
-        expectedDDLs3.add("create schema if not exists `s3`");
-        expectedDDLs3.add("create table `s3`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-        createTable("s3", "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertTables("user tables",
-                "create table `s1`.one (idFoo int, PRIMARY KEY (idFoo)) engine=akibandb;",
-                "create table `s3`.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS(expectedDDLs3.toArray(new String[expectedDDLs.size()]));
-
-        manager.deleteTableDefinition(session, "s3", "one");
-        manager.deleteTableDefinition(session, "s1", "one");
-    }
     
     @Test
     public void testAddDropTwoTablesTwoVolumes() throws Exception {

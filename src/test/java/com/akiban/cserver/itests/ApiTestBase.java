@@ -1,5 +1,8 @@
 package com.akiban.cserver.itests;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 
 import java.lang.reflect.InvocationHandler;
@@ -8,11 +11,17 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -28,6 +37,7 @@ import com.akiban.cserver.api.DDLFunctions;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.DMLFunctionsImpl;
+import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
@@ -52,7 +62,7 @@ import com.akiban.cserver.service.session.SessionImpl;
  */
 public class ApiTestBase extends CServerTestCase {
 
-    static class ListRowOutput implements RowOutput {
+    public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
 
         @Override
@@ -132,6 +142,10 @@ public class ApiTestBase extends CServerTestCase {
         sm = null;
     }
 
+    protected final HapiProcessor hapi() {
+        return sm.getMemcacheService();
+    }
+    
     protected final DMLFunctions dml() {
         return dml;
     }
@@ -265,10 +279,66 @@ public class ApiTestBase extends CServerTestCase {
             this.cause = cause;
         }
 
+        public TestException(InvalidOperationException cause) {
+            super(cause);
+            this.cause = cause;
+        }
+
         @Override
         public InvalidOperationException getCause() {
             assert super.getCause() == cause;
             return cause;
         }
+    }
+
+    protected final UserTable getUserTable(TableId tableId) {
+        try {
+            TableName tableName = ddl().getTableName(tableId);
+            return ddl().getAIS(session).getUserTable(tableName);
+        } catch (NoSuchTableException e) {
+            throw new TestException(e);
+        }
+    }
+
+    protected final Map<TableName,UserTable> getUserTables() {
+        return stripAISTables(ddl().getAIS(session).getUserTables());
+    }
+
+    protected final Map<TableName,GroupTable> getGroupTables() {
+        return stripAISTables(ddl().getAIS(session).getGroupTables());
+    }
+
+    private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
+        final Map<TableName,T> ret = new HashMap<TableName, T>(map);
+        for(Iterator<TableName> iter=ret.keySet().iterator(); iter.hasNext(); ) {
+            if("akiba_information_schema".equals(iter.next().getSchemaName())) {
+                iter.remove();
+            }
+        }
+        return ret;
+    }
+
+    protected void expectIndexes(TableId tableId, String... expectedIndexNames) {
+        UserTable table = getUserTable(tableId);
+        Set<String> expectedIndexesSet = new TreeSet<String>(Arrays.asList(expectedIndexNames));
+        Set<String> actualIndexes = new TreeSet<String>();
+        for (Index index : table.getIndexes()) {
+            String indexName = index.getIndexName().getName();
+            boolean added = actualIndexes.add(indexName);
+            assertTrue("duplicate index name: " + indexName, added);
+        }
+        assertEquals("indexes in " + table.getName(), expectedIndexesSet, actualIndexes);
+    }
+
+    protected void expectIndexColumns(TableId tableId, String indexName, String... expectedColumns) {
+        UserTable table = getUserTable(tableId);
+        List<String> expectedColumnsList = Arrays.asList(expectedColumns);
+        Index index = table.getIndex(indexName);
+        assertNotNull(indexName + " was null", index);
+        List<String> actualColumns = new ArrayList<String>();
+        for (IndexColumn indexColumn : index.getColumns()) {
+            actualColumns.add(indexColumn.getColumn().getName());
+        }
+        assertEquals(indexName + " columns", actualColumns, expectedColumnsList);
     }
 }

@@ -15,6 +15,9 @@ import java.util.Map;
 
 public class Column implements Serializable, ModelNames
 {
+    private static final Long DECIMAL_DEFAULT_PRECISION = 10L;
+    private static final Long DECIMAL_DEFAULT_SCALE = 0L;
+
     public static Column create(AkibaInformationSchema ais, Map<String, Object> map)
     {
         Column column = null;
@@ -222,11 +225,17 @@ public class Column implements Serializable, ModelNames
     
     public void setTypeParameter1(Long typeParameter1)
     {
+        if ( (typeParameter1 == null && isDecimalType()) ) {
+            return;
+        }
         this.typeParameter1 = typeParameter1;
     }
 
     public void setTypeParameter2(Long typeParameter2)
     {
+        if ( (typeParameter2 == null && isDecimalType()) ) {
+            return;
+        }
         this.typeParameter2 = typeParameter2;
     }
 
@@ -315,13 +324,19 @@ public class Column implements Serializable, ModelNames
         return nullable;
     }
 
+    private /* final */ boolean isDecimalType() { // Called in ctor; if you make this non-private, make it final!
+        return type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL);
+    }
+
     public Long getTypeParameter1()
     {
+        assert ! ((typeParameter1 == null) && isDecimalType()) : type;
         return typeParameter1;
     }
 
     public Long getTypeParameter2()
     {
+        assert ! ((typeParameter2 == null) && isDecimalType()) : type;
         return typeParameter2;
     }
 
@@ -375,8 +390,8 @@ public class Column implements Serializable, ModelNames
             final int DIGIT_PER = 9;
             final int BYTE_DIGITS[] = { 0, 1, 1, 2, 2, 3, 3, 4, 4, 4 };
 
-            final int precision = typeParameter1.intValue();
-            final int scale = typeParameter2.intValue();
+            final int precision = getTypeParameter1().intValue();
+            final int scale = getTypeParameter2().intValue();
 
             final int intCount = precision - scale;
             final int intFull = intCount / DIGIT_PER;
@@ -461,10 +476,10 @@ public class Column implements Serializable, ModelNames
         this.type = type;
         this.table.addColumn(this);
         
-        if(type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL))
+        if(isDecimalType())
         {
-            setTypeParameter1(10L);
-            setTypeParameter2(0L);
+            setTypeParameter1(DECIMAL_DEFAULT_PRECISION);
+            setTypeParameter2(DECIMAL_DEFAULT_SCALE);
         }
     }
 
