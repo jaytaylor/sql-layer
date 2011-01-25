@@ -33,4 +33,5 @@ public interface ManageMXBean {
 
     String runCustomQuery();
 
+    String getVersionString();
 }
