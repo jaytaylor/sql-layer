@@ -1,5 +1,6 @@
 package com.akiban.cserver.itests;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.akiban.ais.model.*;
@@ -8,6 +9,7 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.ResolutionException;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.ddl.IndexAlterException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
 
@@ -15,7 +17,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public final class IndexesTest extends ApiTestBase {
-    private AkibaInformationSchema createIndexAIS(TableId id) throws NoSuchTableException, ResolutionException {
+    private AkibaInformationSchema createAISWithTable(TableId id) throws NoSuchTableException, ResolutionException {
         ddl().resolveTableId(id);
         Integer tableId = id.getTableId(null);
         TableName tname = ddl().getTableName(id);
@@ -29,20 +31,34 @@ public final class IndexesTest extends ApiTestBase {
         return ais;
     }
 
-    private void addIndexToAIS(AkibaInformationSchema ais, String indexName, String[] refColumns, boolean isUnique) {
-        UserTable table = ais.getUserTables().entrySet().iterator().next().getValue();
-        Table curTable = ddl().getAIS(session).getTable(table.getName());
-        Index index = Index.create(ais, table, indexName, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
+    private Index addIndexToAIS(AkibaInformationSchema ais, String sname, String tname, String iname, 
+            String[] refColumns, boolean isUnique) {
+        Table table = ais.getTable(sname, tname);
+        Table curTable = ddl().getAIS(session).getTable(sname, tname);
+        Index index = Index.create(ais, table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
 
-        int pos = 0;
-        for (String colName : refColumns) {
-            Column col = curTable.getColumn(colName);
-            Column refCol = Column.create(table, col.getName(), col.getPosition(), col.getType());
-            refCol.setTypeParameter1(col.getTypeParameter1());
-            refCol.setTypeParameter2(col.getTypeParameter2());
-            Integer indexedLen = col.getMaxStorageSize().intValue();
-            index.addColumn(new IndexColumn(index, refCol, pos++, true, indexedLen));
+        if(refColumns != null) {
+            int pos = 0;
+            for (String colName : refColumns) {
+                Column col = curTable.getColumn(colName);
+                Column refCol = Column.create(table, col.getName(), col.getPosition(), col.getType());
+                refCol.setTypeParameter1(col.getTypeParameter1());
+                refCol.setTypeParameter2(col.getTypeParameter2());
+                Integer indexedLen = col.getMaxStorageSize().intValue();
+                index.addColumn(new IndexColumn(index, refCol, pos++, true, indexedLen));
+            }
         }
+        
+        return index;
+    }
+    
+    private List<Index> getAllIndexes(AkibaInformationSchema ais)
+    {
+        ArrayList<Index> indexes = new ArrayList<Index>();
+        for(UserTable tbl : ais.getUserTables().values()) {
+            indexes.addAll(tbl.getIndexes());
+        }
+        return indexes;
     }
 
     
@@ -50,44 +66,85 @@ public final class IndexesTest extends ApiTestBase {
      * Test DDL.createIndexes() API 
      */
     
-    @Test(expected=InvalidOperationException.class) 
-    public void createIndexMultipleTables() throws InvalidOperationException {
-        AkibaInformationSchema indexAis = new AkibaInformationSchema();
-        UserTable.create(indexAis, "test", "t1", 1);
-        UserTable.create(indexAis, "test", "t2", 1);
-        
-        // Attempt to add to multiple tables
-        ddl().createIndexes(session, indexAis);
+    public void createIndexNoIndexes() throws InvalidOperationException {
+        // Passing an empty list should work
+        ArrayList<Index> indexes = new ArrayList<Index>();
+        ddl().createIndexes(session, indexes);
     }
     
-    @Test(expected=InvalidOperationException.class) 
-    public void createIndexInvalidTableName() throws InvalidOperationException {
+    @Test(expected=IndexAlterException.class) 
+    public void createIndexInvalidTable() throws InvalidOperationException {
         TableId tId = createTable("test", "t", "id int primary key");
-        
-        // Attempt to add index to unknown schema.table
-        AkibaInformationSchema indexAis = createIndexAIS(tId);
-        UserTable.create(indexAis, "foo", "bar", -1);
-        ddl().createIndexes(session, indexAis);
+        // Attempt to add index to unknown table
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "index", null, false);
+        ddl().getAIS(session).getUserTables().remove(new TableName("test", "t"));
+        ddl().createIndexes(session, getAllIndexes(ais));
+    }
+    
+    @Test(expected=IndexAlterException.class) 
+    public void createIndexMultipleTables() throws InvalidOperationException {
+        AkibaInformationSchema ais = new AkibaInformationSchema();
+        UserTable.create(ais, "test", "t1", 1);
+        UserTable.create(ais, "test", "t2", 1);
+        // Attempt to add indexes to multiple tables
+        addIndexToAIS(ais, "test", "t1", "index", null, false);
+        addIndexToAIS(ais, "test", "t2", "index", null, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
     }
 
-    @Test(expected=InvalidOperationException.class) 
+    @Test(expected=IndexAlterException.class) 
     public void createIndexInvalidTableId() throws InvalidOperationException {
         TableId tId = createTable("test", "t", "id int primary key");
-        
         // Attempt to add to unknown table id
-        AkibaInformationSchema indexAis = createIndexAIS(tId);
-        indexAis.getUserTables().entrySet().iterator().next().getValue().setTableId(-1);
-        ddl().createIndexes(session, indexAis);
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        ais.getUserTables().values().iterator().next().setTableId(-1);
+        addIndexToAIS(ais, "test", "t", "id", null, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
     }
     
-    @Test(expected=InvalidOperationException.class) 
+    @Test(expected=IndexAlterException.class) 
+    public void createIndexPrimaryKey() throws InvalidOperationException {
+        TableId tId = createTable("test", "atable", "id int");
+        // Attempt to a primary key
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "atable", "PRIMARY", new String[]{"id"}, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
+    }
+    
+    @Test(expected=IndexAlterException.class) 
     public void createIndexDuplicateIndexName() throws InvalidOperationException {
         TableId tId = createTable("test", "t", "id int primary key");
-        
         // Attempt to add duplicate index name
-        AkibaInformationSchema indexAis = createIndexAIS(tId);
-        addIndexToAIS(indexAis, "PRIMARY", new String[]{"id"}, false);
-        ddl().createIndexes(session, indexAis);
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "PRIMARY", new String[]{"id"}, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
+    }
+    
+    @Test(expected=IndexAlterException.class) 
+    public void createIndexWrongColumName() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int primary key");
+        // Attempt to add duplicate index name
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        Table table = ais.getTable("test", "t");
+        Table curTable = ddl().getAIS(session).getTable("test", "t");
+        Index index = Index.create(ais, table, "id", -1, false, "KEY");
+        Column refCol = Column.create(table, "foo", 0, Types.INT);
+        index.addColumn(new IndexColumn(index, refCol, 0, true, 0));
+        ddl().createIndexes(session, getAllIndexes(ais));
+    }
+  
+    @Test(expected=IndexAlterException.class) 
+    public void createIndexWrongColumType() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int primary key");
+        // Attempt to add duplicate index name
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        Table table = ais.getTable("test", "t");
+        Table curTable = ddl().getAIS(session).getTable("test", "t");
+        Index index = Index.create(ais, table, "id", -1, false, "KEY");
+        Column refCol = Column.create(table, "id", 0, Types.BLOB);
+        index.addColumn(new IndexColumn(index, refCol, 0, true, 0));
+        ddl().createIndexes(session, getAllIndexes(ais));
     }
     
     
@@ -105,9 +162,9 @@ public final class IndexesTest extends ApiTestBase {
         expectRowCount(tId, 2);
         
         // Create non-unique index on varchar
-        AkibaInformationSchema indexAis = createIndexAIS(tId); 
-        addIndexToAIS(indexAis, "name", new String[]{"name"}, false);
-        ddl().createIndexes(session, indexAis);
+        AkibaInformationSchema ais = createAISWithTable(tId); 
+        addIndexToAIS(ais, "test", "t", "name", new String[]{"name"}, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -147,9 +204,9 @@ public final class IndexesTest extends ApiTestBase {
         expectRowCount(iId, 5);
         
         // Create index on an varchar (note: in the "middle" of a group, shifts IDs after, etc)
-        AkibaInformationSchema indexAis = createIndexAIS(oId);
-        addIndexToAIS(indexAis, "tag", new String[]{"tag"}, false);
-        ddl().createIndexes(session, indexAis);
+        AkibaInformationSchema ais = createAISWithTable(oId);
+        addIndexToAIS(ais, "coi", "o", "tag", new String[]{"tag"}, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -181,9 +238,9 @@ public final class IndexesTest extends ApiTestBase {
         expectRowCount(tId, 3);
         
         // Create non-unique compound index on two varchars
-        AkibaInformationSchema indexAis = createIndexAIS(tId);
-        addIndexToAIS(indexAis, "name", new String[]{"first","last"}, false);
-        ddl().createIndexes(session, indexAis);
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "name", new String[]{"first","last"}, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -207,9 +264,9 @@ public final class IndexesTest extends ApiTestBase {
         expectRowCount(tId, 3);
         
         // Create unique index on a char(2)
-        AkibaInformationSchema indexAis = createIndexAIS(tId);
-        addIndexToAIS(indexAis, "state", new String[]{"state"}, true);
-        ddl().createIndexes(session, indexAis);
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "state", new String[]{"state"}, true);
+        ddl().createIndexes(session, getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -233,10 +290,10 @@ public final class IndexesTest extends ApiTestBase {
         expectRowCount(tId, 3);
         
         // Create unique index on a int, non-unique index on decimal
-        AkibaInformationSchema indexAis = createIndexAIS(tId);
-        addIndexToAIS(indexAis, "otherId", new String[]{"otherId"}, true);
-        addIndexToAIS(indexAis, "price", new String[]{"price"}, false);
-        ddl().createIndexes(session, indexAis);
+        AkibaInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "otherId", new String[]{"otherId"}, true);
+        addIndexToAIS(ais, "test", "t", "price", new String[]{"price"}, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();

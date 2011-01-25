@@ -1,13 +1,13 @@
 package com.akiban.cserver.api;
 
+import java.util.List;
+
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -16,6 +16,7 @@ import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
 import com.akiban.cserver.api.ddl.DuplicateTableNameException;
 import com.akiban.cserver.api.ddl.ForeignConstraintDDLException;
 import com.akiban.cserver.api.ddl.GroupWithProtectedTableException;
+import com.akiban.cserver.api.ddl.IndexAlterException;
 import com.akiban.cserver.api.ddl.JoinToUnknownTableException;
 import com.akiban.cserver.api.ddl.JoinToWrongColumnsException;
 import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
@@ -25,11 +26,6 @@ import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.message.ErrorCode;
-
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map.Entry;
 
 public final class DDLFunctionsImpl extends ClientAPIBase implements
         DDLFunctions {
@@ -134,62 +130,72 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
-    public void createIndexes(final Session session, AkibaInformationSchema ais)
+    public void createIndexes(final Session session, List<Index> indexesToAdd)
             throws InvalidOperationException {
-        // Can only add index to single table at a time
-        if (ais.getUserTables().size() != 1) {
-            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                    "Can only add indexes to one table at a time");
+        if (indexesToAdd.isEmpty() == true) {
+            return;
         }
-
-        final AkibaInformationSchema curAIS = getAIS(session);
-        final Entry<TableName, UserTable> newEntry = ais.getUserTables().entrySet().iterator().next();
-        final UserTable table = curAIS.getUserTable(newEntry.getKey());
-
-        // Require existing table to modify
+        
+        final Index firstIndex = indexesToAdd.get(0);
+        final AkibaInformationSchema ais = getAIS(session);
+        final UserTable table = ais.getUserTable(firstIndex.getTableName());
+        
         if (table == null) {
-            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION, "Unkown table: "
-                    + newEntry.getKey().getTableName());
+            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "Unkown table: "
+                    + firstIndex.getTableName());
         }
 
-        // Require ids match for current and proposed (some other DDL may have happend)
-        if (table.getTableId().equals(newEntry.getValue().getTableId()) == false) {
-            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                    "TableId does not match current");
+        // Require that IDs match for current and proposed (some other DDL may have happened)
+        if (table.getTableId().equals(firstIndex.getTable().getTableId()) == false) {
+            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "TableId mismatch");
         }
+        
+        // Input validation: same table, not a primary key, not a duplicate index name, and 
+        // referenced columns are valid
+        for (Index idx : indexesToAdd) {
+            if (idx.getTable().equals(firstIndex.getTable()) == false) {
+                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
+                        "Cannot add indexes to multiple tables");
+            }
 
-        for (Index i : newEntry.getValue().getIndexes()) {
-            // AIS Reader.close() adds a pkey to all UserTables that get instantiated.
-            // This interface does not do pkey additions so skip it.
-            if (i.isPrimaryKey()) continue;
+            if (idx.isPrimaryKey()) {
+                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
+                        "Cannot add primary key");
+            }
 
-            final String indexName = i.getIndexName().getName();
+            final String indexName = idx.getIndexName().getName();
             if (table.getIndex(indexName) != null) {
-                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_OPERATION,
-                        "Index already exists: " + indexName);
+                throw new IndexAlterException(ErrorCode.DUPLICATE_KEY,
+                        "Index name already exists: " + indexName);
+            }
+            
+            for (IndexColumn idxCol : idx.getColumns()) {
+                final Column refCol = idxCol.getColumn();
+                final Column tableCol = table.getColumn(refCol.getPosition());
+                if (refCol.getName().equals(tableCol.getName()) == false || 
+                    refCol.getType().equals(tableCol.getType()) == false) {
+                    throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
+                            "Index column does not match table column");
+                }
             }
         }
 
-        StringBuilder namesSB = new StringBuilder();
-        
         // All were valid, add to current AIS
-        for (Index i : newEntry.getValue().getIndexes()) {
-            // Same reason as in above loop
-            if (i.isPrimaryKey()) continue;
+        StringBuilder nameBuffer = new StringBuilder();
+        for (Index idx : indexesToAdd) {
+            Index newIndex = Index.create(ais, table, idx.getIndexName().getName(), -1,
+                    idx.isUnique(), idx.getConstraint());
 
-            Index newIndex = Index.create(curAIS, table, i.getIndexName().getName(), -1,
-                    i.isUnique(), i.getConstraint());
-
-            for (IndexColumn c : i.getColumns()) {
-                Column refCol = table.getColumn(c.getColumn().getPosition());
-                IndexColumn indexCol = new IndexColumn(newIndex, refCol, c.getPosition(),
-                        c.isAscending(), c.getIndexedLength());
+            for (IndexColumn idxCol : idx.getColumns()) {
+                Column refCol = table.getColumn(idxCol.getColumn().getPosition());
+                IndexColumn indexCol = new IndexColumn(newIndex, refCol, idxCol.getPosition(),
+                        idxCol.isAscending(), idxCol.getIndexedLength());
                 newIndex.addColumn(indexCol);
             }
             
-            namesSB.append("index=(");
-            namesSB.append(i.getIndexName());
-            namesSB.append(")");
+            nameBuffer.append("index=(");
+            nameBuffer.append(idx.getIndexName());
+            nameBuffer.append(")");
         }
 
         // Modify stored DDL statement
@@ -204,15 +210,15 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
             // And trigger build of new indexes in this table
             store().buildIndexes(session,
-                    String.format("table=(%s) %s", tableName.getTableName(), namesSB.toString()));
+                    String.format("table=(%s) %s", tableName.getTableName(), nameBuffer.toString()));
         } catch (Exception e) {
-            throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
-                    "Unexpected exception", e);
+            throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    public void dropIndexes(final Session session, TableId tableId, List<Integer> indexIds) throws InvalidOperationException {
-        // TODO Auto-generated method stub
+    public void dropIndexes(final Session session, TableId tableId, List<Integer> indexesToDrop)
+            throws InvalidOperationException {
+        throw new UnsupportedOperationException("Unimplemented");
     }
 }
