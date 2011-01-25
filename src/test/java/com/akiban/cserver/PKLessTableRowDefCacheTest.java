@@ -1,17 +1,12 @@
 package com.akiban.cserver;
 
+import com.akiban.ais.model.*;
+import junit.framework.Assert;
+import org.junit.Test;
+
 import static junit.framework.Assert.assertSame;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import junit.framework.Assert;
-
-import org.junit.Test;
-
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.UserTable;
 
 public class PKLessTableRowDefCacheTest
 {
@@ -32,7 +27,7 @@ public class PKLessTableRowDefCacheTest
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef test = rowDefCache.getRowDef(tableName("test"));
-        UserTable t = (UserTable)test.table();
+        UserTable t = (UserTable) test.table();
         assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
         checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
         IndexDef index;

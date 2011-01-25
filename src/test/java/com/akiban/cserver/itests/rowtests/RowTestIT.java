@@ -93,7 +93,7 @@ public class RowTestIT extends ApiTestBase
     }
 
     @Test
-    public void RowDataUpdate() throws InvalidOperationException
+    public void rowDataUpdate() throws InvalidOperationException
     {
         TableId t = createTable("s",
                                 "t",
@@ -111,7 +111,6 @@ public class RowTestIT extends ApiTestBase
         niceRow.put(cA, 200L);
         niceRow.put(cB, 300L);
         niceRow.put(cC, null);
-        RowDef rowDef = rowDefCache().getRowDef(t.getTableId(null));
         LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.toRowData());
         assertEquals(100L, legacyRow.get(cId));
         assertEquals(200L, legacyRow.get(cA));
@@ -124,5 +123,54 @@ public class RowTestIT extends ApiTestBase
         assertEquals(222L, legacyRow.get(cA));
         assertNull(legacyRow.get(cB));
         assertEquals(444L, legacyRow.get(cC));
+    }
+
+    @Test
+    public void legacyRowConversion() throws InvalidOperationException
+    {
+        // LegacyRowWrapper converts to NiceRow on update, back to RowData on toRowData().
+        // Check the conversions.
+        TableId t = createTable("s",
+                                "t",
+                                "id int not null key, " +
+                                "a int, " +
+                                "b int, " +
+                                "c int");
+        NiceRow niceRow = new NiceRow(t);
+        ColumnId cId = ColumnId.of(0);
+        ColumnId cA = ColumnId.of(1);
+        ColumnId cB = ColumnId.of(2);
+        ColumnId cC = ColumnId.of(3);
+        // Insert longs, not integers, because Persistit stores all ints as 8-byte.
+        niceRow.put(cId, 0);
+        niceRow.put(cA, 0L);
+        niceRow.put(cB, 0L);
+        niceRow.put(cC, 0L);
+        // Create initial legacy row
+        LegacyRowWrapper legacyRow = new LegacyRowWrapper((niceRow.toRowData()));
+        assertEquals(0L, legacyRow.get(cA));
+        assertEquals(0L, legacyRow.get(cB));
+        assertEquals(0L, legacyRow.get(cC));
+        // Apply a few updates
+        legacyRow.put(cA, 1L);
+        legacyRow.put(cB, 1L);
+        legacyRow.put(cC, 1L);
+        // Check the updates (should be a NiceRow)
+        assertEquals(1L, legacyRow.get(cA));
+        assertEquals(1L, legacyRow.get(cB));
+        assertEquals(1L, legacyRow.get(cC));
+        // Convert to LegacyRow and check NiceRow created from the legacy row's RowData
+        RowDef rowDef = rowDefCache().getRowDef(t.getTableId(null));
+        niceRow = (NiceRow) NiceRow.fromRowData(legacyRow.toRowData(), rowDef);
+        assertEquals(1L, niceRow.get(cA));
+        assertEquals(1L, niceRow.get(cB));
+        assertEquals(1L, niceRow.get(cC));
+        // Convert back to NiceRow and check state again
+        legacyRow.put(cA, 2L);
+        legacyRow.put(cB, 2L);
+        legacyRow.put(cC, 2L);
+        assertEquals(2L, legacyRow.get(cA));
+        assertEquals(2L, legacyRow.get(cB));
+        assertEquals(2L, legacyRow.get(cC));
     }
 }

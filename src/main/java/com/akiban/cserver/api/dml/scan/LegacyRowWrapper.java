@@ -8,11 +8,17 @@ import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.DMLError;
+import com.akiban.cserver.api.dml.NoSuchRowException;
 import com.akiban.cserver.service.ServiceManagerImpl;
 
 public final class LegacyRowWrapper implements NewRow {
     private RowDef rowDef;
+    // Updates are handled by creating a NiceRow from the RowData and applying updates to the NiceRow.
+    // When this happens, rowData is set to null, and is regenerated lazily. If updatedRow is null, then
+    // rowData is current.
     private RowData rowData;
+    private NiceRow updatedRow;
 
     // For when a LegacyRowWrapper is being reused, e.g. WriteRowRequest.
     public LegacyRowWrapper() {
@@ -31,28 +37,40 @@ public final class LegacyRowWrapper implements NewRow {
     }
 
     public void setRowData(RowData rowData) {
-        assert rowData == null || rowData.getRowDefId() == rowDef.getRowDefId();
+        assert rowData == null || rowDef == null || rowData.getRowDefId() == rowDef.getRowDefId();
         this.rowData = rowData;
+        this.updatedRow = null;
     }
 
     @Override
-    public Object put(ColumnId index, Object object) {
-        // TODO: Do something more efficient in RowData. For now, just create a new RowData.
-        // return rowData.fromObject(rowDef, index.getPosition(), object);
-        NiceRow niceRow = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
-        Object replaced = niceRow.put(index, object);
-        rowData = niceRow.toRowData();
-        return replaced;
+    public Object put(ColumnId index, Object object)
+    {
+        if (updatedRow == null) {
+            updatedRow = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
+            rowData = null;
+        }
+        return updatedRow.put(index, object);
     }
 
     @Override
     public TableId getTableId() {
-        return TableId.of(rowData.getRowDefId());
+        assert rowData != null || updatedRow != null;
+        return updatedRow != null ? updatedRow.getTableId() : TableId.of(rowData.getRowDefId());
     }
 
     @Override
-    public Object get(ColumnId columnId) {
-        return rowData.toObject(rowDef, columnId.getPosition());
+    public Object get(ColumnId columnId)
+    {
+        Object object;
+        if (rowData == null && updatedRow == null) {
+            throw new DMLError("Row state has not been set");
+        } else {
+            object =
+                updatedRow != null
+                ? updatedRow.get(columnId)
+                : rowData.toObject(rowDef, columnId.getPosition());
+        }
+        return object;
     }
 
     @Override
@@ -71,7 +89,12 @@ public final class LegacyRowWrapper implements NewRow {
     }
 
     @Override
-    public RowData toRowData() {
+    public RowData toRowData()
+    {
+        if (rowData == null && updatedRow != null) {
+            rowData = updatedRow.toRowData();
+            updatedRow = null;
+        }
         return rowData;
     }
 
