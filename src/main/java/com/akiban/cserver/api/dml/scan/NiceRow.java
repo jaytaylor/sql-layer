@@ -17,8 +17,7 @@ import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.util.ArgumentValidation;
 
-public class NiceRow implements NewRow {
-    private final RowDef rowDef;
+public class NiceRow extends NewRow {
     private final Map<ColumnId,Object> fields;
     private final TableId tableId;
 
@@ -29,7 +28,7 @@ public class NiceRow implements NewRow {
 
     public NiceRow(TableId tableId, RowDef rowDef)
     {
-        this.rowDef = rowDef;
+        super(rowDef);
         ArgumentValidation.notNull("tableId", tableId);
         fields = new TreeMap<ColumnId, Object>();
         this.tableId = tableId;
@@ -158,18 +157,5 @@ public class NiceRow implements NewRow {
     @Override
     public int hashCode() {
         return tableId.hashCode() + fields.hashCode();
-    }
-
-    private static RowDef rowDef(TableId tableId)
-    {
-        RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
-        RowDef rowDef = null;
-        try {
-            rowDef = rowDefCache.getRowDef(tableId.getTableId(null));
-        } catch (NoSuchTableException e) {
-            assert false : e;
-        }
-        assert rowDef != null : tableId;
-        return rowDef;
     }
 }

@@ -675,8 +675,7 @@ public class PersistitStore implements CServerConstants, Store {
                     // For Iteration 9, verify that only non-PK/FK fields are
                     // changing - i.e., that the hkey will be the same.
                     //
-                    if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef
-                            .getPKIndexDef().getFields())) {
+                    if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef.getPKIndexDef().getFields())) {
                         if (hEx.hasChildren()) {
                             throw new InvalidOperationException(
                                     ErrorCode.FK_CONSTRAINT_VIOLATION,

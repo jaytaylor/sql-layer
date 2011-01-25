@@ -531,7 +531,7 @@ public class RowData {
 
     public Object fromObject(RowDef rowDef, int fieldIndex, Object value)
     {
-        assert false : "Not implemented yet";
-        return null;
+        // Not implemented yet
+        throw new UnsupportedOperationException();
     }
 }

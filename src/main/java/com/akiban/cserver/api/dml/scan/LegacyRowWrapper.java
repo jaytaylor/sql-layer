@@ -1,19 +1,15 @@
 package com.akiban.cserver.api.dml.scan;
 
-import java.util.Map;
-
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DMLError;
-import com.akiban.cserver.api.dml.NoSuchRowException;
-import com.akiban.cserver.service.ServiceManagerImpl;
 
-public final class LegacyRowWrapper implements NewRow {
-    private RowDef rowDef;
+import java.util.Map;
+
+public final class LegacyRowWrapper extends NewRow
+{
     // Updates are handled by creating a NiceRow from the RowData and applying updates to the NiceRow.
     // When this happens, rowData is set to null, and is regenerated lazily. If updatedRow is null, then
     // rowData is current.
@@ -21,23 +17,28 @@ public final class LegacyRowWrapper implements NewRow {
     private NiceRow updatedRow;
 
     // For when a LegacyRowWrapper is being reused, e.g. WriteRowRequest.
-    public LegacyRowWrapper() {
-        this.rowDef = null;
+    public LegacyRowWrapper()
+    {
+        this((RowDef) null);
+    }
+
+    public LegacyRowWrapper(RowDef rowDef)
+    {
+        super(rowDef);
         setRowData(null);
     }
 
-    public LegacyRowWrapper(RowDef rowDef) {
-        this.rowDef = rowDef;
-        setRowData(null);
-    }
-
-    public LegacyRowWrapper(RowData rowData) {
+    public LegacyRowWrapper(RowData rowData)
+    {
         this(rowDef(rowData.getRowDefId()));
         setRowData(rowData);
     }
 
-    public void setRowData(RowData rowData) {
-        assert rowData == null || rowDef == null || rowData.getRowDefId() == rowDef.getRowDefId();
+    public void setRowData(RowData rowData)
+    {
+        assert
+            rowData == null || rowDef == null || rowData.getRowDefId() == rowDef.getRowDefId()
+            : String.format("rowData: %s, rowDef: %s", rowData, rowDef);
         this.rowData = rowData;
         this.updatedRow = null;
     }
@@ -53,7 +54,8 @@ public final class LegacyRowWrapper implements NewRow {
     }
 
     @Override
-    public TableId getTableId() {
+    public TableId getTableId()
+    {
         assert rowData != null || updatedRow != null;
         return updatedRow != null ? updatedRow.getTableId() : TableId.of(rowData.getRowDefId());
     }
@@ -74,17 +76,20 @@ public final class LegacyRowWrapper implements NewRow {
     }
 
     @Override
-    public boolean hasValue(ColumnId columnId) {
+    public boolean hasValue(ColumnId columnId)
+    {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object remove(ColumnId columnId) {
+    public Object remove(ColumnId columnId)
+    {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Map<ColumnId, Object> getFields() {
+    public Map<ColumnId, Object> getFields()
+    {
         throw new UnsupportedOperationException();
     }
 
@@ -98,11 +103,15 @@ public final class LegacyRowWrapper implements NewRow {
         return rowData;
     }
 
-    private static RowDef rowDef(int rowDefId)
+    @Override
+    public boolean equals(Object o)
     {
-        RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
-        RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        assert rowDef != null : rowDefId;
-        return rowDef;
+        throw new DMLError("Not implemented yet");
+    }
+
+    @Override
+    public int hashCode()
+    {
+        throw new DMLError("Not implemented yet");
     }
 }

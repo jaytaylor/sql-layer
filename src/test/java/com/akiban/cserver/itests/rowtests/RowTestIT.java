@@ -21,8 +21,8 @@ public class RowTestIT extends ApiTestBase
     {
         TableId t = createTable("s",
                                 "t",
-                                "id int not null key, " +
-                                "a int not null, " +
+                                "id int not null key",
+                                "a int not null",
                                 "b int not null");
         NiceRow original = new NiceRow(t);
         ColumnId cId = ColumnId.of(0);
@@ -43,8 +43,8 @@ public class RowTestIT extends ApiTestBase
     {
         TableId t = createTable("s",
                                 "t",
-                                "id int not null key, " +
-                                "a int not null, " +
+                                "id int not null key",
+                                "a int not null",
                                 "b int");
         NiceRow original = new NiceRow(t);
         ColumnId cId = ColumnId.of(0);
@@ -65,9 +65,9 @@ public class RowTestIT extends ApiTestBase
     {
         TableId t = createTable("s",
                                 "t",
-                                "id int not null key, " +
-                                "a int, " +
-                                "b int, " +
+                                "id int not null key",
+                                "a int",
+                                "b int",
                                 "c int");
         NiceRow row = new NiceRow(t);
         ColumnId cId = ColumnId.of(0);
@@ -97,9 +97,9 @@ public class RowTestIT extends ApiTestBase
     {
         TableId t = createTable("s",
                                 "t",
-                                "id int not null key, " +
-                                "a int, " +
-                                "b int, " +
+                                "id int not null key",
+                                "a int",
+                                "b int",
                                 "c int");
         NiceRow niceRow = new NiceRow(t);
         ColumnId cId = ColumnId.of(0);
@@ -132,9 +132,9 @@ public class RowTestIT extends ApiTestBase
         // Check the conversions.
         TableId t = createTable("s",
                                 "t",
-                                "id int not null key, " +
-                                "a int, " +
-                                "b int, " +
+                                "id int not null key",
+                                "a int",
+                                "b int",
                                 "c int");
         NiceRow niceRow = new NiceRow(t);
         ColumnId cId = ColumnId.of(0);

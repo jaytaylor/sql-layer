@@ -6,4 +6,9 @@ public class DMLError extends Error
     {
         super(message);
     }
+
+    public DMLError(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }
