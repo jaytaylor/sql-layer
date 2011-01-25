@@ -68,7 +68,7 @@ JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintClassHistogram"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintTenuringDistribution"
 # JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
-# JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/cassandra/gc.log"
+# JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/akiban/gc.log"
 
 # jmx: metrics and administration interface
 # 
