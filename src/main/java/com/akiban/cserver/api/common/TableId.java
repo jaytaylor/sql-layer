@@ -106,7 +106,7 @@ public class TableId {
         if (!tableId.compareAndSet(null, tableIdInt)) {
             Integer old = tableId.get();
             if (old == null || (old != tableIdInt) ) {
-                throw new ResolutionException(this);
+                throw new ResolutionException(tableIdInteger, tableName, "tableIdInt="+tableIdInt);
             }
         }
         return tableIdInt;
@@ -123,7 +123,7 @@ public class TableId {
     public boolean equals(Object o) {
         Integer myIdInt = tableId.get();
         if (myIdInt == null) {
-            throw new ResolutionException();
+            throw new ResolutionException(myIdInt, tableName);
         }
 
         if (this == o) return true;
@@ -132,7 +132,7 @@ public class TableId {
         TableId tableId1 = (TableId) o;
         Integer otherIdInt = tableId1.tableId.get();
         if (otherIdInt == null) {
-            throw new ResolutionException();
+            throw new ResolutionException(myIdInt, tableName, "otherIdInt==null, otherTableName="+tableId1.tableName);
         }
         return myIdInt.equals(otherIdInt);
     }
@@ -141,7 +141,7 @@ public class TableId {
     public int hashCode() {
         Integer tableIdInt = tableId.get();
         if (tableIdInt == null) {
-            throw new ResolutionException();
+            throw new ResolutionException(tableIdInt, tableName);
         }
         return tableIdInt.hashCode();
     }
