@@ -63,8 +63,8 @@ public class Writer implements ModelNames
         }
         for (UserTable userTable : ais.getUserTables().values()) {
             target.writeTable(userTable.map());
-            nColumns += userTable.getColumns().size();
-            nIndexes += userTable.getIndexes().size();
+            nColumns += userTable.getColumnsIncludingInternal().size();
+            nIndexes += userTable.getIndexesIncludingInternal().size();
         }
     }
 
