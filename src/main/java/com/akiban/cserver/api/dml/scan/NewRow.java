@@ -69,18 +69,11 @@ public interface NewRow {
     Map<ColumnId,Object> getFields();
 
     /**
-     * Specifies whether this instance needs a non-null RowDef for its {@linkplain #toRowData(RowDef)}
-     * @return whether a RowDef is needed to convert this row to a RowData
-     */
-    boolean needsRowDef();
-
-    /**
      * Converts this row to a newly allocated RowData
-     * @param rowDef the row's RowDef; will be ignored if {@linkplain #needsRowDef()} is true
      * @return the data represented by this row, encoded as a RowData
      * @throws NullPointerException if rowDef is required but null
      */
-    RowData toRowData(RowDef rowDef);
+    RowData toRowData();
 
     /**
      * <p>Compares the specified object with this NewRow. Returns <tt>true</tt> if the given object is also a

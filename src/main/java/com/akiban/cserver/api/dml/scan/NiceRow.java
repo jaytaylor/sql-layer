@@ -8,16 +8,31 @@ import java.util.TreeMap;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
+import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.encoding.Encoding;
+import com.akiban.cserver.service.ServiceManager;
+import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.util.ArgumentValidation;
 
 public class NiceRow implements NewRow {
+    private final RowDef rowDef;
     private final Map<ColumnId,Object> fields;
     private final TableId tableId;
 
-    public NiceRow(TableId tableId) {
+    public NiceRow(TableId tableId)
+    {
+        RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
+        RowDef rowDef = null;
+        try {
+            rowDef = rowDefCache.getRowDef(tableId.getTableId(null));
+        } catch (NoSuchTableException e) {
+            assert false : e;
+        }
+        assert rowDef != null : tableId;
+        this.rowDef = rowDef;
         ArgumentValidation.notNull("tableId", tableId);
         fields = new TreeMap<ColumnId, Object>();
         this.tableId = tableId;
@@ -54,22 +69,25 @@ public class NiceRow implements NewRow {
         return fields;
     }
 
-    public static NewRow fromRowData(RowData origData, RowDef rowDef) {
+    public static NewRow fromRowData(RowData origData, RowDef rowDef)
+    {
         Set<ColumnId> activeColumns = new HashSet<ColumnId>();
         for(int fieldIndex=0, fieldsCount=rowDef.getFieldCount(); fieldIndex < fieldsCount; ++fieldIndex) {
             final long location = rowDef.fieldLocation(origData, fieldIndex);
-            if (location != 0) {
+            // Null != not specified. NewRow, NiceRow, RowData all need the concept of specified vs not-specified
+            // fields.
+            if (true) { // location != 0) {
                 activeColumns.add( ColumnId.of(fieldIndex) );
             }
         }
 
-        NewRow retval = new NiceRow( TableId.of(rowDef.getRowDefId()) );
+        NewRow retval = new NiceRow(TableId.of(rowDef.getRowDefId()) );
         for (ColumnId column : activeColumns) {
             final int pos = column.getPosition();
             final FieldDef fieldDef = rowDef.getFieldDef(pos);
             final Encoding encoding = fieldDef.getEncoding();
-            final Object value = encoding.toObject(fieldDef, origData);
-
+            final Object value =
+                origData.isNull(fieldDef.getFieldIndex()) ? null : encoding.toObject(fieldDef, origData);
             Object old = retval.put(column, value);
             assert old == null : String.format("put(%s, %s) --> %s", column, value, old);
         }
@@ -78,12 +96,7 @@ public class NiceRow implements NewRow {
     }
 
     @Override
-    public boolean needsRowDef() {
-        return true;
-    }
-
-    @Override
-    public RowData toRowData(RowDef rowDef) {
+    public RowData toRowData() {
         final int fieldsOffset =
                 + 4 // record length
                 + 2 // signature byte 'AB'

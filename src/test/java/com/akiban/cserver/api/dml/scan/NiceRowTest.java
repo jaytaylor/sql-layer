@@ -35,7 +35,7 @@ public final class NiceRowTest {
         assertEquals("field[0]", 5L, newRow.get(ColumnId.of(0)));
         assertEquals("field[1]", "Bob", newRow.get(ColumnId.of(1)));
 
-        compareRowDatas(rowData, newRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData());
     }
 
     @Test
@@ -63,7 +63,7 @@ public final class NiceRowTest {
             assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
         }
 
-        compareRowDatas(rowData, newRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData());
     }
 
     @Test
@@ -98,7 +98,7 @@ public final class NiceRowTest {
             assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
         }
 
-        compareRowDatas(rowData, newRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData());
     }
 
     @Test

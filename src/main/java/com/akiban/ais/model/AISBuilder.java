@@ -56,9 +56,7 @@ public class AISBuilder {
 
     public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
-        UserTable userTable = UserTable.create(ais, schemaName, tableName,
-                tableIdGenerator++);
-        ais.addUserTable(userTable);
+        UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
     }
 
     public void userTableInitialAutoIncrement(String schemaName,
