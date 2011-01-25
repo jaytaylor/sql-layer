@@ -81,7 +81,7 @@ public class Writer implements ModelNames
 
     private void saveColumns(Table table) throws Exception
     {
-        for (Column column : table.getColumns()) {
+        for (Column column : table.getColumnsIncludingInternal()) {
             target.writeColumn(column.map());
         }
     }
@@ -109,7 +109,7 @@ public class Writer implements ModelNames
     {
         target.writeCount(nIndexes);
         for (UserTable userTable : ais.getUserTables().values()) {
-            for (Index index : userTable.getIndexes()) {
+            for (Index index : userTable.getIndexesIncludingInternal()) {
                 target.writeIndex(index.map());
                 nIndexColumns += index.getColumns().size();
             }
@@ -126,7 +126,7 @@ public class Writer implements ModelNames
     {
         target.writeCount(nIndexColumns);
         for (UserTable userTable : ais.getUserTables().values()) {
-            for (Index index : userTable.getIndexes()) {
+            for (Index index : userTable.getIndexesIncludingInternal()) {
                 for (IndexColumn indexColumn : index.getColumns()) {
                     target.writeIndexColumn(indexColumn.map());
                 }
