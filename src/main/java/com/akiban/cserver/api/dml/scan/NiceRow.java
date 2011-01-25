@@ -24,14 +24,11 @@ public class NiceRow implements NewRow {
 
     public NiceRow(TableId tableId)
     {
-        RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
-        RowDef rowDef = null;
-        try {
-            rowDef = rowDefCache.getRowDef(tableId.getTableId(null));
-        } catch (NoSuchTableException e) {
-            assert false : e;
-        }
-        assert rowDef != null : tableId;
+        this(tableId, rowDef(tableId));
+    }
+
+    public NiceRow(TableId tableId, RowDef rowDef)
+    {
         this.rowDef = rowDef;
         ArgumentValidation.notNull("tableId", tableId);
         fields = new TreeMap<ColumnId, Object>();
@@ -81,7 +78,7 @@ public class NiceRow implements NewRow {
             }
         }
 
-        NewRow retval = new NiceRow(TableId.of(rowDef.getRowDefId()) );
+        NewRow retval = new NiceRow(TableId.of(rowDef.getRowDefId()), rowDef);
         for (ColumnId column : activeColumns) {
             final int pos = column.getPosition();
             final FieldDef fieldDef = rowDef.getFieldDef(pos);
@@ -161,5 +158,18 @@ public class NiceRow implements NewRow {
     @Override
     public int hashCode() {
         return tableId.hashCode() + fields.hashCode();
+    }
+
+    private static RowDef rowDef(TableId tableId)
+    {
+        RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
+        RowDef rowDef = null;
+        try {
+            rowDef = rowDefCache.getRowDef(tableId.getTableId(null));
+        } catch (NoSuchTableException e) {
+            assert false : e;
+        }
+        assert rowDef != null : tableId;
+        return rowDef;
     }
 }
