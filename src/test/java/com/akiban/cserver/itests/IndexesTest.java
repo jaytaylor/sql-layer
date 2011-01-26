@@ -110,7 +110,8 @@ public final class IndexesTest extends ApiTestBase {
         TableId tId = createTable("test", "atable", "id int");
         // Attempt to a primary key
         AkibaInformationSchema ais = createAISWithTable(tId);
-        addIndexToAIS(ais, "test", "atable", "PRIMARY", new String[]{"id"}, false);
+        Table table = ais.getTable("test", "atable");
+        Index.create(ais, table, "PRIMARY", 1, false, "PRIMARY");
         ddl().createIndexes(session, getAllIndexes(ais));
     }
     
