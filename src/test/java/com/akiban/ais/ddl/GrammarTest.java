@@ -42,12 +42,13 @@ public class GrammarTest
         assertTrue(!index.isPrimaryKey());
         assertTrue(index.isUnique());
         // We should have generated our own PK
-        assertNotNull(table.getPrimaryKey());
-        index = table.getPrimaryKey().getIndex();
+        assertNull(table.getPrimaryKey());
+        assertNotNull(table.getPrimaryKeyIncludingInternal());
+        index = table.getPrimaryKeyIncludingInternal().getIndex();
         assertNotNull(index);
         assertTrue(index.isPrimaryKey());
         assertTrue(index.isUnique());
-        assertEquals(Column.AKIBAN_PK_NAME, table.getPrimaryKey().getColumns().get(0).getName());
+        assertEquals(Column.AKIBAN_PK_NAME, table.getPrimaryKeyIncludingInternal().getColumns().get(0).getName());
     }
 
     @Test

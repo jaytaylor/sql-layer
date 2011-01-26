@@ -134,8 +134,6 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     public void setGroup(Group group)
     {
         // Join is permitted in group only if FK points to parent's PK.
-        /*PrimaryKey parentPK =*/
-        parent.getPrimaryKey();
 /*
         if (parentPK == null) {
             throw new AISBuilder.UngroupableJoinException(this);

@@ -77,6 +77,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
             return store().getTableStatistics(session, tableIdInt);
         } catch (Exception e) {
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(NoSuchTableException.class, ioe);
             throw new GenericInvalidOperationException(e);
         }
     }
@@ -323,22 +325,22 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
      *            the cursor id; used only to report errors
      * @param output
      *            the output; see
-     *            {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
      * @param limit
      *            the limit, or negative value if none; ee
-     *            {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
      * @return whether more rows remain to be scanned; see
-     *         {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     *         {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
      * @throws CursorIsFinishedException
      *             see
-     *             {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
      * @throws RowOutputException
      *             see
-     *             {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
      * @throws GenericInvalidOperationException
      *             see
-     *             {@link #scanSome(CursorId, Session, LegacyRowOutput , int)}
-     * @see #scanSome(CursorId, Session, LegacyRowOutput , int)
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     * @see #scanSome(Session, CursorId, LegacyRowOutput , int)
      */
     protected static boolean doScan(Cursor cursor, CursorId cursorId,
             LegacyRowOutput output, int limit)
@@ -430,9 +432,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public RowData convertNewRow(NewRow row) throws NoSuchTableException {
-        RowDef rowDef = row.needsRowDef() ? idResolver().getRowDef(
-                row.getTableId()) : null;
-        return row.toRowData(rowDef);
+        return row.toRowData();
     }
 
     @Override
@@ -496,13 +496,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private RowData niceRowToRowData(NewRow row) throws NoSuchTableException,
             TableDefinitionMismatchException {
-        RowDef rowDef = null;
-        if (row.needsRowDef()) {
-            rowDef = store().getRowDefCache().getRowDef(
-                    row.getTableId().getTableId(idResolver()));
-        }
         try {
-            return row.toRowData(rowDef);
+            return row.toRowData();
         } catch (EncodingException e) {
             throw new TableDefinitionMismatchException(e);
         }

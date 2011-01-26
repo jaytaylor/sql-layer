@@ -31,11 +31,12 @@ public final class NiceRowTest {
 
         NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
-        assertEquals("fields count", 2, newRow.getFields().size());
+        // Why -1: because an __akiban_pk column gets added
+        assertEquals("fields count", 2, newRow.getFields().size() - 1);
         assertEquals("field[0]", 5L, newRow.get(ColumnId.of(0)));
         assertEquals("field[1]", "Bob", newRow.get(ColumnId.of(1)));
 
-        compareRowDatas(rowData, newRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData());
     }
 
     @Test
@@ -55,7 +56,8 @@ public final class NiceRowTest {
 
         NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
-        assertEquals("fields count", NUM, newRow.getFields().size());
+        // Why -1: because an __akiban_pk column gets added
+        assertEquals("fields count", NUM, newRow.getFields().size() - 1);
         assertEquals("field[0]", 15L, newRow.get(ColumnId.of(0)));
         assertEquals("field[1]", "Robert", newRow.get(ColumnId.of(1)));
         for (int i=2; i < NUM; ++i) {
@@ -63,7 +65,7 @@ public final class NiceRowTest {
             assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
         }
 
-        compareRowDatas(rowData, newRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData());
     }
 
     @Test
@@ -90,7 +92,8 @@ public final class NiceRowTest {
 
         NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
 
-        assertEquals("fields count", NUM - nulls, newRow.getFields().size());
+        // Why -1: because an __akiban_pk column gets added
+        assertEquals("fields count", NUM, newRow.getFields().size() - 1);
         assertEquals("field[0]", 15L, newRow.get(ColumnId.of(0)));
         assertEquals("field[1]", "Robert", newRow.get(ColumnId.of(1)));
         for (int i=2; i < NUM; ++i) {
@@ -98,19 +101,19 @@ public final class NiceRowTest {
             assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
         }
 
-        compareRowDatas(rowData, newRow.toRowData(rowDef));
+        compareRowDatas(rowData, newRow.toRowData());
     }
 
     @Test
     public void testEquality() {
         TreeMap<Integer,NiceRow> mapOne = new TreeMap<Integer, NiceRow>();
         TreeMap<Integer,NiceRow> mapTwo = new TreeMap<Integer, NiceRow>();
-        NiceRow rowOne = new NiceRow(TableId.of(1));
+        NiceRow rowOne = new NiceRow(TableId.of(1), null);
         rowOne.put(ColumnId.of(0), Long.valueOf(0l));
         rowOne.put(ColumnId.of(1), "hello world");
         mapOne.put(0, rowOne);
 
-        NiceRow rowTwo = new NiceRow(TableId.of(1));
+        NiceRow rowTwo = new NiceRow(TableId.of(1), null);
         rowTwo.put(ColumnId.of(0), Long.valueOf(0l));
         rowTwo.put(ColumnId.of(1), "hello world");
         mapTwo.put(0, rowTwo);

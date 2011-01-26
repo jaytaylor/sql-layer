@@ -264,7 +264,7 @@ public class IndexDef implements TreeLink {
                 Column column = hKeyColumn.column();
                 H2I h2i;
                 if (!indexColumns.contains(column)) {
-                    if (index.getTable().getColumns().contains(hKeyColumn.column())) {
+                    if (index.getTable().getColumnsIncludingInternal().contains(hKeyColumn.column())) {
                         h2i = H2I.fromField(hKeyColumn.column().getPosition());
                     } else {
                         assert rowDef.isUserTable();

@@ -21,12 +21,20 @@ class Map(object):
     def add_index(self, rowtype, key_fields):
         return Index(self, rowtype, key_fields)
 
-    def lookup(self, key):
-        values = []
-        for row in self._extent:
-            if row.key == key:
-                values.append(row)
-        return values
+    def cursor(self, start = None, end = None):
+        position = 0
+        cursor = None
+        if start is None:
+            cursor = Cursor(self, 0, end)
+        while not cursor and position < len(self._extent):
+            row = self._extent[position]
+            if row.key == start:
+                cursor = Cursor(self, position, end)
+            else:
+                position += 1
+        if not cursor:
+            cursor = Cursor(self, position)
+        return cursor
 
 class Index(Map):
 
@@ -39,3 +47,23 @@ class Index(Map):
                     index_value[field] = row[field]
                 self.add(Row(index_rowtype, index_value))
         self.close()
+
+class Cursor(object):
+
+    def __init__(self, map, position, end):
+        self._map = map
+        self._position = position
+        self._end = end
+
+    def next(self):
+        extent = self._map._extent
+        if self._position >= len(extent):
+            next = None
+        else:
+            next = extent[self._position]
+            if self._end is not None and next.key > self._end:
+                next = None
+                self._position = len(extent)
+            else:
+                self._position += 1
+        return next

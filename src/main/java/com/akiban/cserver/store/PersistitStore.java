@@ -189,10 +189,8 @@ public class PersistitStore implements CServerConstants, Store {
             // For hkey fields not in rowDef's table, find the parent row and
             // get the hkey from it. That provides
             // the hkey up to the point that rowData can contribute the rest.
-            RowDef parentRowDef = rowDefCache.getRowDef(rowDef
-                    .getParentRowDefId());
-            Exchange iEx = getExchange(session, rowDef,
-                    parentRowDef.getPKIndexDef());
+            RowDef parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
+            Exchange iEx = getExchange(session, rowDef, parentRowDef.getPKIndexDef());
             constructParentPKIndexKey(iEx.getKey(), rowDef, rowData);
             if (!iEx.hasChildren()) {
                 throw new InvalidOperationException(
@@ -200,18 +198,15 @@ public class PersistitStore implements CServerConstants, Store {
             }
             boolean next = iEx.next(true);
             assert next;
-            constructHKeyFromIndexKey(hKey, iEx.getKey(),
-                    parentRowDef.getPKIndexDef());
+            constructHKeyFromIndexKey(hKey, iEx.getKey(), parentRowDef.getPKIndexDef());
             releaseExchange(session, iEx);
-            parentHKeySegments = parentRowDef.userTable().hKey().segments()
-                    .size();
+            parentHKeySegments = parentRowDef.userTable().hKey().segments().size();
         }
         // Get hkey contributions from this row
         List<HKeySegment> segments = table.hKey().segments();
         for (int s = parentHKeySegments; s < segments.size(); s++) {
             HKeySegment segment = segments.get(s);
-            RowDef segmentRowDef = rowDefCache.getRowDef(segment.table()
-                    .getTableId());
+            RowDef segmentRowDef = rowDefCache.getRowDef(segment.table().getTableId());
             hKey.append(segmentRowDef.getTableStatus().getOrdinal());
             FieldDef[] fieldDefs = rowDef.getFieldDefs();
             List<HKeyColumn> segmentColumns = segment.columns();
@@ -317,8 +312,7 @@ public class PersistitStore implements CServerConstants, Store {
      * 
      * @param rowData
      */
-    void constructParentPKIndexKey(final Key iKey, final RowDef rowDef,
-            final RowData rowData) {
+    void constructParentPKIndexKey(final Key iKey, final RowDef rowDef, final RowData rowData) {
         iKey.clear();
         appendKeyFields(iKey, rowDef, rowData, rowDef.getParentJoinFields());
     }
@@ -681,8 +675,7 @@ public class PersistitStore implements CServerConstants, Store {
                     // For Iteration 9, verify that only non-PK/FK fields are
                     // changing - i.e., that the hkey will be the same.
                     //
-                    if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef
-                            .getPKIndexDef().getFields())) {
+                    if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef.getPKIndexDef().getFields())) {
                         if (hEx.hasChildren()) {
                             throw new InvalidOperationException(
                                     ErrorCode.FK_CONSTRAINT_VIOLATION,

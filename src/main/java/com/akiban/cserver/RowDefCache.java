@@ -248,14 +248,12 @@ public class RowDefCache implements CServerConstants {
         return String.format("%s$$%s$$%s$$%s", groupName, schemaName, tableName, indexName);
     }
 
-    private RowDef createUserTableRowDef(AkibaInformationSchema ais,
-            UserTable table) {
+    private RowDef createUserTableRowDef(AkibaInformationSchema ais, UserTable table) {
         RowDef rowDef = new RowDef(table);
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
             final Join join = table.getParentJoin();
-            final UserTable parentTable = join.getParent();
             //
             // parentJoinFields - TODO - not sure this is right.
             //
@@ -288,7 +286,7 @@ public class RowDefCache implements CServerConstants {
 
         // Secondary indexes
         List<IndexDef> indexDefList = new ArrayList<IndexDef>();
-        for (Index index : table.getIndexes()) {
+        for (Index index : table.getIndexesIncludingInternal()) {
             List<IndexColumn> indexColumns = index.getColumns();
             if (!indexColumns.isEmpty()) {
                 String treeName = getTreeName(groupTableName, index);
@@ -303,8 +301,7 @@ public class RowDefCache implements CServerConstants {
         }
         rowDef.setTreeName(groupTableTreeName);
         rowDef.setParentJoinFields(parentJoinFields);
-        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList
-                .size()]));
+        rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
         rowDef.setOrdinal(0);
         return rowDef;
 
@@ -314,7 +311,7 @@ public class RowDefCache implements CServerConstants {
             GroupTable table) {
         RowDef rowDef = new RowDef(table);
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();
-        for (Column column : table.getColumns()) {
+        for (Column column : table.getColumnsIncludingInternal()) {
             Column userColumn = column.getUserColumn();
             if (userColumn.getPosition() == 0) {
                 int userRowDefId = userColumn.getTable().getTableId();

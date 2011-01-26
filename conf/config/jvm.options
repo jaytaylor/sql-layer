@@ -53,6 +53,23 @@ JVM_OPTS="$JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError"
 # comment out this entry to enable IPv6 support).
 JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
 
+if [ "`uname`" = "Linux" ] ; then
+    # reduce the per-thread stack size 
+    # Only do so on Linux where it is known to be supported.
+    JVM_OPTS="$JVM_OPTS -Xss128k"
+fi
+
+# GC tuning options
+JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC" 
+
+# GC logging options -- uncomment to enable
+# JVM_OPTS="$JVM_OPTS -XX:+PrintGCDetails"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintGCTimeStamps"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintClassHistogram"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintTenuringDistribution"
+# JVM_OPTS="$JVM_OPTS -XX:+PrintGCApplicationStoppedTime"
+# JVM_OPTS="$JVM_OPTS -Xloggc:/var/log/akiban/gc.log"
+
 # jmx: metrics and administration interface
 # 
 # add this if you're having trouble connecting:

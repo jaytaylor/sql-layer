@@ -39,11 +39,7 @@ public class NewScanRange implements ScanRange {
     }
 
     private RowData convert(NewRow row, IdResolver idResolver) throws NoSuchTableException {
-        RowDef rowDef = null;
-        if (row.needsRowDef()) {
-            rowDef = idResolver.getRowDef(tableId);
-        }
-        return row.toRowData(rowDef);
+        return row.toRowData();
     }
 
     @Override
