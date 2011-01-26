@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
+import com.persistit.Transaction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -142,7 +143,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void createTableDefinition(final Session session,
-            final String defaultSchemaName, final String statement, final boolean useOldId)
+                                      final String defaultSchemaName,
+                                      final String statement,
+                                      final boolean useOldId)
             throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
@@ -162,7 +165,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         validateTableDefinition(session, schemaName, statement, tableDef);
         final Exchange ex = treeService.getExchange(session,
                 treeLink(schemaName, SCHEMA_TREE_NAME));
-
+        Transaction transaction = treeService.getTransaction(session);
+        transaction.begin();
         try {
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
@@ -193,9 +197,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
             changed(treeService, session);
             saveTableStatusRecords(session);
-            getAis(session); // Force AIS creation
-            return;
+            refreshAIS(session);
+            transaction.commit();
         } finally {
+            transaction.end();
             treeService.releaseExchange(session, ex);
         }
     }
@@ -215,24 +220,33 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public void deleteTableDefinition(Session session, final int tableId)
             throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
-        treeService.visitStorage(session, new TreeVisitor() {
+        Transaction transaction = treeService.getTransaction(session);
+        transaction.begin();
+        try {
+            treeService.visitStorage(session, new TreeVisitor()
+            {
 
-            @Override
-            public void visit(Exchange exchange) throws Exception {
-                exchange.clear().append(BY_ID).append(tableId).fetch();
-                if (exchange.isValueDefined()) {
-                    final String canonical = exchange.getValue().getString();
-                    SchemaDef.CName cname = cname(canonical);
-                    exchange.remove();
-                    exchange.clear().append(BY_NAME).append(cname.getSchema())
+                @Override
+                public void visit(Exchange exchange) throws Exception
+                {
+                    exchange.clear().append(BY_ID).append(tableId).fetch();
+                    if (exchange.isValueDefined()) {
+                        final String canonical = exchange.getValue().getString();
+                        SchemaDef.CName cname = cname(canonical);
+                        exchange.remove();
+                        exchange.clear().append(BY_NAME).append(cname.getSchema())
                             .append(cname.getName()).append(tableId).remove();
+                    }
                 }
-            }
 
-        }, SCHEMA_TREE_NAME);
-        removeStaleTableStatusRecords(session);
-        saveTableStatusRecords(session);
-        getAis(session); // Force AIS creation
+            }, SCHEMA_TREE_NAME);
+            removeStaleTableStatusRecords(session);
+            saveTableStatusRecords(session);
+            refreshAIS(session);
+            transaction.commit();
+        } finally {
+            transaction.end();
+        }
     }
 
     /**
@@ -277,10 +291,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 tables.add(t.getName());
             }
         }
-        deleteTableDefinitionList(session, tables);
-        removeStaleTableStatusRecords(session);
-        saveTableStatusRecords(session);
-        getAis(session); // Force AIS creation
+        Transaction transaction = serviceManager.getTreeService().getTransaction(session);
+        try {
+            deleteTableDefinitionList(session, tables);
+            removeStaleTableStatusRecords(session);
+            saveTableStatusRecords(session);
+            refreshAIS(session);
+            transaction.commit();
+        } finally {
+            transaction.end();
+        }
     }
 
     private void deleteTableDefinitionList(final Session session,
@@ -538,12 +558,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public AkibaInformationSchema getAis(final Session session) {
+        return ais;
+    }
+
+    private void refreshAIS(final Session session) throws Exception
+    {
         try {
             while (true) {
                 long wasTimestamp;
                 synchronized (this) {
                     if (aisTimestamp == saveTimestamp) {
-                        return ais;
+                        return;
                     }
                     wasTimestamp = saveTimestamp;
                 }
@@ -596,7 +621,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         } catch (Exception e) {
             LOG.error("AIS creation failed, reverting to original AIS.", e);
             revertAIS();
-            return ais;
+            throw e;
         }
     }
 
