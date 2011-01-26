@@ -98,7 +98,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     @Override
     public void processRequest(Session session, String request, Outputter outputter, OutputStream outputStream)
-            throws HapiRequestException, IOException
+            throws HapiRequestException
     {
         ByteBuffer buffer = ByteBuffer.allocate(65536);
         Store storeLocal = store.get();

@@ -13,5 +13,5 @@ public interface HapiProcessor {
         void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException;
     }
 	public void processRequest(Session session, String request, Outputter outputter, OutputStream outputStream)
-            throws HapiRequestException, IOException;
+            throws HapiRequestException;
 }

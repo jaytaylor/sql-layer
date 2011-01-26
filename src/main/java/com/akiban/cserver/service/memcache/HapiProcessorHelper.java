@@ -17,7 +17,7 @@ final class HapiProcessorHelper {
 
 	static void processRequest(Store store, Session session, String request,
                                  ByteBuffer byteBuffer, HapiProcessor.Outputter outputter, OutputStream outputStream)
-            throws HapiRequestException, IOException
+            throws HapiRequestException
     {
         ArgumentValidation.notNull("outputter", outputter);
         String[] tokens = request.split(":");
@@ -41,7 +41,12 @@ final class HapiProcessorHelper {
             } catch (Exception e) {
                 throw new HapiRequestException("while fetching rows", e);
             }
-            outputter.output(cache, list, outputStream);
+            
+            try {
+                outputter.output(cache, list, outputStream);
+            } catch (IOException e) {
+                throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
+            }
 
         }
         else {
