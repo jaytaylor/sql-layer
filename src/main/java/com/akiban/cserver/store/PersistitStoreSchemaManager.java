@@ -292,6 +292,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
         Transaction transaction = serviceManager.getTreeService().getTransaction(session);
+        transaction.begin();
         try {
             deleteTableDefinitionList(session, tables);
             removeStaleTableStatusRecords(session);
@@ -844,7 +845,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void afterStart() throws Exception {
-        getAis(new SessionImpl());
+        refreshAIS(new SessionImpl());
     }
 
     /**

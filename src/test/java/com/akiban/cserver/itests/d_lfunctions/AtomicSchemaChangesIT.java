@@ -21,7 +21,6 @@ public class AtomicSchemaChangesIT extends ApiTestBase
     // The tests catch Throwable, because some of the breakage scenarios actually survive the DDL and AIS
     // layers, and instead cause createTable to fail an assertion.
 
-/*
     @Test
     public void tryBadSyntax() throws Exception
     {
@@ -70,7 +69,6 @@ public class AtomicSchemaChangesIT extends ApiTestBase
         }
         checkInitialSchema();
     }
-*/
 
     @Test
     public void tryFailAISCreation_2() throws Exception
