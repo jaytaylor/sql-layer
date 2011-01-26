@@ -432,9 +432,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public RowData convertNewRow(NewRow row) throws NoSuchTableException {
-        RowDef rowDef = row.needsRowDef() ? idResolver().getRowDef(
-                row.getTableId()) : null;
-        return row.toRowData(rowDef);
+        return row.toRowData();
     }
 
     @Override
@@ -498,13 +496,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private RowData niceRowToRowData(NewRow row) throws NoSuchTableException,
             TableDefinitionMismatchException {
-        RowDef rowDef = null;
-        if (row.needsRowDef()) {
-            rowDef = store().getRowDefCache().getRowDef(
-                    row.getTableId().getTableId(idResolver()));
-        }
         try {
-            return row.toRowData(rowDef);
+            return row.toRowData();
         } catch (EncodingException e) {
             throw new TableDefinitionMismatchException(e);
         }

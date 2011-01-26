@@ -1,5 +1,11 @@
 package com.akiban.util;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -48,5 +54,33 @@ public abstract class Strings {
         }
         builder.setLength(builder.length() - delimiter.length());
         return builder.toString();
+    }
+
+    /**
+     * Dumps the content of a resource into a List<String>, where each element is one line of the resource.
+     * @param forClass the class whose resource we should get; if null, will get the default
+     * <tt>ClassLoader.getSystemResourceAsStream</tt>.
+     * @param path the name of the resource
+     * @return a list of lines in the resource
+     * @throws IOException if the given resource doesn't exist or can't be properly read
+     */
+    public static List<String> dumpResource(Class<?> forClass, String path) throws IOException {
+        InputStream is = (forClass == null)
+                ?  ClassLoader.getSystemResourceAsStream(path)
+                : forClass.getResourceAsStream(path);
+        if (is == null) {
+            throw new FileNotFoundException("For class " + forClass + ": " + path);
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            List<String> ret = new ArrayList<String>();
+            String line;
+            while ((line=reader.readLine()) != null) {
+                ret.add(line);
+            }
+            return ret;
+        } finally {
+            is.close();
+        }
     }
 }

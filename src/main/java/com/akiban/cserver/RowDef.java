@@ -104,8 +104,9 @@ public class RowDef implements TreeLink {
     public RowDef(Table table) {
         this.table = table;
         this.tableStatus = new TableStatus(this);
-        this.fieldDefs = new FieldDef[table.getColumns().size()];
-        for (Column column : table.getColumns()) {
+        List<Column> columns = table.getColumnsIncludingInternal();
+        this.fieldDefs = new FieldDef[columns.size()];
+        for (Column column : columns) {
             this.fieldDefs[column.getPosition()] = new FieldDef(this, column);
         }
         fieldCoordinates = new int[(fieldDefs.length + 7) / 8][];

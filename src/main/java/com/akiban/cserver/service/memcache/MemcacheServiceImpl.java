@@ -6,9 +6,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.cserver.service.ServiceStartupException;
+import com.akiban.cserver.service.config.ConfigurationService;
+import com.akiban.cserver.service.jmx.JmxManageable;
+import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
+import com.akiban.cserver.service.memcache.outputter.JsonByteOutputter;
+import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
+import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
+import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
 import com.akiban.cserver.service.session.Session;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -30,9 +38,36 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedCommandDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedFrameDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
 
-public class MemcacheServiceImpl implements MemcacheService,
-        Service<MemcacheService> {
-    
+public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
+    private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
+
+    @SuppressWarnings("unused") // these are queried/set via JMX
+    public enum OutputFormat {
+        JSON(JsonByteOutputter.instance()),
+        RAW(RawByteOutputter.instance()),
+        DUMMY(DummyByteOutputter.instance()),
+        PLAIN(RowDataStringOutputter.instance())
+        ;
+        private final Outputter<byte[]> outputter;
+
+        OutputFormat(Outputter<byte[]> outputter) {
+            this.outputter = outputter;
+        }
+
+        public Outputter<byte[]> getOutputter() {
+            return outputter;
+        }
+    }
+
+    private final AtomicReference<OutputFormat> outputAs;
+    private final MemcacheMXBean manageBean = new ManageBean();
+    private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
+        @Override
+        public Outputter<byte[]> getFormat() {
+            return outputAs.get().getOutputter();
+        }
+    };
+
     // Service vars
     private final ServiceManager serviceManager;
     private static final Log log = LogFactory.getLog(MemcacheServiceImpl.class);
@@ -46,16 +81,27 @@ public class MemcacheServiceImpl implements MemcacheService,
 
     public MemcacheServiceImpl() {
         this.serviceManager = ServiceManagerImpl.get();
+
+        ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
+        String defaultOutputName = config.getProperty("cserver", "memcached.output.format", OutputFormat.JSON.name());
+        OutputFormat defaultOutput;
+        try {
+            defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
+            defaultOutput = OutputFormat.JSON;
+        }
+        outputAs = new AtomicReference<OutputFormat>(defaultOutput);
     }
 
     @Override
-    public String processRequest(Session session, String request) {
+    public <T> T processRequest(Session session, String request, Outputter<T> outputter) {
         ByteBuffer buffer = ByteBuffer.allocate(65536);
         Store storeLocal = store.get();
         if (storeLocal == null) {
             storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
         }
-        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer);
+        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer, outputter);
     }
 
     @Override
@@ -105,10 +151,10 @@ public class MemcacheServiceImpl implements MemcacheService,
 
         if (binary) {
             pipelineFactory = new BinaryPipelineFactory(store.get(), verbose,
-                    idle_time, allChannels);
+                    idle_time, allChannels, formatGetter);
         } else {
             pipelineFactory = new TextPipelineFactory(store.get(), verbose,
-                    idle_time, text_frame_size, allChannels);
+                    idle_time, text_frame_size, allChannels, formatGetter);
         }
 
         bootstrap.setPipelineFactory(pipelineFactory);
@@ -148,10 +194,11 @@ public class MemcacheServiceImpl implements MemcacheService,
         private final MemcachedResponseEncoder responseEncoder;
 
         public TextPipelineFactory(Store store, boolean verbose, int idleTime,
-                int frameSize, DefaultChannelGroup channelGroup) {
+                int frameSize, DefaultChannelGroup channelGroup,
+                AkibanCommandHandler.FormatGetter formatGetter) {
             this.frameSize = frameSize;
             responseEncoder = new MemcachedResponseEncoder();
-            commandHandler = new AkibanCommandHandler(store, channelGroup);
+            commandHandler = new AkibanCommandHandler(store, channelGroup, formatGetter);
         }
 
         public final ChannelPipeline getPipeline() throws Exception {
@@ -171,15 +218,44 @@ public class MemcacheServiceImpl implements MemcacheService,
         private final MemcachedBinaryResponseEncoder responseEncoder;
 
         public BinaryPipelineFactory(Store store, boolean verbose,
-                int idleTime, DefaultChannelGroup channelGroup) {
+                int idleTime, DefaultChannelGroup channelGroup,
+                AkibanCommandHandler.FormatGetter formatGetter) {
             commandDecoder = new MemcachedBinaryCommandDecoder();
             responseEncoder = new MemcachedBinaryResponseEncoder();
-            commandHandler = new AkibanCommandHandler(store, channelGroup);
+            commandHandler = new AkibanCommandHandler(store, channelGroup, formatGetter);
         }
 
         public ChannelPipeline getPipeline() throws Exception {
             return Channels.pipeline(commandDecoder, commandHandler,
                     responseEncoder);
+        }
+    }
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("Memcache", manageBean, MemcacheMXBean.class);
+    }
+
+    private class ManageBean implements MemcacheMXBean {
+        @Override
+        public String getOutputFormat() {
+            return outputAs.get().name();
+        }
+
+        @Override
+        public void setOutputFormat(String whichFormat) throws IllegalArgumentException {
+            OutputFormat newFormat = OutputFormat.valueOf(whichFormat);
+            outputAs.set(newFormat);
+        }
+
+        @Override
+        public String[] getAvailableOutputFormats() {
+            OutputFormat[] formats = OutputFormat.values();
+            String[] names = new String[ formats.length ];
+            for (int i=0; i < formats.length; ++i) {
+                names[i] = formats[i].name();
+            }
+            return names;
         }
     }
 }

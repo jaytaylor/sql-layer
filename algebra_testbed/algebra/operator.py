@@ -67,6 +67,15 @@ class Operator(object):
     def stats(self):
         assert False
 
+    def count_random_access(self):
+        self._stats[RANDOM_ACCESS] += 1
+
+    def count_sequential_access(self):
+        self._stats[SEQUENTIAL_ACCESS] += 1
+
+    def count_sort(self, n):
+        self._stats[SORT] += n
+
 class UnaryOperator(Operator):
 
     def __init__(self, input):
