@@ -15,6 +15,8 @@ import com.akiban.cserver.api.dml.scan.ScanAllRequest;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 
 public final class IndexesTest extends ApiTestBase {
     private AkibaInformationSchema createAISWithTable(TableId id) throws NoSuchTableException, ResolutionException {
@@ -151,6 +153,26 @@ public final class IndexesTest extends ApiTestBase {
     /* 
      * Test creating various types of indexes
      */
+    
+    @Test
+    public void createIndexConfirmInAIS() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        
+        // Create non-unique index on varchar
+        AkibaInformationSchema ais = createAISWithTable(tId); 
+        addIndexToAIS(ais, "test", "t", "name", new String[]{"name"}, false);
+        ddl().createIndexes(session, getAllIndexes(ais));
+        
+        // Index should exist on the UserTable
+        UserTable uTable = ddl().getAIS(session).getUserTable("test", "t");
+        assertNotNull(uTable);
+        assertNotNull(uTable.getIndex("name"));
+        
+        // Index should exist on the GroupTable
+        GroupTable gTable = uTable.getGroup().getGroupTable();
+        assertNotNull(gTable);
+        assertNotNull(gTable.getIndex("t$name"));
+    }
     
     @Test
     public void createIndexSimple() throws InvalidOperationException {

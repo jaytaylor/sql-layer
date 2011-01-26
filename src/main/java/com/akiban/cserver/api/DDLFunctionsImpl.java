@@ -179,10 +179,10 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
                 }
             }
         }
-
-        // All were valid, add to current AIS
+         
         StringBuilder nameBuffer = new StringBuilder();
         for (Index idx : indexesToAdd) {
+            // Add to current table/AIS so that the DDLGenerator call below will see it
             Index newIndex = Index.create(ais, table, idx.getIndexName().getName(), -1,
                     idx.isUnique(), idx.getConstraint());
 
@@ -193,22 +193,24 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
                 newIndex.addColumn(indexCol);
             }
             
+            // Track new index names to build only new indexes
             nameBuffer.append("index=(");
             nameBuffer.append(idx.getIndexName());
             nameBuffer.append(")");
         }
 
-        // Modify stored DDL statement
+        
         try {
+            // Generate new DDL statement from existing AIS/table
             final DDLGenerator gen = new DDLGenerator();
             final TableName tableName = table.getName();
             final String newDDL = gen.createTable(table);
+            
+            // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
-
-            // Trigger recreation
             schemaManager().getAis(session);
 
-            // And trigger build of new indexes in this table
+            // Trigger build of new indexes in this table
             store().buildIndexes(session,
                     String.format("table=(%s) %s", tableName.getTableName(), nameBuffer.toString()));
         } catch (Exception e) {
