@@ -226,6 +226,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }, SCHEMA_TREE_NAME);
         removeStaleTableStatusRecords(session);
         saveTableStatusRecords(session);
+        getAis(session); // Force AIS creation
     }
 
     /**
@@ -273,6 +274,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         deleteTableDefinitionList(session, tables);
         removeStaleTableStatusRecords(session);
         saveTableStatusRecords(session);
+        getAis(session); // Force AIS creation
     }
 
     private void deleteTableDefinitionList(final Session session,
