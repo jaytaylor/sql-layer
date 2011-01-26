@@ -19,7 +19,7 @@ import java.util.*;
 
 import static junit.framework.Assert.*;
 
-public final class CbasisIT extends ApiTestBase {
+public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void simpleScan() throws InvalidOperationException {
