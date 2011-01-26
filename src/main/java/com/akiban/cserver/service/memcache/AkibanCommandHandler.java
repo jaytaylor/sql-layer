@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.session.SynchronizedSession;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.channel.Channel;
@@ -40,7 +41,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
     private static final String PAYLOAD = "PAYLOAD";
     private static final String MODULE = AkibanCommandHandler.class.toString();
-    private static final String THREAD_ASSERT = "THREAD";
 
     interface FormatGetter {
         HapiProcessor.Outputter<byte[]> getFormat();
@@ -68,9 +68,8 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     public void channelOpen(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
         ByteBuffer payload = ByteBuffer.allocate(65536);
 
-        Session session = new SessionImpl();
+        SynchronizedSession session = new SynchronizedSession(new SessionImpl());
         session.put(MODULE, PAYLOAD, payload);
-        session.put(MODULE, THREAD_ASSERT, Thread.currentThread());
 
         context.setAttachment(session);
         channelGroup.add(context.getChannel());
@@ -237,17 +236,20 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         keys = command.keys.toArray(keys);
 
         byte[] key = keys[0].getBytes();
-        String request = new String(key);
-        Session session = (Session) context.getAttachment();
-        assert session.get(MODULE, PAYLOAD).equals(Thread.currentThread())
-                : String.format("expected thread %s but on %s", session.get(MODULE, PAYLOAD), Thread.currentThread());
-        byte[] result_bytes = HapiProcessorImpl.processRequest(
-                store,
-                session,
-                request,
-                session.<ByteBuffer>get(MODULE, PAYLOAD),
-                formatGetter.getFormat()
-        );
+        final String request = new String(key);
+        SynchronizedSession session = (SynchronizedSession) context.getAttachment();
+        byte[] result_bytes = session.run(new SynchronizedSession.SessionRunnable<byte[], RuntimeException>() {
+            @Override
+            public byte[] run(SynchronizedSession self) throws RuntimeException {
+                return HapiProcessorImpl.processRequest(
+                        store,
+                        self,
+                        request,
+                        self.<ByteBuffer>get(MODULE, PAYLOAD),
+                        formatGetter.getFormat()
+                );
+            }
+        });
         
         CacheElement[] results = null;
         if(result_bytes != null) {
