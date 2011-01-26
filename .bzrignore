@@ -13,3 +13,6 @@ debian/prerm.debhelper
 debian/substvars
 debian/tmp/
 redhat/rpmbuild
+./.classpath
+./.project
+./.settings

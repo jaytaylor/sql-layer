@@ -245,7 +245,7 @@ public interface Store extends Service<Store> {
     boolean isDeferIndexes();
 
     void setDeferIndexes(final boolean b);
-
+    
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
     IndexManager getIndexManager();
