@@ -21,7 +21,7 @@ public final class JsonByteOutputter implements HapiProcessor.Outputter<byte[]> 
     }
 
     @Override
-    public byte[] output(RowDefCache rowDefCache, List<RowData> rows) {
-        return JsonOutputter.instance().output(rowDefCache, rows).getBytes();
+    public byte[] output(RowDefCache rowDefCache, List<RowData> rows, StringBuilder sb) {
+        return JsonOutputter.instance().output(rowDefCache, rows, sb).getBytes();
     }
 }

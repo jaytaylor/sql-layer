@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface HapiProcessor {
     public interface Outputter<T> {
-        T output(RowDefCache rowDefCache, List<RowData> rows);
+        T output(RowDefCache rowDefCache, List<RowData> rows, StringBuilder sb);
         @Deprecated // TODO remove once ~yshavit/akiban-server/memcache-tests-2 is in
         T error(String message);
     }

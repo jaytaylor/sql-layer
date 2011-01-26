@@ -16,7 +16,7 @@ public final class DummyByteOutputter implements HapiProcessor.Outputter<byte[]>
     private DummyByteOutputter() {}
 
     @Override
-    public byte[] output(RowDefCache rowDefCache, List<RowData> rows) {
+    public byte[] output(RowDefCache rowDefCache, List<RowData> rows, StringBuilder sb) {
         return "DUMMY DATA".getBytes();
     }
 

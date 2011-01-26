@@ -12,10 +12,10 @@ import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.Store;
 import com.akiban.util.ArgumentValidation;
 
-final class HapiProcessorImpl{
+final class HapiProcessorImpl {
 
 	static <T> T processRequest(Store store, Session session, String request,
-                                 ByteBuffer byteBuffer, HapiProcessor.Outputter<T> outputter)
+                                 ByteBuffer byteBuffer, HapiProcessor.Outputter<T> outputter, final StringBuilder sb)
     {
         ArgumentValidation.notNull("outputter", outputter);
         String[] tokens = request.split(":");
@@ -35,7 +35,7 @@ final class HapiProcessorImpl{
             final RowDefCache cache = store.getRowDefCache();
             try {
                 List<RowData> list = store.fetchRows(session, schema, table, colkey, min_val, max_val, null, byteBuffer);
-                return outputter.output(cache, list);
+                return outputter.output(cache, list, sb);
             } catch (Exception e) {
                 e.printStackTrace(); // TODO : once ~yshavit/akiban-server/memcache-tests-2 is in, just throw this
                 return outputter.error("read error: " + e.getMessage());

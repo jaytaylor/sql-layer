@@ -17,7 +17,7 @@ public final class RawByteOutputter implements HapiProcessor.Outputter<byte[]> {
     private RawByteOutputter() {}
 
     @Override
-    public byte[] output(RowDefCache rowDefCache, List<RowData> rows) {
+    public byte[] output(RowDefCache rowDefCache, List<RowData> rows, StringBuilder sb) {
         final int initialSize = estimateIntializeBufferSize(rows);
         ByteArrayOutputStream output = new ByteArrayOutputStream(initialSize);
         for(RowData data : rows) {

@@ -18,8 +18,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter<String> {
     private JsonOutputter() {}
 
     @Override
-    public String output(RowDefCache cache, List<RowData> list) {
-        StringBuilder sb = new StringBuilder();
+    public String output(RowDefCache cache, List<RowData> list, StringBuilder sb) {
         int current_def_id = -1;
         List<Integer> def_id_stack = new ArrayList<Integer>();
 
@@ -78,9 +77,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter<String> {
                 }
             }
 
-            String json_row = data.toJSONString(cache);
             sb.append("{ ");
-            sb.append(json_row);
+            data.toJSONString(cache, sb);
         }
 
         if(sb.length() > 0) {

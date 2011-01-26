@@ -20,7 +20,7 @@ public final class RowDataStringOutputter implements HapiProcessor.Outputter<byt
     private RowDataStringOutputter() {}
     
     @Override
-    public byte[] output(RowDefCache rowDefCache, List<RowData> rows) {
+    public byte[] output(RowDefCache rowDefCache, List<RowData> rows, StringBuilder sb) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(output);
         for (RowData data : rows) {

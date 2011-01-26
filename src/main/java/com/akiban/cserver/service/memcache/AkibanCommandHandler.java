@@ -231,12 +231,20 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
+    private final ThreadLocal<StringBuilder> resultBuffer = new ThreadLocal<StringBuilder>(){
+        @Override
+        public StringBuilder initialValue() {
+            return new StringBuilder(10000);
+        }
+    };
+    
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) throws Exception {
         String[] keys = new String[command.keys.size()];
         keys = command.keys.toArray(keys);
+        final String request = command.keys.get(0);
+        final StringBuilder sb = resultBuffer.get();
+        sb.setLength(0);
 
-        byte[] key = keys[0].getBytes();
-        final String request = new String(key);
         SynchronizedSession session = (SynchronizedSession) context.getAttachment();
         byte[] result_bytes = session.run(new SynchronizedSession.SessionRunnable<byte[], RuntimeException>() {
             @Override
@@ -246,14 +254,15 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
                         self,
                         request,
                         self.<ByteBuffer>get(MODULE, PAYLOAD),
-                        formatGetter.getFormat()
+                        formatGetter.getFormat(),
+                        sb
                 );
             }
         });
         
         CacheElement[] results = null;
         if(result_bytes != null) {
-            LocalCacheElement element = new LocalCacheElement(keys[0]);
+            LocalCacheElement element = new LocalCacheElement(request);
             element.setData(result_bytes);
             results = new CacheElement[] { element };
         }

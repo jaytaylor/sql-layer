@@ -97,11 +97,12 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     @Override
     public <T> T processRequest(Session session, String request, Outputter<T> outputter) {
         ByteBuffer buffer = ByteBuffer.allocate(65536);
+        StringBuilder sb = new StringBuilder();
         Store storeLocal = store.get();
         if (storeLocal == null) {
             storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
         }
-        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer, outputter);
+        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer, outputter, sb);
     }
 
     @Override
