@@ -1,0 +1,33 @@
+{
+
+"comment" : "Tests various odd names",
+
+"passing_default" : false,
+
+"setup" : {
+    "schema" : "♚",
+    "tables" : [
+        [ "♟",
+           "`♜` char(1) key" ]
+    ],
+    "write_rows" : {
+        "♟" : [
+            ["♛"]
+        ]
+    }
+},
+"tests" : {
+    "unicode fun" : {
+        "get"           : "♚:♟:♟=♛",
+        "expect result" :
+        {
+            "@♟" : [
+                {
+                    "♟" : "♛"
+                }
+            ]
+        }
+    }
+}
+
+}

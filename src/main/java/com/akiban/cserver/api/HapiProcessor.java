@@ -12,5 +12,5 @@ public interface HapiProcessor {
         @Deprecated // TODO remove once ~yshavit/akiban-server/memcache-tests-2 is in
         T error(String message);
     }
-	public <T> T processRequest(Session session, String request, Outputter<T> outputter);
+	public <T> T processRequest(Session session, String request, Outputter<T> outputter) throws HapiRequestException;
 }
