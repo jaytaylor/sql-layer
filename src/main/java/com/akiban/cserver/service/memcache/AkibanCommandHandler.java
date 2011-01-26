@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.cserver.service.session.SynchronizedSession;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.channel.Channel;
@@ -38,10 +39,12 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
+    private static final String PAYLOAD = "PAYLOAD";
+    private static final String MODULE = AkibanCommandHandler.class.toString();
+
     interface FormatGetter {
         HapiProcessor.Outputter<byte[]> getFormat();
     }
-    private final Session session;
     /**
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
@@ -55,7 +58,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     {
         this.store = store;
         this.channelGroup = channelGroup;
-        this.session = new SessionImpl();
         this.formatGetter = formatGetter;
     }
 
@@ -65,7 +67,11 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     @Override
     public void channelOpen(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
         ByteBuffer payload = ByteBuffer.allocate(65536);
-        context.setAttachment(payload);
+
+        SynchronizedSession session = new SynchronizedSession(new SessionImpl());
+        session.put(MODULE, PAYLOAD, payload);
+
+        context.setAttachment(session);
         channelGroup.add(context.getChannel());
     }
 
@@ -225,19 +231,25 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
+    protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) throws Exception {
         String[] keys = new String[command.keys.size()];
         keys = command.keys.toArray(keys);
 
         byte[] key = keys[0].getBytes();
-        String request = new String(key);
-        byte[] result_bytes = HapiProcessorImpl.processRequest(
-                store,
-                session,
-                request,
-                (ByteBuffer) context.getAttachment(),
-                formatGetter.getFormat()
-        );
+        final String request = new String(key);
+        SynchronizedSession session = (SynchronizedSession) context.getAttachment();
+        byte[] result_bytes = session.run(new SynchronizedSession.SessionRunnable<byte[], RuntimeException>() {
+            @Override
+            public byte[] run(SynchronizedSession self) throws RuntimeException {
+                return HapiProcessorImpl.processRequest(
+                        store,
+                        self,
+                        request,
+                        self.<ByteBuffer>get(MODULE, PAYLOAD),
+                        formatGetter.getFormat()
+                );
+            }
+        });
         
         CacheElement[] results = null;
         if(result_bytes != null) {
