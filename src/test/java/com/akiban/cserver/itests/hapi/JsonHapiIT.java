@@ -179,9 +179,9 @@ public final class JsonHapiIT extends ApiTestBase {
     private static class TestSetupInfo {
         final String schema;
         final List<String> ddls;
-        final List<NewRow> writeRows;
+        final Map<String,JSONArray> writeRows;
 
-        private TestSetupInfo(String schema, List<String> ddls, List<NewRow> writeRows) {
+        private TestSetupInfo(String schema, List<String> ddls, Map<String,JSONArray> writeRows) {
             this.schema = schema;
             this.ddls = ddls;
             this.writeRows = writeRows;
@@ -289,7 +289,7 @@ public final class JsonHapiIT extends ApiTestBase {
     private static TestSetupInfo extractTestSetupInfo(JSONObject setupJSON) throws JSONException {
         validateKeys("setup", setupJSON, SETUP_KEYS_REQUIRED, SETUP_KEYS_OPTIONAL);
         final String schema;
-        final List<NewRow> writeRows;
+        final Map<String,JSONArray> writeRows;
         final List<String> ddls = new ArrayList<String>();
 
         schema = setupJSON.optString(SETUP_SCHEMA, SETUP_SCHEMA_DEFAULT);
@@ -314,10 +314,10 @@ public final class JsonHapiIT extends ApiTestBase {
 
         final JSONObject writeRowsJSON = setupJSON.optJSONObject(SETUP_WRITE_ROWS);
         if (writeRowsJSON == null) {
-            writeRows = Collections.emptyList();
+            writeRows = Collections.emptyMap();
         }
         else {
-            List<NewRow> writeRowsTmp = new ArrayList<NewRow>();
+            Map<String,JSONArray> writeRowsTmp = new HashMap<String,JSONArray>();
             Set<String> writeRowTables = new TreeSet<String>(Arrays.asList(JSONObject.getNames(writeRowsJSON)));
             if (!tableNames.equals(writeRowTables)) {
                 throw new RuntimeException(String.format("write_row tables expected %s but was %s",
@@ -329,22 +329,14 @@ public final class JsonHapiIT extends ApiTestBase {
             for (String tableName : tableNames) {
                 // rows is an array of arrays, each sub-array being a row's columns
                 JSONArray rows = writeRowsJSON.getJSONArray(tableName);
-                final TableId tableId = TableId.of(schema, tableName);
-                for(int rowNum=0, ROWS=rows.length(); rowNum < ROWS; ++rowNum) {
-                    JSONArray columns = rows.getJSONArray(rowNum);
-                    NewRow row = new NiceRow(tableId);
-                    for(int col=0, COLS=columns.length(); col < COLS; ++col) {
-                        row.put(ColumnId.of(col), columns.get(col));
-                    }
-                    writeRowsTmp.add(row);
-                }
+                writeRowsTmp.put(tableName, rows);
             }
-            writeRows = Collections.unmodifiableList(writeRowsTmp);
+            writeRows = Collections.unmodifiableMap(writeRowsTmp);
         }
         return new TestSetupInfo(
                 schema,
                 Collections.unmodifiableList(ddls),
-                Collections.unmodifiableList(writeRows)
+                writeRows
         );
     }
 
@@ -365,13 +357,23 @@ public final class JsonHapiIT extends ApiTestBase {
     }
 
     @Before
-    public void setUp() throws InvalidOperationException {
+    public void setUp() throws InvalidOperationException, JSONException {
         for(String ddl : setupInfo.ddls) {
             ddl().createTable(session, setupInfo.schema, ddl);
         }
         if (runInfo.writeRows) {
-            for (NewRow row : setupInfo.writeRows) {
-                dml().writeRow(session, copyRow(row));
+            for(Map.Entry<String,JSONArray> entry : setupInfo.writeRows.entrySet()) {
+                TableId tableId = TableId.of(setupInfo.schema, entry.getKey());
+                tableId = ddl().resolveTableId(tableId);
+                JSONArray rows = entry.getValue();
+                for(int rowNum=0, ROWS=rows.length(); rowNum < ROWS; ++rowNum) {
+                    JSONArray columns = rows.getJSONArray(rowNum);
+                    NewRow row = new NiceRow(tableId);
+                    for(int col=0, COLS=columns.length(); col < COLS; ++col) {
+                        row.put(ColumnId.of(col), columns.get(col));
+                    }
+                    dml().writeRow(session, row);
+                }
             }
         }
     }

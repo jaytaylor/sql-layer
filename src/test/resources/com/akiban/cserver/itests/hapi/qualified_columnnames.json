@@ -1,4 +1,5 @@
 {
+"passing_default" : false,
 
 "setup" : {
     "schema" : "@schema",
@@ -12,7 +13,7 @@
         [ "@orders",
             "id int key",
             "cid int",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES customer(`@id`)"
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES `:customers`(`@id`)"
         ]
     ],
 
