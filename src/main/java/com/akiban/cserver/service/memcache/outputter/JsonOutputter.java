@@ -5,10 +5,12 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiProcessor;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class JsonOutputter implements HapiProcessor.Outputter<String> {
+public final class JsonOutputter implements HapiProcessor.Outputter {
     private static final JsonOutputter instance = new JsonOutputter();
 
     public static JsonOutputter instance() {
@@ -18,6 +20,12 @@ public final class JsonOutputter implements HapiProcessor.Outputter<String> {
     private JsonOutputter() {}
 
     @Override
+    public void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream)  throws IOException {
+        // TODO obvious optimization here, write directly to the stream
+        String json = output(rowDefCache, rows);
+        outputStream.write(json.getBytes());
+    }
+
     public String output(RowDefCache cache, List<RowData> list) {
         StringBuilder sb = new StringBuilder();
         int current_def_id = -1;
@@ -96,10 +104,5 @@ public final class JsonOutputter implements HapiProcessor.Outputter<String> {
             sb.append(" }");
         }
         return sb.toString();
-    }
-
-    @Override
-    public String error(String message) {
-        return message;
     }
 }

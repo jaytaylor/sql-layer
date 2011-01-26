@@ -1,15 +1,17 @@
 package com.akiban.cserver.service.memcache;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
-import com.akiban.cserver.service.memcache.outputter.JsonByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
@@ -43,18 +45,18 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     @SuppressWarnings("unused") // these are queried/set via JMX
     public enum OutputFormat {
-        JSON(JsonByteOutputter.instance()),
+        JSON(JsonOutputter.instance()),
         RAW(RawByteOutputter.instance()),
         DUMMY(DummyByteOutputter.instance()),
         PLAIN(RowDataStringOutputter.instance())
         ;
-        private final Outputter<byte[]> outputter;
+        private final Outputter outputter;
 
-        OutputFormat(Outputter<byte[]> outputter) {
+        OutputFormat(Outputter outputter) {
             this.outputter = outputter;
         }
 
-        public Outputter<byte[]> getOutputter() {
+        public Outputter getOutputter() {
             return outputter;
         }
     }
@@ -63,7 +65,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private final MemcacheMXBean manageBean = new ManageBean();
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
-        public Outputter<byte[]> getFormat() {
+        public Outputter getFormat() {
             return outputAs.get().getOutputter();
         }
     };
@@ -95,13 +97,15 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     }
 
     @Override
-    public <T> T processRequest(Session session, String request, Outputter<T> outputter) {
+    public void processRequest(Session session, String request, Outputter outputter, OutputStream outputStream)
+            throws HapiRequestException, IOException
+    {
         ByteBuffer buffer = ByteBuffer.allocate(65536);
         Store storeLocal = store.get();
         if (storeLocal == null) {
             storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
         }
-        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer, outputter);
+        HapiProcessorHelper.processRequest(storeLocal, session, request, buffer, outputter, outputStream);
     }
 
     @Override

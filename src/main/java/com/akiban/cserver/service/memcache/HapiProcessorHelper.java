@@ -1,21 +1,23 @@
 package com.akiban.cserver.service.memcache;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.Store;
 import com.akiban.util.ArgumentValidation;
 
-final class HapiProcessorImpl{
+final class HapiProcessorHelper {
 
-	static <T> T processRequest(Store store, Session session, String request,
-                                 ByteBuffer byteBuffer, HapiProcessor.Outputter<T> outputter)
+	static void processRequest(Store store, Session session, String request,
+                                 ByteBuffer byteBuffer, HapiProcessor.Outputter outputter, OutputStream outputStream)
+            throws HapiRequestException, IOException
     {
         ArgumentValidation.notNull("outputter", outputter);
         String[] tokens = request.split(":");
@@ -33,17 +35,17 @@ final class HapiProcessorImpl{
             }
 
             final RowDefCache cache = store.getRowDefCache();
+            final List<RowData> list;
             try {
-                List<RowData> list = store.fetchRows(session, schema, table, colkey, min_val, max_val, null, byteBuffer);
-                return outputter.output(cache, list);
+                list = store.fetchRows(session, schema, table, colkey, min_val, max_val, null, byteBuffer);
             } catch (Exception e) {
-                e.printStackTrace(); // TODO : once ~yshavit/akiban-server/memcache-tests-2 is in, just throw this
-                return outputter.error("read error: " + e.getMessage());
+                throw new HapiRequestException("while fetching rows", e);
             }
+            outputter.output(cache, list, outputStream);
 
         }
         else {
-            return outputter.error("invalid key: " + request);
+            throw new HapiRequestException("not enough tokens: " + request, HapiRequestException.ReasonCode.UNPARSABLE);
         }
 	}
 }

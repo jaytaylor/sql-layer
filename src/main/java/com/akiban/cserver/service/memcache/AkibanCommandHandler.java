@@ -1,5 +1,6 @@
 package com.akiban.cserver.service.memcache;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,7 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
     interface FormatGetter {
-        HapiProcessor.Outputter<byte[]> getFormat();
+        HapiProcessor.Outputter getFormat();
     }
     private final Session session;
     /**
@@ -231,13 +232,21 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         byte[] key = keys[0].getBytes();
         String request = new String(key);
-        byte[] result_bytes = HapiProcessorImpl.processRequest(
-                store,
-                session,
-                request,
-                (ByteBuffer) context.getAttachment(),
-                formatGetter.getFormat()
-        );
+        byte[] result_bytes;
+        try {
+            ByteArrayOutputStream outpuStream = new ByteArrayOutputStream(1024);
+            HapiProcessorHelper.processRequest(
+                    store,
+                    session,
+                    request,
+                    (ByteBuffer) context.getAttachment(),
+                    formatGetter.getFormat(),
+                    outpuStream
+            );
+            result_bytes = outpuStream.toByteArray();
+        } catch (Exception e) {
+            result_bytes = ("error: " + e.getMessage()).getBytes();
+        }
         
         CacheElement[] results = null;
         if(result_bytes != null) {

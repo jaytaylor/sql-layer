@@ -19,12 +19,12 @@ public final class HapiRequestException extends  Exception {
 
     private final ReasonCode reasonCode;
 
-    private HapiRequestException(String message, ReasonCode reasonCode) {
+    public HapiRequestException(String message, ReasonCode reasonCode) {
         super(message);
         this.reasonCode = reasonCode == null ? ReasonCode.UNKNOWN : reasonCode;
     }
 
-    private HapiRequestException(String message, Exception cause) {
+    public HapiRequestException(String message, Exception cause) {
         super(message, cause);
         this.reasonCode = ReasonCode.EXCEPTION_THROWN;
     }
