@@ -2,6 +2,8 @@
 
 "comment" : "Tests various odd names",
 
+"passing_default" : false,
+
 "setup" : {
     "schema" : "♚",
     "tables" : [
@@ -14,7 +16,7 @@
         ]
     }
 },
-"tests" :
+"tests" : {
     "unicode fun" : {
         "get"           : "♚:♟:♟=♛",
         "expect result" :
@@ -26,4 +28,6 @@
             ]
         }
     }
+}
+
 }

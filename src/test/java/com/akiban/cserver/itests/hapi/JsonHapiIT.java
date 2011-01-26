@@ -42,6 +42,7 @@ import static org.junit.Assert.*;
  *  <li><b>comment</b> (optional) : value is completely ignored</li>
  *  <li><b>setup</b> : defines a setup common to all tests in this file</li>
  *  <li><b>tests</b> : defines the individual tests</li>
+ *  <li><b>passing_default</b> (optional boolean) : whether tests are considered passing by default (see below)</li>
  * </ul>
  *
  * <h2>Setup section</h2>
@@ -126,6 +127,8 @@ public final class JsonHapiIT extends ApiTestBase {
 
     private static final String COMMENT = "comment";
 
+    private static final String PASSING_DEFAULT = "passing_default";
+
     private static final String SETUP = "setup";
     private static final String SETUP_SCHEMA = "schema";
     private static final String SETUP_SCHEMA_DEFAULT = "test";
@@ -147,7 +150,7 @@ public final class JsonHapiIT extends ApiTestBase {
                                                         COMMENT};
 
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
-    private static final String[] SECTIONS_OPTIONAL = {COMMENT};
+    private static final String[] SECTIONS_OPTIONAL = {COMMENT, PASSING_DEFAULT};
 
     @NamedParameterizedRunner.TestParameters
     public static List<Parameterization> params() throws IOException {
@@ -211,8 +214,9 @@ public final class JsonHapiIT extends ApiTestBase {
         keys.removeAll(Arrays.asList(optional));
         Set<String> requiredSet = new HashSet<String>(Arrays.asList(required));
         if (!requiredSet.equals(keys)) {
-            throw new RuntimeException(String.format("%s: required keys %s but found %s",
-                    description, requiredSet, keys
+            Set<String> optionalSet = new TreeSet<String>(Arrays.asList(optional));
+            throw new RuntimeException(String.format("%s: required keys %s (optional %s) but found %s",
+                    description, requiredSet, optionalSet, keys
             ));
         }
     }
@@ -231,6 +235,7 @@ public final class JsonHapiIT extends ApiTestBase {
         final JSONObject testPlan = new JSONObject(Strings.join(Strings.dumpResource(JsonHapiIT.class, file)));
         validateKeys("test plan", testPlan, SECTIONS_REQUIRED, SECTIONS_OPTIONAL);
 
+        final boolean passingDefault = testPlan.optBoolean(PASSING_DEFAULT, TEST_PASSING_DEFAULT);
         final TestSetupInfo setupInfo = extractTestSetupInfo(testPlan.getJSONObject(SETUP));
 
         final JSONObject tests = testPlan.getJSONObject(TESTS);
@@ -241,7 +246,7 @@ public final class JsonHapiIT extends ApiTestBase {
         for(String testName : testNames) {
             try {
                 JSONObject test = tests.getJSONObject(testName);
-                final boolean passing = test.optBoolean(TEST_PASSING, TEST_PASSING_DEFAULT);
+                final boolean passing = test.optBoolean(TEST_PASSING, passingDefault);
                 final Parameterization param;
                 if (passing) {
                     validateKeys("test \"" + testName +'"', test, TEST_KEYS_REQUIRED, TEST_KEYS_OPTIONAL);
@@ -301,7 +306,7 @@ public final class JsonHapiIT extends ApiTestBase {
             for(int j=1, MAX2 = tableDefinition.length(); j < MAX2; ++j) {
                 ddlComponents.add(tableDefinition.getString(j));
             }
-            ddls.add(String.format("CREATE TABLE %s (%s)", tableName, Strings.join(ddlComponents, ", ")));
+            ddls.add(String.format("CREATE TABLE `%s` (%s)", tableName, Strings.join(ddlComponents, ", ")));
         }
 
         final JSONObject writeRowsJSON = setupJSON.optJSONObject(SETUP_WRITE_ROWS);

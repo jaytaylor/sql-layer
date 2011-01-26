@@ -6,6 +6,8 @@
     "   - giving customer id=9 an address"
 ],
 
+"passing_default" : false,
+
 "setup" : {
     "schema" : "coi",
     "tables" : [
@@ -95,6 +97,13 @@
                     ]
                 }
             ]
+        }
+    },
+
+    "empty result" : {
+        "get"           : "coi:customer:cid=999",
+        "expect result" : {
+            "@customer" : []
         }
     },
 
