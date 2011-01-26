@@ -41,7 +41,12 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     interface FormatGetter {
         HapiProcessor.Outputter<byte[]> getFormat();
     }
-    private final Session session;
+    private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
+        @Override
+        protected Session initialValue() {
+            return new SessionImpl();
+        }
+    };
     /**
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
@@ -55,7 +60,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     {
         this.store = store;
         this.channelGroup = channelGroup;
-        this.session = new SessionImpl();
         this.formatGetter = formatGetter;
     }
 
@@ -233,7 +237,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         String request = new String(key);
         byte[] result_bytes = HapiProcessorImpl.processRequest(
                 store,
-                session,
+                session.get(),
                 request,
                 (ByteBuffer) context.getAttachment(),
                 formatGetter.getFormat()
