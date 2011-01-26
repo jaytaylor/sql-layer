@@ -94,4 +94,10 @@ public interface SchemaMXBean {
      */
     public List<String> getDDLs() throws Exception;
 
+    /**
+     * Change the stored DDL statement for a table that already exists. Does not change the tableid. 
+     * 
+     * @throws Exception
+     */
+    public void changeTableDDL(String schemaName, String tableName, String DDL) throws Exception;
 }
