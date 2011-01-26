@@ -33,6 +33,6 @@ class Row(object):
         ancestor = False
         self_key = self.hkey
         other_key = other.hkey
-        if self_key and other_key and len(self_key) < len(other_key):
+        if self_key and other_key and len(self_key) <= len(other_key):
             ancestor = self_key == other_key[:len(self_key)]
         return ancestor

@@ -22,6 +22,8 @@ import java.util.TreeSet;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.store.Store;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -152,6 +154,11 @@ public class ApiTestBase extends CServerTestCase {
 
     protected final DDLFunctions ddl() {
         return ddl;
+    }
+
+    protected final RowDefCache rowDefCache() {
+        Store store = sm.getStore();
+        return store.getRowDefCache();
     }
 
     protected final TableId createTable(String schema, String table, String definition) throws InvalidOperationException {

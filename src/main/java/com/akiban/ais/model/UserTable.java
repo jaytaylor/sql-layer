@@ -9,9 +9,7 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class UserTable extends Table
 {
@@ -44,6 +42,16 @@ public class UserTable extends Table
             getGroup() == null
             ? "UserTable(" + tableName + ", group(null))"
             : "UserTable(" + tableName + ", group(" + getGroup().getName() + "))";
+    }
+
+    @Override
+    protected void addIndex(Index index)
+    {
+        super.addIndex(index);
+        if (index.isPrimaryKey()) {
+            assert primaryKey == null;
+            primaryKey = new PrimaryKey(index);
+        }
     }
 
     public void setSize(int size)
@@ -116,6 +124,37 @@ public class UserTable extends Table
     }
 
     @Override
+    public Collection<Index> getIndexes()
+    {
+        Collection<Index> indexes = super.getIndexes();
+        return removeInternalColumnIndexes(indexes);
+    }
+
+    public Collection<Index> getIndexesIncludingInternal()
+    {
+        return super.getIndexes();
+    }
+
+    @Override
+    public Index getIndex(String indexName)
+    {
+        Index index = null;
+        if (indexName.equals(Index.PRIMARY_KEY_CONSTRAINT)) {
+            // getPrimaryKey has logic for handling Akiban PK
+            PrimaryKey primaryKey = getPrimaryKey();
+            index = primaryKey == null ? null : primaryKey.getIndex();
+        } else {
+            index = super.getIndex(indexName);
+        }
+        return index;
+    }
+
+    public Index getIndexIncludingInternal(String indexName)
+    {
+        return super.getIndex(indexName);
+    }
+
+    @Override
     public void traversePreOrder(Visitor visitor) throws Exception
     {
         for (Column column : getColumns()) {
@@ -150,29 +189,28 @@ public class UserTable extends Table
 
     public synchronized PrimaryKey getPrimaryKey()
     {
-        // Creates a real PK if possible.
-        if (primaryKey == null) {
-            // Find primary key index
-            Index primaryKeyIndex = null;
-            for (Index index : getIndexes()) {
-                if (index.isPrimaryKey()) {
-                    primaryKeyIndex = index;
-                }
-            }
-            if (primaryKeyIndex != null) {
-                primaryKey = new PrimaryKey(primaryKeyIndex);
+        PrimaryKey declaredPrimaryKey = primaryKey;
+        if (declaredPrimaryKey != null) {
+            List<IndexColumn> pkColumns = primaryKey.getIndex().getColumns();
+            if (pkColumns.size() == 1 && pkColumns.get(0).getColumn().isAkibanPKColumn()) {
+                declaredPrimaryKey = null;
             }
         }
+        return declaredPrimaryKey;
+    }
+
+    public synchronized PrimaryKey getPrimaryKeyIncludingInternal()
+    {
         return primaryKey;
     }
 
     public synchronized void endTable()
     {
         // Creates a PK for a pk-less table.
-        if (getPrimaryKey() == null) {
+        if (primaryKey == null) {
             // Find primary key index
             Index primaryKeyIndex = null;
-            for (Index index : getIndexes()) {
+            for (Index index : getIndexesIncludingInternal()) {
                 if (index.isPrimaryKey()) {
                     primaryKeyIndex = index;
                 }
@@ -256,7 +294,7 @@ public class UserTable extends Table
     public List<Column> allHKeyColumns()
     {
         assert getGroup() != null;
-        assert getPrimaryKey() != null;
+        assert getPrimaryKeyIncludingInternal() != null;
         if (allHKeyColumns == null) {
             allHKeyColumns = new ArrayList<Column>();
             for (HKeySegment segment : hKey().segments()) {
@@ -317,7 +355,7 @@ public class UserTable extends Table
         }
         // This table's hkey also includes any PK columns not already included.
         HKeySegment newSegment = hKey.addSegment(this);
-        for (Column pkColumn : getPrimaryKey().getColumns()) {
+        for (Column pkColumn : getPrimaryKeyIncludingInternal().getColumns()) {
             if (!hKeyColumns.contains(pkColumn)) {
                 newSegment.addColumn(pkColumn);
             }
@@ -328,9 +366,9 @@ public class UserTable extends Table
     {
         // Create a column for a PK
         Column pkColumn = Column.create(this,
-                                      Column.AKIBAN_PK_NAME,
-                                      getColumns().size(),
-                                      Types.BIGINT); // adds column to table
+                                        Column.AKIBAN_PK_NAME,
+                                        getColumns().size(),
+                                        Types.BIGINT); // adds column to table
         pkColumn.setNullable(false);
         // Create an index for the PK column
         int maxIndexId = -1;
@@ -341,13 +379,26 @@ public class UserTable extends Table
         }
         Index pkIndex = Index.create(ais,
                                      this,
-                                     Column.AKIBAN_PK_NAME,
+                                     Index.PRIMARY_KEY_CONSTRAINT,
                                      maxIndexId + 1,
                                      true,
                                      Index.PRIMARY_KEY_CONSTRAINT);
         IndexColumn pkIndexColumn = new IndexColumn(pkIndex, pkColumn, 0, true, null);
         pkIndex.addColumn(pkIndexColumn);
         return pkIndex;
+    }
+
+    private static Collection<Index> removeInternalColumnIndexes(Collection<Index> indexes)
+    {
+        Collection<Index> declaredIndexes = new ArrayList<Index>(indexes);
+        for (Iterator<Index> iterator = declaredIndexes.iterator(); iterator.hasNext();) {
+            Index index = iterator.next();
+            List<IndexColumn> indexColumns = index.getColumns();
+            if (indexColumns.size() == 1 && indexColumns.get(0).getColumn().isAkibanPKColumn()) {
+                iterator.remove();
+            }
+        }
+        return declaredIndexes;
     }
 
     // State

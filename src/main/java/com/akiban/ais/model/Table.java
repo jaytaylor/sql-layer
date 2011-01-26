@@ -10,14 +10,7 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
@@ -123,20 +116,13 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public List<Column> getColumns()
     {
-        if (columnsStale) {
-            columns.clear();
-            columns.addAll(columnMap.values());
-            Collections.sort(columns,
-                             new Comparator<Column>()
-                             {
-                                 @Override
-                                 public int compare(Column x, Column y)
-                                 {
-                                     return x.getPosition() - y.getPosition();
-                                 }
-                             });
-            columnsStale = false;
-        }
+        ensureColumnsUpToDate();
+        return removeInternalColumns(columns);
+    }
+
+    public List<Column> getColumnsIncludingInternal()
+    {
+        ensureColumnsUpToDate();
         return columns;
     }
 
@@ -148,11 +134,6 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public Index getIndex(String indexName)
     {
         return indexMap.get(indexName.toLowerCase());
-    }
-
-    public Map<String, Column> getColumnMap()
-    {
-        return columnMap;
     }
 
     public CharsetAndCollation getCharsetAndCollation()
@@ -301,6 +282,40 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return engine;
     }
 
+    Map<String, Column> getColumnMap()
+    {
+        return columnMap;
+    }
+
+    private void ensureColumnsUpToDate()
+    {
+        if (columnsStale) {
+            columns.clear();
+            columns.addAll(columnMap.values());
+            Collections.sort(columns,
+                             new Comparator<Column>()
+                             {
+                                 @Override
+                                 public int compare(Column x, Column y)
+                                 {
+                                     return x.getPosition() - y.getPosition();
+                                 }
+                             });
+            columnsStale = false;
+        }
+    }
+
+    private static List<Column> removeInternalColumns(List<Column> columns)
+    {
+        List<Column> declaredColumns = new ArrayList<Column>(columns);
+        for (Iterator<Column> iterator = declaredColumns.iterator(); iterator.hasNext();) {
+            Column column = iterator.next();
+            if (column.isAkibanPKColumn()) {
+                iterator.remove();
+            }
+        }
+        return declaredColumns;
+    }
 
     // State
 

@@ -1,7 +1,6 @@
 import operator
 
 Operator = operator.Operator
-SORT = operator.SORT
 
 class Sort(Operator):
 
@@ -11,7 +10,6 @@ class Sort(Operator):
         self._rowtype = rowtype
         self._sort_key = sort_key
         self._sorted = None
-        self._stats[SORT] = 0
 
     def open(self):
         self._input.open()
@@ -26,7 +24,7 @@ class Sort(Operator):
                 row = self._input.next()
             rows.sort(key = lambda row: self._sort_key(row))
             self._sorted = iter(rows)
-            self._stats[SORT] += len(rows)
+            self.count_sort(len(rows))
         try:
             output_row = self._sorted.next()
         except StopIteration:
