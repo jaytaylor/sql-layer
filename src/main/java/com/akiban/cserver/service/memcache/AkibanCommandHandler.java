@@ -38,15 +38,13 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
+    private static final String PAYLOAD = "PAYLOAD";
+    private static final String MODULE = AkibanCommandHandler.class.toString();
+    private static final String THREAD_ASSERT = "THREAD";
+
     interface FormatGetter {
         HapiProcessor.Outputter<byte[]> getFormat();
     }
-    private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
-        @Override
-        protected Session initialValue() {
-            return new SessionImpl();
-        }
-    };
     /**
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
@@ -69,7 +67,12 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     @Override
     public void channelOpen(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
         ByteBuffer payload = ByteBuffer.allocate(65536);
-        context.setAttachment(payload);
+
+        Session session = new SessionImpl();
+        session.put(MODULE, PAYLOAD, payload);
+        session.put(MODULE, THREAD_ASSERT, Thread.currentThread());
+
+        context.setAttachment(session);
         channelGroup.add(context.getChannel());
     }
 
@@ -235,11 +238,14 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         byte[] key = keys[0].getBytes();
         String request = new String(key);
+        Session session = (Session) context.getAttachment();
+        assert session.get(MODULE, PAYLOAD).equals(Thread.currentThread())
+                : String.format("expected thread %s but on %s", session.get(MODULE, PAYLOAD), Thread.currentThread());
         byte[] result_bytes = HapiProcessorImpl.processRequest(
                 store,
-                session.get(),
+                session,
                 request,
-                (ByteBuffer) context.getAttachment(),
+                session.<ByteBuffer>get(MODULE, PAYLOAD),
                 formatGetter.getFormat()
         );
         
