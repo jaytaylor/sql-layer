@@ -6,8 +6,6 @@
     "   - giving customer id=9 an address"
 ],
 
-"passing_default" : false,
-
 "setup" : {
     "schema" : "coi",
     "tables" : [
@@ -108,7 +106,7 @@
     },
 
     "from child" : {
-        "get"           : "coi:order:oid=21",
+        "get"           : "coi:orders:oid=21",
         "expect result" :
         {
             "@orders" :
@@ -130,11 +128,13 @@
     },
 
     "from predicate's child" : {
+        "passing" : false,
         "get"           : "coi:orders:(customer)cid=11",
-        "expect error"  : "PREDICATE_IS_PARENT"
+        "expect error"  : "UNSUPPORTED_REQUEST"
     },
 
     "from predicate's parent" : {
+        "passing" : false,
         "get"           : "coi:customer:(orders)oid=22",
         "expect result" :
         {
@@ -167,6 +167,8 @@
     },
 
     "nonunique fromm predicate's parent" : {
+        "passing" : false,
+
         "get"           : "coi:customer:(orders)when='1%2F1%2F2001'",
         "expect result" :
         {
