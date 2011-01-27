@@ -1,0 +1,60 @@
+{
+"comment" : "The out-of-spec, but working-by-current-implementation test.",
+
+"setup" : {
+    "schema" : "coi",
+    "tables" : [
+        [ "customer",
+            "cid int key",
+            "name varchar(32)",
+        ],
+
+        [ "orders",
+            "oid int key",
+            "c_id int",
+            "when varchar(10)",
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
+        ],
+
+        [ "item",
+            "iid int key",
+            "o_id int",
+            "sku int",
+            "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (o_id) REFERENCES orders(oid)"
+        ]
+    ],
+    "write_rows" : {
+        "customer"  : [ [11, "CustomerOne"]
+        ],
+        "orders"    : [ [21, 11, "1/1/2001"]
+        ],
+        "item"      : [ [31, 21, 1111]
+        ]
+    }
+},
+
+"tests" : {
+    "from root" : {
+        "get"           : "coi:customer:cid=11",
+        "expect result" :
+        {
+            "customer" :
+            {
+                "cid" : 11,
+                "name" : "CustomerOne",
+                "orders" : [{
+                    "c_id": 11,
+                    "oid": 21,
+                    "when": "1/1/2001",
+                    "item": [{
+                        "iid": 31,
+                        "o_id": 21,
+                        "sku": 1111
+                    }]
+                }]
+            }
+        }
+    }
+}
+
+}

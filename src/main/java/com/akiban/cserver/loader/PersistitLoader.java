@@ -1,6 +1,8 @@
 package com.akiban.cserver.loader;
 
 import java.sql.ResultSet;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import com.akiban.cserver.service.session.SessionImpl;
@@ -22,12 +24,20 @@ public class PersistitLoader
     {
         // transaction.begin();
         DB.Connection connection = db.new Connection();
+
+        try {
+        	Collections.sort(finalTasks, new TaskComparator());
+        } catch (Exception e) {
+        	tracker.error("Caught exception while sorting finalTasks", e);
+        }
+        
         try {
             // TODO: Merge inputs from final tasks by hkey. This would require a
             // TODO: connection per table.
             for (GenerateFinalTask task : finalTasks) {
                 load(task, connection);
             }
+            
             store.buildIndexes(new SessionImpl(), "");
             // transaction.commit();
         } catch (PersistitException e) {

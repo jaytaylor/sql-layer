@@ -1,0 +1,217 @@
+{
+"comment" : ["See spec file: ",
+    "https://spreadsheets.google.com/a/akiban.com/ccc?key=0AiGr_XWdHm0edFNSaFZwUXd5SnAtOHlDcTJyOEUzdXc",
+    "This test plan has a couple modifications from that spec:",
+    "   - no orphan rows",
+    "   - giving customer id=9 an address"
+],
+
+"passing_default" : false,
+
+"setup" : {
+    "schema" : "coi",
+    "tables" : [
+        [ "customer",
+            "cid int key",
+            "name varchar(32)",
+            "address char(4)"
+        ],
+
+        [ "orders",
+            "oid int key",
+            "c_id int",
+            "when varchar(10)",
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
+        ],
+
+        [ "item",
+            "iid int key",
+            "o_id int",
+            "sku int",
+            "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (o_id) REFERENCES orders(oid)"
+        ],
+
+        [ "address",
+            "aid int key",
+            "c_id int",
+            "street varchar(32)",
+            "CONSTRAINT __akiban_a FOREIGN KEY __akiban_a (c_id) REFERENCES customer(cid)"
+        ]
+    ],
+    "write_rows" : {
+        "customer"  : [ [11, "Alpha", "Mrs"],
+                        [19, "Bravo", "Miss"],
+                        [18, "Charlie", "Mr"]
+        ],
+        "orders"    : [ [21, 11, "1/1/2001"],
+                        [22, 11, "2/2/2002"],
+                        [23, 18, "2/2/2002"]
+        ],
+        "item"      : [ [31, 21, 1111]
+        ],
+        "address"   : [ [41, 11, "500 Harrison"],
+                        [42, 19, "1 Akiban Way"]
+        ]
+    }
+},
+
+"tests" : {
+    "from root" : {
+        "get"           : "coi:customer:cid=1",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid"   : 11,
+                    "name"  : "Alpha",
+                    "address" : "Mrs",
+                    "@orders" :
+                    [
+                        {
+                            "oid"   : 21,
+                            "c_id"  : 11,
+                            "when"  : "1/1/2001",
+                            "@item" : [
+                                {
+                                    "iid"   : 31,
+                                    "o_id"  : 21,
+                                    "sku"   : 1111
+                                }
+                            ]
+                        },
+                        {
+                            "oid"   : 22,
+                            "c_id"  : 11,
+                            "when"  : "2/2/2002",
+                            "@item" : []
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "aid"   : 41,
+                            "c_id"  : 11,
+                            "street": "500 Harrison"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    "empty result" : {
+        "get"           : "coi:customer:cid=999",
+        "expect result" : {
+            "@customer" : []
+        }
+    },
+
+    "from child" : {
+        "get"           : "coi:order:oid=21",
+        "expect result" :
+        {
+            "@orders" :
+            [
+                {
+                    "oid"   : 21,
+                    "c_id"  : 11,
+                    "when"  : "1/1/2001",
+                    "@item" : [
+                        {
+                            "iid"   : 31,
+                            "o_id"  : 21,
+                            "sku"   : 1111
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    "from predicate's child" : {
+        "get"           : "coi:orders:(customer)cid=11",
+        "expect error"  : "PREDICATE_IS_PARENT"
+    },
+
+    "from predicate's parent" : {
+        "get"           : "coi:customer:(orders)oid=22",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : 11,
+                    "address" : "Mrs",
+                    "name" : "Alpha",
+                    "@order" :
+                    [
+                        {
+                            "oid" : 22,
+                            "c_id" : 11,
+                            "when" : "2/2/2002",
+                            "@item": []
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "aid" : 41,
+                            "c_id" : 11,
+                            "street" : "500 Harrison"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    "nonunique fromm predicate's parent" : {
+        "get"           : "coi:customer:(orders)when='1%2F1%2F2001'",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "address" : "Mrs",
+                    "cid" : 11,
+                    "name" : "Alpha",
+                    "@order" :
+                    [
+                        {
+                            "oid" : 22,
+                            "c_id" : 11,
+                            "when" : "2/2/2002",
+                            "@item" : []
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "aid" : 41,
+                            "c_id" : 11,
+                            "street" : "500 Harrison"
+                        }
+                    ]
+                },
+                {
+                    "cid" : 18,
+                    "name" : "Charlie",
+                    "address" : "Mr",
+                    "@order" :
+                    [
+                        {
+                            "oid" : 23,
+                            "c_id" : 18,
+                            "when" : "2/2/2002",
+                            "@item" : []
+                        }
+                    ],
+                    "@address" : []
+                }
+            ]
+        }
+    }
+}
+
+}

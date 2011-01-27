@@ -21,7 +21,7 @@ public final class Parameterization
         return new Parameterization(name, false, args);
     }
 
-    public Parameterization(String name, boolean isPassing, Object[] args)
+    public Parameterization(String name, boolean isPassing, Object... args)
     {
         if (name == null) {
             throw new IllegalArgumentException("name can't be null");

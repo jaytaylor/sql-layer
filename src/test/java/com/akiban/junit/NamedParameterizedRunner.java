@@ -56,7 +56,6 @@ public final class NamedParameterizedRunner extends Suite
 
     private final static Logger logger = Logger.getLogger(NamedParameterizedRunner.class);
     private final List<Runner> runners;
-    private boolean preconditionFailure;
 
     /**
      * Adapted from {@link org.junit.runners.Parameterized}'s nested class
@@ -127,7 +126,7 @@ public final class NamedParameterizedRunner extends Suite
         @Override
         public String getName()
         {
-            return String.format("%s [%s]", getTestClass().getName(), parameterization.getName());
+            return parameterization.getName();
         }
 
         @Override
@@ -281,13 +280,6 @@ public final class NamedParameterizedRunner extends Suite
     {
 		return runners;
 	}
-
-    @Override
-    protected void runChild(Runner runner, RunNotifier notifier)
-    {
-        preconditionFailure = false;
-        super.runChild(runner, notifier);
-    }
 
     /**
      * Gets the parameterization
