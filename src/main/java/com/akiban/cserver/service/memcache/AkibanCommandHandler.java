@@ -1,7 +1,6 @@
 package com.akiban.cserver.service.memcache;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Set;
 
@@ -68,8 +67,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      */
     @Override
     public void channelOpen(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
-        ByteBuffer payload = ByteBuffer.allocate(65536);
-        context.setAttachment(payload);
         channelGroup.add(context.getChannel());
     }
 
@@ -78,7 +75,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      */
     @Override
     public void channelClosed(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
-        context.setAttachment(null);
         channelGroup.remove(context.getChannel());
     }
     
