@@ -233,9 +233,9 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         byte[] result_bytes;
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(key);
-            AkibanByteOutputStream outputStream = new AkibanByteOutputStream(1024);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
             hapiProcessor.processRequest(session.get(), request, formatGetter.getFormat(), outputStream);
-            result_bytes = outputStream.getBytesNoCopy();
+            result_bytes = outputStream.toByteArray();
         } catch (Exception e) {
             result_bytes = ("error: " + e.getMessage()).getBytes();
         }
@@ -249,15 +249,5 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
-    }
-
-    private static class AkibanByteOutputStream extends ByteArrayOutputStream {
-        private AkibanByteOutputStream(int size) {
-            super(size);
-        }
-
-        public byte[] getBytesNoCopy() {
-            return buf;
-        }
     }
 }
