@@ -480,7 +480,8 @@ public class RowData {
         return sb.toString();
     }
 
-    public void toJSONString(final RowDefCache cache, final StringBuilder sb) {
+    public String toJSONString(final RowDefCache cache) {
+        final StringBuilder sb = new StringBuilder();
 
         try {
             final RowDef rowDef = cache.getRowDef(getRowDefId());
@@ -507,6 +508,8 @@ public class RowData {
             CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
             sb.append("\"");
         }   
+
+        return sb.toString();
     }
 
     public String explain() {

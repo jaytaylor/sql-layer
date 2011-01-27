@@ -4,9 +4,11 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiProcessor;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
-public final class DummyByteOutputter implements HapiProcessor.Outputter<byte[]> {
+public final class DummyByteOutputter implements HapiProcessor.Outputter {
     private static final DummyByteOutputter instance= new DummyByteOutputter();
 
     public static DummyByteOutputter instance() {
@@ -16,12 +18,7 @@ public final class DummyByteOutputter implements HapiProcessor.Outputter<byte[]>
     private DummyByteOutputter() {}
 
     @Override
-    public byte[] output(RowDefCache rowDefCache, List<RowData> rows, StringBuilder sb) {
-        return "DUMMY DATA".getBytes();
-    }
-
-    @Override
-    public byte[] error(String message) {
-        return message.getBytes();
+    public void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
+        outputStream.write("DUMMY DATA".getBytes());
     }
 }

@@ -5,12 +5,14 @@ import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiProcessor;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class RowDataStringOutputter implements HapiProcessor.Outputter<byte[]> {
+public final class RowDataStringOutputter implements HapiProcessor.Outputter {
     private static final RowDataStringOutputter instance = new RowDataStringOutputter();
 
     public static RowDataStringOutputter instance() {
@@ -20,19 +22,12 @@ public final class RowDataStringOutputter implements HapiProcessor.Outputter<byt
     private RowDataStringOutputter() {}
     
     @Override
-    public byte[] output(RowDefCache rowDefCache, List<RowData> rows, StringBuilder sb) {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        PrintWriter writer = new PrintWriter(output);
+    public void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
+        PrintWriter writer = new PrintWriter(outputStream);
         for (RowData data : rows) {
             String toString = data.toString(rowDefCache);
             writer.println(toString);
         }
         writer.flush();
-        return output.toByteArray();
-    }
-
-    @Override
-    public byte[] error(String message) {
-        return message.getBytes();
     }
 }

@@ -1,19 +1,27 @@
 package com.akiban.cserver.service.memcache;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
-import com.akiban.cserver.service.memcache.outputter.JsonByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.util.ArgumentValidation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -40,21 +48,23 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
 
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
     private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
+    private static final String MODULE = MemcacheServiceImpl.class.toString();
+    private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
     @SuppressWarnings("unused") // these are queried/set via JMX
     public enum OutputFormat {
-        JSON(JsonByteOutputter.instance()),
+        JSON(JsonOutputter.instance()),
         RAW(RawByteOutputter.instance()),
         DUMMY(DummyByteOutputter.instance()),
         PLAIN(RowDataStringOutputter.instance())
         ;
-        private final Outputter<byte[]> outputter;
+        private final Outputter outputter;
 
-        OutputFormat(Outputter<byte[]> outputter) {
+        OutputFormat(Outputter outputter) {
             this.outputter = outputter;
         }
 
-        public Outputter<byte[]> getOutputter() {
+        public Outputter getOutputter() {
             return outputter;
         }
     }
@@ -63,7 +73,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private final MemcacheMXBean manageBean = new ManageBean();
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
-        public Outputter<byte[]> getFormat() {
+        public Outputter getFormat() {
             return outputAs.get().getOutputter();
         }
     };
@@ -79,18 +89,6 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private ServerSocketChannelFactory channelFactory;
     int port;
 
-    ThreadLocal<ByteBuffer> bufferCache = new ThreadLocal<ByteBuffer>() {
-        public ByteBuffer initialValue() {
-            return ByteBuffer.allocate(1024 * 1024);
-        }
-    };
-    
-    ThreadLocal<StringBuilder> builderCache = new ThreadLocal<StringBuilder>() {
-        public StringBuilder initialValue() {
-            return new StringBuilder(1024 * 1024);
-        }
-    };
-    
     public MemcacheServiceImpl() {
         this.serviceManager = ServiceManagerImpl.get();
 
@@ -107,18 +105,80 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     }
 
     @Override
-    public <T> T processRequest(Session session, String request, Outputter<T> outputter) {
-        ByteBuffer buffer = bufferCache.get();
-        buffer.clear();
-        
-        StringBuilder sb = builderCache.get();
-        sb.setLength(0);
-        
+    public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
+            throws HapiRequestException
+    {
         Store storeLocal = store.get();
         if (storeLocal == null) {
-            storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
+            throw new HapiRequestException("Service not started (Store is null",
+                    HapiRequestException.ReasonCode.INTERNAL_ERROR
+            );
         }
-        return HapiProcessorImpl.processRequest(storeLocal, session, request, buffer, outputter, sb);
+        
+        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
+        if (buffer == null) {
+            buffer = ByteBuffer.allocate(65536);
+            session.put(MODULE, SESSION_BUFFER, buffer);
+        }
+        else {
+            buffer.clear();
+        }
+
+        doProcessRequest(storeLocal, session, request, buffer, outputter, outputStream);
+    }
+
+    private static void doProcessRequest(Store store, Session session, HapiGetRequest request,
+                                         ByteBuffer byteBuffer, HapiProcessor.Outputter outputter, OutputStream outputStream)
+            throws HapiRequestException
+    {
+        ArgumentValidation.notNull("outputter", outputter);
+        HapiGetRequest.Predicate predicate = extractLimitedPredicate(request);
+
+        final RowDefCache cache = store.getRowDefCache();
+        final List<RowData> list;
+        try {
+            list = store.fetchRows(
+                    session,
+                    request.getSchema(),
+                    request.getTable(),
+                    predicate.getColumnName(),
+                    predicate.getValue(),
+                    predicate.getValue(),
+                    null,
+                    byteBuffer
+            );
+        } catch (Exception e) {
+            throw new HapiRequestException("while fetching rows", e);
+        }
+
+        try {
+            outputter.output(cache, list, outputStream);
+        } catch (IOException e) {
+            throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
+        }
+    }
+
+    private static HapiGetRequest.Predicate extractLimitedPredicate(HapiGetRequest request) throws HapiRequestException {
+        if (request.getPredicates().size() != 1) {
+            complain("You may only specify one predicate (for now!) -- saw %s", request.getPredicates());
+        }
+        if (!request.getTable().equals(request.getUsingTable().getTableName())) {
+            complain("You may not specify a different SELECT table and USING table (for now!) -- %s != %s",
+                    request.getTable(), request.getUsingTable().getTableName());
+        }
+        HapiGetRequest.Predicate predicate = request.getPredicates().iterator().next();
+        if (predicate.getTableName().equals(request.getUsingTable().getTableName())) {
+            complain("Can't have different SELECT table and predicate table (for now!) %s != %s",
+                    predicate.getTableName(), request.getUsingTable().getTableName()
+            );
+        }
+        return predicate;
+    }
+
+    private static void complain(String format, Object... args) throws HapiRequestException {
+        throw new HapiRequestException(String.format(format, args),
+                HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST
+        );
     }
 
     @Override
@@ -167,10 +227,10 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         final ChannelPipelineFactory pipelineFactory;
 
         if (binary) {
-            pipelineFactory = new BinaryPipelineFactory(store.get(), verbose,
+            pipelineFactory = new BinaryPipelineFactory(this, verbose,
                     idle_time, allChannels, formatGetter);
         } else {
-            pipelineFactory = new TextPipelineFactory(store.get(), verbose,
+            pipelineFactory = new TextPipelineFactory(this, verbose,
                     idle_time, text_frame_size, allChannels, formatGetter);
         }
 
@@ -210,12 +270,12 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         private final AkibanCommandHandler commandHandler;
         private final MemcachedResponseEncoder responseEncoder;
 
-        public TextPipelineFactory(Store store, boolean verbose, int idleTime,
+        public TextPipelineFactory(HapiProcessor hapiProcessor, boolean verbose, int idleTime,
                 int frameSize, DefaultChannelGroup channelGroup,
                 AkibanCommandHandler.FormatGetter formatGetter) {
             this.frameSize = frameSize;
             responseEncoder = new MemcachedResponseEncoder();
-            commandHandler = new AkibanCommandHandler(store, channelGroup, formatGetter);
+            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter);
         }
 
         public final ChannelPipeline getPipeline() throws Exception {
@@ -234,12 +294,12 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         private final MemcachedBinaryCommandDecoder commandDecoder;
         private final MemcachedBinaryResponseEncoder responseEncoder;
 
-        public BinaryPipelineFactory(Store store, boolean verbose,
+        public BinaryPipelineFactory(HapiProcessor hapiProcessor, boolean verbose,
                 int idleTime, DefaultChannelGroup channelGroup,
                 AkibanCommandHandler.FormatGetter formatGetter) {
             commandDecoder = new MemcachedBinaryCommandDecoder();
             responseEncoder = new MemcachedBinaryResponseEncoder();
-            commandHandler = new AkibanCommandHandler(store, channelGroup, formatGetter);
+            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter);
         }
 
         public ChannelPipeline getPipeline() throws Exception {
