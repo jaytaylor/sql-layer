@@ -38,6 +38,8 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
+    private static final String MODULE = AkibanCommandHandler.class.toString();
+    private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
     interface FormatGetter {
         HapiProcessor.Outputter getFormat();
     }
@@ -229,12 +231,12 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         String key = command.keys.get(0);
 
-
+        final Session sessionLocal = session.get();
         byte[] result_bytes;
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(key);
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-            hapiProcessor.processRequest(session.get(), request, formatGetter.getFormat(), outputStream);
+            ByteArrayOutputStream outputStream = getOutputStream(sessionLocal);
+            hapiProcessor.processRequest(sessionLocal, request, formatGetter.getFormat(), outputStream);
             result_bytes = outputStream.toByteArray();
         } catch (Exception e) {
             result_bytes = ("error: " + e.getMessage()).getBytes();
@@ -249,5 +251,17 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
+    }
+
+    private static ByteArrayOutputStream getOutputStream(Session session) {
+        ByteArrayOutputStream outputStream = session.get(MODULE, OUTPUTSTREAM_CACHE);
+        if (outputStream == null) {
+            outputStream = new ByteArrayOutputStream(1024);
+            session.put(MODULE, OUTPUTSTREAM_CACHE, outputStream);
+        }
+        else {
+            outputStream.reset();
+        }
+        return outputStream;
     }
 }
