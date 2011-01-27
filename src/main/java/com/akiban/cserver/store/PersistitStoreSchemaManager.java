@@ -7,6 +7,8 @@ import static com.akiban.cserver.service.tree.TreeService.STATUS_TREE_NAME;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,6 +21,10 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.io.MessageSource;
+import com.akiban.ais.io.MessageTarget;
+import com.akiban.ais.io.Reader;
+import com.persistit.Transaction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -65,8 +71,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     static final String BY_NAME = "byName";
 
-    private static final Log LOG = LogFactory
-            .getLog(PersistitStoreSchemaManager.class.getName());
+    private static final Log LOG = LogFactory.getLog(PersistitStoreSchemaManager.class.getName());
+
+    private static final int INITIAL_AIS_BUFFER_SIZE = 1 * 1000 * 1000; // 1M
+
+    private static final int MAX_AIS_BUFFER_SIZE = 10 * 1000 * 1000; // 10M
+
+    private static final int AIS_BUFFER_GROWTH = 20 * 1000; // 20K
 
     // TODO - replace with transactional cache implementation
     private final static long DELAY = 10000L;
@@ -82,6 +93,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private SchemaDef schemaDef;
 
     private AkibaInformationSchema ais;
+
+    private ByteBuffer aisSafeCopy;
 
     private long aisTimestamp;
 
@@ -130,7 +143,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void createTableDefinition(final Session session,
-            final String defaultSchemaName, final String statement, final boolean useOldId)
+                                      final String defaultSchemaName,
+                                      final String statement,
+                                      final boolean useOldId)
             throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
@@ -150,7 +165,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         validateTableDefinition(session, schemaName, statement, tableDef);
         final Exchange ex = treeService.getExchange(session,
                 treeLink(schemaName, SCHEMA_TREE_NAME));
-
+        Transaction transaction = treeService.getTransaction(session);
+        transaction.begin();
         try {
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
@@ -181,8 +197,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
             changed(treeService, session);
             saveTableStatusRecords(session);
-            return;
+            refreshAIS(session);
+            transaction.commit();
         } finally {
+            transaction.end();
             treeService.releaseExchange(session, ex);
         }
     }
@@ -202,23 +220,33 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public void deleteTableDefinition(Session session, final int tableId)
             throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
-        treeService.visitStorage(session, new TreeVisitor() {
+        Transaction transaction = treeService.getTransaction(session);
+        transaction.begin();
+        try {
+            treeService.visitStorage(session, new TreeVisitor()
+            {
 
-            @Override
-            public void visit(Exchange exchange) throws Exception {
-                exchange.clear().append(BY_ID).append(tableId).fetch();
-                if (exchange.isValueDefined()) {
-                    final String canonical = exchange.getValue().getString();
-                    SchemaDef.CName cname = cname(canonical);
-                    exchange.remove();
-                    exchange.clear().append(BY_NAME).append(cname.getSchema())
+                @Override
+                public void visit(Exchange exchange) throws Exception
+                {
+                    exchange.clear().append(BY_ID).append(tableId).fetch();
+                    if (exchange.isValueDefined()) {
+                        final String canonical = exchange.getValue().getString();
+                        SchemaDef.CName cname = cname(canonical);
+                        exchange.remove();
+                        exchange.clear().append(BY_NAME).append(cname.getSchema())
                             .append(cname.getName()).append(tableId).remove();
+                    }
                 }
-            }
 
-        }, SCHEMA_TREE_NAME);
-        removeStaleTableStatusRecords(session);
-        saveTableStatusRecords(session);
+            }, SCHEMA_TREE_NAME);
+            removeStaleTableStatusRecords(session);
+            saveTableStatusRecords(session);
+            refreshAIS(session);
+            transaction.commit();
+        } finally {
+            transaction.end();
+        }
     }
 
     /**
@@ -263,9 +291,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 tables.add(t.getName());
             }
         }
-        deleteTableDefinitionList(session, tables);
-        removeStaleTableStatusRecords(session);
-        saveTableStatusRecords(session);
+        Transaction transaction = serviceManager.getTreeService().getTransaction(session);
+        transaction.begin();
+        try {
+            deleteTableDefinitionList(session, tables);
+            removeStaleTableStatusRecords(session);
+            saveTableStatusRecords(session);
+            refreshAIS(session);
+            transaction.commit();
+        } finally {
+            transaction.end();
+        }
     }
 
     private void deleteTableDefinitionList(final Session session,
@@ -523,17 +559,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public AkibaInformationSchema getAis(final Session session) {
-        // TODO - make this transactional
-        while (true) {
-            long wasTimestamp;
-            synchronized (this) {
-                if (aisTimestamp == saveTimestamp) {
-                    return ais;
+        return ais;
+    }
+
+    private void refreshAIS(final Session session) throws Exception
+    {
+        try {
+            while (true) {
+                long wasTimestamp;
+                synchronized (this) {
+                    if (aisTimestamp == saveTimestamp) {
+                        return;
+                    }
+                    wasTimestamp = saveTimestamp;
                 }
-                wasTimestamp = saveTimestamp;
-            }
-            AkibaInformationSchema newAis;
-            try {
+                AkibaInformationSchema newAis;
                 final StringBuilder sb = new StringBuilder();
                 final Map<TableName, Integer> idMap = assembleSchema(session,
                         sb, true, false, false);
@@ -541,51 +581,48 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 schemaDef = SchemaDef.parseSchema(schemaText);
                 newAis = new SchemaDefToAis(schemaDef, true).getAis();
                 // Reassign the table ID values.
-                for (final Map.Entry<TableName, Integer> entry : idMap
-                        .entrySet()) {
+                for (final Map.Entry<TableName, Integer> entry : idMap.entrySet()) {
                     Table table = newAis.getTable(entry.getKey());
-                    table.setTableId(entry.getValue().intValue());
+                    table.setTableId(entry.getValue());
                 }
-                for (final Map.Entry<TableName, GroupTable> entry : newAis
-                        .getGroupTables().entrySet()) {
+                for (final Map.Entry<TableName, GroupTable> entry : newAis.getGroupTables().entrySet()) {
                     final UserTable root = entry.getValue().getRoot();
                     final Integer rootId = idMap.get(root.getName());
                     assert rootId != null : "Group table with no root!";
                     entry.getValue().setTableId(
                             TreeService.MAX_TABLES_PER_VOLUME - rootId);
                 }
-
-            } catch (Exception e) {
-                // TODO - better handling
-                LOG.error("Exception while building new AIS", e);
-                return ais;
-            }
-            //
-            // Detect a race condition in which another schema change happened
-            // during creation of the AIS. In that case, simple retry.
-            //
-            synchronized (this) {
-                if (saveTimestamp == wasTimestamp
-                        && aisTimestamp != saveTimestamp) {
-                    aisTimestamp = saveTimestamp;
-                    ais = newAis;
-                    final RowDefCache rowDefCache = getRowDefCache();
-                    rowDefCache.clear();
-                    rowDefCache.setAIS(ais);
-                    try {
-                        loadTableStatusRecords(session);
-                        rowDefCache.fixUpOrdinals(this);
-                    } catch (Exception e) {
-                        LOG.error("Exception while building new AIS", e);
-                    }
-                    try {
-                        final Store store = serviceManager.getStore();
-                        new Writer(new CServerAisTarget(store)).save(newAis);
-                    } catch (Exception e) {
-                        LOG.warn("Exception while storing AIS tables", e);
+                //
+                // Detect a race condition in which another schema change happened
+                // during creation of the AIS. In that case, simple retry.
+                //
+                synchronized (this) {
+                    if (saveTimestamp == wasTimestamp
+                            && aisTimestamp != saveTimestamp) {
+                        aisTimestamp = saveTimestamp;
+                        preserveAIS(newAis);
+                        final RowDefCache rowDefCache = getRowDefCache();
+                        rowDefCache.clear();
+                        rowDefCache.setAIS(ais);
+                        try {
+                            loadTableStatusRecords(session);
+                            rowDefCache.fixUpOrdinals(this);
+                        } catch (Exception e) {
+                            LOG.error("Exception while building new AIS", e);
+                        }
+                        try {
+                            final Store store = serviceManager.getStore();
+                            new Writer(new CServerAisTarget(store)).save(newAis);
+                        } catch (Exception e) {
+                            LOG.warn("Exception while storing AIS tables", e);
+                        }
                     }
                 }
             }
+        } catch (Exception e) {
+            LOG.error("AIS creation failed, reverting to original AIS.", e);
+            revertAIS();
+            throw e;
         }
     }
 
@@ -808,7 +845,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     @Override
     public void afterStart() throws Exception {
-        getAis(new SessionImpl());
+        refreshAIS(new SessionImpl());
     }
 
     /**
@@ -1090,5 +1127,37 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private void stopTableStatusFlusher() {
         timer.cancel();
+    }
+
+    private void preserveAIS(AkibaInformationSchema newAIS) throws Exception
+    {
+        ByteBuffer buffer = ByteBuffer.allocate(aisSafeCopy == null
+                                                ? INITIAL_AIS_BUFFER_SIZE
+                                                : aisSafeCopy.limit() + AIS_BUFFER_GROWTH);
+        AkibaInformationSchema currentAIS = ais;
+        while (ais == currentAIS) {
+            try {
+                new Writer(new MessageTarget(buffer)).save(newAIS);
+                buffer.flip();
+                ais = newAIS;
+                aisSafeCopy = buffer;
+            } catch (BufferOverflowException e) {
+                int newCapacity = buffer.capacity() * 2;
+                if (newCapacity > MAX_AIS_BUFFER_SIZE) {
+                    throw e;
+                } else {
+                    buffer = ByteBuffer.allocate(newCapacity);
+                }
+            }
+        }
+    }
+
+    private void revertAIS()
+    {
+        try {
+            ais = aisSafeCopy == null ? null : new Reader(new MessageSource(aisSafeCopy)).load();
+        } catch (Exception e) {
+            LOG.error("Unable to deserialize safe copy of AIS?!");
+        }
     }
 }
