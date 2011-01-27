@@ -1,6 +1,7 @@
 package com.akiban.cserver.api;
 
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -9,6 +10,7 @@ import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
 import com.akiban.cserver.api.ddl.DuplicateTableNameException;
 import com.akiban.cserver.api.ddl.ForeignConstraintDDLException;
 import com.akiban.cserver.api.ddl.GroupWithProtectedTableException;
+import com.akiban.cserver.api.ddl.IndexAlterException;
 import com.akiban.cserver.api.ddl.JoinToUnknownTableException;
 import com.akiban.cserver.api.ddl.JoinToWrongColumnsException;
 import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
@@ -17,6 +19,8 @@ import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
+
+import java.util.List;
 
 public interface DDLFunctions {
     /**
@@ -126,4 +130,24 @@ public interface DDLFunctions {
      */
     @SuppressWarnings("unused") // meant to be used from JMX
     void forceGenerationUpdate() throws InvalidOperationException;
+    
+    /**
+     * Create new indexes on an existing table. All indexes must exist on the same table. Primary
+     * keys can not be created through this interface. Specified index IDs will not be used as they
+     * are recalculated later.Blocks until the actual index data has been created.
+     * @param indexesToAdd a list of indexes to add to the existing AIS
+     * @throws IndexAlterException, InvalidOperationException
+     */
+    void createIndexes(Session session, List<Index> indexesToAdd) throws IndexAlterException,
+            InvalidOperationException;
+
+    /**
+     * Drop indexes on an existing table.
+     * 
+     * @param tableId the table containing the indexes to drop
+     * @param indexesToDrop list of indexes to drop
+     * @throws InvalidOperationException
+     */
+    void dropIndexes(Session session, TableId tableId, List<Integer> indexesToDrop)
+            throws InvalidOperationException;
 }

@@ -40,11 +40,12 @@ public interface SchemaManager {
      * @param schemaName
      * @param tableName
      * @param statement
+     * @param useOldId
      * @throws Exception
      */
     void createTableDefinition(Session session, String schemaName,
-            String statement) throws Exception;
-
+            String statement, boolean useOldId) throws Exception;
+    
     /**
      * Delete the table definition for the specified tableId. This method does
      * not disturb other table definition versions having the same table and
