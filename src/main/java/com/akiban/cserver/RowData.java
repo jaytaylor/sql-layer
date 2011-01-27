@@ -7,6 +7,7 @@ import java.util.BitSet;
 
 import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.util.RowDefNotFoundException;
+import com.akiban.util.AkibanAppender;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -448,7 +449,7 @@ public class RowData {
     }
 
     public String toString(final RowDef rowDef) {
-        final StringBuilder sb = new StringBuilder();
+        final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         try {
             if (rowDef == null) {
                 sb.append("RowData?(rowDefId=");
@@ -481,30 +482,30 @@ public class RowData {
         return sb.toString();
     }
 
-    public void toJSONString(final RowDefCache cache, PrintWriter pr) throws IOException {
+    public void toJSONString(final RowDefCache cache, AkibanAppender sb) throws IOException {
         final RowDef rowDef = cache.getRowDef(getRowDefId());
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
             if(i != 0) {
-                pr.write(',');
+                sb.write(',');
             }
-            pr.write('"');
+            sb.write('"');
             String fieldName = fieldDef.getName();
             if (fieldName != null
                     && fieldName.length() > 0
                     && (fieldName.charAt(0) == '@' || fieldName.charAt(0) == ':')
             ) {
-                pr.write(':');
+                sb.write(':');
             }
-            pr.write(fieldName);
-            pr.write("\":");
+            sb.write(fieldName);
+            sb.write("\":");
 
             if(location != 0) {
-                fieldDef.getEncoding().toString(fieldDef, this, pr, Quote.JSON_QUOTE);
+                fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
             }
             else {
-                pr.write("null");
+                sb.write("null");
             }
         }
 //        } catch(Exception e) {

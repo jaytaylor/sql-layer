@@ -7,6 +7,7 @@ import com.akiban.ais.model.Type;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 abstract class AbstractDateEncoder extends EncodingBase<Date> {
@@ -61,7 +62,7 @@ abstract class AbstractDateEncoder extends EncodingBase<Date> {
 
     @Override
     public void toString(FieldDef fieldDef, RowData rowData,
-                         StringBuilder sb, final Quote quote) {
+                         AkibanAppender sb, final Quote quote) {
         final Date date;
         try {
             date = toObject(fieldDef, rowData);

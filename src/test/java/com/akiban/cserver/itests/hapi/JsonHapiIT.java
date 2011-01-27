@@ -128,6 +128,7 @@ import static org.junit.Assert.*;
  * </ol>
  * </p>
  */
+@org.junit.Ignore
 @RunWith(NamedParameterizedRunner.class)
 public final class JsonHapiIT extends ApiTestBase {
     private static final String SUFFIX_JSON = ".json";
