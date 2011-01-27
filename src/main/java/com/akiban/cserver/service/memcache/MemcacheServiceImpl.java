@@ -113,6 +113,9 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             buffer = ByteBuffer.allocate(65536);
             session.put(MODULE, SESSION_BUFFER, buffer);
         }
+        else {
+            buffer.clear();
+        }
         HapiProcessorHelper.processRequest(storeLocal, session, request, buffer, outputter, outputStream);
     }
 
