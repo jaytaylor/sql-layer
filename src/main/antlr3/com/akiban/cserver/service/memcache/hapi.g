@@ -46,10 +46,10 @@ tokens {
 }
   
 @members {
-	private HapiGetRequest.ParseErrorReporter errorReporter;
-	public void setErrorReporter(HapiGetRequest.ParseErrorReporter reporter) {
+	private ParsedHapiGetRequest.ParseErrorReporter errorReporter;
+	public void setErrorReporter(ParsedHapiGetRequest.ParseErrorReporter reporter) {
 		if (reporter == null) {
-			System.err.println("Given HapiGetRequest.ParseErrorReporter is null; will default to stderr");
+			System.err.println("Given ParsedHapiGetRequest.ParseErrorReporter is null; will default to stderr");
 		}
 		this.errorReporter = reporter;
 	}
@@ -65,8 +65,8 @@ tokens {
 	}
 }
 
-get_request returns[HapiGetRequest request]
-	: { request = new HapiGetRequest() ; }
+get_request returns[ParsedHapiGetRequest request]
+	: { request = new ParsedHapiGetRequest() ; }
 	schema=string {request.setSchema(schema); }
 	COLON
 	table=string {request.setTable(table); }
@@ -76,21 +76,21 @@ get_request returns[HapiGetRequest request]
 	{ request.validate(); }
 	;
 
-predicate_using[HapiGetRequest request]
+predicate_using[ParsedHapiGetRequest request]
 	: PAREN_OPEN using=string PAREN_CLOSE { request.setUsingTable(using); }
 	;
 
-predicate [HapiGetRequest request]
+predicate [ParsedHapiGetRequest request]
 	: s=string o=op p=string { request.addPredicate(s, o, p); }
 	;
 
-op returns [HapiGetRequest.Predicate.Operator op]
-	: EQ {$op = HapiGetRequest.Predicate.Operator.EQ; }
-	| NE {$op = HapiGetRequest.Predicate.Operator.NE; }
-	| GT {$op = HapiGetRequest.Predicate.Operator.GT; }
-	| GTE {$op = HapiGetRequest.Predicate.Operator.GTE; }
-	| LT {$op = HapiGetRequest.Predicate.Operator.LT; }
-	| LTE {$op = HapiGetRequest.Predicate.Operator.LTE; }
+op returns [SimplePredicate.Operator op]
+	: EQ {$op = SimplePredicate.Operator.EQ; }
+	| NE {$op = SimplePredicate.Operator.NE; }
+	| GT {$op = SimplePredicate.Operator.GT; }
+	| GTE {$op = SimplePredicate.Operator.GTE; }
+	| LT {$op = SimplePredicate.Operator.LT; }
+	| LTE {$op = SimplePredicate.Operator.LTE; }
 	;
 
 string returns [String string]
