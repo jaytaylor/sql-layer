@@ -1,5 +1,6 @@
 package com.akiban.cserver.service.memcache.outputter;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
@@ -36,7 +37,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             if(def_id_stack.isEmpty()) {
                 current_def_id = def_id;
                 def_id_stack.add(parent_def_id);
-                pr.write("{\"");
+                pr.write("{\"@");
                 pr.print(def.getTableName());
                 pr.write("\":");
 //                if(min_val == null) {
@@ -52,7 +53,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 current_def_id = def_id;
                 def_id_stack.add(parent_def_id);
 
-                pr.write(",\"");
+                pr.write(",\"@");
                 pr.print(def.getTableName());
                 pr.write("\":[");
             }
@@ -73,7 +74,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
                 if(pop_count == 0) {
                     // Was sibling
-                    pr.write(",\"");
+                    pr.write(",\"@");
                     pr.print(def.getTableName());
                     pr.write("\":[");
                 }
@@ -83,9 +84,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 }
             }
 
-            String json_row = data.toJSONString(cache);
             pr.write('{');
-            pr.print(json_row);
+            data.toJSONString(cache, pr);
         }
 
         if(wrote) {

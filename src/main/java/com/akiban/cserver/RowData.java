@@ -1,6 +1,7 @@
 package com.akiban.cserver;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
@@ -480,36 +481,38 @@ public class RowData {
         return sb.toString();
     }
 
-    public String toJSONString(final RowDefCache cache) {
-        final StringBuilder sb = new StringBuilder();
+    public void toJSONString(final RowDefCache cache, PrintWriter pr) throws IOException {
+        final RowDef rowDef = cache.getRowDef(getRowDefId());
+        for(int i = 0; i < getFieldCount(); i++) {
+            final FieldDef fieldDef = rowDef.getFieldDef(i);
+            final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
+            if(i != 0) {
+                pr.write(',');
+            }
+            pr.write('"');
+            String fieldName = fieldDef.getName();
+            if (fieldName != null
+                    && fieldName.length() > 0
+                    && (fieldName.charAt(0) == '@' || fieldName.charAt(0) == ':')
+            ) {
+                pr.write(':');
+            }
+            pr.write(fieldName);
+            pr.write("\":");
 
-        try {
-            final RowDef rowDef = cache.getRowDef(getRowDefId());
-            for(int i = 0; i < getFieldCount(); i++) {
-                final FieldDef fieldDef = rowDef.getFieldDef(i);
-                final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
-                if(i != 0) {
-                    sb.append(", ");
-                }   
-                sb.append("\"");
-                sb.append(fieldDef.getName());
-                sb.append("\" : ");
-
-                if(location != 0) {
-                    fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
-                }   
-                else {
-                    sb.append("null");
-                }   
-            }   
-        } catch(Exception e) {
-            sb.setLength(0);
-            sb.append("\"hex_row\" : \"");
-            CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
-            sb.append("\"");
-        }   
-
-        return sb.toString();
+            if(location != 0) {
+                fieldDef.getEncoding().toString(fieldDef, this, pr, Quote.JSON_QUOTE);
+            }
+            else {
+                pr.write("null");
+            }
+        }
+//        } catch(Exception e) {
+//            sb.setLength(0);
+//            sb.append("\"hex_row\" : \"");
+//            CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
+//            sb.append("\"");
+//        }
     }
 
     public String explain() {

@@ -31,7 +31,7 @@ public interface Encoding<T> {
      *            Member of the {@link com.akiban.cserver.Quote} enum that specifies how to add
      *            quotation marks: none, single-quote or double-quote symbols.
      */
-    void toString(final FieldDef fieldDef, final RowData rowData, final StringBuilder sb, final Quote quote);
+    void toString(final FieldDef fieldDef, final RowData rowData, final Appendable sb, final Quote quote);
 
     /**
      * Converts the given field to a Java object.
