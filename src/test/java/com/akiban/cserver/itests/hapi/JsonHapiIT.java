@@ -1,6 +1,7 @@
 package com.akiban.cserver.itests.hapi;
 
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.common.ColumnId;
@@ -8,10 +9,12 @@ import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
+import com.akiban.cserver.service.memcache.ParsedHapiGetRequest;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,7 +25,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -117,8 +122,8 @@ import static org.junit.Assert.*;
  *  <li>the tables will be created</li>
  *  <li>if <tt>test.write_rows</tt> is true, the rows defined in <tt>setup.write_rows</tt> will be written</li>
  *  <li>the <tt>GET</tt> will be issued to
- *      {@link com.akiban.cserver.service.memcache.MemcacheService#processRequest(Session, String,
- *      HapiProcessor.Outputter)}</li>
+ *      {@link com.akiban.cserver.service.memcache.MemcacheService#processRequest(Session, HapiGetRequest,
+ *      HapiProcessor.Outputter, OutputStream)}</li>
  *  <li>the result will be compared against <tt>test.expected</tt>
  * </ol>
  * </p>
@@ -317,7 +322,7 @@ public final class JsonHapiIT extends ApiTestBase {
             writeRows = Collections.emptyMap();
         }
         else {
-            Map<String,JSONArray> writeRowsTmp = new HashMap<String,JSONArray>();
+            Map<String,JSONArray> writeRowsTmp = new LinkedHashMap<String,JSONArray>();
             Set<String> writeRowTables = new TreeSet<String>(Arrays.asList(JSONObject.getNames(writeRowsJSON)));
             if (!tableNames.equals(writeRowTables)) {
                 throw new RuntimeException(String.format("write_row tables expected %s but was %s",
@@ -372,16 +377,24 @@ public final class JsonHapiIT extends ApiTestBase {
                     for(int col=0, COLS=columns.length(); col < COLS; ++col) {
                         row.put(ColumnId.of(col), columns.get(col));
                     }
-                    dml().writeRow(session, row);
+                    try {
+                        dml().writeRow(session, row);
+                    } catch (InvalidOperationException e) {
+                        throw new InvalidOperationException(ErrorCode.UNKNOWN, "while writing " + row, e);
+                    }
                 }
             }
         }
     }
 
     @Test
-    public void get() throws JSONException, HapiRequestException {
+    public void get() throws JSONException, HapiRequestException, IOException {
+        HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
         try {
-            String result = hapi().processRequest(session, runInfo.getQuery, JsonOutputter.instance());
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+            hapi().processRequest(session, request, JsonOutputter.instance(), outputStream);
+            outputStream.flush();
+            String result = new String(outputStream.toByteArray());
             assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);
             assertNotNull("null result", result);
             assertTrue("empty result: >" + result + "< ", result.trim().length() > 1);

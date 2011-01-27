@@ -6,8 +6,10 @@ public final class HapiRequestException extends  Exception {
         UNPARSABLE(0),
         UNKNOWN_IDENTIFIER(1),
         MULTIBRANCH(2),
-        PREDICATE_IS_PARENT(3),
+        UNSUPPORTED_REQUEST(3),
         EXCEPTION_THROWN(4),
+        WRITE_ERROR(5),
+        INTERNAL_ERROR(6)
         ;
 
         private final int code;
@@ -19,14 +21,19 @@ public final class HapiRequestException extends  Exception {
 
     private final ReasonCode reasonCode;
 
-    private HapiRequestException(String message, ReasonCode reasonCode) {
+    public HapiRequestException(String message, ReasonCode reasonCode) {
         super(message);
         this.reasonCode = reasonCode == null ? ReasonCode.UNKNOWN : reasonCode;
     }
 
-    private HapiRequestException(String message, Exception cause) {
+    public HapiRequestException(String message, Exception cause) {
         super(message, cause);
         this.reasonCode = ReasonCode.EXCEPTION_THROWN;
+    }
+
+    public HapiRequestException(String message, Throwable cause, ReasonCode reasonCode) {
+        super(message, cause);
+        this.reasonCode = reasonCode == null ? ReasonCode.UNKNOWN : reasonCode;
     }
 
     @Override

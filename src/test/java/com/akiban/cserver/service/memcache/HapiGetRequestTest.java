@@ -1,6 +1,8 @@
 package com.akiban.cserver.service.memcache;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiRequestException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -10,7 +12,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.akiban.cserver.service.memcache.HapiGetRequest.Predicate.Operator.*;
+import static com.akiban.cserver.api.HapiGetRequest.Predicate.Operator.*;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -19,22 +21,22 @@ import static org.junit.Assert.assertEquals;
 public final class HapiGetRequestTest {
 
     private static class HapiGetRequestBuilder {
-        private final HapiGetRequest request;
+        private final ParsedHapiGetRequest request;
 
-        HapiGetRequestBuilder(HapiGetRequest request) {
+        HapiGetRequestBuilder(ParsedHapiGetRequest request) {
             this.request = request;
         }
 
         HapiGetRequestBuilder predicate(
-                String columnName, HapiGetRequest.Predicate.Operator operator, String value
+                String columnName, SimplePredicate.Operator operator, String value
        ) {
             int oldsize = request.getPredicates().size();
             request.addPredicate(columnName, operator, value);
             assertEquals("predicates.size()", oldsize+1, request.getPredicates().size());
 
             HapiGetRequest.Predicate actual = request.getPredicates().get(oldsize);
-            HapiGetRequest.Predicate expected
-                    = new HapiGetRequest.Predicate(request.getUsingTable(), columnName, operator, value);
+            SimplePredicate expected
+                    = new SimplePredicate(request.getUsingTable(), columnName, operator, value);
 
             assertEquals("predicate", expected, actual);
             assertEquals("predicate hash", expected.hashCode(), actual.hashCode());
@@ -55,7 +57,7 @@ public final class HapiGetRequestTest {
         }
 
         HapiGetRequestBuilder add(String queryString, String schema, String table, String usingTable) {
-            HapiGetRequest request = new HapiGetRequest();
+            ParsedHapiGetRequest request = new ParsedHapiGetRequest();
             request.setSchema(schema);
             request.setTable(table);
             request.setUsingTable(usingTable);
@@ -111,23 +113,15 @@ public final class HapiGetRequestTest {
     }
 
     private final String query;
-    private final HapiGetRequest expectedRequest;
+    private final ParsedHapiGetRequest expectedRequest;
 
-
-    private final static HapiGetRequest.ParseErrorReporter ERROR_REPORTER = new HapiGetRequest.ParseErrorReporter() {
-        @Override
-        public void reportError(String error) {
-            throw new RuntimeException(error);
-        }
-    };
-
-    public HapiGetRequestTest(String query, HapiGetRequest request) {
+    public HapiGetRequestTest(String query, ParsedHapiGetRequest request) {
         this.query = query;
         this.expectedRequest = request;
     }
 
     @Test
-    public void test() {
+    public void test() throws HapiRequestException {
         if (expectedRequest == null) {
             testFailing();
         }
@@ -139,7 +133,7 @@ public final class HapiGetRequestTest {
     private void testFailing() {
         Exception exception = null;
         try {
-            HapiGetRequest request = HapiGetRequest.parse(query, ERROR_REPORTER);
+            HapiGetRequest request = ParsedHapiGetRequest.parse(query);
             assert false : request;
         } catch (Exception e) {
             exception = e;
@@ -147,8 +141,8 @@ public final class HapiGetRequestTest {
         assertNotNull(query + "expected exception", exception);
     }
 
-    private void testWorking() {
-        HapiGetRequest actual = HapiGetRequest.parse(query, ERROR_REPORTER);
+    private void testWorking() throws HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " request", expectedRequest, actual);
         assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
 
