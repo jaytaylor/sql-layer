@@ -1,11 +1,15 @@
 package com.akiban.cserver.service.memcache;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
@@ -16,6 +20,7 @@ import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.util.ArgumentValidation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -108,6 +113,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
                     HapiRequestException.ReasonCode.INTERNAL_ERROR
             );
         }
+        
         ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
         if (buffer == null) {
             buffer = ByteBuffer.allocate(65536);
@@ -116,7 +122,47 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         else {
             buffer.clear();
         }
-        HapiProcessorHelper.processRequest(storeLocal, session, request, buffer, outputter, outputStream);
+
+        doProcessRequest(storeLocal, session, request, buffer, outputter, outputStream);
+    }
+
+    private static void doProcessRequest(Store store, Session session, String request,
+                                         ByteBuffer byteBuffer, HapiProcessor.Outputter outputter, OutputStream outputStream)
+            throws HapiRequestException
+    {
+        ArgumentValidation.notNull("outputter", outputter);
+        String[] tokens = request.split(":");
+
+        if(tokens.length == 3 || tokens.length == 4) {
+            String schema = tokens[0];
+            String table = tokens[1];
+            String colkey = tokens[2];
+            String min_val = null;
+            String max_val = null;
+
+
+            if(tokens.length == 4) {
+                min_val = max_val = tokens[3];
+            }
+
+            final RowDefCache cache = store.getRowDefCache();
+            final List<RowData> list;
+            try {
+                list = store.fetchRows(session, schema, table, colkey, min_val, max_val, null, byteBuffer);
+            } catch (Exception e) {
+                throw new HapiRequestException("while fetching rows", e);
+            }
+
+            try {
+                outputter.output(cache, list, outputStream);
+            } catch (IOException e) {
+                throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
+            }
+
+        }
+        else {
+            throw new HapiRequestException("not enough tokens: " + request, HapiRequestException.ReasonCode.UNPARSABLE);
+        }
     }
 
     @Override
