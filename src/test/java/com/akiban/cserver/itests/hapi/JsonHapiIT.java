@@ -1,6 +1,7 @@
 package com.akiban.cserver.itests.hapi;
 
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.common.ColumnId;
@@ -8,6 +9,7 @@ import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
+import com.akiban.cserver.service.memcache.ParsedHapiGetRequest;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -120,7 +122,7 @@ import static org.junit.Assert.*;
  *  <li>the tables will be created</li>
  *  <li>if <tt>test.write_rows</tt> is true, the rows defined in <tt>setup.write_rows</tt> will be written</li>
  *  <li>the <tt>GET</tt> will be issued to
- *      {@link com.akiban.cserver.service.memcache.MemcacheService#processRequest(Session, String,
+ *      {@link com.akiban.cserver.service.memcache.MemcacheService#processRequest(Session, HapiGetRequest,
  *      HapiProcessor.Outputter, OutputStream)}</li>
  *  <li>the result will be compared against <tt>test.expected</tt>
  * </ol>
@@ -387,9 +389,10 @@ public final class JsonHapiIT extends ApiTestBase {
 
     @Test
     public void get() throws JSONException, HapiRequestException, IOException {
+        HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-            hapi().processRequest(session, runInfo.getQuery, JsonOutputter.instance(), outputStream);
+            hapi().processRequest(session, request, JsonOutputter.instance(), outputStream);
             outputStream.flush();
             String result = new String(outputStream.toByteArray());
             assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);

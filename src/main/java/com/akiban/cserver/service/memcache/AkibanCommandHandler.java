@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.Set;
 
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import org.apache.commons.logging.Log;
@@ -226,11 +227,10 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     }
 
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        String[] keys = new String[command.keys.size()];
-        keys = command.keys.toArray(keys);
+        String key = command.keys.get(0);
+        HapiGetRequest request = ParsedHapiGetRequest.parse(key);
 
-        byte[] key = keys[0].getBytes();
-        String request = new String(key);
+
         byte[] result_bytes;
         try {
             AkibanByteOutputStream outputStream = new AkibanByteOutputStream(1024);
@@ -242,7 +242,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         
         CacheElement[] results = null;
         if(result_bytes != null) {
-            LocalCacheElement element = new LocalCacheElement(keys[0]);
+            LocalCacheElement element = new LocalCacheElement(key);
             element.setData(result_bytes);
             results = new CacheElement[] { element };
         }

@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
@@ -104,7 +105,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     }
 
     @Override
-    public void processRequest(Session session, String request, Outputter outputter, OutputStream outputStream)
+    public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
         Store storeLocal = store.get();
@@ -126,43 +127,58 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         doProcessRequest(storeLocal, session, request, buffer, outputter, outputStream);
     }
 
-    private static void doProcessRequest(Store store, Session session, String request,
+    private static void doProcessRequest(Store store, Session session, HapiGetRequest request,
                                          ByteBuffer byteBuffer, HapiProcessor.Outputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
         ArgumentValidation.notNull("outputter", outputter);
-        String[] tokens = request.split(":");
+        HapiGetRequest.Predicate predicate = extractLimitedPredicate(request);
 
-        if(tokens.length == 3 || tokens.length == 4) {
-            String schema = tokens[0];
-            String table = tokens[1];
-            String colkey = tokens[2];
-            String min_val = null;
-            String max_val = null;
-
-
-            if(tokens.length == 4) {
-                min_val = max_val = tokens[3];
-            }
-
-            final RowDefCache cache = store.getRowDefCache();
-            final List<RowData> list;
-            try {
-                list = store.fetchRows(session, schema, table, colkey, min_val, max_val, null, byteBuffer);
-            } catch (Exception e) {
-                throw new HapiRequestException("while fetching rows", e);
-            }
-
-            try {
-                outputter.output(cache, list, outputStream);
-            } catch (IOException e) {
-                throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
-            }
-
+        final RowDefCache cache = store.getRowDefCache();
+        final List<RowData> list;
+        try {
+            list = store.fetchRows(
+                    session,
+                    request.getSchema(),
+                    request.getTable(),
+                    predicate.getColumnName(),
+                    predicate.getValue(),
+                    predicate.getValue(),
+                    null,
+                    byteBuffer
+            );
+        } catch (Exception e) {
+            throw new HapiRequestException("while fetching rows", e);
         }
-        else {
-            throw new HapiRequestException("not enough tokens: " + request, HapiRequestException.ReasonCode.UNPARSABLE);
+
+        try {
+            outputter.output(cache, list, outputStream);
+        } catch (IOException e) {
+            throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }
+    }
+
+    private static HapiGetRequest.Predicate extractLimitedPredicate(HapiGetRequest request) throws HapiRequestException {
+        if (request.getPredicates().size() != 1) {
+            complain("You may only specify one predicate (for now!) -- saw %s", request.getPredicates());
+        }
+        if (!request.getTable().equals(request.getUsingTable().getTableName())) {
+            complain("You may not specify a different SELECT table and USING table (for now!) -- %s != %s",
+                    request.getTable(), request.getUsingTable().getTableName());
+        }
+        HapiGetRequest.Predicate predicate = request.getPredicates().iterator().next();
+        if (predicate.getTableName().equals(request.getUsingTable().getTableName())) {
+            complain("Can't have different SELECT table and predicate table (for now!) %s != %s",
+                    predicate.getTableName(), request.getUsingTable().getTableName()
+            );
+        }
+        return predicate;
+    }
+
+    private static void complain(String format, Object... args) throws HapiRequestException {
+        throw new HapiRequestException(String.format(format, args),
+                HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST
+        );
     }
 
     @Override

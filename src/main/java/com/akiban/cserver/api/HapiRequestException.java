@@ -6,7 +6,7 @@ public final class HapiRequestException extends  Exception {
         UNPARSABLE(0),
         UNKNOWN_IDENTIFIER(1),
         MULTIBRANCH(2),
-        PREDICATE_IS_PARENT(3),
+        UNSUPPORTED_REQUEST(3),
         EXCEPTION_THROWN(4),
         WRITE_ERROR(5),
         INTERNAL_ERROR(6)
