@@ -2,6 +2,7 @@ package com.akiban.cserver.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiRequestException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -114,21 +115,13 @@ public final class HapiGetRequestTest {
     private final String query;
     private final ParsedHapiGetRequest expectedRequest;
 
-
-    private final static ParsedHapiGetRequest.ParseErrorReporter ERROR_REPORTER = new ParsedHapiGetRequest.ParseErrorReporter() {
-        @Override
-        public void reportError(String error) {
-            throw new RuntimeException(error);
-        }
-    };
-
     public HapiGetRequestTest(String query, ParsedHapiGetRequest request) {
         this.query = query;
         this.expectedRequest = request;
     }
 
     @Test
-    public void test() {
+    public void test() throws HapiRequestException {
         if (expectedRequest == null) {
             testFailing();
         }
@@ -140,7 +133,7 @@ public final class HapiGetRequestTest {
     private void testFailing() {
         Exception exception = null;
         try {
-            HapiGetRequest request = ParsedHapiGetRequest.parse(query, ERROR_REPORTER);
+            HapiGetRequest request = ParsedHapiGetRequest.parse(query);
             assert false : request;
         } catch (Exception e) {
             exception = e;
@@ -148,8 +141,8 @@ public final class HapiGetRequestTest {
         assertNotNull(query + "expected exception", exception);
     }
 
-    private void testWorking() {
-        ParsedHapiGetRequest actual = ParsedHapiGetRequest.parse(query, ERROR_REPORTER);
+    private void testWorking() throws HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " request", expectedRequest, actual);
         assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
 

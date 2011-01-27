@@ -2,6 +2,7 @@ package com.akiban.cserver.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiRequestException;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
@@ -16,20 +17,33 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
         public void reportError(String error);
     }
 
+    private final static ParseErrorReporter ERROR_REPORTER = new ParsedHapiGetRequest.ParseErrorReporter() {
+        @Override
+        public void reportError(String error) {
+            throw new HapiParseException(error);
+        }
+    };
+
     ParsedHapiGetRequest()
     {}
 
     public static class HapiParseException extends RuntimeException {
+        public HapiParseException(String message) {
+            super(message);
+        }
+
         HapiParseException(Throwable cause) {
             super(cause);
         }
     }
 
-    public static HapiGetRequest parse(String query) {
-        return parse(query, null);
+    public static HapiGetRequest parse(String query) throws HapiRequestException {
+        return parse(query, ERROR_REPORTER);
     }
     
-    public static ParsedHapiGetRequest parse(String query, ParseErrorReporter errorReporter) {
+    public static ParsedHapiGetRequest parse(String query, ParseErrorReporter errorReporter)
+            throws HapiRequestException
+    {
         hapiLexer lexer = new hapiLexer( new ANTLRStringStream(query) );
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         hapiParser parser = new hapiParser(tokens);
@@ -40,6 +54,8 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
             throw new HapiParseException(e);
         } catch (RecognitionException e) {
             throw new HapiParseException(e);
+        } catch (HapiParseException e) {
+            throw new HapiRequestException("while parsing request", e, HapiRequestException.ReasonCode.UNPARSABLE);
         }
     }
 

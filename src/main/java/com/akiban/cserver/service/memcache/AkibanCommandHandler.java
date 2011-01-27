@@ -228,11 +228,11 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         String key = command.keys.get(0);
-        HapiGetRequest request = ParsedHapiGetRequest.parse(key);
 
 
         byte[] result_bytes;
         try {
+            HapiGetRequest request = ParsedHapiGetRequest.parse(key);
             AkibanByteOutputStream outputStream = new AkibanByteOutputStream(1024);
             hapiProcessor.processRequest(session.get(), request, formatGetter.getFormat(), outputStream);
             result_bytes = outputStream.getBytesNoCopy();
