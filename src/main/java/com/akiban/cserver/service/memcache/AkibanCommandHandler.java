@@ -20,7 +20,6 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
 import com.akiban.cserver.api.HapiProcessor;
-import com.akiban.cserver.store.Store;
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.LocalCacheElement;
@@ -42,7 +41,12 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     interface FormatGetter {
         HapiProcessor.Outputter getFormat();
     }
-    private final Session session;
+    private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
+        @Override
+        protected Session initialValue() {
+            return new SessionImpl();
+        }
+    };
     /**
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
@@ -56,7 +60,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     {
         this.hapiProcessor = hapiProcessor;
         this.channelGroup = channelGroup;
-        this.session = new SessionImpl();
         this.formatGetter = formatGetter;
     }
 
@@ -235,7 +238,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         byte[] result_bytes;
         try {
             AkibanByteOutputStream outputStream = new AkibanByteOutputStream(1024);
-            hapiProcessor.processRequest(session, request, formatGetter.getFormat(), outputStream);
+            hapiProcessor.processRequest(session.get(), request, formatGetter.getFormat(), outputStream);
             result_bytes = outputStream.getBytesNoCopy();
         } catch (Exception e) {
             result_bytes = ("error: " + e.getMessage()).getBytes();
