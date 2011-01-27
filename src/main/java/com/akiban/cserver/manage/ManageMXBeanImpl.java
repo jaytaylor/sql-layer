@@ -105,17 +105,26 @@ public class ManageMXBeanImpl implements ManageMXBean
     }
 
    
-    public String loadCustomQuery(final String className) {
+    public String loadCustomQuery(final String className, String path) {
         try {
             customClass = null;
-            final URL url = new URL("file:///tmp/custom-classes/");
-            final ClassLoader cl = new URLClassLoader(new URL[]{url});
+            URL[] urls;
+            if (path == null) {
+                urls = new URL[]{new URL("file:///tmp/custom-classes/")};
+            } else {
+                String[] pathElements = path.split(":");
+                urls = new URL[pathElements.length];
+                for (int i = 0; i < pathElements.length; i++) {
+                    urls[i] = new URL("file://" + pathElements[i]);
+                }
+            }
+            final ClassLoader cl = new URLClassLoader(urls);
             final Class<?> c = cl.loadClass(className);
             if (CustomQuery.class.isAssignableFrom(c)) {
                 customClass = c;
                 return "OK";
             } else {
-                return c.getSimpleName() + " does not implement Runnable";
+                return c.getSimpleName() + " does not implement CustomQuery";
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -123,10 +132,11 @@ public class ManageMXBeanImpl implements ManageMXBean
         }
     }
     
-    public String runCustomQuery() {
+    public String runCustomQuery(final String params) {
         try {
             final CustomQuery cq = (CustomQuery)(customClass.newInstance());
-            cq.setStore(cserver.getServiceManager().getStore());
+            cq.setServiceManager(cserver.getServiceManager());
+            cq.setParameters(params.split(" "));
             cq.runQuery();
             return cq.getResult();
         } catch (Exception e) {

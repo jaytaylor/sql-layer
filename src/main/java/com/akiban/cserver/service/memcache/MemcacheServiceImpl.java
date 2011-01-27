@@ -79,6 +79,18 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private ServerSocketChannelFactory channelFactory;
     int port;
 
+    ThreadLocal<ByteBuffer> bufferCache = new ThreadLocal<ByteBuffer>() {
+        public ByteBuffer initialValue() {
+            return ByteBuffer.allocate(1024 * 1024);
+        }
+    };
+    
+    ThreadLocal<StringBuilder> builderCache = new ThreadLocal<StringBuilder>() {
+        public StringBuilder initialValue() {
+            return new StringBuilder(1024 * 1024);
+        }
+    };
+    
     public MemcacheServiceImpl() {
         this.serviceManager = ServiceManagerImpl.get();
 
@@ -96,8 +108,12 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     @Override
     public <T> T processRequest(Session session, String request, Outputter<T> outputter) {
-        ByteBuffer buffer = ByteBuffer.allocate(65536);
-        StringBuilder sb = new StringBuilder();
+        ByteBuffer buffer = bufferCache.get();
+        buffer.clear();
+        
+        StringBuilder sb = builderCache.get();
+        sb.setLength(0);
+        
         Store storeLocal = store.get();
         if (storeLocal == null) {
             storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
