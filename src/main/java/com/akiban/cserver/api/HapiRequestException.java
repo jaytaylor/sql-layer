@@ -8,7 +8,8 @@ public final class HapiRequestException extends  Exception {
         MULTIBRANCH(2),
         PREDICATE_IS_PARENT(3),
         EXCEPTION_THROWN(4),
-        WRITE_ERROR(5)
+        WRITE_ERROR(5),
+        INTERNAL_ERROR(6)
         ;
 
         private final int code;

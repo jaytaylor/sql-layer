@@ -1,12 +1,12 @@
 package com.akiban.cserver.service.memcache;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
@@ -42,6 +42,8 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
 
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
     private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
+    private static final String MODULE = MemcacheServiceImpl.class.toString();
+    private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
     @SuppressWarnings("unused") // these are queried/set via JMX
     public enum OutputFormat {
@@ -100,10 +102,16 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     public void processRequest(Session session, String request, Outputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
-        ByteBuffer buffer = ByteBuffer.allocate(65536);
         Store storeLocal = store.get();
         if (storeLocal == null) {
-            storeLocal = serviceManager.getStore(); // We should be able to run this even without the service started
+            throw new HapiRequestException("Service not started (Store is null",
+                    HapiRequestException.ReasonCode.INTERNAL_ERROR
+            );
+        }
+        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
+        if (buffer == null) {
+            buffer = ByteBuffer.allocate(65536);
+            session.put(MODULE, SESSION_BUFFER, buffer);
         }
         HapiProcessorHelper.processRequest(storeLocal, session, request, buffer, outputter, outputStream);
     }
@@ -154,10 +162,10 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         final ChannelPipelineFactory pipelineFactory;
 
         if (binary) {
-            pipelineFactory = new BinaryPipelineFactory(store.get(), verbose,
+            pipelineFactory = new BinaryPipelineFactory(this, verbose,
                     idle_time, allChannels, formatGetter);
         } else {
-            pipelineFactory = new TextPipelineFactory(store.get(), verbose,
+            pipelineFactory = new TextPipelineFactory(this, verbose,
                     idle_time, text_frame_size, allChannels, formatGetter);
         }
 
@@ -197,12 +205,12 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         private final AkibanCommandHandler commandHandler;
         private final MemcachedResponseEncoder responseEncoder;
 
-        public TextPipelineFactory(Store store, boolean verbose, int idleTime,
+        public TextPipelineFactory(HapiProcessor hapiProcessor, boolean verbose, int idleTime,
                 int frameSize, DefaultChannelGroup channelGroup,
                 AkibanCommandHandler.FormatGetter formatGetter) {
             this.frameSize = frameSize;
             responseEncoder = new MemcachedResponseEncoder();
-            commandHandler = new AkibanCommandHandler(store, channelGroup, formatGetter);
+            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter);
         }
 
         public final ChannelPipeline getPipeline() throws Exception {
@@ -221,12 +229,12 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         private final MemcachedBinaryCommandDecoder commandDecoder;
         private final MemcachedBinaryResponseEncoder responseEncoder;
 
-        public BinaryPipelineFactory(Store store, boolean verbose,
+        public BinaryPipelineFactory(HapiProcessor hapiProcessor, boolean verbose,
                 int idleTime, DefaultChannelGroup channelGroup,
                 AkibanCommandHandler.FormatGetter formatGetter) {
             commandDecoder = new MemcachedBinaryCommandDecoder();
             responseEncoder = new MemcachedBinaryResponseEncoder();
-            commandHandler = new AkibanCommandHandler(store, channelGroup, formatGetter);
+            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter);
         }
 
         public ChannelPipeline getPipeline() throws Exception {

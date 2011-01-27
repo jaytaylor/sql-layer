@@ -47,14 +47,14 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
      */
-    private final Store store;
+    private final HapiProcessor hapiProcessor;
     private final DefaultChannelGroup channelGroup;
     private static final Log LOG = LogFactory.getLog(MemcacheService.class);
     private final FormatGetter formatGetter;
 
-    public AkibanCommandHandler(Store store, DefaultChannelGroup channelGroup, FormatGetter formatGetter)
+    public AkibanCommandHandler(HapiProcessor hapiProcessor, DefaultChannelGroup channelGroup, FormatGetter formatGetter)
     {
-        this.store = store;
+        this.hapiProcessor = hapiProcessor;
         this.channelGroup = channelGroup;
         this.session = new SessionImpl();
         this.formatGetter = formatGetter;
@@ -235,14 +235,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         byte[] result_bytes;
         try {
             AkibanByteOutputStream outputStream = new AkibanByteOutputStream(1024);
-            HapiProcessorHelper.processRequest(
-                    store,
-                    session,
-                    request,
-                    (ByteBuffer) context.getAttachment(),
-                    formatGetter.getFormat(),
-                    outputStream
-            );
+            hapiProcessor.processRequest(session, request, formatGetter.getFormat(), outputStream);
             result_bytes = outputStream.getBytesNoCopy();
         } catch (Exception e) {
             result_bytes = ("error: " + e.getMessage()).getBytes();
