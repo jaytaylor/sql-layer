@@ -1,12 +1,12 @@
 package com.akiban.cserver.service.memcache;
 
-import java.nio.ByteBuffer;
+import java.io.ByteArrayOutputStream;
 import java.util.Map;
 import java.util.Set;
 
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import com.akiban.cserver.service.session.SynchronizedSession;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.channel.Channel;
@@ -20,7 +20,6 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
 import com.akiban.cserver.api.HapiProcessor;
-import com.akiban.cserver.store.Store;
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.LocalCacheElement;
@@ -39,24 +38,29 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
-    private static final String PAYLOAD = "PAYLOAD";
     private static final String MODULE = AkibanCommandHandler.class.toString();
-
+    private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
     interface FormatGetter {
-        HapiProcessor.Outputter<byte[]> getFormat();
+        HapiProcessor.Outputter getFormat();
     }
+    private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
+        @Override
+        protected Session initialValue() {
+            return new SessionImpl();
+        }
+    };
     /**
      * State variables that are universal for entire service.
      * The handler *must* be declared with a ChannelPipelineCoverage of "all".
      */
-    private final Store store;
+    private final HapiProcessor hapiProcessor;
     private final DefaultChannelGroup channelGroup;
     private static final Log LOG = LogFactory.getLog(MemcacheService.class);
     private final FormatGetter formatGetter;
 
-    public AkibanCommandHandler(Store store, DefaultChannelGroup channelGroup, FormatGetter formatGetter)
+    public AkibanCommandHandler(HapiProcessor hapiProcessor, DefaultChannelGroup channelGroup, FormatGetter formatGetter)
     {
-        this.store = store;
+        this.hapiProcessor = hapiProcessor;
         this.channelGroup = channelGroup;
         this.formatGetter = formatGetter;
     }
@@ -66,12 +70,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      */
     @Override
     public void channelOpen(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
-        ByteBuffer payload = ByteBuffer.allocate(65536);
-
-        SynchronizedSession session = new SynchronizedSession(new SessionImpl());
-        session.put(MODULE, PAYLOAD, payload);
-
-        context.setAttachment(session);
         channelGroup.add(context.getChannel());
     }
 
@@ -80,7 +78,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      */
     @Override
     public void channelClosed(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
-        context.setAttachment(null);
         channelGroup.remove(context.getChannel());
     }
     
@@ -231,29 +228,23 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) throws Exception {
-        String[] keys = new String[command.keys.size()];
-        keys = command.keys.toArray(keys);
+    protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
+        String key = command.keys.get(0);
 
-        byte[] key = keys[0].getBytes();
-        final String request = new String(key);
-        SynchronizedSession session = (SynchronizedSession) context.getAttachment();
-        byte[] result_bytes = session.run(new SynchronizedSession.SessionRunnable<byte[], RuntimeException>() {
-            @Override
-            public byte[] run(SynchronizedSession self) throws RuntimeException {
-                return HapiProcessorImpl.processRequest(
-                        store,
-                        self,
-                        request,
-                        self.<ByteBuffer>get(MODULE, PAYLOAD),
-                        formatGetter.getFormat()
-                );
-            }
-        });
+        final Session sessionLocal = session.get();
+        byte[] result_bytes;
+        try {
+            HapiGetRequest request = ParsedHapiGetRequest.parse(key);
+            ByteArrayOutputStream outputStream = getOutputStream(sessionLocal);
+            hapiProcessor.processRequest(sessionLocal, request, formatGetter.getFormat(), outputStream);
+            result_bytes = outputStream.toByteArray();
+        } catch (Exception e) {
+            result_bytes = ("error: " + e.getMessage()).getBytes();
+        }
         
         CacheElement[] results = null;
         if(result_bytes != null) {
-            LocalCacheElement element = new LocalCacheElement(keys[0]);
+            LocalCacheElement element = new LocalCacheElement(key);
             element.setData(result_bytes);
             results = new CacheElement[] { element };
         }
@@ -262,5 +253,15 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
     }
 
-    
+    private static ByteArrayOutputStream getOutputStream(Session session) {
+        ByteArrayOutputStream outputStream = session.get(MODULE, OUTPUTSTREAM_CACHE);
+        if (outputStream == null) {
+            outputStream = new ByteArrayOutputStream(1024);
+            session.put(MODULE, OUTPUTSTREAM_CACHE, outputStream);
+        }
+        else {
+            outputStream.reset();
+        }
+        return outputStream;
+    }
 }

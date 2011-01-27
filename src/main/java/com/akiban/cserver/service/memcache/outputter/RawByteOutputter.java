@@ -5,9 +5,11 @@ import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiProcessor;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
-public final class RawByteOutputter implements HapiProcessor.Outputter<byte[]> {
+public final class RawByteOutputter implements HapiProcessor.Outputter{
     private static final RawByteOutputter instance = new RawByteOutputter();
 
     public static RawByteOutputter instance() {
@@ -17,21 +19,9 @@ public final class RawByteOutputter implements HapiProcessor.Outputter<byte[]> {
     private RawByteOutputter() {}
 
     @Override
-    public byte[] output(RowDefCache rowDefCache, List<RowData> rows) {
-        final int initialSize = estimateIntializeBufferSize(rows);
-        ByteArrayOutputStream output = new ByteArrayOutputStream(initialSize);
+    public void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
         for(RowData data : rows) {
-            output.write(data.getBytes(), data.getBufferStart(), data.getBufferLength());
+            outputStream.write(data.getBytes(), data.getBufferStart(), data.getBufferLength());
         }
-        return output.toByteArray();
-    }
-
-    @Override
-    public byte[] error(String message) {
-        return message.getBytes();
-    }
-
-    private static int estimateIntializeBufferSize(List<RowData> rows) {
-        return rows.size() == 0 ? 1024 : rows.get(0).getBytes().length;
     }
 }

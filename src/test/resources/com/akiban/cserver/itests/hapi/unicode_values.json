@@ -1,0 +1,33 @@
+{
+
+"comment" : "Can the unicode snowman really be a value?!",
+
+"passing_default" : false,
+
+"setup" : {
+    "tables" : [
+        [ "t1",
+           "snowman char(1) key" ]
+    ],
+    "write_rows" : {
+        "t1" : [
+            ["☃"]
+        ]
+    }
+},
+
+"tests" : {
+    "unicode fun" : {
+        "get"           : "test:t1:c1:☃",
+        "expect result" :
+        {
+            "@t1" : [
+                {
+                    "snowman" : "☃"
+                }
+            ]
+        }
+    }
+}
+
+}
