@@ -62,6 +62,9 @@ if [ ${PUBLISH} -gt 0 ];then
 	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${rev}
 	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${rev}/* /var/www/latest/"
 	ssh skeswani@172.16.20.117 /var/www/rpms/createrepo.sh
+	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 "mkdir -p /var/www/rpms/akiban-server/${rev}"
+	scp -i ~/.ssh/akibanweb -r rpmbuild/RPMS/noarch/*.rpm ubuntu@50.16.188.89:/var/www/rpms/akiban-server/${rev}
+	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 /var/www/rpms/createrepo.sh
 fi
 }
 
