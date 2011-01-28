@@ -292,6 +292,9 @@
                 <excludes>
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/**</exclude>
                 </excludes>
+                <properties>
+                    <year>2011</year>
+                </properties>
             </configuration>
             <executions>
                 <execution>
