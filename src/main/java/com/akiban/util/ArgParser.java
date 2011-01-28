@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 2004 Persistit Corporation. All Rights Reserved.
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
  *
- * The Java source code is the confidential and proprietary information
- * of Persistit Corporation ("Confidential Information"). You shall
- * not disclose such Confidential Information and shall use it only in
- * accordance with the terms of the license agreement you entered into
- * with Persistit Corporation.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
  *
- * PERSISTIT CORPORATION MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE
- * SUITABILITY OF THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT
- * NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR
- * A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. PERSISTIT CORPORATION SHALL
- * NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY LICENSEE AS A RESULT OF USING,
- * MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
 package com.akiban.util;

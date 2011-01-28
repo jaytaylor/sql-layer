@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.cserver.service;
 
 import java.util.ArrayList;
@@ -12,7 +27,6 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
-import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.tree.TreeService;
@@ -69,11 +83,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     }
 
     @Override
-    public LoggingService getLogging() {
-        return getService(LoggingService.class);
-    }
-
-    @Override
     public SessionService getSessionService() {
         return getService(SessionService.class);
     }
@@ -102,8 +111,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.configurationService(), jmxRegistry);
 
         jmxRegistry.register(this);
-        ConfigurationService configService = getServiceAsService(ConfigurationService.class).cast();
-        servicesDebugHooks(configService);
         
         // TODO -
         // Temporarily I moved this so that services can refer to their predecessors
@@ -112,7 +119,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         // I'd like to brainstorm a better approach. -- Peter
         
         setServiceManager(this);
-        startAndPut(factory.loggingService(), jmxRegistry);
         startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
@@ -121,21 +127,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.chunkserverService(), jmxRegistry);
         startAndPut(factory.memcacheService(), jmxRegistry);
         afterStart();
-    }
-
-    private void servicesDebugHooks(ConfigurationService configService)
-    throws InterruptedException
-    {
-        if (configService.getProperty("services", "start_blocked", "false").equalsIgnoreCase("true")) {
-            System.out.println("BLOCKING BLOCKING BLOCKING BLOCKING BLOCKING");
-            System.out.println("  CServer is waiting for persmission to");
-            System.out.println("  proceed from JMX.");
-            System.out.println("BLOCKING BLOCKING BLOCKING BLOCKING BLOCKING");
-            blockerLatch.await();
-        }
-        else {
-            blockerLatch.countDown();
-        }
     }
 
     private void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {

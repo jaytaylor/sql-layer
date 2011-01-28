@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.cserver.api;
 
 import java.nio.ByteBuffer;
@@ -45,12 +60,11 @@ import com.akiban.cserver.api.dml.scan.RowOutputException;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
 import com.akiban.cserver.api.dml.scan.ScanRequest;
 import com.akiban.cserver.encoding.EncodingException;
-import com.akiban.cserver.service.logging.AkibanLogger;
-import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
+import org.apache.log4j.Logger;
 
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
@@ -59,12 +73,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final Object OPEN_CURSORS = new Object();
 
-    private final AkibanLogger logger;
-
-    public DMLFunctionsImpl(LoggingService loggingService) {
-        super();
-        logger = loggingService.getLogger(DMLFunctionsImpl.class);
-    }
+    private final static Logger logger = Logger.getLogger(DMLFunctionsImpl.class);
 
     @Override
     public TableStatistics getTableStatistics(Session session, TableId tableId,

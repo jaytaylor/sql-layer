@@ -1,4 +1,19 @@
 /**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
+/**
  * 
  */
 package com.akiban.cserver.store;
@@ -293,7 +308,9 @@ public class PersistitStoreRowCollector implements RowCollector {
         for (int s = 0; s < segments.size(); s++) {
             HKeySegment hKeySegment = segments.get(s);
             RowDef def = store.getRowDefCache().getRowDef(hKeySegment.table().getTableId());
-            terms[t++] = KeyFilter.simpleTerm(def.getOrdinal());
+            key.clear().reset().append(def.getOrdinal()).append(def.getOrdinal());
+            // using termFromKeySegments avoids allocating a new Key object
+            terms[t++] = KeyFilter.termFromKeySegments(key, key, true, true);
             List<HKeyColumn> segmentColumns = hKeySegment.columns();
             for (int c = 0; c < segmentColumns.size(); c++) {
                 HKeyColumn segmentColumn = segmentColumns.get(c);
