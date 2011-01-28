@@ -106,12 +106,9 @@ string returns [String string]
 S_CHARS	: S_CHAR S_CHAR* ;
 
 fragment
-S_CHAR 	: ('0'..'9'|'a'..'z'|'A'..'Z');
+S_CHAR 	: ('0'..'9'|'a'..'z'|'A'..'Z'|'.'|'-'|'*'|'_');
 
-Q_CHARS	: (URL_CHAR | URL_ESC)+;
-
-fragment
-URL_CHAR: '.'|'-'|'_'|'+';
+Q_CHARS	: ('+' | URL_ESC)+;
 
 fragment
 URL_ESC	: '%' HEX_DIGIT HEX_DIGIT;
