@@ -117,8 +117,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.configurationService(), jmxRegistry);
 
         jmxRegistry.register(this);
-        ConfigurationService configService = getServiceAsService(ConfigurationService.class).cast();
-        servicesDebugHooks(configService);
         
         // TODO -
         // Temporarily I moved this so that services can refer to their predecessors
@@ -136,21 +134,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.chunkserverService(), jmxRegistry);
         startAndPut(factory.memcacheService(), jmxRegistry);
         afterStart();
-    }
-
-    private void servicesDebugHooks(ConfigurationService configService)
-    throws InterruptedException
-    {
-        if (configService.getProperty("services", "start_blocked", "false").equalsIgnoreCase("true")) {
-            System.out.println("BLOCKING BLOCKING BLOCKING BLOCKING BLOCKING");
-            System.out.println("  CServer is waiting for persmission to");
-            System.out.println("  proceed from JMX.");
-            System.out.println("BLOCKING BLOCKING BLOCKING BLOCKING BLOCKING");
-            blockerLatch.await();
-        }
-        else {
-            blockerLatch.countDown();
-        }
     }
 
     private void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
