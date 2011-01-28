@@ -1,6 +1,5 @@
 package com.akiban.cserver.service.memcache.outputter;
 
-import com.akiban.ais.model.TableName;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
