@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 import org.apache.commons.logging.Log;
@@ -246,13 +247,9 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         String key = command.keys.get(0);
 
-        final Session sessionLocal = session.get();
         byte[] result_bytes;
         try {
-            HapiGetRequest request = ParsedHapiGetRequest.parse(key);
-            ByteArrayOutputStream outputStream = getOutputStream(sessionLocal);
-            hapiProcessor.processRequest(sessionLocal, request, formatGetter.getFormat(), outputStream);
-            result_bytes = outputStream.toByteArray();
+            result_bytes = getBytesForGets(session.get(), key, hapiProcessor, formatGetter.getFormat());
         } catch (Exception e) {
             result_bytes = ("error: " + e.getMessage()).getBytes();
         }
@@ -266,6 +263,16 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
+    }
+
+    final static byte[] getBytesForGets(Session sessionLocal, String key,
+                                        HapiProcessor hapiProcessor, HapiProcessor.Outputter outputter)
+            throws HapiRequestException
+    {
+        HapiGetRequest request = ParsedHapiGetRequest.parse(key);
+        ByteArrayOutputStream outputStream = getOutputStream(sessionLocal);
+        hapiProcessor.processRequest(sessionLocal, request, outputter, outputStream);
+        return outputStream.toByteArray();
     }
 
     private static ByteArrayOutputStream getOutputStream(Session session) {
