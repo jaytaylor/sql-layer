@@ -15,13 +15,14 @@
 
 package com.akiban.cserver;
 
-import com.akiban.cserver.store.Store;
+import com.akiban.cserver.service.ServiceManager;
 
 public interface CustomQuery {
 
-    public void setStore(final Store store);
+    public void setServiceManager(final ServiceManager serviceManager);
     public void setParameters(Object[] parameters);
     public String getResult();
     public void runQuery() throws Exception;
+    public void stopQuery() throws Exception;
     
 }

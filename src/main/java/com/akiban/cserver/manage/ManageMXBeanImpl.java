@@ -18,28 +18,31 @@ package com.akiban.cserver.manage;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.log4j.Logger;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CustomQuery;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.Store;
 import com.akiban.util.Strings;
-import org.apache.log4j.Logger;
 
-public class ManageMXBeanImpl implements ManageMXBean
-{
+public class ManageMXBeanImpl implements ManageMXBean {
     private static final Logger LOG = Logger.getLogger(ManageMXBeanImpl.class);
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     private final String versionString;
     private final CServer cserver;
-    
-    private Class customClass;
+
+    private Class<?> customClass;
+    private AtomicReference<CustomQuery> runningQuery = new AtomicReference<CustomQuery>();
 
     public ManageMXBeanImpl(final CServer cserver) {
         this.cserver = cserver;
         String version;
         try {
-            version = Strings.join(Strings.dumpResource(null, VERSION_STRING_FILE));
+            version = Strings.join(Strings.dumpResource(null,
+                    VERSION_STRING_FILE));
         } catch (IOException e) {
             LOG.warn("Couldn't read resource file");
             version = "Error: " + e;
@@ -119,39 +122,90 @@ public class ManageMXBeanImpl implements ManageMXBean
         getStore().flushIndexes(new SessionImpl());
     }
 
-   
-    public String loadCustomQuery(final String className) {
+    @Override
+    public String loadCustomQuery(final String className, String path) {
         try {
             customClass = null;
-            final URL url = new URL("file:///tmp/custom-classes/");
-            final ClassLoader cl = new URLClassLoader(new URL[]{url});
+            URL[] urls;
+            if (path == null) {
+                urls = new URL[] { new URL("file:///tmp/custom-classes/") };
+            } else {
+                String[] pathElements = path.split(":");
+                urls = new URL[pathElements.length];
+                for (int i = 0; i < pathElements.length; i++) {
+                    urls[i] = new URL("file://" + pathElements[i]);
+                }
+            }
+            final ClassLoader cl = new URLClassLoader(urls);
             final Class<?> c = cl.loadClass(className);
             if (CustomQuery.class.isAssignableFrom(c)) {
                 customClass = c;
                 return "OK";
             } else {
-                return c.getSimpleName() + " does not implement Runnable";
+                return c.getSimpleName() + " does not implement CustomQuery";
             }
         } catch (Exception e) {
             e.printStackTrace();
             return e.toString();
         }
     }
-    
-    public String runCustomQuery() {
-        try {
-            final CustomQuery cq = (CustomQuery)(customClass.newInstance());
-            cq.setStore(cserver.getServiceManager().getStore());
-            cq.runQuery();
-            return cq.getResult();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return e.toString();
+
+    @Override
+    public String runCustomQuery(final String params) {
+        if (runningQuery.get() == null) {
+            try {
+                final CustomQuery cq = (CustomQuery) (customClass.newInstance());
+                cq.setServiceManager(cserver.getServiceManager());
+                cq.setParameters(params.split(" "));
+                runningQuery.set(cq);
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            cq.runQuery();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, "Run " + customClass.getSimpleName()).start();
+                return "Running - use showCustomQueryResult to view status";
+            } catch (Exception e) {
+                runningQuery.set(null);
+                e.printStackTrace();
+                return e.toString();
+            }
+        } else {
+            return "Already running - use stopCustomQuery to stop";
         }
     }
 
-    private Store getStore()
-    {
+    @Override
+    public String stopCustomQuery() {
+        CustomQuery cq = runningQuery.get();
+        if (cq == null) {
+            return "No running query";
+        } else {
+            try {
+                cq.stopQuery();
+                runningQuery.set(null);
+                return cq.getResult();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return e.toString();
+            }
+        }
+    }
+    
+    @Override
+    public String showCustomQueryResult() {
+        CustomQuery cq = runningQuery.get();
+        if (cq == null) {
+            return "No running query";
+        } else {
+            return cq.getResult();
+        }
+    }
+
+    private Store getStore() {
         return cserver.getServiceManager().getStore();
     }
 

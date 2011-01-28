@@ -308,7 +308,9 @@ public class PersistitStoreRowCollector implements RowCollector {
         for (int s = 0; s < segments.size(); s++) {
             HKeySegment hKeySegment = segments.get(s);
             RowDef def = store.getRowDefCache().getRowDef(hKeySegment.table().getTableId());
-            terms[t++] = KeyFilter.simpleTerm(def.getOrdinal());
+            key.clear().reset().append(def.getOrdinal()).append(def.getOrdinal());
+            // using termFromKeySegments avoids allocating a new Key object
+            terms[t++] = KeyFilter.termFromKeySegments(key, key, true, true);
             List<HKeyColumn> segmentColumns = hKeySegment.columns();
             for (int c = 0; c < segmentColumns.size(); c++) {
                 HKeyColumn segmentColumn = segmentColumns.get(c);

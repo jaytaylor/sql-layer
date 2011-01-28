@@ -44,9 +44,13 @@ public interface ManageMXBean {
 
     // TODO - temporary
     //
-    String loadCustomQuery(final String className);
+    String loadCustomQuery(String className, String path);
 
-    String runCustomQuery();
+    String runCustomQuery(String params);
+    
+    String showCustomQueryResult();
+    
+    String stopCustomQuery();
 
     String getVersionString();
 }

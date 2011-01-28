@@ -1104,7 +1104,6 @@ public class PersistitStore implements CServerConstants, Store {
                     break;
                 }
             }
-
         if (leafRowDef == null) {
             throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE,
                     leafTableName + " in group");
@@ -1119,7 +1118,7 @@ public class PersistitStore implements CServerConstants, Store {
         } else {
             final Object[] startValues = new Object[groupRowDef.getFieldCount()];
             startValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = least;
-            start = new RowData(new byte[1024]);
+            start = new RowData(new byte[128]);
             start.createRow(groupRowDef, startValues);
         }
 
@@ -1128,7 +1127,7 @@ public class PersistitStore implements CServerConstants, Store {
         } else {
             final Object[] endValues = new Object[groupRowDef.getFieldCount()];
             endValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = greatest;
-            end = new RowData(new byte[1024]);
+            end = new RowData(new byte[128]);
             end.createRow(groupRowDef, endValues);
         }
 
