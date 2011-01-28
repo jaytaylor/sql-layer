@@ -32,6 +32,10 @@ public interface ManageMXBean {
     String loadCustomQuery(String className, String path);
 
     String runCustomQuery(String params);
+    
+    String showCustomQueryResult();
+    
+    String stopCustomQuery();
 
     String getVersionString();
 }

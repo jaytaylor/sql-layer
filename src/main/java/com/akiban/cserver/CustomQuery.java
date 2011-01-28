@@ -8,5 +8,6 @@ public interface CustomQuery {
     public void setParameters(Object[] parameters);
     public String getResult();
     public void runQuery() throws Exception;
+    public void stopQuery() throws Exception;
     
 }
