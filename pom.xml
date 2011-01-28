@@ -291,6 +291,8 @@
                 <failIfMissing>true</failIfMissing>
                 <excludes>
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/**</exclude>
+                    <exclude>src/test/resources/com/akiban/ais/ddl/**</exclude>
+                    <exclude>**/*.sql</exclude>
                 </excludes>
                 <properties>
                     <year>2011</year>
