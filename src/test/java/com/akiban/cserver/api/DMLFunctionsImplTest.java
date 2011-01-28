@@ -173,19 +173,6 @@ public final class DMLFunctionsImplTest extends CServerTestCase {
         }
     }
 
-    private class TestDML extends DMLFunctionsImpl {
-        private final StringRowCollector collector;
-
-        private TestDML(String... rowsToCollect) {
-            collector = new StringRowCollector(1, rowsToCollect);
-        }
-
-        @Override
-        protected RowCollector getRowCollector(final Session session, ScanRequest request) {
-            return collector;
-        }
-    }
-
     @Test(expected= CursorIsFinishedException.class)
     public void scansNoLimit() throws InvalidOperationException {
         final TestingStruct s = new TestingStruct("Hi", "there", "pooh bear", "how are you there");
