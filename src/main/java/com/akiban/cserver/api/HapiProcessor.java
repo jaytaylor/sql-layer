@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface HapiProcessor {
     public interface Outputter {
-        void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException;
+        void output(HapiGetRequest request, RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException;
     }
 	public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
             throws HapiRequestException;

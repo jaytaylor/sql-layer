@@ -2,6 +2,7 @@ package com.akiban.cserver.service.memcache.outputter;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ public final class RowDataStringOutputter implements HapiProcessor.Outputter {
     private RowDataStringOutputter() {}
     
     @Override
-    public void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiGetRequest request, RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
         PrintWriter writer = new PrintWriter(outputStream);
         for (RowData data : rows) {
             String toString = data.toString(rowDefCache);
