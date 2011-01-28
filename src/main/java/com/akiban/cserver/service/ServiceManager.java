@@ -17,7 +17,6 @@ package com.akiban.cserver.service;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
-import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.tree.TreeService;
@@ -35,8 +34,6 @@ public interface ServiceManager extends ServiceManagerMXBean {
     CServer getCServer();
 
     Store getStore();
-
-    LoggingService getLogging();
     
     SessionService getSessionService();
     

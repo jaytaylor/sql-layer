@@ -20,8 +20,6 @@ import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.config.ConfigurationServiceImpl;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
-import com.akiban.cserver.service.logging.LoggingService;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.memcache.MemcacheServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
@@ -38,7 +36,6 @@ import com.akiban.cserver.store.Store;
 public class DefaultServiceFactory implements ServiceFactory {
 
     private Service<JmxRegistryService> jmxRegistryService;
-    private Service<LoggingService> loggingService;
     private Service<SessionService> sessionService;
     private Service<ConfigurationService> configurationService;
     private Service<NetworkService> networkService;
@@ -55,14 +52,6 @@ public class DefaultServiceFactory implements ServiceFactory {
             configurationService = new ConfigurationServiceImpl();
         }
         return configurationService;
-    }
-
-    @Override
-    public Service<LoggingService> loggingService() {
-        if (loggingService == null) {
-            loggingService = new LoggingServiceImpl();
-        }
-        return loggingService;
     }
 
     @Override

@@ -18,7 +18,6 @@ package com.akiban.cserver.service;
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
-import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.session.SessionService;
@@ -33,8 +32,6 @@ public interface ServiceFactory
     Service<ConfigurationService> configurationService();
     
     Service<SessionService> sessionService();
-
-    Service<LoggingService> loggingService();
 
     Service<NetworkService> networkService();
 
