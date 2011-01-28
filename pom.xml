@@ -288,6 +288,10 @@
             <artifactId>maven-license-plugin</artifactId>
             <configuration>
                 <header>src/etc/header.txt</header>
+                <failIfMissing>true</failIfMissing>
+                <excludes>
+                    <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/**</exclude>
+                </excludes>
             </configuration>
             <executions>
                 <execution>
