@@ -40,7 +40,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
     private static final String MODULE = AkibanCommandHandler.class.toString();
     private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
-    interface FormatGetter {
+    static interface FormatGetter {
         HapiProcessor.Outputter getFormat();
     }
     private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
