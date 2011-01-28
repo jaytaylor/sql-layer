@@ -55,7 +55,7 @@
 
 "tests" : {
     "from root" : {
-        "get"           : "coi:customer:cid=1",
+        "get"           : "coi:customer:cid=11",
         "expect result" :
         {
             "@customer" :

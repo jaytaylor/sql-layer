@@ -27,7 +27,7 @@
 
 "tests" : {
     "child names" : {
-        "get"           : "'%40schema':'%3Acustomers':'%40id'=1",
+        "get"           : "'%40schema':'%3Acustomers':'%40id'=11",
         "expect result" :
         {
             "@:customers" :
