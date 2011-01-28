@@ -68,7 +68,6 @@ import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.UnitTestServiceFactory;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
@@ -147,7 +146,7 @@ public class ApiTestBase extends CServerTestCase {
     public final void startTestServices() throws Exception {
         sm = new TestServiceManager( );
         sm.startServices();
-        dml = new DMLFunctionsImpl(new LoggingServiceImpl());
+        dml = new DMLFunctionsImpl();
         ddl = new DDLFunctionsImpl();
     }
 

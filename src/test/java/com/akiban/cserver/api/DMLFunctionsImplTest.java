@@ -35,7 +35,6 @@ import com.akiban.cserver.api.dml.scan.CursorId;
 import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
 import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
 import com.akiban.cserver.api.dml.scan.ScanRequest;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
 
@@ -178,7 +177,6 @@ public final class DMLFunctionsImplTest extends CServerTestCase {
         private final StringRowCollector collector;
 
         private TestDML(String... rowsToCollect) {
-            super(new LoggingServiceImpl());
             collector = new StringRowCollector(1, rowsToCollect);
         }
 

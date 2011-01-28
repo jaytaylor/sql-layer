@@ -25,8 +25,6 @@ import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.service.logging.LoggingService;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 public final class ApiTest extends CServerTestCase {
@@ -36,8 +34,7 @@ public final class ApiTest extends CServerTestCase {
         final DDLFunctionsImpl ddl;
         
         private ApiPair() {
-            LoggingService loggingService = new LoggingServiceImpl();
-            dml = new DMLFunctionsImpl(loggingService);
+            dml = new DMLFunctionsImpl();
             ddl = new DDLFunctionsImpl();
         }
     }

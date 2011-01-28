@@ -27,7 +27,6 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.jmx.JmxRegistryService;
-import com.akiban.cserver.service.logging.LoggingService;
 import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.session.SessionService;
 import com.akiban.cserver.service.tree.TreeService;
@@ -84,11 +83,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     }
 
     @Override
-    public LoggingService getLogging() {
-        return getService(LoggingService.class);
-    }
-
-    @Override
     public SessionService getSessionService() {
         return getService(SessionService.class);
     }
@@ -127,7 +121,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         // I'd like to brainstorm a better approach. -- Peter
         
         setServiceManager(this);
-        startAndPut(factory.loggingService(), jmxRegistry);
         startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
