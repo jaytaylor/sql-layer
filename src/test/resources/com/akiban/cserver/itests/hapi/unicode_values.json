@@ -2,8 +2,6 @@
 
 "comment" : "Can the unicode snowman really be a value?!",
 
-"passing_default" : false,
-
 "setup" : {
     "tables" : [
         [ "t1",
@@ -18,12 +16,12 @@
 
 "tests" : {
     "unicode fun" : {
-        "get"           : "test:t1:c1:☃",
+        "get"           : "test:t1:snowman='%E2%98%83'",
         "expect result" :
         {
             "@t1" : [
                 {
-                    "snowman" : "☃"
+                    "snowman" : "\u2603"
                 }
             ]
         }

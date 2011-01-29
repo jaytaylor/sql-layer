@@ -398,7 +398,12 @@ public final class JsonHapiIT extends ApiTestBase {
             assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);
             assertNotNull("null result", result);
             assertTrue("empty result: >" + result + "< ", result.trim().length() > 1);
-            final Object actual = new JSONTokener(result).nextValue();
+            final Object actual;
+            try {
+                actual = new JSONTokener(result).nextValue();
+            } catch (JSONException e) {
+                throw new RuntimeException(result, e);
+            }
             assertEquals("GET response", jsonString(runInfo.expect), jsonString(actual));
         } catch (HapiRequestException e) {
             if(runInfo.expect != null) {

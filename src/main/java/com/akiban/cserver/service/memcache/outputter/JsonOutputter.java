@@ -5,7 +5,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.util.AkibanAppender;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -38,8 +40,9 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
     }
     
     @Override
-    public void output(RowDefCache cache, List<RowData> list, OutputStream outputStream)  throws IOException {
+    public void output(HapiGetRequest request, RowDefCache cache, List<RowData> list, OutputStream outputStream)  throws IOException {
         PrintWriter pr = new PrintWriter(outputStream);
+        AkibanAppender appender = AkibanAppender.of(pr);
         Stack<Integer> defIdStack = new Stack<Integer>();
         Stack<HashSet<String>> sawChildStack = new Stack<HashSet<String>>();
         
@@ -105,9 +108,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 sawChildStack.add(new HashSet<String>());
             }
 
-            String json_row = data.toJSONString(cache);
             pr.write('{');
-            pr.print(json_row);
+            data.toJSONString(cache, appender);
         }
 
         if (list != null && list.isEmpty() == false) {

@@ -7,6 +7,7 @@ import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public final class DecimalEncoder extends EncodingBase<BigDecimal> {
@@ -100,7 +101,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         if (location == 0) {
             key.append(null);
         } else {
-            StringBuilder sb = new StringBuilder();
+            AkibanAppender sb = AkibanAppender.of(new StringBuilder());
             toString(fieldDef, rowData, sb, Quote.NONE);
 
             BigDecimal decimal = new BigDecimal(sb.toString());
@@ -239,7 +240,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
 
     @Override
     public void toString(FieldDef fieldDef, RowData rowData,
-                         StringBuilder sb, final Quote quote) {
+                         AkibanAppender sb, final Quote quote) {
         decodeAndParse(fieldDef, rowData, sb);
     }
 
@@ -254,7 +255,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
      * @throws EncodingException if the string can't be parsed to a BigDecimal; the exception's cause will be a
      * NumberFormatException
      */
-    private static BigDecimal decodeAndParse(FieldDef fieldDef, RowData rowData, StringBuilder sb) {
+    private static void decodeAndParse(FieldDef fieldDef, RowData rowData, AkibanAppender sb) {
         final int precision = fieldDef.getTypeParameter1().intValue();
         final int scale = fieldDef.getTypeParameter2().intValue();
         final long locationAndOffset = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
@@ -262,7 +263,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         final byte[] from = rowData.getBytes();
 
         try {
-            return decodeAndParse(from, location, precision, scale, sb);
+            decodeAndParse(from, location, precision, scale, sb);
         } catch (NumberFormatException e) {
             StringBuilder errSb = new StringBuilder();
             errSb.append("in field[");
@@ -271,7 +272,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             errSb.append(fieldDef.getTypeParameter1()).append(',').append(fieldDef.getTypeParameter2());
             errSb.append(")] 0x");
             final int bytesLen = (int) (locationAndOffset >>> 32);
-            CServerUtil.hex(errSb, rowData.getBytes(), location, bytesLen);
+            CServerUtil.hex(AkibanAppender.of(errSb), rowData.getBytes(), location, bytesLen);
             errSb.append(": ").append( e.getMessage() );
             throw new EncodingException(errSb.toString(), e);
         }
@@ -289,9 +290,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
      * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
      * tried to parse
      */
-    static BigDecimal decodeAndParse(byte[] from, int location, int precision, int scale, StringBuilder sb) {
-        final int sbInitialLen = sb.length();
-
+    static void decodeAndParse(byte[] from, int location, int precision, int scale, AkibanAppender sb) {
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
         final int intPartial = intCount % DECIMAL_DIGIT_PER;
@@ -349,19 +348,18 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
 
         // Restore high bit
         from[location] ^= 0x80;
+    }
 
-        final String createdStr = sb.substring(sbInitialLen);
-
+    @Override
+    public BigDecimal toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
+        StringBuilder sb = new StringBuilder(fieldDef.getMaxStorageSize());
+        decodeAndParse(fieldDef, rowData, AkibanAppender.of(sb));
+        final String createdStr = sb.toString();
         try {
             return new BigDecimal(createdStr);
         } catch (NumberFormatException e) {
             throw new NumberFormatException(createdStr);
         }
-    }
-
-    @Override
-    public BigDecimal toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        return decodeAndParse(fieldDef, rowData, new StringBuilder(fieldDef.getMaxStorageSize()));
     }
 
     @Override

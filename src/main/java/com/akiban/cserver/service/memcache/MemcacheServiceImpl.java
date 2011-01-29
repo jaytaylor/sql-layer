@@ -152,7 +152,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
 
         try {
-            outputter.output(cache, list, outputStream);
+            outputter.output(request, cache, list, outputStream);
         } catch (IOException e) {
             throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }

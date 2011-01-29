@@ -1,5 +1,7 @@
 package com.akiban.cserver;
 
+import com.akiban.util.AkibanAppender;
+
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
@@ -283,7 +285,7 @@ public class CServerUtil {
 
     public static String hex(byte[] bytes, int start, int length) {
         final StringBuilder sb = new StringBuilder(length * 2);
-        hex(sb, bytes, start, length);
+        hex(AkibanAppender.of(sb), bytes, start, length);
         return sb.toString();
     }
 
@@ -294,13 +296,12 @@ public class CServerUtil {
         return sb;
     }
 
-    public static StringBuilder hex(StringBuilder sb, byte[] bytes, int start,
+    public static void hex(AkibanAppender sb, byte[] bytes, int start,
             int length) {
         for (int i = start; i < start + length; i++) {
             sb.append(HEX_DIGITS[(bytes[i] & 0xF0) >>> 4]);
             sb.append(HEX_DIGITS[(bytes[i] & 0x0F)]);
         }
-        return sb;
     }
 
     public static void printRuntimeInfo() {
