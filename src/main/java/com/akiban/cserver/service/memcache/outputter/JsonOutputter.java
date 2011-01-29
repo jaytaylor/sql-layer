@@ -42,10 +42,19 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
     @Override
     public void output(HapiGetRequest request, RowDefCache cache, List<RowData> list, OutputStream outputStream)  throws IOException {
         PrintWriter pr = new PrintWriter(outputStream);
+
+        if (list.isEmpty()) {
+            pr.write("{\"@");
+            pr.write(request.getTable());
+            pr.write("\":[]}");
+            pr.flush();
+            return;
+        }
+
         AkibanAppender appender = AkibanAppender.of(pr);
         Stack<Integer> defIdStack = new Stack<Integer>();
         Stack<HashSet<String>> sawChildStack = new Stack<HashSet<String>>();
-        
+
         for(RowData data : list) {
             final int def_id = data.getRowDefId();
             final RowDef def = cache.getRowDef(def_id);
@@ -57,7 +66,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 sawChildStack.add(new HashSet<String>());
                 pr.write("{\"@");
                 pr.print(def.getTableName());
-                pr.write("\":");
+                pr.write("\":[");
             }
             else if(defIdStack.peek().equals(def_id)) {
                 // another leaf on current branch (add to current open array)
@@ -124,7 +133,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 writeEmptyChildren(cache, pr, d, sawChildStack.pop());
                 pr.write('}');
             }
-            pr.write('}');
+            pr.write("]}");
         }
         pr.flush();
     }
