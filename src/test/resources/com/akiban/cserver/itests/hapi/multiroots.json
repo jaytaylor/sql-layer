@@ -38,7 +38,7 @@
 
 "tests" : {
     "with orders" : {
-        "get"           : "coi:customer:cid=11",
+        "get"           : "coi:customer:status=1",
         "expect result" :
         {
             "@customer" :
