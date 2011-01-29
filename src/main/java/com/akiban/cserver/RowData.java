@@ -508,12 +508,6 @@ public class RowData {
                 sb.write("null");
             }
         }
-//        } catch(Exception e) {
-//            sb.setLength(0);
-//            sb.append("\"hex_row\" : \"");
-//            CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
-//            sb.append("\"");
-//        }
     }
 
     public String explain() {
