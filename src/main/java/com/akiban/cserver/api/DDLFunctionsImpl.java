@@ -15,12 +15,15 @@
 
 package com.akiban.cserver.api;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
@@ -145,13 +148,13 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
-    public void createIndexes(final Session session, List<Index> indexesToAdd)
+    public void createIndexes(final Session session, Collection<Index> indexesToAdd)
             throws InvalidOperationException {
         if (indexesToAdd.isEmpty() == true) {
             return;
         }
         
-        final Index firstIndex = indexesToAdd.get(0);
+        final Index firstIndex = indexesToAdd.iterator().next();
         final AkibaInformationSchema ais = getAIS(session);
         final UserTable table = ais.getUserTable(firstIndex.getTableName());
         
@@ -195,7 +198,11 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             }
         }
          
-        StringBuilder nameBuffer = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
+        sb.append("table=(");
+        sb.append(table.getName().getTableName());
+        sb.append(") ");
+        
         for (Index idx : indexesToAdd) {
             // Add to current table/AIS so that the DDLGenerator call below will see it
             Index newIndex = Index.create(ais, table, idx.getIndexName().getName(), -1,
@@ -209,12 +216,11 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             }
             
             // Track new index names to build only new indexes
-            nameBuffer.append("index=(");
-            nameBuffer.append(idx.getIndexName());
-            nameBuffer.append(")");
+            sb.append("index=(");
+            sb.append(idx.getIndexName());
+            sb.append(")");
         }
 
-        
         try {
             // Generate new DDL statement from existing AIS/table
             final DDLGenerator gen = new DDLGenerator();
@@ -225,17 +231,73 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
             schemaManager().getAis(session);
 
-            // Trigger build of new indexes in this table
-            store().buildIndexes(session,
-                    String.format("table=(%s) %s", tableName.getTableName(), nameBuffer.toString()));
+            // Trigger build of new index trees
+            store().buildIndexes(session, sb.toString());
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
     @Override
-    public void dropIndexes(final Session session, TableId tableId, List<Integer> indexesToDrop)
+    public void dropIndexes(final Session session, TableId tableId, Collection<String> indexNamesToDrop)
             throws InvalidOperationException {
-        throw new UnsupportedOperationException("Unimplemented");
+        if(indexNamesToDrop.isEmpty() == true) {
+            return;
+        }
+
+        final TableName tableName;
+        try {
+            tableId.getTableId(idResolver());
+            tableName = tableId.getTableName(idResolver());
+        } catch(NoSuchTableException e) {
+            throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "Unkown table");
+        }
+
+        final Table table = getAIS(session).getTable(tableName);
+        ArrayList<Index> indexesToDrop = new ArrayList<Index>();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("table=(");
+        sb.append(tableName.getTableName());
+        sb.append(") ");
+
+        // Confirm they exist
+        for(String indexName : indexNamesToDrop) {
+            Index index = table.getIndex(indexName);
+            if(index == null) {
+                throw new IndexAlterException(ErrorCode.NO_INDEX, "Unkown index: " + indexName);
+            }
+            if(index.isPrimaryKey() == true) {
+                throw new IndexAlterException(ErrorCode.UNSUPPORTED_OPERATION,
+                        "Cannot drop primary key index");
+            }
+            indexesToDrop.add(index);
+            sb.append("index=(");
+            sb.append(indexName);
+            sb.append(") ");
+        }
+
+        // Remove from existing AIS to generate new DDL
+        if(table.isUserTable()) {
+            ((UserTable)table).getIndexesIncludingInternal().removeAll(indexesToDrop);
+        }
+        else {
+            table.getIndexes().removeAll(indexesToDrop);
+        }
+        
+        try {
+            // Generate new DDL statement from existing AIS/table
+            final DDLGenerator gen = new DDLGenerator();
+            final String newDDL = gen.createTable(table);
+
+            // Store new DDL statement and recreate AIS
+            schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            schemaManager().getAis(session);
+
+            // Trigger drop of index trees
+            store().deleteIndexes(session, sb.toString());
+        } catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
+        }
     }
 }

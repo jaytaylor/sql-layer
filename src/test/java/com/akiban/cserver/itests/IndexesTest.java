@@ -30,6 +30,7 @@ import com.akiban.cserver.api.dml.scan.ScanAllRequest;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
 
@@ -171,7 +172,7 @@ public final class IndexesTest extends ApiTestBase {
      */
     
     @Test
-    public void createIndexConfirmInAIS() throws InvalidOperationException {
+    public void createIndexConfirmAIS() throws InvalidOperationException {
         TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
         
         // Create non-unique index on varchar
@@ -266,7 +267,7 @@ public final class IndexesTest extends ApiTestBase {
     }
     
     @Test
-    public void createCompoundIndex() throws InvalidOperationException {
+    public void createIndexCompound() throws InvalidOperationException {
         TableId tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255)");
         
         expectRowCount(tId, 0);
@@ -292,7 +293,7 @@ public final class IndexesTest extends ApiTestBase {
     }
     
     @Test
-    public void createUniqueIndex() throws InvalidOperationException {
+    public void createIndexUnique() throws InvalidOperationException {
         TableId tId = createTable("test", "t", "id int primary key, state char(2)");
         
         expectRowCount(tId, 0);
@@ -342,5 +343,102 @@ public final class IndexesTest extends ApiTestBase {
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 3, rows.size());
+    }
+    
+    /*
+     * Test DDL.dropIndexes() API 
+     */
+    
+    @Test
+    public void dropIndexNoIndexes() throws InvalidOperationException {
+        // Passing an empty list should work
+        ArrayList<String> indexes = new ArrayList<String>();
+        ddl().dropIndexes(session, null, indexes);
+    }
+    
+    @Test(expected=IndexAlterException.class) 
+    public void dropIndexUnknownTable() throws InvalidOperationException {
+        // Attempt to add index to unknown table
+        ArrayList<String> indexes = new ArrayList<String>();
+        indexes.add("foo");
+        ddl().dropIndexes(session, TableId.of("test","bar"), indexes);
+    }
+    
+    @Test(expected=IndexAlterException.class)
+    public void dropIndexUnkownIndex() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        // Attemp to drop unkown index
+        ArrayList<String> indexes = new ArrayList<String>();
+        indexes.add("name");
+        ddl().dropIndexes(session, tId, indexes);
+    }
+
+    @Test(expected=IndexAlterException.class)
+    public void dropIndexImplicitPkey() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int, name varchar(255)");
+        // Attemp to drop implicit primary key
+        ArrayList<String> indexes = new ArrayList<String>();
+        indexes.add("PRIMARY");
+        ddl().dropIndexes(session, tId, indexes);
+    }
+    
+    @Test(expected=IndexAlterException.class)
+    public void dropIndexExplicitPkey() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        // Attemp to drop implicit primary key
+        ArrayList<String> indexes = new ArrayList<String>();
+        indexes.add("PRIMARY");
+        ddl().dropIndexes(session, tId, indexes);
+    }
+
+    
+    /* 
+     * Test dropping various types of indexes
+     */
+    
+    @Test
+    public void dropIndexConfirmAIS() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
+
+        // Drop non-unique index on varchar
+        ArrayList<String> indexes = new ArrayList<String>();
+        indexes.add("name");
+        ddl().dropIndexes(session, tId, indexes);
+
+        // Index should be gone from UserTable
+        UserTable uTable = ddl().getAIS(session).getUserTable("test", "t");
+        assertNotNull(uTable);
+        assertNull(uTable.getIndex("name"));
+
+        // Index should exist on the GroupTable
+        GroupTable gTable = uTable.getGroup().getGroupTable();
+        assertNotNull(gTable);
+        assertNull(gTable.getIndex("t$name"));
+    }
+    
+    @Test
+    public void dropIndexSimple() throws InvalidOperationException {
+        TableId tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
+
+        expectRowCount(tId, 0);
+        dml().writeRow(session, createNewRow(tId, 1, "bob"));
+        dml().writeRow(session, createNewRow(tId, 2, "jim"));
+        expectRowCount(tId, 2);
+
+        // Drop non-unique index on varchar
+        ArrayList<String> indexes = new ArrayList<String>();
+        indexes.add("name");
+        ddl().dropIndexes(session, tId, indexes);
+
+        // Check that AIS was updated and DDL gets created correctly
+        DDLGenerator gen = new DDLGenerator();
+        assertEquals(
+                "New DDL",
+                "create table `test`.`t`(`id` int, `name` varchar(255), PRIMARY KEY(`id`)) engine=akibandb",
+                gen.createTable(ddl().getAIS(session).getUserTable("test", "t")));
+
+        // Check that we can still get the rows
+        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
+        assertEquals("Rows scanned", 2, rows.size());
     }
 }
