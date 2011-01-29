@@ -389,8 +389,8 @@ public final class JsonHapiIT extends ApiTestBase {
 
     @Test
     public void get() throws JSONException, HapiRequestException, IOException {
-        HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
         try {
+            HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
             hapi().processRequest(session, request, JsonOutputter.instance(), outputStream);
             outputStream.flush();
@@ -409,7 +409,8 @@ public final class JsonHapiIT extends ApiTestBase {
             if(runInfo.expect != null) {
                 throw e;
             }
-            if(runInfo.errorExpect.equals(e.getReasonCode())) {
+
+            if(!runInfo.errorExpect.equals(e.getReasonCode())) {
                 String message = String.format("Error reason code expected <%s> but was <%s>",
                         runInfo.errorExpect, e.getReasonCode()
                 );
@@ -417,7 +418,6 @@ public final class JsonHapiIT extends ApiTestBase {
                 e.printStackTrace();
                 fail(message);
             }
-            assertEquals("error reason code", runInfo.errorExpect, e.getReasonCode());
         }
 
 

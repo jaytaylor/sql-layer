@@ -128,7 +128,7 @@
     },
 
     "from predicate's child" : {
-        "passing" : false,
+        "comment"       : "predicate is on parent",
         "get"           : "coi:orders:(customer)cid=11",
         "expect error"  : "UNSUPPORTED_REQUEST"
     },
