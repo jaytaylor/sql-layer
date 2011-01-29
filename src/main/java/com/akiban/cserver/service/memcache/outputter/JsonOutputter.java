@@ -12,7 +12,6 @@ import com.akiban.util.AkibanAppender;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Stack;
@@ -26,7 +25,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
     private JsonOutputter() {}
 
-    void writeEmptyChildren(RowDefCache cache, PrintWriter pr, final RowDef def, final HashSet<String> saw_children)
+    void writeEmptyChildren(PrintWriter pr, final RowDef def, final HashSet<String> saw_children)
     {
         for(Join j: def.userTable().getChildJoins()) {
             UserTable child = j.getChild();
@@ -70,7 +69,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             }
             else if(defIdStack.peek().equals(def_id)) {
                 // another leaf on current branch (add to current open array)
-                writeEmptyChildren(cache, pr, def, null); // sawChildStack *should* be empty anyway
+                writeEmptyChildren(pr, def, null); // sawChildStack *should* be empty anyway
                 pr.write("},");
             }
             else if(defIdStack.peek().equals(parent_def_id)) {
@@ -86,8 +85,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             else {
                 // a) parent sibling branch, or
                 // b) up the tree to a previously known parent (close array for each step up)
-                RowDef d = cache.getRowDef(defIdStack.pop().intValue());
-                writeEmptyChildren(cache, pr, d, sawChildStack.pop());
+                RowDef d = cache.getRowDef(defIdStack.pop());
+                writeEmptyChildren(pr, d, sawChildStack.pop());
                 
                 pr.write("}]");
                 int pop_count = 0;
@@ -97,7 +96,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                     }
                     
                     d = cache.getRowDef(defIdStack.pop());
-                    writeEmptyChildren(cache, pr, d, sawChildStack.pop());
+                    writeEmptyChildren(pr, d, sawChildStack.pop());
                     pr.write("}");
                 }
 
@@ -123,20 +122,18 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             data.toJSONString(cache, appender);
         }
 
-        if (list != null && list.isEmpty() == false) {
-            boolean first = true;
-            while (defIdStack.size() > 1) {
-                if (first == true) {
-                    first = false;
-                } else {
-                    pr.write(']');
-                }
-                RowDef d = cache.getRowDef(defIdStack.pop());
-                writeEmptyChildren(cache, pr, d, sawChildStack.pop());
-                pr.write('}');
+        boolean first = true;
+        while (defIdStack.size() > 1) {
+            if (first == true) {
+                first = false;
+            } else {
+                pr.write(']');
             }
-            pr.write("]}");
+            RowDef d = cache.getRowDef(defIdStack.pop());
+            writeEmptyChildren(pr, d, sawChildStack.pop());
+            pr.write('}');
         }
+        pr.write("]}");
         pr.flush();
     }
 }
