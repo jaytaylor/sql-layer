@@ -32,9 +32,9 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             UserTable child = j.getChild();
             String childName = child.getName().getTableName();
             if(saw_children == null || saw_children.contains(childName) == false) {
-                pr.write(",\"");
+                pr.write(",\"@");
                 pr.write(childName);
-                pr.write("\" : []");
+                pr.write("\":[]");
             }
         }
     }
@@ -55,7 +55,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 defIdStack.add(parent_def_id);
                 defIdStack.add(def_id);
                 sawChildStack.add(new HashSet<String>());
-                pr.write("{\"");
+                pr.write("{\"@");
                 pr.print(def.getTableName());
                 pr.write("\":");
             }
@@ -70,7 +70,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 sawChildStack.peek().add(def.getTableName());
                 sawChildStack.add(new HashSet<String>());
 
-                pr.write(",\"");
+                pr.write(",\"@");
                 pr.print(def.getTableName());
                 pr.write("\":[");
             }
@@ -94,7 +94,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
                 if(pop_count == 0) {
                     // Was parent sibling branch
-                    pr.write(",\"");
+                    pr.write(",\"@");
                     pr.print(def.getTableName());
                     pr.write("\":[");
                 }
