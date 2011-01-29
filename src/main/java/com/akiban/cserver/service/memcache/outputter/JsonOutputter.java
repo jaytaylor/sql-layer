@@ -27,7 +27,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
     private JsonOutputter() {}
 
-    private static Set<String> writeEmptyChildren(PrintWriter pr, final RowDef def, final Set<String> saw_children)
+    private static void writeEmptyChildren(PrintWriter pr, final RowDef def, Set<String> saw_children)
     {
         for(Join j: def.userTable().getChildJoins()) {
             UserTable child = j.getChild();
@@ -38,9 +38,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 pr.write("\":[]");
             }
         }
-        return saw_children;
     }
-    
+
     @Override
     public void output(HapiGetRequest request, RowDefCache cache, List<RowData> list, OutputStream outputStream)  throws IOException {
         PrintWriter pr = new PrintWriter(outputStream);
@@ -55,7 +54,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
         AkibanAppender appender = AkibanAppender.of(pr);
         Deque<Integer> defIdStack = new ArrayDeque<Integer>();
-        Deque<HashSet<String>> sawChildStack = new ArrayDeque<HashSet<String>>();
+        Deque<Set<String>> sawChildStack = new ArrayDeque<Set<String>>();
 
         for(RowData data : list) {
             final int def_id = data.getRowDefId();
