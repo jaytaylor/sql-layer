@@ -113,7 +113,9 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 }
                 
                 defIdStack.push(def_id);
-                sawChildStack.peek().add(def.getTableName());
+                if(!sawChildStack.isEmpty()) {
+                    sawChildStack.peek().add(def.getTableName());
+                }
                 sawChildStack.add(new HashSet<String>());
             }
 
