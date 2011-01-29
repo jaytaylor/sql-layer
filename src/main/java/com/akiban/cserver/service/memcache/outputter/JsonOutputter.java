@@ -12,9 +12,11 @@ import com.akiban.util.AkibanAppender;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Stack;
+import java.util.Set;
 
 public final class JsonOutputter implements HapiProcessor.Outputter {
     private static final JsonOutputter instance = new JsonOutputter();
@@ -25,7 +27,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
     private JsonOutputter() {}
 
-    void writeEmptyChildren(PrintWriter pr, final RowDef def, final HashSet<String> saw_children)
+    private static Set<String> writeEmptyChildren(PrintWriter pr, final RowDef def, final Set<String> saw_children)
     {
         for(Join j: def.userTable().getChildJoins()) {
             UserTable child = j.getChild();
@@ -36,6 +38,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 pr.write("\":[]");
             }
         }
+        return saw_children;
     }
     
     @Override
@@ -51,8 +54,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
         }
 
         AkibanAppender appender = AkibanAppender.of(pr);
-        Stack<Integer> defIdStack = new Stack<Integer>();
-        Stack<HashSet<String>> sawChildStack = new Stack<HashSet<String>>();
+        Deque<Integer> defIdStack = new ArrayDeque<Integer>();
+        Deque<HashSet<String>> sawChildStack = new ArrayDeque<HashSet<String>>();
 
         for(RowData data : list) {
             final int def_id = data.getRowDefId();
@@ -67,15 +70,15 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                 pr.print(def.getTableName());
                 pr.write("\":[");
             }
-            else if(defIdStack.peek().equals(def_id)) {
+            else if(defIdStack.peekLast().equals(def_id)) {
                 // another leaf on current branch (add to current open array)
                 writeEmptyChildren(pr, def, null); // sawChildStack *should* be empty anyway
                 pr.write("},");
             }
-            else if(defIdStack.peek().equals(parent_def_id)) {
+            else if(defIdStack.peekLast().equals(parent_def_id)) {
                 // down the tree, new child branch (new open array)
                 defIdStack.add(def_id);
-                sawChildStack.peek().add(def.getTableName());
+                sawChildStack.peekLast().add(def.getTableName());
                 sawChildStack.add(new HashSet<String>());
 
                 pr.write(",\"@");
@@ -85,18 +88,18 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             else {
                 // a) parent sibling branch, or
                 // b) up the tree to a previously known parent (close array for each step up)
-                RowDef d = cache.getRowDef(defIdStack.pop());
-                writeEmptyChildren(pr, d, sawChildStack.pop());
+                RowDef d = cache.getRowDef(defIdStack.removeLast());
+                writeEmptyChildren(pr, d, sawChildStack.removeLast());
                 
                 pr.write("}]");
                 int pop_count = 0;
-                while(!defIdStack.peek().equals(parent_def_id)) {
+                while(!defIdStack.peekLast().equals(parent_def_id)) {
                     if(pop_count++ > 0) {
                         pr.write(" ]");
                     }
                     
-                    d = cache.getRowDef(defIdStack.pop());
-                    writeEmptyChildren(pr, d, sawChildStack.pop());
+                    d = cache.getRowDef(defIdStack.removeLast());
+                    writeEmptyChildren(pr, d, sawChildStack.removeLast());
                     pr.write("}");
                 }
 
@@ -111,9 +114,9 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                     pr.write(',');
                 }
                 
-                defIdStack.push(def_id);
+                defIdStack.add(def_id);
                 if(!sawChildStack.isEmpty()) {
-                    sawChildStack.peek().add(def.getTableName());
+                    sawChildStack.peekLast().add(def.getTableName());
                 }
                 sawChildStack.add(new HashSet<String>());
             }
@@ -129,8 +132,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             } else {
                 pr.write(']');
             }
-            RowDef d = cache.getRowDef(defIdStack.pop());
-            writeEmptyChildren(pr, d, sawChildStack.pop());
+            RowDef d = cache.getRowDef(defIdStack.removeLast());
+            writeEmptyChildren(pr, d, sawChildStack.removeLast());
             pr.write('}');
         }
         pr.write("]}");
