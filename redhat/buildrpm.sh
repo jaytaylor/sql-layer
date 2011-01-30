@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# Copyright (C) 2011 Akiban Technologies Inc.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License, version 3,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see http://www.gnu.org/licenses.
+#
+
 set -x
 set -e
 
@@ -47,6 +62,9 @@ if [ ${PUBLISH} -gt 0 ];then
 	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${rev}
 	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${rev}/* /var/www/latest/"
 	ssh skeswani@172.16.20.117 /var/www/rpms/createrepo.sh
+	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 "mkdir -p /var/www/rpms/akiban-server/${rev}"
+	scp -i ~/.ssh/akibanweb -r rpmbuild/RPMS/noarch/*.rpm ubuntu@50.16.188.89:/var/www/rpms/akiban-server/${rev}
+	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 /var/www/rpms/createrepo.sh
 fi
 }
 

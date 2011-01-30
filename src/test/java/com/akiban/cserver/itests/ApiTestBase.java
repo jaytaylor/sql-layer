@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.cserver.itests;
 
 import static junit.framework.Assert.assertEquals;
@@ -53,7 +68,6 @@ import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.UnitTestServiceFactory;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
@@ -132,7 +146,7 @@ public class ApiTestBase extends CServerTestCase {
     public final void startTestServices() throws Exception {
         sm = new TestServiceManager( );
         sm.startServices();
-        dml = new DMLFunctionsImpl(new LoggingServiceImpl());
+        dml = new DMLFunctionsImpl();
         ddl = new DDLFunctionsImpl();
     }
 
