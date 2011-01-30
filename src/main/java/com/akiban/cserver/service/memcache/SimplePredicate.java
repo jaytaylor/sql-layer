@@ -25,7 +25,7 @@ public class SimplePredicate implements HapiGetRequest.Predicate {
     private final Operator op;
     private final String value;
 
-    SimplePredicate(TableName tableName, String columnName, Operator op, String value) {
+    public SimplePredicate(TableName tableName, String columnName, Operator op, String value) {
         ArgumentValidation.notNull("table name", tableName);
         ArgumentValidation.notNull("column name", columnName);
         ArgumentValidation.notNull("operator", op);
