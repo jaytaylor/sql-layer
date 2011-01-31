@@ -18,7 +18,6 @@ package com.akiban.cserver.api.dml.scan;
 import java.util.Set;
 
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
 
 public class ScanAllRange implements ScanRange {
@@ -32,12 +31,12 @@ public class ScanAllRange implements ScanRange {
     }
 
     @Override
-    public RowData getStart(IdResolver idResolver) {
+    public RowData getStart() {
         return null;
     }
 
     @Override
-    public RowData getEnd(IdResolver idResolver) {
+    public RowData getEnd() {
         return null;
     }
 
@@ -50,7 +49,7 @@ public class ScanAllRange implements ScanRange {
     }
 
     @Override
-    public int getTableIdInt(IdResolver idResolver) throws NoSuchTableException {
+    public int getTableId() throws NoSuchTableException {
         return tableId;
     }
 

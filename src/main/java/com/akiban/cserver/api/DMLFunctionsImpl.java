@@ -28,12 +28,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
-import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
@@ -155,7 +153,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private ScanRequest scanAllColumns(final Session session,
             final ScanRequest request) throws NoSuchTableException {
         Table table = ddlFunctions.getAIS(session).getTable(
-                ddlFunctions.getTableName(session, request.getTableIdInt(null))
+                ddlFunctions.getTableName(session, request.getTableId())
         );
         final int colsCount = table.getColumns().size();
         Set<Integer> allColumns = new HashSet<Integer>(colsCount);
@@ -175,15 +173,15 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
-            public RowData getStart(IdResolver idResolver)
+            public RowData getStart()
                     throws NoSuchTableException {
-                return request.getStart(idResolver);
+                return request.getStart();
             }
 
             @Override
-            public RowData getEnd(IdResolver idResolver)
+            public RowData getEnd()
                     throws NoSuchTableException {
-                return request.getEnd(idResolver);
+                return request.getEnd();
             }
 
             @Override
@@ -192,9 +190,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
-            public int getTableIdInt(IdResolver idResolver)
+            public int getTableId()
                     throws NoSuchTableException {
-                return request.getTableIdInt(idResolver);
+                return request.getTableId();
             }
 
             @Override
@@ -208,13 +206,12 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throws NoSuchTableException, NoSuchColumnException,
             NoSuchIndexException, GenericInvalidOperationException {
         try {
-            final IdResolver idr = idResolver();
-            return store().newRowCollector(session, request.getTableIdInt(idr),
+            return store().newRowCollector(session, request.getTableId(),
                     request.getIndexId(), request.getScanFlags(),
-                    request.getStart(idr), request.getEnd(idr),
+                    request.getStart(), request.getEnd(),
                     request.getColumnBitMap());
         } catch (RowDefNotFoundException e) {
-            throw new NoSuchTableException(request.getTableIdInt(null), e);
+            throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }

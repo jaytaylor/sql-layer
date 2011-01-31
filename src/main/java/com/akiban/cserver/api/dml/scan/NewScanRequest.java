@@ -17,8 +17,6 @@ package com.akiban.cserver.api.dml.scan;
 
 import java.util.Set;
 
-import com.akiban.cserver.api.common.IdResolver;
-
 public final class NewScanRequest extends NewScanRange {
 
     private final int indexId;
@@ -28,7 +26,7 @@ public final class NewScanRequest extends NewScanRange {
         this.indexId = indexId;
     }
 
-    public int getIndexIdInt(IdResolver resolver) {
+    public int getIndexIdInt() {
         return indexId;
     }
 }

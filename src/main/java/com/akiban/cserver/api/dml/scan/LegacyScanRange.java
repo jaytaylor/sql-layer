@@ -17,7 +17,6 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.LegacyUtils;
-import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
 
 public class LegacyScanRange implements ScanRange {
@@ -41,12 +40,12 @@ public class LegacyScanRange implements ScanRange {
     }
 
     @Override
-    public RowData getStart(IdResolver ignored) {
+    public RowData getStart() {
         return start;
     }
 
     @Override
-    public RowData getEnd(IdResolver ignored) {
+    public RowData getEnd() {
         return end;
     }
 
@@ -56,7 +55,7 @@ public class LegacyScanRange implements ScanRange {
     }
 
     @Override
-    public int getTableIdInt(IdResolver ignored) {
+    public int getTableId() {
         return tableId;
     }
 
