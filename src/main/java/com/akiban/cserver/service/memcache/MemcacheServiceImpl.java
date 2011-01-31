@@ -167,7 +167,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
 
         try {
-            outputter.output(cache, list, outputStream);
+            outputter.output(request, cache, list, outputStream);
         } catch (IOException e) {
             throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }
@@ -182,9 +182,9 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
                     request.getTable(), request.getUsingTable().getTableName());
         }
         HapiGetRequest.Predicate predicate = request.getPredicates().iterator().next();
-        if (predicate.getTableName().equals(request.getUsingTable().getTableName())) {
+        if (!predicate.getTableName().equals(request.getUsingTable())) {
             complain("Can't have different SELECT table and predicate table (for now!) %s != %s",
-                    predicate.getTableName(), request.getUsingTable().getTableName()
+                    predicate.getTableName(), request.getUsingTable()
             );
         }
         return predicate;

@@ -19,6 +19,7 @@ import com.akiban.ais.model.Type;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public class StringEncoder extends EncodingBase<String> {
@@ -49,7 +50,7 @@ public class StringEncoder extends EncodingBase<String> {
 
     @Override
     public void toString(FieldDef fieldDef, RowData rowData,
-                         StringBuilder sb, final Quote quote) {
+                         AkibanAppender sb, final Quote quote) {
         try {
             quote.append(sb, toObject(fieldDef, rowData));
         } catch (EncodingException e) {

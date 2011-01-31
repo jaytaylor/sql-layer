@@ -17,6 +17,7 @@ package com.akiban.cserver.service.memcache.outputter;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public final class DummyByteOutputter implements HapiProcessor.Outputter {
     private DummyByteOutputter() {}
 
     @Override
-    public void output(RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiGetRequest request, RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
         outputStream.write("DUMMY DATA".getBytes());
     }
 }

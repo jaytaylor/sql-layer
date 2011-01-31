@@ -18,6 +18,7 @@ package com.akiban.cserver.encoding;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
+import com.akiban.util.AkibanAppender;
 
 abstract class EncodingBase<T> implements Encoding<T> {
     EncodingBase() {
@@ -32,7 +33,7 @@ abstract class EncodingBase<T> implements Encoding<T> {
     }
 
     @Override
-    public void toString(FieldDef fieldDef, RowData rowData, StringBuilder sb, Quote quote) {
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
         try {
             sb.append(toObject(fieldDef,rowData));
         } catch (EncodingException e) {

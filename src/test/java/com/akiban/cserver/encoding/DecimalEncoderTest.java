@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
+import com.akiban.util.AkibanAppender;
 import org.junit.Test;
 
 public final class DecimalEncoderTest {
@@ -85,7 +86,8 @@ public final class DecimalEncoderTest {
     private static void doTest(String label, String expected, int precision, int scale, String bytesHex) {
         byte[] bytes = bytes(bytesHex);
         StringBuilder sb = new StringBuilder();
-        BigDecimal actual = DecimalEncoder.decodeAndParse(bytes, 0, precision, scale, sb);
+        DecimalEncoder.decodeAndParse(bytes, 0, precision, scale, AkibanAppender.of(sb));
+        BigDecimal actual = new BigDecimal(sb.toString());
 
         assertEquals(label + ": BigDecimal", new BigDecimal(expected), actual);
         assertEquals(label + ": String", expected, sb.toString());

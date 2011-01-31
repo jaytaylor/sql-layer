@@ -19,6 +19,7 @@ import com.akiban.ais.model.Type;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public interface Encoding<T> {
@@ -46,7 +47,7 @@ public interface Encoding<T> {
      *            Member of the {@link com.akiban.cserver.Quote} enum that specifies how to add
      *            quotation marks: none, single-quote or double-quote symbols.
      */
-    void toString(final FieldDef fieldDef, final RowData rowData, final StringBuilder sb, final Quote quote);
+    void toString(final FieldDef fieldDef, final RowData rowData, final AkibanAppender sb, final Quote quote);
 
     /**
      * Converts the given field to a Java object.
