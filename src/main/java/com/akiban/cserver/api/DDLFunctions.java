@@ -15,6 +15,8 @@
 
 package com.akiban.cserver.api;
 
+import java.util.Collection;
+
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
@@ -34,8 +36,6 @@ import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
-
-import java.util.List;
 
 public interface DDLFunctions {
     /**
@@ -149,20 +149,21 @@ public interface DDLFunctions {
     /**
      * Create new indexes on an existing table. All indexes must exist on the same table. Primary
      * keys can not be created through this interface. Specified index IDs will not be used as they
-     * are recalculated later.Blocks until the actual index data has been created.
+     * are recalculated later. Blocks until the actual index data has been created.
      * @param indexesToAdd a list of indexes to add to the existing AIS
      * @throws IndexAlterException, InvalidOperationException
      */
-    void createIndexes(Session session, List<Index> indexesToAdd) throws IndexAlterException,
+    void createIndexes(Session session, Collection<Index> indexesToAdd) throws IndexAlterException,
             InvalidOperationException;
 
     /**
-     * Drop indexes on an existing table.
-     * 
+     * Drop indexes on an existing table. The indexes to drop are identified by their names. All 
+     * indexes must exist on the given table for any of them to be dropped. Primary keys can not be
+     * dropped through this interface. Blocks until the actual data has been deleted.
      * @param tableId the table containing the indexes to drop
      * @param indexesToDrop list of indexes to drop
      * @throws InvalidOperationException
      */
-    void dropIndexes(Session session, TableId tableId, List<Integer> indexesToDrop)
+    void dropIndexes(Session session, TableId tableId, Collection<String> indexesToDrop)
             throws InvalidOperationException;
 }
