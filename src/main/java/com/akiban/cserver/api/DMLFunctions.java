@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.cserver.api;
 
 import java.util.List;
@@ -7,13 +22,7 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.DuplicateKeyException;
-import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
-import com.akiban.cserver.api.dml.NoSuchColumnException;
-import com.akiban.cserver.api.dml.NoSuchIndexException;
-import com.akiban.cserver.api.dml.NoSuchRowException;
-import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
-import com.akiban.cserver.api.dml.UnsupportedModificationException;
+import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.CursorId;
 import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
 import com.akiban.cserver.api.dml.scan.CursorIsUnknownException;
@@ -265,6 +274,7 @@ public interface DMLFunctions {
      * <p>Updates a row, possibly cascading updates to its PK to children rows.</p>
      * @param oldRow the row to update
      * @param newRow the row's new values
+     * @param columnSelector specifies which columns are being updated
      * @throws NullPointerException if any of the arguments are <tt>null</tt>
      * @throws DuplicateKeyException if the update would create a duplicate of a unique column
      * @throws TableDefinitionMismatchException if either (or both) RowData objects don't match the specification
@@ -276,7 +286,7 @@ public interface DMLFunctions {
      * @throws NoSuchRowException if the specified oldRow doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void updateRow(Session session, NewRow oldRow, NewRow newRow)
+    void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector)
     throws  NoSuchTableException,
             DuplicateKeyException,
             TableDefinitionMismatchException,

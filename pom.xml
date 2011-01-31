@@ -47,6 +47,17 @@
             <id>thimbleware.repo</id>
             <url>http://thimbleware.com/maven</url>
         </repository>
+        <repository>
+        <id>mc-release</id>
+        <name>Local Maven repository of releases</name>
+        <url>http://mc-repo.googlecode.com/svn/maven2/releases</url>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -146,12 +157,18 @@
     <build>
         <resources>
             <resource>
-                <directory>src/main/resources/version</directory>
+                <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <includes>
+                    <include>version/akserver_version</include>
+                </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
+                <excludes>
+                    <exclude>version/akserver_version</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>
@@ -271,6 +288,31 @@
                 <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
                 <xmlOutput>true</xmlOutput>
             </configuration>
+        </plugin>
+        <plugin>
+            <groupId>com.mycila.maven-license-plugin</groupId>
+            <artifactId>maven-license-plugin</artifactId>
+            <configuration>
+                <header>src/etc/header.txt</header>
+                <failIfMissing>true</failIfMissing>
+                <excludes>
+                    <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/**</exclude>
+                    <exclude>src/test/resources/com/akiban/ais/ddl/**</exclude>
+                    <exclude>**/*.sql</exclude>
+                    <exclude>.idea/**</exclude>
+                    <exclude>algebra_testbed/**</exclude>
+                </excludes>
+                <properties>
+                    <year>2011</year>
+                </properties>
+            </configuration>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>check</goal>
+                    </goals>
+                </execution>
+            </executions>
         </plugin>
     </plugins>
 </build>

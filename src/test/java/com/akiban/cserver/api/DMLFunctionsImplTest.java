@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.cserver.api;
 
 import static com.akiban.cserver.api.DMLFunctionsImpl.doScan;
@@ -20,7 +35,6 @@ import com.akiban.cserver.api.dml.scan.CursorId;
 import com.akiban.cserver.api.dml.scan.CursorIsFinishedException;
 import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
 import com.akiban.cserver.api.dml.scan.ScanRequest;
-import com.akiban.cserver.service.logging.LoggingServiceImpl;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
 
@@ -156,20 +170,6 @@ public final class DMLFunctionsImplTest extends CServerTestCase {
             output = new StringRowOutput();
             cursor = new Cursor(collector);
             cursorId = new CursorId(5, TABLE_ID);
-        }
-    }
-
-    private class TestDML extends DMLFunctionsImpl {
-        private final StringRowCollector collector;
-
-        private TestDML(String... rowsToCollect) {
-            super(new LoggingServiceImpl());
-            collector = new StringRowCollector(1, rowsToCollect);
-        }
-
-        @Override
-        protected RowCollector getRowCollector(final Session session, ScanRequest request) {
-            return collector;
         }
     }
 

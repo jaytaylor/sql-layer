@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.cserver.store;
 
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_DEEP;
@@ -5,16 +20,14 @@ import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_END_AT_EDGE;
 import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_AT_EDGE;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
+import com.akiban.cserver.api.common.ColumnId;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.ColumnSelector;
+import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.api.dml.scan.NiceRow;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -36,7 +49,6 @@ import com.akiban.cserver.TableStatus;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
@@ -86,6 +98,8 @@ public class PersistitStore implements CServerConstants, Store {
     private final static int MAX_INDEX_TRANCHE_SIZE = 10 * MEGA;
 
     private final static int KEY_STATE_SIZE_OVERHEAD = 50;
+
+    private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private boolean verbose = false;
 
@@ -621,9 +635,11 @@ public class PersistitStore implements CServerConstants, Store {
     }
 
     @Override
-    public void updateRow(final Session session, final RowData oldRowData,
-            final RowData newRowData) throws InvalidOperationException,
-            PersistitException {
+    public void updateRow(final Session session,
+                          final RowData oldRowData,
+                          final RowData newRowData,
+                          final ColumnSelector columnSelector)
+        throws InvalidOperationException, PersistitException {
         final int rowDefId = oldRowData.getRowDefId();
 
         if (newRowData.getRowDefId() != rowDefId) {
@@ -652,30 +668,19 @@ public class PersistitStore implements CServerConstants, Store {
                                 ErrorCode.NO_SUCH_RECORD,
                                 "Missing record at key: %s", hEx.getKey());
                     }
-                    //
+                    // Combine current version of row with the version coming in on the update request.
+                    // This is done by taking only the values of columns listed in the column selector.
+                    RowData currentRow = new RowData(EMPTY_BYTE_ARRAY);
+                    expandRowData(hEx, rowDef, currentRow);
+                    final RowData mergedRowData =
+                        columnSelector == null
+                        ? newRowData // TEMPORARY
+                        : mergeRows(rowDef, currentRow, newRowData, columnSelector);
                     // Verify that it hasn't changed. Note: at some point we
                     // may want to optimize the protocol to send only PK and FK
                     // fields in oldRowData, in which case this test will need
                     // to change.
-                    //
-                    //
-                    // For Iteration 11, this logic is disabled because the
-                    // SELECT for update may have used a covering index, in
-                    // which case the oldRowData will be incomplete.
-                    //
-                    // final int oldStart = oldRowData.getInnerStart();
-                    // final int oldSize = oldRowData.getInnerSize();
-                    // if (!bytesEqual(oldRowData.getBytes(), oldStart, oldSize,
-                    // hEx.getValue().getEncodedBytes(), 0, hEx.getValue()
-                    // .getEncodedSize())) {
-                    // throw new StoreException(HA_ERR_RECORD_CHANGED,
-                    // "Record changed at key " + hEx.getKey());
-                    // }
-                    //
-                    // For Iteration 9, verify that only non-PK/FK fields are
-                    // changing - i.e., that the hkey will be the same.
-                    //
-                    if (!fieldsEqual(rowDef, oldRowData, newRowData, rowDef.getPKIndexDef().getFields())) {
+                    if (!fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getPKIndexDef().getFields())) {
                         if (hEx.hasChildren()) {
                             throw new InvalidOperationException(
                                     ErrorCode.FK_CONSTRAINT_VIOLATION,
@@ -683,9 +688,9 @@ public class PersistitStore implements CServerConstants, Store {
                                     hEx.getKey());
                         }
                         deleteRow(session, oldRowData);
-                        writeRow(session, newRowData);
+                        writeRow(session, mergedRowData);
                     } else {
-                        packRowData(hEx, rowDef, newRowData);
+                        packRowData(hEx, rowDef, mergedRowData);
                         // Store the h-row
                         hEx.store();
                         ts.updated();
@@ -694,8 +699,7 @@ public class PersistitStore implements CServerConstants, Store {
                         //
                         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                             if (!indexDef.isHKeyEquivalent()) {
-                                updateIndex(session, indexDef, rowDef,
-                                        oldRowData, newRowData, hEx.getKey());
+                                updateIndex(session, indexDef, rowDef, oldRowData, mergedRowData, hEx.getKey());
                             }
                         }
                     }
@@ -706,8 +710,7 @@ public class PersistitStore implements CServerConstants, Store {
                         transaction.commit(new CommitListener() {
                             public void committed() {
                                 for (final CommittedUpdateListener cul : updateListeners) {
-                                    cul.updated(keyState, rowDef, oldRowData,
-                                            newRowData);
+                                    cul.updated(keyState, rowDef, oldRowData, mergedRowData);
                                 }
                             }
                         }, forceToDisk);
@@ -725,6 +728,13 @@ public class PersistitStore implements CServerConstants, Store {
             releaseExchange(session, hEx);
             UPDATE_ROW_TAP.out();
         }
+    }
+
+    public void updateRow(final Session session,
+                          final RowData oldRowData,
+                          final RowData newRowData) throws InvalidOperationException, PersistitException
+    {
+        updateRow(session, oldRowData, newRowData, null);
     }
 
     /**
@@ -1089,7 +1099,6 @@ public class PersistitStore implements CServerConstants, Store {
                     break;
                 }
             }
-
         if (leafRowDef == null) {
             throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE,
                     leafTableName + " in group");
@@ -1104,7 +1113,7 @@ public class PersistitStore implements CServerConstants, Store {
         } else {
             final Object[] startValues = new Object[groupRowDef.getFieldCount()];
             startValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = least;
-            start = new RowData(new byte[1024]);
+            start = new RowData(new byte[128]);
             start.createRow(groupRowDef, startValues);
         }
 
@@ -1113,7 +1122,7 @@ public class PersistitStore implements CServerConstants, Store {
         } else {
             final Object[] endValues = new Object[groupRowDef.getFieldCount()];
             endValues[fieldDef.getFieldIndex() + rowDef.getColumnOffset()] = greatest;
-            end = new RowData(new byte[1024]);
+            end = new RowData(new byte[128]);
             end.createRow(groupRowDef, endValues);
         }
 
@@ -1273,15 +1282,9 @@ public class PersistitStore implements CServerConstants, Store {
         hEx.getValue().setEncodedSize(size);
     }
 
-    public void expandRowData(final Exchange exchange, final RowDef rowDef,
-            final RowData rowData) throws InvalidOperationException,
-            PersistitException { // TODO
-        // this
-        // needs
-        // to be a
-        // more
-        // specific
-        // exception
+    public void expandRowData(final Exchange exchange, final RowDef rowDef, final RowData rowData)
+        throws InvalidOperationException, PersistitException {
+        // TODO this needs to be a more specific exception
         final int size = exchange.getValue().getEncodedSize();
         final int rowDataSize = size + RowData.ENVELOPE_SIZE;
         final byte[] valueBytes = exchange.getValue().getEncodedBytes();
@@ -1473,6 +1476,20 @@ public class PersistitStore implements CServerConstants, Store {
                     + "into index tree %s in %,d seconds", keys.size(), iEx
                     .getTree().getName(), elapsed / 1000000000));
         }
+    }
+
+    private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector)
+    {
+        NewRow mergedRow = (NiceRow) NiceRow.fromRowData(currentRow, rowDef);
+        NewRow newRow = new LegacyRowWrapper(newRowData);
+        int fields = rowDef.getFieldCount();
+        for (int i = 0; i < fields; i++) {
+            if (columnSelector.includesColumn(i)) {
+                ColumnId columnId = ColumnId.of(i);
+                mergedRow.put(columnId, newRow.get(columnId));
+            }
+        }
+        return mergedRow.toRowData();
     }
 
     @Override

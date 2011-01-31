@@ -1,8 +1,26 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.cserver.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiRequestException;
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.Parameterization;
+import com.akiban.junit.ParameterizationBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -16,8 +34,7 @@ import static com.akiban.cserver.api.HapiGetRequest.Predicate.Operator.*;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(org.junit.runners.Parameterized.class)
-// TODO Migrate to Yuval's named-parameterized runner as soon as it's available
+@RunWith(NamedParameterizedRunner.class)
 public final class HapiGetRequestTest {
 
     private static class HapiGetRequestBuilder {
@@ -50,10 +67,10 @@ public final class HapiGetRequestTest {
     }
 
     private static class Parameterizations {
-        private final List<Object[]> params = new ArrayList<Object[]>();
+        private final ParameterizationBuilder params = new ParameterizationBuilder();
 
         void addFailing(String queryString) {
-            params.add( new Object[] {queryString, null} );
+            params.addFailing(queryString, queryString, null);
         }
 
         HapiGetRequestBuilder add(String queryString, String schema, String table, String usingTable) {
@@ -67,17 +84,17 @@ public final class HapiGetRequestTest {
             assertEquals(queryString + " table", table, request.getTable());
             assertEquals(queryString + " usingTable", new TableName(schema, usingTable), request.getUsingTable());
 
-            params.add( new Object[] {queryString, request} );
+            params.add(queryString, queryString, request);
             return new HapiGetRequestBuilder(request);
         }
 
-        public List<Object[]> getParams() {
-            return params;
+        public List<Parameterization> getParams() {
+            return params.asList();
         }
     }
 
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
+    @NamedParameterizedRunner.TestParameters
+    public static List<Parameterization> data() {
         Parameterizations params = new Parameterizations();
 
         params.add("coi:customer:cid=5", "coi", "customer", "customer").predicate("cid", EQ, "5");
@@ -86,6 +103,7 @@ public final class HapiGetRequestTest {
         params.add("coi:customer:name=null", "coi", "customer", "customer").predicate("name", EQ, null);
         params.add("coi:customer:name=NULL", "coi", "customer", "customer").predicate("name", EQ, null);
         params.add("coi:customer:name=''", "coi", "customer", "customer").predicate("name", EQ, "");
+        params.add(".-*_:c_table:c_name=a_b", ".-*_", "c_table", "c_table").predicate("c_name", EQ, "a_b");
 
         params.add("coi:customer:(order)description=snowglobe", "coi", "customer", "order")
                 .predicate("description", EQ, "snowglobe");
