@@ -13,12 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.itests;
+package com.akiban.cserver.itests.alter;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.*;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -27,6 +35,7 @@ import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.IndexAlterException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
+import com.akiban.cserver.itests.ApiTestBase;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -34,52 +43,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
 
-public final class IndexesTest extends ApiTestBase {
-    private AkibaInformationSchema createAISWithTable(TableId id) throws NoSuchTableException, ResolutionException {
-        ddl().resolveTableId(id);
-        Integer tableId = id.getTableId(null);
-        TableName tname = ddl().getTableName(id);
-        String schemaName = tname.getSchemaName();
-        String tableName = tname.getTableName();
-
-        Table curTable = ddl().getAIS(session).getTable(tname);
-        AkibaInformationSchema ais = new AkibaInformationSchema();
-        UserTable.create(ais, schemaName, tableName, tableId);
-        
-        return ais;
-    }
-
-    private Index addIndexToAIS(AkibaInformationSchema ais, String sname, String tname, String iname, 
-            String[] refColumns, boolean isUnique) {
-        Table table = ais.getTable(sname, tname);
-        Table curTable = ddl().getAIS(session).getTable(sname, tname);
-        Index index = Index.create(ais, table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
-
-        if(refColumns != null) {
-            int pos = 0;
-            for (String colName : refColumns) {
-                Column col = curTable.getColumn(colName);
-                Column refCol = Column.create(table, col.getName(), col.getPosition(), col.getType());
-                refCol.setTypeParameter1(col.getTypeParameter1());
-                refCol.setTypeParameter2(col.getTypeParameter2());
-                Integer indexedLen = col.getMaxStorageSize().intValue();
-                index.addColumn(new IndexColumn(index, refCol, pos++, true, indexedLen));
-            }
-        }
-        
-        return index;
-    }
-    
-    private List<Index> getAllIndexes(AkibaInformationSchema ais)
-    {
-        ArrayList<Index> indexes = new ArrayList<Index>();
-        for(UserTable tbl : ais.getUserTables().values()) {
-            indexes.addAll(tbl.getIndexes());
-        }
-        return indexes;
-    }
-
-    
+public final class CreateIndexesTest extends AlterTestBase {
     /*
      * Test DDL.createIndexes() API 
      */
@@ -328,7 +292,7 @@ public final class IndexesTest extends ApiTestBase {
         dml().writeRow(session, createNewRow(tId, 3, 47000, "9.99"));
         expectRowCount(tId, 3);
         
-        // Create unique index on a int, non-unique index on decimal
+        // Create unique index on an int, non-unique index on decimal
         AkibaInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "otherId", new String[]{"otherId"}, true);
         addIndexToAIS(ais, "test", "t", "price", new String[]{"price"}, false);
@@ -343,102 +307,5 @@ public final class IndexesTest extends ApiTestBase {
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 3, rows.size());
-    }
-    
-    /*
-     * Test DDL.dropIndexes() API 
-     */
-    
-    @Test
-    public void dropIndexNoIndexes() throws InvalidOperationException {
-        // Passing an empty list should work
-        ArrayList<String> indexes = new ArrayList<String>();
-        ddl().dropIndexes(session, null, indexes);
-    }
-    
-    @Test(expected=IndexAlterException.class) 
-    public void dropIndexUnknownTable() throws InvalidOperationException {
-        // Attempt to add index to unknown table
-        ArrayList<String> indexes = new ArrayList<String>();
-        indexes.add("foo");
-        ddl().dropIndexes(session, TableId.of("test","bar"), indexes);
-    }
-    
-    @Test(expected=IndexAlterException.class)
-    public void dropIndexUnkownIndex() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
-        // Attemp to drop unkown index
-        ArrayList<String> indexes = new ArrayList<String>();
-        indexes.add("name");
-        ddl().dropIndexes(session, tId, indexes);
-    }
-
-    @Test(expected=IndexAlterException.class)
-    public void dropIndexImplicitPkey() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int, name varchar(255)");
-        // Attemp to drop implicit primary key
-        ArrayList<String> indexes = new ArrayList<String>();
-        indexes.add("PRIMARY");
-        ddl().dropIndexes(session, tId, indexes);
-    }
-    
-    @Test(expected=IndexAlterException.class)
-    public void dropIndexExplicitPkey() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
-        // Attemp to drop implicit primary key
-        ArrayList<String> indexes = new ArrayList<String>();
-        indexes.add("PRIMARY");
-        ddl().dropIndexes(session, tId, indexes);
-    }
-
-    
-    /* 
-     * Test dropping various types of indexes
-     */
-    
-    @Test
-    public void dropIndexConfirmAIS() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
-
-        // Drop non-unique index on varchar
-        ArrayList<String> indexes = new ArrayList<String>();
-        indexes.add("name");
-        ddl().dropIndexes(session, tId, indexes);
-
-        // Index should be gone from UserTable
-        UserTable uTable = ddl().getAIS(session).getUserTable("test", "t");
-        assertNotNull(uTable);
-        assertNull(uTable.getIndex("name"));
-
-        // Index should exist on the GroupTable
-        GroupTable gTable = uTable.getGroup().getGroupTable();
-        assertNotNull(gTable);
-        assertNull(gTable.getIndex("t$name"));
-    }
-    
-    @Test
-    public void dropIndexSimple() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
-
-        expectRowCount(tId, 0);
-        dml().writeRow(session, createNewRow(tId, 1, "bob"));
-        dml().writeRow(session, createNewRow(tId, 2, "jim"));
-        expectRowCount(tId, 2);
-
-        // Drop non-unique index on varchar
-        ArrayList<String> indexes = new ArrayList<String>();
-        indexes.add("name");
-        ddl().dropIndexes(session, tId, indexes);
-
-        // Check that AIS was updated and DDL gets created correctly
-        DDLGenerator gen = new DDLGenerator();
-        assertEquals(
-                "New DDL",
-                "create table `test`.`t`(`id` int, `name` varchar(255), PRIMARY KEY(`id`)) engine=akibandb",
-                gen.createTable(ddl().getAIS(session).getUserTable("test", "t")));
-
-        // Check that we can still get the rows
-        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
-        assertEquals("Rows scanned", 2, rows.size());
     }
 }
