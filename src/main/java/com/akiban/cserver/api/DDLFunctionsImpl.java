@@ -229,7 +229,6 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
-            schemaManager().getAis(session);
 
             // Trigger build of new index trees
             store().buildIndexes(session, sb.toString());
@@ -290,12 +289,11 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             final DDLGenerator gen = new DDLGenerator();
             final String newDDL = gen.createTable(table);
 
+            // Trigger drop of index trees while indexDef(s) still exist
+            store().deleteIndexes(session, sb.toString());
+            
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
-            schemaManager().getAis(session);
-
-            // Trigger drop of index trees
-            store().deleteIndexes(session, sb.toString());
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
