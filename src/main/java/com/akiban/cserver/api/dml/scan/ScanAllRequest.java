@@ -22,20 +22,30 @@ import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {
-
-    private static final int SCAN_FLAGS = ScanFlag.toRowDataFormat(EnumSet.noneOf(ScanFlag.class));
-
+    private final int indexId;
+    private final int scanFlags;
+    
     public ScanAllRequest(TableId tableId, Set<ColumnId> columnIds) {
-        super(tableId, columnIds);
+        this(tableId, 
+             columnIds, 
+             0, 
+             ScanFlag.toRowDataFormat(EnumSet.noneOf(ScanFlag.class)));
     }
-
+    
+    public ScanAllRequest(TableId tableId, Set<ColumnId> columnIds, int indexId, int scanFlags)
+    {
+        super(tableId, columnIds);
+        this.indexId = indexId;
+        this.scanFlags = scanFlags;
+    }
+    
     @Override
     public int getIndexId() {
-        return 0;
+        return indexId;
     }
 
     @Override
     public int getScanFlags() {
-        return SCAN_FLAGS;
+        return scanFlags;
     }
 }
