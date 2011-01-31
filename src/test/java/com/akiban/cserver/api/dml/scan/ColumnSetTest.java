@@ -28,7 +28,7 @@ public final class ColumnSetTest {
     @Test
     public void pack1Byte() throws Exception {
         Set<Integer> columns = new HashSet<Integer>();
-        columns.add( 6 );
+        columns.add( 0 );
         columns.add( 6 );
 
         assertBytes("[ 10000010 ]", columns);
