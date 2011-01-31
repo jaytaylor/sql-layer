@@ -33,7 +33,6 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
@@ -96,7 +95,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         private final Cursor cursor;
         private final byte[] scanColumns;
         private final boolean scanAll;
-        private Set<ColumnId> scanColumnsUnpacked;
+        private Set<Integer> scanColumnsUnpacked;
 
         ScanData(ScanRequest request, Cursor cursor) {
             scanColumns = request.getColumnBitMap();
@@ -104,7 +103,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             this.cursor = cursor;
         }
 
-        public Set<ColumnId> getScanColumns() {
+        public Set<Integer> getScanColumns() {
             if (scanColumnsUnpacked == null) {
                 scanColumnsUnpacked = ColumnSet.unpackFromLegacy(scanColumns);
             }
@@ -155,9 +154,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         Table table = schemaManager().getAis(session).getTable(
                 request.getTableId().getTableName(idResolver()));
         final int colsCount = table.getColumns().size();
-        Set<ColumnId> allColumns = new HashSet<ColumnId>(colsCount);
+        Set<Integer> allColumns = new HashSet<Integer>(colsCount);
         for (int i = 0; i < colsCount; ++i) {
-            allColumns.add(ColumnId.of(i));
+            allColumns.add(i);
         }
         final byte[] allColumnsBytes = ColumnSet.packToLegacy(allColumns);
         return new ScanRequest() {
@@ -267,7 +266,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             return router;
         }
 
-        public void setConverter(RowOutput output, Set<ColumnId> columns)
+        public void setConverter(RowOutput output, Set<Integer> columns)
                 throws NoSuchTableException {
             converter.setOutput(output);
             converter.setColumnsToScan(columns);
@@ -277,7 +276,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
 
     private PooledConverter getPooledConverter(RowOutput output,
-            Set<ColumnId> columns) throws NoSuchTableException {
+            Set<Integer> columns) throws NoSuchTableException {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
@@ -312,7 +311,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException {
         final ScanData scanData = session.get(MODULE_NAME, cursorId);
         assert scanData != null;
-        Set<ColumnId> scanColumns = scanData.scanAll() ? null : scanData
+        Set<Integer> scanColumns = scanData.scanAll() ? null : scanData
                 .getScanColumns();
         final PooledConverter converter = getPooledConverter(output,
                 scanColumns);
@@ -542,10 +541,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         Index pkIndex = schemaManager().getAis(session).getTable(tableName)
                 .getIndex(Index.PRIMARY_KEY_CONSTRAINT);
         assert pkIndex.isPrimaryKey() : pkIndex;
-        Set<ColumnId> pkColumns = new HashSet<ColumnId>();
+        Set<Integer> pkColumns = new HashSet<Integer>();
         for (IndexColumn column : pkIndex.getColumns()) {
             int pos = column.getColumn().getPosition();
-            pkColumns.add(ColumnId.of(pos));
+            pkColumns.add(pos);
         }
         ScanRequest all = new ScanAllRequest(tableId, pkColumns);
 

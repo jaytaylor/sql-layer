@@ -19,7 +19,6 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
@@ -390,7 +389,7 @@ public final class JsonHapiIT extends ApiTestBase {
                     JSONArray columns = rows.getJSONArray(rowNum);
                     NewRow row = new NiceRow(tableId);
                     for(int col=0, COLS=columns.length(); col < COLS; ++col) {
-                        row.put(ColumnId.of(col), columns.get(col));
+                        row.put(col, columns.get(col));
                     }
                     try {
                         dml().writeRow(session, row);

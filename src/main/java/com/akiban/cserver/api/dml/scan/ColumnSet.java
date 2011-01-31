@@ -22,32 +22,23 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.util.ArgumentValidation;
 
 public final class ColumnSet {
 
-    /**
-     * Translates an array of ints into a set of ColumnIds. Repeated ints are ignored.
-     * @param positions the positions to translate to ColumnIds
-     * @return the Set of ColumnIds generated from the given positions; or null if positions is null
-     */
-    public static Set<ColumnId> ofPositions(int... positions) {
-        if (positions == null) {
-            return null;
+    public static Set<Integer> ofPositions(int... positions) {
+        Set<Integer> asSet = new HashSet<Integer>();
+        for(int pos : positions) {
+            asSet.add(pos);
         }
-        Set<ColumnId> set = new HashSet<ColumnId>(positions.length);
-        for (int pos : positions) {
-            set.add(ColumnId.of(pos));
-        }
-        return set;
+        return asSet;
     }
 
-    public static int unpackByteFromLegacy(byte theByte, int byteNum, Set<ColumnId> out) {
+    public static int unpackByteFromLegacy(byte theByte, int byteNum, Set<Integer> out) {
         int added = 0;
         for(int relativePos=0; relativePos < 8; ++relativePos) {
             if ( 0!= (theByte & (1 << relativePos))) {
-                if (out.add( ColumnId.of( (byteNum*8) + relativePos) )) {
+                if (out.add( (byteNum*8) + relativePos) ) {
                     ++added;
                 }
             }
@@ -55,12 +46,12 @@ public final class ColumnSet {
         return added;
     }
 
-    public static Set<ColumnId> unpackFromLegacy(byte[] columns) {
+    public static Set<Integer> unpackFromLegacy(byte[] columns) {
         ArgumentValidation.notNull("columns", columns);
         if (columns.length == 0) {
             return Collections.emptySet();
         }
-        Set<ColumnId> retval = new HashSet<ColumnId>();
+        Set<Integer> retval = new HashSet<Integer>();
         for (int byteNum=0; byteNum < columns.length; ++byteNum) {
             if (columns[byteNum] > 0) {
                 int added = unpackByteFromLegacy(columns[byteNum], byteNum, retval);
@@ -77,17 +68,17 @@ public final class ColumnSet {
      * See the
      * <a href="https://akibainc.onconfluence.com/display/db/Message+Compendium#MessageCompendium-ScanRowsRequest">
      * message compendium's definition of ScanRowsRequest</a> for more information.
+     * @param columns the columns to pack to bytes
      * @return the columns desired
      */
-    public static byte[] packToLegacy(Collection<ColumnId> columns) {
+    public static byte[] packToLegacy(Collection<Integer> columns) {
         if (columns.isEmpty()) {
             return new byte[0];
         }
         ByteBuffer byteBuffer = ByteBuffer.allocate(1);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        for (ColumnId column : columns) {
-            final int posAbsolute = column.getPosition();
+        for (int posAbsolute : columns) {
             final int byteNum = ((posAbsolute + 8) / 8) - 1;
             final int posRelative = posAbsolute - byteNum*8;
             assert (posRelative <= 7) && (posRelative >=0)

@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 
 public final class SimplePredicateTest {
@@ -34,16 +33,16 @@ public final class SimplePredicateTest {
         final SimplePredicate predicate = new SimplePredicate(TableId.of(0), SimplePredicate.Comparison.EQ);
         final Object col0Val = new Object();
 
-        predicate.addColumn(ColumnId.of(0), col0Val);
+        predicate.addColumn(0, col0Val);
 
         final NewRow start = predicate.getStartRow();
         final NewRow end = predicate.getEndRow();
 
         assertSame("start and end", start, end);
 
-        Map<ColumnId,Object> actualFields = start.getFields();
+        Map<Integer,Object> actualFields = start.getFields();
         assertEquals("fields size", 1, actualFields.size());
-        assertSame("value[0]", col0Val, actualFields.get(ColumnId.of(0)));
+        assertSame("value[0]", col0Val, actualFields.get(0));
 
         assertEquals("scan flags",
                 EnumSet.of(
@@ -57,7 +56,7 @@ public final class SimplePredicateTest {
         final SimplePredicate predicate = new SimplePredicate(TableId.of(0), comparison);
         final Object col0Val = new Object();
 
-        predicate.addColumn(ColumnId.of(0), col0Val);
+        predicate.addColumn(0, col0Val);
 
         final NewRow start = predicate.getStartRow();
         final NewRow end = predicate.getEndRow();
@@ -86,9 +85,9 @@ public final class SimplePredicateTest {
         }
 
 
-        Map<ColumnId,Object> actualFields = rowToCheck.getFields();
+        Map<Integer,Object> actualFields = rowToCheck.getFields();
         assertEquals("fields size", 1, actualFields.size());
-        assertSame("value[0]", col0Val, actualFields.get(ColumnId.of(0)));
+        assertSame("value[0]", col0Val, actualFields.get(0));
 
         assertEquals("scan flags", expectedFlags, predicate.getScanFlags());
     }

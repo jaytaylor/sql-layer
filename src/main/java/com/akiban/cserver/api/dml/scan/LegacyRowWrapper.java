@@ -17,7 +17,6 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DMLError;
 
@@ -59,7 +58,7 @@ public final class LegacyRowWrapper extends NewRow
     }
 
     @Override
-    public Object put(ColumnId index, Object object)
+    public Object put(int index, Object object)
     {
         if (updatedRow == null) {
             updatedRow = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
@@ -76,7 +75,7 @@ public final class LegacyRowWrapper extends NewRow
     }
 
     @Override
-    public Object get(ColumnId columnId)
+    public Object get(int columnId)
     {
         Object object;
         if (rowData == null && updatedRow == null) {
@@ -85,25 +84,25 @@ public final class LegacyRowWrapper extends NewRow
             object =
                 updatedRow != null
                 ? updatedRow.get(columnId)
-                : rowData.toObject(rowDef, columnId.getPosition());
+                : rowData.toObject(rowDef, columnId);
         }
         return object;
     }
 
     @Override
-    public boolean hasValue(ColumnId columnId)
+    public boolean hasValue(int columnId)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Object remove(ColumnId columnId)
+    public Object remove(int columnId)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Map<ColumnId, Object> getFields()
+    public Map<Integer, Object> getFields()
     {
         throw new UnsupportedOperationException();
     }

@@ -55,7 +55,6 @@ import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.DMLFunctionsImpl;
 import com.akiban.cserver.api.HapiProcessor;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.CursorId;
@@ -250,9 +249,9 @@ public class ApiTestBase extends CServerTestCase {
 
     protected final void expectFullRows(TableId tableId, NewRow... expectedRows) throws InvalidOperationException {
         Table uTable = ddl().getAIS(session).getTable( ddl().getTableName(tableId) );
-        Set<ColumnId> allCols = new HashSet<ColumnId>();
+        Set<Integer> allCols = new HashSet<Integer>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
-            allCols.add( ColumnId.of(i) );
+            allCols.add(i);
         }
         ScanRequest all = new ScanAllRequest(tableId, allCols);
         expectRows(all, expectedRows);
@@ -272,7 +271,7 @@ public class ApiTestBase extends CServerTestCase {
     protected static NewRow createNewRow(TableId tableId, Object... columns) {
         NewRow row = new NiceRow(tableId);
         for (int i=0; i < columns.length; ++i) {
-            row.put(ColumnId.of(i), columns[i] );
+            row.put(i, columns[i] );
         }
         return row;
     }

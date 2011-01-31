@@ -20,7 +20,6 @@ import java.util.Map;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DMLError;
@@ -51,7 +50,7 @@ public abstract class NewRow {
      * @return the previous object at the specified index, or null if there was one
      * @throws UnsupportedOperationException if not supported
      */
-    public abstract Object put(ColumnId index, Object object);
+    public abstract Object put(int index, Object object);
 
     /**
      * Gets the table ID to which this row belongs
@@ -65,21 +64,21 @@ public abstract class NewRow {
      * @return the value at the specified index, or null if there is none
      * @throws UnsupportedOperationException if not supported
      */
-    public abstract Object get(ColumnId columnId);
+    public abstract Object get(int columnId);
 
     /**
      * Whether a value is defined in this column. This is the equivalent of Map.containsKey.
      * @param columnId the column to request
      * @return whether a value is defined for the given column
      */
-    public abstract boolean hasValue(ColumnId columnId);
+    public abstract boolean hasValue(int columnId);
 
     /**
      * Removes a value from the row, if it existed. Returns back the old value
      * @param columnId the column whose value we should remove
      * @return the old value, or null if there wasn't one
      */
-    public abstract Object remove(ColumnId columnId);
+    public abstract Object remove(int columnId);
 
     /**
      * Returns a modifiable map view of the fields. The modifying the NewRow will update the Map, and updating
@@ -87,7 +86,7 @@ public abstract class NewRow {
      * @return the fields that have been set
      * @throws UnsupportedOperationException if not supported
      */
-    public abstract Map<ColumnId,Object> getFields();
+    public abstract Map<Integer,Object> getFields();
 
     /**
      * Converts this row to a newly allocated RowData

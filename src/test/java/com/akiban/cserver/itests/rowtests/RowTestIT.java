@@ -18,12 +18,10 @@ package com.akiban.cserver.itests.rowtests;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
-import org.junit.Before;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -40,9 +38,9 @@ public class RowTestIT extends ApiTestBase
                                 "a int not null",
                                 "b int not null");
         NiceRow original = new NiceRow(t);
-        ColumnId cId = ColumnId.of(0);
-        ColumnId cA = ColumnId.of(1);
-        ColumnId cB = ColumnId.of(2);
+        int cId = 0;
+        int cA = 1;
+        int cB = 2;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
         original.put(cId, 100L);
         original.put(cA, 200L);
@@ -62,9 +60,9 @@ public class RowTestIT extends ApiTestBase
                                 "a int not null",
                                 "b int");
         NiceRow original = new NiceRow(t);
-        ColumnId cId = ColumnId.of(0);
-        ColumnId cA = ColumnId.of(1);
-        ColumnId cB = ColumnId.of(2);
+        int cId = 0;
+        int cA = 1;
+        int cB = 2;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
         original.put(cId, 100L);
         original.put(cA, 200L);
@@ -85,10 +83,10 @@ public class RowTestIT extends ApiTestBase
                                 "b int",
                                 "c int");
         NiceRow row = new NiceRow(t);
-        ColumnId cId = ColumnId.of(0);
-        ColumnId cA = ColumnId.of(1);
-        ColumnId cB = ColumnId.of(2);
-        ColumnId cC = ColumnId.of(3);
+        int cId = 0;
+        int cA = 1;
+        int cB = 2;
+        int cC = 3;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
         row.put(cId, 100L);
         row.put(cA, 200L);
@@ -117,10 +115,10 @@ public class RowTestIT extends ApiTestBase
                                 "b int",
                                 "c int");
         NiceRow niceRow = new NiceRow(t);
-        ColumnId cId = ColumnId.of(0);
-        ColumnId cA = ColumnId.of(1);
-        ColumnId cB = ColumnId.of(2);
-        ColumnId cC = ColumnId.of(3);
+        int cId = 0;
+        int cA = 1;
+        int cB = 2;
+        int cC = 3;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
         niceRow.put(cId, 100L);
         niceRow.put(cA, 200L);
@@ -152,10 +150,10 @@ public class RowTestIT extends ApiTestBase
                                 "b int",
                                 "c int");
         NiceRow niceRow = new NiceRow(t);
-        ColumnId cId = ColumnId.of(0);
-        ColumnId cA = ColumnId.of(1);
-        ColumnId cB = ColumnId.of(2);
-        ColumnId cC = ColumnId.of(3);
+        int cId = 0;
+        int cA = 1;
+        int cB = 2;
+        int cC = 3;
         // Insert longs, not integers, because Persistit stores all ints as 8-byte.
         niceRow.put(cId, 0);
         niceRow.put(cA, 0L);

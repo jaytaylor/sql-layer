@@ -18,7 +18,6 @@ package com.akiban.cserver.api.dml.scan;
 import java.util.EnumSet;
 import java.util.Set;
 
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.util.ArgumentValidation;
 
@@ -39,7 +38,7 @@ public final class SimplePredicate implements Predicate {
         this.tableId = tableId;
     }
 
-    public void addColumn(ColumnId column, Object value) {
+    public void addColumn(int column, Object value) {
         ArgumentValidation.notNull("column ID", column);
         ArgumentValidation.notNull("value", value); // TODO verify this is needed
 
@@ -82,7 +81,7 @@ public final class SimplePredicate implements Predicate {
         }
     }
 
-    private void putToRow(NewRow which, ColumnId index, Object value) {
+    private void putToRow(NewRow which, int index, Object value) {
         Object old = which.put(index, value);
         if (old != null && (!old.equals(value))) {
             which.put(index, old);

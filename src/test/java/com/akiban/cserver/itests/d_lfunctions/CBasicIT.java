@@ -18,7 +18,6 @@ package com.akiban.cserver.itests.d_lfunctions;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.NoSuchRowException;
@@ -215,7 +214,7 @@ public final class CBasicIT extends ApiTestBase {
 
         try {
             NiceRow old = new NiceRow(tableId);
-            old.put(ColumnId.of(1), "hello world");
+            old.put(1, "hello world");
             dml().updateRow( session, old, createNewRow(tableId, 1, "goodbye cruel world") );
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -373,7 +372,7 @@ public final class CBasicIT extends ApiTestBase {
 
         try {
             NiceRow deleteAttempt = new NiceRow(tableId);
-            deleteAttempt.put(ColumnId.of(1), "the customer's name");
+            deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session, deleteAttempt);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -393,7 +392,7 @@ public final class CBasicIT extends ApiTestBase {
 
         try {
             NiceRow deleteAttempt = new NiceRow(tableId);
-            deleteAttempt.put(ColumnId.of(1), "the customer's name");
+            deleteAttempt.put(1, "the customer's name");
             dml().deleteRow( session, createNewRow(tableId, 0, "this row doesn't exist"));
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
