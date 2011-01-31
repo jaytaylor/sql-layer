@@ -24,6 +24,7 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.TableStatistics;
+import com.akiban.cserver.api.dml.ColumnSelector;
 import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.session.Session;
@@ -58,7 +59,12 @@ public interface Store extends Service<Store> {
             throws Exception;
 
     void updateRow(final Session session, final RowData oldRowData,
-            final RowData newRowData) throws Exception;
+                   final RowData newRowData,
+                   final ColumnSelector columnSelector) throws Exception;
+
+    // TEMPORARY - remove when logic relating to columnSelector is enabled
+    void updateRow(final Session session, final RowData oldRowData,
+                   final RowData newRowData) throws Exception;
 
     /**
      * @param scanRowsRequest
