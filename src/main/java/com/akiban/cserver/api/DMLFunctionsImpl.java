@@ -35,7 +35,6 @@ import com.akiban.cserver.RowDef;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
 import com.akiban.cserver.api.dml.NoSuchColumnException;
@@ -73,17 +72,21 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static final Object OPEN_CURSORS = new Object();
 
     private final static Logger logger = Logger.getLogger(DMLFunctionsImpl.class);
+    private final DDLFunctionsImpl ddlFunctions;
+
+    public DMLFunctionsImpl(DDLFunctionsImpl ddlFunctions) {
+        this.ddlFunctions = ddlFunctions;
+    }
 
     @Override
-    public TableStatistics getTableStatistics(Session session, TableId tableId,
+    public TableStatistics getTableStatistics(Session session, int tableId,
             boolean updateFirst) throws NoSuchTableException,
             GenericInvalidOperationException {
-        final int tableIdInt = tableId.getTableId(idResolver());
         try {
             if (updateFirst) {
-                store().analyzeTable(session, tableIdInt);
+                store().analyzeTable(session, tableId);
             }
-            return store().getTableStatistics(session, tableIdInt);
+            return store().getTableStatistics(session, tableId);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchTableException.class, ioe);
@@ -151,8 +154,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private ScanRequest scanAllColumns(final Session session,
             final ScanRequest request) throws NoSuchTableException {
-        Table table = schemaManager().getAis(session).getTable(
-                request.getTableId().getTableName(idResolver()));
+        Table table = ddlFunctions.getAIS(session).getTable(
+                ddlFunctions.getTableName(session, request.getTableIdInt(null))
+        );
         final int colsCount = table.getColumns().size();
         Set<Integer> allColumns = new HashSet<Integer>(colsCount);
         for (int i = 0; i < colsCount; ++i) {
@@ -194,11 +198,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
-            public TableId getTableId() {
-                return request.getTableId();
-            }
-
-            @Override
             public boolean scanAllColumns() {
                 return true;
             }
@@ -215,7 +214,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                     request.getStart(idr), request.getEnd(idr),
                     request.getColumnBitMap());
         } catch (RowDefNotFoundException e) {
-            throw new NoSuchTableException(request.getTableId(), e);
+            throw new NoSuchTableException(request.getTableIdInt(null), e);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -445,8 +444,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
-        RowDef rowDef = idResolver().getRowDef(
-                TableId.of(rowData.getRowDefId()));
+
+        RowDef rowDef = ddlFunctions.getRowDef(rowData.getRowDefId());
         return NiceRow.fromRowData(rowData, rowDef);
     }
 
@@ -464,7 +463,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             int currRowDefId = rowData.getRowDefId();
             if ((rowDef == null) || (currRowDefId != lastRowDefId)) {
                 lastRowDefId = currRowDefId;
-                rowDef = idResolver().getRowDef(TableId.of(currRowDefId));
+                rowDef = ddlFunctions.getRowDef(currRowDefId);
             }
             converted.add(NiceRow.fromRowData(rowData, rowDef));
         }
@@ -532,14 +531,12 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public void truncateTable(final Session session, final TableId tableId)
+    public void truncateTable(final Session session, final int tableId)
             throws NoSuchTableException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, GenericInvalidOperationException {
         // Store.truncate doesn't work well, so we have to actually scan the
         // rows
-        TableName tableName = tableId.getTableName(idResolver());
-        Index pkIndex = schemaManager().getAis(session).getTable(tableName)
-                .getIndex(Index.PRIMARY_KEY_CONSTRAINT);
+        Index pkIndex = ddlFunctions.getTable(session, tableId).getIndex(Index.PRIMARY_KEY_CONSTRAINT);
         assert pkIndex.isPrimaryKey() : pkIndex;
         Set<Integer> pkColumns = new HashSet<Integer>();
         for (IndexColumn column : pkIndex.getColumns()) {

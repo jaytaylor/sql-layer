@@ -23,5 +23,5 @@ public interface IdResolver {
 
     TableName tableName(int id) throws NoSuchTableException;
 
-    RowDef getRowDef(TableId id) throws NoSuchTableException;
+    RowDef getRowDef(int id) throws NoSuchTableException;
 }

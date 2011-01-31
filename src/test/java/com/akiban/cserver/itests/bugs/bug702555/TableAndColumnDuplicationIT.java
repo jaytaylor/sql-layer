@@ -16,7 +16,6 @@
 package com.akiban.cserver.itests.bugs.bug702555;
 
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Test;
 
@@ -54,9 +53,9 @@ public final class TableAndColumnDuplicationIT extends ApiTestBase {
      */
     @Test
     public void noDuplicateKeyButIncompatibleRows() throws InvalidOperationException {
-        final TableId schema1Table
+        final int schema1Table
                 = createTable("schema1", "table1", "id int key");
-        final TableId schema2Table =
+        final int schema2Table =
                 createTable("schema2","table1", "name varchar(32) key");
 
         writeRows(
@@ -87,9 +86,9 @@ public final class TableAndColumnDuplicationIT extends ApiTestBase {
     private void doTest(String schema1TableName, String schema1TableKeyCol,
                         String schema2TableName, String schema2TableKeyCol) throws InvalidOperationException
     {
-        final TableId schema1Table
+        final int schema1Table
                 = createTable("schema1", schema1TableName, schema1TableKeyCol + " int key, name varchar(32)");
-        final TableId schema2Table =
+        final int schema2Table =
                 createTable("schema2", schema2TableName, schema2TableKeyCol + " int key, name varchar(32)");
 
         writeRows(

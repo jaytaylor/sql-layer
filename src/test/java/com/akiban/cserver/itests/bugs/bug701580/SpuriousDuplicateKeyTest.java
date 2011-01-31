@@ -17,7 +17,6 @@ package com.akiban.cserver.itests.bugs.bug701580;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Test;
 
@@ -40,7 +39,7 @@ public final class SpuriousDuplicateKeyTest extends ApiTestBase {
 
     private void simpleTestCase() throws Exception {
         createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
-        TableId t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
+        int t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
 
         confirmIds("t1", 0, 2, 2);
         confirmIds("t2", 0, 2, 2);

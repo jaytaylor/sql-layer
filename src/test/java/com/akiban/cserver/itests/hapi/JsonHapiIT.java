@@ -19,7 +19,6 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
@@ -382,8 +381,7 @@ public final class JsonHapiIT extends ApiTestBase {
         }
         if (runInfo.writeRows) {
             for(Map.Entry<String,JSONArray> entry : setupInfo.writeRows.entrySet()) {
-                TableId tableId = TableId.of(setupInfo.schema, entry.getKey());
-                tableId = ddl().resolveTableId(tableId);
+                int tableId = tableId(setupInfo.schema, entry.getKey());
                 JSONArray rows = entry.getValue();
                 for(int rowNum=0, ROWS=rows.length(); rowNum < ROWS; ++rowNum) {
                     JSONArray columns = rows.getJSONArray(rowNum);

@@ -17,10 +17,10 @@ package com.akiban.cserver.api;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
 import com.akiban.cserver.api.ddl.DuplicateTableNameException;
 import com.akiban.cserver.api.ddl.ForeignConstraintDDLException;
@@ -72,24 +72,20 @@ public interface DDLFunctions {
             GenericInvalidOperationException;
 
     /**
-     * Drops a table if it exists, and possibly its children. Returns the names of all tables that ended up being
-     * dropped; this could be an empty set, if the given tableId doesn't correspond to a known table. If the returned
-     * Set is empty (tableId wasn't known), the Set is unmodifiable; otherwise, it is safe to edit.
-     * @param tableId the table to drop
-     * @throws NullPointerException if tableId is null
+     * Drops a table if it exists, and possibly its children.
+     * @param tableName the table to drop
+     * @throws NullPointerException if tableName is null
      * @throws ProtectedTableDDLException if the given table is protected
      * @throws ForeignConstraintDDLException if dropping this table would create a foreign key violation
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void dropTable(Session session, TableId tableId)
+    void dropTable(Session session, TableName tableName)
     throws  ProtectedTableDDLException,
             ForeignConstraintDDLException,
             GenericInvalidOperationException;
 
     /**
-     * Drops a table if it exists, and possibly its children. Returns the names of all tables that ended up being
-     * dropped; this could be an empty set, if the given tableId doesn't correspond to a known table. If the returned
-     * Set is empty (tableId wasn't known), the Set is unmodifiable; otherwise, it is safe to edit.
+     * Drops a table if it exists, and possibly its children.
      * @param schemaName the schema to drop
      * @throws NullPointerException if tableId is null
      * @throws ProtectedTableDDLException if the given schema contains protected tables
@@ -108,23 +104,33 @@ public interface DDLFunctions {
     AkibaInformationSchema getAIS(Session session);
 
     /**
-     * Resolves the given TableId to its table's name. As a side effect, the tableId will be resolved.
+     * Resolves the given table ID to its table's name.
+     * @param session the session
      * @param tableId the table to look up
      * @return the table's name
      * @throws NoSuchTableException if the given table doesn't exist
      * @throws NullPointerException if the tableId is null
      */
-    TableName getTableName(TableId tableId) throws NoSuchTableException;
+    TableName getTableName(Session session, int tableId) throws NoSuchTableException;
 
     /**
-     * Resolves the given TableId and returns it (as a convenience, for chaining).
-     * @see com.akiban.cserver.api.common.TableId#isResolved() 
-     * @param tableId the table ID to resolve
-     * @return the same instance you passed in
-     * @throws NoSuchTableException if the table ID can't be resolved
-     * @throws NullPointerException if the given table ID is null
+     * Resolves the given table name to its table's id.
+     * @param session the session
+     * @param tableName the table to look up
+     * @return the table's id
+     * @throws NoSuchTableException if the given table doesn't exist
+     * @throws NullPointerException if the tableName is null
      */
-    TableId resolveTableId(TableId tableId) throws NoSuchTableException;
+    int getTableId(Session session, TableName tableName) throws NoSuchTableException;
+
+    /**
+     * Resolves the given table to its Table
+     * @param session the session
+     * @param tableId the table to look up
+     * @return the Table
+     * @throws NoSuchTableException if the given table doesn't exist
+     */
+    public Table getTable(Session session, int tableId) throws NoSuchTableException;
 
     /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including group tables and tables in the
@@ -159,10 +165,10 @@ public interface DDLFunctions {
     /**
      * Drop indexes on an existing table.
      * 
-     * @param tableId the table containing the indexes to drop
+     * @param tableName the table containing the indexes to drop
      * @param indexesToDrop list of indexes to drop
      * @throws InvalidOperationException
      */
-    void dropIndexes(Session session, TableId tableId, List<Integer> indexesToDrop)
+    void dropIndexes(Session session, TableName tableName, List<Integer> indexesToDrop)
             throws InvalidOperationException;
 }

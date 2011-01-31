@@ -18,7 +18,6 @@ package com.akiban.cserver.itests.rowtests;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
@@ -32,7 +31,7 @@ public class RowTestIT extends ApiTestBase
     @Test
     public void rowConversionTestNoNulls() throws InvalidOperationException
     {
-        TableId t = createTable("s",
+        int t = createTable("s",
                                 "t",
                                 "id int not null key",
                                 "a int not null",
@@ -45,7 +44,7 @@ public class RowTestIT extends ApiTestBase
         original.put(cId, 100L);
         original.put(cA, 200L);
         original.put(cB, 300L);
-        RowDef rowDef = rowDefCache().getRowDef(t.getTableId(null));
+        RowDef rowDef = rowDefCache().getRowDef(t);
         RowData rowData = original.toRowData();
         NiceRow reconstituted = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
         assertEquals(original, reconstituted);
@@ -54,7 +53,7 @@ public class RowTestIT extends ApiTestBase
     @Test
     public void rowConversionTestWithNulls() throws InvalidOperationException
     {
-        TableId t = createTable("s",
+        int t = createTable("s",
                                 "t",
                                 "id int not null key",
                                 "a int not null",
@@ -67,7 +66,7 @@ public class RowTestIT extends ApiTestBase
         original.put(cId, 100L);
         original.put(cA, 200L);
         original.put(cB, null);
-        RowDef rowDef = rowDefCache().getRowDef(t.getTableId(null));
+        RowDef rowDef = rowDefCache().getRowDef(t);
         RowData rowData = original.toRowData();
         NiceRow reconstituted = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
         assertEquals(original, reconstituted);
@@ -76,7 +75,7 @@ public class RowTestIT extends ApiTestBase
     @Test
     public void niceRowUpdate() throws InvalidOperationException
     {
-        TableId t = createTable("s",
+        int t = createTable("s",
                                 "t",
                                 "id int not null key",
                                 "a int",
@@ -108,7 +107,7 @@ public class RowTestIT extends ApiTestBase
     @Test
     public void rowDataUpdate() throws InvalidOperationException
     {
-        TableId t = createTable("s",
+        int t = createTable("s",
                                 "t",
                                 "id int not null key",
                                 "a int",
@@ -143,7 +142,7 @@ public class RowTestIT extends ApiTestBase
     {
         // LegacyRowWrapper converts to NiceRow on update, back to RowData on toRowData().
         // Check the conversions.
-        TableId t = createTable("s",
+        int t = createTable("s",
                                 "t",
                                 "id int not null key",
                                 "a int",
@@ -173,7 +172,7 @@ public class RowTestIT extends ApiTestBase
         assertEquals(1L, legacyRow.get(cB));
         assertEquals(1L, legacyRow.get(cC));
         // Convert to LegacyRow and check NiceRow created from the legacy row's RowData
-        RowDef rowDef = rowDefCache().getRowDef(t.getTableId(null));
+        RowDef rowDef = rowDefCache().getRowDef(t);
         niceRow = (NiceRow) NiceRow.fromRowData(legacyRow.toRowData(), rowDef);
         assertEquals(1L, niceRow.get(cA));
         assertEquals(1L, niceRow.get(cB));

@@ -62,14 +62,13 @@ public final class IdResolverImpl implements IdResolver {
     }
 
     @Override
-    public RowDef getRowDef(TableId id) throws NoSuchTableException {
-        final int idInt = id.getTableId(this);
+    public RowDef getRowDef(int id) throws NoSuchTableException {
         try {
-            RowDef rowDef = store.getRowDefCache().getRowDef(idInt);
+            RowDef rowDef = store.getRowDefCache().getRowDef(id);
             assert rowDef != null;
             return rowDef;
         } catch (RowDefNotFoundException e) {
-            throw new NoSuchTableException(idInt);
+            throw new NoSuchTableException(id);
         }
     }
 

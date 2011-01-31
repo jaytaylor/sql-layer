@@ -17,6 +17,7 @@ package com.akiban.cserver.api;
 
 import static org.junit.Assert.assertEquals;
 
+import com.akiban.ais.model.TableName;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +25,6 @@ import org.junit.Test;
 import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.TableStatistics;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 public final class ApiTest extends CServerTestCase {
@@ -34,8 +34,8 @@ public final class ApiTest extends CServerTestCase {
         final DDLFunctionsImpl ddl;
         
         private ApiPair() {
-            dml = new DMLFunctionsImpl();
             ddl = new DDLFunctionsImpl();
+            dml = new DMLFunctionsImpl(ddl);
         }
     }
     
@@ -52,8 +52,8 @@ public final class ApiTest extends CServerTestCase {
     @Test
     public void testAutoIncrement() throws InvalidOperationException {
         ApiPair apiPair = new ApiPair();
-        final TableId tableId = TableId.of("sc1", "t1");
         final Session session = new SessionImpl();
+        final int tableId = apiPair.ddl.getTableId(session, new TableName("sc1", "t1"));
         apiPair.ddl.createTable(session, "sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
         TableStatistics tableStats = apiPair.dml.getTableStatistics(session, tableId, false);
         assertEquals("autoinc value", 10L, tableStats.getAutoIncrementValue());

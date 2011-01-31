@@ -21,7 +21,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Test;
 
@@ -40,7 +39,7 @@ import static junit.framework.Assert.*;
 public final class DecimalsWithoutParamsIT extends ApiTestBase {
     @Test
     public void decimalHasNoParams() throws InvalidOperationException {
-        TableId t1Id = createTable("schema", "t1",
+        int t1Id = createTable("schema", "t1",
                 "c1 DECIMAL NOT NULL, c2 DECIMAL NOT NULL, c3 DECIMAL NOT NULL, PRIMARY KEY(c1,c2,c3)"
         );
 
@@ -68,7 +67,7 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
 
     @Test
     public void decimalHasOneParams() throws InvalidOperationException {
-        TableId t1Id = createTable("schema", "t1",
+        int t1Id = createTable("schema", "t1",
                 "c1 DECIMAL(17) NOT NULL,PRIMARY KEY(c1)"
         );
 
@@ -97,8 +96,8 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
      * Bug 706315. For each column in the given table, compares the column's values to the values of its map.
      * @param tableId the table whose columns we should compare
      */
-    private void columnSerializationTest(TableId tableId) throws InvalidOperationException {
-        TableName tableName = ddl().getTableName(tableId);
+    private void columnSerializationTest(int tableId) throws InvalidOperationException {
+        TableName tableName = ddl().getTableName(session, tableId);
         UserTable uTable = ddl().getAIS(session).getUserTable(tableName);
         assertNotNull("no table " + tableName, uTable);
 

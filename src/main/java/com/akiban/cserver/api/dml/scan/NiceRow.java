@@ -23,20 +23,19 @@ import java.util.TreeMap;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.encoding.Encoding;
 import com.akiban.util.ArgumentValidation;
 
 public class NiceRow extends NewRow {
     private final Map<Integer,Object> fields;
-    private final TableId tableId;
+    private final int tableId;
 
-    public NiceRow(TableId tableId)
+    public NiceRow(int tableId)
     {
         this(tableId, rowDef(tableId));
     }
 
-    public NiceRow(TableId tableId, RowDef rowDef)
+    public NiceRow(int tableId, RowDef rowDef)
     {
         super(rowDef);
         ArgumentValidation.notNull("tableId", tableId);
@@ -51,7 +50,7 @@ public class NiceRow extends NewRow {
     }
 
     @Override
-    public TableId getTableId() {
+    public int getTableId() {
         return tableId;
     }
 
@@ -87,7 +86,7 @@ public class NiceRow extends NewRow {
             }
         }
 
-        NewRow retval = new NiceRow(TableId.of(rowDef.getRowDefId()), rowDef);
+        NewRow retval = new NiceRow(rowDef.getRowDefId(), rowDef);
         for (int pos : activeColumns) {
             final FieldDef fieldDef = rowDef.getFieldDef(pos);
             final Encoding encoding = fieldDef.getEncoding();
@@ -159,12 +158,14 @@ public class NiceRow extends NewRow {
 
         NiceRow niceRow = (NiceRow) o;
 
-        return fields.equals(niceRow.fields) && tableId.equals(niceRow.tableId);
+        return fields.equals(niceRow.fields) && (tableId == niceRow.tableId);
 
     }
 
     @Override
     public int hashCode() {
-        return tableId.hashCode() + fields.hashCode();
+        int result = fields != null ? fields.hashCode() : 0;
+        result = 31 * result + tableId;
+        return result;
     }
 }

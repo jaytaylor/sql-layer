@@ -17,7 +17,6 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DMLError;
 
 import java.util.Map;
@@ -68,10 +67,10 @@ public final class LegacyRowWrapper extends NewRow
     }
 
     @Override
-    public TableId getTableId()
+    public int getTableId()
     {
         assert rowData != null || updatedRow != null;
-        return updatedRow != null ? updatedRow.getTableId() : TableId.of(rowData.getRowDefId());
+        return updatedRow != null ? updatedRow.getTableId() : rowData.getRowDefId();
     }
 
     @Override

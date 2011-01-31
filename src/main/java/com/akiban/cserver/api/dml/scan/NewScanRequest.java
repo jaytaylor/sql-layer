@@ -18,13 +18,12 @@ package com.akiban.cserver.api.dml.scan;
 import java.util.Set;
 
 import com.akiban.cserver.api.common.IdResolver;
-import com.akiban.cserver.api.common.TableId;
 
 public final class NewScanRequest extends NewScanRange {
 
     private final int indexId;
 
-    public NewScanRequest(TableId tableId, int indexId, Set<Integer> columns, Predicate predicate) {
+    public NewScanRequest(int tableId, int indexId, Set<Integer> columns, Predicate predicate) {
         super(tableId, columns, predicate);
         this.indexId = indexId;
     }

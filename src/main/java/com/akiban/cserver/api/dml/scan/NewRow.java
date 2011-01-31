@@ -20,8 +20,6 @@ import java.util.Map;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DMLError;
 import com.akiban.cserver.service.ServiceManagerImpl;
 
@@ -56,7 +54,7 @@ public abstract class NewRow {
      * Gets the table ID to which this row belongs
      * @return the table ID
      */
-    public abstract TableId getTableId();
+    public abstract int getTableId();
 
     /**
      * Gets the value at the specified index, which is a 0-indexed column position offset.
@@ -121,17 +119,6 @@ public abstract class NewRow {
     protected NewRow(RowDef rowDef)
     {
         this.rowDef = rowDef;
-    }
-
-    protected static RowDef rowDef(TableId tableId)
-    {
-        int tableIdInt;
-        try {
-            tableIdInt = tableId.getTableId(null);
-        } catch (NoSuchTableException e) {
-            throw new DMLError(String.format("Couldn't resolve %s", tableId), e);
-        }
-        return rowDef(tableIdInt);
     }
 
     protected static RowDef rowDef(int rowDefId)

@@ -16,7 +16,6 @@
 package com.akiban.cserver.itests.bugs.bug696096;
 
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.itests.ApiTestBase;
@@ -27,11 +26,10 @@ import org.junit.Test;
 import static junit.framework.Assert.*;
 
 public final class DuplicateKeyValueMessageTest extends ApiTestBase {
-    private TableId tableId;
+    private int tableId;
 
     @Before
     public void setUp() throws InvalidOperationException {
-        assert tableId == null;
         tableId = createTable("sa", "ta",
                 "c0 INT KEY",
                 "c1 int",

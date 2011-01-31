@@ -21,7 +21,6 @@ import java.util.Set;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
 import com.akiban.cserver.api.dml.NoSuchColumnException;
@@ -52,7 +51,7 @@ public interface DMLFunctions {
      * @throws com.akiban.cserver.api.common.NoSuchTableException if the specified table doesn't exist
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    TableStatistics getTableStatistics(Session session, TableId tableId, boolean updateFirst)
+    TableStatistics getTableStatistics(Session session, int tableId, boolean updateFirst)
     throws NoSuchTableException,
             GenericInvalidOperationException;
 
@@ -196,7 +195,8 @@ public interface DMLFunctions {
     CursorState getCursorState(Session session, CursorId cursorId);
 
     /**
-     * <p>Returns all open cursors. It is not necessarily safe to call {@linkplain #scanSome(CursorId, Session, LegacyRowOutput , int)}
+     * <p>Returns all open cursors. It is not necessarily safe to call
+     * {@linkplain #scanSome(Session, CursorId, LegacyRowOutput, int)}
      * on all of these cursors, since some may have reached their end. But it is safe to close each of these cursors
      * (unless, of course, another thread closes them first).</p>
      *
@@ -317,7 +317,7 @@ public interface DMLFunctions {
      * @throws ForeignKeyConstraintDMLException if the truncate was blocked by at least one child table
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    void truncateTable(Session session, TableId tableId)
+    void truncateTable(Session session, int tableId)
     throws NoSuchTableException,
             UnsupportedModificationException,
             ForeignKeyConstraintDMLException,

@@ -25,12 +25,10 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.akiban.cserver.api.common.TableId;
-
 public final class SimplePredicateTest {
     @Test
     public void testEquals() throws Exception {
-        final SimplePredicate predicate = new SimplePredicate(TableId.of(0), SimplePredicate.Comparison.EQ);
+        final SimplePredicate predicate = new SimplePredicate(0, SimplePredicate.Comparison.EQ);
         final Object col0Val = new Object();
 
         predicate.addColumn(0, col0Val);
@@ -53,7 +51,7 @@ public final class SimplePredicateTest {
     }
     
     public void testGeneralNE(SimplePredicate.Comparison comparison) {
-        final SimplePredicate predicate = new SimplePredicate(TableId.of(0), comparison);
+        final SimplePredicate predicate = new SimplePredicate(0, comparison);
         final Object col0Val = new Object();
 
         predicate.addColumn(0, col0Val);

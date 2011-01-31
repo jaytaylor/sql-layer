@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.GroupTable;
@@ -43,7 +44,6 @@ import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -56,7 +56,6 @@ import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.DMLFunctionsImpl;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.CursorId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
@@ -145,8 +144,9 @@ public class ApiTestBase extends CServerTestCase {
     public final void startTestServices() throws Exception {
         sm = new TestServiceManager( );
         sm.startServices();
-        dml = new DMLFunctionsImpl();
-        ddl = new DDLFunctionsImpl();
+        DDLFunctionsImpl ddlFunctions = new DDLFunctionsImpl();
+        ddl = ddlFunctions;
+        dml = new DMLFunctionsImpl(ddlFunctions);
     }
 
     @After
@@ -174,12 +174,12 @@ public class ApiTestBase extends CServerTestCase {
         return store.getRowDefCache();
     }
 
-    protected final TableId createTable(String schema, String table, String definition) throws InvalidOperationException {
+    protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         ddl().createTable(session, schema, String.format("CREATE TABLE %s (%s)", table, definition));
-        return getTableId(schema, table);
+        return ddl().getTableId(session, new TableName(schema, table));
     }
 
-    protected final TableId createTable(String schema, String table, String... definitions) throws InvalidOperationException {
+    protected final int createTable(String schema, String table, String... definitions) throws InvalidOperationException {
         assertTrue("must have at least one definition element", definitions.length >= 1);
         StringBuilder unifiedDef = new StringBuilder();
         for (String definition : definitions) {
@@ -196,29 +196,10 @@ public class ApiTestBase extends CServerTestCase {
      * @param rowsExpected how many rows we expect
      * @throws InvalidOperationException for various reasons :)
      */
-    protected final void expectRowCount(TableId tableId, long rowsExpected) throws InvalidOperationException {
+    protected final void expectRowCount(int tableId, long rowsExpected) throws InvalidOperationException {
         TableStatistics tableStats = dml().getTableStatistics(session, tableId, true);
-        assertEquals("table ID", tableId.getTableId(null), tableStats.getRowDefId());
+        assertEquals("table ID", tableId, tableStats.getRowDefId());
         assertEquals("rows by TableStatistics", rowsExpected, tableStats.getRowCount());
-    }
-
-    protected final TableId getTableId(String schema, String table) {
-        AkibaInformationSchema ais = ddl().getAIS(session);
-        assertNotNull("ais was null", ais);
-        UserTable uTable = ais.getUserTable(schema, table);
-        assertNotNull("utable was null", uTable);
-
-        TableId byName = TableId.of(schema, table);
-        TableId byId = TableId.of(uTable.getTableId());
-        try {
-            assertEquals("table ID name", TableName.create(schema, table), ddl().getTableName(byId) );
-            assertEquals("table ID int", byId.getTableId(null), ddl.resolveTableId(byName).getTableId(null));
-            assertEquals("table IDs", byId, byName);
-            assertEquals("table IDs hash", byId.hashCode(), byName.hashCode());
-        } catch (NoSuchTableException e) {
-            throw new RuntimeException(e);
-        }
-        return byId;
     }
 
     protected static RuntimeException unexpectedException(Throwable cause) {
@@ -247,8 +228,8 @@ public class ApiTestBase extends CServerTestCase {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
 
-    protected final void expectFullRows(TableId tableId, NewRow... expectedRows) throws InvalidOperationException {
-        Table uTable = ddl().getAIS(session).getTable( ddl().getTableName(tableId) );
+    protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
+        Table uTable = ddl().getTable(session, tableId);
         Set<Integer> allCols = new HashSet<Integer>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
@@ -268,7 +249,7 @@ public class ApiTestBase extends CServerTestCase {
         return set;
     }
 
-    protected static NewRow createNewRow(TableId tableId, Object... columns) {
+    protected static NewRow createNewRow(int tableId, Object... columns) {
         NewRow row = new NiceRow(tableId);
         for (int i=0; i < columns.length; ++i) {
             row.put(i, columns[i] );
@@ -279,7 +260,7 @@ public class ApiTestBase extends CServerTestCase {
     protected final void dropAllTables() throws InvalidOperationException {
         for (TableName tableName : ddl().getAIS(session).getUserTables().keySet()) {
             if (!"akiba_information_schema".equals(tableName.getSchemaName())) {
-                ddl().dropTable(session, TableId.of(tableName.getSchemaName(), tableName.getTableName()));
+                ddl().dropTable(session, tableName);
             }
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
@@ -311,13 +292,41 @@ public class ApiTestBase extends CServerTestCase {
         }
     }
 
-    protected final UserTable getUserTable(TableId tableId) {
+    protected final int tableId(String schema, String table) {
+        return tableId(new TableName(schema, table));
+    }
+
+    protected final int tableId(TableName tableName) {
         try {
-            TableName tableName = ddl().getTableName(tableId);
-            return ddl().getAIS(session).getUserTable(tableName);
+            return ddl().getTableId(session, tableName);
         } catch (NoSuchTableException e) {
             throw new TestException(e);
         }
+    }
+
+    protected final TableName tableName(int tableId) {
+        try {
+            return ddl().getTableName(session, tableId);
+        } catch (NoSuchTableException e) {
+            throw new TestException(e);
+        }
+    }
+
+    protected final TableName tableName(String schema, String table) {
+        return new TableName(schema, table);
+    }
+
+    protected final UserTable getUserTable(int tableId) {
+        final Table table;
+        try {
+            table = ddl().getTable(session, tableId);
+        } catch (NoSuchTableException e) {
+            throw new TestException(e);
+        }
+        if (table.isUserTable()) {
+            return (UserTable) table;
+        }
+        throw new RuntimeException("not a user table: " + table);
     }
 
     protected final Map<TableName,UserTable> getUserTables() {
@@ -338,7 +347,7 @@ public class ApiTestBase extends CServerTestCase {
         return ret;
     }
 
-    protected void expectIndexes(TableId tableId, String... expectedIndexNames) {
+    protected void expectIndexes(int tableId, String... expectedIndexNames) {
         UserTable table = getUserTable(tableId);
         Set<String> expectedIndexesSet = new TreeSet<String>(Arrays.asList(expectedIndexNames));
         Set<String> actualIndexes = new TreeSet<String>();
@@ -350,7 +359,7 @@ public class ApiTestBase extends CServerTestCase {
         assertEquals("indexes in " + table.getName(), expectedIndexesSet, actualIndexes);
     }
 
-    protected void expectIndexColumns(TableId tableId, String indexName, String... expectedColumns) {
+    protected void expectIndexColumns(int tableId, String indexName, String... expectedColumns) {
         UserTable table = getUserTable(tableId);
         List<String> expectedColumnsList = Arrays.asList(expectedColumns);
         Index index = table.getIndex(indexName);

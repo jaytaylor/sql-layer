@@ -18,7 +18,6 @@ package com.akiban.cserver.api.dml.scan;
 import java.util.EnumSet;
 import java.util.Set;
 
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.util.ArgumentValidation;
 
 public final class SimplePredicate implements Predicate {
@@ -28,11 +27,11 @@ public final class SimplePredicate implements Predicate {
 
     private NewRow startRow = null;
     private NewRow endRow = null;
-    private final TableId tableId;
+    private final int tableId;
     private final Comparison comparison;
     private final Set<ScanFlag> scanFlags = EnumSet.noneOf(ScanFlag.class);
 
-    public SimplePredicate(TableId tableId, Comparison comparison) {
+    public SimplePredicate(int tableId, Comparison comparison) {
         ArgumentValidation.notNull("comparison operator", comparison);
         this.comparison = comparison;
         this.tableId = tableId;

@@ -18,7 +18,6 @@ package com.akiban.cserver.api.dml.scan;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 
 /**
  * Convenience class for building NewRows. Primarily useful for debugging.
@@ -27,7 +26,7 @@ public final class NewRowBuilder {
     private final NewRow row;
     private int nextCol = 0;
 
-    public static NewRowBuilder forTable(TableId tableId) {
+    public static NewRowBuilder forTable(int tableId) {
         return new NewRowBuilder(new NiceRow(tableId));
     }
 

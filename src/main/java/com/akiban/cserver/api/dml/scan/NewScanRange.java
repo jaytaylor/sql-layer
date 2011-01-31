@@ -20,14 +20,13 @@ import java.util.Set;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 
 public class NewScanRange implements ScanRange {
-    protected final TableId tableId;
+    protected final int tableId;
     protected final Set<Integer> columns;
     protected final Predicate predicate;
 
-    public NewScanRange(TableId tableId, Set<Integer> columns, Predicate predicate) {
+    public NewScanRange(int tableId, Set<Integer> columns, Predicate predicate) {
         this.tableId = tableId;
         this.columns = columns;
         this.predicate = predicate;
@@ -62,11 +61,6 @@ public class NewScanRange implements ScanRange {
 
     @Override
     public int getTableIdInt(IdResolver idResolver) throws NoSuchTableException {
-        return tableId.getTableId(idResolver);
-    }
-
-    @Override
-    public TableId getTableId() {
         return tableId;
     }
 
