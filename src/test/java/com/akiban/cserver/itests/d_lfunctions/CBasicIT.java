@@ -176,7 +176,7 @@ public final class CBasicIT extends ApiTestBase {
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( session, createNewRow(tableId, 0, "hello world"), createNewRow(tableId, 0, "goodbye cruel world") );
+        dml().updateRow( session, createNewRow(tableId, 0, "hello world"), createNewRow(tableId, 0, "goodbye cruel world"), null);
         expectRowCount(tableId, 1);
         expectRows(request, createNewRow(tableId, 0L, "goodbye cruel world") );
     }
@@ -192,7 +192,7 @@ public final class CBasicIT extends ApiTestBase {
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world") );
+        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world"), null);
         expectRowCount(tableId, 1);
         expectRows(request, createNewRow(tableId, 1L, "goodbye cruel world") );
     }
@@ -216,7 +216,7 @@ public final class CBasicIT extends ApiTestBase {
         try {
             NiceRow old = new NiceRow(tableId);
             old.put(ColumnId.of(1), "hello world");
-            dml().updateRow( session, old, createNewRow(tableId, 1, "goodbye cruel world") );
+            dml().updateRow( session, old, createNewRow(tableId, 1, "goodbye cruel world"), null);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "hello world") );
@@ -241,7 +241,7 @@ public final class CBasicIT extends ApiTestBase {
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1) );
+        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1), null);
         expectRowCount(tableId, 1);
         expectRows(new ScanAllRequest(tableId, ColumnSet.ofPositions(0)), createNewRow(tableId, 1L) );
     }
@@ -265,7 +265,7 @@ public final class CBasicIT extends ApiTestBase {
         try {
             dml().updateRow(
                     session, createNewRow(tableId, 0, "hello world"),
-                    createNewRow(tableId, "zero", "1234") );
+                    createNewRow(tableId, "zero", "1234"), null);
         } catch (TableDefinitionMismatchException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "hello world") );
@@ -325,7 +325,7 @@ public final class CBasicIT extends ApiTestBase {
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         expectRows(request, createNewRow(tableId, 0L, "hello world") );
 
-        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world") );
+        dml().updateRow( session, createNewRow(tableId, 0), createNewRow(tableId, 1, "goodbye cruel world"), null);
         expectRowCount(tableId, 1);
         expectRows(request, createNewRow(tableId, 1L, "goodbye cruel world") );
     }

@@ -37,13 +37,7 @@ import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.TableId;
-import com.akiban.cserver.api.dml.DuplicateKeyException;
-import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
-import com.akiban.cserver.api.dml.NoSuchColumnException;
-import com.akiban.cserver.api.dml.NoSuchIndexException;
-import com.akiban.cserver.api.dml.NoSuchRowException;
-import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
-import com.akiban.cserver.api.dml.UnsupportedModificationException;
+import com.akiban.cserver.api.dml.*;
 import com.akiban.cserver.api.dml.scan.ColumnSet;
 import com.akiban.cserver.api.dml.scan.Cursor;
 import com.akiban.cserver.api.dml.scan.CursorId;
@@ -513,7 +507,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public void updateRow(Session session, NewRow oldRow, NewRow newRow)
+    public void updateRow(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector)
             throws NoSuchTableException, DuplicateKeyException,
             TableDefinitionMismatchException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, NoSuchRowException,
@@ -523,7 +517,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
         LegacyUtils.matchRowDatas(oldData, newData);
         try {
-            store().updateRow(session, oldData, newData);
+            store().updateRow(session, oldData, newData, columnSelector);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
