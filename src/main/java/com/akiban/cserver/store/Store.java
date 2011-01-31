@@ -62,10 +62,6 @@ public interface Store extends Service<Store> {
                    final RowData newRowData,
                    final ColumnSelector columnSelector) throws Exception;
 
-    // TEMPORARY - remove when logic relating to columnSelector is enabled
-    void updateRow(final Session session, final RowData oldRowData,
-                   final RowData newRowData) throws Exception;
-
     /**
      * @param scanRowsRequest
      * @return The RowCollector that will generated the requested rows

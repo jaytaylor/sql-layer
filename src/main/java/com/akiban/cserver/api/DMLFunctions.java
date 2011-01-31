@@ -75,7 +75,7 @@ public interface DMLFunctions {
      *
      * <p>This method returns whether there are more rows to be scanned; if it returns <tt>false</tt>, subsequent scans
      * on this cursor will raise a CursorIsFinishedException. The first invocation of this method on a cursor will never
-     * throw a CursorIsFinishedException, even if there are now rows in the table.</p>
+     * throw a CursorIsFinishedException, even if there are no rows in the table.</p>
      *
      * <p>If the specified limit is <tt>&gt;= 0</tt>, this method will scan no more than that limit; it may scan
      * fewer, if the table has fewer remaining rows. If al limit is provided and this method returns <tt>true</tt>,

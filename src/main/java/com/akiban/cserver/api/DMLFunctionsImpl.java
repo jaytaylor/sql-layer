@@ -130,8 +130,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final RowCollector rc = getRowCollector(session, request);
         final CursorId cursorId = newUniqueCursor(rc.getTableId());
         final Cursor cursor = new Cursor(rc);
-        Object old = session.put(MODULE_NAME, cursorId, new ScanData(request,
-                cursor));
+        Object old = session.put(MODULE_NAME, cursorId, new ScanData(request, cursor));
         assert old == null : old;
 
         Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
@@ -230,17 +229,17 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId,
-            LegacyRowOutput output, int limit)
-            throws CursorIsFinishedException, CursorIsUnknownException,
-            RowOutputException, GenericInvalidOperationException
+    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, int limit)
+            throws CursorIsFinishedException,
+                   CursorIsUnknownException,
+                   RowOutputException,
+                   GenericInvalidOperationException
 
     {
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
 
-        final Cursor cursor = session.<ScanData> get(MODULE_NAME, cursorId)
-                .getCursor();
+        final Cursor cursor = session.<ScanData> get(MODULE_NAME, cursorId).getCursor();
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
@@ -270,8 +269,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
 
-    private PooledConverter getPooledConverter(RowOutput output,
-            Set<ColumnId> columns) throws NoSuchTableException {
+    private PooledConverter getPooledConverter(RowOutput output, Set<ColumnId> columns)
+        throws NoSuchTableException {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
@@ -300,19 +299,18 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId,
-            RowOutput output, int limit) throws CursorIsFinishedException,
-            CursorIsUnknownException, RowOutputException, NoSuchTableException,
-            GenericInvalidOperationException {
+    public boolean scanSome(Session session, CursorId cursorId, RowOutput output, int limit)
+        throws CursorIsFinishedException,
+               CursorIsUnknownException,
+               RowOutputException,
+               NoSuchTableException,
+               GenericInvalidOperationException {
         final ScanData scanData = session.get(MODULE_NAME, cursorId);
         assert scanData != null;
-        Set<ColumnId> scanColumns = scanData.scanAll() ? null : scanData
-                .getScanColumns();
-        final PooledConverter converter = getPooledConverter(output,
-                scanColumns);
+        Set<ColumnId> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
+        final PooledConverter converter = getPooledConverter(output, scanColumns);
         try {
-            return scanSome(session, cursorId, converter.getLegacyOutput(),
-                    limit);
+            return scanSome(session, cursorId, converter.getLegacyOutput(), limit);
         } finally {
             releasePooledConverter(converter);
         }
@@ -345,10 +343,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
      *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
      * @see #scanSome(Session, CursorId, LegacyRowOutput , int)
      */
-    protected static boolean doScan(Cursor cursor, CursorId cursorId,
-            LegacyRowOutput output, int limit)
-            throws CursorIsFinishedException, RowOutputException,
-            GenericInvalidOperationException {
+    protected static boolean doScan(Cursor cursor,
+                                    CursorId cursorId,
+                                    LegacyRowOutput output,
+                                    int limit)
+            throws CursorIsFinishedException,
+                   RowOutputException,
+                   GenericInvalidOperationException {
         assert cursor != null;
         assert cursorId != null;
         assert output != null;

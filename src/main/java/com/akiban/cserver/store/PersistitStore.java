@@ -674,7 +674,7 @@ public class PersistitStore implements CServerConstants, Store {
                     expandRowData(hEx, rowDef, currentRow);
                     final RowData mergedRowData =
                         columnSelector == null
-                        ? newRowData // TEMPORARY
+                        ? newRowData
                         : mergeRows(rowDef, currentRow, newRowData, columnSelector);
                     // Verify that it hasn't changed. Note: at some point we
                     // may want to optimize the protocol to send only PK and FK
@@ -728,13 +728,6 @@ public class PersistitStore implements CServerConstants, Store {
             releaseExchange(session, hEx);
             UPDATE_ROW_TAP.out();
         }
-    }
-
-    public void updateRow(final Session session,
-                          final RowData oldRowData,
-                          final RowData newRowData) throws InvalidOperationException, PersistitException
-    {
-        updateRow(session, oldRowData, newRowData, null);
     }
 
     /**
@@ -1480,7 +1473,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector)
     {
-        NewRow mergedRow = (NiceRow) NiceRow.fromRowData(currentRow, rowDef);
+        NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
         NewRow newRow = new LegacyRowWrapper(newRowData);
         int fields = rowDef.getFieldCount();
         for (int i = 0; i < fields; i++) {

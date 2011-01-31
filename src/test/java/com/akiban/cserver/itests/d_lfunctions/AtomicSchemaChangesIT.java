@@ -18,7 +18,6 @@ package com.akiban.cserver.itests.d_lfunctions;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.cserver.store.SchemaManager;
@@ -120,6 +119,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
         checkInitialAIS();
         checkInitialDDL();
     }
+
     private void checkInitialAIS() throws Exception
     {
         ByteBuffer copy = expectedAIS.duplicate();
