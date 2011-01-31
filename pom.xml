@@ -157,12 +157,18 @@
     <build>
         <resources>
             <resource>
-                <directory>src/main/resources/version</directory>
+                <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <includes>
+                    <include>version/akserver_version</include>
+                </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
+                <excludes>
+                    <exclude>version/akserver_version</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>
