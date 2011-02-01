@@ -672,7 +672,7 @@ public class PersistitStore implements CServerConstants, Store {
                     expandRowData(hEx, rowDef, currentRow);
                     final RowData mergedRowData =
                         columnSelector == null
-                        ? newRowData // TEMPORARY
+                        ? newRowData
                         : mergeRows(rowDef, currentRow, newRowData, columnSelector);
                     // Verify that it hasn't changed. Note: at some point we
                     // may want to optimize the protocol to send only PK and FK
@@ -726,13 +726,6 @@ public class PersistitStore implements CServerConstants, Store {
             releaseExchange(session, hEx);
             UPDATE_ROW_TAP.out();
         }
-    }
-
-    public void updateRow(final Session session,
-                          final RowData oldRowData,
-                          final RowData newRowData) throws InvalidOperationException, PersistitException
-    {
-        updateRow(session, oldRowData, newRowData, null);
     }
 
     /**

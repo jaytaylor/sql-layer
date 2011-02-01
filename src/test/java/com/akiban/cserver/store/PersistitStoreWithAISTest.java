@@ -489,7 +489,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         RowData newRowData = new RowData(new byte[256]);
         newRowData.createRow(td.defX, new Object[] { iid, xid, 4, 424242,
                 "Description_424242" });
-        store.updateRow(session, oldRowData, newRowData);
+        store.updateRow(session, oldRowData, newRowData, null);
 
         rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
@@ -508,7 +508,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         newRowData.createRow(td.defX, new Object[] { iid, -xid, 4, 545454,
                 "Description_545454" });
 
-        store.updateRow(session, updateRowData, newRowData);
+        store.updateRow(session, updateRowData, newRowData, null);
 
         rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, updateRowData, updateRowData,
@@ -722,7 +722,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
                 if (scanCount++ % 2 == 0) {
                     store.deleteRow(session, rowData);
                 } else {
-                    store.updateRow(session, rowData, rowData);
+                    store.updateRow(session, rowData, rowData, null);
                 }
                 p = rowData.getRowEnd();
             }
