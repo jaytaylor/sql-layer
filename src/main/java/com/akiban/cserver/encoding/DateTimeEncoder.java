@@ -22,6 +22,7 @@ import com.akiban.ais.model.Type;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public class DateTimeEncoder extends EncodingBase<Date> {
@@ -93,7 +94,7 @@ public class DateTimeEncoder extends EncodingBase<Date> {
     }
 
     @Override
-    public void toString(FieldDef fieldDef, RowData rowData, StringBuilder sb, final Quote quote) {
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, final Quote quote) {
         try {
             final Date date = toObject(fieldDef, rowData);
             quote.append(sb, EncodingUtils.getDateFormat(SDF_DATETIME).format(date));

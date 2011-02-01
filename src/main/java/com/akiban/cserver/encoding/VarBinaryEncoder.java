@@ -22,6 +22,7 @@ import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.Quote;
 import com.akiban.cserver.RowData;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
@@ -59,7 +60,7 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
 
     @Override
     public void toString(FieldDef fieldDef, RowData rowData,
-                         StringBuilder sb, final Quote quote) {
+                         AkibanAppender sb, final Quote quote) {
         final ByteBuffer myBuffer = toObject(fieldDef, rowData);
         sb.append("0x");
         CServerUtil.hex(sb, myBuffer.array(), 0, myBuffer.limit());

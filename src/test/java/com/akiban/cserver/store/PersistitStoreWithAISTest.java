@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.akiban.ais.model.TableName;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,6 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.DDLFunctions;
 import com.akiban.cserver.api.DDLFunctionsImpl;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.service.tree.TreeLink;
 import com.akiban.message.ErrorCode;
@@ -381,7 +381,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
         final DDLFunctions ddlf = new DDLFunctionsImpl();
 
-        ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
+        ddlf.dropTable(session, new TableName(SCHEMA, "order"));
         assertEquals(0, td.defO.getTableStatus().getRowCount());
         assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
         //

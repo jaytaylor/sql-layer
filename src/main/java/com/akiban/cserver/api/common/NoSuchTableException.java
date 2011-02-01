@@ -26,7 +26,7 @@ public final class NoSuchTableException extends DMLException {
         super(e);
     }
 
-    public NoSuchTableException(TableId tableId, RowDefNotFoundException e) {
+    public NoSuchTableException(int tableId, RowDefNotFoundException e) {
         super(ErrorCode.NO_SUCH_TABLE, "TableId not found: " + tableId, e);
     }
 

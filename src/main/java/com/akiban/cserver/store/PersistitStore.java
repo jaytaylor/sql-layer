@@ -22,8 +22,6 @@ import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_AT_EDGE;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.ColumnSelector;
 import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NewRow;
@@ -1480,13 +1478,12 @@ public class PersistitStore implements CServerConstants, Store {
 
     private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector)
     {
-        NewRow mergedRow = (NiceRow) NiceRow.fromRowData(currentRow, rowDef);
+        NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
         NewRow newRow = new LegacyRowWrapper(newRowData);
         int fields = rowDef.getFieldCount();
         for (int i = 0; i < fields; i++) {
             if (columnSelector.includesColumn(i)) {
-                ColumnId columnId = ColumnId.of(i);
-                mergedRow.put(columnId, newRow.get(columnId));
+                mergedRow.put(i, newRow.get(i));
             }
         }
         return mergedRow.toRowData();

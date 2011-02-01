@@ -16,11 +16,13 @@
 package com.akiban.cserver;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
 import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.util.RowDefNotFoundException;
+import com.akiban.util.AkibanAppender;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -462,7 +464,7 @@ public class RowData {
     }
 
     public String toString(final RowDef rowDef) {
-        final StringBuilder sb = new StringBuilder();
+        final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         try {
             if (rowDef == null) {
                 sb.append("RowData?(rowDefId=");
@@ -495,36 +497,32 @@ public class RowData {
         return sb.toString();
     }
 
-    public String toJSONString(final RowDefCache cache) {
-        final StringBuilder sb = new StringBuilder();
+    public void toJSONString(final RowDefCache cache, AkibanAppender sb) throws IOException {
+        final RowDef rowDef = cache.getRowDef(getRowDefId());
+        for(int i = 0; i < getFieldCount(); i++) {
+            final FieldDef fieldDef = rowDef.getFieldDef(i);
+            final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
+            if(i != 0) {
+                sb.write(',');
+            }
+            sb.write('"');
+            String fieldName = fieldDef.getName();
+            if (fieldName != null
+                    && fieldName.length() > 0
+                    && (fieldName.charAt(0) == '@' || fieldName.charAt(0) == ':')
+            ) {
+                sb.write(':');
+            }
+            sb.write(fieldName);
+            sb.write("\":");
 
-        try {
-            final RowDef rowDef = cache.getRowDef(getRowDefId());
-            for(int i = 0; i < getFieldCount(); i++) {
-                final FieldDef fieldDef = rowDef.getFieldDef(i);
-                final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
-                if(i != 0) {
-                    sb.append(", ");
-                }   
-                sb.append("\"");
-                sb.append(fieldDef.getName());
-                sb.append("\" : ");
-
-                if(location != 0) {
-                    fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
-                }   
-                else {
-                    sb.append("null");
-                }   
-            }   
-        } catch(Exception e) {
-            sb.setLength(0);
-            sb.append("\"hex_row\" : \"");
-            CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
-            sb.append("\"");
-        }   
-
-        return sb.toString();
+            if(location != 0) {
+                fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
+            }
+            else {
+                sb.write("null");
+            }
+        }
     }
 
     public String explain() {

@@ -19,8 +19,6 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
@@ -383,14 +381,13 @@ public final class JsonHapiIT extends ApiTestBase {
         }
         if (runInfo.writeRows) {
             for(Map.Entry<String,JSONArray> entry : setupInfo.writeRows.entrySet()) {
-                TableId tableId = TableId.of(setupInfo.schema, entry.getKey());
-                tableId = ddl().resolveTableId(tableId);
+                int tableId = tableId(setupInfo.schema, entry.getKey());
                 JSONArray rows = entry.getValue();
                 for(int rowNum=0, ROWS=rows.length(); rowNum < ROWS; ++rowNum) {
                     JSONArray columns = rows.getJSONArray(rowNum);
                     NewRow row = new NiceRow(tableId);
                     for(int col=0, COLS=columns.length(); col < COLS; ++col) {
-                        row.put(ColumnId.of(col), columns.get(col));
+                        row.put(col, columns.get(col));
                     }
                     try {
                         dml().writeRow(session, row);
@@ -404,8 +401,8 @@ public final class JsonHapiIT extends ApiTestBase {
 
     @Test
     public void get() throws JSONException, HapiRequestException, IOException {
-        HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
         try {
+            HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
             hapi().processRequest(session, request, JsonOutputter.instance(), outputStream);
             outputStream.flush();
@@ -413,13 +410,19 @@ public final class JsonHapiIT extends ApiTestBase {
             assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);
             assertNotNull("null result", result);
             assertTrue("empty result: >" + result + "< ", result.trim().length() > 1);
-            final Object actual = new JSONTokener(result).nextValue();
+            final Object actual;
+            try {
+                actual = new JSONTokener(result).nextValue();
+            } catch (JSONException e) {
+                throw new RuntimeException(result, e);
+            }
             assertEquals("GET response", jsonString(runInfo.expect), jsonString(actual));
         } catch (HapiRequestException e) {
             if(runInfo.expect != null) {
                 throw e;
             }
-            if(runInfo.errorExpect.equals(e.getReasonCode())) {
+
+            if(!runInfo.errorExpect.equals(e.getReasonCode())) {
                 String message = String.format("Error reason code expected <%s> but was <%s>",
                         runInfo.errorExpect, e.getReasonCode()
                 );
@@ -427,7 +430,6 @@ public final class JsonHapiIT extends ApiTestBase {
                 e.printStackTrace();
                 fail(message);
             }
-            assertEquals("error reason code", runInfo.errorExpect, e.getReasonCode());
         }
 
 

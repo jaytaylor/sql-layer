@@ -18,27 +18,24 @@ package com.akiban.cserver.api.dml.scan;
 import java.util.EnumSet;
 import java.util.Set;
 
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
-
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {
     private final int indexId;
     private final int scanFlags;
     
-    public ScanAllRequest(TableId tableId, Set<ColumnId> columnIds) {
+    public ScanAllRequest(int tableId, Set<Integer> columnIds) {
         this(tableId, 
              columnIds, 
              0, 
              ScanFlag.toRowDataFormat(EnumSet.noneOf(ScanFlag.class)));
     }
-    
-    public ScanAllRequest(TableId tableId, Set<ColumnId> columnIds, int indexId, int scanFlags)
+
+    public ScanAllRequest(int tableId, Set<Integer> columnIds, int indexId, int scanFlags)
     {
         super(tableId, columnIds);
         this.indexId = indexId;
         this.scanFlags = scanFlags;
     }
-    
+
     @Override
     public int getIndexId() {
         return indexId;
