@@ -16,7 +16,6 @@
 package com.akiban.cserver.api;
 
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.IdResolverImpl;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.ddl.DuplicateTableNameException;
 import com.akiban.cserver.api.ddl.JoinToUnknownTableException;
@@ -42,13 +41,11 @@ abstract class ClientAPIBase {
 
     private final Store store;
     private final SchemaManager schemaManager;
-    private final IdResolverImpl resolver;
 
     ClientAPIBase() {
         final ServiceManager serviceManager = ServiceManagerImpl.get();
         this.store = serviceManager.getStore();
         this.schemaManager = serviceManager.getSchemaManager();
-        this.resolver = new IdResolverImpl(store);
     }
 
     final public Store store() {
@@ -57,10 +54,6 @@ abstract class ClientAPIBase {
 
     final public SchemaManager schemaManager() {
         return schemaManager;
-    }
-
-    final public IdResolverImpl idResolver() {
-        return resolver;
     }
 
     /**

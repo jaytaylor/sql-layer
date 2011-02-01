@@ -29,8 +29,6 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.SchemaFactory;
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
 
 public final class NiceRowTest {
     @Test
@@ -48,8 +46,8 @@ public final class NiceRowTest {
 
         // Why -1: because an __akiban_pk column gets added
         assertEquals("fields count", 2, newRow.getFields().size() - 1);
-        assertEquals("field[0]", 5L, newRow.get(ColumnId.of(0)));
-        assertEquals("field[1]", "Bob", newRow.get(ColumnId.of(1)));
+        assertEquals("field[0]", 5L, newRow.get(0));
+        assertEquals("field[1]", "Bob", newRow.get(1));
 
         compareRowDatas(rowData, newRow.toRowData());
     }
@@ -73,11 +71,11 @@ public final class NiceRowTest {
 
         // Why -1: because an __akiban_pk column gets added
         assertEquals("fields count", NUM, newRow.getFields().size() - 1);
-        assertEquals("field[0]", 15L, newRow.get(ColumnId.of(0)));
-        assertEquals("field[1]", "Robert", newRow.get(ColumnId.of(1)));
+        assertEquals("field[0]", 15L, newRow.get(0));
+        assertEquals("field[1]", "Robert", newRow.get(1));
         for (int i=2; i < NUM; ++i) {
             long expected = i + 1000;
-            assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
+            assertEquals("field[1]", expected, newRow.get(i));
         }
 
         compareRowDatas(rowData, newRow.toRowData());
@@ -109,11 +107,11 @@ public final class NiceRowTest {
 
         // Why -1: because an __akiban_pk column gets added
         assertEquals("fields count", NUM, newRow.getFields().size() - 1);
-        assertEquals("field[0]", 15L, newRow.get(ColumnId.of(0)));
-        assertEquals("field[1]", "Robert", newRow.get(ColumnId.of(1)));
+        assertEquals("field[0]", 15L, newRow.get(0));
+        assertEquals("field[1]", "Robert", newRow.get(1));
         for (int i=2; i < NUM; ++i) {
             Long expected = (i % 3) == 0 ? null : i + 1000L;
-            assertEquals("field[1]", expected, newRow.get(ColumnId.of(i)));
+            assertEquals("field[1]", expected, newRow.get(i));
         }
 
         compareRowDatas(rowData, newRow.toRowData());
@@ -123,14 +121,14 @@ public final class NiceRowTest {
     public void testEquality() {
         TreeMap<Integer,NiceRow> mapOne = new TreeMap<Integer, NiceRow>();
         TreeMap<Integer,NiceRow> mapTwo = new TreeMap<Integer, NiceRow>();
-        NiceRow rowOne = new NiceRow(TableId.of(1), null);
-        rowOne.put(ColumnId.of(0), Long.valueOf(0l));
-        rowOne.put(ColumnId.of(1), "hello world");
+        NiceRow rowOne = new NiceRow(1, null);
+        rowOne.put(0, Long.valueOf(0l));
+        rowOne.put(1, "hello world");
         mapOne.put(0, rowOne);
 
-        NiceRow rowTwo = new NiceRow(TableId.of(1), null);
-        rowTwo.put(ColumnId.of(0), Long.valueOf(0l));
-        rowTwo.put(ColumnId.of(1), "hello world");
+        NiceRow rowTwo = new NiceRow(1, null);
+        rowTwo.put(0, Long.valueOf(0l));
+        rowTwo.put(1, "hello world");
         mapTwo.put(0, rowTwo);
 
         assertEquals("rows", rowOne, rowTwo);

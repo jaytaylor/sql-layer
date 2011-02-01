@@ -23,84 +23,77 @@ import java.util.TreeMap;
 import com.akiban.cserver.FieldDef;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.encoding.Encoding;
-import com.akiban.cserver.service.ServiceManager;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.util.ArgumentValidation;
 
 public class NiceRow extends NewRow {
-    private final Map<ColumnId,Object> fields;
-    private final TableId tableId;
+    private final Map<Integer,Object> fields;
+    private final int tableId;
 
-    public NiceRow(TableId tableId)
+    public NiceRow(int tableId)
     {
         this(tableId, rowDef(tableId));
     }
 
-    public NiceRow(TableId tableId, RowDef rowDef)
+    public NiceRow(int tableId, RowDef rowDef)
     {
         super(rowDef);
         ArgumentValidation.notNull("tableId", tableId);
-        fields = new TreeMap<ColumnId, Object>();
+        fields = new TreeMap<Integer, Object>();
         this.tableId = tableId;
     }
 
     @Override
-    public Object put(ColumnId index, Object object) {
+    public Object put(int index, Object object) {
         ArgumentValidation.notNull("column", index);
         return fields.put(index, object);
     }
 
     @Override
-    public TableId getTableId() {
+    public int getTableId() {
         return tableId;
     }
 
     @Override
-    public Object get(ColumnId column) {
+    public Object get(int column) {
         return fields.get(column);
     }
 
     @Override
-    public boolean hasValue(ColumnId columnId) {
+    public boolean hasValue(int columnId) {
         return fields.containsKey(columnId);
     }
 
     @Override
-    public Object remove(ColumnId columnId) {
+    public Object remove(int columnId) {
         return fields.remove(columnId);
     }
 
     @Override
-    public Map<ColumnId,Object> getFields() {
+    public Map<Integer,Object> getFields() {
         return fields;
     }
 
     public static NewRow fromRowData(RowData origData, RowDef rowDef)
     {
-        Set<ColumnId> activeColumns = new HashSet<ColumnId>();
+        Set<Integer> activeColumns = new HashSet<Integer>();
         for(int fieldIndex=0, fieldsCount=rowDef.getFieldCount(); fieldIndex < fieldsCount; ++fieldIndex) {
             final long location = rowDef.fieldLocation(origData, fieldIndex);
             // Null != not specified. NewRow, NiceRow, RowData all need the concept of specified vs not-specified
             // fields.
             if (true) { // location != 0) {
-                activeColumns.add( ColumnId.of(fieldIndex) );
+                activeColumns.add( fieldIndex );
             }
         }
 
-        NewRow retval = new NiceRow(TableId.of(rowDef.getRowDefId()), rowDef);
-        for (ColumnId column : activeColumns) {
-            final int pos = column.getPosition();
+        NewRow retval = new NiceRow(rowDef.getRowDefId(), rowDef);
+        for (int pos : activeColumns) {
             final FieldDef fieldDef = rowDef.getFieldDef(pos);
             final Encoding encoding = fieldDef.getEncoding();
             final Object value =
                 origData.isNull(fieldDef.getFieldIndex()) ? null : encoding.toObject(fieldDef, origData);
-            Object old = retval.put(column, value);
-            assert old == null : String.format("put(%s, %s) --> %s", column, value, old);
+            Object old = retval.put(pos, value);
+            assert old == null : String.format("put(%s, %s) --> %s", pos, value, old);
         }
 
         return retval;
@@ -126,8 +119,8 @@ public class NiceRow extends NewRow {
         }
 
         final Object[] objects = new Object[ rowDef.getFieldCount() ];
-        for (Map.Entry<ColumnId,Object> entry : fields.entrySet()) {
-            objects[ entry.getKey().getPosition() ] = entry.getValue();
+        for (Map.Entry<Integer,Object> entry : fields.entrySet()) {
+            objects[ entry.getKey() ] = entry.getValue();
         }
         final RowData retval = new RowData(new byte[bytesLength]);
         retval.createRow(rowDef, objects);
@@ -139,14 +132,14 @@ public class NiceRow extends NewRow {
     public String toString() {
         StringBuilder sb = new StringBuilder("NiceRow{ ");
         int nextExpectedPos = 0;
-        for (Map.Entry<ColumnId,Object> entry : fields.entrySet()) {
-            final int pos = entry.getKey().getPosition();
+        for (Map.Entry<Integer,Object> entry : fields.entrySet()) {
+            final int pos = entry.getKey();
             if (pos != nextExpectedPos) {
                 sb.append("... ");
             }
             
             final Object value = entry.getValue();
-            sb.append('(').append(entry.getKey().getPosition()).append(": ");
+            sb.append('(').append(entry.getKey()).append(": ");
             if (value != null) {
                 sb.append(value.getClass().getSimpleName()).append(' ');
             }
@@ -165,12 +158,14 @@ public class NiceRow extends NewRow {
 
         NiceRow niceRow = (NiceRow) o;
 
-        return fields.equals(niceRow.fields) && tableId.equals(niceRow.tableId);
+        return fields.equals(niceRow.fields) && (tableId == niceRow.tableId);
 
     }
 
     @Override
     public int hashCode() {
-        return tableId.hashCode() + fields.hashCode();
+        int result = fields != null ? fields.hashCode() : 0;
+        result = 31 * result + tableId;
+        return result;
     }
 }

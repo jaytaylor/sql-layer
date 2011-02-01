@@ -28,8 +28,8 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
 import com.akiban.cserver.api.ddl.DuplicateTableNameException;
 import com.akiban.cserver.api.ddl.ForeignConstraintDDLException;
@@ -43,6 +43,7 @@ import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
+import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 
 public final class DDLFunctionsImpl extends ClientAPIBase implements
@@ -69,14 +70,12 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
-    public void dropTable(Session session, TableId tableId)
+    public void dropTable(Session session, TableName tableName)
             throws ProtectedTableDDLException, ForeignConstraintDDLException,
             GenericInvalidOperationException {
-        final TableName tableName;
         final int rowDefId;
         try {
-            tableName = tableId.getTableName(idResolver());
-            rowDefId = tableId.getTableId(idResolver());
+            rowDefId = getTableId(session, tableName);
         } catch (NoSuchTableException e) {
             return; // dropping a nonexistent table is a no-op
         }
@@ -109,15 +108,40 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
-    public TableName getTableName(TableId tableId) throws NoSuchTableException {
-        return tableId.getTableName(idResolver());
+    public int getTableId(Session session, TableName tableName) throws NoSuchTableException {
+        Table table = getAIS(session).getTable(tableName);
+        if (table == null) {
+            throw new NoSuchTableException(tableName);
+        }
+        return table.getTableId();
     }
 
     @Override
-    public TableId resolveTableId(TableId tableId) throws NoSuchTableException {
-        tableId.getTableId(idResolver());
-        tableId.getTableName(idResolver());
-        return tableId;
+    public Table getTable(Session session, int tableId) throws NoSuchTableException {
+        for (Table userTable : getAIS(session).getUserTables().values()) {
+            if (tableId == userTable.getTableId()) {
+                return userTable;
+            }
+        }
+        for (Table groupTable : getAIS(session).getGroupTables().values()) {
+            if (tableId == groupTable.getTableId()) {
+                return groupTable;
+            }
+        }
+        throw new NoSuchTableException(tableId);
+    }
+
+    @Override
+    public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
+        return getTable(session, tableId).getName();
+    }
+
+    RowDef getRowDef(int tableId) throws NoSuchTableException {
+        try {
+            return store().getRowDefCache().getRowDef(tableId);
+        } catch (RowDefNotFoundException e) {
+            throw new NoSuchTableException(tableId, e);
+        }
     }
 
     @Override
@@ -238,21 +262,17 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
-    public void dropIndexes(final Session session, TableId tableId, Collection<String> indexNamesToDrop)
+    public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
             throws InvalidOperationException {
         if(indexNamesToDrop.isEmpty() == true) {
             return;
         }
 
-        final TableName tableName;
-        try {
-            tableId.getTableId(idResolver());
-            tableName = tableId.getTableName(idResolver());
-        } catch(NoSuchTableException e) {
+        final Table table = getAIS(session).getTable(tableName);
+        if (table == null) {
             throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "Unkown table");
         }
 
-        final Table table = getAIS(session).getTable(tableName);
         ArrayList<Index> indexesToDrop = new ArrayList<Index>();
 
         StringBuilder sb = new StringBuilder();

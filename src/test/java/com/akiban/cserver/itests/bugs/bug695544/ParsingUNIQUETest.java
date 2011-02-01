@@ -16,7 +16,6 @@
 package com.akiban.cserver.itests.bugs.bug695544;
 
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.api.dml.DuplicateKeyException;
 import com.akiban.cserver.itests.ApiTestBase;
@@ -28,11 +27,11 @@ import static org.junit.Assert.*;
 public final class ParsingUNIQUETest extends ApiTestBase {
     private final static String SCHEMA = "sc1";
     private final static String TABLE = "tb1";
-    private TableId tableId;
+    private int tableId;
 
     @After
     public void tearDown() {
-        tableId = null;
+        tableId = -1;
     }
 
     @Test

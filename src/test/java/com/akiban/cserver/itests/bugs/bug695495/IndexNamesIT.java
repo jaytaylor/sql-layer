@@ -18,7 +18,6 @@ package com.akiban.cserver.itests.bugs.bug695495;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.util.Strings;
@@ -347,14 +346,10 @@ public final class IndexNamesIT extends ApiTestBase {
         // TODO convenience method for ApiTestBase call. This method, and assertIndexColumns below,
         // were designed before the ApiTestBase methods. These convenience methods are here to make the transition
         // to the new ApiTestBase methods less invasive to this class.
-        TableName tableName = table.getName();
-        TableId tableId = TableId.of(tableName.getSchemaName(), tableName.getTableName());
-        expectIndexes(tableId, expectedIndexNames);
+        expectIndexes(tableId(table.getName()), expectedIndexNames);
     }
 
     private void assertIndexColumns(UserTable table, String indexName, String... expectedColumns) {
-        TableName tableName = table.getName();
-        TableId tableId = TableId.of(tableName.getSchemaName(), tableName.getTableName());
-        expectIndexColumns(tableId, indexName, expectedColumns);
+        expectIndexColumns(tableId(table.getName()), indexName, expectedColumns);
     }
 }

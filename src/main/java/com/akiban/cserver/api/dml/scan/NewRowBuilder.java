@@ -17,9 +17,7 @@ package com.akiban.cserver.api.dml.scan;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.DMLFunctions;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 
 /**
  * Convenience class for building NewRows. Primarily useful for debugging.
@@ -28,7 +26,7 @@ public final class NewRowBuilder {
     private final NewRow row;
     private int nextCol = 0;
 
-    public static NewRowBuilder forTable(TableId tableId) {
+    public static NewRowBuilder forTable(int tableId) {
         return new NewRowBuilder(new NiceRow(tableId));
     }
 
@@ -48,20 +46,10 @@ public final class NewRowBuilder {
      * @param object the object
      * @return this instance
      */
-    public NewRowBuilder put(ColumnId column, Object object) {
-        row.put(column, object);
-        nextCol = column.getPosition() + 1;
-        return this;
-    }
-
-    /**
-     * Puts the given column-to-object pairing in, and returns this builder for chaining.
-     * @param column the column
-     * @param object the object
-     * @return this instance
-     */
     public NewRowBuilder put(int column, Object object) {
-        return put(ColumnId.of(column), object);
+        row.put(column, object);
+        nextCol = column + 1;
+        return this;
     }
 
     /**

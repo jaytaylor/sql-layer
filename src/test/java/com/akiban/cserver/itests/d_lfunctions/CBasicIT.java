@@ -18,9 +18,7 @@ package com.akiban.cserver.itests.d_lfunctions;
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.NoSuchRowException;
 import com.akiban.cserver.api.dml.TableDefinitionMismatchException;
 import com.akiban.cserver.api.dml.scan.*;
@@ -38,7 +36,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void simpleScan() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
@@ -75,7 +73,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void partialRowScan() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
@@ -91,7 +89,7 @@ public final class CBasicIT extends ApiTestBase {
      */
     @Test
     public void partialRowScanLegacy() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
@@ -110,19 +108,19 @@ public final class CBasicIT extends ApiTestBase {
         expectedRows.add( createNewRow(tableId, 0L, "hello world") ); // full scan expected
         RowData rowData = new RowData(output.getOutputBuffer().array(), 0, output.getOutputBuffer().position());
         rowData.prepareRow(0);
-        assertEquals("table ID", tableId.getTableId(null), rowData.getRowDefId());
+        assertEquals("table ID", tableId, rowData.getRowDefId());
         List<NewRow> converted = dml().convertRowDatas(Arrays.asList(rowData));
         assertEquals("rows scanned", expectedRows, converted);
     }
     
     @Test
     public void testDropTable() throws InvalidOperationException {
-        final TableId tableId1 = createTable("testSchema", "customer", "id int key");
-        ddl().dropTable(session, TableId.of("testSchema", "customer"));
+        final int tableId1 = createTable("testSchema", "customer", "id int key");
+        ddl().dropTable(session, tableName("testSchema", "customer"));
 
         AkibaInformationSchema ais = ddl().getAIS(session);
         assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
-        ddl().dropTable(session, tableId1); // should be a no-op, just testing it doesn't fail
+        ddl().dropTable(session, tableName(tableId1)); // should be a no-op, just testing it doesn't fail
 
         NoSuchTableException caught = null;
         try {
@@ -135,7 +133,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void scanEmptyTable() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         Session session = new SessionImpl();
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -167,7 +165,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void updateNoChangeToHKey() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
@@ -183,7 +181,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void updateOldOnlyById() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session, createNewRow(tableId, 0, "hello world") );
@@ -199,7 +197,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test(expected=NoSuchRowException.class)
     public void updateOldNotById() throws InvalidOperationException {
-        final TableId tableId;
+        final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
@@ -215,8 +213,8 @@ public final class CBasicIT extends ApiTestBase {
 
         try {
             NiceRow old = new NiceRow(tableId);
-            old.put(ColumnId.of(1), "hello world");
-            dml().updateRow( session, old, createNewRow(tableId, 1, "goodbye cruel world"), null);
+            old.put(1, "hello world");
+            dml().updateRow( session, old, createNewRow(tableId, 1, "goodbye cruel world"), null );
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "hello world") );
@@ -232,7 +230,7 @@ public final class CBasicIT extends ApiTestBase {
      */
     @Test
     public void updateRowPartially() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
@@ -248,7 +246,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test(expected=TableDefinitionMismatchException.class)
     public void updateOldNewHasWrongType() throws InvalidOperationException {
-        final TableId tableId;
+        final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
@@ -276,7 +274,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test(expected=TableDefinitionMismatchException.class)
     public void insertHasWrongType() throws InvalidOperationException {
-        final TableId tableId;
+        final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
             expectRowCount(tableId, 0);
@@ -296,7 +294,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test(expected=TableDefinitionMismatchException.class)
     public void insertStringTooLong() throws InvalidOperationException {
-        final TableId tableId;
+        final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int key, name varchar(5)");
             expectRowCount(tableId, 0);
@@ -316,7 +314,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void updateChangesHKey() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "hello world") );
@@ -332,7 +330,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void deleteRows() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "doomed row") );
@@ -357,7 +355,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test(expected=NoSuchRowException.class)
     public void deleteRowNotById() throws InvalidOperationException {
-        final TableId tableId;
+        final int tableId;
         try{
             tableId = createTable("theschema", "c", "id int key, name varchar(32)");
 
@@ -373,7 +371,7 @@ public final class CBasicIT extends ApiTestBase {
 
         try {
             NiceRow deleteAttempt = new NiceRow(tableId);
-            deleteAttempt.put(ColumnId.of(1), "the customer's name");
+            deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session, deleteAttempt);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -384,7 +382,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test(expected=NoSuchRowException.class)
     public void deleteMissingRow()  throws InvalidOperationException {
-        final TableId tableId;
+        final int tableId;
         try{
             tableId = createTable("theschema", "c", "id int key, name varchar(32)");
         } catch (InvalidOperationException e) {
@@ -393,7 +391,7 @@ public final class CBasicIT extends ApiTestBase {
 
         try {
             NiceRow deleteAttempt = new NiceRow(tableId);
-            deleteAttempt.put(ColumnId.of(1), "the customer's name");
+            deleteAttempt.put(1, "the customer's name");
             dml().deleteRow( session, createNewRow(tableId, 0, "this row doesn't exist"));
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
@@ -413,7 +411,7 @@ public final class CBasicIT extends ApiTestBase {
 
     @Test
     public void truncate() throws InvalidOperationException {
-        final TableId tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow( session, createNewRow(tableId, 0, "hello world") );

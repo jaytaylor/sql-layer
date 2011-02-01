@@ -29,17 +29,12 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.ResolutionException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.IndexAlterException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
-import com.akiban.cserver.itests.ApiTestBase;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
 
@@ -47,7 +42,8 @@ public final class CreateIndexesTest extends AlterTestBase {
     /*
      * Test DDL.createIndexes() API 
      */
-    
+
+    @Test
     public void createIndexNoIndexes() throws InvalidOperationException {
         // Passing an empty list should work
         ArrayList<Index> indexes = new ArrayList<Index>();
@@ -56,7 +52,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test(expected=IndexAlterException.class) 
     public void createIndexInvalidTable() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int primary key");
         // Attempt to add index to unknown table
         AkibaInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "index", null, false);
@@ -77,7 +73,7 @@ public final class CreateIndexesTest extends AlterTestBase {
 
     @Test(expected=IndexAlterException.class) 
     public void createIndexInvalidTableId() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int primary key");
         // Attempt to add to unknown table id
         AkibaInformationSchema ais = createAISWithTable(tId);
         ais.getUserTables().values().iterator().next().setTableId(-1);
@@ -87,7 +83,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test(expected=IndexAlterException.class) 
     public void createIndexPrimaryKey() throws InvalidOperationException {
-        TableId tId = createTable("test", "atable", "id int");
+        int tId = createTable("test", "atable", "id int");
         // Attempt to a primary key
         AkibaInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "atable");
@@ -97,7 +93,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test(expected=IndexAlterException.class) 
     public void createIndexDuplicateIndexName() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int primary key");
         // Attempt to add duplicate index name
         AkibaInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "PRIMARY", new String[]{"id"}, false);
@@ -106,7 +102,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test(expected=IndexAlterException.class) 
     public void createIndexWrongColumName() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int primary key");
         // Attempt to add duplicate index name
         AkibaInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
@@ -119,7 +115,7 @@ public final class CreateIndexesTest extends AlterTestBase {
   
     @Test(expected=IndexAlterException.class) 
     public void createIndexWrongColumType() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int primary key");
         // Attempt to add duplicate index name
         AkibaInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
@@ -137,7 +133,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test
     public void createIndexConfirmAIS() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         
         // Create non-unique index on varchar
         AkibaInformationSchema ais = createAISWithTable(tId); 
@@ -157,7 +153,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test
     public void createIndexSimple() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, "bob"));
@@ -182,9 +178,9 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test
     public void createIndexMiddleOfGroup() throws InvalidOperationException {
-        TableId cId = createTable("coi", "c", "cid int key, name varchar(32)");
-        TableId oId = createTable("coi", "o", "oid int key, c_id int, tag varchar(32), CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (c_id) REFERENCES c(cid)");
-        TableId iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY __akiban_fk_i (o_id) REFERENCES o(oid)");
+        int cId = createTable("coi", "c", "cid int key, name varchar(32)");
+        int oId = createTable("coi", "o", "oid int key, c_id int, tag varchar(32), CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (c_id) REFERENCES c(cid)");
+        int iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY __akiban_fk_i (o_id) REFERENCES o(oid)");
         
         // One customer 
         expectRowCount(cId, 0);
@@ -232,7 +228,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test
     public void createIndexCompound() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255)");
+        int tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, "foo", "bar"));
@@ -258,7 +254,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test
     public void createIndexUnique() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, state char(2)");
+        int tId = createTable("test", "t", "id int primary key, state char(2)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, "IA"));
@@ -284,7 +280,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test
     public void createMultipleIndexes() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, otherId int, price decimal(10,2)");
+        int tId = createTable("test", "t", "id int primary key, otherId int, price decimal(10,2)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, 1337, "10.50"));

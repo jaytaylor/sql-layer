@@ -18,18 +18,13 @@ package com.akiban.cserver.itests.alter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.ResolutionException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.ddl.IndexAlterException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
-import com.akiban.cserver.itests.ApiTestBase;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -54,34 +49,34 @@ public final class DropIndexesTest extends AlterTestBase {
         // Attempt to add index to unknown table
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("foo");
-        ddl().dropIndexes(session, TableId.of("test","bar"), indexes);
+        ddl().dropIndexes(session, tableName("test","bar"), indexes);
     }
     
     @Test(expected=IndexAlterException.class)
     public void dropIndexUnkownIndex() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         // Attempt to drop unknown index
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("name");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
     }
 
     @Test(expected=IndexAlterException.class)
     public void dropIndexImplicitPkey() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int, name varchar(255)");
+        int tId = createTable("test", "t", "id int, name varchar(255)");
         // Attempt to drop implicit primary key
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("PRIMARY");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
     }
     
     @Test(expected=IndexAlterException.class)
     public void dropIndexExplicitPkey() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         // Attempt to drop implicit primary key
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("PRIMARY");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
     }
 
     
@@ -91,12 +86,12 @@ public final class DropIndexesTest extends AlterTestBase {
     
     @Test
     public void dropIndexConfirmAIS() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
+        int tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
 
         // Drop non-unique index on varchar
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("name");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
 
         // Index should be gone from UserTable
         UserTable uTable = ddl().getAIS(session).getUserTable("test", "t");
@@ -111,7 +106,7 @@ public final class DropIndexesTest extends AlterTestBase {
     
     @Test
     public void dropIndexSimple() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
+        int tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
 
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, "bob"));
@@ -121,7 +116,7 @@ public final class DropIndexesTest extends AlterTestBase {
         // Drop non-unique index on varchar
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("name");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
 
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -137,9 +132,9 @@ public final class DropIndexesTest extends AlterTestBase {
     
     @Test
     public void dropIndexMiddleOfGroup() throws InvalidOperationException {
-        TableId cId = createTable("coi", "c", "cid int key, name varchar(32)");
-        TableId oId = createTable("coi", "o", "oid int key, c_id int, tag varchar(32), key tag(tag), CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (c_id) REFERENCES c(cid)");
-        TableId iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY __akiban_fk_i (o_id) REFERENCES o(oid)");
+        int cId = createTable("coi", "c", "cid int key, name varchar(32)");
+        int oId = createTable("coi", "o", "oid int key, c_id int, tag varchar(32), key tag(tag), CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (c_id) REFERENCES c(cid)");
+        int iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY __akiban_fk_i (o_id) REFERENCES o(oid)");
         
         // One customer 
         expectRowCount(cId, 0);
@@ -164,7 +159,7 @@ public final class DropIndexesTest extends AlterTestBase {
         // Drop index on an varchar (note: in the "middle" of a group, shifts IDs after, etc)
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("tag");
-        ddl().dropIndexes(session, oId, indexes);
+        ddl().dropIndexes(session, tableName(oId), indexes);
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -187,7 +182,7 @@ public final class DropIndexesTest extends AlterTestBase {
     
     @Test
     public void dropIndexCompound() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255), key name(first,last)");
+        int tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255), key name(first,last)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, "foo", "bar"));
@@ -198,7 +193,7 @@ public final class DropIndexesTest extends AlterTestBase {
         // Drop non-unique compound index on two varchars
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("name");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -213,7 +208,7 @@ public final class DropIndexesTest extends AlterTestBase {
     
     @Test
     public void dropIndexUnique() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, state char(2), unique state(state)");
+        int tId = createTable("test", "t", "id int primary key, state char(2), unique state(state)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, "IA"));
@@ -224,7 +219,7 @@ public final class DropIndexesTest extends AlterTestBase {
         // Drop unique index on a char(2)
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("state");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -239,7 +234,7 @@ public final class DropIndexesTest extends AlterTestBase {
     
     @Test
     public void dropMultipleIndexes() throws InvalidOperationException {
-        TableId tId = createTable("test", "t", "id int primary key, otherId int, price decimal(10,2), unique otherId(otherId), key price(price)");
+        int tId = createTable("test", "t", "id int primary key, otherId int, price decimal(10,2), unique otherId(otherId), key price(price)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session, createNewRow(tId, 1, 1337, "10.50"));
@@ -251,7 +246,7 @@ public final class DropIndexesTest extends AlterTestBase {
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("otherId");
         indexes.add("price");
-        ddl().dropIndexes(session, tId, indexes);
+        ddl().dropIndexes(session, tableName(tId), indexes);
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();

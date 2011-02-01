@@ -27,14 +27,11 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.common.ResolutionException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.itests.ApiTestBase;
 
 public class AlterTestBase extends ApiTestBase {
-    public AkibaInformationSchema createAISWithTable(TableId id) throws NoSuchTableException, ResolutionException {
-        ddl().resolveTableId(id);
-        Integer tableId = id.getTableId(null);
-        TableName tname = ddl().getTableName(id);
+    public AkibaInformationSchema createAISWithTable(int tableId) throws NoSuchTableException, ResolutionException {
+        TableName tname = tableName(tableId);
         String schemaName = tname.getSchemaName();
         String tableName = tname.getTableName();
 

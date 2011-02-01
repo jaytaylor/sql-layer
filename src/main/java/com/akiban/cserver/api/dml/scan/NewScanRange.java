@@ -18,18 +18,14 @@ package com.akiban.cserver.api.dml.scan;
 import java.util.Set;
 
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.IdResolver;
 import com.akiban.cserver.api.common.NoSuchTableException;
-import com.akiban.cserver.api.common.TableId;
 
 public class NewScanRange implements ScanRange {
-    protected final TableId tableId;
-    protected final Set<ColumnId> columns;
+    protected final int tableId;
+    protected final Set<Integer> columns;
     protected final Predicate predicate;
 
-    public NewScanRange(TableId tableId, Set<ColumnId> columns, Predicate predicate) {
+    public NewScanRange(int tableId, Set<Integer> columns, Predicate predicate) {
         this.tableId = tableId;
         this.columns = columns;
         this.predicate = predicate;
@@ -44,16 +40,16 @@ public class NewScanRange implements ScanRange {
     }
 
     @Override
-    public RowData getStart(IdResolver idResolver) throws NoSuchTableException {
-        return convert(predicate.getStartRow(), idResolver);
+    public RowData getStart() throws NoSuchTableException {
+        return convert(predicate.getStartRow());
     }
 
     @Override
-    public RowData getEnd(IdResolver idResolver) throws NoSuchTableException {
-        return convert(predicate.getEndRow(), idResolver);
+    public RowData getEnd() throws NoSuchTableException {
+        return convert(predicate.getEndRow());
     }
 
-    private RowData convert(NewRow row, IdResolver idResolver) throws NoSuchTableException {
+    private RowData convert(NewRow row) throws NoSuchTableException {
         return row.toRowData();
     }
 
@@ -63,12 +59,7 @@ public class NewScanRange implements ScanRange {
     }
 
     @Override
-    public int getTableIdInt(IdResolver idResolver) throws NoSuchTableException {
-        return tableId.getTableId(idResolver);
-    }
-
-    @Override
-    public TableId getTableId() {
+    public int getTableId() throws NoSuchTableException {
         return tableId;
     }
 

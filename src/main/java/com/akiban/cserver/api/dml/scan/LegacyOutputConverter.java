@@ -20,7 +20,6 @@ import java.util.Set;
 
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.DMLFunctions;
-import com.akiban.cserver.api.common.ColumnId;
 import com.akiban.cserver.api.common.NoSuchTableException;
 
 /**
@@ -34,7 +33,7 @@ import com.akiban.cserver.api.common.NoSuchTableException;
 public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
     private final DMLFunctions converter;
     private RowOutput output;
-    private Set<ColumnId> columnsToScan;
+    private Set<Integer> columnsToScan;
 
     public LegacyOutputConverter(DMLFunctions converter) {
         this.converter = converter;
@@ -52,13 +51,13 @@ public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
         }
 
         if (columnsToScan != null) {
-            final Set<ColumnId> colsToRemove = new HashSet<ColumnId>();
-            for (ColumnId newRowCol : aNew.getFields().keySet()) {
+            final Set<Integer> colsToRemove = new HashSet<Integer>();
+            for (Integer newRowCol : aNew.getFields().keySet()) {
                 if (!columnsToScan.contains(newRowCol)) {
                     colsToRemove.add(newRowCol);
                 }
             }
-            for (ColumnId removeMe : colsToRemove) {
+            for (Integer removeMe : colsToRemove) {
                 aNew.remove(removeMe);
             }
         }
@@ -70,7 +69,7 @@ public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
         this.output = output;
     }
 
-    public void setColumnsToScan(Set<ColumnId> columns) {
+    public void setColumnsToScan(Set<Integer> columns) {
         this.columnsToScan = columns;
     }
 }

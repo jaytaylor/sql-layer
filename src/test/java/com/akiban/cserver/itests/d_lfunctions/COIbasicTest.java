@@ -33,18 +33,17 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NewRowBuilder;
 
 public final class COIbasicTest extends ApiTestBase {
     private static class TableIds {
-        public final TableId c;
-        public final TableId o;
-        public final TableId i;
-        public final TableId coi;
+        public final int c;
+        public final int o;
+        public final int i;
+        public final int coi;
 
-        private TableIds(TableId c, TableId o, TableId i, TableId coi) {
+        private TableIds(int c, int o, int i, int coi) {
             this.c = c;
             this.o = o;
             this.i = i;
@@ -53,13 +52,13 @@ public final class COIbasicTest extends ApiTestBase {
     }
 
     private TableIds createTables() throws InvalidOperationException {
-        TableId cId = createTable("coi", "c", "cid int key, name varchar(32)");
-        TableId oId = createTable("coi", "o", "oid int key, c_id int, CONSTRAINT __akiban_fk_o FOREIGN KEY index1 (c_id) REFERENCES c(cid)");
-        TableId iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY index2 (o_id) REFERENCES o(oid)");
+        int cId = createTable("coi", "c", "cid int key, name varchar(32)");
+        int oId = createTable("coi", "o", "oid int key, c_id int, CONSTRAINT __akiban_fk_o FOREIGN KEY index1 (c_id) REFERENCES c(cid)");
+        int iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY index2 (o_id) REFERENCES o(oid)");
         AkibaInformationSchema ais = ddl().getAIS(session);
 
         // Lots of checking, the more the merrier
-        final UserTable cTable = ais.getUserTable( ddl().getTableName(cId) );
+        final UserTable cTable = ais.getUserTable( ddl().getTableName(session, cId) );
         {
             assertEquals("c.columns.size()", 2, cTable.getColumns().size());
             assertEquals("c.indexes.size()", 1, cTable.getIndexes().size());
@@ -72,7 +71,7 @@ public final class COIbasicTest extends ApiTestBase {
             assertEquals("parent join", null, cTable.getParentJoin());
             assertEquals("child joins.size", 1, cTable.getChildJoins().size());
         }
-        final UserTable oTable = ais.getUserTable( ddl().getTableName(oId) );
+        final UserTable oTable = ais.getUserTable( ddl().getTableName(session, oId) );
         {
             assertEquals("c.columns.size()", 2, oTable.getColumns().size());
             assertEquals("c.indexes.size()", 2, oTable.getIndexes().size());
@@ -86,7 +85,7 @@ public final class COIbasicTest extends ApiTestBase {
             assertSame("parent join", cTable.getChildJoins().get(0), oTable.getParentJoin());
             assertEquals("child joins.size", 1, oTable.getChildJoins().size());
         }
-        final UserTable iTable = ais.getUserTable( ddl().getTableName(iId) );
+        final UserTable iTable = ais.getUserTable( ddl().getTableName(session, iId) );
         {
             assertEquals("c.columns.size()", 3, iTable.getColumns().size());
             assertEquals("c.indexes.size()", 2, iTable.getIndexes().size());
@@ -111,7 +110,7 @@ public final class COIbasicTest extends ApiTestBase {
             assertEquals("group table's indexes size", 5, gTable.getIndexes().size());
         }
 
-        return new TableIds(cId, oId, iId, TableId.of(gTable.getTableId()));
+        return new TableIds(cId, oId, iId, gTable.getTableId());
     }
 
     @Test
