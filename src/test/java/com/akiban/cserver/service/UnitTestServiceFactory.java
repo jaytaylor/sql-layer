@@ -33,6 +33,8 @@ import com.akiban.cserver.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.cserver.service.network.NetworkService;
 import com.akiban.cserver.service.network.NetworkServiceImpl;
 
+import javax.management.ObjectName;
+
 /**
  * Extension of DefaultServiceFactory that creates mock services for unit tests.
  * Specifically, this class is used by tests that need to run the CServer and
@@ -75,8 +77,8 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
 
     private static class MockJmxRegistryService extends JmxRegistryServiceImpl {
         @Override
-        public void register(JmxManageable service) {
-            // ignore
+        public ObjectName register(JmxManageable service) {
+            return null;
         }
 
         @Override

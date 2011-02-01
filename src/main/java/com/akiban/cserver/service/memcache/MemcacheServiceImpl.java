@@ -15,28 +15,18 @@
 
 package com.akiban.cserver.service.memcache;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
-import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
-import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
-import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
-import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
 import com.akiban.cserver.service.session.Session;
-import com.akiban.util.ArgumentValidation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -61,35 +51,18 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedCommandDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedFrameDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
 
+import javax.management.ObjectName;
+
+import static com.akiban.cserver.service.memcache.MemcacheMXBean.*;
+
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
     private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
-    private static final String MODULE = MemcacheServiceImpl.class.toString();
-    private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
-    @SuppressWarnings("unused") // these are queried/set via JMX
-    public enum OutputFormat {
-        JSON(JsonOutputter.instance()),
-        RAW(RawByteOutputter.instance()),
-        DUMMY(DummyByteOutputter.instance()),
-        PLAIN(RowDataStringOutputter.instance())
-        ;
-        private final Outputter outputter;
-
-        OutputFormat(Outputter outputter) {
-            this.outputter = outputter;
-        }
-
-        public Outputter getOutputter() {
-            return outputter;
-        }
-    }
-
-    private final AtomicReference<OutputFormat> outputAs;
-    private final MemcacheMXBean manageBean = new ManageBean();
+    private final MemcacheMXBean manageBean;
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
         public Outputter getFormat() {
-            return outputAs.get().getOutputter();
+            return manageBean.getOutputFormat().getOutputter();
         }
     };
 
@@ -116,84 +89,16 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
             defaultOutput = OutputFormat.JSON;
         }
-        outputAs = new AtomicReference<OutputFormat>(defaultOutput);
+        manageBean = new ManageBean(WhichHapi.FETCHROWS, defaultOutput);
     }
 
     @Override
     public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
-        Store storeLocal = store.get();
-        if (storeLocal == null) {
-            throw new HapiRequestException("Service not started (Store is null",
-                    HapiRequestException.ReasonCode.INTERNAL_ERROR
-            );
-        }
-        
-        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
-        if (buffer == null) {
-            buffer = ByteBuffer.allocate(65536);
-            session.put(MODULE, SESSION_BUFFER, buffer);
-        }
-        else {
-            buffer.clear();
-        }
+        final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
 
-        doProcessRequest(storeLocal, session, request, buffer, outputter, outputStream);
-    }
-
-    private static void doProcessRequest(Store store, Session session, HapiGetRequest request,
-                                         ByteBuffer byteBuffer, HapiProcessor.Outputter outputter, OutputStream outputStream)
-            throws HapiRequestException
-    {
-        ArgumentValidation.notNull("outputter", outputter);
-        HapiGetRequest.Predicate predicate = extractLimitedPredicate(request);
-
-        final RowDefCache cache = store.getRowDefCache();
-        final List<RowData> list;
-        try {
-            list = store.fetchRows(
-                    session,
-                    request.getSchema(),
-                    request.getTable(),
-                    predicate.getColumnName(),
-                    predicate.getValue(),
-                    predicate.getValue(),
-                    null,
-                    byteBuffer
-            );
-        } catch (Exception e) {
-            throw new HapiRequestException("while fetching rows", e);
-        }
-
-        try {
-            outputter.output(request, cache, list, outputStream);
-        } catch (IOException e) {
-            throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
-        }
-    }
-
-    private static HapiGetRequest.Predicate extractLimitedPredicate(HapiGetRequest request) throws HapiRequestException {
-        if (request.getPredicates().size() != 1) {
-            complain("You may only specify one predicate (for now!) -- saw %s", request.getPredicates());
-        }
-        if (!request.getTable().equals(request.getUsingTable().getTableName())) {
-            complain("You may not specify a different SELECT table and USING table (for now!) -- %s != %s",
-                    request.getTable(), request.getUsingTable().getTableName());
-        }
-        HapiGetRequest.Predicate predicate = request.getPredicates().iterator().next();
-        if (!predicate.getTableName().equals(request.getUsingTable())) {
-            complain("Can't have different SELECT table and predicate table (for now!) %s != %s",
-                    predicate.getTableName(), request.getUsingTable()
-            );
-        }
-        return predicate;
-    }
-
-    private static void complain(String format, Object... args) throws HapiRequestException {
-        throw new HapiRequestException(String.format(format, args),
-                HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST
-        );
+        processor.processRequest(session, request, outputter, outputStream);
     }
 
     @Override
@@ -328,26 +233,85 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         return new JmxObjectInfo("Memcache", manageBean, MemcacheMXBean.class);
     }
 
-    private class ManageBean implements MemcacheMXBean {
-        @Override
-        public String getOutputFormat() {
-            return outputAs.get().name();
-        }
+    private static class ManageBean implements MemcacheMXBean {
+        private final AtomicReference<WhichStruct<OutputFormat>> outputAs;
+        private final AtomicReference<WhichStruct<WhichHapi>> processAs;
 
-        @Override
-        public void setOutputFormat(String whichFormat) throws IllegalArgumentException {
-            OutputFormat newFormat = OutputFormat.valueOf(whichFormat);
-            outputAs.set(newFormat);
-        }
+        private static class WhichStruct<T> {
+            final T whichItem;
+            final ObjectName jmxName;
 
-        @Override
-        public String[] getAvailableOutputFormats() {
-            OutputFormat[] formats = OutputFormat.values();
-            String[] names = new String[ formats.length ];
-            for (int i=0; i < formats.length; ++i) {
-                names[i] = formats[i].name();
+            private WhichStruct(T whichItem, ObjectName jmxName) {
+                this.whichItem = whichItem;
+                this.jmxName = jmxName;
             }
-            return names;
+        }
+
+        ManageBean(WhichHapi whichHapi, OutputFormat outputFormat) {
+            processAs = new AtomicReference<WhichStruct<WhichHapi>>(null);
+            outputAs = new AtomicReference<WhichStruct<OutputFormat>>(null);
+            setHapiProcessor(whichHapi);
+            setOutputFormat(outputFormat);
+        }
+
+        @Override
+        public OutputFormat getOutputFormat() {
+            return outputAs.get().whichItem;
+        }
+
+        @Override
+        public void setOutputFormat(OutputFormat whichFormat) throws IllegalArgumentException {
+            WhichStruct<OutputFormat> old = outputAs.get();
+            if (old != null && old.whichItem.equals(whichFormat)) {
+                return;
+            }
+            ObjectName objectName = null;
+            if (whichFormat.getOutputter() instanceof JmxManageable) {
+                JmxManageable asJmx = (JmxManageable)whichFormat.getOutputter();
+                objectName = ServiceManagerImpl.get().getJmxRegistryService().register(asJmx);
+            }
+            WhichStruct<OutputFormat> newStruct = new WhichStruct<OutputFormat>(whichFormat, objectName);
+
+            old = outputAs.getAndSet(newStruct);
+
+            if (old != null && old.jmxName != null) {
+                ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);
+            }
+        }
+
+        @Override
+        public OutputFormat[] getAvailableOutputFormats() {
+            return OutputFormat.values();
+        }
+
+        @Override
+        public WhichHapi getHapiProcessor() {
+            return processAs.get().whichItem;
+        }
+
+        @Override
+        public void setHapiProcessor(WhichHapi whichProcessor) {
+            WhichStruct<WhichHapi> old = processAs.get();
+            if (old != null && old.whichItem.equals(whichProcessor)) {
+                return;
+            }
+            ObjectName objectName = null;
+            if (whichProcessor.getHapiProcessor() instanceof JmxManageable) {
+                JmxManageable asJmx = (JmxManageable)whichProcessor.getHapiProcessor();
+                objectName = ServiceManagerImpl.get().getJmxRegistryService().register(asJmx);
+            }
+            WhichStruct<WhichHapi> newStruct = new WhichStruct<WhichHapi>(whichProcessor, objectName);
+
+            old = processAs.getAndSet(newStruct);
+
+            if (old != null && old.jmxName != null) {
+                ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);
+            }
+        }
+
+        @Override
+        public WhichHapi[] getAvailableHapiProcessors() {
+            return WhichHapi.values();
         }
     }
 }
