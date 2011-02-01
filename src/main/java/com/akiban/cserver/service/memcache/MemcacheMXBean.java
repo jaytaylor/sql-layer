@@ -21,6 +21,7 @@ import com.akiban.cserver.service.memcache.hprocessor.Fetchrows;
 import com.akiban.cserver.service.memcache.outputter.DummyOutputter;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
+import com.akiban.cserver.service.memcache.outputter.RequestEchoOutputter;
 import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
 
 @SuppressWarnings("unused") // these are queried/set via JMX
@@ -54,7 +55,8 @@ public interface MemcacheMXBean {
         JSON(JsonOutputter.instance()),
         RAW(RawByteOutputter.instance()),
         DUMMY(DummyOutputter.instance()),
-        PLAIN(RowDataStringOutputter.instance())
+        PLAIN(RowDataStringOutputter.instance()),
+        ECHO(RequestEchoOutputter.instance())
         ;
         private final HapiProcessor.Outputter outputter;
 
