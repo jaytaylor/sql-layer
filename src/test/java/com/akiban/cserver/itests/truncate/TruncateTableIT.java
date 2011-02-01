@@ -17,13 +17,13 @@ package com.akiban.cserver.itests.truncate;
 
 import com.akiban.ais.model.Table;
 import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.api.GenericInvalidOperationException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
+import com.akiban.cserver.api.dml.scan.ScanFlag;
 import com.akiban.cserver.itests.ApiTestBase;
-import com.akiban.cserver.store.RowCollector;
 import org.junit.Test;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -67,7 +67,7 @@ public final class TruncateTableIT extends ApiTestBase {
         dml().truncateTable(session, tableId);
 
         int indexId = ddl().getAIS(session).getTable("test", "t").getIndex("pid").getIndexId();
-        int scanFlags = RowCollector.SCAN_FLAGS_START_AT_EDGE | RowCollector.SCAN_FLAGS_END_AT_EDGE;
+        EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END);
 
         // Exception originally thrown during dml.doScan: Corrupt RowData at {1,(long)1}
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null, indexId, scanFlags));
@@ -96,7 +96,7 @@ public final class TruncateTableIT extends ApiTestBase {
         final int pkeyIndexId = table.getIndex("PRIMARY").getIndexId();
         final int valueIndexId = table.getIndex("value").getIndexId();
         final int nameIndexId = table.getIndex("name").getIndexId();
-        int scanFlags = RowCollector.SCAN_FLAGS_START_AT_EDGE | RowCollector.SCAN_FLAGS_END_AT_EDGE;
+        final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END);
 
         // Scan on primary key
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null, pkeyIndexId, scanFlags));

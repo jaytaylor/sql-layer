@@ -72,6 +72,33 @@ public final class CBasicIT extends ApiTestBase {
     }
 
     @Test
+    public void indexScan() throws InvalidOperationException {
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32), key name(name)");
+        final int indexId = ddl().getTable(session, tableId).getIndex("name").getIndexId();
+
+        expectRowCount(tableId, 0);
+        dml().writeRow(session, createNewRow(tableId, 1, "foo"));
+        dml().writeRow(session, createNewRow(tableId, 2, "bar"));
+        dml().writeRow(session, createNewRow(tableId, 3, "zap"));
+        expectRowCount(tableId, 3);
+
+        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, ColumnSet.ofPositions(1), indexId, null));
+        assertEquals("rows scanned", 3, rows.size());
+
+        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        expectedRows.add(createNewRow(tableId, 2L, "bar"));
+        expectedRows.add(createNewRow(tableId, 1L, "foo"));
+        expectedRows.add(createNewRow(tableId, 3L, "zap"));
+
+        // Remove first column so toStrings match on assert below
+        for(NewRow row : expectedRows) {
+            row.remove(0);
+        }
+
+        assertEquals("row contents", expectedRows, rows);
+    }
+
+    @Test
     public void partialRowScan() throws InvalidOperationException {
         final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 

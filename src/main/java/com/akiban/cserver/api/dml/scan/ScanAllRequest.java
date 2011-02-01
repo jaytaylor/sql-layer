@@ -23,17 +23,14 @@ public class ScanAllRequest extends ScanAllRange implements ScanRequest {
     private final int scanFlags;
     
     public ScanAllRequest(int tableId, Set<Integer> columnIds) {
-        this(tableId, 
-             columnIds, 
-             0, 
-             ScanFlag.toRowDataFormat(EnumSet.noneOf(ScanFlag.class)));
+        this(tableId, columnIds, 0, null);
     }
 
-    public ScanAllRequest(int tableId, Set<Integer> columnIds, int indexId, int scanFlags)
+    public ScanAllRequest(int tableId, Set<Integer> columnIds, int indexId, EnumSet<ScanFlag> scanFlags)
     {
         super(tableId, columnIds);
         this.indexId = indexId;
-        this.scanFlags = scanFlags;
+        this.scanFlags = ScanFlag.toRowDataFormat(scanFlags != null ? scanFlags : EnumSet.noneOf(ScanFlag.class));
     }
 
     @Override
