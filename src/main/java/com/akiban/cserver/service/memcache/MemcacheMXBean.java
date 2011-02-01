@@ -18,7 +18,7 @@ package com.akiban.cserver.service.memcache;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.service.memcache.hprocessor.EmptyRows;
 import com.akiban.cserver.service.memcache.hprocessor.Fetchrows;
-import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
+import com.akiban.cserver.service.memcache.outputter.DummyOutputter;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
@@ -53,7 +53,7 @@ public interface MemcacheMXBean {
     enum OutputFormat {
         JSON(JsonOutputter.instance()),
         RAW(RawByteOutputter.instance()),
-        DUMMY(DummyByteOutputter.instance()),
+        DUMMY(DummyOutputter.instance()),
         PLAIN(RowDataStringOutputter.instance())
         ;
         private final HapiProcessor.Outputter outputter;

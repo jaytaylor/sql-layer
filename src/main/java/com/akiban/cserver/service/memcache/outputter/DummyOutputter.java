@@ -19,22 +19,48 @@ import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.service.jmx.JmxManageable;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
-public final class DummyByteOutputter implements HapiProcessor.Outputter {
-    private static final DummyByteOutputter instance= new DummyByteOutputter();
+public final class DummyOutputter implements HapiProcessor.Outputter, JmxManageable {
 
-    public static DummyByteOutputter instance() {
+    @SuppressWarnings("unused") // jmx
+    public interface DummyOutputterMXBean {
+        String getDummyText();
+        void setDummyText(String text);
+    }
+
+    private static final DummyOutputter instance= new DummyOutputter();
+
+    public static DummyOutputter instance() {
         return instance;
     }
 
-    private DummyByteOutputter() {}
+    private final AtomicReference<String> string = new AtomicReference<String>("DUMMY DATA");
+    private DummyOutputter() {}
 
     @Override
     public void output(HapiGetRequest request, RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
-        outputStream.write("DUMMY DATA".getBytes());
+        outputStream.write(string.get().getBytes());
+    }
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("HapiOutDummy", new DummyOutputterMXBean() {
+            @Override
+            public String getDummyText() {
+                return string.get();
+            }
+
+            @Override
+            public void setDummyText(String text) {
+                string.set(text);
+            }
+        },
+        DummyOutputterMXBean.class);
     }
 }

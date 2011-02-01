@@ -17,7 +17,6 @@ package com.akiban.cserver.service.memcache;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,7 +26,6 @@ import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
-import com.akiban.cserver.service.jmx.JmxRegistryService;
 import com.akiban.cserver.service.session.Session;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -236,34 +234,45 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     }
 
     private static class ManageBean implements MemcacheMXBean {
-        private final AtomicReference<OutputFormat> outputAs;
-        private final AtomicReference<WhichHapiStruct> processAs;
+        private final AtomicReference<WhichStruct<OutputFormat>> outputAs;
+        private final AtomicReference<WhichStruct<WhichHapi>> processAs;
 
-        private static class WhichHapiStruct {
-            final WhichHapi whichHapi;
+        private static class WhichStruct<T> {
+            final T whichItem;
             final ObjectName jmxName;
 
-            private WhichHapiStruct(WhichHapi whichHapi, ObjectName jmxName) {
-                this.whichHapi = whichHapi;
+            private WhichStruct(T whichItem, ObjectName jmxName) {
+                this.whichItem = whichItem;
                 this.jmxName = jmxName;
             }
         }
 
         ManageBean(WhichHapi whichHapi, OutputFormat outputFormat) {
-            processAs = new AtomicReference<WhichHapiStruct>(null);
-            outputAs = new AtomicReference<OutputFormat>(null);
+            processAs = new AtomicReference<WhichStruct<WhichHapi>>(null);
+            outputAs = new AtomicReference<WhichStruct<OutputFormat>>(null);
             setHapiProcessor(whichHapi);
             setOutputFormat(outputFormat);
         }
 
         @Override
         public OutputFormat getOutputFormat() {
-            return outputAs.get();
+            return outputAs.get().whichItem;
         }
 
         @Override
         public void setOutputFormat(OutputFormat whichFormat) throws IllegalArgumentException {
-            outputAs.set(whichFormat);
+            ObjectName objectName = null;
+            if (whichFormat.getOutputter() instanceof JmxManageable) {
+                JmxManageable asJmx = (JmxManageable)whichFormat.getOutputter();
+                objectName = ServiceManagerImpl.get().getJmxRegistryService().register(asJmx);
+            }
+            WhichStruct<OutputFormat> newStruct = new WhichStruct<OutputFormat>(whichFormat, objectName);
+
+            WhichStruct<OutputFormat> old = outputAs.getAndSet(newStruct);
+
+            if (old != null && old.jmxName != null) {
+                ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);
+            }
         }
 
         @Override
@@ -273,7 +282,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         @Override
         public WhichHapi getHapiProcessor() {
-            return processAs.get().whichHapi;
+            return processAs.get().whichItem;
         }
 
         @Override
@@ -283,9 +292,9 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
                 JmxManageable asJmx = (JmxManageable)whichProcessor.getHapiProcessor();
                 objectName = ServiceManagerImpl.get().getJmxRegistryService().register(asJmx);
             }
-            WhichHapiStruct newStruct = new WhichHapiStruct(whichProcessor, objectName);
+            WhichStruct<WhichHapi> newStruct = new WhichStruct<WhichHapi>(whichProcessor, objectName);
 
-            WhichHapiStruct old = processAs.getAndSet(newStruct);
+            WhichStruct<WhichHapi> old = processAs.getAndSet(newStruct);
 
             if (old != null && old.jmxName != null) {
                 ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);
