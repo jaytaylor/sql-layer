@@ -26,7 +26,7 @@ public class RequestEchoOutputter implements HapiProcessor.Outputter {
                        OutputStream outputStream) throws IOException
     {
         PrintWriter writer = new PrintWriter(outputStream);
-        writer.write("Echoing request:\n");
+        writer.printf("Echoing request %s:\n", request);
         writer.printf("schema:       %s\n", request.getSchema());
         writer.printf("select table: %s\n", request.getTable());
         writer.printf("using  table: %s\n", request.getUsingTable());
