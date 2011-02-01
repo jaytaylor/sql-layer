@@ -102,6 +102,11 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         return getService(SchemaManager.class);
     }
 
+    @Override
+    public JmxRegistryService getJmxRegistryService() {
+        return getService(JmxRegistryService.class);
+    }
+
     public void startServices() throws Exception {
 
         Service<JmxRegistryService> jmxRegistryService = factory.jmxRegistryService();

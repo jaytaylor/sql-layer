@@ -16,17 +16,40 @@
 package com.akiban.cserver.service.memcache;
 
 import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.service.memcache.hprocessor.EmptyRows;
+import com.akiban.cserver.service.memcache.hprocessor.Fetchrows;
 import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
 import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
 
+@SuppressWarnings("unused") // these are queried/set via JMX
 public interface MemcacheMXBean {
-    public OutputFormat getOutputFormat();
-    public void setOutputFormat(OutputFormat whichFormat);
-    public String[] getAvailableOutputFormats();
 
-    @SuppressWarnings("unused") // these are queried/set via JMX
+    OutputFormat getOutputFormat();
+    void setOutputFormat(OutputFormat whichFormat);
+    OutputFormat[] getAvailableOutputFormats();
+
+    WhichHapi getHapiProcessor();
+    void setHapiProcessor(WhichHapi whichProcessor);
+    WhichHapi[] getAvailableHapiProcessors();
+
+    enum WhichHapi {
+        FETCHROWS(Fetchrows.instance()),
+        EMPTY(EmptyRows.instance())
+        ;
+
+        private final HapiProcessor processor;
+
+        WhichHapi(HapiProcessor processor) {
+            this.processor = processor;
+        }
+
+        public HapiProcessor getHapiProcessor() {
+            return processor;
+        }
+    }
+
     enum OutputFormat {
         JSON(JsonOutputter.instance()),
         RAW(RawByteOutputter.instance()),

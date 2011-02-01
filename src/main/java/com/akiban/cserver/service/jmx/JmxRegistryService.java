@@ -15,6 +15,9 @@
 
 package com.akiban.cserver.service.jmx;
 
+import javax.management.ObjectName;
+
 public interface JmxRegistryService extends JmxRegistryServiceMXBean {
-    void register(JmxManageable service);
+    ObjectName register(JmxManageable service);
+    void unregister(ObjectName registeredObject);
 }

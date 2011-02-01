@@ -56,7 +56,7 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
     }
 
     @Override
-    public void register(JmxManageable service) {
+    public ObjectName register(JmxManageable service) {
         final JmxObjectInfo info = service.getJmxObjectInfo();
         validate(info);
         String serviceName = info.getObjectName();
@@ -74,11 +74,15 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
             if (started) {
                 try {
                     getMBeanServer().registerMBean(info.getInstance(), objectName);
+                    return objectName;
                 }
                 catch (Exception e) {
                     removeService(objectName);
                     throw new JmxRegistrationException(e);
                 }
+            }
+            else {
+                return objectName;
             }
         }
     }
@@ -125,6 +129,20 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
         synchronized (INTERNAL_LOCK) {
             try {
                 final ObjectName registeredObject = new ObjectName(String.format(FORMATTER, objectNameString));
+                if (started) {
+                    getMBeanServer().unregisterMBean(registeredObject);
+                }
+                removeService(registeredObject);
+            } catch (Exception e) {
+                throw new JmxRegistrationException(e);
+            }
+        }
+    }
+
+    @Override
+    public void unregister(ObjectName registeredObject) {
+        synchronized (INTERNAL_LOCK) {
+            try {
                 if (started) {
                     getMBeanServer().unregisterMBean(registeredObject);
                 }
