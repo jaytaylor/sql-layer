@@ -15,8 +15,32 @@
 
 package com.akiban.cserver.service.memcache;
 
+import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
+import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
+import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
+import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
+
 public interface MemcacheMXBean {
-    public String getOutputFormat();
-    public void setOutputFormat(String whichFormat);
+    public OutputFormat getOutputFormat();
+    public void setOutputFormat(OutputFormat whichFormat);
     public String[] getAvailableOutputFormats();
+
+    @SuppressWarnings("unused") // these are queried/set via JMX
+    enum OutputFormat {
+        JSON(JsonOutputter.instance()),
+        RAW(RawByteOutputter.instance()),
+        DUMMY(DummyByteOutputter.instance()),
+        PLAIN(RowDataStringOutputter.instance())
+        ;
+        private final HapiProcessor.Outputter outputter;
+
+        OutputFormat(HapiProcessor.Outputter outputter) {
+            this.outputter = outputter;
+        }
+
+        public HapiProcessor.Outputter getOutputter() {
+            return outputter;
+        }
+    }
 }

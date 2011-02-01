@@ -31,10 +31,6 @@ import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
-import com.akiban.cserver.service.memcache.outputter.DummyByteOutputter;
-import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
-import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
-import com.akiban.cserver.service.memcache.outputter.RowDataStringOutputter;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.util.ArgumentValidation;
 import org.apache.commons.logging.Log;
@@ -66,25 +62,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private static final String MODULE = MemcacheServiceImpl.class.toString();
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
-    @SuppressWarnings("unused") // these are queried/set via JMX
-    public enum OutputFormat {
-        JSON(JsonOutputter.instance()),
-        RAW(RawByteOutputter.instance()),
-        DUMMY(DummyByteOutputter.instance()),
-        PLAIN(RowDataStringOutputter.instance())
-        ;
-        private final Outputter outputter;
-
-        OutputFormat(Outputter outputter) {
-            this.outputter = outputter;
-        }
-
-        public Outputter getOutputter() {
-            return outputter;
-        }
-    }
-
-    private final AtomicReference<OutputFormat> outputAs;
+    private final AtomicReference<MemcacheMXBean.OutputFormat> outputAs;
     private final MemcacheMXBean manageBean = new ManageBean();
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
@@ -108,15 +86,15 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         this.serviceManager = ServiceManagerImpl.get();
 
         ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
-        String defaultOutputName = config.getProperty("cserver", "memcached.output.format", OutputFormat.JSON.name());
-        OutputFormat defaultOutput;
+        String defaultOutputName = config.getProperty("cserver", "memcached.output.format", MemcacheMXBean.OutputFormat.JSON.name());
+        MemcacheMXBean.OutputFormat defaultOutput;
         try {
-            defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
+            defaultOutput = MemcacheMXBean.OutputFormat.valueOf(defaultOutputName.toUpperCase());
         } catch (IllegalArgumentException e) {
             LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
-            defaultOutput = OutputFormat.JSON;
+            defaultOutput = MemcacheMXBean.OutputFormat.JSON;
         }
-        outputAs = new AtomicReference<OutputFormat>(defaultOutput);
+        outputAs = new AtomicReference<MemcacheMXBean.OutputFormat>(defaultOutput);
     }
 
     @Override
@@ -330,14 +308,13 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     private class ManageBean implements MemcacheMXBean {
         @Override
-        public String getOutputFormat() {
-            return outputAs.get().name();
+        public OutputFormat getOutputFormat() {
+            return outputAs.get();
         }
 
         @Override
-        public void setOutputFormat(String whichFormat) throws IllegalArgumentException {
-            OutputFormat newFormat = OutputFormat.valueOf(whichFormat);
-            outputAs.set(newFormat);
+        public void setOutputFormat(OutputFormat whichFormat) throws IllegalArgumentException {
+            outputAs.set(whichFormat);
         }
 
         @Override
