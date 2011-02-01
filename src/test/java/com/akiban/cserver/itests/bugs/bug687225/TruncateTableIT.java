@@ -15,6 +15,7 @@
 
 package com.akiban.cserver.itests.bugs.bug687225;
 
+import com.akiban.ais.model.Table;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.GenericInvalidOperationException;
 import com.akiban.cserver.api.dml.scan.NewRow;
@@ -45,10 +46,17 @@ public final class TruncateTableIT extends ApiTestBase {
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
         assertEquals("Rows scanned", 0, rows.size());
     }
-    
-    @Test(expected=GenericInvalidOperationException.class)
+
+    /*
+     * Bug appeared after truncate was implemented as 'scan all rows and delete'.
+     * Manifested as a corrupt RowData when doing a non-primary index scan after the truncate.
+     * Turned out that PersistitStore.deleteRow() requires all index columns be present in the passed RowData.
+     */
+    @Test
     public void bugTestCase() throws InvalidOperationException {
-        int tableId = createTable("test", "t", "id int NOT NULL, pid int NOT NULL, PRIMARY KEY(id), UNIQUE KEY pid(pid)");
+        int tableId = createTable("test",
+                                  "t",
+                                  "id int NOT NULL, pid int NOT NULL, PRIMARY KEY(id), UNIQUE KEY pid(pid)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session, createNewRow(tableId, 1, 1));
@@ -56,12 +64,51 @@ public final class TruncateTableIT extends ApiTestBase {
         expectRowCount(tableId, 2);
 
         dml().truncateTable(session, tableId);
-        
+
         int indexId = ddl().getAIS(session).getTable("test", "t").getIndex("pid").getIndexId();
         int scanFlags = RowCollector.SCAN_FLAGS_START_AT_EDGE | RowCollector.SCAN_FLAGS_END_AT_EDGE;
-        
-        // Exception currently thrown during dml.doScan: Corrupt RowData at {1,(long)1}
+
+        // Exception originally thrown during dml.doScan: Corrupt RowData at {1,(long)1}
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null, indexId, scanFlags));
+        assertEquals("Rows scanned", 0, rows.size());
+    }
+
+    @Test
+    public void multiIndexTest() throws InvalidOperationException {
+        int tableId = createTable("test",
+                                  "t",
+                                  "id int key, tag int, value decimal(10,2), name varchar(32), key value(value), unique key name(name)");
+
+        expectRowCount(tableId, 0);
+        dml().writeRow(session, createNewRow(tableId, 1, 1234, "10.50", "foo"));
+        dml().writeRow(session, createNewRow(tableId, 2, -421, "14.99", "bar"));
+        dml().writeRow(session, createNewRow(tableId, 3, 1337, "100.5", "zap"));
+        dml().writeRow(session, createNewRow(tableId, 4, -987, "12.95", "dob"));
+        dml().writeRow(session, createNewRow(tableId, 5, 3409, "99.00", "eek"));
+        expectRowCount(tableId, 5);
+
+        dml().truncateTable(session, tableId);
+
+        final Table table = ddl().getTable(session, tableId);
+        final int pkeyIndexId = table.getIndex("PRIMARY").getIndexId();
+        final int valueIndexId = table.getIndex("value").getIndexId();
+        final int nameIndexId = table.getIndex("name").getIndexId();
+        int scanFlags = RowCollector.SCAN_FLAGS_START_AT_EDGE | RowCollector.SCAN_FLAGS_END_AT_EDGE;
+
+        // Scan on primary key
+        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null, pkeyIndexId, scanFlags));
+        assertEquals("Rows scanned", 0, rows.size());
+
+        // Scan on index
+        rows = scanAll(new ScanAllRequest(tableId, null, valueIndexId, scanFlags));
+        assertEquals("Rows scanned", 0, rows.size());
+
+        // Scan on unique index
+        rows = scanAll(new ScanAllRequest(tableId, null, nameIndexId, scanFlags));
+        assertEquals("Rows scanned", 0, rows.size());
+
+        // Table scan
+        rows = scanAll(new ScanAllRequest(tableId, null));
         assertEquals("Rows scanned", 0, rows.size());
     }
 }

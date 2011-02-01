@@ -525,16 +525,17 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     public void truncateTable(final Session session, final int tableId)
             throws NoSuchTableException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, GenericInvalidOperationException {
-        // Store.truncate doesn't work well, so we have to actually scan the
-        // rows
-        Index pkIndex = ddlFunctions.getTable(session, tableId).getIndex(Index.PRIMARY_KEY_CONSTRAINT);
-        assert pkIndex.isPrimaryKey() : pkIndex;
-        Set<Integer> pkColumns = new HashSet<Integer>();
-        for (IndexColumn column : pkIndex.getColumns()) {
-            int pos = column.getColumn().getPosition();
-            pkColumns.add(pos);
+        // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
+        Set<Integer> keyColumns = new HashSet<Integer>();
+        for(Index index : ddlFunctions.getTable(session, tableId).getIndexes()) {
+            for(IndexColumn col : index.getColumns()) {
+                int pos = col.getColumn().getPosition();
+                keyColumns.add(pos);
+            }
         }
-        ScanRequest all = new ScanAllRequest(tableId, pkColumns);
+
+        // Store.truncate() gets rid of the entire group, so roll our own by doing a table scan
+        ScanRequest all = new ScanAllRequest(tableId, keyColumns);
 
         RowOutput output = new RowOutput() {
             @Override
