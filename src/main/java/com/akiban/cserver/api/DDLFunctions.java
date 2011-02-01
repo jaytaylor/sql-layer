@@ -133,6 +133,15 @@ public interface DDLFunctions {
     public Table getTable(Session session, int tableId) throws NoSuchTableException;
 
     /**
+     * Resolves the given table to its Table
+     * @param session the session
+     * @param tableName the table to look up
+     * @return the Table
+     * @throws NoSuchTableException if the given table doesn't exist
+     */
+    public Table getTable(Session session, TableName tableName) throws NoSuchTableException;
+
+    /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including group tables and tables in the
      * <tt>akiban_information_schema</tt> schema. The DDLs will be arranged such that it should be safe to call them
      * in order, but they will not contain any DROP commands; it is up to the caller to drop all conflicting
