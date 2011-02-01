@@ -35,7 +35,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("HapiFetchrows", new FetchrowsMXBean() {
+        return new JmxObjectInfo("HapiP-Fetchrows", new FetchrowsMXBean() {
             @Override
             public int getBufferCapacity() {
                 return capacity.get();

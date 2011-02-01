@@ -50,7 +50,7 @@ public final class DummyOutputter implements HapiProcessor.Outputter, JmxManagea
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("HapiOutDummy", new DummyOutputterMXBean() {
+        return new JmxObjectInfo("HapiO-Dummy", new DummyOutputterMXBean() {
             @Override
             public String getDummyText() {
                 return string.get();

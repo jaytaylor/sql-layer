@@ -261,6 +261,10 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         @Override
         public void setOutputFormat(OutputFormat whichFormat) throws IllegalArgumentException {
+            WhichStruct<OutputFormat> old = outputAs.get();
+            if (old != null && old.whichItem.equals(whichFormat)) {
+                return;
+            }
             ObjectName objectName = null;
             if (whichFormat.getOutputter() instanceof JmxManageable) {
                 JmxManageable asJmx = (JmxManageable)whichFormat.getOutputter();
@@ -268,7 +272,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             }
             WhichStruct<OutputFormat> newStruct = new WhichStruct<OutputFormat>(whichFormat, objectName);
 
-            WhichStruct<OutputFormat> old = outputAs.getAndSet(newStruct);
+            old = outputAs.getAndSet(newStruct);
 
             if (old != null && old.jmxName != null) {
                 ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);
@@ -287,6 +291,10 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         @Override
         public void setHapiProcessor(WhichHapi whichProcessor) {
+            WhichStruct<WhichHapi> old = processAs.get();
+            if (old != null && old.whichItem.equals(whichProcessor)) {
+                return;
+            }
             ObjectName objectName = null;
             if (whichProcessor.getHapiProcessor() instanceof JmxManageable) {
                 JmxManageable asJmx = (JmxManageable)whichProcessor.getHapiProcessor();
@@ -294,7 +302,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             }
             WhichStruct<WhichHapi> newStruct = new WhichStruct<WhichHapi>(whichProcessor, objectName);
 
-            WhichStruct<WhichHapi> old = processAs.getAndSet(newStruct);
+            old = processAs.getAndSet(newStruct);
 
             if (old != null && old.jmxName != null) {
                 ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);

@@ -60,7 +60,7 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
         final JmxObjectInfo info = service.getJmxObjectInfo();
         validate(info);
         String serviceName = info.getObjectName();
-        if (!serviceName.matches("[\\w\\d]+")) {
+        if (!serviceName.matches("[\\w-]+")) {
             throw new JmxRegistrationException(service.getClass(), serviceName);
         }
         final ObjectName objectName;
