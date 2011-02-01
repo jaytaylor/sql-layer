@@ -17,8 +17,6 @@ package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.common.ColumnId;
-import com.akiban.cserver.api.common.TableId;
 import com.akiban.cserver.api.dml.ByteArrayColumnSelector;
 import com.akiban.cserver.api.dml.ColumnSelector;
 import com.akiban.cserver.api.dml.scan.NewRow;
@@ -88,12 +86,12 @@ public class RowUpdateIT extends ApiTestBase
                         "b int",
                         "c int",
                         "d int");
-        cId = ColumnId.of(0);
-        cA = ColumnId.of(1);
-        cB = ColumnId.of(2);
-        cC = ColumnId.of(3);
-        cD = ColumnId.of(4);
-        rowDef = rowDefCache().getRowDef(t.getTableId(null));
+        cId = 0;
+        cA = 1;
+        cB = 2;
+        cC = 3;
+        cD = 4;
+        rowDef = rowDefCache().getRowDef(t);
         target = new NiceRow(t, rowDef);
         target.put(cId, 888L);
         target.put(cA, 888L);
@@ -118,12 +116,12 @@ public class RowUpdateIT extends ApiTestBase
         expectFullRows(t, before, target, after);
     }
 
-    private TableId t;
-    private ColumnId cId;
-    private ColumnId cA;
-    private ColumnId cB;
-    private ColumnId cC;
-    private ColumnId cD;
+    private int t;
+    private int cId;
+    private int cA;
+    private int cB;
+    private int cC;
+    private int cD;
     private RowDef rowDef;
     private NewRow before;
     private NewRow target;
