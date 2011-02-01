@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
@@ -53,6 +54,7 @@ import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.util.RowDefNotFoundException;
+import com.akiban.message.ErrorCode;
 import com.akiban.util.ArgumentValidation;
 import org.apache.log4j.Logger;
 
@@ -525,9 +527,19 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     public void truncateTable(final Session session, final int tableId)
             throws NoSuchTableException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, GenericInvalidOperationException {
+        final Table table = ddlFunctions.getTable(session, tableId);
+
+        // Orphan rows not yet supported AND the DML layer does not have access to transactions so reject any
+        // truncate that could fail due to child rows and leave the table half emptied
+        if(table.isUserTable() && ((UserTable)table).getChildJoins().isEmpty() == false) {
+            InvalidOperationException ioe = new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
+                                                                          "Cannot truncate non leaf table");
+            throw new GenericInvalidOperationException(ioe);
+        }
+
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
         Set<Integer> keyColumns = new HashSet<Integer>();
-        for(Index index : ddlFunctions.getTable(session, tableId).getIndexes()) {
+        for(Index index : table.getIndexes()) {
             for(IndexColumn col : index.getColumns()) {
                 int pos = col.getColumn().getPosition();
                 keyColumns.add(pos);

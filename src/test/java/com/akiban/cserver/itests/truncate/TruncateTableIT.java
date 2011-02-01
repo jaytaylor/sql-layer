@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.itests.bugs.bug687225;
+package com.akiban.cserver.itests.truncate;
 
 import com.akiban.ais.model.Table;
 import com.akiban.cserver.InvalidOperationException;
@@ -30,10 +30,9 @@ import static org.junit.Assert.assertEquals;
 
 public final class TruncateTableIT extends ApiTestBase {
     @Test
-    public void basicTruncate() throws InvalidOperationException {
+    public void basic() throws InvalidOperationException {
         int tableId = createTable("test", "t", "id int key");
 
-        expectRowCount(tableId, 0);
         final int rowCount = 5;
         for(int i = 1; i <= rowCount; ++i) {
             dml().writeRow(session, createNewRow(tableId, i));
@@ -42,7 +41,10 @@ public final class TruncateTableIT extends ApiTestBase {
 
         dml().truncateTable(session, tableId);
 
-        // Check that we can still get the rows
+        // Check table stats
+        expectRowCount(tableId, 0);
+
+        // Check table scan
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
         assertEquals("Rows scanned", 0, rows.size());
     }
@@ -53,12 +55,11 @@ public final class TruncateTableIT extends ApiTestBase {
      * Turned out that PersistitStore.deleteRow() requires all index columns be present in the passed RowData.
      */
     @Test
-    public void bugTestCase() throws InvalidOperationException {
+    public void bug687225() throws InvalidOperationException {
         int tableId = createTable("test",
                                   "t",
                                   "id int NOT NULL, pid int NOT NULL, PRIMARY KEY(id), UNIQUE KEY pid(pid)");
 
-        expectRowCount(tableId, 0);
         dml().writeRow(session, createNewRow(tableId, 1, 1));
         dml().writeRow(session, createNewRow(tableId, 2, 2));
         expectRowCount(tableId, 2);
@@ -74,12 +75,11 @@ public final class TruncateTableIT extends ApiTestBase {
     }
 
     @Test
-    public void multiIndexTest() throws InvalidOperationException {
+    public void multipleIndex() throws InvalidOperationException {
         int tableId = createTable("test",
                                   "t",
                                   "id int key, tag int, value decimal(10,2), name varchar(32), key value(value), unique key name(name)");
 
-        expectRowCount(tableId, 0);
         dml().writeRow(session, createNewRow(tableId, 1, 1234, "10.50", "foo"));
         dml().writeRow(session, createNewRow(tableId, 2, -421, "14.99", "bar"));
         dml().writeRow(session, createNewRow(tableId, 3, 1337, "100.5", "zap"));
@@ -88,6 +88,9 @@ public final class TruncateTableIT extends ApiTestBase {
         expectRowCount(tableId, 5);
 
         dml().truncateTable(session, tableId);
+
+        // Check table stats
+        expectRowCount(tableId, 0);
 
         final Table table = ddl().getTable(session, tableId);
         final int pkeyIndexId = table.getIndex("PRIMARY").getIndexId();
@@ -110,5 +113,54 @@ public final class TruncateTableIT extends ApiTestBase {
         // Table scan
         rows = scanAll(new ScanAllRequest(tableId, null));
         assertEquals("Rows scanned", 0, rows.size());
+    }
+
+    /*
+     * TODO: Remove expected from below tests when orphan rows are supported and dml.truncate() is updated
+     */
+
+    @Test(expected=InvalidOperationException.class)
+    public void truncateParentNoChild() throws InvalidOperationException {
+        int parentId = createTable("test",
+                                   "parent",
+                                   "id int key");
+        int childId = createTable("test",
+                                   "child",
+                                   "id int key, pid int, constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references parent(id)");
+
+        dml().writeRow(session, createNewRow(parentId, 1));
+        expectRowCount(parentId, 1);
+
+        dml().truncateTable(session, parentId);
+
+        expectRowCount(parentId, 0);
+        List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
+        assertEquals("Rows scanned", 0, rows.size());
+    }
+
+    @Test(expected=InvalidOperationException.class)
+    public void truncateParentWithChild() throws InvalidOperationException {
+        int parentId = createTable("test",
+                                   "parent",
+                                   "id int key");
+        int childId = createTable("test",
+                                   "child",
+                                   "id int key, pid int, constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references parent(id)");
+
+        dml().writeRow(session, createNewRow(parentId, 1));
+        expectRowCount(parentId, 1);
+
+        dml().writeRow(session, createNewRow(childId, 1, 1));
+        expectRowCount(childId, 1);
+
+        dml().truncateTable(session, parentId);
+
+        expectRowCount(parentId, 0);
+        List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
+        assertEquals("Rows scanned", 0, rows.size());
+
+        expectRowCount(childId, 1);
+        rows = scanAll(new ScanAllRequest(childId, null));
+        assertEquals("Rows scanned", 1, rows.size());
     }
 }
