@@ -41,7 +41,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static final String MODULE = Scanrows.class.toString();
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
-    private static final Scanrows instance = new Scanrows();
     private final AtomicInteger bufferSize = new AtomicInteger(65535);
 
     private final ScanrowsMXBean bean = new ScanrowsMXBean() {
@@ -57,7 +56,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     };
 
     public static Scanrows instance() {
-        return instance;
+        return new Scanrows();
     }
 
     private final DDLFunctions ddlFunctions = new DDLFunctionsImpl();

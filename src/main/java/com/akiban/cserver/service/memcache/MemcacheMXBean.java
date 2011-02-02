@@ -39,7 +39,12 @@ public interface MemcacheMXBean {
     enum WhichHapi {
         FETCHROWS(Fetchrows.instance()),
         EMPTY(EmptyRows.instance()),
-        SCANROWS(Scanrows.instance())
+        SCANROWS(null) {
+            @Override
+            public HapiProcessor getHapiProcessor() {
+                return Scanrows.instance();
+            }
+        }
         ;
 
         private final HapiProcessor processor;

@@ -74,7 +74,7 @@ import com.akiban.cserver.service.session.SessionImpl;
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
  * various convenience testing methods.</p>
  */
-public class ApiTestBase extends CServerTestCase {
+public class ApiTestBase {
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
@@ -139,14 +139,15 @@ public class ApiTestBase extends CServerTestCase {
     private DMLFunctions dml;
     private DDLFunctions ddl;
     private ServiceManager sm;
+    protected Session session;
 
     @Before
     public final void startTestServices() throws Exception {
+        session = new SessionImpl();
         sm = new TestServiceManager( );
         sm.startServices();
-        DDLFunctionsImpl ddlFunctions = new DDLFunctionsImpl();
-        ddl = ddlFunctions;
-        dml = new DMLFunctionsImpl(ddlFunctions);
+        ddl = new DDLFunctionsImpl();
+        dml = new DMLFunctionsImpl(ddl);
     }
 
     @After
@@ -155,6 +156,7 @@ public class ApiTestBase extends CServerTestCase {
         ddl = null;
         dml = null;
         sm = null;
+        session = null;
     }
 
     protected final HapiProcessor hapi() {
