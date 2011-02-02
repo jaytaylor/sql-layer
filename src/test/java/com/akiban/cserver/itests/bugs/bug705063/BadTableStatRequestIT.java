@@ -22,26 +22,15 @@ import org.junit.Test;
 
 public final class BadTableStatRequestIT extends ApiTestBase {
     @Test(expected= NoSuchTableException.class)
-    public void noTablesDefined_byID() throws InvalidOperationException {
+    public void noTablesDefined() throws InvalidOperationException {
         dml().getTableStatistics(session, 1, false);
     }
 
     @Test(expected= NoSuchTableException.class)
-    public void noTablesDefined_byName() throws InvalidOperationException {
-        dml().getTableStatistics(session, tableId("schema1", "table1"), false);
-    }
-
-    @Test(expected= NoSuchTableException.class)
-    public void wrongTableIdDefined_byID() throws InvalidOperationException {
+    public void wrongTableIdDefined() throws InvalidOperationException {
         int created = createATable();
 
         dml().getTableStatistics(session, created + 31, false);
-    }
-
-    @Test(expected= NoSuchTableException.class)
-    public void wrongTableIdDefined_byName() throws InvalidOperationException {
-        createATable();
-        dml().getTableStatistics(session, tableId("schema1", "table27"), false);
     }
 
     private int createATable() {
