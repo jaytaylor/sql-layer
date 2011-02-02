@@ -13,17 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.api.dml;
+package com.akiban.cserver.service.d_l;
 
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.message.ErrorCode;
+public interface DStarLMXBean {
+    String getUsingSchema();
+    void setUsingSchema(String schema);
 
-public final class ForeignKeyConstraintDMLException extends DMLException {
-    public ForeignKeyConstraintDMLException(InvalidOperationException e) {
-    super(e);
-    }
+    void createTable(String schema, String ddl);
+    void createTable(String ddl);
 
-    public ForeignKeyConstraintDMLException(ErrorCode code, String message) {
-    super(code, message);
-    }
+    void writeRow(String schema, String table, String fields);
+    void writeRow(String table, String fields);
 }

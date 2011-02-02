@@ -49,6 +49,10 @@ public enum ScanFlag {
         return result;
     }
 
+    public static int addFlag(int flagsInt, ScanFlag flag) {
+        return flagsInt | (1 << flag.position);
+    }
+
     public static EnumSet<ScanFlag> fromRowDataFormat(int packed) {
         ArgumentValidation.isNotNegative("packed int", packed);
         ArgumentValidation.isLT("packed int", packed, 1 << values().length );

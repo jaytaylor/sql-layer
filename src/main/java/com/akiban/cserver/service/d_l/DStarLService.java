@@ -13,17 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.api.dml;
+package com.akiban.cserver.service.d_l;
 
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.message.ErrorCode;
-
-public final class ForeignKeyConstraintDMLException extends DMLException {
-    public ForeignKeyConstraintDMLException(InvalidOperationException e) {
-    super(e);
-    }
-
-    public ForeignKeyConstraintDMLException(ErrorCode code, String message) {
-    super(code, message);
-    }
+public interface DStarLService {
 }

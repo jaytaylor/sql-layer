@@ -22,6 +22,7 @@ import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
+import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.service.memcache.ParsedHapiGetRequest;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.session.Session;
@@ -166,9 +167,11 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String TEST_GET = "get";
     private static final String TEST_EXPECT = "expect result";
     private static final String TEST_ERROR = "expect error";
+    private static final String TEST_PROCESSORS = "processors";
     private static final String[] TEST_KEYS_REQUIRED = {TEST_GET};
     private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING, TEST_EXPECT, TEST_ERROR,
-                                                        COMMENT};
+                                                        COMMENT, TEST_PROCESSORS};
+    private static final String[] DEFAULT_TEST_PROCESSORS = {"FETCHROWS", "SCANROWS"};
 
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
     private static final String[] SECTIONS_OPTIONAL = {COMMENT, PASSING_DEFAULT};
@@ -207,7 +210,7 @@ public final class JsonHapiIT extends ApiTestBase {
 
         @Override
         public String toString() {
-            return String.format("TestSetupInfo{schema=%s, ddls=%s, writeRows=%s", schema, ddls, writeRows);
+            return String.format("TestSetupInfo{schema=%s, ddls=%s, writeRows=%s}", schema, ddls, writeRows);
         }
     }
 
@@ -226,7 +229,24 @@ public final class JsonHapiIT extends ApiTestBase {
 
         @Override
         public String toString() {
-            return String.format("write_rows=%s, get=%s, expect=%s", writeRows, getQuery, expect);
+            return String.format("TestRunInfo{write_rows=%s, get=%s, expect=%s}", writeRows, getQuery, expect);
+        }
+    }
+
+    private static class TestExtraParam {
+        final String hapiProcessor;
+
+        private TestExtraParam(String hapiProcessor) {
+            this.hapiProcessor = hapiProcessor.toUpperCase();
+        }
+
+        String getName(String previousName) {
+            return String.format("(%s) %s", hapiProcessor, previousName);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("TestExtraParam{hapiProcessor=%s}", hapiProcessor);
         }
     }
 
@@ -283,12 +303,39 @@ public final class JsonHapiIT extends ApiTestBase {
                 else {
                     param = Parameterization.failing(paramName(name, testName), null, null, null);
                 }
-                params.add(param);
+                String[] processors = extractProcessors(test);
+                addParams(params, param, processors);
             } catch (JSONException e) {
                 params.add( Parameterization.create(paramName(name, testName), e, null, null) );
             }
         }
         return params;
+    }
+
+    private static void addParams(List<Parameterization> params, Parameterization basic, String[] processors) {
+        for (String hapiProcessor : processors) {
+            List<Object> paramArgs = new ArrayList<Object>(basic.getArgsAsList());
+            TestExtraParam extraParam = new TestExtraParam(hapiProcessor);
+            paramArgs.add(extraParam);
+            Parameterization param = new Parameterization(
+                    extraParam.getName(basic.getName()),
+                    basic.expectedToPass()
+            );
+            param.getArgsAsList().addAll(paramArgs);
+            params.add(param);
+        }
+    }
+
+    private static String[] extractProcessors(JSONObject test) throws JSONException {
+        JSONArray array = test.optJSONArray(TEST_PROCESSORS);
+        if (array == null) {
+            return DEFAULT_TEST_PROCESSORS;
+        }
+        String[] ret = new String[array.length()];
+        for(int i=0; i < ret.length; ++i) {
+            ret[i] = array.getString(i);
+        }
+        return ret;
     }
 
     private static TestRunInfo extractTestRunInfo(String testName, JSONObject test) throws JSONException{
@@ -364,14 +411,17 @@ public final class JsonHapiIT extends ApiTestBase {
 
     private final TestSetupInfo setupInfo;
     private final TestRunInfo runInfo;
+    private final MemcacheService.WhichHapi hapiProcessor;
 
-    public JsonHapiIT(Exception testSetupErr, TestSetupInfo setupInfo, TestRunInfo runInfo) throws Exception
+    public JsonHapiIT(Exception testSetupErr, TestSetupInfo setupInfo, TestRunInfo runInfo, TestExtraParam extraParams)
+            throws Exception
     {
         if (testSetupErr != null) {
             throw testSetupErr;
         }
         this.setupInfo = setupInfo;
         this.runInfo = runInfo;
+        this.hapiProcessor = MemcacheService.WhichHapi.valueOf(extraParams.hapiProcessor);
     }
 
     @Before
@@ -404,6 +454,7 @@ public final class JsonHapiIT extends ApiTestBase {
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+            memcache().setHapiProcessor(hapiProcessor);
             hapi().processRequest(session, request, JsonOutputter.instance(), outputStream);
             outputStream.flush();
             String result = new String(outputStream.toByteArray());

@@ -15,8 +15,15 @@
 
 package com.akiban.cserver.service.memcache;
 
+@SuppressWarnings("unused") // these are queried/set via JMX
 public interface MemcacheMXBean {
-    public String getOutputFormat();
-    public void setOutputFormat(String whichFormat);
-    public String[] getAvailableOutputFormats();
+
+    MemcacheService.OutputFormat getOutputFormat();
+    void setOutputFormat(MemcacheService.OutputFormat whichFormat);
+    MemcacheService.OutputFormat[] getAvailableOutputFormats();
+
+    MemcacheService.WhichHapi getHapiProcessor();
+    void setHapiProcessor(MemcacheService.WhichHapi whichProcessor);
+    MemcacheService.WhichHapi[] getAvailableHapiProcessors();
+
 }

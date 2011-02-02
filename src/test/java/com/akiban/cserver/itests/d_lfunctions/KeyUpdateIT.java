@@ -22,6 +22,7 @@ import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.cserver.store.TreeRecordVisitor;
 import com.persistit.exception.PersistitException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,6 +46,12 @@ public class KeyUpdateIT extends ApiTestBase
     {
         createSchema();
         populateTables();
+    }
+
+    @After
+    public void after()
+    {
+        rowDefCache().clear();
     }
 
     @Test

@@ -27,7 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
@@ -53,6 +55,7 @@ import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.util.RowDefNotFoundException;
+import com.akiban.message.ErrorCode;
 import com.akiban.util.ArgumentValidation;
 import org.apache.log4j.Logger;
 
@@ -64,9 +67,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static final Object OPEN_CURSORS = new Object();
 
     private final static Logger logger = Logger.getLogger(DMLFunctionsImpl.class);
-    private final DDLFunctionsImpl ddlFunctions;
+    private final DDLFunctions ddlFunctions;
 
-    public DMLFunctionsImpl(DDLFunctionsImpl ddlFunctions) {
+    public DMLFunctionsImpl(DDLFunctions ddlFunctions) {
         this.ddlFunctions = ddlFunctions;
     }
 
@@ -526,16 +529,31 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     public void truncateTable(final Session session, final int tableId)
             throws NoSuchTableException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, GenericInvalidOperationException {
-        // Store.truncate doesn't work well, so we have to actually scan the
-        // rows
-        Index pkIndex = ddlFunctions.getTable(session, tableId).getIndex(Index.PRIMARY_KEY_CONSTRAINT);
-        assert pkIndex.isPrimaryKey() : pkIndex;
-        Set<Integer> pkColumns = new HashSet<Integer>();
-        for (IndexColumn column : pkIndex.getColumns()) {
-            int pos = column.getColumn().getPosition();
-            pkColumns.add(pos);
+        final Table table = ddlFunctions.getTable(session, tableId);
+
+        // Reject a truncate that would create orphan rows
+        if(table.isUserTable() == true) {
+            for(Join join : ((UserTable)table).getChildJoins()) {
+                final Table childTable = join.getChild();
+                final TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
+                if(stats.getRowCount() > 0) {
+                    String errorMsg = String.format("Child table %s has rows", childTable.getName().getTableName());
+                    throw new ForeignKeyConstraintDMLException(ErrorCode.FK_CONSTRAINT_VIOLATION, errorMsg);
+                }
+            }
         }
-        ScanRequest all = new ScanAllRequest(tableId, pkColumns);
+
+        // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
+        Set<Integer> keyColumns = new HashSet<Integer>();
+        for(Index index : table.getIndexes()) {
+            for(IndexColumn col : index.getColumns()) {
+                int pos = col.getColumn().getPosition();
+                keyColumns.add(pos);
+            }
+        }
+
+        // Store.truncate() gets rid of the entire group, so roll our own by doing a table scan
+        ScanRequest all = new ScanAllRequest(tableId, keyColumns);
 
         RowOutput output = new RowOutput() {
             @Override

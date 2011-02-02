@@ -3,7 +3,6 @@ akiban-cserver.ipr
 akiban-cserver.iws
 src/main/antlr3/com/akiban/ais/ddl/output/
 src/main/antlr3/com/akiban/cserver/service/memcache/output/
-target
 velocity.log
 debian/debhelper.log
 debian/files
@@ -17,3 +16,4 @@ redhat/rpmbuild
 ./.project
 ./.settings
 ./.idea
+./target
