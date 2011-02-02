@@ -199,15 +199,6 @@ public class KeyUpdateIT extends ApiTestBase
             }
             row.put(column++, value);
         }
-        if (table == customerRowDef) {
-            customers.add(row);
-        } else if (table == orderRowDef) {
-            orders.add(row);
-        } else if (table == itemRowDef) {
-            items.add(row);
-        } else {
-            assert false : table;
-        }
         return row;
     }
 
@@ -215,8 +206,6 @@ public class KeyUpdateIT extends ApiTestBase
     {
         dml().writeRow(session, row);
     }
-
-    private static final NiceRow[] NICE_ROW_ARRAY = new NiceRow[0];
 
     private int customerId;
     private int c_cid;
@@ -232,9 +221,6 @@ public class KeyUpdateIT extends ApiTestBase
     private int i_oid;
     private int i_ix;
     private RowDef itemRowDef;
-    private List<NiceRow> customers = new ArrayList<NiceRow>();
-    private List<NiceRow> orders = new ArrayList<NiceRow>();
-    private List<NiceRow> items = new ArrayList<NiceRow>();
 
     private class InitialStateVisistor extends TreeRecordVisitor
     {
