@@ -7,6 +7,8 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.DDLFunctions;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.DMLFunctions;
@@ -15,31 +17,71 @@ import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.dml.scan.ColumnSet;
+import com.akiban.cserver.api.dml.scan.CursorId;
+import com.akiban.cserver.api.dml.scan.LegacyScanRequest;
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.api.dml.scan.NiceRow;
+import com.akiban.cserver.api.dml.scan.RowDataOutput;
+import com.akiban.cserver.api.dml.scan.ScanFlag;
+import com.akiban.cserver.service.ServiceManagerImpl;
+import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.session.Session;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class Scanrows implements HapiProcessor {
+public class Scanrows implements HapiProcessor, JmxManageable {
     private static final Scanrows instance = new Scanrows();
+    private final AtomicInteger bufferSize = new AtomicInteger(65535);
+
+    private final ScanrowsMXBean bean = new ScanrowsMXBean() {
+        @Override
+        public int getBufferCapacity() {
+            return bufferSize.get();
+        }
+
+        @Override
+        public void setBufferCapacity(int bytes) {
+            bufferSize.set(bytes);
+        }
+    };
 
     public static Scanrows instance() {
         return instance;
     }
 
-    private final DDLFunctions ddlFunctions;
-    private final DMLFunctions dmlFunctions;
+    private final DDLFunctions ddlFunctions = new DDLFunctionsImpl();
+    private final DMLFunctions dmlFunctions = new DMLFunctionsImpl(ddlFunctions);
 
-    private Scanrows() {
-        DDLFunctionsImpl ddl = new DDLFunctionsImpl();
-        ddlFunctions = ddl;
-        dmlFunctions = new DMLFunctionsImpl(ddl);
+    private static class RowDataStruct {
+        final NewRow start;
+        final NewRow end;
+        final EnumSet<ScanFlag> scanFlags;
+
+        RowDataStruct(int tableId, RowDef rowDef) {
+            start = new NiceRow(tableId, rowDef);
+            end = new NiceRow(tableId, rowDef);
+            scanFlags = EnumSet.noneOf(ScanFlag.class);
+        }
+
+        int scanFlagsInt() {
+            return ScanFlag.toRowDataFormat(scanFlags);
+        }
+
+        RowData start() {
+            return start.toRowData();
+        }
+
+        RowData end() {
+            return end.toRowData();
+        }
     }
 
     @Override
@@ -58,10 +100,41 @@ public class Scanrows implements HapiProcessor {
             tableId = table.getTableId();
             indexId = findIndexId(table, request.getPredicates());
             columnBitMap = scanAllColumns(table);
+            RowDataStruct range = getScanRange(request);
+
+            LegacyScanRequest scanRequest = new LegacyScanRequest(
+                    tableId, range.start(), range.end(), columnBitMap, indexId, range.scanFlagsInt());
+            RowDataOutput output = new RowDataOutput(getBuffer(session));
+
+            CursorId scanCursor = dmlFunctions.openCursor(session, scanRequest);
+            try {
+                while(dmlFunctions.scanSome(session, scanCursor, output, -1))
+                {}
+            } catch (InvalidOperationException e) {
+                dmlFunctions.closeCursor(session, scanCursor);
+                throw e;
+            }
+
+            outputter.output(
+                    request,
+                    ServiceManagerImpl.get().getStore().getRowDefCache(),
+                    output.getRowDatas(),
+                    outputStream
+            );
 
         } catch (InvalidOperationException e) {
             throw new HapiRequestException("unknown error", e); // TODO
+        } catch (IOException e) {
+            throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }
+    }
+
+    private static ByteBuffer getBuffer(Session session) {
+        return ByteBuffer.allocate(65535);
+    }
+
+    private static RowDataStruct getScanRange(HapiGetRequest request) {
+        throw new UnsupportedOperationException();
     }
 
     private static byte[] scanAllColumns(Table table) {
@@ -137,5 +210,10 @@ public class Scanrows implements HapiProcessor {
             indexColumns.add(indexColumn.getColumn().getName());
         }
         return indexColumns.equals(columns);
+    }
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("HapiP-Scanrows", bean, ScanrowsMXBean.class);
     }
 }

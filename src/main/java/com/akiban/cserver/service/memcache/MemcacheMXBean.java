@@ -18,6 +18,7 @@ package com.akiban.cserver.service.memcache;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.service.memcache.hprocessor.EmptyRows;
 import com.akiban.cserver.service.memcache.hprocessor.Fetchrows;
+import com.akiban.cserver.service.memcache.hprocessor.Scanrows;
 import com.akiban.cserver.service.memcache.outputter.DummyOutputter;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.memcache.outputter.RawByteOutputter;
@@ -37,7 +38,8 @@ public interface MemcacheMXBean {
 
     enum WhichHapi {
         FETCHROWS(Fetchrows.instance()),
-        EMPTY(EmptyRows.instance())
+        EMPTY(EmptyRows.instance()),
+        SCANROWS(Scanrows.instance())
         ;
 
         private final HapiProcessor processor;
