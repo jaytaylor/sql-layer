@@ -64,9 +64,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static final Object OPEN_CURSORS = new Object();
 
     private final static Logger logger = Logger.getLogger(DMLFunctionsImpl.class);
-    private final DDLFunctionsImpl ddlFunctions;
+    private final DDLFunctions ddlFunctions;
 
-    public DMLFunctionsImpl(DDLFunctionsImpl ddlFunctions) {
+    public DMLFunctionsImpl(DDLFunctions ddlFunctions) {
         this.ddlFunctions = ddlFunctions;
     }
 

@@ -146,7 +146,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
         return getTable(session, tableId).getName();
     }
 
-    RowDef getRowDef(int tableId) throws NoSuchTableException {
+    @Override
+    public RowDef getRowDef(int tableId) throws NoSuchTableException {
         try {
             return store().getRowDefCache().getRowDef(tableId);
         } catch (RowDefNotFoundException e) {

@@ -22,6 +22,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.ddl.DuplicateColumnNameException;
 import com.akiban.cserver.api.ddl.DuplicateTableNameException;
@@ -140,6 +141,14 @@ public interface DDLFunctions {
      * @throws NoSuchTableException if the given table doesn't exist
      */
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException;
+
+    /**
+     * Resolves the given table ID to its RowDef
+     * @param tableId the table to look up
+     * @return the rowdef
+     * @throws NoSuchTableException if the given table doesn't exist
+     */
+    RowDef getRowDef(int tableId) throws NoSuchTableException;
 
     /**
      * Retrieves the "CREATE" DDLs for all Akiban tables, including group tables and tables in the
