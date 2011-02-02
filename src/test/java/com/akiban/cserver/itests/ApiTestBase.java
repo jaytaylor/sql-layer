@@ -39,6 +39,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.store.Store;
 import junit.framework.Assert;
 import org.junit.After;
@@ -169,6 +170,10 @@ public class ApiTestBase {
 
     protected final DDLFunctions ddl() {
         return ddl;
+    }
+
+    protected final MemcacheService memcache() {
+        return sm.getMemcacheService();
     }
 
     protected final RowDefCache rowDefCache() {
