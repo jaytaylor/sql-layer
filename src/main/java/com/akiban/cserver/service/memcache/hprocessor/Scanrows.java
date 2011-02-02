@@ -16,6 +16,7 @@ import com.akiban.cserver.api.DMLFunctionsImpl;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
+import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.dml.scan.ColumnSet;
 import com.akiban.cserver.api.dml.scan.LegacyScanRequest;
 import com.akiban.cserver.api.dml.scan.NewRow;
@@ -37,6 +38,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Scanrows implements HapiProcessor, JmxManageable {
+    private static final String MODULE = Scanrows.class.toString();
+    private static final String SESSION_BUFFER = "SESSION_BUFFER";
+
     private static final Scanrows instance = new Scanrows();
     private final AtomicInteger bufferSize = new AtomicInteger(65535);
 
@@ -91,7 +95,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         try {
             final int tableId;
             final int indexId;
-            final int scanFlags;
             final byte[] columnBitMap;
 
             TableName tableName = new TableName(request.getSchema(), request.getTable());
@@ -99,7 +102,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             tableId = table.getTableId();
             indexId = findIndexId(table, request.getPredicates());
             columnBitMap = scanAllColumns(table);
-            RowDataStruct range = getScanRange(request);
+            RowDataStruct range = getScanRange(table, request);
 
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     tableId, range.start(), range.end(), columnBitMap, indexId, range.scanFlagsInt());
@@ -119,12 +122,45 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         }
     }
 
-    private static ByteBuffer getBuffer(Session session) {
-        return ByteBuffer.allocate(65535);
+    private ByteBuffer getBuffer(Session session) {
+        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
+        if (buffer == null) {
+            buffer = ByteBuffer.allocate(bufferSize.get());
+            session.put(MODULE, SESSION_BUFFER, buffer);
+        }
+        else {
+            buffer.clear();
+        }
+        return buffer;
     }
 
-    private static RowDataStruct getScanRange(HapiGetRequest request) {
-        throw new UnsupportedOperationException();
+    private RowDataStruct getScanRange(Table table, HapiGetRequest request)
+            throws HapiRequestException, NoSuchTableException
+    {
+        if (request.getPredicates().size() != 1) {
+            throw new UnsupportedOperationException();
+        }
+        HapiGetRequest.Predicate predicate = request.getPredicates().get(0);
+        if (!table.getName().equals(predicate.getTableName())) {
+            throw new UnsupportedOperationException();
+        }
+        if (!predicate.getOp().equals(HapiGetRequest.Predicate.Operator.EQ)) {
+            throw new UnsupportedOperationException();
+        }
+
+        RowDataStruct ret = new RowDataStruct(table.getTableId(), ddlFunctions.getRowDef(table.getTableId()));
+
+        ret.start.put( column(table, predicate), predicate.getValue() );
+        ret.end.put( column(table, predicate), predicate.getValue() );
+        ret.scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
+        ret.scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
+        ret.scanFlags.add(ScanFlag.DEEP);
+
+        return ret;
+    }
+
+    private static int column(Table table, HapiGetRequest.Predicate predicate) {
+        return table.getColumn(predicate.getColumnName()).getPosition();
     }
 
     private static byte[] scanAllColumns(Table table) {
