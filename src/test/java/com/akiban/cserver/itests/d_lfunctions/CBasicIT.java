@@ -16,6 +16,7 @@
 package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -120,7 +121,7 @@ public final class CBasicIT extends ApiTestBase {
 
         AkibaInformationSchema ais = ddl().getAIS(session);
         assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
-        ddl().dropTable(session, tableName(tableId1)); // should be a no-op, just testing it doesn't fail
+        ddl().dropTable(session, tableName("testSchema", "customer")); // should be a no-op; testing it doesn't fail
 
         NoSuchTableException caught = null;
         try {
