@@ -16,3 +16,4 @@ redhat/rpmbuild
 ./.classpath
 ./.project
 ./.settings
+./.idea

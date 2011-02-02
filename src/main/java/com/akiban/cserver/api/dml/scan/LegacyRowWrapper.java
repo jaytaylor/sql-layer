@@ -24,10 +24,10 @@ import java.util.Map;
 public final class LegacyRowWrapper extends NewRow
 {
     // Updates are handled by creating a NiceRow from the RowData and applying updates to the NiceRow.
-    // When this happens, rowData is set to null, and is regenerated lazily. If updatedRow is null, then
+    // When this happens, rowData is set to null, and is regenerated lazily. If niceRow is null, then
     // rowData is current.
     private RowData rowData;
-    private NiceRow updatedRow;
+    private NiceRow niceRow;
 
     // For when a LegacyRowWrapper is being reused, e.g. WriteRowRequest.
     public LegacyRowWrapper()
@@ -53,36 +53,32 @@ public final class LegacyRowWrapper extends NewRow
             rowData == null || rowDef == null || rowData.getRowDefId() == rowDef.getRowDefId()
             : String.format("rowData: %s, rowDef: %s", rowData, rowDef);
         this.rowData = rowData;
-        this.updatedRow = null;
+        this.niceRow = null;
     }
 
     @Override
     public Object put(int index, Object object)
     {
-        if (updatedRow == null) {
-            updatedRow = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
-            rowData = null;
-        }
-        return updatedRow.put(index, object);
+        return niceRow().put(index, object);
     }
 
     @Override
     public int getTableId()
     {
-        assert rowData != null || updatedRow != null;
-        return updatedRow != null ? updatedRow.getTableId() : rowData.getRowDefId();
+        assert rowData != null || niceRow != null;
+        return niceRow != null ? niceRow.getTableId() : rowData.getRowDefId();
     }
 
     @Override
     public Object get(int columnId)
     {
         Object object;
-        if (rowData == null && updatedRow == null) {
+        if (rowData == null && niceRow == null) {
             throw new DMLError("Row state has not been set");
         } else {
             object =
-                updatedRow != null
-                ? updatedRow.get(columnId)
+                niceRow != null
+                ? niceRow.get(columnId)
                 : rowData.toObject(rowDef, columnId);
         }
         return object;
@@ -109,9 +105,9 @@ public final class LegacyRowWrapper extends NewRow
     @Override
     public RowData toRowData()
     {
-        if (rowData == null && updatedRow != null) {
-            rowData = updatedRow.toRowData();
-            updatedRow = null;
+        if (rowData == null && niceRow != null) {
+            rowData = niceRow.toRowData();
+            niceRow = null;
         }
         return rowData;
     }
@@ -119,12 +115,41 @@ public final class LegacyRowWrapper extends NewRow
     @Override
     public boolean equals(Object o)
     {
-        throw new DMLError("Not implemented yet");
+        boolean eq;
+        if (o == null) {
+            eq = false;
+        } else if (this == o) {
+            eq = true;
+        } else if (o instanceof LegacyRowWrapper) {
+            LegacyRowWrapper that = (LegacyRowWrapper) o;
+            eq = this.niceRow().equals(that.niceRow());
+        } else if (o instanceof NiceRow) {
+            NiceRow that = (NiceRow) o;
+            eq = this.niceRow().equals(that);
+        } else {
+            eq = false;
+        }
+        return eq;
     }
 
     @Override
     public int hashCode()
     {
-        throw new DMLError("Not implemented yet");
+        return niceRow().hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        return niceRow().toString();
+    }
+
+    private NiceRow niceRow()
+    {
+        if (niceRow == null) {
+            niceRow = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
+            rowData = null;
+        }
+        return niceRow;
     }
 }

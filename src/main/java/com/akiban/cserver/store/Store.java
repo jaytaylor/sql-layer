@@ -29,6 +29,7 @@ import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -263,6 +264,9 @@ public interface Store extends Service<Store> {
 
     void setDeferIndexes(final boolean b);
     
+    void traverse(Session session, RowDef rowDef, TreeRecordVisitor visitor)
+        throws PersistitException, InvalidOperationException;
+
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
     IndexManager getIndexManager();

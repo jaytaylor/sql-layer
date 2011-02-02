@@ -168,6 +168,10 @@ public class ApiTestBase extends CServerTestCase {
         return ddl;
     }
 
+    protected final Store store() {
+        return sm.getStore();
+    }
+
     protected final RowDefCache rowDefCache() {
         Store store = sm.getStore();
         return store.getRowDefCache();
