@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
@@ -529,12 +530,16 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             ForeignKeyConstraintDMLException, GenericInvalidOperationException {
         final Table table = ddlFunctions.getTable(session, tableId);
 
-        // Orphan rows not yet supported AND the DML layer does not have access to transactions so reject any
-        // truncate that could fail due to child rows and leave the table half emptied
-        if(table.isUserTable() && ((UserTable)table).getChildJoins().isEmpty() == false) {
-            InvalidOperationException ioe = new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
-                                                                          "Cannot truncate non leaf table");
-            throw new GenericInvalidOperationException(ioe);
+        // Reject a truncate that would create orphan rows
+        if(table.isUserTable() == true) {
+            for(Join join : ((UserTable)table).getChildJoins()) {
+                final Table childTable = join.getChild();
+                final TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
+                if(stats.getRowCount() > 0) {
+                    String errorMsg = String.format("Child table %s has rows", childTable.getName().getTableName());
+                    throw new ForeignKeyConstraintDMLException(ErrorCode.FK_CONSTRAINT_VIOLATION, errorMsg);
+                }
+            }
         }
 
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up

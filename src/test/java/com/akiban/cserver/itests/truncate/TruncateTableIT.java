@@ -17,6 +17,7 @@ package com.akiban.cserver.itests.truncate;
 
 import com.akiban.ais.model.Table;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
 import com.akiban.cserver.api.dml.scan.ScanFlag;
@@ -60,8 +61,8 @@ public final class TruncateTableIT extends ApiTestBase {
                                   "t",
                                   "id int NOT NULL, pid int NOT NULL, PRIMARY KEY(id), UNIQUE KEY pid(pid)");
 
-        dml().writeRow(session, createNewRow(tableId, 1, 1));
-        dml().writeRow(session, createNewRow(tableId, 2, 2));
+        writeRows(createNewRow(tableId, 1, 1),
+                  createNewRow(tableId, 2, 2));
         expectRowCount(tableId, 2);
 
         dml().truncateTable(session, tableId);
@@ -78,13 +79,13 @@ public final class TruncateTableIT extends ApiTestBase {
     public void multipleIndex() throws InvalidOperationException {
         int tableId = createTable("test",
                                   "t",
-                                  "id int key, tag int, value decimal(10,2), name varchar(32), key value(value), unique key name(name)");
+                                  "id int key, tag int, value decimal(10,2), other char(1), name varchar(32), key value(value), unique key name(name)");
 
-        dml().writeRow(session, createNewRow(tableId, 1, 1234, "10.50", "foo"));
-        dml().writeRow(session, createNewRow(tableId, 2, -421, "14.99", "bar"));
-        dml().writeRow(session, createNewRow(tableId, 3, 1337, "100.5", "zap"));
-        dml().writeRow(session, createNewRow(tableId, 4, -987, "12.95", "dob"));
-        dml().writeRow(session, createNewRow(tableId, 5, 3409, "99.00", "eek"));
+        writeRows(createNewRow(tableId, 1, 1234, "10.50", 'a', "foo"),
+                  createNewRow(tableId, 2, -421, "14.99", 'b', "bar"),
+                  createNewRow(tableId, 3, 1337, "100.5", 'c', "zap"),
+                  createNewRow(tableId, 4, -987, "12.95", 'd', "dob"),
+                  createNewRow(tableId, 5, 3409, "99.00", 'e', "eek"));
         expectRowCount(tableId, 5);
 
         dml().truncateTable(session, tableId);
@@ -115,12 +116,8 @@ public final class TruncateTableIT extends ApiTestBase {
         assertEquals("Rows scanned", 0, rows.size());
     }
 
-    /*
-     * TODO: Remove expected from below tests when orphan rows are supported and dml.truncate() is updated
-     */
-
-    @Test(expected=InvalidOperationException.class)
-    public void truncateParentNoChild() throws InvalidOperationException {
+    @Test
+    public void truncateParentNoChildRows() throws InvalidOperationException {
         int parentId = createTable("test",
                                    "parent",
                                    "id int key");
@@ -138,8 +135,11 @@ public final class TruncateTableIT extends ApiTestBase {
         assertEquals("Rows scanned", 0, rows.size());
     }
 
-    @Test(expected=InvalidOperationException.class)
-    public void truncateParentWithChild() throws InvalidOperationException {
+    /*
+     * TODO: This should pass when orphan rows are in and tuncate() is updated
+     */
+    @Test(expected=ForeignKeyConstraintDMLException.class)
+    public void truncateParentWithChildRows() throws InvalidOperationException {
         int parentId = createTable("test",
                                    "parent",
                                    "id int key");
