@@ -37,7 +37,9 @@ import java.util.TreeSet;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.service.memcache.MemcacheService;
 import com.akiban.cserver.store.Store;
 import junit.framework.Assert;
 import org.junit.After;
@@ -73,7 +75,7 @@ import com.akiban.cserver.service.session.SessionImpl;
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
  * various convenience testing methods.</p>
  */
-public class ApiTestBase extends CServerTestCase {
+public class ApiTestBase {
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
@@ -138,14 +140,15 @@ public class ApiTestBase extends CServerTestCase {
     private DMLFunctions dml;
     private DDLFunctions ddl;
     private ServiceManager sm;
+    protected Session session;
 
     @Before
     public final void startTestServices() throws Exception {
+        session = new SessionImpl();
         sm = new TestServiceManager( );
         sm.startServices();
-        DDLFunctionsImpl ddlFunctions = new DDLFunctionsImpl();
-        ddl = ddlFunctions;
-        dml = new DMLFunctionsImpl(ddlFunctions);
+        ddl = new DDLFunctionsImpl();
+        dml = new DMLFunctionsImpl(ddl);
     }
 
     @After
@@ -154,6 +157,7 @@ public class ApiTestBase extends CServerTestCase {
         ddl = null;
         dml = null;
         sm = null;
+        session = null;
     }
 
     protected final HapiProcessor hapi() {
@@ -166,6 +170,10 @@ public class ApiTestBase extends CServerTestCase {
 
     protected final DDLFunctions ddl() {
         return ddl;
+    }
+
+    protected final MemcacheService memcache() {
+        return sm.getMemcacheService();
     }
 
     protected final RowDefCache rowDefCache() {
@@ -227,15 +235,28 @@ public class ApiTestBase extends CServerTestCase {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
 
-    protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
+    protected final ScanAllRequest scanAllRequest(int tableId) throws NoSuchTableException {
         Table uTable = ddl().getTable(session, tableId);
         Set<Integer> allCols = new HashSet<Integer>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
         }
-        ScanRequest all = new ScanAllRequest(tableId, allCols);
+        return new ScanAllRequest(tableId, allCols);
+    }
+
+    protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
+        ScanRequest all = scanAllRequest(tableId);
         expectRows(all, expectedRows);
 //        expectRowCount(tableId, expectedRows.length); TODO broken pending fix to bug 703136
+    }
+
+    protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
+        List<NewRow> ret = new ArrayList<NewRow>(rowDatas.size());
+        for(RowData rowData : rowDatas) {
+            NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(rowData.getRowDefId()));
+            ret.add(newRow);
+        }
+        return ret;
     }
 
     protected static Set<CursorId> cursorSet(CursorId... cursorIds) {

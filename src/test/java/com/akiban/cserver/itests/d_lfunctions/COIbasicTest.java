@@ -19,9 +19,12 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertSame;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.api.dml.scan.RowDataOutput;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -118,7 +121,7 @@ public final class COIbasicTest extends ApiTestBase {
         createTables(); // TODO placeholder test method until we get the insertToUTablesAndScan to work
     }
 
-    @Ignore @Test
+    @Test
     public void insertToUTablesAndScan() throws InvalidOperationException {
         final TableIds tids = createTables();
 
@@ -130,7 +133,28 @@ public final class COIbasicTest extends ApiTestBase {
         expectFullRows(tids.c, NewRowBuilder.copyOf(cRow).row());
         expectFullRows(tids.o, NewRowBuilder.copyOf(oRow).row());
         expectFullRows(tids.i, NewRowBuilder.copyOf(iRow).row());
-        
+
+        expectFullRows(tids.coi, cRow, oRow, iRow);
+    }
+
+    @Test
+    public void insertToUTablesAndScanToLegacy() throws InvalidOperationException {
+        final TableIds tids = createTables();
+
+        final NewRow cRow = NewRowBuilder.forTable(tids.c).put(1L).put("Robert").check(dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o).put(10L).put(1L).check(dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i).put(100L).put(10L).put("Desc 1").check(dml()).row();
+
+        writeRows(cRow, oRow, iRow);
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        List<RowData> cRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.c));
+        List<RowData> oRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.o));
+        List<RowData> iRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.i));
+
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
+        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
+        assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
+
         expectFullRows(tids.coi, cRow, oRow, iRow);
     }
 }

@@ -13,17 +13,9 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.memcache;
+package com.akiban.cserver.service.memcache.hprocessor;
 
-@SuppressWarnings("unused") // these are queried/set via JMX
-public interface MemcacheMXBean {
-
-    MemcacheService.OutputFormat getOutputFormat();
-    void setOutputFormat(MemcacheService.OutputFormat whichFormat);
-    MemcacheService.OutputFormat[] getAvailableOutputFormats();
-
-    MemcacheService.WhichHapi getHapiProcessor();
-    void setHapiProcessor(MemcacheService.WhichHapi whichProcessor);
-    MemcacheService.WhichHapi[] getAvailableHapiProcessors();
-
+public interface ScanrowsMXBean {
+    public int getBufferCapacity();
+    public void setBufferCapacity(int bytes);
 }

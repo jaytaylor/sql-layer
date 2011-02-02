@@ -53,8 +53,6 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
 
 import javax.management.ObjectName;
 
-import static com.akiban.cserver.service.memcache.MemcacheMXBean.*;
-
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
     private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
 
@@ -231,6 +229,11 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("Memcache", manageBean, MemcacheMXBean.class);
+    }
+
+    @Override
+    public void setHapiProcessor(WhichHapi processor) {
+        manageBean.setHapiProcessor(processor);
     }
 
     private static class ManageBean implements MemcacheMXBean {

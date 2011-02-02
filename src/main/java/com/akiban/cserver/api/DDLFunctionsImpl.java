@@ -132,11 +132,22 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
+    public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
+        AkibaInformationSchema ais = getAIS(session);
+        Table table = ais.getTable(tableName);
+        if (table == null) {
+            throw new NoSuchTableException(tableName);
+        }
+        return table;
+    }
+
+    @Override
     public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
         return getTable(session, tableId).getName();
     }
 
-    RowDef getRowDef(int tableId) throws NoSuchTableException {
+    @Override
+    public RowDef getRowDef(int tableId) throws NoSuchTableException {
         try {
             return store().getRowDefCache().getRowDef(tableId);
         } catch (RowDefNotFoundException e) {

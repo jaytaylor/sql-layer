@@ -33,15 +33,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {
 
-    private final DDLFunctions ddlFunctions;
-    private final DMLFunctions dmlFunctions;
+    private final DDLFunctions ddlFunctions = new DDLFunctionsImpl();
+    private final DMLFunctions dmlFunctions = new DMLFunctionsImpl(ddlFunctions);
     private final AtomicReference<String> usingTable = new AtomicReference<String>("test");
-
-    public DStarLServiceImpl() {
-        DDLFunctionsImpl ddl = new DDLFunctionsImpl();
-        ddlFunctions = ddl;
-        dmlFunctions = new DMLFunctionsImpl(ddl);
-    }
 
     private final DStarLMXBean bean = new DStarLMXBean() {
         @Override
