@@ -13,11 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.jmx;
+package com.akiban.cserver.service.d_l;
 
-import javax.management.ObjectName;
+public interface DStarLMXBean {
+    String getUsingSchema();
+    void setUsingSchema(String schema);
 
-public interface JmxRegistryService extends JmxRegistryServiceMXBean {
-    ObjectName register(JmxManageable service);
-    void unregister(ObjectName registeredObject);
+    void createTable(String schema, String ddl);
+    void createTable(String ddl);
+
+    void writeRow(String schema, String table, String fields);
+    void writeRow(String table, String fields);
 }

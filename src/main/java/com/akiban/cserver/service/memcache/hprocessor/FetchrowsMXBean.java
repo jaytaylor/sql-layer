@@ -13,11 +13,9 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.jmx;
+package com.akiban.cserver.service.memcache.hprocessor;
 
-import javax.management.ObjectName;
-
-public interface JmxRegistryService extends JmxRegistryServiceMXBean {
-    ObjectName register(JmxManageable service);
-    void unregister(ObjectName registeredObject);
+public interface FetchrowsMXBean {
+    public int getBufferCapacity();
+    public void setBufferCapacity(int bytes);
 }

@@ -13,11 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.jmx;
+package com.akiban.cserver.service.d_l;
 
-import javax.management.ObjectName;
-
-public interface JmxRegistryService extends JmxRegistryServiceMXBean {
-    ObjectName register(JmxManageable service);
-    void unregister(ObjectName registeredObject);
+public interface DStarLService {
 }
