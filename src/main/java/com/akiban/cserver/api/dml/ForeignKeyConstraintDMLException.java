@@ -16,9 +16,14 @@
 package com.akiban.cserver.api.dml;
 
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 
 public final class ForeignKeyConstraintDMLException extends DMLException {
     public ForeignKeyConstraintDMLException(InvalidOperationException e) {
     super(e);
+    }
+
+    public ForeignKeyConstraintDMLException(ErrorCode code, String message) {
+    super(code, message);
     }
 }

@@ -19,20 +19,27 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {
-
-    private static final int SCAN_FLAGS = ScanFlag.toRowDataFormat(EnumSet.noneOf(ScanFlag.class));
-
+    private final int indexId;
+    private final int scanFlags;
+    
     public ScanAllRequest(int tableId, Set<Integer> columnIds) {
+        this(tableId, columnIds, 0, null);
+    }
+
+    public ScanAllRequest(int tableId, Set<Integer> columnIds, int indexId, EnumSet<ScanFlag> scanFlags)
+    {
         super(tableId, columnIds);
+        this.indexId = indexId;
+        this.scanFlags = ScanFlag.toRowDataFormat(scanFlags != null ? scanFlags : EnumSet.noneOf(ScanFlag.class));
     }
 
     @Override
     public int getIndexId() {
-        return 0;
+        return indexId;
     }
 
     @Override
     public int getScanFlags() {
-        return SCAN_FLAGS;
+        return scanFlags;
     }
 }
