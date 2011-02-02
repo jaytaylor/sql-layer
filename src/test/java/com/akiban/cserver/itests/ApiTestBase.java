@@ -37,6 +37,7 @@ import java.util.TreeSet;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.store.Store;
 import junit.framework.Assert;
@@ -227,15 +228,28 @@ public class ApiTestBase extends CServerTestCase {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
 
-    protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
+    protected final ScanAllRequest scanAllRequest(int tableId) throws NoSuchTableException {
         Table uTable = ddl().getTable(session, tableId);
         Set<Integer> allCols = new HashSet<Integer>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
         }
-        ScanRequest all = new ScanAllRequest(tableId, allCols);
+        return new ScanAllRequest(tableId, allCols);
+    }
+
+    protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
+        ScanRequest all = scanAllRequest(tableId);
         expectRows(all, expectedRows);
 //        expectRowCount(tableId, expectedRows.length); TODO broken pending fix to bug 703136
+    }
+
+    protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
+        List<NewRow> ret = new ArrayList<NewRow>(rowDatas.size());
+        for(RowData rowData : rowDatas) {
+            NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(rowData.getRowDefId()));
+            ret.add(newRow);
+        }
+        return ret;
     }
 
     protected static Set<CursorId> cursorSet(CursorId... cursorIds) {

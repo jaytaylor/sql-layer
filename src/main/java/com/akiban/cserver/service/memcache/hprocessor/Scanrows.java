@@ -17,7 +17,6 @@ import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.dml.scan.ColumnSet;
-import com.akiban.cserver.api.dml.scan.CursorId;
 import com.akiban.cserver.api.dml.scan.LegacyScanRequest;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
@@ -104,21 +103,12 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     tableId, range.start(), range.end(), columnBitMap, indexId, range.scanFlagsInt());
-            RowDataOutput output = new RowDataOutput(getBuffer(session));
-
-            CursorId scanCursor = dmlFunctions.openCursor(session, scanRequest);
-            try {
-                while(dmlFunctions.scanSome(session, scanCursor, output, -1))
-                {}
-            } catch (InvalidOperationException e) {
-                dmlFunctions.closeCursor(session, scanCursor);
-                throw e;
-            }
+            List<RowData> rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
 
             outputter.output(
                     request,
                     ServiceManagerImpl.get().getStore().getRowDefCache(),
-                    output.getRowDatas(),
+                    rows,
                     outputStream
             );
 
