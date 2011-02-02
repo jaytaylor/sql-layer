@@ -39,11 +39,11 @@ public abstract class TreeRecordVisitor
     public void visit() throws PersistitException, InvalidOperationException
     {
         NewRow row = row();
-        List<Object> key = key(row.getRowDef());
+        Object[] key = key(row.getRowDef());
         visit(key, row);
     }
 
-    public abstract void visit(List<Object> key, NewRow row);
+    public abstract void visit(Object[] key, NewRow row);
 
     public void initialize(PersistitStore store, Exchange exchange)
     {
@@ -67,7 +67,7 @@ public abstract class TreeRecordVisitor
         return new LegacyRowWrapper(rowData);
     }
 
-    private List<Object> key(RowDef rowDef)
+    private Object[] key(RowDef rowDef)
     {
         // Key traversal
         Key key = exchange.getKey();
@@ -77,18 +77,19 @@ public abstract class TreeRecordVisitor
         List<HKeySegment> hKeySegments = hKey.segments();
         int k = 0;
         // Traverse key, guided by hKey, populating result
-        List<Object> keyList = new ArrayList<Object>(keySize);
+        Object[] keyArray = new Object[keySize];
+        int h = 0;
         while (k < hKeySegments.size()) {
             HKeySegment hKeySegment = hKeySegments.get(k++);
             UserTable table = hKeySegment.table();
             int ordinal = (Integer) key.decode();
             assert ordinalToTable.get(ordinal) == table : ordinalToTable.get(ordinal);
-            keyList.add(table);
+            keyArray[h++] = table;
             for (int i = 0; i < hKeySegment.columns().size(); i++) {
-                keyList.add(key.decode());
+                keyArray[h++] = key.decode();
             }
         }
-        return keyList;
+        return keyArray;
     }
 
     private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];

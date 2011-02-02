@@ -30,6 +30,14 @@ import java.util.List;
 
 import static junit.framework.Assert.*;
 
+// Assumptions:
+// - COI schema
+// - oid / 10 = cid
+// - iid / 10 = oid
+// - cx = 100 * cid
+// - ox = 100 * oid
+// - ix = 100 * iid
+
 public class KeyUpdateIT extends ApiTestBase
 {
     @Before
@@ -45,47 +53,8 @@ public class KeyUpdateIT extends ApiTestBase
         int groupRowDefId = customerRowDef.getGroupRowDefId();
         RowDef groupRowDef = store().getRowDefCache().getRowDef(groupRowDefId);
         InitialStateVisistor initialStateVisistor = new InitialStateVisistor();
-        store().traverse(session, groupRowDef, initialStateVisistor);
-        checkHKeys(initialStateVisistor.keys(),
-                   new Object[]{customerRowDef, 1L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 11L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 11L, itemRowDef, 111L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 11L, itemRowDef, 112L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 11L, itemRowDef, 113L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 12L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 12L, itemRowDef, 121L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 12L, itemRowDef, 122L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 12L, itemRowDef, 123L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 13L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 13L, itemRowDef, 131L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 13L, itemRowDef, 132L},
-                   new Object[]{customerRowDef, 1L, orderRowDef, 13L, itemRowDef, 133L},
-                   new Object[]{customerRowDef, 2L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 21L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 21L, itemRowDef, 211L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 21L, itemRowDef, 212L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 21L, itemRowDef, 213L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 22L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 221L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 223L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 23L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 23L, itemRowDef, 231L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 23L, itemRowDef, 232L},
-                   new Object[]{customerRowDef, 2L, orderRowDef, 23L, itemRowDef, 233L},
-                   new Object[]{customerRowDef, 3L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 31L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 31L, itemRowDef, 311L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 31L, itemRowDef, 312L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 31L, itemRowDef, 313L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 32L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 32L, itemRowDef, 321L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 32L, itemRowDef, 322L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 32L, itemRowDef, 323L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 33L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 33L, itemRowDef, 331L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 33L, itemRowDef, 332L},
-                   new Object[]{customerRowDef, 3L, orderRowDef, 33L, itemRowDef, 333L});
+        persistitStore().traverse(session, groupRowDef, initialStateVisistor);
+        checkHKeys(hKeys, initialStateVisistor.keys());
     }
 
     private void createSchema() throws InvalidOperationException
@@ -116,28 +85,28 @@ public class KeyUpdateIT extends ApiTestBase
         itemRowDef = rowDefCache().getRowDef(itemId);
     }
 
-    private void checkHKeys(List<List<Object>> actual, Object[]... expected)
+    private void checkHKeys(List<Object[]> expected, List<Object[]> actual)
     {
-        assertEquals(expected.length, actual.size());
-        for (int i = 0; i < expected.length; i++) {
-            List<Object> a = actual.get(i);
-            Object[] e = expected[i];
-            assertEquals(e.length, a.size());
+        assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++) {
+            Object[] a = actual.get(i);
+            Object[] e = expected.get(i);
+            assertEquals(e.length, a.length);
             for (int j = 0; j < e.length; j++) {
                 if (e[j] instanceof RowDef) {
-                    assertSame(((RowDef)e[j]).userTable(), a.get(j));
+                    assertSame(((RowDef)e[j]).userTable(), a[j]);
                 } else {
-                    assertEquals(e[j], a.get(j));
+                    assertEquals(e[j], a[j]);
                 }
             }
         }
     }
 
-    private void checkHKey(List<Object> actualHKey, Object... expectedHKey)
+    private void checkHKey(Object[] actualHKey, Object... expectedHKey)
     {
-        assertEquals(expectedHKey.length, actualHKey.size());
+        assertEquals(expectedHKey.length, actualHKey.length);
         for (int i = 0; i < expectedHKey.length; i++) {
-            Object actual = actualHKey.get(i);
+            Object actual = actualHKey[i];
             Object expected = expectedHKey[i];
             if (expected instanceof RowDef) {
                 assertSame(((RowDef) expected).userTable(), actual);
@@ -148,41 +117,41 @@ public class KeyUpdateIT extends ApiTestBase
     private void populateTables() throws Exception
     {
         insert(row(customerRowDef, 1, 100));
-        insert(row(customerRowDef, 2, 200));
-        insert(row(customerRowDef, 3, 300));
         insert(row(orderRowDef, 11, 1, 1100));
-        insert(row(orderRowDef, 12, 1, 1200));
-        insert(row(orderRowDef, 13, 1, 1300));
-        insert(row(orderRowDef, 21, 2, 2100));
-        insert(row(orderRowDef, 22, 2, 2200));
-        insert(row(orderRowDef, 23, 2, 2300));
-        insert(row(orderRowDef, 31, 3, 3100));
-        insert(row(orderRowDef, 32, 3, 3200));
-        insert(row(orderRowDef, 33, 3, 3300));
         insert(row(itemRowDef, 111, 11, 11100));
         insert(row(itemRowDef, 112, 11, 11200));
         insert(row(itemRowDef, 113, 11, 11300));
+        insert(row(orderRowDef, 12, 1, 1200));
         insert(row(itemRowDef, 121, 12, 12100));
         insert(row(itemRowDef, 122, 12, 12200));
         insert(row(itemRowDef, 123, 12, 12300));
+        insert(row(orderRowDef, 13, 1, 1300));
         insert(row(itemRowDef, 131, 13, 13100));
         insert(row(itemRowDef, 132, 13, 13200));
         insert(row(itemRowDef, 133, 13, 13300));
+        insert(row(customerRowDef, 2, 200));
+        insert(row(orderRowDef, 21, 2, 2100));
         insert(row(itemRowDef, 211, 21, 21100));
         insert(row(itemRowDef, 212, 21, 21200));
         insert(row(itemRowDef, 213, 21, 21300));
+        insert(row(orderRowDef, 22, 2, 2200));
         insert(row(itemRowDef, 221, 22, 22100));
         insert(row(itemRowDef, 222, 22, 22200));
         insert(row(itemRowDef, 223, 22, 22300));
+        insert(row(orderRowDef, 23, 2, 2300));
         insert(row(itemRowDef, 231, 23, 23100));
         insert(row(itemRowDef, 232, 23, 23200));
         insert(row(itemRowDef, 233, 23, 23300));
+        insert(row(customerRowDef, 3, 300));
+        insert(row(orderRowDef, 31, 3, 3100));
         insert(row(itemRowDef, 311, 31, 31100));
         insert(row(itemRowDef, 312, 31, 31200));
         insert(row(itemRowDef, 313, 31, 31300));
+        insert(row(orderRowDef, 32, 3, 3200));
         insert(row(itemRowDef, 321, 32, 32100));
         insert(row(itemRowDef, 322, 32, 32200));
         insert(row(itemRowDef, 323, 32, 32300));
+        insert(row(orderRowDef, 33, 3, 3300));
         insert(row(itemRowDef, 331, 33, 33100));
         insert(row(itemRowDef, 332, 33, 33200));
         insert(row(itemRowDef, 333, 33, 33300));
@@ -205,6 +174,31 @@ public class KeyUpdateIT extends ApiTestBase
     private void insert(NiceRow row) throws Exception
     {
         dml().writeRow(session, row);
+        rows.add(row);
+        hKeys.add(hKey(row));
+    }
+
+    private Object[] hKey(NewRow row)
+    {
+        Object[] hKey = null;
+        RowDef rowDef = row.getRowDef();
+        if (rowDef == customerRowDef) {
+            Long cid = (Long) row.get(c_cid);
+            hKey = new Object[]{customerRowDef.userTable(), cid};
+        } else if (rowDef == orderRowDef) {
+            Long oid = (Long) row.get(o_oid);
+            Long cid = (Long) row.get(o_cid);
+            hKey = new Object[]{customerRowDef.userTable(), cid,
+                                orderRowDef.userTable(), oid};
+        } else if (rowDef == itemRowDef) {
+            Long iid = (Long) row.get(i_iid);
+            Long oid = (Long) row.get(i_oid);
+            Long cid = (Long) oid / 10;
+            hKey = new Object[]{customerRowDef.userTable(), cid,
+                                orderRowDef.userTable(), oid,
+                                itemRowDef.userTable(), iid};
+        }
+        return hKey;
     }
 
     private int customerId;
@@ -221,11 +215,13 @@ public class KeyUpdateIT extends ApiTestBase
     private int i_oid;
     private int i_ix;
     private RowDef itemRowDef;
+    private List<NewRow> rows = new ArrayList<NewRow>();
+    private List<Object[]> hKeys = new ArrayList<Object[]>();
 
     private class InitialStateVisistor extends TreeRecordVisitor
     {
         @Override
-        public void visit(List<Object> key, NewRow row)
+        public void visit(Object[] key, NewRow row)
         {
             RowDef rowDef = row.getRowDef();
             if (rowDef == customerRowDef) {
@@ -253,11 +249,11 @@ public class KeyUpdateIT extends ApiTestBase
             keys.add(key);
         }
 
-        public List<List<Object>> keys()
+        public List<Object[]> keys()
         {
             return keys;
         }
 
-        private final List<List<Object>> keys = new ArrayList<List<Object>>();
+        private final List<Object[]> keys = new ArrayList<Object[]>();
     }
 }

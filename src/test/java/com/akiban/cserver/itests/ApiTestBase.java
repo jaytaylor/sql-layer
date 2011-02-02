@@ -38,6 +38,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.cserver.RowDefCache;
+import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
 import junit.framework.Assert;
 import org.junit.After;
@@ -170,6 +171,10 @@ public class ApiTestBase extends CServerTestCase {
 
     protected final Store store() {
         return sm.getStore();
+    }
+
+    protected final PersistitStore persistitStore() {
+        return (PersistitStore) sm.getStore();
     }
 
     protected final RowDefCache rowDefCache() {

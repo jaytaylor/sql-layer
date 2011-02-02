@@ -264,9 +264,6 @@ public interface Store extends Service<Store> {
 
     void setDeferIndexes(final boolean b);
     
-    void traverse(Session session, RowDef rowDef, TreeRecordVisitor visitor)
-        throws PersistitException, InvalidOperationException;
-
     // TODO - temporary - we want this to be a separate service acquired
     // from ServiceManager.
     IndexManager getIndexManager();
