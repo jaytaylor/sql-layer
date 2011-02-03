@@ -134,7 +134,7 @@
     },
 
     "from predicate's parent" : {
-        "passing" : false,
+        "processors"    : ["scanrows"],
         "get"           : "coi:customer:(orders)oid=22",
         "expect result" :
         {
@@ -167,7 +167,7 @@
     },
 
     "nonunique fromm predicate's parent" : {
-        "passing" : false,
+        "processors"    : ["scanrows"],
 
         "get"           : "coi:customer:(orders)when='1%2F1%2F2001'",
         "expect result" :
