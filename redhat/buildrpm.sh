@@ -17,10 +17,14 @@
 set -x
 set -e
 
-BUILD_VCS_NUMBER=$(bzr revision-info | sed "s/\([0-9]*\) .*/\1/")
+if [ -z "${BZR_REVISION}" ]; then
+    # usually hudson sets this
+    # figure out the build number outside of hudson (for user builds)
+    BZR_REVISION=$(bzr revision-info | sed "s/\([0-9]*\) .*/\1/")
+fi
+
 TEAMCITY=${TEAMCITY:-0}
 PUBLISH=${PUBLISH:-0}
-rev=${BUILD_VCS_NUMBER:-1000}
 
 rpm_env()
 {
@@ -44,26 +48,28 @@ tarball()
 	mkdir -p rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
 	mv ${name}.tar.gz rpmbuild/SOURCES
 	rm -rf ${randir}
-	cat akiban-server.spec        | sed "s/REVISION/${rev}/g" > akiban-server-${rev}.spec 
+    # replace only on line 9 of the file. rpm requires you to explictly set the release
+	cat akiban-server.spec        | sed "9,9 s/REVISION/${BZR_REVISION}/g" > akiban-server-${BZR_REVISION}.spec 
 }
 
 
 # create chunkserver rpm
 chunkserver_rpm()
 {
-	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild"   -ba akiban-server-${rev}.spec 
+    export BZR_REVISION 
+	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild"   -ba akiban-server-${BZR_REVISION}.spec 
 }
 
 #update the yum repository
 publish()
 {
 if [ ${PUBLISH} -gt 0 ];then
-	ssh skeswani@172.16.20.117  " mkdir -p /var/www/rpms/akiban-server/${rev}"
-	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${rev}
-	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${rev}/* /var/www/latest/"
+	ssh skeswani@172.16.20.117  " mkdir -p /var/www/rpms/akiban-server/${BZR_REVISION}"
+	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${BZR_REVISION}
+	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${BZR_REVISION}/* /var/www/latest/"
 	ssh skeswani@172.16.20.117 /var/www/rpms/createrepo.sh
-	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 "mkdir -p /var/www/rpms/akiban-server/${rev}"
-	scp -i ~/.ssh/akibanweb -r rpmbuild/RPMS/noarch/*.rpm ubuntu@50.16.188.89:/var/www/rpms/akiban-server/${rev}
+	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 "mkdir -p /var/www/rpms/akiban-server/${BZR_REVISION}"
+	scp -i ~/.ssh/akibanweb -r rpmbuild/RPMS/noarch/*.rpm ubuntu@50.16.188.89:/var/www/rpms/akiban-server/${BZR_REVISION}
 	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 /var/www/rpms/createrepo.sh
 fi
 }
