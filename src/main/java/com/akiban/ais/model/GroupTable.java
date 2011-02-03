@@ -40,7 +40,7 @@ public class GroupTable extends Table
     @Override
     public String toString()
     {
-        return "GroupTable(" + super.toString() + " -> " + getRoot() + ", group(" + getGroup().getName() + "))";
+        return "GroupTable(" + super.toString() + " -> " + getRoot() + ")";
     }
 
     @Override

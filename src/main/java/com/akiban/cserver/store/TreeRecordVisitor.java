@@ -29,7 +29,6 @@ import com.persistit.Key;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,10 +50,8 @@ public abstract class TreeRecordVisitor
         this.exchange = exchange;
         for (RowDef rowDef : store.rowDefCache.getRowDefs()) {
             if (rowDef.isUserTable()) {
-
                 UserTable table = rowDef.userTable();
                 if (!table.getName().getSchemaName().equals("akiba_information_schema")) {
-                    // Not sure why ais types show up when run from maven, but not run from intellij.
                     ordinalToTable.put(rowDef.getOrdinal(), table);
                 }
             }

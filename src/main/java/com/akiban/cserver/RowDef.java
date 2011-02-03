@@ -54,12 +54,6 @@ public class RowDef implements TreeLink {
     private final FieldDef[] fieldDefs;
 
     /**
-     * Denotes position within a group; this value is used to identify a table
-     * within the group structure in the hkey.
-     */
-    private int ordinal;
-
-    /**
      * Field(s) that constitute the foreign key by which this row is joined to
      * its parent table.
      */
@@ -645,12 +639,13 @@ public class RowDef implements TreeLink {
     @Override
     public boolean equals(final Object o) {
         final RowDef def = (RowDef) o;
-        return def.getRowDefId() == def.getRowDefId()
+        return this == def ||
+               def.getRowDefId() == def.getRowDefId()
                 && CServerUtil.equals(table.getName(), def.table.getName())
                 && CServerUtil.equals(treeName, def.treeName)
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexDefs, def.indexDefs)
-                && ordinal == def.ordinal
+                && getOrdinal() == def.getOrdinal()
                 && Arrays.equals(parentJoinFields, def.parentJoinFields);
 
     }
