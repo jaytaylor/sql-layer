@@ -17,6 +17,7 @@ package com.akiban.cserver.api;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -530,9 +531,12 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throws NoSuchTableException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, GenericInvalidOperationException {
         final Table table = ddlFunctions.getTable(session, tableId);
+        final UserTable utable = table.isUserTable() ? (UserTable)table : null;
+
+        final Collection<Index> indexes;
 
         // Reject a truncate that would create orphan rows
-        if(table.isUserTable() == true) {
+        if(utable != null) {
             for(Join join : ((UserTable)table).getChildJoins()) {
                 final Table childTable = join.getChild();
                 final TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
@@ -541,11 +545,16 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                     throw new ForeignKeyConstraintDMLException(ErrorCode.FK_CONSTRAINT_VIOLATION, errorMsg);
                 }
             }
+
+            indexes = utable.getIndexesIncludingInternal();
+        }
+        else {
+            indexes = table.getIndexes();
         }
 
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
         Set<Integer> keyColumns = new HashSet<Integer>();
-        for(Index index : table.getIndexes()) {
+        for(Index index : indexes) {
             for(IndexColumn col : index.getColumns()) {
                 int pos = col.getColumn().getPosition();
                 keyColumns.add(pos);
