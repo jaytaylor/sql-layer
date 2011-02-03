@@ -34,7 +34,7 @@ For more information see http://akiban.com/
 %setup -q -n cserver
 
 %build
-mvn -B -Dmaven.test.skip=true -B clean install
+mvn -B -Dmaven.test.skip=true -DBZR_REVISION=%{release} clean install
 
 %install
 rm -rf ${RPM_BUILD_ROOT}
