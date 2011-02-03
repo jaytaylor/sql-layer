@@ -163,4 +163,27 @@ public final class TruncateTableIT extends ApiTestBase {
         rows = scanAll(new ScanAllRequest(childId, null));
         assertEquals("Rows scanned", 1, rows.size());
     }
+
+    @Test
+    public void tableWithNoPK() throws InvalidOperationException {
+        int tableId = createTable("test", "t", "c1 CHAR(10) NOT NULL");
+
+        writeRows(createNewRow(tableId, "a", -1L),
+                  createNewRow(tableId, "aaa", -1L),
+                  createNewRow(tableId, "b", -1L),
+                  createNewRow(tableId, "b", -1L),
+                  createNewRow(tableId, "bb", -1L),
+                  createNewRow(tableId, "bbb", -1L),
+                  createNewRow(tableId, "c", -1L));
+        expectRowCount(tableId, 7);
+
+        dml().truncateTable(session, tableId);
+
+        // Check table stats
+        expectRowCount(tableId, 0);
+
+        // Check table scan
+        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
+        assertEquals("Rows scanned", 0, rows.size());
+    }
 }
