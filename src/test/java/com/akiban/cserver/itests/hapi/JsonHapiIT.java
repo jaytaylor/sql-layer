@@ -150,6 +150,7 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String COMMENT = "comment";
 
     private static final String PASSING_DEFAULT = "passing_default";
+    private static final String PROCESSORS_DEFAULT = "processors_default";
 
     private static final String SETUP = "setup";
     private static final String SETUP_SCHEMA = "schema";
@@ -157,7 +158,7 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String SETUP_TABLES = "tables";
     private static final String SETUP_WRITE_ROWS = "write_rows";
     private static final String[] SETUP_KEYS_REQUIRED = {SETUP_TABLES, SETUP_WRITE_ROWS};
-    private static final String[] SETUP_KEYS_OPTIONAL = {SETUP_SCHEMA};
+    private static final String[] SETUP_KEYS_OPTIONAL = {SETUP_SCHEMA, PROCESSORS_DEFAULT};
 
     private static final String TESTS = "tests";
     private static final String TEST_WRITE_ROWS = "write_rows";
@@ -198,14 +199,27 @@ public final class JsonHapiIT extends ApiTestBase {
     }
 
     private static class TestSetupInfo {
+        final List<String> defaultProcessors;
         final String schema;
         final List<String> ddls;
         final Map<String,JSONArray> writeRows;
 
-        private TestSetupInfo(String schema, List<String> ddls, Map<String,JSONArray> writeRows) {
+        private TestSetupInfo(String schema, List<String> ddls, Map<String,JSONArray> writeRows, JSONArray processors)
+        throws JSONException
+        {
             this.schema = schema;
             this.ddls = ddls;
             this.writeRows = writeRows;
+            if (processors == null) {
+                this.defaultProcessors = Collections.unmodifiableList( Arrays.asList(DEFAULT_TEST_PROCESSORS));
+            }
+            else {
+                List<String> defaultProcessors = new ArrayList<String>();
+                for(int i=0, len=processors.length(); i < len; ++i) {
+                    defaultProcessors.add( processors.getString(i) );
+                }
+                this.defaultProcessors = Collections.unmodifiableList( defaultProcessors );
+            }
         }
 
         @Override
@@ -303,7 +317,7 @@ public final class JsonHapiIT extends ApiTestBase {
                 else {
                     param = Parameterization.failing(paramName(name, testName), null, null, null);
                 }
-                String[] processors = extractProcessors(test);
+                List<String> processors = extractProcessors(test, setupInfo);
                 addParams(params, param, processors);
             } catch (JSONException e) {
                 params.add( Parameterization.create(paramName(name, testName), e, null, null) );
@@ -312,7 +326,7 @@ public final class JsonHapiIT extends ApiTestBase {
         return params;
     }
 
-    private static void addParams(List<Parameterization> params, Parameterization basic, String[] processors) {
+    private static void addParams(List<Parameterization> params, Parameterization basic, List<String> processors) {
         for (String hapiProcessor : processors) {
             List<Object> paramArgs = new ArrayList<Object>(basic.getArgsAsList());
             TestExtraParam extraParam = new TestExtraParam(hapiProcessor);
@@ -326,14 +340,14 @@ public final class JsonHapiIT extends ApiTestBase {
         }
     }
 
-    private static String[] extractProcessors(JSONObject test) throws JSONException {
+    private static List<String> extractProcessors(JSONObject test, TestSetupInfo setupInfo) throws JSONException {
         JSONArray array = test.optJSONArray(TEST_PROCESSORS);
         if (array == null) {
-            return DEFAULT_TEST_PROCESSORS;
+            return setupInfo.defaultProcessors;
         }
-        String[] ret = new String[array.length()];
-        for(int i=0; i < ret.length; ++i) {
-            ret[i] = array.getString(i);
+        List<String> ret = new ArrayList<String>();
+        for(int i=0, len=array.length(); i < len; ++i) {
+            ret.add( array.getString(i) );
         }
         return ret;
     }
@@ -401,7 +415,8 @@ public final class JsonHapiIT extends ApiTestBase {
         return new TestSetupInfo(
                 schema,
                 Collections.unmodifiableList(ddls),
-                writeRows
+                writeRows,
+                setupJSON.optJSONArray(PROCESSORS_DEFAULT)
         );
     }
 
