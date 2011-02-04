@@ -360,7 +360,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                 return candidateIndexes.iterator().next();
             }
         }
-        throw new HapiRequestException("too many indexes found: " + candidateIndexes, UNSUPPORTED_REQUEST);
+        // We shouldn't ever get here
+        throw new AssertionError("too many indexes: " + candidateIndexes);
     }
 
     private static Collection<Index> getCandidateIndexes(Table table, List<String> columns) {
