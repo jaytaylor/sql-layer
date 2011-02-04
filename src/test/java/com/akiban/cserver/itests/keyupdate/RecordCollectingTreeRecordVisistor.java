@@ -15,24 +15,24 @@
 
 package com.akiban.cserver.itests.keyupdate;
 
-import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.store.TreeRecordVisitor;
 
-import static com.akiban.cserver.itests.keyupdate.Schema.*;
-import static junit.framework.Assert.*;
+import java.util.ArrayList;
+import java.util.List;
 
-abstract class KeyUpdateTestRecordVisistor extends TreeRecordVisitor
+class RecordCollectingTreeRecordVisistor extends TreeRecordVisitor
 {
-    protected static void checkHKey(Object[] actualHKey, Object... expectedHKey)
+    @Override
+    public void visit(Object[] key, NewRow row)
     {
-        assertEquals(expectedHKey.length, actualHKey.length);
-        for (int i = 0; i < expectedHKey.length; i++) {
-            Object actual = actualHKey[i];
-            Object expected = expectedHKey[i];
-            if (expected instanceof RowDef) {
-                assertSame(((RowDef) expected).userTable(), actual);
-            }
-        }
+        records.add(new TreeRecord(key, row));
     }
+
+    public List<TreeRecord> records()
+    {
+        return records;
+    }
+
+    private final List<TreeRecord> records = new ArrayList<TreeRecord>();
 }

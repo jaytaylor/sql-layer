@@ -35,16 +35,14 @@ import java.util.Map;
 
 public abstract class TreeRecordVisitor
 {
-    public void visit() throws PersistitException, InvalidOperationException
+    public final void visit() throws PersistitException, InvalidOperationException
     {
         NewRow row = row();
         Object[] key = key(row.getRowDef());
         visit(key, row);
     }
 
-    public abstract void visit(Object[] key, NewRow row);
-
-    public void initialize(PersistitStore store, Exchange exchange)
+    public final void initialize(PersistitStore store, Exchange exchange)
     {
         this.store = store;
         this.exchange = exchange;
@@ -57,6 +55,8 @@ public abstract class TreeRecordVisitor
             }
         }
     }
+
+    public abstract void visit(Object[] key, NewRow row);
 
     private NewRow row() throws PersistitException, InvalidOperationException
     {

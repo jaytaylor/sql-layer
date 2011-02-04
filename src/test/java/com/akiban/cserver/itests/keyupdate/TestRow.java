@@ -35,10 +35,16 @@ public class TestRow extends NiceRow
         this.hKey = hKey;
     }
 
-    private TestRow(int tableId, RowDef rowDef)
+    public TestRow parent()
     {
-        super(tableId, rowDef);
+        return parent;
+    }
+
+    public void parent(TestRow parent)
+    {
+        this.parent = parent;
     }
 
     private HKey hKey;
+    private TestRow parent;
 }

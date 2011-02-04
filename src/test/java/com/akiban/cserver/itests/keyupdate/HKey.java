@@ -18,6 +18,9 @@ package com.akiban.cserver.itests.keyupdate;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.dml.scan.NewRow;
+import static junit.framework.Assert.assertSame;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 
 import java.util.*;
 
@@ -88,15 +91,24 @@ public class HKey implements Comparable<HKey>
         while (c == 0 && i.hasNext() && j.hasNext()) {
             Object iElement = i.next();
             Object jElement = j.next();
-            assert iElement.getClass() == jElement.getClass();
-            if (iElement instanceof UserTable) {
-                c = ((UserTable) iElement).getTableId() - ((UserTable) jElement).getTableId();
+            if (iElement == null && jElement == null) {
+                // c is already 0
+            } else if (iElement == null) {
+                c = -1;
+            } else if (jElement == null) {
+                c = 1;
             } else {
-                c = ((Comparable) iElement).compareTo(jElement);
+                assertSame(iElement.getClass(), jElement.getClass());
+                if (iElement instanceof UserTable) {
+                    c = ((UserTable) iElement).getTableId() - ((UserTable) jElement).getTableId();
+                } else {
+                    c = ((Comparable) iElement).compareTo(jElement);
+                }
             }
         }
         if (c == 0) {
-            c = i.hasNext() ? 1 : -1;
+            assertTrue((i.hasNext() ? 1 : 0) + (j.hasNext() ? 1 : 0) <= 1);
+            c = i.hasNext() ? 1 : j.hasNext() ? -1 : 0;
         }
         return c;
     }
@@ -107,6 +119,11 @@ public class HKey implements Comparable<HKey>
     public Object[] objectArray()
     {
         return elements.toArray();
+    }
+
+    public HKey copy()
+    {
+        return new HKey(elements.toArray());
     }
 
     public HKey(Object ... elements)
@@ -123,5 +140,4 @@ public class HKey implements Comparable<HKey>
     // Object state
 
     private List<Object> elements;
-    private SortedMap<HKey, NewRow> contents;
 }

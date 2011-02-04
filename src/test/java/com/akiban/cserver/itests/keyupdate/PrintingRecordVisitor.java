@@ -16,10 +16,11 @@
 package com.akiban.cserver.itests.keyupdate;
 
 import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.store.TreeRecordVisitor;
 
 import java.util.Arrays;
 
-public class PrintingRecordVisitor extends KeyUpdateTestRecordVisistor
+public class PrintingRecordVisitor extends TreeRecordVisitor
 {
     @Override
     public void visit(Object[] key, NewRow row)

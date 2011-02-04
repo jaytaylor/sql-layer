@@ -47,10 +47,7 @@ public class TestStore
         throws Exception
     {
         TestRow currentRow = map.remove(oldRow.hKey());
-        TestRow mergedRow =
-            columnSelector == null
-            ? mergeRows(currentRow, newRow, columnSelector)
-            : newRow;
+        TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
         map.put(mergedRow.hKey(), mergedRow);
         delegate.updateRow(session,
                            oldRow.toRowData(),
@@ -65,6 +62,12 @@ public class TestStore
             testVisitor.visit(entry.getKey().objectArray(), entry.getValue());
         }
         delegate.traverse(session, rowDef, realVisitor);
+    }
+
+    public void traverse(Session session, IndexDef indexDef, IndexRecordVisitor visitor)
+        throws Exception
+    {
+        delegate.traverse(session, indexDef, visitor);
     }
 
     // TestStore interface
@@ -83,13 +86,18 @@ public class TestStore
 
     private TestRow mergeRows(TestRow currentRow, TestRow newRow, ColumnSelector columnSelector)
     {
-        if (currentRow.getRowDef() != newRow.getRowDef()) {
-            throw new RuntimeException();
-        }
-        TestRow mergedRow = new TestRow(newRow.getRowDef().getRowDefId());
-        int n = newRow.getRowDef().getFieldCount();
-        for (int i = 0; i < n; i++) {
-            mergedRow.put(i, columnSelector.includesColumn(i) ? newRow.get(i) : currentRow.get(i));
+        TestRow mergedRow;
+        if (columnSelector == null) {
+            mergedRow = newRow;
+        } else {
+            if (currentRow.getRowDef() != newRow.getRowDef()) {
+                throw new RuntimeException();
+            }
+            mergedRow = new TestRow(newRow.getRowDef().getRowDefId());
+            int n = newRow.getRowDef().getFieldCount();
+            for (int i = 0; i < n; i++) {
+                mergedRow.put(i, columnSelector.includesColumn(i) ? newRow.get(i) : currentRow.get(i));
+            }
         }
         return mergedRow;
     }

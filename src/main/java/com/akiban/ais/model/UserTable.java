@@ -284,10 +284,6 @@ public class UserTable extends Table
         return branchHKey;
     }
 
-    /**
-     * @deprecated
-     * @return
-     */
     public List<Column> allHKeyColumns()
     {
         assert getGroup() != null;

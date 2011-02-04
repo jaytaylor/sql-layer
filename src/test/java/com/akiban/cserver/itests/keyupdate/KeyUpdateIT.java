@@ -18,15 +18,13 @@ package com.akiban.cserver.itests.keyupdate;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.itests.ApiTestBase;
-import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
+import java.util.*;
 
 import static com.akiban.cserver.itests.keyupdate.Schema.*;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 public class KeyUpdateIT extends ApiTestBase
 {
@@ -41,26 +39,28 @@ public class KeyUpdateIT extends ApiTestBase
     @Test
     public void testInitialState() throws Exception
     {
-        RecordCollectingRecordVisistor testVisitor = new RecordCollectingRecordVisistor();
-        RecordCollectingRecordVisistor realVisitor = new RecordCollectingRecordVisistor();
-        testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
-        assertEquals(testVisitor.records(), realVisitor.records());
+        checkDB();
     }
 
-/*
     @Test
     public void testLeafFKUpdate() throws Exception
     {
-        UpdatedRecordVisitor updatedRecordVisitor = new UpdatedRecordVisitor(new InitialStateRecordVisistor());
         TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
         TestRow newRow = copyRow(oldRow);
-        newRow.put(i_oid, 0);
-        update(oldRow, newRow);
-        KeyCollectingRecordVisistor visitor = new KeyCollectingRecordVisistor(updatedRecordVisitor);
-        persistitStore().traverse(session, groupRowDef, visitor);
-        assertEquals(testStore.hKeys(), visitor.hKeys());
+        updateRow(newRow, i_oid, 0L, null);
+        dbUpdate(oldRow, newRow);
+        checkDB();
     }
-*/
+
+    @Test
+    public void testMiddlePKUpdate() throws Exception
+    {
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        TestRow newRow = copyRow(oldRow);
+        newRow.put(o_oid, 0L);
+        dbUpdate(oldRow, newRow);
+        checkDB();
+    }
 
     private void createSchema() throws InvalidOperationException
     {
@@ -96,48 +96,101 @@ public class KeyUpdateIT extends ApiTestBase
         groupRowDef = store().getRowDefCache().getRowDef(groupRowDefId);
     }
 
+    private void updateRow(TestRow row, int column, Object newValue, TestRow newParent)
+    {
+        row.put(column, newValue);
+        row.parent(newParent);
+        row.hKey(hKey(row, newParent));
+    }
+
+    private void checkDB()
+        throws Exception
+    {
+        // Records
+        RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
+        RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
+        testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
+        assertEquals(testVisitor.records(), realVisitor.records());
+        // Item PK index
+        RecordCollectingIndexRecordVisistor indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session, itemRowDef.getPKIndexDef(), indexVisitor);
+        assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+    }
+
+    private List<List<Object>> itemPKIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == itemRowDef) {
+                List<Object> indexEntry =
+                    Arrays.asList(record.row().get(i_iid), // iid
+                                  record.hKey().objectArray()[1], // cid
+                                  record.row().get(i_oid)); // oid
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                         new Comparator<List<Object>>()
+                         {
+                             @Override
+                             public int compare(List<Object> x, List<Object> y)
+                             {
+                                 // compare cids
+                                 Long lx = (Long) x.get(1);
+                                 Long ly = (Long) y.get(1);
+                                 return
+                                     lx == ly ? 0 :
+                                     lx == null ? -1 :
+                                     ly == null ? 1 :
+                                     lx < ly ? -1 :
+                                     lx > ly ? 1 : 0;
+                             }
+                         });
+        return indexEntries;
+    }
+
     private void populateTables() throws Exception
     {
         TestRow order;
-        insert(row(customerRowDef, 1, 100));
-        insert(order = row(orderRowDef, 11, 1, 1100));
-        insert(row(order, itemRowDef, 111, 11, 11100));
-        insert(row(order, itemRowDef, 112, 11, 11200));
-        insert(row(order, itemRowDef, 113, 11, 11300));
-        insert(order = row(orderRowDef, 12, 1, 1200));
-        insert(row(order, itemRowDef, 121, 12, 12100));
-        insert(row(order, itemRowDef, 122, 12, 12200));
-        insert(row(order, itemRowDef, 123, 12, 12300));
-        insert(order = row(orderRowDef, 13, 1, 1300));
-        insert(row(order, itemRowDef, 131, 13, 13100));
-        insert(row(order, itemRowDef, 132, 13, 13200));
-        insert(row(order, itemRowDef, 133, 13, 13300));
-        insert(row(customerRowDef, 2, 200));
-        insert(order = row(orderRowDef, 21, 2, 2100));
-        insert(row(order, itemRowDef, 211, 21, 21100));
-        insert(row(order, itemRowDef, 212, 21, 21200));
-        insert(row(order, itemRowDef, 213, 21, 21300));
-        insert(order = row(orderRowDef, 22, 2, 2200));
-        insert(row(order, itemRowDef, 221, 22, 22100));
-        insert(row(order, itemRowDef, 222, 22, 22200));
-        insert(row(order, itemRowDef, 223, 22, 22300));
-        insert(order = row(orderRowDef, 23, 2, 2300));
-        insert(row(order, itemRowDef, 231, 23, 23100));
-        insert(row(order, itemRowDef, 232, 23, 23200));
-        insert(row(order, itemRowDef, 233, 23, 23300));
-        insert(row(customerRowDef, 3, 300));
-        insert(order = row(orderRowDef, 31, 3, 3100));
-        insert(row(order, itemRowDef, 311, 31, 31100));
-        insert(row(order, itemRowDef, 312, 31, 31200));
-        insert(row(order, itemRowDef, 313, 31, 31300));
-        insert(order = row(orderRowDef, 32, 3, 3200));
-        insert(row(order, itemRowDef, 321, 32, 32100));
-        insert(row(order, itemRowDef, 322, 32, 32200));
-        insert(row(order, itemRowDef, 323, 32, 32300));
-        insert(order = row(orderRowDef, 33, 3, 3300));
-        insert(row(order, itemRowDef, 331, 33, 33100));
-        insert(row(order, itemRowDef, 332, 33, 33200));
-        insert(row(order, itemRowDef, 333, 33, 33300));
+        dbInsert(row(customerRowDef, 1, 100));
+        dbInsert(order = row(orderRowDef, 11, 1, 1100));
+        dbInsert(row(order, itemRowDef, 111, 11, 11100));
+        dbInsert(row(order, itemRowDef, 112, 11, 11200));
+        dbInsert(row(order, itemRowDef, 113, 11, 11300));
+        dbInsert(order = row(orderRowDef, 12, 1, 1200));
+        dbInsert(row(order, itemRowDef, 121, 12, 12100));
+        dbInsert(row(order, itemRowDef, 122, 12, 12200));
+        dbInsert(row(order, itemRowDef, 123, 12, 12300));
+        dbInsert(order = row(orderRowDef, 13, 1, 1300));
+        dbInsert(row(order, itemRowDef, 131, 13, 13100));
+        dbInsert(row(order, itemRowDef, 132, 13, 13200));
+        dbInsert(row(order, itemRowDef, 133, 13, 13300));
+        dbInsert(row(customerRowDef, 2, 200));
+        dbInsert(order = row(orderRowDef, 21, 2, 2100));
+        dbInsert(row(order, itemRowDef, 211, 21, 21100));
+        dbInsert(row(order, itemRowDef, 212, 21, 21200));
+        dbInsert(row(order, itemRowDef, 213, 21, 21300));
+        dbInsert(order = row(orderRowDef, 22, 2, 2200));
+        dbInsert(row(order, itemRowDef, 221, 22, 22100));
+        dbInsert(row(order, itemRowDef, 222, 22, 22200));
+        dbInsert(row(order, itemRowDef, 223, 22, 22300));
+        dbInsert(order = row(orderRowDef, 23, 2, 2300));
+        dbInsert(row(order, itemRowDef, 231, 23, 23100));
+        dbInsert(row(order, itemRowDef, 232, 23, 23200));
+        dbInsert(row(order, itemRowDef, 233, 23, 23300));
+        dbInsert(row(customerRowDef, 3, 300));
+        dbInsert(order = row(orderRowDef, 31, 3, 3100));
+        dbInsert(row(order, itemRowDef, 311, 31, 31100));
+        dbInsert(row(order, itemRowDef, 312, 31, 31200));
+        dbInsert(row(order, itemRowDef, 313, 31, 31300));
+        dbInsert(order = row(orderRowDef, 32, 3, 3200));
+        dbInsert(row(order, itemRowDef, 321, 32, 32100));
+        dbInsert(row(order, itemRowDef, 322, 32, 32200));
+        dbInsert(row(order, itemRowDef, 323, 32, 32300));
+        dbInsert(order = row(orderRowDef, 33, 3, 3300));
+        dbInsert(row(order, itemRowDef, 331, 33, 33100));
+        dbInsert(row(order, itemRowDef, 332, 33, 33200));
+        dbInsert(row(order, itemRowDef, 333, 33, 33300));
     }
 
     private TestRow row(RowDef table, Object... values)
@@ -168,12 +221,12 @@ public class KeyUpdateIT extends ApiTestBase
         return row;
     }
 
-    private void insert(TestRow row) throws Exception
+    private void dbInsert(TestRow row) throws Exception
     {
         testStore.writeRow(session, row);
     }
 
-    private void update(TestRow oldRow, TestRow newRow) throws Exception
+    private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
     {
         testStore.updateRow(session, oldRow, newRow, null);
     }
@@ -187,6 +240,11 @@ public class KeyUpdateIT extends ApiTestBase
         } else if (rowDef == orderRowDef) {
             hKey = new HKey(customerRowDef, row.get(o_cid),
                             orderRowDef, row.get(o_oid));
+        } else if (rowDef == itemRowDef) {
+            assertNotNull(row.parent());
+            hKey = new HKey(customerRowDef, row.parent().get(o_cid),
+                            orderRowDef, row.get(i_oid),
+                            itemRowDef, row.get(i_iid));
         } else {
             assertTrue(false);
         }
@@ -198,12 +256,13 @@ public class KeyUpdateIT extends ApiTestBase
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();
         if (rowDef == itemRowDef) {
-            hKey = new HKey(customerRowDef, parent.get(o_cid),
+            hKey = new HKey(customerRowDef, parent == null ? null : parent.get(o_cid),
                             orderRowDef, row.get(i_oid),
                             itemRowDef, row.get(i_iid));
         } else {
             assertTrue(false);
         }
+        row.parent(parent);
         return hKey;
     }
 
@@ -213,6 +272,8 @@ public class KeyUpdateIT extends ApiTestBase
         for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }
+        copy.parent(row.parent());
+        copy.hKey(hKey(row));
         return copy;
     }
 

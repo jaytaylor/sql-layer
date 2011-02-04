@@ -22,6 +22,7 @@ import static com.akiban.cserver.store.RowCollector.SCAN_FLAGS_START_AT_EDGE;
 import java.nio.ByteBuffer;
 import java.util.*;
 
+import com.akiban.ais.model.*;
 import com.akiban.cserver.api.dml.ColumnSelector;
 import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NewRow;
@@ -30,10 +31,6 @@ import com.persistit.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.FieldDef;
@@ -162,50 +159,107 @@ public class PersistitStore implements CServerConstants, Store {
     public void releaseExchange(final Session session, final Exchange exchange) {
         treeService.releaseExchange(session, exchange);
     }
-
-    // private Exchange getExchange(final Session session, final Tree tree)
-    // throws PersistitException {
-    // return ps.getExchange(session, tree);
-    // }
-    //
-    // public Exchange getExchange(final Session session, final String treeName)
-    // throws PersistitException {
-    // return ps.getExchange(session, "_system_", treeName);
-    // }
-
-    /**
-     * Given a RowData for a table, construct an hkey for a row in the table.
-     * For a non-root table, this method uses the parent join columns as needed
-     * to find the hkey of the parent table. The attempt to look up the parent
-     * row may result in a StoreException due to a missing parent row; this is
-     * expressed as a HA_ERR_NO_REFERENCED_ROW error.
-     * 
-     * @param hEx
-     * @param rowData
-     * @throws PersistitException
-     * @throws InvalidOperationException
-     */
-    void constructHKey(final Session session, Exchange hEx, RowDef rowDef,
-            RowData rowData, boolean insertingRow) throws PersistitException,
-            InvalidOperationException {
+     // Given a RowData for a table, construct an hkey for a row in the table.
+     // For a table that does not contain its own hkey, this method uses the parent join
+     // columns as needed to find the hkey of the parent table.
+    void constructHKey(Session session,
+                       Exchange hEx,
+                       RowDef rowDef,
+                       RowData rowData,
+                       boolean insertingRow)
+        throws PersistitException, InvalidOperationException
+    {
+        // Initialize the hkey being constructed
         Key hKey = hEx.getKey();
         hKey.clear();
+        // Metadata for the row's table
         UserTable table = rowDef.userTable();
-        int parentHKeySegments = 0;
+        FieldDef[] fieldDefs = rowDef.getFieldDefs();
+        // Metadata and other state for the parent table
+        RowDef parentRowDef = null;
+        UserTable parentTable = null;
+        if (rowDef.getParentRowDefId() != 0) {
+            parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
+            parentTable = parentRowDef.userTable();
+        }
+        IndexDef.I2H[] indexToHKey = null;
+        int i2hPosition = 0;
+        Exchange parentExchange = null;
+        boolean parentExists = false;
+        // Nested loop over hkey metadata: All the segments of an hkey, and all the columns of a segment.
+        List<HKeySegment> hKeySegments = table.hKey().segments();
+        int s = 0;
+        while (s < hKeySegments.size()) {
+            HKeySegment hKeySegment = hKeySegments.get(s++);
+            // Write the ordinal for this segment
+            RowDef segmentRowDef = rowDefCache.getRowDef(hKeySegment.table().getTableId());
+            hKey.append(segmentRowDef.getOrdinal());
+            // Iterate over the segment's columns
+            List<HKeyColumn> hKeyColumns = hKeySegment.columns();
+            int c = 0;
+            while (c < hKeyColumns.size()) {
+                HKeyColumn hKeyColumn = hKeyColumns.get(c++);
+                UserTable hKeyColumnTable = hKeyColumn.column().getUserTable();
+                // The columns of an hkey come from the table, or the table and its parent.
+                assert hKeyColumnTable == table || parentTable != null && hKeyColumnTable == parentTable : hKeyColumn;
+                if (hKeyColumnTable == parentTable) {
+                    // Hkey column from row of parent table
+                    if (parentExchange == null) {
+                        // Initialize parent metadata and state
+                        IndexDef parentPK = parentRowDef.getPKIndexDef();
+                        parentExchange = getExchange(session, rowDef, parentPK);
+                        constructParentPKIndexKey(parentExchange.getKey(), rowDef, rowData);
+                        parentExists = parentExchange.hasChildren();
+                        indexToHKey = parentPK.hkeyFields();
+                    }
+                    IndexDef.I2H i2h = indexToHKey[i2hPosition++];
+                    if (i2h.isOrdinalType()) {
+                        assert i2h.ordinal() == segmentRowDef.getOrdinal() : hKeyColumn;
+                        i2h = indexToHKey[i2hPosition++];
+                    }
+                    if (parentExists) {
+                        boolean next = parentExchange.next(true);
+                        assert next : rowData;
+                        appendKeyFieldFromKey(parentExchange.getKey(), hKey, i2h.indexKeyLoc());
+                    } else {
+                        // orphan row
+                        hKey.append(null);
+                    }
+                } else {
+                    // Hkey column from rowData
+                    Column column = hKeyColumn.column();
+                    FieldDef fieldDef = fieldDefs[column.getPosition()];
+                    if (insertingRow && column.isAkibanPKColumn()) {
+                        // Must be a PK-less table. Use unique id from TableStatus.
+                        TableStatus tableStatus = segmentRowDef.getTableStatus();
+                        long rowId = tableStatus.newUniqueId();
+                        hKey.append(rowId);
+                        // Write rowId into the value part of the row also.
+                        rowData.updateNonNullLong(fieldDef, rowId);
+                    } else {
+                        appendKeyField(hKey, fieldDef, rowData);
+                    }
+                }
+            }
+        }
+        if (parentExchange != null) {
+            releaseExchange(session, parentExchange);
+        }
+/*        int parentHKeySegments = 0;
         if (!table.containsOwnHKey()) {
+            RowDef parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
             // For hkey fields not in rowDef's table, find the parent row and
             // get the hkey from it. That provides
             // the hkey up to the point that rowData can contribute the rest.
-            RowDef parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
             Exchange iEx = getExchange(session, rowDef, parentRowDef.getPKIndexDef());
             constructParentPKIndexKey(iEx.getKey(), rowDef, rowData);
-            if (!iEx.hasChildren()) {
-                throw new InvalidOperationException(
-                        ErrorCode.NO_REFERENCED_ROW, iEx.getKey().toString());
+            if (iEx.hasChildren()) {
+                boolean next = iEx.next(true);
+                assert next;
+                constructHKeyFromIndexKey(hKey, iEx.getKey(), parentRowDef.getPKIndexDef());
+            } else {
+                constructHKeyFromNullIndexKey(hKey, parentRowDef.getPKIndexDef());
             }
-            boolean next = iEx.next(true);
-            assert next;
-            constructHKeyFromIndexKey(hKey, iEx.getKey(), parentRowDef.getPKIndexDef());
             releaseExchange(session, iEx);
             parentHKeySegments = parentRowDef.userTable().hKey().segments().size();
         }
@@ -232,7 +286,7 @@ public class PersistitStore implements CServerConstants, Store {
                     appendKeyField(hKey, fieldDef, rowData);
                 }
             }
-        }
+        }*/
     }
 
     void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
@@ -288,13 +342,12 @@ public class PersistitStore implements CServerConstants, Store {
     /**
      * Given an index key and an indexDef, construct the corresponding hkey for
      * the row identified by the index key.
-     * 
+     *
      * @param hKey
      * @param indexKey
      * @param indexDef
      */
-    void constructHKeyFromIndexKey(final Key hKey, final Key indexKey,
-            final IndexDef indexDef) {
+    void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final IndexDef indexDef) {
         final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
         hKey.clear();
         for (int index = 0; index < fassoc.length; index++) {
@@ -309,6 +362,25 @@ public class PersistitStore implements CServerConstants, Store {
                                     + ": " + indexKey);
                 }
                 appendKeyFieldFromKey(indexKey, hKey, fa.indexKeyLoc());
+            }
+        }
+    }
+
+    /**
+     * Given an indexDef, construct the corresponding hkey containing nulls.
+     *
+     * @param hKey
+     * @param indexDef
+     */
+    void constructHKeyFromNullIndexKey(final Key hKey, final IndexDef indexDef) {
+        final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
+        hKey.clear();
+        for (int index = 0; index < fassoc.length; index++) {
+            final IndexDef.I2H fa = fassoc[index];
+            if (fa.isOrdinalType()) {
+                hKey.append(fa.ordinal());
+            } else {
+                hKey.append(null);
             }
         }
     }
@@ -673,7 +745,8 @@ public class PersistitStore implements CServerConstants, Store {
                     // may want to optimize the protocol to send only PK and FK
                     // fields in oldRowData, in which case this test will need
                     // to change.
-                    if (!fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getPKIndexDef().getFields())) {
+                    if (!fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getPKIndexDef().getFields()) ||
+                        !fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getParentJoinFields())) {
                         if (hEx.hasChildren()) {
                             throw new InvalidOperationException(
                                     ErrorCode.FK_CONSTRAINT_VIOLATION,
@@ -1158,9 +1231,19 @@ public class PersistitStore implements CServerConstants, Store {
         if (indexDef.isUnique()) {
             int saveSize = key.getEncodedSize();
             key.setDepth(indexDef.getIndexKeySegmentCount());
+            LOG.fatal(String.format("FIX ME - re-enable dup check, key: %s hasChildren: %s", key, iEx.hasChildren()));
+/*
             if (iEx.hasChildren()) {
                 complainAboutDuplicateKey(indexDef.getName(), key);
             }
+*/
+//////////////
+            for (int i = 2; i >= 0; i--) {
+                key.setDepth(i);
+                System.out.println(String.format("depth = %s, hasChildren: %s", i, iEx.hasChildren()));
+            }
+            key.setDepth(indexDef.getIndexKeySegmentCount());
+////////////////
             key.setEncodedSize(saveSize);
         }
         iEx.getValue().clear();
@@ -1222,7 +1305,7 @@ public class PersistitStore implements CServerConstants, Store {
             throws PersistitException {
         final Exchange iEx = getExchange(session, rowDef, indexDef);
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
-        iEx.remove();
+        boolean removed = iEx.remove();
         releaseExchange(session, iEx);
     }
 
@@ -1494,6 +1577,20 @@ public class PersistitStore implements CServerConstants, Store {
         Exchange exchange = getExchange(session, rowDef, null).append(Key.BEFORE);
         try {
             visitor.initialize(this, exchange);
+            while (exchange.next(true)) {
+                visitor.visit();
+            }
+        } finally {
+            releaseExchange(session, exchange);
+        }
+    }
+
+    public void traverse(Session session, IndexDef indexDef, IndexRecordVisitor visitor)
+        throws PersistitException, InvalidOperationException
+    {
+        Exchange exchange = getExchange(session, null, indexDef).append(Key.BEFORE);
+        try {
+            visitor.initialize(exchange);
             while (exchange.next(true)) {
                 visitor.visit();
             }

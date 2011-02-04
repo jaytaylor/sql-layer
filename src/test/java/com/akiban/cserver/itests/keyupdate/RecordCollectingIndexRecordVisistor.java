@@ -16,30 +16,24 @@
 package com.akiban.cserver.itests.keyupdate;
 
 import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.store.IndexRecordVisitor;
 import com.akiban.cserver.store.TreeRecordVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class KeyCollectingRecordVisistor extends KeyUpdateTestRecordVisistor
+class RecordCollectingIndexRecordVisistor extends IndexRecordVisitor
 {
     @Override
-    public void visit(Object[] key, NewRow row)
+    public void visit(List<Object> key)
     {
-        visitor.visit(key, row);
-        keys.add(new HKey(key));
+        records.add(key);
     }
 
-    public List<HKey> hKeys()
+    public List<List<Object>> records()
     {
-        return keys;
+        return records;
     }
 
-    public KeyCollectingRecordVisistor(TreeRecordVisitor visitor)
-    {
-        this.visitor = visitor;
-    }
-
-    private final TreeRecordVisitor visitor;
-    private final List<HKey> keys = new ArrayList<HKey>();
+    private final List<List<Object>> records = new ArrayList<List<Object>>();
 }
