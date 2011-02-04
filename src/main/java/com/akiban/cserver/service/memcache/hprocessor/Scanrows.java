@@ -46,11 +46,18 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.akiban.cserver.api.HapiRequestException.ReasonCode.*;
 
 public class Scanrows implements HapiProcessor, JmxManageable {
     private static final String MODULE = Scanrows.class.toString();
@@ -108,18 +115,18 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         //    public LegacyScanRequest(int tableId, RowData start, RowData end, byte[] columnBitMap, int indexId, int scanFlags)
         try {
             final int tableId;
-            final int indexId;
+            final Index index;
             final byte[] columnBitMap;
 
             TableName tableName = new TableName(request.getSchema(), request.getTable());
             Table table = ddlFunctions.getTable(session, tableName);
             tableId = table.getTableId();
-            indexId = findIndexId(table, request.getPredicates());
+            index = findIndex(table, request.getPredicates());
             columnBitMap = scanAllColumns(table);
             RowDataStruct range = getScanRange(table, request);
 
             LegacyScanRequest scanRequest = new LegacyScanRequest(
-                    tableId, range.start(), range.end(), columnBitMap, indexId, range.scanFlagsInt());
+                    tableId, range.start(), range.end(), columnBitMap, index.getIndexId(), range.scanFlagsInt());
             List<RowData> rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
 
             outputter.output(
@@ -132,7 +139,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         } catch (InvalidOperationException e) {
             throw new HapiRequestException("unknown error", e); // TODO
         } catch (IOException e) {
-            throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
+            throw new HapiRequestException("while writing output", e, WRITE_ERROR);
         }
     }
 
@@ -185,6 +192,136 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         return ColumnSet.packToLegacy(allSet);
     }
 
+    private static List<String> predicateColumns(List<HapiGetRequest.Predicate> predicates, TableName tableName)
+    throws HapiRequestException
+    {
+        List<String> columns = new ArrayList<String>();
+        for (HapiGetRequest.Predicate predicate : predicates) {
+            if (!tableName.equals(predicate.getTableName())) {
+                throw new HapiRequestException(
+                        String.format("predicate %s must be against table %s", predicate, tableName),
+                        UNSUPPORTED_REQUEST
+                );
+            }
+            columns.add(predicate.getColumnName());
+        }
+        return Collections.unmodifiableList(columns);
+    }
+
+    private interface IndexPreference {
+        Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns);
+    }
+
+    private static class IdentityPreference implements IndexPreference {
+        @Override
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+            return candidates;
+        }
+    }
+
+    private static class ColumnOrderPreference implements IndexPreference {
+        @Override
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+            return getBestBucket(candidates, columns, BucketSortOption.HIGHER_IS_BETTER,
+                    new IndexBucketSorter() {
+                        @Override
+                        public int sortToBuckets(Index index, List<String> columns) {
+                            int matched = 0;
+                            Iterator<String> colsIter = columns.iterator();
+                            for (IndexColumn iCol : index.getColumns()) {
+                                String iColName = iCol.getColumn().getName();
+                                if (iColName.equals(colsIter.next())) {
+                                    ++matched;
+                                }
+                                else {
+                                    return matched;
+                                }
+                            }
+                            return matched;
+                        }
+                    }
+            );
+        }
+    }
+
+    private static class UniqunessPreference implements IndexPreference {
+        @Override
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+            Collection<Index> unique = new ArrayList<Index>();
+            Collection<Index> nonUnique = new ArrayList<Index>();
+            for (Index index : candidates) {
+                Collection<Index> addTo = index.isUnique() ? unique : nonUnique;
+                addTo.add(index);
+            }
+            return unique.isEmpty() ? nonUnique : unique;
+        }
+    }
+
+    private static class IndexSizePreference implements IndexPreference {
+        @Override
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+            return getBestBucket(candidates, columns, BucketSortOption.LOWER_IS_BETTER,
+                    new IndexBucketSorter() {
+                        @Override
+                        public int sortToBuckets(Index index, List<String> columns) {
+                            return index.getColumns().size();
+                        }
+                    }
+            );
+        }
+    }
+
+    private static class IndexNamePreference implements IndexPreference {
+        @Override
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+            Iterator<Index> iterator = candidates.iterator();
+            Index best = iterator.next();
+            while (iterator.hasNext()) {
+                Index contender = iterator.next();
+                if (contender.getIndexName().getName().compareTo(best.getIndexName().getName()) < 0) {
+                    best = contender;
+                }
+            }
+            return Collections.singleton(best);
+        }
+    }
+
+    private interface IndexBucketSorter {
+        int sortToBuckets(Index index, List<String> columns);
+    }
+
+    private enum BucketSortOption {
+        HIGHER_IS_BETTER,
+        LOWER_IS_BETTER
+    }
+
+    private static Collection<Index> getBestBucket(Collection<Index> candidates, List<String> columns,
+                                                   BucketSortOption sortOption, IndexBucketSorter sorter)
+    {
+        TreeMap<Integer,Collection<Index>> buckets = new TreeMap<Integer, Collection<Index>>();
+        for (Index index : candidates) {
+            final int key = sorter.sortToBuckets(index, columns);
+            Collection<Index> bucket = buckets.get(key);
+            if (bucket == null) {
+                bucket = new ArrayList<Index>();
+                buckets.put(1, bucket);
+            }
+            bucket.add(index);
+        }
+        return sortOption.equals(BucketSortOption.HIGHER_IS_BETTER)
+                ? buckets.lastEntry().getValue()
+                : buckets.firstEntry().getValue();
+    }
+
+    private static final List<IndexPreference> PREFERENCES =
+            Collections.unmodifiableList(Arrays.<IndexPreference>asList(
+                    new IdentityPreference(),
+                    new ColumnOrderPreference(),
+                    new UniqunessPreference(),
+                    new IndexSizePreference(),
+                    new IndexNamePreference()
+            ));
+
     /**
      * Find an index that contains all of the columns specified in the predicates, and no more.
      * If the primary key matches, it is always returned. Otherwise, if more than one index matches, an
@@ -194,62 +331,57 @@ public class Scanrows implements HapiProcessor, JmxManageable {
      * @return the index id
      * @throws HapiRequestException if the index can't be deduced
      */
-    private static int findIndexId(Table table, List<HapiGetRequest.Predicate> predicates) throws HapiRequestException {
-        List<String> columns = new ArrayList<String>();
-        for (HapiGetRequest.Predicate predicate : predicates) {
-            if (!table.getName().equals(predicate.getTableName())) {
-                throw new HapiRequestException(
-                        String.format("predicate %s must be against table %s", predicate, table.getName()),
-                        HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST
-                );
-            }
-            columns.add(predicate.getColumnName());
+    private static Index findIndex(Table table, List<HapiGetRequest.Predicate> predicates) throws HapiRequestException {
+        List<String> columns = predicateColumns(predicates, table.getName());
+
+        Index pk = findMatchingPK(table, columns);
+        if (pk != null) {
+            return pk;
         }
 
+        Collection<Index> candidateIndexes = getCandidateIndexes(table, columns);
+        if (candidateIndexes.isEmpty()) {
+            throw new HapiRequestException("no valid indexes found", UNSUPPORTED_REQUEST);
+        }
+        for (IndexPreference preference : PREFERENCES) {
+            candidateIndexes = preference.applyPreference(candidateIndexes, columns);
+            if (candidateIndexes.size() == 1) {
+                return candidateIndexes.iterator().next();
+            }
+        }
+        throw new HapiRequestException("too many indexes found: " + candidateIndexes, UNSUPPORTED_REQUEST);
+    }
+
+    private static Collection<Index> getCandidateIndexes(Table table, List<String> columns) {
+        List<Index> candidates = new ArrayList<Index>(table.getIndexes().size());
+        for (Index possible : table.getIndexes()) {
+            if (indexIsCandidate(possible, columns)) {
+                candidates.add(possible);
+            }
+        }
+        return candidates;
+    }
+
+    private static Index findMatchingPK(Table table, List<String> columns) {
         if (table instanceof UserTable) {
             UserTable utable = (UserTable) table;
             PrimaryKey pk = utable.getPrimaryKey();
             if (pk != null) {
                 Index pkIndex = pk.getIndex();
-                if (allColumnsInIndex(pkIndex, columns)) {
-                    return pkIndex.getIndexId();
+                if (indexIsCandidate(pkIndex, columns)) {
+                    return pkIndex;
                 }
             }
         }
-        List<Index> candidateIndexes = new ArrayList<Index>(table.getIndexes());
-
-        Index bestMatch = null;
-        for (Index index : candidateIndexes) {
-            if (index.isPrimaryKey()) {
-                continue; // already saw it
-            }
-
-            if (allColumnsInIndex(index, columns)) {
-                if (bestMatch != null) {
-                    throw new HapiRequestException(
-                            String.format("Can't guess index; between %s and %s",
-                                    bestMatch.getIndexName(), index.getIndexName()
-                            ),
-                            HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST
-                    );
-                }
-                bestMatch = index;
-            }
-        }
-        if (bestMatch == null) {
-            throw new HapiRequestException("no appropriate index found",
-                    HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST
-            );
-        }
-        return bestMatch.getIndexId();
+        return null;
     }
 
-    private static boolean allColumnsInIndex(Index index, List<String> columns) {
+    static boolean indexIsCandidate(Index index, List<String> columns) {
         List<String> indexColumns = new ArrayList<String>(index.getColumns().size());
         for (IndexColumn indexColumn : index.getColumns()) {
             indexColumns.add(indexColumn.getColumn().getName());
         }
-        return indexColumns.equals(columns);
+        return indexColumns.subList(0, columns.size()).containsAll(columns);
     }
 
     @Override
