@@ -19,7 +19,7 @@
             "lastname varchar(32)",
             "CONSTRAINT __akiban_fk_c1 FOREIGN KEY __akiban_fk_c1 (pid) REFERENCES p1(pid)",
             "UNIQUE KEY name_by_last(lastname, firstname, midinitial)",
-            "UNIQUE KEY name_by_first(firstname, lastname, midinitial DESC)"
+            "UNIQUE KEY name_by_first(firstname, lastname, midinitial)"
         ]
     ],
 
@@ -84,17 +84,17 @@
         {
             "@c1" : [
                 {
+                    "cid" : 2,
+                    "pid" : 1,
+                    "firstname"  : "John",
+                    "midinitial" : "A",
+                    "lastname"   : "Public"
+                },
+                {
                     "cid" : 1,
                     "pid" : 1,
                     "firstname"  : "John",
                     "midinitial" : "Q",
-                    "lastname"   : "Public"
-                },
-                {
-                    "cid" : 2,
-                    "pid" : 2,
-                    "firstname"  : "John",
-                    "midinitial" : "A",
                     "lastname"   : "Public"
                 }
             ]
