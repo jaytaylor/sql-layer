@@ -89,13 +89,28 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         final NewRow start;
         final NewRow end;
         final EnumSet<ScanFlag> scanFlags;
+        private final DDLFunctions ddlFunctions;
+        private final Index index;
+        private final Session session;
         private Integer bookendColumnId = null;
         boolean foundInequality = false;
 
-        RowDataStruct(int tableId, RowDef rowDef) {
+        RowDataStruct(DDLFunctions ddlFunctions, Session session, Index index, HapiGetRequest request)
+                throws HapiRequestException
+        {
+            int tableId = index.getTable().getTableId();
+            final RowDef rowDef;
+            try {
+                rowDef = ddlFunctions.getRowDef(tableId);
+            } catch (NoSuchTableException e) {
+                throw new HapiRequestException("internal error; tableId" + tableId, INTERNAL_ERROR);
+            }
+            this.ddlFunctions = ddlFunctions;
+            this.index = index;
+            this.session = session;
+            scanFlags = EnumSet.noneOf(ScanFlag.class);
             start = new NiceRow(tableId, rowDef);
             end = new NiceRow(tableId, rowDef);
-            scanFlags = EnumSet.noneOf(ScanFlag.class);
         }
 
         int scanFlagsInt() {
@@ -110,11 +125,23 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             return end.toRowData();
         }
 
-        void putEquality(Table table, HapiGetRequest.Predicate predicate) throws HapiRequestException {
+        Table selectTable() {
+            return index.getTable();
+        }
 
+        int indexId() {
+            return index.getIndexId();
+        }
+
+        byte[] columnBitmap() {
+            return scanAllColumns(selectTable());
+        }
+
+        void putEquality(HapiGetRequest.Predicate predicate) throws HapiRequestException {
             if (foundInequality) {
                 unsupported("may not combine equality with inequality");
             }
+            Table table = index.getTable();
             scanFlags.remove(ScanFlag.START_AT_BEGINNING);
             scanFlags.remove(ScanFlag.END_AT_END);
 
@@ -125,13 +152,13 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             putPredicate(table, predicate, end);
         }
 
-        void putBookend(Table table, HapiGetRequest.Predicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
+        void putBookend(HapiGetRequest.Predicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
                 throws HapiRequestException
         {
             if(!scanFlags.remove(flagToRemove)) {
                 unsupported("multiple inequality predicates must define range on a single column");
             }
-            int putColumn = putPredicate(table, predicate, bookendRow);
+            int putColumn = putPredicate(index.getTable(), predicate, bookendRow);
             if (bookendColumnId == null) {
                 bookendColumnId = putColumn;
             }
@@ -160,18 +187,18 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                                Outputter outputter, OutputStream outputStream) throws HapiRequestException
     {
         try {
-            final int tableId;
-            final Index index;
-            final byte[] columnBitMap;
+            RowDataStruct range = getScanRange(session, request);
 
-            Table table = ddlFunctions.getTable(session, request.getUsingTable());
-            tableId = table.getTableId();
-            index = findHapiRequestIndex(session, request);
-            columnBitMap = scanAllColumns(table);
-            RowDataStruct range = getScanRange(index, request);
-
+//            LegacyScanRequest scanRequest = new LegacyScanRequest(
+//                    tableId, range.start(), range.end(), columnBitMap, index.getIndexId(), range.scanFlagsInt());
             LegacyScanRequest scanRequest = new LegacyScanRequest(
-                    tableId, range.start(), range.end(), columnBitMap, index.getIndexId(), range.scanFlagsInt());
+                    range.selectTable().getTableId(),
+                    range.start(),
+                    range.end(),
+                    range.columnBitmap(),
+                    range.indexId(),
+                    range.scanFlagsInt()
+            );
             List<RowData> rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
 
             outputter.output(
@@ -200,12 +227,14 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         return buffer;
     }
 
-    private RowDataStruct getScanRange(Index index, HapiGetRequest request)
+    private RowDataStruct getScanRange(Session session, HapiGetRequest request)
             throws HapiRequestException, NoSuchTableException
     {
-        final Table table = index.getTable();
-        final TableName tableName = table.getName();
-        RowDataStruct ret = new RowDataStruct(table.getTableId(), ddlFunctions.getRowDef(table.getTableId()));
+//        final Table table = index.getTable();
+//        final TableName tableName = table.getName();
+//        RowDataStruct ret = new RowDataStruct(table.getTableId(), ddlFunctions.getRowDef(table.getTableId()));
+        Index index = findHapiRequestIndex(session, request);
+        RowDataStruct ret = new RowDataStruct(ddlFunctions, session, index, request);
 
         assert ret.scanFlags.isEmpty() : ret.scanFlags;
         ret.scanFlags.add(ScanFlag.START_AT_BEGINNING);
@@ -213,23 +242,21 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         ret.scanFlags.add(ScanFlag.DEEP);
 
         for (HapiGetRequest.Predicate predicate : request.getPredicates()) {
-            assert tableName.equals(predicate.getTableName()) : table.getName() + " != " + predicate.getTableName();
-
             switch (predicate.getOp()) {
                 case EQ:
-                    ret.putEquality(table, predicate);
+                    ret.putEquality(predicate);
                     break;
                 case GT:
                     ret.scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
                     // fall through
                 case GTE:
-                    ret.putBookend(table, predicate, ret.start, ScanFlag.START_AT_BEGINNING);
+                    ret.putBookend(predicate, ret.start, ScanFlag.START_AT_BEGINNING);
                     break;
                 case LT:
                     ret.scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
                     // fall through
                 case LTE:
-                    ret.putBookend(table, predicate, ret.end, ScanFlag.END_AT_END);
+                    ret.putBookend(predicate, ret.end, ScanFlag.END_AT_END);
                     break;
                 default:
                     unsupported(predicate.getOp() + " not supported");
