@@ -112,7 +112,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     public void processRequest(Session session, HapiGetRequest request,
                                Outputter outputter, OutputStream outputStream) throws HapiRequestException
     {
-        //    public LegacyScanRequest(int tableId, RowData start, RowData end, byte[] columnBitMap, int indexId, int scanFlags)
         try {
             final int tableId;
             final Index index;
@@ -121,7 +120,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             TableName tableName = new TableName(request.getSchema(), request.getTable());
             Table table = ddlFunctions.getTable(session, tableName);
             tableId = table.getTableId();
-            index = findIndex(table, request.getPredicates());
+            index = findHapiRequestIndex(session, request);
             columnBitMap = scanAllColumns(table);
             RowDataStruct range = getScanRange(table, request);
 
@@ -209,19 +208,22 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     }
 
     private interface IndexPreference {
-        Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns);
+        Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
+                                          List<HapiGetRequest.Predicate> predicates);
     }
 
     private static class IdentityPreference implements IndexPreference {
         @Override
-        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
+                                                 List<HapiGetRequest.Predicate> predicates) {
             return candidates;
         }
     }
 
     private static class ColumnOrderPreference implements IndexPreference {
         @Override
-        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
+                                                 List<HapiGetRequest.Predicate> predicates) {
             return getBestBucket(candidates, columns, BucketSortOption.HIGHER_IS_BETTER,
                     new IndexBucketSorter() {
                         @Override
@@ -246,11 +248,23 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     private static class UniqunessPreference implements IndexPreference {
         @Override
-        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
+                                                 List<HapiGetRequest.Predicate> predicates) {
+            for (HapiGetRequest.Predicate predicate : predicates) {
+                if (!predicate.getOp().equals(HapiGetRequest.Predicate.Operator.EQ)) {
+                    return candidates;
+                }
+            }
             Collection<Index> unique = new ArrayList<Index>();
             Collection<Index> nonUnique = new ArrayList<Index>();
             for (Index index : candidates) {
-                Collection<Index> addTo = index.isUnique() ? unique : nonUnique;
+                final Collection<Index> addTo;
+                if (index.isUnique()) {
+                    addTo = indexColumns(index).containsAll(columns) ? unique : nonUnique;
+                }
+                else {
+                    addTo = nonUnique;
+                }
                 addTo.add(index);
             }
             return unique.isEmpty() ? nonUnique : unique;
@@ -259,7 +273,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     private static class IndexSizePreference implements IndexPreference {
         @Override
-        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
+                                                 List<HapiGetRequest.Predicate> predicates) {
             return getBestBucket(candidates, columns, BucketSortOption.LOWER_IS_BETTER,
                     new IndexBucketSorter() {
                         @Override
@@ -273,7 +288,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     private static class IndexNamePreference implements IndexPreference {
         @Override
-        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns) {
+        public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
+                                                 List<HapiGetRequest.Predicate> predicates) {
             Iterator<Index> iterator = candidates.iterator();
             Index best = iterator.next();
             while (iterator.hasNext()) {
@@ -330,20 +346,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         } catch (NoSuchTableException e) {
             throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
         }
-        return findIndex(table, request.getPredicates());
-    }
 
-    /**
-     * Find an index that contains all of the columns specified in the predicates, and no more.
-     * If the primary key matches, it is always returned. Otherwise, if more than one index matches, an
-     * exception is thrown.
-     * @param table the table to look in
-     * @param predicates the predicates; each one's table name must match the given table
-     * @return the index id
-     * @throws HapiRequestException if the index can't be deduced
-     */
-    private static Index findIndex(Table table, List<HapiGetRequest.Predicate> predicates) throws HapiRequestException {
-        List<String> columns = predicateColumns(predicates, table.getName());
+        List<String> columns = predicateColumns(request.getPredicates(), table.getName());
 
         Index pk = findMatchingPK(table, columns);
         if (pk != null) {
@@ -355,7 +359,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             throw new HapiRequestException("no valid indexes found", UNSUPPORTED_REQUEST);
         }
         for (IndexPreference preference : PREFERENCES) {
-            candidateIndexes = preference.applyPreference(candidateIndexes, columns);
+            candidateIndexes = preference.applyPreference(candidateIndexes, columns, null);
             if (candidateIndexes.size() == 1) {
                 return candidateIndexes.iterator().next();
             }
@@ -389,12 +393,17 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     }
 
     static boolean indexIsCandidate(Index index, List<String> columns) {
+        List<String> indexColumns = indexColumns(index);
+        return indexColumns.size() >= columns.size()
+                && indexColumns.subList(0, columns.size()).containsAll(columns);
+    }
+
+    private static List<String> indexColumns(Index index) {
         List<String> indexColumns = new ArrayList<String>(index.getColumns().size());
         for (IndexColumn indexColumn : index.getColumns()) {
             indexColumns.add(indexColumn.getColumn().getName());
         }
-        return indexColumns.size() >= columns.size()
-                && indexColumns.subList(0, columns.size()).containsAll(columns);
+        return indexColumns;
     }
 
     @Override
