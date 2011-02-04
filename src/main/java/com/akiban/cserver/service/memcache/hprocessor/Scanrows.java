@@ -230,7 +230,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                             Iterator<String> colsIter = columns.iterator();
                             for (IndexColumn iCol : index.getColumns()) {
                                 String iColName = iCol.getColumn().getName();
-                                if (iColName.equals(colsIter.next())) {
+                                if (colsIter.hasNext() && iColName.equals(colsIter.next())) {
                                     ++matched;
                                 }
                                 else {
@@ -304,7 +304,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             Collection<Index> bucket = buckets.get(key);
             if (bucket == null) {
                 bucket = new ArrayList<Index>();
-                buckets.put(1, bucket);
+                buckets.put(key, bucket);
             }
             bucket.add(index);
         }
@@ -392,7 +392,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         for (IndexColumn indexColumn : index.getColumns()) {
             indexColumns.add(indexColumn.getColumn().getName());
         }
-        return indexColumns.subList(0, columns.size()).containsAll(columns);
+        return indexColumns.size() >= columns.size()
+                && indexColumns.subList(0, columns.size()).containsAll(columns);
     }
 
     @Override
