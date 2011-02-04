@@ -14,6 +14,7 @@
  */
 
 package com.akiban.cserver.api;
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.service.session.Session;
@@ -29,4 +30,5 @@ public interface HapiProcessor {
     }
 	public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
             throws HapiRequestException;
+    Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException;
 }

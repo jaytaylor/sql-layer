@@ -39,6 +39,7 @@
 "tests" : {
     "p1 nochildren" : {
         "get"           : "test:p1:status1=2,status2=4",
+        "expect index"  : "p1_multi",
         "expect result" :
         {
             "@p1" : [
@@ -54,6 +55,7 @@
 
     "lastname" : {
         "get"           : "test:c1:lastname=Public",
+        "expect index"  : "name_by_last",
         "expect result" :
         {
             "@c1" : [
@@ -77,6 +79,7 @@
 
     "firstname, lastname" : {
         "get"           : "test:c1:firstname=John,lastname=Public",
+        "expect index"  : "name_by_first",
         "expect result" :
         {
             "@c1" : [
@@ -105,6 +108,7 @@
 
     "with_depth" : {
         "get"           : "test:p1:(c1)firstname=John",
+        "expect index"  : "name_by_first",
         "comment"       : "should use index c1.name_by_first",
         "expect result" :
         {

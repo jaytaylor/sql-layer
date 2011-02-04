@@ -15,6 +15,7 @@
 
 package com.akiban.cserver.service.memcache.hprocessor;
 
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiGetRequest;
@@ -141,5 +142,10 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         throw new HapiRequestException(String.format(format, args),
                 HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST
         );
+    }
+
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        return null;
     }
 }

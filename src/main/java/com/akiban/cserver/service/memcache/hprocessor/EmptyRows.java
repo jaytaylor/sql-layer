@@ -15,6 +15,7 @@
 
 package com.akiban.cserver.service.memcache.hprocessor;
 
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
@@ -47,5 +48,10 @@ public class EmptyRows implements HapiProcessor {
         } catch (IOException e) {
             throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }
+    }
+
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        return null;
     }
 }

@@ -322,6 +322,17 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                     new IndexNamePreference()
             ));
 
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        final Table table;
+        try {
+            table = ddlFunctions.getTable(session, request.getUsingTable());
+        } catch (NoSuchTableException e) {
+            throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
+        }
+        return findIndex(table, request.getPredicates());
+    }
+
     /**
      * Find an index that contains all of the columns specified in the predicates, and no more.
      * If the primary key matches, it is always returned. Otherwise, if more than one index matches, an

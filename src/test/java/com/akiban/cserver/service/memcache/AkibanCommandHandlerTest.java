@@ -15,6 +15,7 @@
 
 package com.akiban.cserver.service.memcache;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
@@ -67,6 +68,11 @@ public final class AkibanCommandHandlerTest {
             } catch (IOException e) {
                 throw new RuntimeException("unexpected", e);
             }
+        }
+
+        @Override
+        public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+            return null;
         }
     }
 

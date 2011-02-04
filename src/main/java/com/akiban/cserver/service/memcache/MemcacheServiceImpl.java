@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
@@ -97,6 +98,13 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
 
         processor.processRequest(session, request, outputter, outputStream);
+    }
+
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
+
+        return processor.findHapiRequestIndex(session, request);
     }
 
     @Override

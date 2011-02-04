@@ -15,6 +15,7 @@
 
 package com.akiban.cserver.itests.hapi;
 
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
@@ -168,10 +169,11 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String TEST_GET = "get";
     private static final String TEST_EXPECT = "expect result";
     private static final String TEST_ERROR = "expect error";
+    private static final String TEST_INDEX = "expect index";
     private static final String TEST_PROCESSORS = "processors";
     private static final String[] TEST_KEYS_REQUIRED = {TEST_GET};
     private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING, TEST_EXPECT, TEST_ERROR,
-                                                        COMMENT, TEST_PROCESSORS};
+                                                        COMMENT, TEST_PROCESSORS, TEST_INDEX};
     private static final String[] DEFAULT_TEST_PROCESSORS = {"FETCHROWS", "SCANROWS"};
 
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
@@ -233,12 +235,14 @@ public final class JsonHapiIT extends ApiTestBase {
         final String getQuery;
         final Object expect;
         final HapiRequestException.ReasonCode errorExpect;
+        final String expectIndexName;
 
-        private TestRunInfo(boolean writeRows, String getQuery, Object expect, String errorExpect) {
+        private TestRunInfo(boolean writeRows, String getQuery, Object expect, String errorExpect, String expectIndex) {
             this.writeRows = writeRows;
             this.getQuery = getQuery;
             this.expect = expect;
             this.errorExpect = errorExpect == null ? null : HapiRequestException.ReasonCode.valueOf(errorExpect);
+            this.expectIndexName = expectIndex;
         }
 
         @Override
@@ -347,7 +351,7 @@ public final class JsonHapiIT extends ApiTestBase {
         }
         List<String> ret = new ArrayList<String>();
         for(int i=0, len=array.length(); i < len; ++i) {
-            ret.add( array.getString(i) );
+            ret.add(array.getString(i));
         }
         return ret;
     }
@@ -357,12 +361,13 @@ public final class JsonHapiIT extends ApiTestBase {
         final String get = test.getString(TEST_GET);
         final Object expect = test.opt(TEST_EXPECT);
         final String error = test.optString(TEST_ERROR, null);
+        final String expectIndex = test.optString(TEST_INDEX, null);
         if ( (expect == null) == (error == null) ) {
             throw new RuntimeException(String.format("test '%s': you must set one (and only one) of '%s' or '%s'",
                     testName, TEST_EXPECT, TEST_ERROR
             ));
         }
-        return new TestRunInfo(writeRows, get, expect, error);
+        return new TestRunInfo(writeRows, get, expect, error, expectIndex);
     }
 
     private static TestSetupInfo extractTestSetupInfo(JSONObject setupJSON) throws JSONException {
@@ -464,13 +469,35 @@ public final class JsonHapiIT extends ApiTestBase {
         }
     }
 
+    @Test // @OnlyIf("shouldCheckIndex") TODO bug 713193. Remove the shouldCheckIndex() early-return below when fixed
+    public void correctIndex() throws HapiRequestException {
+        if (!shouldCheckIndex()) {
+            return;
+        }
+        
+        HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
+        Index expectedIndex = ddl().getAIS(session).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
+        assertNotNull(
+                String.format("no index %s on %s", runInfo.expectIndexName, request.getUsingTable()),
+                expectedIndex);
+        Index actualIndex = hapi(hapiProcessor).findHapiRequestIndex(session, request);
+        assertNotNull("HapiProcessor couldn't resolve index", actualIndex);
+        assertSame("index", expectedIndex, actualIndex);
+        assertEquals("index (expected " + runInfo.expectIndexName + ')',
+                expectedIndex.getIndexId(),
+                actualIndex.getIndexId());
+    }
+
+    private boolean shouldCheckIndex() {
+        return runInfo.expectIndexName != null;
+    }
+
     @Test
     public void get() throws JSONException, HapiRequestException, IOException {
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-            memcache().setHapiProcessor(hapiProcessor);
-            hapi().processRequest(session, request, JsonOutputter.instance(), outputStream);
+            hapi(hapiProcessor).processRequest(session, request, JsonOutputter.instance(), outputStream);
             outputStream.flush();
             String result = new String(outputStream.toByteArray());
             assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);
