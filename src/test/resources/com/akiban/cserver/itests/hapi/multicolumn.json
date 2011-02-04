@@ -61,7 +61,7 @@
             "@c1" : [
                 {
                     "cid" : 2,
-                    "pid" : 2,
+                    "pid" : 1,
                     "firstname"  : "John",
                     "midinitial" : "A",
                     "lastname"   : "Public"
@@ -149,6 +149,16 @@
                     ]
                 }
             ]
+        }
+    },
+
+    "with depth empty" :
+    {
+        "get"           : "test:p1:(c1)firstname=Nemo",
+        "expect index"  : "name_by_first",
+        "expect result" :
+        {
+            "@p1" : []
         }
     }
 }

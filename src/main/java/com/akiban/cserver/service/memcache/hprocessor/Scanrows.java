@@ -15,6 +15,7 @@
 
 package com.akiban.cserver.service.memcache.hprocessor;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.PrimaryKey;
@@ -88,6 +89,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         final NewRow start;
         final NewRow end;
         final EnumSet<ScanFlag> scanFlags;
+        private Integer bookendColumnId = null;
+        boolean foundInequality = false;
 
         RowDataStruct(int tableId, RowDef rowDef) {
             start = new NiceRow(tableId, rowDef);
@@ -106,6 +109,50 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         RowData end() {
             return end.toRowData();
         }
+
+        void putEquality(Table table, HapiGetRequest.Predicate predicate) throws HapiRequestException {
+
+            if (foundInequality) {
+                unsupported("may not combine equality with inequality");
+            }
+            scanFlags.remove(ScanFlag.START_AT_BEGINNING);
+            scanFlags.remove(ScanFlag.END_AT_END);
+
+            scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
+            scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
+
+            putPredicate(table, predicate, start);
+            putPredicate(table, predicate, end);
+        }
+
+        void putBookend(Table table, HapiGetRequest.Predicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
+                throws HapiRequestException
+        {
+            if(!scanFlags.remove(flagToRemove)) {
+                unsupported("multiple inequality predicates must define range on a single column");
+            }
+            int putColumn = putPredicate(table, predicate, bookendRow);
+            if (bookendColumnId == null) {
+                bookendColumnId = putColumn;
+            }
+            else if (putColumn != bookendColumnId) {
+                unsupported("multiple inequality predicates must define range on a single column");
+            }
+            foundInequality = true;
+        }
+
+        private static int putPredicate(Table table, HapiGetRequest.Predicate predicate, NewRow row)
+                throws HapiRequestException
+        {
+            Column column = table.getColumn(predicate.getColumnName());
+            if (column == null) {
+                unsupported("unknown column: " + predicate.getColumnName());
+                throw new AssertionError("above line should have thrown an exception");
+            }
+            int pos = column.getPosition();
+            row.put(pos, predicate.getValue());
+            return pos;
+        }
     }
 
     @Override
@@ -117,12 +164,11 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             final Index index;
             final byte[] columnBitMap;
 
-            TableName tableName = new TableName(request.getSchema(), request.getTable());
-            Table table = ddlFunctions.getTable(session, tableName);
+            Table table = ddlFunctions.getTable(session, request.getUsingTable());
             tableId = table.getTableId();
             index = findHapiRequestIndex(session, request);
             columnBitMap = scanAllColumns(table);
-            RowDataStruct range = getScanRange(table, request);
+            RowDataStruct range = getScanRange(index, request);
 
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     tableId, range.start(), range.end(), columnBitMap, index.getIndexId(), range.scanFlagsInt());
@@ -154,33 +200,48 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         return buffer;
     }
 
-    private RowDataStruct getScanRange(Table table, HapiGetRequest request)
+    private RowDataStruct getScanRange(Index index, HapiGetRequest request)
             throws HapiRequestException, NoSuchTableException
     {
-        if (request.getPredicates().size() != 1) {
-            throw new UnsupportedOperationException();
-        }
-        HapiGetRequest.Predicate predicate = request.getPredicates().get(0);
-        if (!table.getName().equals(predicate.getTableName())) {
-            throw new UnsupportedOperationException();
-        }
-        if (!predicate.getOp().equals(HapiGetRequest.Predicate.Operator.EQ)) {
-            throw new UnsupportedOperationException();
-        }
-
+        final Table table = index.getTable();
+        final TableName tableName = table.getName();
         RowDataStruct ret = new RowDataStruct(table.getTableId(), ddlFunctions.getRowDef(table.getTableId()));
 
-        ret.start.put( column(table, predicate), predicate.getValue() );
-        ret.end.put( column(table, predicate), predicate.getValue() );
-        ret.scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
-        ret.scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
+        assert ret.scanFlags.isEmpty() : ret.scanFlags;
+        ret.scanFlags.add(ScanFlag.START_AT_BEGINNING);
+        ret.scanFlags.add(ScanFlag.END_AT_END);
         ret.scanFlags.add(ScanFlag.DEEP);
+
+        for (HapiGetRequest.Predicate predicate : request.getPredicates()) {
+            assert tableName.equals(predicate.getTableName()) : table.getName() + " != " + predicate.getTableName();
+
+            switch (predicate.getOp()) {
+                case EQ:
+                    ret.putEquality(table, predicate);
+                    break;
+                case GT:
+                    ret.scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
+                    // fall through
+                case GTE:
+                    ret.putBookend(table, predicate, ret.start, ScanFlag.START_AT_BEGINNING);
+                    break;
+                case LT:
+                    ret.scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
+                    // fall through
+                case LTE:
+                    ret.putBookend(table, predicate, ret.end, ScanFlag.END_AT_END);
+                    break;
+                default:
+                    unsupported(predicate.getOp() + " not supported");
+                    break;
+            }
+        }
 
         return ret;
     }
 
-    private static int column(Table table, HapiGetRequest.Predicate predicate) {
-        return table.getColumn(predicate.getColumnName()).getPosition();
+    private static void unsupported(String message) throws HapiRequestException {
+        throw new HapiRequestException(message, UNSUPPORTED_REQUEST);
     }
 
     private static byte[] scanAllColumns(Table table) {
