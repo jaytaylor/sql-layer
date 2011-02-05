@@ -125,6 +125,30 @@ public final class NamedParameterizedRunner extends Suite
             return null;
         }
 
+        /**
+         * For debugging
+         * @return the number of children in this runner
+         */
+        int getChildrenCount() {
+            return getChildren().size();
+        }
+
+        /**
+         * For debugging (and only for assertion messages)
+         * @return shows human-readable info about the children
+         */
+        String describeChildren() {
+            List<FrameworkMethod> children = getChildren();
+            if (children == null) {
+                return "null";
+            }
+            List<String> descriptions = new ArrayList<String>(children.size());
+            for (FrameworkMethod method : children) {
+                descriptions.add( method.getName() );
+            }
+            return descriptions.toString();
+        }
+
         @Override
         public Object createTest() throws Exception
         {
