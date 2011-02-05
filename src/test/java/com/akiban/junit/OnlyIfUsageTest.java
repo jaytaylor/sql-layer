@@ -34,7 +34,7 @@ public final class OnlyIfUsageTest {
     }
 
     @SuppressWarnings("unused") // via junit reflection
-    private boolean isFoo() {
+    public boolean isFoo() {
         return "foo".equals(string);
     }
 }

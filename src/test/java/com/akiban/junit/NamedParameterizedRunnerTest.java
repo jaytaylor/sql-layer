@@ -104,7 +104,7 @@ public final class NamedParameterizedRunnerTest
         }
 
         @SuppressWarnings("unused") // via junit reflection
-        boolean is1() {
+        public boolean is1() {
             return number == 1;
         }
     }
