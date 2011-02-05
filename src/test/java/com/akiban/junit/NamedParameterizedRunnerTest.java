@@ -103,7 +103,6 @@ public final class NamedParameterizedRunnerTest
             assertEquals("number", 1, number);
         }
 
-        @SuppressWarnings("unused") // via junit reflection
         public boolean is1() {
             return number == 1;
         }

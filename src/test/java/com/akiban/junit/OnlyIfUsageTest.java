@@ -33,7 +33,6 @@ public final class OnlyIfUsageTest {
         assertNotNull("string", string);
     }
 
-    @SuppressWarnings("unused") // via junit reflection
     public boolean isFoo() {
         return "foo".equals(string);
     }
