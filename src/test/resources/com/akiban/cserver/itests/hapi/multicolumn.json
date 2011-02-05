@@ -30,8 +30,8 @@
                     [4, 2, 4]
         ],
         "c1"    : [ [1, 1, "John", "Q", "Public"],
-                    [2, 1, "John", "A", "Public"],
-                    [3, 3, "John", "B", "Good"]
+                    [2, 3, "John", "B", "Good"],
+                    [3, 1, "John", "A", "Public"]
         ]
     }
 },
@@ -60,7 +60,7 @@
         {
             "@c1" : [
                 {
-                    "cid" : 2,
+                    "cid" : 3,
                     "pid" : 1,
                     "firstname"  : "John",
                     "midinitial" : "A",
@@ -84,7 +84,7 @@
         {
             "@c1" : [
                 {
-                    "cid" : 2,
+                    "cid" : 3,
                     "pid" : 1,
                     "firstname"  : "John",
                     "midinitial" : "A",
@@ -119,7 +119,7 @@
                     "status2" : 3,
                     "@c1" : [
                         {
-                            "cid" : 3,
+                            "cid" : 2,
                             "pid" : 3,
                             "firstname" : "John",
                             "midinitial": "B",
@@ -133,14 +133,14 @@
                     "status2" : 2,
                     "@c1" : [
                         {
-                            "cid" : 2,
+                            "cid" : 3,
                             "pid" : 1,
                             "firstname" : "John",
                             "midinitial": "A",
                             "lastname"  : "Public"
                         },
                         {
-                            "cid" : 3,
+                            "cid" : 1,
                             "pid" : 1,
                             "firstname" : "John",
                             "midinitial": "Q",
@@ -159,6 +159,39 @@
         "expect result" :
         {
             "@p1" : []
+        }
+    },
+
+    "all children by id" :
+    {
+        "get"           : "test:c1:cid>0",
+        "expect index"  : "PRIMARY",
+        "expect result" :
+        {
+            "@c1" :
+            [
+                {
+                    "cid" : 1,
+                    "pid" : 1,
+                    "firstname" : "John",
+                    "midinitial": "Q",
+                    "lastname"  : "Public"
+                },
+                {
+                    "cid" : 2,
+                    "pid" : 3,
+                    "firstname" : "John",
+                    "midinitial": "B",
+                    "lastname"  : "Good"
+                },
+                {
+                    "cid" : 3,
+                    "pid" : 1,
+                    "firstname" : "John",
+                    "midinitial": "A",
+                    "lastname"  : "Public"
+                }
+            ]
         }
     }
 }

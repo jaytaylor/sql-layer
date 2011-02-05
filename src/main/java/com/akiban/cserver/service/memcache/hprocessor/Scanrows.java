@@ -86,28 +86,35 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private final DMLFunctions dmlFunctions = new DMLFunctionsImpl(ddlFunctions);
 
     private static class RowDataStruct {
-        final NewRow start;
-        final NewRow end;
         final EnumSet<ScanFlag> scanFlags;
-        private final DDLFunctions ddlFunctions;
+
+        private final NewRow start;
+        private final NewRow end;
         private final Index index;
-        private final Session session;
+        private final boolean needGroupTable;
+        private final HapiGetRequest request;
+
         private Integer bookendColumnId = null;
         boolean foundInequality = false;
 
-        RowDataStruct(DDLFunctions ddlFunctions, Session session, Index index, HapiGetRequest request)
+        RowDataStruct(DDLFunctions ddlFunctions, Index index, HapiGetRequest request)
                 throws HapiRequestException
         {
-            int tableId = index.getTable().getTableId();
+            this.request = request;
+            TableName tableName = index.getTable().getName();
+            needGroupTable = !  (tableName.getSchemaName().equals(request.getSchema())
+                    && tableName.getTableName().equals(request.getTable()));
+
+            int tableId = needGroupTable
+                    ? index.getTable().getGroup().getGroupTable().getTableId()
+                    : index.getTable().getTableId();
             final RowDef rowDef;
             try {
                 rowDef = ddlFunctions.getRowDef(tableId);
             } catch (NoSuchTableException e) {
                 throw new HapiRequestException("internal error; tableId" + tableId, INTERNAL_ERROR);
             }
-            this.ddlFunctions = ddlFunctions;
             this.index = index;
-            this.session = session;
             scanFlags = EnumSet.noneOf(ScanFlag.class);
             start = new NiceRow(tableId, rowDef);
             end = new NiceRow(tableId, rowDef);
@@ -125,11 +132,21 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             return end.toRowData();
         }
 
+        private boolean needGroupTable() {
+            return needGroupTable;
+        }
+
         Table selectTable() {
-            return index.getTable();
+            Table table = index.getTable();
+            if (needGroupTable()) {
+                table = table.getGroup().getGroupTable();
+            }
+            return table;
         }
 
         int indexId() {
+//            return needGroupTable() ?
+//                    index.
             return index.getIndexId();
         }
 
@@ -141,15 +158,14 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             if (foundInequality) {
                 unsupported("may not combine equality with inequality");
             }
-            Table table = index.getTable();
             scanFlags.remove(ScanFlag.START_AT_BEGINNING);
             scanFlags.remove(ScanFlag.END_AT_END);
 
             scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
             scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
 
-            putPredicate(table, predicate, start);
-            putPredicate(table, predicate, end);
+            putPredicate(predicate, start);
+            putPredicate(predicate, end);
         }
 
         void putBookend(HapiGetRequest.Predicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
@@ -158,7 +174,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             if(!scanFlags.remove(flagToRemove)) {
                 unsupported("multiple inequality predicates must define range on a single column");
             }
-            int putColumn = putPredicate(index.getTable(), predicate, bookendRow);
+            int putColumn = putPredicate(predicate, bookendRow);
             if (bookendColumnId == null) {
                 bookendColumnId = putColumn;
             }
@@ -168,13 +184,17 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             foundInequality = true;
         }
 
-        private static int putPredicate(Table table, HapiGetRequest.Predicate predicate, NewRow row)
+        private int putPredicate(HapiGetRequest.Predicate predicate, NewRow row)
                 throws HapiRequestException
         {
-            Column column = table.getColumn(predicate.getColumnName());
+            Table uTable = index.getTable();
+            Column column = uTable.getColumn(predicate.getColumnName());
             if (column == null) {
                 unsupported("unknown column: " + predicate.getColumnName());
                 throw new AssertionError("above line should have thrown an exception");
+            }
+            if(needGroupTable()) {
+                column = column.getGroupColumn();
             }
             int pos = column.getPosition();
             row.put(pos, predicate.getValue());
@@ -189,8 +209,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         try {
             RowDataStruct range = getScanRange(session, request);
 
-//            LegacyScanRequest scanRequest = new LegacyScanRequest(
-//                    tableId, range.start(), range.end(), columnBitMap, index.getIndexId(), range.scanFlagsInt());
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     range.selectTable().getTableId(),
                     range.start(),
@@ -230,11 +248,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private RowDataStruct getScanRange(Session session, HapiGetRequest request)
             throws HapiRequestException, NoSuchTableException
     {
-//        final Table table = index.getTable();
-//        final TableName tableName = table.getName();
-//        RowDataStruct ret = new RowDataStruct(table.getTableId(), ddlFunctions.getRowDef(table.getTableId()));
         Index index = findHapiRequestIndex(session, request);
-        RowDataStruct ret = new RowDataStruct(ddlFunctions, session, index, request);
+        RowDataStruct ret = new RowDataStruct(ddlFunctions, index, request);
 
         assert ret.scanFlags.isEmpty() : ret.scanFlags;
         ret.scanFlags.add(ScanFlag.START_AT_BEGINNING);
