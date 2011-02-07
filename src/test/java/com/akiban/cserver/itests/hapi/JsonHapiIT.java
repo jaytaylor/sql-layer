@@ -17,7 +17,6 @@ package com.akiban.cserver.itests.hapi;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;

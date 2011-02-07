@@ -164,6 +164,9 @@
 
     "all children by id" :
     {
+        "passing"       : false,
+        "comment"       : "bug 714771",
+        
         "get"           : "test:c1:cid>0",
         "expect index"  : "PRIMARY",
         "expect result" :
