@@ -80,6 +80,21 @@ public final class NamedParameterizedRunner extends Suite
     {
         private final Parameterization parameterization;
         private final boolean overrideOn;
+        private Object testObject = null;
+
+        private static class OnlyIfErrorFrameworkMethod extends FrameworkMethod {
+            private final OnlyIfException exception;
+
+            private OnlyIfErrorFrameworkMethod(Method method, OnlyIfException exception) {
+                super(method);
+                this.exception = exception;
+            }
+
+            @Override
+            public Object invokeExplosively(Object target, Object... params) throws Throwable {
+                throw exception;
+            }
+        }
 
         public ReifiedParamRunner(Class<?> klass, Parameterization parameterization, boolean overrideOn)
                 throws InitializationError
@@ -125,17 +140,61 @@ public final class NamedParameterizedRunner extends Suite
             return null;
         }
 
+        /**
+         * For debugging
+         * @return the number of children in this runner
+         */
+        int getChildrenCount() {
+            return getChildren().size();
+        }
+
+        /**
+         * For debugging (and only for assertion messages)
+         * @return shows human-readable info about the children
+         */
+        String describeChildren() {
+            List<FrameworkMethod> children = getChildren();
+            if (children == null) {
+                return "null";
+            }
+            List<String> descriptions = new ArrayList<String>(children.size());
+            for (FrameworkMethod method : children) {
+                descriptions.add( method.getName() );
+            }
+            return descriptions.toString();
+        }
+
         @Override
         public Object createTest() throws Exception
         {
+            if (testObject != null) {
+                return testObject;
+            }
             try
             {
-                return getTestClass().getOnlyConstructor().newInstance(parameterization.getArguments());
+                testObject = getTestClass().getOnlyConstructor().newInstance(parameterization.getArguments());
+                return testObject;
             }
             catch(IllegalArgumentException e)
             {
                 throw new IllegalArgumentException("parameters: " + Arrays.toString(parameterization.getArguments()), e);
             }
+        }
+
+        @Override
+        protected List<FrameworkMethod> getChildren() {
+            List<FrameworkMethod> ret = super.getChildren();
+            for(ListIterator<FrameworkMethod> iter = ret.listIterator(); iter.hasNext(); ) {
+                FrameworkMethod frameworkMethod = iter.next();
+                try {
+                    if (onlyIfSaysNo(frameworkMethod)) {
+                        iter.remove();
+                    }
+                } catch (OnlyIfException e) {
+                    iter.set(new OnlyIfErrorFrameworkMethod(frameworkMethod.getMethod(), e));
+                }
+            }
+            return ret;
         }
 
         @Override
@@ -172,6 +231,47 @@ public final class NamedParameterizedRunner extends Suite
             else
             {
                 notifier.fireTestIgnored( describeChild(method));
+            }
+        }
+
+        private static class OnlyIfException extends Exception {
+            private OnlyIfException(String message, Throwable cause) {
+                super(message, cause);
+            }
+
+            private OnlyIfException(String message) {
+                super(message);
+            }
+        }
+
+        boolean onlyIfSaysNo(FrameworkMethod method) throws OnlyIfException {
+            OnlyIf onlyIf = method.getAnnotation(OnlyIf.class);
+            if (onlyIf == null) {
+                return false;
+            }
+
+            Class<?> testClass = getTestClass().getJavaClass();
+            final Method onlyIfMethod;
+            final Object result;
+
+            try {
+                onlyIfMethod = testClass.getMethod(onlyIf.value());
+            } catch (NoSuchMethodException e) {
+                throw new OnlyIfException("no such method: public boolean " + onlyIf.value() + "()", e);
+            }
+            if (!onlyIfMethod.getReturnType().equals(boolean.class)) {
+                throw new OnlyIfException("no such method: public boolean " + onlyIf.value() + "()");
+            }
+            try {
+                Object test = createTest();
+                result = onlyIfMethod.invoke(test);
+            } catch (Exception e) {
+                throw new OnlyIfException("couldn't invoke " + onlyIf.value() + "()", e);
+            }
+            try {
+                return ! ((Boolean)result);
+            } catch (ClassCastException e) {
+                throw new OnlyIfException("method " + onlyIf.value() + "() didn't return boolean", e);
             }
         }
 
