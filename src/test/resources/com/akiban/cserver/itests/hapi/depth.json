@@ -196,7 +196,7 @@
         }
     },
 
-    "nonunique fromm predicate's parent" : {
+    "nonunique from predicate's parent" : {
         "processors"    : ["scanrows"],
 
         "get"           : "coi:customer:(orders)when='1%2F1%2F2001'",
