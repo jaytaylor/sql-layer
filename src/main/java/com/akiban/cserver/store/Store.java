@@ -29,6 +29,7 @@ import com.akiban.cserver.message.ScanRowsRequest;
 import com.akiban.cserver.service.Service;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
 /**
  * An abstraction for a layer that stores and retrieves data

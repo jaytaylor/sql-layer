@@ -26,6 +26,7 @@ import com.akiban.cserver.api.dml.ColumnSelector;
 import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
+import com.persistit.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -50,14 +51,8 @@ import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.tree.TreeService;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Tap;
-import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.KeyState;
 import com.persistit.Management.DisplayFilter;
-import com.persistit.Persistit;
-import com.persistit.Transaction;
 import com.persistit.Transaction.CommitListener;
-import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
@@ -103,9 +98,9 @@ public class PersistitStore implements CServerConstants, Store {
 
     private boolean deferIndexes = false;
 
-    private RowDefCache rowDefCache;
+    RowDefCache rowDefCache;
 
-    private TreeService treeService;
+    TreeService treeService;
 
     private SchemaManager schemaManager;
 
@@ -1490,5 +1485,20 @@ public class PersistitStore implements CServerConstants, Store {
     @Override
     public void setDeferIndexes(final boolean defer) {
         deferIndexes = defer;
+    }
+
+    public void traverse(Session session, RowDef rowDef, TreeRecordVisitor visitor)
+        throws PersistitException, InvalidOperationException
+    {
+        assert rowDef.isGroupTable() : rowDef;
+        Exchange exchange = getExchange(session, rowDef, null).append(Key.BEFORE);
+        try {
+            visitor.initialize(this, exchange);
+            while (exchange.next(true)) {
+                visitor.visit();
+            }
+        } finally {
+            releaseExchange(session, exchange);
+        }
     }
 }

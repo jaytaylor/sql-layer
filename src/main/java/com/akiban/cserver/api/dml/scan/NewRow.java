@@ -42,6 +42,15 @@ public abstract class NewRow {
     protected final RowDef rowDef;
 
     /**
+     * Gets the RowDef for the row.
+     * @return the RowDef
+     */
+    public final RowDef getRowDef()
+    {
+        return rowDef;
+    }
+
+    /**
      * Puts a value into the row. Optional operation.
      * @param index the column to insert into
      * @param object the object to insert
