@@ -19,7 +19,8 @@
             "oid int key",
             "c_id int",
             "when varchar(10)",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)",
+            "KEY (when)"
         ],
 
         [ "item",
