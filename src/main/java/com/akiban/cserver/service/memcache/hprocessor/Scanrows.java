@@ -513,7 +513,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         return findHapiRequestIndex(session, request, alwaysUseGroupTable.get());
     }
 
-    private Index findHapiRequestIndex(Session session, HapiGetRequest request, boolean useGroupTable)
+    private Index findHapiRequestIndex(Session session, HapiGetRequest request, boolean forceUseGroupTable)
             throws HapiRequestException
     {
         final Table table;
@@ -522,12 +522,9 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         } catch (NoSuchTableException e) {
             throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
         }
-        if (!(  request.getUsingTable().getSchemaName().equals(request.getSchema())
-                        && request.getUsingTable().getTableName().equals(request.getTable())
-                    )) {
-            useGroupTable = true;
-        }
-        
+        boolean useGroupTable = forceUseGroupTable
+                || !request.getUsingTable().equals(request.getSchema(), request.getTable());
+
         List<String> columns = predicateColumns(request.getPredicates(), table.getName());
 
         Index pk = findMatchingPK(table, columns);
