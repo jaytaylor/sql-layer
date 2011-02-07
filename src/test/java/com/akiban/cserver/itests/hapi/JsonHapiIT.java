@@ -28,6 +28,7 @@ import com.akiban.cserver.service.memcache.ParsedHapiGetRequest;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.OnlyIf;
 import com.akiban.junit.Parameterization;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
@@ -469,12 +470,8 @@ public final class JsonHapiIT extends ApiTestBase {
         }
     }
 
-    @Test // @OnlyIf("shouldCheckIndex") TODO bug 713193. Remove the shouldCheckIndex() early-return below when fixed
+    @Test @OnlyIf("shouldCheckIndex")
     public void correctIndex() throws HapiRequestException {
-        if (!shouldCheckIndex()) {
-            return;
-        }
-        
         HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
         Index expectedIndex = ddl().getAIS(session).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
         assertNotNull(
@@ -488,7 +485,7 @@ public final class JsonHapiIT extends ApiTestBase {
                 actualIndex.getIndexId());
     }
 
-    private boolean shouldCheckIndex() {
+    public boolean shouldCheckIndex() {
         return runInfo.expectIndexName != null;
     }
 
