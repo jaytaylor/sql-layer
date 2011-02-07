@@ -18,12 +18,15 @@ package com.akiban.cserver.itests.d_lfunctions;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertSame;
+import static junit.framework.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
 import com.akiban.cserver.RowData;
+import com.akiban.cserver.api.common.NoSuchTableException;
+import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.api.dml.scan.RowDataOutput;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Ignore;
@@ -156,5 +159,54 @@ public final class COIbasicTest extends ApiTestBase {
         assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
 
         expectFullRows(tids.coi, cRow, oRow, iRow);
+    }
+
+    @Test(expected=UnsupportedDropException.class)
+    public void dropTableRoot() throws InvalidOperationException {
+        final TableIds tids = createTables();
+        ddl().dropTable(session, tableName(tids.c));
+    }
+
+    @Test(expected=UnsupportedDropException.class)
+    public void dropTableMiddle() throws InvalidOperationException {
+        final TableIds tids = createTables();
+        ddl().dropTable(session, tableName(tids.o));
+    }
+
+    @Test
+    public void dropTableLeaves() throws InvalidOperationException {
+        final TableIds tids = createTables();
+
+        final NewRow cRow = NewRowBuilder.forTable(tids.c).put(1L).put("Robert").check(dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o).put(10L).put(1L).check(dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i).put(100L).put(10L).put("Desc 1").check(dml()).row();
+
+        writeRows(cRow, oRow, iRow);
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        List<RowData> cRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.c));
+        List<RowData> oRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.o));
+        List<RowData> iRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.i));
+
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
+        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
+        assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
+
+        expectFullRows(tids.coi, cRow, oRow, iRow);
+
+        ddl().dropTable(session, tableName(tids.i));
+        expectFullRows(tids.coi, cRow, oRow);
+
+        ddl().dropTable(session, tableName(tids.o));
+        expectFullRows(tids.coi, cRow);
+
+        ddl().dropTable(session, tableName(tids.c));
+
+        try {
+            expectFullRows(tids.coi);
+            assertTrue("group table exists", false);
+        }
+        catch(NoSuchTableException e) {
+            // Expected, deleting root table should remove group table
+        }
     }
 }
