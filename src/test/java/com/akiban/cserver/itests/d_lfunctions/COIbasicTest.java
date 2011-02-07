@@ -30,7 +30,6 @@ import com.akiban.cserver.api.common.NoSuchTableException;
 import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.api.dml.scan.RowDataOutput;
 import com.akiban.cserver.itests.ApiTestBase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibaInformationSchema;
