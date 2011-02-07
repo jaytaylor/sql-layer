@@ -133,9 +133,9 @@
         "expect error"  : "UNSUPPORTED_REQUEST"
     },
 
-    "from predicate's parent" : {
+    "branched from predicate's parent" : {
         "processors"    : ["scanrows"],
-        "get"           : "coi:customer:(orders)oid=22",
+        "get"           : "coi:customer:(orders)oid=21",
         "expect result" :
         {
             "@customer" :
@@ -147,10 +147,16 @@
                     "@order" :
                     [
                         {
-                            "oid" : 22,
+                            "oid" : 21,
                             "c_id" : 11,
-                            "when" : "2/2/2002",
-                            "@item": []
+                            "when" : "1/1/2001",
+                            "@item": [
+                                {
+                                    "iid" : 31,
+                                    "o_id" : 21,
+                                    "sku" : 1111
+                                }
+                            ]
                         }
                     ],
                     "@address" :
@@ -159,6 +165,30 @@
                             "aid" : 41,
                             "c_id" : 11,
                             "street" : "500 Harrison"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    "shallow from predicate's parent" : {
+        "processors"    : ["scanrows"],
+        "get"           : "coi:orders:(item)iid=31",
+        "expect result" :
+        {
+            "@orders" :
+            [
+                {
+                    "oid" : 21,
+                    "c_id" : 11,
+                    "when" : "1/1/2001",
+                    "@item" :
+                    [
+                        {
+                            "iid" : 31,
+                            "o_id" : 21,
+                            "sku" : 1111
                         }
                     ]
                 }

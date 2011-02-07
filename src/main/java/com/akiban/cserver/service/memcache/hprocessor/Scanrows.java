@@ -233,6 +233,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                                Outputter outputter, OutputStream outputStream) throws HapiRequestException
     {
         try {
+            validateRequest(session, request);
             RowDataStruct range = getScanRange(session, request);
 
             LegacyScanRequest scanRequest = new LegacyScanRequest(
@@ -257,6 +258,43 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         } catch (IOException e) {
             throw new HapiRequestException("while writing output", e, WRITE_ERROR);
         }
+    }
+
+    private void validateRequest(Session session, HapiGetRequest request) throws HapiRequestException {
+        boolean foundSelectTable = predicateChildOfHRoot(session, request);
+        if (!foundSelectTable) {
+            throw new HapiRequestException(String.format("%s is not an ancestor of %s",
+                    new TableName(request.getSchema(), request.getTable()), request.getUsingTable().getTableName()),
+                    UNSUPPORTED_REQUEST
+            );
+        }
+    }
+
+    private boolean predicateChildOfHRoot(Session session, HapiGetRequest request) throws HapiRequestException {
+        // Validate that the predicate table is a child of the hroot table
+        UserTable predicateTable = ddlFunctions.getAIS(session).getUserTable(request.getUsingTable());
+        if (predicateTable == null) {
+            throw new HapiRequestException("unknown predicate table: " + request.getUsingTable(), UNKNOWN_IDENTIFIER);
+        }
+
+        if (predicateTable.getName().equals(request.getSchema(), request.getTable())) {
+            return true;
+        }
+
+        UserTable child = predicateTable;
+        while (child.getParentJoin() != null) {
+            UserTable parent = child.getParentJoin().getParent();
+            TableName parentName = parent.getName();
+            if (!parentName.getSchemaName().equals(request.getSchema())) {
+                throw new HapiRequestException("group spans multiple schemas", UNSUPPORTED_REQUEST);
+            }
+            if (parentName.getTableName().equals(request.getTable())) {
+                return true;
+            }
+            child = parent;
+        }
+
+        return false;
     }
 
     private ByteBuffer getBuffer(Session session) {
