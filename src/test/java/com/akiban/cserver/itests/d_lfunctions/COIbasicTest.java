@@ -209,4 +209,12 @@ public final class COIbasicTest extends ApiTestBase {
             // Expected, deleting root table should remove group table
         }
     }
+
+    @Test
+    public void dropAllTablesHelper() throws InvalidOperationException {
+        createTables();
+        createTable("test", "parent", "id int key");
+        createTable("test", "child", "id int key, pid int, CONSTRAINT __akiban_fk_0 FOREIGN KEY __akiban_fk_0(pid) REFERENCES parent(id)");
+        dropAllTables();
+    }
 }

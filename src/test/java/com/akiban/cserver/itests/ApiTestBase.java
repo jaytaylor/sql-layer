@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.GroupTable;
@@ -49,7 +50,6 @@ import org.junit.Before;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.TableStatistics;
 import com.akiban.cserver.api.DDLFunctions;
@@ -287,10 +287,16 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
-        for (TableName tableName : ddl().getAIS(session).getUserTables().keySet()) {
-            if (!"akiba_information_schema".equals(tableName.getSchemaName())) {
-                ddl().dropTable(session, tableName);
+        // Can't drop a parent before child. Get all to drop and sort children first (they always have higher id).
+        List<Integer> allIds = new ArrayList<Integer>();
+        for (Map.Entry<TableName, UserTable> entry : ddl().getAIS(session).getUserTables().entrySet()) {
+            if (!"akiba_information_schema".equals(entry.getKey().getSchemaName())) {
+                allIds.add(entry.getValue().getTableId());
             }
+        }
+        Collections.sort(allIds, Collections.<Object>reverseOrder());
+        for (Integer id : allIds) {
+            ddl().dropTable(session, tableName(id));
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
