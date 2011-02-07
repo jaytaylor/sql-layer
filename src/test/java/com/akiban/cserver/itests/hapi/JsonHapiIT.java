@@ -237,13 +237,17 @@ public final class JsonHapiIT extends ApiTestBase {
         final Object expect;
         final HapiRequestException.ReasonCode errorExpect;
         final String expectIndexName;
+        final boolean expectIndexOnGroup;
 
-        private TestRunInfo(boolean writeRows, String getQuery, Object expect, String errorExpect, String expectIndex) {
+        private TestRunInfo(boolean writeRows, String getQuery, Object expect, String errorExpect,
+                            String expectIndex, boolean expectIndexOnGroup)
+        {
             this.writeRows = writeRows;
             this.getQuery = getQuery;
             this.expect = expect;
             this.errorExpect = errorExpect == null ? null : HapiRequestException.ReasonCode.valueOf(errorExpect);
             this.expectIndexName = expectIndex;
+            this.expectIndexOnGroup = expectIndexOnGroup;
         }
 
         @Override
@@ -362,13 +366,46 @@ public final class JsonHapiIT extends ApiTestBase {
         final String get = test.getString(TEST_GET);
         final Object expect = test.opt(TEST_EXPECT);
         final String error = test.optString(TEST_ERROR, null);
-        final String expectIndex = test.optString(TEST_INDEX, null);
         if ( (expect == null) == (error == null) ) {
             throw new RuntimeException(String.format("test '%s': you must set one (and only one) of '%s' or '%s'",
                     testName, TEST_EXPECT, TEST_ERROR
             ));
         }
-        return new TestRunInfo(writeRows, get, expect, error, expectIndex);
+        final String expectIndex;
+        final boolean expectIndexOnGroup;
+        Object expectIndexObj = test.opt(TEST_INDEX);
+        if (expectIndexObj == null) {
+            expectIndex = null;
+            expectIndexOnGroup = false;
+        }
+        else if (expectIndexObj instanceof String) {
+            expectIndex = (String)expectIndexObj;
+            expectIndexOnGroup = false;
+        }
+        else if (expectIndexObj instanceof JSONObject) {
+            JSONObject jsonObject = (JSONObject)expectIndexObj;
+            if (jsonObject.length() != 1) {
+                throw new JSONException(TEST_INDEX + " json object may only have one key, 'group' or 'utable'");
+            }
+            String key = (String)jsonObject.keys().next();
+            if (key.equalsIgnoreCase("group")) {
+                expectIndex = jsonObject.getString(key);
+                expectIndexOnGroup = true;
+            }
+            else if (key.equalsIgnoreCase("utable")) {
+                expectIndex = jsonObject.getString(key);
+                expectIndexOnGroup = false;
+            }
+            else {
+                throw new JSONException(TEST_INDEX + " json object may only have one key, 'group' or 'utable'");
+            }
+
+        }
+        else {
+            throw new JSONException(TEST_INDEX + " must be a String or JSON object");
+        }
+
+        return new TestRunInfo(writeRows, get, expect, error, expectIndex, expectIndexOnGroup);
     }
 
     private static TestSetupInfo extractTestSetupInfo(JSONObject setupJSON) throws JSONException {

@@ -108,7 +108,7 @@
 
     "with_depth" : {
         "get"           : "test:p1:(c1)firstname=John",
-        "expect index"  : "name_by_first",
+        "expect index"  : {"group" : "name_by_first"},
         "comment"       : "should use index c1.name_by_first",
         "expect result" :
         {
@@ -155,7 +155,7 @@
     "with depth empty" :
     {
         "get"           : "test:p1:(c1)firstname=Nemo",
-        "expect index"  : "name_by_first",
+        "expect index"  : {"group" : "name_by_first"},
         "expect result" :
         {
             "@p1" : []

@@ -56,6 +56,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.akiban.cserver.api.HapiRequestException.ReasonCode.*;
@@ -64,7 +65,9 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static final String MODULE = Scanrows.class.toString();
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
-    private final AtomicInteger bufferSize = new AtomicInteger(65535);
+    private static final AtomicInteger bufferSize = new AtomicInteger(65535);
+    private static final AtomicBoolean useDeep = new AtomicBoolean(true);
+    private static final AtomicBoolean alwaysUseGroupTable = new AtomicBoolean(false);
 
     private final ScanrowsMXBean bean = new ScanrowsMXBean() {
         @Override
@@ -75,6 +78,26 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         @Override
         public void setBufferCapacity(int bytes) {
             bufferSize.set(bytes);
+        }
+
+        @Override
+        public boolean getUsingDeep() {
+            return useDeep.get();
+        }
+
+        @Override
+        public void setUsingDeep(boolean usingDeep) {
+            useDeep.set(usingDeep);
+        }
+
+        @Override
+        public boolean getAlwaysUseGroupTable() {
+            return alwaysUseGroupTable.get();
+        }
+
+        @Override
+        public void setAlwaysUseGroupTable(boolean alwaysUseGroupTable) {
+            Scanrows.alwaysUseGroupTable.set(alwaysUseGroupTable);
         }
     };
 
@@ -91,23 +114,15 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         private final NewRow start;
         private final NewRow end;
         private final Index index;
-        private final boolean needGroupTable;
-        private final HapiGetRequest request;
 
         private Integer bookendColumnId = null;
         boolean foundInequality = false;
+        private final UserTable uTable;
 
-        RowDataStruct(DDLFunctions ddlFunctions, Index index, HapiGetRequest request)
+        RowDataStruct(DDLFunctions ddlFunctions, Index index, HapiGetRequest request, Session session)
                 throws HapiRequestException
         {
-            this.request = request;
-            TableName tableName = index.getTable().getName();
-            needGroupTable = !  (tableName.getSchemaName().equals(request.getSchema())
-                    && tableName.getTableName().equals(request.getTable()));
-
-            int tableId = needGroupTable
-                    ? index.getTable().getGroup().getGroupTable().getTableId()
-                    : index.getTable().getTableId();
+            int tableId = index.getTable().getTableId();
             final RowDef rowDef;
             try {
                 rowDef = ddlFunctions.getRowDef(tableId);
@@ -115,6 +130,20 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                 throw new HapiRequestException("internal error; tableId" + tableId, INTERNAL_ERROR);
             }
             this.index = index;
+
+            try {
+                Table usingTable = ddlFunctions.getTable(session, request.getUsingTable());
+                if (!usingTable.isUserTable()) {
+                    throw new HapiRequestException("not a user table: " + request.getUsingTable(), UNKNOWN_IDENTIFIER);
+                }
+                uTable = (UserTable) usingTable;
+            } catch (NoSuchTableException e) {
+                throw new HapiRequestException("no such table" + request.getUsingTable(), UNKNOWN_IDENTIFIER);
+            } catch (ClassCastException e) {
+                throw new HapiRequestException("not a UserTable: " + request.getUsingTable(), INTERNAL_ERROR);
+            }
+
+
             scanFlags = EnumSet.noneOf(ScanFlag.class);
             start = new NiceRow(tableId, rowDef);
             end = new NiceRow(tableId, rowDef);
@@ -132,21 +161,11 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             return end.toRowData();
         }
 
-        private boolean needGroupTable() {
-            return needGroupTable;
-        }
-
         Table selectTable() {
-            Table table = index.getTable();
-            if (needGroupTable()) {
-                table = table.getGroup().getGroupTable();
-            }
-            return table;
+            return index.getTable();
         }
 
         int indexId() {
-//            return needGroupTable() ?
-//                    index.
             return index.getIndexId();
         }
 
@@ -187,14 +206,21 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         private int putPredicate(HapiGetRequest.Predicate predicate, NewRow row)
                 throws HapiRequestException
         {
-            Table uTable = index.getTable();
-            Column column = uTable.getColumn(predicate.getColumnName());
+            Column column;
+            column = uTable.getColumn(predicate.getColumnName());
             if (column == null) {
                 unsupported("unknown column: " + predicate.getColumnName());
                 throw new AssertionError("above line should have thrown an exception");
             }
-            if(needGroupTable()) {
+            Table indexTable = index.getTable();
+            if (indexTable.isGroupTable()) {
                 column = column.getGroupColumn();
+                if (!column.getTable().equals(uTable.getGroup().getGroupTable())) {
+                    throw new HapiRequestException(
+                            String.format("%s != %s", column.getTable(), uTable.getGroup().getGroupTable()),
+                            INTERNAL_ERROR
+                    );
+                }
             }
             int pos = column.getPosition();
             row.put(pos, predicate.getValue());
@@ -248,13 +274,16 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private RowDataStruct getScanRange(Session session, HapiGetRequest request)
             throws HapiRequestException, NoSuchTableException
     {
-        Index index = findHapiRequestIndex(session, request);
-        RowDataStruct ret = new RowDataStruct(ddlFunctions, index, request);
+        final boolean useGroupTable = alwaysUseGroupTable.get();
+        Index index = findHapiRequestIndex(session, request, useGroupTable);
+        RowDataStruct ret = new RowDataStruct(ddlFunctions, index, request, session);
 
         assert ret.scanFlags.isEmpty() : ret.scanFlags;
         ret.scanFlags.add(ScanFlag.START_AT_BEGINNING);
         ret.scanFlags.add(ScanFlag.END_AT_END);
-        ret.scanFlags.add(ScanFlag.DEEP);
+        if (useDeep.get()) {
+            ret.scanFlags.add(ScanFlag.DEEP);
+        }
 
         for (HapiGetRequest.Predicate predicate : request.getPredicates()) {
             switch (predicate.getOp()) {
@@ -443,18 +472,29 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     @Override
     public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        return findHapiRequestIndex(session, request, alwaysUseGroupTable.get());
+    }
+
+    private Index findHapiRequestIndex(Session session, HapiGetRequest request, boolean useGroupTable)
+            throws HapiRequestException
+    {
         final Table table;
         try {
             table = ddlFunctions.getTable(session, request.getUsingTable());
         } catch (NoSuchTableException e) {
             throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
         }
-
+        if (!(  request.getUsingTable().getSchemaName().equals(request.getSchema())
+                        && request.getUsingTable().getTableName().equals(request.getTable())
+                    )) {
+            useGroupTable = true;
+        }
+        
         List<String> columns = predicateColumns(request.getPredicates(), table.getName());
 
         Index pk = findMatchingPK(table, columns);
         if (pk != null) {
-            return pk;
+            return useGroupTable ? getGroupTableIndex(pk) : pk;
         }
 
         Collection<Index> candidateIndexes = getCandidateIndexes(table, columns);
@@ -464,11 +504,31 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         for (IndexPreference preference : PREFERENCES) {
             candidateIndexes = preference.applyPreference(candidateIndexes, columns, null);
             if (candidateIndexes.size() == 1) {
-                return candidateIndexes.iterator().next();
+                Index index = candidateIndexes.iterator().next();
+                return useGroupTable ? getGroupTableIndex(index) : index;
             }
         }
         // We shouldn't ever get here
         throw new AssertionError("too many indexes: " + candidateIndexes);
+    }
+
+    private static Index getGroupTableIndex(Index index) throws HapiRequestException {
+        Table indexTable = index.getTable();
+        if (!indexTable.isUserTable()) {
+            throw new HapiRequestException("not a user table: " + indexTable, UNKNOWN_IDENTIFIER);
+        }
+        UserTable uTable = (UserTable) indexTable;
+        List<Index> groupIndexes = new ArrayList<Index>();
+        int uIndexId = index.getIndexId();
+        for (Index groupIndex : uTable.getGroup().getGroupTable().getIndexes()) {
+            if (groupIndex.getIndexId() == uIndexId) {
+                groupIndexes.add(groupIndex);
+            }
+        }
+        if (groupIndexes.size() != 1) {
+            throw new HapiRequestException("not 1 group index: " + groupIndexes, INTERNAL_ERROR);
+        }
+        return groupIndexes.get(0);
     }
 
     private static Collection<Index> getCandidateIndexes(Table table, List<String> columns) {
