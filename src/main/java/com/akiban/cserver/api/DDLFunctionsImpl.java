@@ -17,10 +17,13 @@ package com.akiban.cserver.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
@@ -78,7 +81,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
         final Table table = getAIS(session).getTable(tableName);
         
         if(table == null) {
-            return; // dropping a nonexistent table is a no-op
+            return; // dropping a non-existing table is a no-op
         }
 
         final UserTable userTable = table.isUserTable() ? (UserTable)table : null;
@@ -105,6 +108,24 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             schemaManager().deleteSchemaDefinition(session, schemaName);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
+        }
+    }
+
+    @Override
+    public void dropGroup(Session session, String groupName)
+            throws ProtectedTableDDLException, GenericInvalidOperationException, NoSuchTableException,
+            UnsupportedDropException, ForeignConstraintDDLException {
+        List<Integer> toDrop = new ArrayList<Integer>();
+        for(UserTable userTable : getAIS(session).getUserTables().values()) {
+            if(userTable.getGroup().getName().equals(groupName)) {
+                toDrop.add(userTable.getTableId());
+            }
+        }
+
+        // Child tables always have a higher id than parents, reverse sort to drop children first
+        Collections.sort(toDrop, Collections.reverseOrder());
+        for(Integer id : toDrop) {
+            dropTable(session, getTableName(session, id));
         }
     }
 

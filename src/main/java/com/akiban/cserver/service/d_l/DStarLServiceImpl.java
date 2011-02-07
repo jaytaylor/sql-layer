@@ -15,6 +15,8 @@
 
 package com.akiban.cserver.service.d_l;
 
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.DDLFunctions;
@@ -29,23 +31,25 @@ import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {
 
     private final DDLFunctions ddlFunctions = new DDLFunctionsImpl();
     private final DMLFunctions dmlFunctions = new DMLFunctionsImpl(ddlFunctions);
-    private final AtomicReference<String> usingTable = new AtomicReference<String>("test");
+    private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
 
     private final DStarLMXBean bean = new DStarLMXBean() {
         @Override
         public String getUsingSchema() {
-            return usingTable.get();
+            return usingSchema.get();
         }
 
         @Override
         public void setUsingSchema(String schema) {
-            usingTable.set(schema);
+            usingSchema.set(schema);
         }
 
         @Override
@@ -59,7 +63,30 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
 
         @Override
         public void createTable(String ddl) {
-            createTable(usingTable.get(), ddl);
+            createTable(usingSchema.get(), ddl);
+        }
+
+        @Override
+        public void dropTable(String schema, String tableName) {
+            try {
+                ddlFunctions.dropTable(new SessionImpl(), new TableName(schema, tableName));
+            } catch (InvalidOperationException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void dropTable(String tableName) {
+            dropTable(usingSchema.get(), tableName);
+        }
+
+        @Override
+        public void dropGroup(String groupName) {
+            try {
+                ddlFunctions.dropGroup(new SessionImpl(), groupName);
+            } catch (InvalidOperationException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
@@ -83,7 +110,7 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
 
         @Override
         public void writeRow(String table, String fields) {
-            writeRow(usingTable.get(), table, fields);
+            writeRow(usingSchema.get(), table, fields);
         }
     };
 

@@ -17,6 +17,7 @@ package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -153,6 +154,27 @@ public final class CBasicIT extends ApiTestBase {
         NoSuchTableException caught = null;
         try {
             dml().openCursor(session, new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
+        } catch (NoSuchTableException e) {
+            caught = e;
+        }
+        assertNotNull("expected NoSuchTableException", caught);
+    }
+
+    @Test
+    public void testDropGroup() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "id int key");
+        final String groupName = ddl().getAIS(session).getUserTable("test", "t").getGroup().getName();
+        ddl().dropGroup(session, groupName);
+
+        AkibaInformationSchema ais = ddl().getAIS(session);
+        assertNull("expected no table", ais.getUserTable("test", "t"));
+        assertNull("expected no group", ais.getGroup(groupName));
+
+        ddl().dropGroup(session, groupName);
+
+        NoSuchTableException caught = null;
+        try {
+            dml().openCursor(session, new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
         } catch (NoSuchTableException e) {
             caught = e;
         }

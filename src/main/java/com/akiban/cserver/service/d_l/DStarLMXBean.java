@@ -22,6 +22,10 @@ public interface DStarLMXBean {
     void createTable(String schema, String ddl);
     void createTable(String ddl);
 
+    void dropTable(String schema, String tableName);
+    void dropTable(String tableName);
+    void dropGroup(String groupName);
+
     void writeRow(String schema, String table, String fields);
     void writeRow(String table, String fields);
 }

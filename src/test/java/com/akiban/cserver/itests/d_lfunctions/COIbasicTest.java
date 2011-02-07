@@ -19,6 +19,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -216,5 +217,19 @@ public final class COIbasicTest extends ApiTestBase {
         createTable("test", "parent", "id int key");
         createTable("test", "child", "id int key, pid int, CONSTRAINT __akiban_fk_0 FOREIGN KEY __akiban_fk_0(pid) REFERENCES parent(id)");
         dropAllTables();
+    }
+
+    @Test
+    public void dropGroup() throws InvalidOperationException {
+        final TableIds tids = createTables();
+        final String groupName = ddl().getAIS(session).getUserTable(tableName(tids.i)).getGroup().getName();
+
+        ddl().dropGroup(session, groupName);
+
+        AkibaInformationSchema ais = ddl().getAIS(session);
+        assertNull("expected no table", ais.getUserTable("coi", "c"));
+        assertNull("expected no table", ais.getUserTable("coi", "o"));
+        assertNull("expected no table", ais.getUserTable("coi", "i"));
+        assertNull("expected no group", ais.getGroup(groupName));
     }
 }
