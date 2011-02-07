@@ -82,6 +82,16 @@ public class TestStore
         this.delegate = delegate;
     }
 
+    public void writeTestRow(TestRow row)
+    {
+        map.put(row.hKey(), row);
+    }
+
+    public void deleteTestRow(TestRow row)
+    {
+        map.remove(row.hKey());
+    }
+
     // For use by this class
 
     private TestRow mergeRows(TestRow currentRow, TestRow newRow, ColumnSelector columnSelector)

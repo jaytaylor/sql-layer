@@ -650,16 +650,6 @@ public class PersistitStore implements CServerConstants, Store {
                     // "Record changed at key " + hEx.getKey());
                     // }
 
-                    //
-                    // For Iteration 9 we disallow deleting rows that would
-                    // cascade to child rows.
-                    //
-                    if (hEx.hasChildren()) {
-                        throw new InvalidOperationException(
-                                ErrorCode.FK_CONSTRAINT_VIOLATION,
-                                "Can't cascade DELETE: %s", hEx.getKey());
-
-                    }
 
                     // Remove the h-row
                     hEx.remove();
@@ -724,6 +714,7 @@ public class PersistitStore implements CServerConstants, Store {
                 try {
                     final TableStatus ts = rowDef.getTableStatus();
                     constructHKey(session, hEx, rowDef, oldRowData, false);
+                    Key hKey = hEx.getKey();
                     hEx.fetch();
                     //
                     // Verify that the row exists
@@ -747,14 +738,33 @@ public class PersistitStore implements CServerConstants, Store {
                     // to change.
                     if (!fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getPKIndexDef().getFields()) ||
                         !fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getParentJoinFields())) {
-                        if (hEx.hasChildren()) {
-                            throw new InvalidOperationException(
-                                    ErrorCode.FK_CONSTRAINT_VIOLATION,
-                                    "Can't cascade UPDATE on PK field: %s",
-                                    hEx.getKey());
-                        }
                         deleteRow(session, oldRowData);
                         writeRow(session, mergedRowData);
+                        // Propagate hkey changes to children whose hkeys are computed from this row.
+                        // TODO: Optimizations
+                        // - Don't have to visit children that contain their own hkey
+                        // - Don't have to visit children whose hkey contains no changed column
+                        KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
+                        while (hEx.next(filter)) {
+                            // Get the current row (under the top-level row being updated)
+                            Value value = hEx.getValue();
+                            int descendentRowDefId =
+                                CServerUtil.getInt(value.getEncodedBytes(),
+                                                   RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+                            RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
+                            RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
+                            expandRowData(hEx, descendentRowDef, descendentRowData);
+                            // Delete the current row from the tree
+                            hEx.remove();
+                            // ... and from the indexes
+                            for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
+                                if (!indexDef.isHKeyEquivalent()) {
+                                    deleteIndex(session, indexDef, descendentRowDef, descendentRowData, hEx.getKey());
+                                }
+                            }
+                            // Reinsert it, recomputing the hkey
+                            writeRow(session, descendentRowData);
+                        }
                     } else {
                         packRowData(hEx, rowDef, mergedRowData);
                         // Store the h-row
@@ -1231,20 +1241,11 @@ public class PersistitStore implements CServerConstants, Store {
         if (indexDef.isUnique()) {
             int saveSize = key.getEncodedSize();
             key.setDepth(indexDef.getIndexKeySegmentCount());
-            LOG.fatal(String.format("FIX ME - re-enable dup check, key: %s hasChildren: %s", key, iEx.hasChildren()));
-/*
             if (iEx.hasChildren()) {
                 complainAboutDuplicateKey(indexDef.getName(), key);
             }
-*/
-//////////////
-            for (int i = 2; i >= 0; i--) {
-                key.setDepth(i);
-                System.out.println(String.format("depth = %s, hasChildren: %s", i, iEx.hasChildren()));
-            }
-            key.setDepth(indexDef.getIndexKeySegmentCount());
-////////////////
-            key.setEncodedSize(saveSize);
+            // Restores key to pre-transaction state?!   key.setEncodedSize(saveSize);
+            constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
         }
         iEx.getValue().clear();
         if (deferIndexes) {

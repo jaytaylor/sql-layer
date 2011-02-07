@@ -43,8 +43,9 @@ public class KeyUpdateIT extends ApiTestBase
     }
 
     @Test
-    public void testLeafFKUpdate() throws Exception
+    public void testItemFKUpdate() throws Exception
     {
+        // Set item.oid = o for item 222
         TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
         TestRow newRow = copyRow(oldRow);
         updateRow(newRow, i_oid, 0L, null);
@@ -53,12 +54,53 @@ public class KeyUpdateIT extends ApiTestBase
     }
 
     @Test
-    public void testMiddlePKUpdate() throws Exception
+    public void testItemPKUpdate() throws Exception
     {
-        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        // Set item.iid = 0 for item 222
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
         TestRow newRow = copyRow(oldRow);
-        newRow.put(o_oid, 0L);
+        TestRow parent = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        assertNotNull(parent);
+        updateRow(newRow, i_iid, 0L, parent);
         dbUpdate(oldRow, newRow);
+        checkDB();
+    }
+
+    @Test
+    public void testOrderFKUpdate() throws Exception
+    {
+        // Set order.cid = 0 for order 22
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_cid, 0L, null);
+        // Propagate change to order 22's items
+        for (long iid = 221; iid <= 223; iid++) {
+            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, iid));
+            TestRow newItemRow = copyRow(oldItemRow);
+            newItemRow.hKey(hKey(newItemRow, newOrderRow));
+            testStore.deleteTestRow(oldItemRow);
+            testStore.writeTestRow(newItemRow);
+        }
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+    @Test
+    public void testOrderPKUpdate() throws Exception
+    {
+        // Set order.oid = 0 for order 22
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_oid, 0L, null);
+        // Propagate change to order 22's items
+        for (long iid = 221; iid <= 223; iid++) {
+            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, iid));
+            TestRow newItemRow = copyRow(oldItemRow);
+            newItemRow.hKey(hKey(newItemRow, null));
+            testStore.deleteTestRow(oldItemRow);
+            testStore.writeTestRow(newItemRow);
+        }
+        dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
     }
 
@@ -111,10 +153,68 @@ public class KeyUpdateIT extends ApiTestBase
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
         testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
         assertEquals(testVisitor.records(), realVisitor.records());
+        // Check indexes
+        RecordCollectingIndexRecordVisistor indexVisitor;
+        // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
+        // Order PK index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session, orderRowDef.getPKIndexDef(), indexVisitor);
+        assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
         // Item PK index
-        RecordCollectingIndexRecordVisistor indexVisitor = new RecordCollectingIndexRecordVisistor();
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session, itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+    }
+
+    private List<List<Object>> customerPKIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == customerRowDef) {
+                List<Object> indexEntry =
+                    Arrays.asList(record.row().get(c_cid)); // oid
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                         new Comparator<List<Object>>()
+                         {
+                             @Override
+                             public int compare(List<Object> x, List<Object> y)
+                             {
+                                 // compare cids
+                                 Long lx = (Long) x.get(0);
+                                 Long ly = (Long) y.get(0);
+                                 return lx < ly ? -1 : lx > ly ? 1 : 0;
+                             }
+                         });
+        return indexEntries;
+    }
+
+    private List<List<Object>> orderPKIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry =
+                    Arrays.asList(record.row().get(o_oid),
+                                  record.row().get(o_cid));
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                         new Comparator<List<Object>>()
+                         {
+                             @Override
+                             public int compare(List<Object> x, List<Object> y)
+                             {
+                                 // compare oids
+                                 Long lx = (Long) x.get(0);
+                                 Long ly = (Long) y.get(0);
+                                 return lx < ly ? -1 : lx > ly ? 1 : 0;
+                             }
+                         });
+        return indexEntries;
     }
 
     private List<List<Object>> itemPKIndex(List<TreeRecord> records)
@@ -135,15 +235,10 @@ public class KeyUpdateIT extends ApiTestBase
                              @Override
                              public int compare(List<Object> x, List<Object> y)
                              {
-                                 // compare cids
-                                 Long lx = (Long) x.get(1);
-                                 Long ly = (Long) y.get(1);
-                                 return
-                                     lx == ly ? 0 :
-                                     lx == null ? -1 :
-                                     ly == null ? 1 :
-                                     lx < ly ? -1 :
-                                     lx > ly ? 1 : 0;
+                                 // compare iids
+                                 Long lx = (Long) x.get(0);
+                                 Long ly = (Long) y.get(0);
+                                 return lx < ly ? -1 : lx > ly ? 1 : 0;
                              }
                          });
         return indexEntries;
@@ -255,7 +350,12 @@ public class KeyUpdateIT extends ApiTestBase
     {
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();
-        if (rowDef == itemRowDef) {
+        if (rowDef == customerRowDef) {
+            hKey = new HKey(customerRowDef, row.get(c_cid));
+        } else if (rowDef == orderRowDef) {
+            hKey = new HKey(customerRowDef, row.get(o_cid),
+                            orderRowDef, row.get(o_oid));
+        } else if (rowDef == itemRowDef) {
             hKey = new HKey(customerRowDef, parent == null ? null : parent.get(o_cid),
                             orderRowDef, row.get(i_oid),
                             itemRowDef, row.get(i_iid));
