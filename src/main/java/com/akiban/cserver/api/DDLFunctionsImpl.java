@@ -41,6 +41,8 @@ import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.api.ddl.UnsupportedDropException;
+import com.akiban.cserver.api.dml.DMLException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.util.RowDefNotFoundException;
@@ -72,20 +74,24 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @Override
     public void dropTable(Session session, TableName tableName)
             throws ProtectedTableDDLException, ForeignConstraintDDLException,
-            GenericInvalidOperationException {
-        final int rowDefId;
-        try {
-            rowDefId = getTableId(session, tableName);
-        } catch (NoSuchTableException e) {
+            UnsupportedDropException, GenericInvalidOperationException {
+        final Table table = getAIS(session).getTable(tableName);
+        
+        if(table == null) {
             return; // dropping a nonexistent table is a no-op
         }
 
+        final UserTable userTable = table.isUserTable() ? (UserTable)table : null;
+
+        // Halo spec: may only drop leaf tables through DDL interface
+        if(userTable == null || userTable.getChildJoins().isEmpty() == false) {
+            throw new UnsupportedDropException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot drop non-leaf table");
+        }
+
         try {
-            // TODO - reconsider the API for truncateTable.
-            // TODO - needs to be wrapped in a Transaction
-            store().truncateTable(session, rowDefId);
-            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(),
-                    tableName.getTableName());
+            DMLFunctions dml = new DMLFunctionsImpl(this);
+            dml.truncateTable(session, table.getTableId());
+            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }

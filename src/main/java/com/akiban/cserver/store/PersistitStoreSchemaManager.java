@@ -267,19 +267,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     /**
      * Delete all table definition versions for a table specified by schema name
      * and table name. This removes the entire history of the table, and is
-     * intended to implement part of the DROP TABLE operation. (The other part
-     * is truncating the data.)
-     * 
-     * TODO: This method verifies that no other tables refer to this table
-     * definition before removing it. An attempt to remove a table definition
-     * that would render other tables invalid is rejected.
+     * intended to implement part of the DROP TABLE operation (the other part
+     * is truncating the data).
+     *
+     * For a GroupTable, it will also delete all tables participating in the group.
+     * A UserTable is required to have no referencing tables to succeed.
      * 
      * @param session
      * @param schemaName
      * @param tableName
      * @throws InvalidOperationException
-     *             if removing this table would cause other table definitions to
-     *             become invalid.
+     *         if removing this table would cause other table definitions to
+     *         become invalid.
      */
     @Override
     public void deleteTableDefinition(final Session session,
@@ -287,11 +286,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
-        // TODO - This is temporary. this method finds all the members of the
-        // group containing specified table, and deletes them all. Note - this
-        // implementation requires an up-to-date AIS, which is created lazily as
-        // a side-effect.
-        //
+
         final AkibaInformationSchema ais = getAis(session);
         final Table table = ais.getTable(schemaName, tableName);
         if (table == null) {
@@ -299,13 +294,24 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
 
         final List<TableName> tables = new ArrayList<TableName>();
-        final Group group = table.getGroup();
-        tables.add(group.getGroupTable().getName());
-        for (final Table t : ais.getUserTables().values()) {
-            if (t.getGroup().equals(group)) {
-                tables.add(t.getName());
+
+        if(table.isGroupTable() == true) {
+            final Group group = table.getGroup();
+            tables.add(group.getGroupTable().getName());
+            for(final Table t : ais.getUserTables().values()) {
+                if(t.getGroup().equals(group)) {
+                    tables.add(t.getName());
+                }
             }
+        } else if(table.isUserTable() == true) {
+            final UserTable userTable = (UserTable)table;
+            if(userTable.getChildJoins().isEmpty() == false) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_MODIFICATION,
+                                                    table.getName() + " has referencing tables");
+            }
+            tables.add(table.getName());
         }
+
         Transaction transaction = serviceManager.getTreeService().getTransaction(session);
         transaction.begin();
         try {

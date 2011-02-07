@@ -35,6 +35,7 @@ import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
 
@@ -81,8 +82,9 @@ public interface DDLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void dropTable(Session session, TableName tableName)
-    throws  ProtectedTableDDLException,
+            throws ProtectedTableDDLException,
             ForeignConstraintDDLException,
+            UnsupportedDropException,
             GenericInvalidOperationException;
 
     /**
