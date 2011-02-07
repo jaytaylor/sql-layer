@@ -16,6 +16,8 @@
 package com.akiban.cserver.itests.hapi;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
@@ -511,6 +513,18 @@ public final class JsonHapiIT extends ApiTestBase {
     public void correctIndex() throws HapiRequestException {
         HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
         Index expectedIndex = ddl().getAIS(session).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
+        if (runInfo.expectIndexOnGroup) {
+            Table gTable = ddl().getAIS(session).getUserTable(request.getUsingTable()).getGroup().getGroupTable();
+            List<Index> matchingIndexes = new ArrayList<Index>();
+            int indexId = expectedIndex.getIndexId();
+            for (Index gTableIndex : gTable.getIndexes()) {
+                if (gTableIndex.getIndexId() == indexId) {
+                    matchingIndexes.add(gTableIndex);
+                }
+            }
+            assertEquals("too many matching indexes: " + matchingIndexes.toString(), 1, matchingIndexes.size());
+            expectedIndex = matchingIndexes.get(0);
+        }
         assertNotNull(
                 String.format("no index %s on %s", runInfo.expectIndexName, request.getUsingTable()),
                 expectedIndex);
