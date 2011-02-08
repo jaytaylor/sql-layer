@@ -19,7 +19,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
-import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
@@ -140,7 +140,7 @@ import static org.junit.Assert.*;
  *  <li>if <tt>test.write_rows</tt> is true, the rows defined in <tt>setup.write_rows</tt> will be written</li>
  *  <li>the <tt>GET</tt> will be issued to
  *      {@link com.akiban.cserver.service.memcache.MemcacheService#processRequest(Session, HapiGetRequest,
- *      HapiProcessor.Outputter, OutputStream)}</li>
+ *      HapiOutputter, OutputStream)}</li>
  *  <li>the result will be compared against <tt>test.expected</tt>
  * </ol>
  * </p>

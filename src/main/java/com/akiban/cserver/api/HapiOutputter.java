@@ -14,13 +14,14 @@
  */
 
 package com.akiban.cserver.api;
-import com.akiban.ais.model.Index;
-import com.akiban.cserver.service.session.Session;
 
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDefCache;
+
+import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
-public interface HapiProcessor {
-    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
-            throws HapiRequestException;
-    Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException;
+public interface HapiOutputter {
+    void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException;
 }

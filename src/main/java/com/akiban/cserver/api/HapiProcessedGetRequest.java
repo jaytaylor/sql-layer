@@ -14,13 +14,14 @@
  */
 
 package com.akiban.cserver.api;
-import com.akiban.ais.model.Index;
-import com.akiban.cserver.service.session.Session;
 
-import java.io.OutputStream;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.api.common.NoSuchTableException;
 
-public interface HapiProcessor {
-    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
-            throws HapiRequestException;
-    Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException;
+import java.io.IOException;
+import java.util.Set;
+
+public interface HapiProcessedGetRequest extends HapiGetRequest {
+    Set<String> getProjectedTables();
+    RowDef getRowDef(int tableId) throws IOException;
 }

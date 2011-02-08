@@ -13,14 +13,27 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.api;
-import com.akiban.ais.model.Index;
-import com.akiban.cserver.service.session.Session;
+package com.akiban.cserver.service.memcache.hprocessor;
 
-import java.io.OutputStream;
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.common.NoSuchTableException;
 
-public interface HapiProcessor {
-    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
-            throws HapiRequestException;
-    Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException;
+import java.util.Collections;
+import java.util.Set;
+
+final class DummyProcessedRequest extends BaseHapiProcessedGetRequest {
+    DummyProcessedRequest(HapiGetRequest request) {
+        super(request);
+    }
+
+    @Override
+    public Set<String> getProjectedTables() {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public RowDef getRowDef(int tableId) {
+        throw new UnsupportedOperationException();
+    }
 }

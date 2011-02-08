@@ -19,6 +19,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceManagerImpl;
@@ -66,7 +67,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
     }
 
     @Override
-    public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
+    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
         Store storeLocal = ServiceManagerImpl.get().getStore();
@@ -91,7 +92,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
 
 
     private static void doProcessRequest(Store store, Session session, HapiGetRequest request,
-                                         ByteBuffer byteBuffer, HapiProcessor.Outputter outputter, OutputStream outputStream)
+                                         ByteBuffer byteBuffer, HapiOutputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
         ArgumentValidation.notNull("outputter", outputter);
@@ -115,7 +116,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         }
 
         try {
-            outputter.output(request, cache, list, outputStream);
+            outputter.output(new DefaultProcessedRequest(request, session), list, outputStream);
         } catch (IOException e) {
             throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }

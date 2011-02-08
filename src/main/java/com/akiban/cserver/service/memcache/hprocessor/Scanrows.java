@@ -30,6 +30,7 @@ import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.api.DMLFunctions;
 import com.akiban.cserver.api.DMLFunctionsImpl;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -39,7 +40,6 @@ import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.api.dml.scan.RowDataOutput;
 import com.akiban.cserver.api.dml.scan.ScanFlag;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.session.Session;
 
@@ -272,7 +272,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     @Override
     public void processRequest(Session session, HapiGetRequest request,
-                               Outputter outputter, OutputStream outputStream) throws HapiRequestException
+                               HapiOutputter outputter, OutputStream outputStream) throws HapiRequestException
     {
         try {
             validateRequest(session, request);
@@ -289,8 +289,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             List<RowData> rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
 
             outputter.output(
-                    request,
-                    ServiceManagerImpl.get().getStore().getRowDefCache(),
+                    new DefaultProcessedRequest(request, session, ddlFunctions),
                     rows,
                     outputStream
             );

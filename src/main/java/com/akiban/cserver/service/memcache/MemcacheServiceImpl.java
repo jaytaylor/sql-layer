@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.Index;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
@@ -61,7 +62,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private final MemcacheMXBean manageBean;
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
-        public Outputter getFormat() {
+        public HapiOutputter getFormat() {
             return manageBean.getOutputFormat().getOutputter();
         }
     };
@@ -108,7 +109,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     }
 
     @Override
-    public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
+    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
         final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();

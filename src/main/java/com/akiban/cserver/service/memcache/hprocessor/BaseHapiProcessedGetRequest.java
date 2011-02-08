@@ -13,29 +13,38 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.memcache.outputter;
+package com.akiban.cserver.service.memcache.hprocessor;
 
-import com.akiban.cserver.RowData;
-import com.akiban.cserver.api.HapiOutputter;
+import com.akiban.ais.model.TableName;
+import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiProcessedGetRequest;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
-public final class RawByteOutputter implements HapiOutputter {
-    private static final RawByteOutputter instance = new RawByteOutputter();
+abstract class BaseHapiProcessedGetRequest implements HapiProcessedGetRequest {
+    private final HapiGetRequest request;
 
-    public static RawByteOutputter instance() {
-        return instance;
+    protected BaseHapiProcessedGetRequest(HapiGetRequest request) {
+        this.request = request;
     }
 
-    private RawByteOutputter() {}
+    @Override
+    public String getSchema() {
+        return request.getSchema();
+    }
 
     @Override
-    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException {
-        for(RowData data : rows) {
-            outputStream.write(data.getBytes(), data.getRowStart(), data.getRowSize());
-        }
+    public String getTable() {
+        return request.getTable();
+    }
+
+    @Override
+    public TableName getUsingTable() {
+        return request.getUsingTable();
+    }
+
+    @Override
+    public List<Predicate> getPredicates() {
+        return request.getPredicates();
     }
 }

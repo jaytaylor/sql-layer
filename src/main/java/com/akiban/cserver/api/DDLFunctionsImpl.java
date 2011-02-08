@@ -17,7 +17,6 @@ package com.akiban.cserver.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
@@ -135,6 +134,16 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
         AkibaInformationSchema ais = getAIS(session);
         Table table = ais.getTable(tableName);
+        if (table == null) {
+            throw new NoSuchTableException(tableName);
+        }
+        return table;
+    }
+
+    @Override
+    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
+        AkibaInformationSchema ais = getAIS(session);
+        UserTable table = ais.getUserTable(tableName);
         if (table == null) {
             throw new NoSuchTableException(tableName);
         }
