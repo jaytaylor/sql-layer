@@ -246,6 +246,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 {
                     exchange.clear().append(BY_ID).append(tableId).fetch();
                     if (exchange.isValueDefined()) {
+                        final RowDef rowDef = getRowDefCache().getRowDef(tableId);
+                        if (rowDef != null) {
+                            rowDef.setDeleted(true);
+                        }
                         final String canonical = exchange.getValue().getString();
                         SchemaDef.CName cname = cname(canonical);
                         exchange.remove();
@@ -350,6 +354,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 while (ex1.next(keyFilter)) {
                     final int tableId = ex1.getKey().indexTo(-1).decodeInt();
                     ex2.clear().append(BY_ID).append(tableId).remove();
+                    final RowDef rowDef = rowDefCache.getRowDef(tableId);
+                    if (rowDef != null) {
+                        rowDef.setDeleted(true);
+                    }
                     ex1.remove();
                     ex3.clear().append(tableId).remove();
                 }
@@ -918,10 +926,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 exchange.clear().to(Key.BEFORE);
                 while (exchange.next()) {
                     int tableId = exchange.getKey().reset().decodeInt();
-                    tableId = treeService.storeToAis(exchange.getVolume(),
-                            tableId);
-                    final RowDef rowDef = getRowDefCache().rowDef(tableId);
-                    if (rowDef == null) {
+                    tableId = treeService.storeToAis(exchange.getVolume(), tableId);
+                    final RowDef rowDef = rowDefCache.rowDef(tableId);
+                    if (rowDef == null || rowDef.isDeleted()) {
                         exchange.remove();
                     }
                 }
@@ -935,7 +942,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final TreeService treeService = serviceManager.getTreeService();
         for (final RowDef rowDef : getRowDefCache().getRowDefs()) {
             final TableStatus ts = rowDef.getTableStatus();
-            if (ts.isDirty()) {
+            if (ts.isDirty() && rowDef.isDeleted() == false) {
                 final TreeLink link = treeLink(rowDef.getSchemaName(),
                         STATUS_TREE_NAME);
                 final Exchange exchange = treeService
