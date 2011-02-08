@@ -186,7 +186,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                     }
                     this.iEx = store.getExchange(session, rowDef, indexDef).append(Key.BEFORE);
                     this.iFilter = computeIFilter(indexDef, rowDef, start, end);
-/* See bugs 344, 345
+/* TODO: disabled due to bugs 687212, 687213
                     coveringFields = computeCoveringIndexFields(rowDef, def,
                             columnBitMap);
 */

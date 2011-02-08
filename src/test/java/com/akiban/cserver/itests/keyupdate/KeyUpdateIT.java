@@ -104,6 +104,17 @@ public class KeyUpdateIT extends ApiTestBase
         checkDB();
     }
 
+    @Test
+    public void testCustomerPKUpdate() throws Exception
+    {
+        // Set customer.cid = 0 for customer 2
+        TestRow oldCustomerRow = testStore.find(new HKey(customerRowDef, 2L));
+        TestRow newCustomerRow = copyRow(oldCustomerRow);
+        updateRow(newCustomerRow, c_cid, 0L, null);
+        dbUpdate(oldCustomerRow, newCustomerRow);
+        checkDB();
+    }
+
     private void createSchema() throws InvalidOperationException
     {
         // customer
@@ -164,31 +175,6 @@ public class KeyUpdateIT extends ApiTestBase
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session, itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
-    }
-
-    private List<List<Object>> customerPKIndex(List<TreeRecord> records)
-    {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == customerRowDef) {
-                List<Object> indexEntry =
-                    Arrays.asList(record.row().get(c_cid)); // oid
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                         new Comparator<List<Object>>()
-                         {
-                             @Override
-                             public int compare(List<Object> x, List<Object> y)
-                             {
-                                 // compare cids
-                                 Long lx = (Long) x.get(0);
-                                 Long ly = (Long) y.get(0);
-                                 return lx < ly ? -1 : lx > ly ? 1 : 0;
-                             }
-                         });
-        return indexEntries;
     }
 
     private List<List<Object>> orderPKIndex(List<TreeRecord> records)

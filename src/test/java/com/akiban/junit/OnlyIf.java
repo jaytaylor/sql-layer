@@ -13,26 +13,23 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.itests.keyupdate;
+package com.akiban.junit;
 
-import com.akiban.cserver.RowDef;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class Schema
+/**
+ * Represents a failing test.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface OnlyIf
 {
-    static int customerId;
-    static int c_cid;
-    static int c_cx;
-    static RowDef customerRowDef;
-    static int orderId;
-    static int o_oid;
-    static int o_cid;
-    static int o_ox;
-    static RowDef orderRowDef;
-    static int itemId;
-    static int i_cid;
-    static int i_oid;
-    static int i_iid;
-    static int i_ix;
-    static RowDef itemRowDef;
-    static RowDef groupRowDef;
+    /**
+     * The method that should be invoked to see if this annotated method should be run
+     * @return
+     */
+    String value();
 }
