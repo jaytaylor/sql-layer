@@ -85,7 +85,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
         // Halo spec: may only drop leaf tables through DDL interface
         if(userTable == null || userTable.getChildJoins().isEmpty() == false) {
-            throw new UnsupportedDropException(ErrorCode.UNSUPPORTED_OPERATION, "Cannot drop non-leaf table");
+            throw new UnsupportedDropException(ErrorCode.UNSUPPORTED_OPERATION,
+                                               "Cannot drop non-leaf table " + userTable.getName());
         }
 
         try {

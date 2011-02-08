@@ -53,10 +53,8 @@ public final class ColumnSet {
         }
         Set<Integer> retval = new HashSet<Integer>();
         for (int byteNum=0; byteNum < columns.length; ++byteNum) {
-            if (columns[byteNum] > 0) {
-                int added = unpackByteFromLegacy(columns[byteNum], byteNum, retval);
-                assert added > 0 : String.format("bytes[%d] added %d: %s", byteNum, added, retval);
-            }
+            int added = unpackByteFromLegacy(columns[byteNum], byteNum, retval);
+            assert added >= 0 : String.format("bytes[%d] added %d: %s", byteNum, added, retval);
         }
         return retval;
     }

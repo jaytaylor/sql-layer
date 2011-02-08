@@ -73,6 +73,34 @@ public final class CBasicIT extends ApiTestBase {
         assertEquals("rows scanned", expectedRows, output.getRows());
     }
 
+    /*
+     * There was a miscalculation in the ColumnSet pack to/from legacy conversions if the 8th bit
+     * happened to be set. A bad if check would skip the byte all together and up to 8 columns would
+     * no longer be in the set.
+     */
+    @Test
+    public void simpleScanColumnMapConversionCheck() throws InvalidOperationException {
+        final int tableId = createTable("test", "t",
+                                        "c1 int key, c2 int, c3 int, c4 int, c5 int, c6 int, c7 int, c8 int, c9 int");
+
+        expectRowCount(tableId, 0);
+        writeRows(createNewRow(tableId, 11, 12, 13, 14, 15, 16, 17, 18, 19),
+                  createNewRow(tableId, 21, 22, 23, 24, 25, 26, 27, 28, 29),
+                  createNewRow(tableId, 31, 32, 33, 34, 35, 36, 37, 38, 39));
+        expectRowCount(tableId, 3);
+
+        // Select 8th place in column map (index 7) which caused the byte to be <0 and skipped in a bad if check
+        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 7, 8)));
+        assertEquals("rows scanned", 3, rows.size());
+
+        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        NiceRow r;
+        r = new NiceRow(tableId); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
+        r = new NiceRow(tableId); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
+        r = new NiceRow(tableId); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
+        assertEquals("row content", expectedRows, rows);
+    }
+
     @Test
     public void indexScan() throws InvalidOperationException {
         final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32), key name(name)");
