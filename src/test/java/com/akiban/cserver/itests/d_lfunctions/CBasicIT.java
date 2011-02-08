@@ -143,7 +143,7 @@ public final class CBasicIT extends ApiTestBase {
     }
     
     @Test
-    public void testDropTable() throws InvalidOperationException {
+    public void dropTable() throws InvalidOperationException {
         final int tableId1 = createTable("testSchema", "customer", "id int key");
         ddl().dropTable(session, tableName("testSchema", "customer"));
 
@@ -161,7 +161,7 @@ public final class CBasicIT extends ApiTestBase {
     }
 
     @Test
-    public void testDropGroup() throws InvalidOperationException {
+    public void dropGroup() throws InvalidOperationException {
         final int tid = createTable("test", "t", "id int key");
         final String groupName = ddl().getAIS(session).getUserTable("test", "t").getGroup().getName();
         ddl().dropGroup(session, groupName);
@@ -179,6 +179,24 @@ public final class CBasicIT extends ApiTestBase {
             caught = e;
         }
         assertNotNull("expected NoSuchTableException", caught);
+    }
+
+    /*
+     * RowDef IDs are currently non-unique during the lifetime of the server and can easily be reused.
+     * Since a stored TableStatus is identified RowDefID, not deleting it will yield a) invalid status b) exception
+     */
+    @Test
+    public void dropThenCreateRowDefIDRecycled() throws InvalidOperationException {
+        final int tidV1 = createTable("test", "t1", "id int key auto_increment, name varchar(255)");
+        dml().writeRow(session, createNewRow(tidV1, 1, "hello world"));
+        expectRowCount(tidV1, 1);
+        ddl().dropTable(session, tableName(tidV1));
+
+        // Easiest exception trigger was to toggle auto_inc column, failed when trying to update it
+        final int tidV2 = createTable("test", "t2", "id int key, tag char(1), value decimal(10,2)");
+        dml().writeRow(session, createNewRow(tidV2, "1", "a", "49.95"));
+        expectRowCount(tidV2, 1);
+        ddl().dropTable(session, tableName(tidV2));
     }
 
     @Test
@@ -457,7 +475,6 @@ public final class CBasicIT extends ApiTestBase {
         int secondGen = ddl().getSchemaID().getGeneration();
         assertTrue(String.format("failed %d > %d", secondGen, firstGen), secondGen > firstGen);
     }
-
 
     @Test
     public void truncate() throws InvalidOperationException {
