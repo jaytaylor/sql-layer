@@ -177,14 +177,12 @@ public class PersistitStore implements CServerConstants, Store {
         FieldDef[] fieldDefs = rowDef.getFieldDefs();
         // Metadata and other state for the parent table
         RowDef parentRowDef = null;
-        UserTable parentTable = null;
         if (rowDef.getParentRowDefId() != 0) {
             parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
-            parentTable = parentRowDef.userTable();
         }
         IndexDef.I2H[] indexToHKey = null;
         int i2hPosition = 0;
-        Exchange parentExchange = null;
+        Exchange parentPKExchange = null;
         boolean parentExists = false;
         // Nested loop over hkey metadata: All the segments of an hkey, and all the columns of a segment.
         List<HKeySegment> hKeySegments = table.hKey().segments();
@@ -200,17 +198,21 @@ public class PersistitStore implements CServerConstants, Store {
             while (c < hKeyColumns.size()) {
                 HKeyColumn hKeyColumn = hKeyColumns.get(c++);
                 UserTable hKeyColumnTable = hKeyColumn.column().getUserTable();
-                // The columns of an hkey come from the table, or the table and its parent.
-                assert hKeyColumnTable == table || parentTable != null && hKeyColumnTable == parentTable : hKeyColumn;
-                if (hKeyColumnTable == parentTable) {
+                if (hKeyColumnTable != table) {
                     // Hkey column from row of parent table
-                    if (parentExchange == null) {
+                    if (parentPKExchange == null) {
                         // Initialize parent metadata and state
+                        assert parentRowDef != null : rowDef;
                         IndexDef parentPK = parentRowDef.getPKIndexDef();
-                        parentExchange = getExchange(session, rowDef, parentPK);
-                        constructParentPKIndexKey(parentExchange.getKey(), rowDef, rowData);
-                        parentExists = parentExchange.hasChildren();
                         indexToHKey = parentPK.hkeyFields();
+                        parentPKExchange = getExchange(session, rowDef, parentPK);
+                        constructParentPKIndexKey(parentPKExchange.getKey(), rowDef, rowData);
+                        parentExists = parentPKExchange.hasChildren();
+                        if (parentExists) {
+                            boolean hasNext = parentPKExchange.next(true);
+                            assert hasNext : rowData;
+                        }
+                        // parent does not necessarily exist. rowData could be an orphan
                     }
                     IndexDef.I2H i2h = indexToHKey[i2hPosition++];
                     if (i2h.isOrdinalType()) {
@@ -218,9 +220,7 @@ public class PersistitStore implements CServerConstants, Store {
                         i2h = indexToHKey[i2hPosition++];
                     }
                     if (parentExists) {
-                        boolean next = parentExchange.next(true);
-                        assert next : rowData;
-                        appendKeyFieldFromKey(parentExchange.getKey(), hKey, i2h.indexKeyLoc());
+                        appendKeyFieldFromKey(parentPKExchange.getKey(), hKey, i2h.indexKeyLoc());
                     } else {
                         // orphan row
                         hKey.append(null);
@@ -242,51 +242,9 @@ public class PersistitStore implements CServerConstants, Store {
                 }
             }
         }
-        if (parentExchange != null) {
-            releaseExchange(session, parentExchange);
+        if (parentPKExchange != null) {
+            releaseExchange(session, parentPKExchange);
         }
-/*        int parentHKeySegments = 0;
-        if (!table.containsOwnHKey()) {
-            RowDef parentRowDef = rowDefCache.getRowDef(rowDef.getParentRowDefId());
-            // For hkey fields not in rowDef's table, find the parent row and
-            // get the hkey from it. That provides
-            // the hkey up to the point that rowData can contribute the rest.
-            Exchange iEx = getExchange(session, rowDef, parentRowDef.getPKIndexDef());
-            constructParentPKIndexKey(iEx.getKey(), rowDef, rowData);
-            if (iEx.hasChildren()) {
-                boolean next = iEx.next(true);
-                assert next;
-                constructHKeyFromIndexKey(hKey, iEx.getKey(), parentRowDef.getPKIndexDef());
-            } else {
-                constructHKeyFromNullIndexKey(hKey, parentRowDef.getPKIndexDef());
-            }
-            releaseExchange(session, iEx);
-            parentHKeySegments = parentRowDef.userTable().hKey().segments().size();
-        }
-        // Get hkey contributions from this row
-        List<HKeySegment> segments = table.hKey().segments();
-        for (int s = parentHKeySegments; s < segments.size(); s++) {
-            HKeySegment segment = segments.get(s);
-            RowDef segmentRowDef = rowDefCache.getRowDef(segment.table().getTableId());
-            hKey.append(segmentRowDef.getTableStatus().getOrdinal());
-            FieldDef[] fieldDefs = rowDef.getFieldDefs();
-            List<HKeyColumn> segmentColumns = segment.columns();
-            for (int c = 0; c < segmentColumns.size(); c++) {
-                HKeyColumn segmentColumn = segmentColumns.get(c);
-                Column column = segmentColumn.column();
-                FieldDef fieldDef = fieldDefs[column.getPosition()];
-                if (insertingRow && column.isAkibanPKColumn()) {
-                    // Must be a PK-less table. Use unique id from TableStatus.
-                    TableStatus tableStatus = segmentRowDef.getTableStatus();
-                    long rowId = tableStatus.newUniqueId();
-                    hKey.append(rowId);
-                    // Write rowId into the value part of the row also.
-                    rowData.updateNonNullLong(fieldDef, rowId);
-                } else {
-                    appendKeyField(hKey, fieldDef, rowData);
-                }
-            }
-        }*/
     }
 
     void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
@@ -1239,13 +1197,12 @@ public class PersistitStore implements CServerConstants, Store {
         final Key key = iEx.getKey();
 
         if (indexDef.isUnique()) {
-            int saveSize = key.getEncodedSize();
+            KeyState ks = new KeyState(key);
             key.setDepth(indexDef.getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
                 complainAboutDuplicateKey(indexDef.getName(), key);
             }
-            // Restores key to pre-transaction state?!   key.setEncodedSize(saveSize);
-            constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
+            ks.copyTo(key);
         }
         iEx.getValue().clear();
         if (deferIndexes) {

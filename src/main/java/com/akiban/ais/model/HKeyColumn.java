@@ -20,6 +20,16 @@ import java.util.List;
 
 public class HKeyColumn
 {
+    @Override
+    public String toString()
+    {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(column().getTable().getName().getTableName());
+        buffer.append('.');
+        buffer.append(column().getName());
+        return buffer.toString();
+    }
+
     public HKeySegment segment()
     {
         return segment;

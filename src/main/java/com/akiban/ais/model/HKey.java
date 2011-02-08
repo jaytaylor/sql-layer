@@ -20,6 +20,7 @@ import java.util.List;
 
 public class HKey
 {
+    @Override
     public String toString()
     {
         StringBuilder buffer = new StringBuilder();
@@ -31,20 +32,7 @@ public class HKey
             } else {
                 buffer.append(", ");
             }
-            buffer.append(segment.table().getName().getTableName());
-            buffer.append(": (");
-            boolean firstColumn = true;
-            for (HKeyColumn hKeyColumn : segment.columns()) {
-                if (firstColumn) {
-                    firstColumn = false;
-                } else {
-                    buffer.append(", ");
-                }
-                buffer.append(hKeyColumn.column().getTable().getName().getTableName());
-                buffer.append('.');
-                buffer.append(hKeyColumn.column().getName());
-            }
-            buffer.append(")");
+            buffer.append(segment.toString());
         }
         buffer.append(")");
         return buffer.toString();
