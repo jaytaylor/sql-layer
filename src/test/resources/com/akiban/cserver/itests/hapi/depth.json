@@ -46,7 +46,8 @@
                         [22, 11, "2/2/2002"],
                         [23, 18, "2/2/2002"]
         ],
-        "item"      : [ [31, 21, 1111]
+        "item"      : [ [31, 21, 1111],
+                        [32, 23, 2222]
         ],
         "address"   : [ [41, 11, "500 Harrison"],
                         [42, 19, "1 Akiban Way"]
@@ -145,7 +146,7 @@
                     "cid" : 11,
                     "address" : "Mrs",
                     "name" : "Alpha",
-                    "@order" :
+                    "@orders" :
                     [
                         {
                             "oid" : 21,
@@ -158,14 +159,6 @@
                                     "sku" : 1111
                                 }
                             ]
-                        }
-                    ],
-                    "@address" :
-                    [
-                        {
-                            "aid" : 41,
-                            "c_id" : 11,
-                            "street" : "500 Harrison"
                         }
                     ]
                 }
@@ -200,7 +193,7 @@
     "nonunique from predicate's parent" : {
         "processors"    : ["scanrows"],
 
-        "get"           : "coi:customer:(orders)when='1%2F1%2F2001'",
+        "get"           : "coi:customer:(orders)when='2%2F2%2F2002'",
         "expect result" :
         {
             "@customer" :
@@ -209,7 +202,7 @@
                     "address" : "Mrs",
                     "cid" : 11,
                     "name" : "Alpha",
-                    "@order" :
+                    "@orders" :
                     [
                         {
                             "oid" : 22,
@@ -217,30 +210,27 @@
                             "when" : "2/2/2002",
                             "@item" : []
                         }
-                    ],
-                    "@address" :
-                    [
-                        {
-                            "aid" : 41,
-                            "c_id" : 11,
-                            "street" : "500 Harrison"
-                        }
                     ]
                 },
                 {
                     "cid" : 18,
                     "name" : "Charlie",
                     "address" : "Mr",
-                    "@order" :
+                    "@orders" :
                     [
                         {
                             "oid" : 23,
                             "c_id" : 18,
                             "when" : "2/2/2002",
-                            "@item" : []
+                            "@item" : [
+                                {
+                                    "iid" : 32,
+                                    "o_id" : 23,
+                                    "sku" : 2222
+                                }
+                            ]
                         }
-                    ],
-                    "@address" : []
+                    ]
                 }
             ]
         }

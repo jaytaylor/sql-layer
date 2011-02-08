@@ -117,7 +117,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
         private Integer bookendColumnId = null;
         boolean foundInequality = false;
-        private final UserTable uTable;
+        private final UserTable predicateTable;
+        private final UserTable hRoot;
 
         RowDataStruct(DDLFunctions ddlFunctions, Index index, HapiGetRequest request, Session session)
                 throws HapiRequestException
@@ -130,23 +131,28 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                 throw new HapiRequestException("internal error; tableId" + tableId, INTERNAL_ERROR);
             }
             this.index = index;
-
-            try {
-                Table usingTable = ddlFunctions.getTable(session, request.getUsingTable());
-                if (!usingTable.isUserTable()) {
-                    throw new HapiRequestException("not a user table: " + request.getUsingTable(), UNKNOWN_IDENTIFIER);
-                }
-                uTable = (UserTable) usingTable;
-            } catch (NoSuchTableException e) {
-                throw new HapiRequestException("no such table" + request.getUsingTable(), UNKNOWN_IDENTIFIER);
-            } catch (ClassCastException e) {
-                throw new HapiRequestException("not a UserTable: " + request.getUsingTable(), INTERNAL_ERROR);
-            }
-
-
+            this.predicateTable = getUserTable(session, ddlFunctions, request.getUsingTable());
+            this.hRoot = getUserTable(session, ddlFunctions, new TableName(request.getSchema(), request.getTable()));
             scanFlags = EnumSet.noneOf(ScanFlag.class);
             start = new NiceRow(tableId, rowDef);
             end = new NiceRow(tableId, rowDef);
+        }
+
+        private static UserTable getUserTable(Session session, DDLFunctions ddlFunctions,
+                                              TableName tableName)
+                throws HapiRequestException
+        {
+            try {
+                Table usingTable = ddlFunctions.getTable(session, tableName);
+                if (!usingTable.isUserTable()) {
+                    throw new HapiRequestException("not a user table: " + tableName, UNKNOWN_IDENTIFIER);
+                }
+                return (UserTable) usingTable;
+            } catch (NoSuchTableException e) {
+                throw new HapiRequestException("no such table" + tableName, UNKNOWN_IDENTIFIER);
+            } catch (ClassCastException e) {
+                throw new HapiRequestException("not a UserTable: " + tableName, INTERNAL_ERROR);
+            }
         }
 
         int scanFlagsInt() {
@@ -154,11 +160,11 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         }
 
         RowData start() {
-            return start.toRowData();
+            return start.getFields().isEmpty() ? null : start.toRowData();
         }
 
         RowData end() {
-            return end.toRowData();
+            return end.getFields().isEmpty() ? null : end.toRowData();
         }
 
         Table selectTable() {
@@ -170,8 +176,44 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         }
 
         byte[] columnBitmap() {
-            return scanAllColumns(selectTable());
+            if (index.getTable().isUserTable()) {
+                return allColumnsBitmap(index.getTable());
+            }
+
+            Set<Integer> projection = new HashSet<Integer>();
+            UserTable projectTable = predicateTable;
+            while (projectTable != null) {
+                addColumns(projectTable, projection);
+                if (projectTable.getName().equals(hRoot.getName())) {
+                    break;
+                }
+                projectTable = projectTable.getParentJoin().getParent();
+            }
+            return ColumnSet.packToLegacy(projection);
         }
+
+        private static byte[] allColumnsBitmap(Table table) {
+            Set<Integer> projection = new HashSet<Integer>();
+            for (Column column : table.getColumns()) {
+                projection.add(column.getPosition());
+            }
+            return ColumnSet.packToLegacy(projection);
+        }
+        private static void addColumns(UserTable table, Set<Integer> projection) {
+            for (Column column : table.getColumns()) {
+                projection.add(column.getGroupColumn().getPosition());
+            }
+        }
+
+
+
+//        private static byte[] scanAllColumns(Table table) {
+//            Set<Integer> allSet = new HashSet<Integer>();
+//            for (int i=0; i < table.getColumns().size(); ++i) {
+//                allSet.add(i);
+//            }
+//            return ColumnSet.packToLegacy(allSet);
+//        }
 
         void putEquality(HapiGetRequest.Predicate predicate) throws HapiRequestException {
             if (foundInequality) {
@@ -207,7 +249,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                 throws HapiRequestException
         {
             Column column;
-            column = uTable.getColumn(predicate.getColumnName());
+            column = predicateTable.getColumn(predicate.getColumnName());
             if (column == null) {
                 unsupported("unknown column: " + predicate.getColumnName());
                 throw new AssertionError("above line should have thrown an exception");
@@ -215,9 +257,9 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             Table indexTable = index.getTable();
             if (indexTable.isGroupTable()) {
                 column = column.getGroupColumn();
-                if (!column.getTable().equals(uTable.getGroup().getGroupTable())) {
+                if (!column.getTable().equals(predicateTable.getGroup().getGroupTable())) {
                     throw new HapiRequestException(
-                            String.format("%s != %s", column.getTable(), uTable.getGroup().getGroupTable()),
+                            String.format("%s != %s", column.getTable(), predicateTable.getGroup().getGroupTable()),
                             INTERNAL_ERROR
                     );
                 }
@@ -351,14 +393,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     private static void unsupported(String message) throws HapiRequestException {
         throw new HapiRequestException(message, UNSUPPORTED_REQUEST);
-    }
-
-    private static byte[] scanAllColumns(Table table) {
-        Set<Integer> allSet = new HashSet<Integer>();
-        for (int i=0; i < table.getColumns().size(); ++i) {
-            allSet.add(i);
-        }
-        return ColumnSet.packToLegacy(allSet);
     }
 
     private static List<String> predicateColumns(List<HapiGetRequest.Predicate> predicates, TableName tableName)
