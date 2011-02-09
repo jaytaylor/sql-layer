@@ -17,6 +17,7 @@ package com.akiban.cserver.itests.keyupdate;
 
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
+import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.message.ErrorCode;
 import org.junit.Before;
@@ -41,6 +42,7 @@ public class KeyUpdateIT extends ApiTestBase
     public void testInitialState() throws Exception
     {
         checkDB();
+        checkInitialState();
     }
 
     @Test
@@ -52,6 +54,10 @@ public class KeyUpdateIT extends ApiTestBase
         updateRow(newRow, i_oid, 0L, null);
         dbUpdate(oldRow, newRow);
         checkDB();
+        // Revert change
+        dbUpdate(newRow, oldRow);
+        checkDB();
+        checkInitialState();
     }
 
     @Test
@@ -65,6 +71,10 @@ public class KeyUpdateIT extends ApiTestBase
         updateRow(newRow, i_iid, 0L, parent);
         dbUpdate(oldRow, newRow);
         checkDB();
+        // Revert change
+        dbUpdate(newRow, oldRow);
+        checkDB();
+        checkInitialState();
     }
 
     @Test
@@ -83,6 +93,7 @@ public class KeyUpdateIT extends ApiTestBase
             assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
         }
         checkDB();
+        checkInitialState();
     }
 
     @Test
@@ -102,6 +113,17 @@ public class KeyUpdateIT extends ApiTestBase
         }
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
+        // Revert change
+        for (long iid = 221; iid <= 223; iid++) {
+            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 0L, orderRowDef, 22L, itemRowDef, iid));
+            TestRow newItemRow = copyRow(oldItemRow);
+            newItemRow.hKey(hKey(newItemRow, oldOrderRow));
+            testStore.deleteTestRow(oldItemRow);
+            testStore.writeTestRow(newItemRow);
+        }
+        dbUpdate(newOrderRow, oldOrderRow);
+        checkDB();
+        checkInitialState();
     }
 
     @Test
@@ -121,6 +143,17 @@ public class KeyUpdateIT extends ApiTestBase
         }
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
+        // Revert change
+        for (long iid = 221; iid <= 223; iid++) {
+            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, null, orderRowDef, 22L, itemRowDef, iid));
+            TestRow newItemRow = copyRow(oldItemRow);
+            newItemRow.hKey(hKey(newItemRow, oldOrderRow));
+            testStore.deleteTestRow(oldItemRow);
+            testStore.writeTestRow(newItemRow);
+        }
+        dbUpdate(newOrderRow, oldOrderRow);
+        checkDB();
+        checkInitialState();
     }
 
     @Test
@@ -150,6 +183,10 @@ public class KeyUpdateIT extends ApiTestBase
         updateRow(newCustomerRow, c_cid, 0L, null);
         dbUpdate(oldCustomerRow, newCustomerRow);
         checkDB();
+        // Revert change
+        dbUpdate(newCustomerRow, oldCustomerRow);
+        checkDB();
+        checkInitialState();
     }
 
     @Test
@@ -228,6 +265,55 @@ public class KeyUpdateIT extends ApiTestBase
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session, itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+    }
+
+    private void checkInitialState() throws Exception
+    {
+        RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
+        RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
+        testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
+        Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
+        Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
+        Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
+        expectedCounts.put(customerRowDef.getRowDefId(), 0);
+        expectedCounts.put(orderRowDef.getRowDefId(), 0);
+        expectedCounts.put(itemRowDef.getRowDefId(), 0);
+        Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
+        actualCounts.put(customerRowDef.getRowDefId(), 0);
+        actualCounts.put(orderRowDef.getRowDefId(), 0);
+        actualCounts.put(itemRowDef.getRowDefId(), 0);
+        while (expectedIterator.hasNext() && actualIterator.hasNext()) {
+            TreeRecord expected = expectedIterator.next();
+            TreeRecord actual = actualIterator.next();
+            assertEquals(expected, actual);
+            assertEquals(hKey((TestRow) expected.row()), actual.hKey());
+            checkInitialState(actual.row());
+            expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
+            actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
+        }
+        assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
+        assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
+        assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
+        assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
+        assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
+        assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
+        assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
+    }
+
+    private void checkInitialState(NewRow row)
+    {
+        RowDef rowDef = row.getRowDef();
+        if (rowDef == customerRowDef) {
+            assertEquals(row.get(c_cx), ((Long)row.get(c_cid)) * 100);
+        } else if (rowDef == orderRowDef) {
+            assertEquals(row.get(o_cid), ((Long)row.get(o_oid)) / 10);
+            assertEquals(row.get(o_ox), ((Long)row.get(o_oid)) * 100);
+        } else if (rowDef == itemRowDef) {
+            assertEquals(row.get(i_oid), ((Long)row.get(i_iid)) / 10);
+            assertEquals(row.get(i_ix), ((Long)row.get(i_iid)) * 100);
+        } else {
+            fail();
+        }
     }
 
     private List<List<Object>> orderPKIndex(List<TreeRecord> records)
@@ -412,7 +498,7 @@ public class KeyUpdateIT extends ApiTestBase
             copy.put(entry.getKey(), entry.getValue());
         }
         copy.parent(row.parent());
-        copy.hKey(hKey(row));
+        copy.hKey(hKey(row, row.parent()));
         return copy;
     }
 
