@@ -210,8 +210,8 @@ public final class CBasicIT extends ApiTestBase {
     }
 
     /*
-     * RowDef IDs are currently non-unique during the lifetime of the server and can easily be reused.
-     * Since a stored TableStatus is identified RowDefID, not deleting it will yield a) invalid status b) exception
+     * Found from an actual case in the MTR test suite. Caused by recycled RowDefIDs and undeleted table statuses.
+     * Really testing that table statuses get deleted, but about as direct as we can get from this level.
      */
     @Test
     public void dropThenCreateRowDefIDRecycled() throws InvalidOperationException {

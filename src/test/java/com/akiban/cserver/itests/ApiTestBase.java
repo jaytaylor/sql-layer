@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.GroupTable;
@@ -294,7 +293,7 @@ public class ApiTestBase {
                 allIds.add(entry.getValue().getTableId());
             }
         }
-        Collections.sort(allIds, Collections.<Object>reverseOrder());
+        Collections.sort(allIds, Collections.reverseOrder());
         for (Integer id : allIds) {
             ddl().dropTable(session, tableName(id));
         }
