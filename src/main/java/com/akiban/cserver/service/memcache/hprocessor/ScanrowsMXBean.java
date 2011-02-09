@@ -18,10 +18,4 @@ package com.akiban.cserver.service.memcache.hprocessor;
 public interface ScanrowsMXBean {
     public int getBufferCapacity();
     public void setBufferCapacity(int bytes);
-
-    boolean getUsingDeep();
-    void setUsingDeep(boolean usingDeep);
-
-    boolean getAlwaysUseGroupTable();
-    void setAlwaysUseGroupTable(boolean alwaysUseGroupTable);
 }

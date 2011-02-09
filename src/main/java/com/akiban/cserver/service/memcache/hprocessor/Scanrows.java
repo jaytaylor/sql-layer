@@ -56,7 +56,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.akiban.cserver.api.HapiRequestException.ReasonCode.*;
@@ -66,8 +65,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
     private static final AtomicInteger bufferSize = new AtomicInteger(65535);
-    private static final AtomicBoolean useDeep = new AtomicBoolean(true);
-    private static final AtomicBoolean alwaysUseGroupTable = new AtomicBoolean(false);
 
     private final ScanrowsMXBean bean = new ScanrowsMXBean() {
         @Override
@@ -78,26 +75,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         @Override
         public void setBufferCapacity(int bytes) {
             bufferSize.set(bytes);
-        }
-
-        @Override
-        public boolean getUsingDeep() {
-            return useDeep.get();
-        }
-
-        @Override
-        public void setUsingDeep(boolean usingDeep) {
-            useDeep.set(usingDeep);
-        }
-
-        @Override
-        public boolean getAlwaysUseGroupTable() {
-            return alwaysUseGroupTable.get();
-        }
-
-        @Override
-        public void setAlwaysUseGroupTable(boolean alwaysUseGroupTable) {
-            Scanrows.alwaysUseGroupTable.set(alwaysUseGroupTable);
         }
     };
 
@@ -133,7 +110,11 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             this.index = index;
             this.predicateTable = getUserTable(session, ddlFunctions, request.getUsingTable());
             this.hRoot = getUserTable(session, ddlFunctions, new TableName(request.getSchema(), request.getTable()));
-            scanFlags = EnumSet.noneOf(ScanFlag.class);
+            scanFlags = EnumSet.of(
+                    ScanFlag.DEEP,
+                    ScanFlag.START_AT_BEGINNING,
+                    ScanFlag.END_AT_END
+            );
             start = new NiceRow(tableId, rowDef);
             end = new NiceRow(tableId, rowDef);
         }
@@ -343,16 +324,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private RowDataStruct getScanRange(Session session, HapiGetRequest request)
             throws HapiRequestException, NoSuchTableException
     {
-        final boolean useGroupTable = alwaysUseGroupTable.get();
-        Index index = findHapiRequestIndex(session, request, useGroupTable);
+        Index index = findHapiRequestIndex(session, request);
         RowDataStruct ret = new RowDataStruct(ddlFunctions, index, request, session);
-
-        assert ret.scanFlags.isEmpty() : ret.scanFlags;
-        ret.scanFlags.add(ScanFlag.START_AT_BEGINNING);
-        ret.scanFlags.add(ScanFlag.END_AT_END);
-        if (useDeep.get()) {
-            ret.scanFlags.add(ScanFlag.DEEP);
-        }
 
         for (HapiGetRequest.Predicate predicate : request.getPredicates()) {
             switch (predicate.getOp()) {
@@ -532,11 +505,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             ));
 
     @Override
-    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
-        return findHapiRequestIndex(session, request, alwaysUseGroupTable.get());
-    }
-
-    private Index findHapiRequestIndex(Session session, HapiGetRequest request, boolean forceUseGroupTable)
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request)
             throws HapiRequestException
     {
         final UserTable table;
@@ -545,8 +514,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         } catch (NoSuchTableException e) {
             throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
         }
-        boolean useGroupTable = forceUseGroupTable
-                || !request.getUsingTable().equals(request.getSchema(), request.getTable());
+        boolean useGroupTable = !request.getUsingTable().equals(request.getSchema(), request.getTable());
 
         List<String> columns = predicateColumns(request.getPredicates(), table.getName());
 
