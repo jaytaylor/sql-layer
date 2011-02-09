@@ -21,10 +21,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.commons.logging.Log;
 import org.apache.log4j.Level;
 
 import com.akiban.util.Command;
+import org.apache.log4j.Logger;
 
 public class DB
 {
@@ -53,7 +53,7 @@ public class DB
                                                                        dbPort, schema);
     }
 
-    public void spawn(String sql, Log logger)
+    public void spawn(String sql, Logger logger)
     {
         Command command =
                 dbPassword == null

@@ -29,8 +29,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.persistit.logging.Log4JAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.cserver.CServerUtil;
 import com.akiban.cserver.service.Service;
@@ -51,7 +52,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private final static int MEGA = 1024 * 1024;
 
-    private static final Log LOG = LogFactory.getLog(TreeServiceImpl.class
+    private static final Logger LOG = LoggerFactory.getLogger(TreeServiceImpl.class
             .getName());
 
     private static final String SERVER_MODULE_NAME = "cserver";
@@ -160,7 +161,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         // Now we're ready to create the Persistit instance.
         //
         db = new Persistit();
-        db.setPersistitLogger(new ApacheCommonsLogAdapter(LOG));
+        db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
         db.initialize(properties);
         buildSchemaMap();
 

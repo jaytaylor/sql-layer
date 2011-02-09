@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.cserver.loader.Event;
 import com.akiban.cserver.message.BulkLoadRequest;
@@ -293,7 +293,7 @@ public class BulkLoaderClient
             "is monitored.",
             ""};
 
-    private static final Log logger = LogFactory.getLog(BulkLoaderClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(BulkLoaderClient.class);
     private static final String LOCALHOST = "localhost";
     private static final int DEFAULT_MYSQL_PORT = 3306;
     // Networking layer requires a listening port

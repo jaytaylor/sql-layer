@@ -36,14 +36,14 @@ public interface GwtLogger
     boolean isFatalEnabled();
 
     /**
-     * <p> Log a message with trace log level. </p>
+     * <p> Logger a message with trace log level. </p>
      *
      * @param message log this message
      */
     public void trace(Object message);
 
     /**
-     * <p> Log an error with trace log level. </p>
+     * <p> Logger an error with trace log level. </p>
      *
      * @param message log this message
      * @param t log this cause
@@ -52,7 +52,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log a message with debug log level. </p>
+     * <p> Logger a message with debug log level. </p>
      *
      * @param message log this message
      */
@@ -60,7 +60,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log an error with debug log level. </p>
+     * <p> Logger an error with debug log level. </p>
      *
      * @param message log this message
      * @param t log this cause
@@ -69,7 +69,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log a message with info log level. </p>
+     * <p> Logger a message with info log level. </p>
      *
      * @param message log this message
      */
@@ -77,7 +77,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log an error with info log level. </p>
+     * <p> Logger an error with info log level. </p>
      *
      * @param message log this message
      * @param t log this cause
@@ -86,7 +86,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log a message with warn log level. </p>
+     * <p> Logger a message with warn log level. </p>
      *
      * @param message log this message
      */
@@ -94,7 +94,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log an error with warn log level. </p>
+     * <p> Logger an error with warn log level. </p>
      *
      * @param message log this message
      * @param t log this cause
@@ -103,7 +103,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log a message with error log level. </p>
+     * <p> Logger a message with error log level. </p>
      *
      * @param message log this message
      */
@@ -111,7 +111,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log an error with error log level. </p>
+     * <p> Logger an error with error log level. </p>
      *
      * @param message log this message
      * @param t log this cause
@@ -120,7 +120,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log a message with fatal log level. </p>
+     * <p> Logger a message with fatal log level. </p>
      *
      * @param message log this message
      */
@@ -128,7 +128,7 @@ public interface GwtLogger
 
 
     /**
-     * <p> Log an error with fatal log level. </p>
+     * <p> Logger an error with fatal log level. </p>
      *
      * @param message log this message
      * @param t log this cause

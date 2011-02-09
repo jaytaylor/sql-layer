@@ -44,8 +44,8 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.ddl.SchemaDef.CName;
 import com.akiban.ais.ddl.SchemaDef.ColumnDef;
@@ -100,7 +100,7 @@ public class DDLSource extends Source {
     public final static String CREATE_TABLE = "create table ";
     public final static String IF_NOT_EXISTS = "if not exists ";
 
-    private static final Log LOG = LogFactory.getLog(DDLSource.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DDLSource.class.getName());
 
     private final static String SCHEMA_FILE_NAME = "src/test/resources/xxxxxxxx_schema.ddl";
     private final static int MAX_AIS_SIZE = 1048576;

@@ -26,8 +26,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.antlr.runtime.RecognitionException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.ddl.SchemaDef.CName;
 import com.akiban.ais.ddl.SchemaDef.ColumnDef;
@@ -55,7 +55,7 @@ import com.akiban.util.Strings;
  */
 public class SchemaDefToAis {
 
-    private static final Log LOG = LogFactory.getLog(SchemaDefToAis.class
+    private static final Logger LOG = LoggerFactory.getLogger(SchemaDefToAis.class
             .getName());
 
     private final static String AKIBANDB_ENGINE_NAME = "akibandb";

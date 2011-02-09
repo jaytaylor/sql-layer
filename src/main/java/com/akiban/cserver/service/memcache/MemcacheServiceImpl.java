@@ -27,8 +27,6 @@ import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.session.Session;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -66,7 +64,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     // Service vars
     private final ServiceManager serviceManager;
-    private static final Log log = LogFactory.getLog(MemcacheServiceImpl.class);
+    private static final Logger log = Logger.getLogger(MemcacheServiceImpl.class);
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;

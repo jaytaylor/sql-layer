@@ -23,8 +23,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Tracker
 {
@@ -47,7 +47,7 @@ public class Tracker
         recordEvent(stack);
     }
 
-    public Log logger()
+    public Logger logger()
     {
         return logger;
     }
@@ -99,7 +99,7 @@ public class Tracker
         }
     }
 
-    private static final Log logger = LogFactory.getLog(Tracker.class);
+    private static final Logger logger = LoggerFactory.getLogger(Tracker.class);
     private static final int ONE_BILLION = 1000 * 1000 * 1000;
     private static final String TEMPLATE_CREATE_PROGRESS_TABLE = "create table if not exists %s.progress("
                                                                  + "    event_id int auto_increment, "

@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -52,12 +51,12 @@ public abstract class Command
         return new PrintOutput(env, output, commandLine);
     }
 
-    public static Command logOutput(Log log, Level level, String ... commandLine)
+    public static Command logOutput(Logger log, Level level, String ... commandLine)
     {
         return new LogOutput(null, log, level, commandLine);
     }
 
-    public static Command logOutput(Map<String, String> env, Log log, Level level, String ... commandLine)
+    public static Command logOutput(Map<String, String> env, Logger log, Level level, String ... commandLine)
     {
         return new LogOutput(env, log, level, commandLine);
     }
@@ -166,7 +165,7 @@ public abstract class Command
     private final String[] env;
     private final String[] commandLine;
     private final PrintStream output;
-    private final Log log;
+    private final Logger log;
     private State state = State.NOT_YET_RUN;
     private Process process;
     private int processExit;
@@ -292,7 +291,7 @@ public abstract class Command
 
     private static class LogOutput extends Command
     {
-        LogOutput(Map<String, String> env, Log log, Level level, String ... commandLine)
+        LogOutput(Map<String, String> env, Logger log, Level level, String ... commandLine)
         {
             super(env, commandLine);
             this.log = log;
@@ -308,7 +307,7 @@ public abstract class Command
             return consumer;
         }
 
-        private final Log log;
+        private final Logger log;
         private final Level level;
 
         private class LogOutputConsumer extends Consumer
