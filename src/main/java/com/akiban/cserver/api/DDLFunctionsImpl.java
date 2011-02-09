@@ -17,6 +17,7 @@ package com.akiban.cserver.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import com.akiban.ais.model.AkibaInformationSchema;
@@ -41,6 +42,7 @@ import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
 import com.akiban.cserver.util.RowDefNotFoundException;
@@ -72,20 +74,25 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @Override
     public void dropTable(Session session, TableName tableName)
             throws ProtectedTableDDLException, ForeignConstraintDDLException,
-            GenericInvalidOperationException {
-        final int rowDefId;
-        try {
-            rowDefId = getTableId(session, tableName);
-        } catch (NoSuchTableException e) {
-            return; // dropping a nonexistent table is a no-op
+            UnsupportedDropException, GenericInvalidOperationException {
+        final Table table = getAIS(session).getTable(tableName);
+        
+        if(table == null) {
+            return; // dropping a non-existing table is a no-op
+        }
+
+        final UserTable userTable = table.isUserTable() ? (UserTable)table : null;
+
+        // Halo spec: may only drop leaf tables through DDL interface
+        if(userTable == null || userTable.getChildJoins().isEmpty() == false) {
+            throw new UnsupportedDropException(ErrorCode.UNSUPPORTED_OPERATION,
+                                               "Cannot drop non-leaf table " + userTable.getName());
         }
 
         try {
-            // TODO - reconsider the API for truncateTable.
-            // TODO - needs to be wrapped in a Transaction
-            store().truncateTable(session, rowDefId);
-            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(),
-                    tableName.getTableName());
+            DMLFunctions dml = new DMLFunctionsImpl(this);
+            dml.truncateTable(session, table.getTableId());
+            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -99,6 +106,24 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             schemaManager().deleteSchemaDefinition(session, schemaName);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
+        }
+    }
+
+    @Override
+    public void dropGroup(Session session, String groupName)
+            throws ProtectedTableDDLException, GenericInvalidOperationException, NoSuchTableException,
+            UnsupportedDropException, ForeignConstraintDDLException {
+        List<Integer> toDrop = new ArrayList<Integer>();
+        for(UserTable userTable : getAIS(session).getUserTables().values()) {
+            if(userTable.getGroup().getName().equals(groupName)) {
+                toDrop.add(userTable.getTableId());
+            }
+        }
+
+        // Child tables always have a higher id than parents, reverse sort to drop children first
+        Collections.sort(toDrop, Collections.reverseOrder());
+        for(Integer id : toDrop) {
+            dropTable(session, getTableName(session, id));
         }
     }
 

@@ -53,10 +53,8 @@ public final class ColumnSet {
         }
         Set<Integer> retval = new HashSet<Integer>();
         for (int byteNum=0; byteNum < columns.length; ++byteNum) {
-            if (columns[byteNum] > 0) {
-                int added = unpackByteFromLegacy(columns[byteNum], byteNum, retval);
-                assert added > 0 : String.format("bytes[%d] added %d: %s", byteNum, added, retval);
-            }
+            int added = unpackByteFromLegacy(columns[byteNum], byteNum, retval);
+            assert added >= 0 : String.format("bytes[%d] added %d: %s", byteNum, added, retval);
         }
         return retval;
     }
@@ -79,10 +77,8 @@ public final class ColumnSet {
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
         for (int posAbsolute : columns) {
-            final int byteNum = ((posAbsolute + 8) / 8) - 1;
-            final int posRelative = posAbsolute - byteNum*8;
-            assert (posRelative <= 7) && (posRelative >=0)
-                    : String.format("0x%X had bit %d in byte %d", posAbsolute, byteNum, posRelative);
+            final int byteNum = posAbsolute / 8;
+            final int posRelative = posAbsolute % 8;
             byteBuffer = ensureCapacity(byteBuffer, byteNum + 1);
             final byte activeByteOrig = byteBuffer.get(byteNum);
             final byte activeByteNew = (byte) (activeByteOrig | (1 << posRelative));
@@ -108,8 +104,8 @@ public final class ColumnSet {
             return oldBuffer;
         }
         final ByteBuffer newBuffer = ByteBuffer.allocate(byteCount);
-        newBuffer.order( oldBuffer.order() );
-        newBuffer.put(oldBuffer);
+        newBuffer.order(oldBuffer.order());
+        newBuffer.put(oldBuffer.array());
         return newBuffer;
     }
 }

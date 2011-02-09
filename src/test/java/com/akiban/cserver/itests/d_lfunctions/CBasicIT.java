@@ -17,6 +17,7 @@ package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -70,6 +71,34 @@ public final class CBasicIT extends ApiTestBase {
         expectedRows.add( createNewRow(tableId, 0L, "hello world") );
         expectedRows.add( createNewRow(tableId, 1L, "foo bear") );
         assertEquals("rows scanned", expectedRows, output.getRows());
+    }
+
+    /*
+     * There was a miscalculation in the ColumnSet pack to/from legacy conversions if the 8th bit
+     * happened to be set. A bad if check would skip the byte all together and up to 8 columns would
+     * no longer be in the set.
+     */
+    @Test
+    public void simpleScanColumnMapConversionCheck() throws InvalidOperationException {
+        final int tableId = createTable("test", "t",
+                                        "c1 int key, c2 int, c3 int, c4 int, c5 int, c6 int, c7 int, c8 int, c9 int");
+
+        expectRowCount(tableId, 0);
+        writeRows(createNewRow(tableId, 11, 12, 13, 14, 15, 16, 17, 18, 19),
+                  createNewRow(tableId, 21, 22, 23, 24, 25, 26, 27, 28, 29),
+                  createNewRow(tableId, 31, 32, 33, 34, 35, 36, 37, 38, 39));
+        expectRowCount(tableId, 3);
+
+        // Select 8th place in column map (index 7) which caused the byte to be <0 and skipped in a bad if check
+        List<NewRow> rows = scanAll(new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 7, 8)));
+        assertEquals("rows scanned", 3, rows.size());
+
+        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        NiceRow r;
+        r = new NiceRow(tableId); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
+        r = new NiceRow(tableId); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
+        r = new NiceRow(tableId); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
+        assertEquals("row content", expectedRows, rows);
     }
 
     @Test
@@ -142,7 +171,7 @@ public final class CBasicIT extends ApiTestBase {
     }
     
     @Test
-    public void testDropTable() throws InvalidOperationException {
+    public void dropTable() throws InvalidOperationException {
         final int tableId1 = createTable("testSchema", "customer", "id int key");
         ddl().dropTable(session, tableName("testSchema", "customer"));
 
@@ -157,6 +186,45 @@ public final class CBasicIT extends ApiTestBase {
             caught = e;
         }
         assertNotNull("expected NoSuchTableException", caught);
+    }
+
+    @Test
+    public void dropGroup() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "id int key");
+        final String groupName = ddl().getAIS(session).getUserTable("test", "t").getGroup().getName();
+        ddl().dropGroup(session, groupName);
+
+        AkibaInformationSchema ais = ddl().getAIS(session);
+        assertNull("expected no table", ais.getUserTable("test", "t"));
+        assertNull("expected no group", ais.getGroup(groupName));
+
+        ddl().dropGroup(session, groupName);
+
+        NoSuchTableException caught = null;
+        try {
+            dml().openCursor(session, new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
+        } catch (NoSuchTableException e) {
+            caught = e;
+        }
+        assertNotNull("expected NoSuchTableException", caught);
+    }
+
+    /*
+     * Found from an actual case in the MTR test suite. Caused by recycled RowDefIDs and undeleted table statuses.
+     * Really testing that table statuses get deleted, but about as direct as we can get from this level.
+     */
+    @Test
+    public void dropThenCreateRowDefIDRecycled() throws InvalidOperationException {
+        final int tidV1 = createTable("test", "t1", "id int key auto_increment, name varchar(255)");
+        dml().writeRow(session, createNewRow(tidV1, 1, "hello world"));
+        expectRowCount(tidV1, 1);
+        ddl().dropTable(session, tableName(tidV1));
+
+        // Easiest exception trigger was to toggle auto_inc column, failed when trying to update it
+        final int tidV2 = createTable("test", "t2", "id int key, tag char(1), value decimal(10,2)");
+        dml().writeRow(session, createNewRow(tidV2, "1", "a", "49.95"));
+        expectRowCount(tidV2, 1);
+        ddl().dropTable(session, tableName(tidV2));
     }
 
     @Test
@@ -435,7 +503,6 @@ public final class CBasicIT extends ApiTestBase {
         int secondGen = ddl().getSchemaID().getGeneration();
         assertTrue(String.format("failed %d > %d", secondGen, firstGen), secondGen > firstGen);
     }
-
 
     @Test
     public void truncate() throws InvalidOperationException {

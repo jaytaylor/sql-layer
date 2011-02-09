@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -13,19 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.d_l;
+package com.akiban.cserver.api.ddl;
 
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 
-    void createTable(String schema, String ddl);
-    void createTable(String ddl);
+public final class UnsupportedDropException extends DDLException {
+    public UnsupportedDropException(InvalidOperationException e) {
+        super(e);
+    }
 
-    void dropTable(String schema, String tableName);
-    void dropTable(String tableName);
-    void dropGroup(String groupName);
-
-    void writeRow(String schema, String table, String fields);
-    void writeRow(String table, String fields);
+    public UnsupportedDropException(ErrorCode code, String message) {
+        super(code, message);
+    }
 }
