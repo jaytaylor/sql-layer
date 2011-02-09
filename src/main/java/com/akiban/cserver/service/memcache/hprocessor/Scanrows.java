@@ -205,16 +205,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             }
         }
 
-
-
-//        private static byte[] scanAllColumns(Table table) {
-//            Set<Integer> allSet = new HashSet<Integer>();
-//            for (int i=0; i < table.getColumns().size(); ++i) {
-//                allSet.add(i);
-//            }
-//            return ColumnSet.packToLegacy(allSet);
-//        }
-
         void putEquality(HapiGetRequest.Predicate predicate) throws HapiRequestException {
             if (foundInequality) {
                 unsupported("may not combine equality with inequality");
@@ -549,9 +539,9 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private Index findHapiRequestIndex(Session session, HapiGetRequest request, boolean forceUseGroupTable)
             throws HapiRequestException
     {
-        final Table table;
+        final UserTable table;
         try {
-            table = ddlFunctions.getTable(session, request.getUsingTable());
+            table = ddlFunctions.getUserTable(session, request.getUsingTable());
         } catch (NoSuchTableException e) {
             throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
         }
@@ -609,15 +599,12 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         return candidates;
     }
 
-    private static Index findMatchingPK(Table table, List<String> columns) {
-        if (table instanceof UserTable) {
-            UserTable utable = (UserTable) table;
-            PrimaryKey pk = utable.getPrimaryKey();
-            if (pk != null) {
-                Index pkIndex = pk.getIndex();
-                if (indexIsCandidate(pkIndex, columns)) {
-                    return pkIndex;
-                }
+    private static Index findMatchingPK(UserTable utable, List<String> columns) {
+        PrimaryKey pk = utable.getPrimaryKey();
+        if (pk != null) {
+            Index pkIndex = pk.getIndex();
+            if (indexIsCandidate(pkIndex, columns)) {
+                return pkIndex;
             }
         }
         return null;
