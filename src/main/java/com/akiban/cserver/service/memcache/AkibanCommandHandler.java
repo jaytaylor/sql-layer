@@ -104,7 +104,9 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
     {
-        LOG.error("Command handler caught exception: " + e, e.getCause());
+        Throwable exception = e.getCause();
+        LOG.error("Command handler caught exception", exception);
+        Channels.write(ctx.getChannel(), ExceptionHelper.forException(exception));
     }
 
     /**
@@ -245,15 +247,13 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
-    protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
+    protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel)
+    throws HapiRequestException
+    {
         String key = command.keys.get(0);
 
         byte[] result_bytes;
-        try {
-            result_bytes = getBytesForGets(session.get(), key, hapiProcessor, formatGetter.getFormat());
-        } catch (Exception e) {
-            result_bytes = ("error: " + e.getMessage()).getBytes();
-        }
+        result_bytes = getBytesForGets(session.get(), key, hapiProcessor, formatGetter.getFormat());
         
         CacheElement[] results = null;
         if(result_bytes != null) {
@@ -266,7 +266,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
     }
 
-    final static byte[] getBytesForGets(Session sessionLocal, String key,
+    static byte[] getBytesForGets(Session sessionLocal, String key,
                                         HapiProcessor hapiProcessor, HapiOutputter outputter)
             throws HapiRequestException
     {
