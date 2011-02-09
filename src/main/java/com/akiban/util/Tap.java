@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Loosely inspired by SystemTap, this class implements a generic mechanism for
@@ -142,7 +142,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class Tap {
 
-    private static final Log LOG = LogFactory.getLog(Tap.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
 
     public final static String NEW_LINE = System.getProperty("line.separator");
 

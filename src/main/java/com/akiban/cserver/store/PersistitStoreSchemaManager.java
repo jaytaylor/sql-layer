@@ -40,8 +40,8 @@ import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
 import com.persistit.Transaction;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
@@ -86,7 +86,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     static final String BY_NAME = "byName";
 
-    private static final Log LOG = LogFactory.getLog(PersistitStoreSchemaManager.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
 
     private static final int INITIAL_AIS_BUFFER_SIZE = 1 * 1000 * 1000; // 1M
 

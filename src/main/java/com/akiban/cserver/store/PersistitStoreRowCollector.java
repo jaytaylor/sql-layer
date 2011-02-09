@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
@@ -43,7 +43,7 @@ import com.persistit.exception.PersistitException;
 
 public class PersistitStoreRowCollector implements RowCollector {
 
-    static final Log LOG = LogFactory.getLog(PersistitStoreRowCollector.class
+    static final Logger LOG = LoggerFactory.getLogger(PersistitStoreRowCollector.class
             .getName());
 
     private static final Tap SCAN_NEXT_ROW_TAP = Tap.add("read: next_row");

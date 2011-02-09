@@ -17,8 +17,8 @@ package com.akiban.admin.action;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.admin.Admin;
 import com.akiban.admin.config.ChunkserverNetworkConfig;
@@ -40,7 +40,7 @@ public abstract class StopChunkservers
     public final void shutdown()
     {}
 
-    private static final Log logger = LogFactory.getLog(StopChunkservers.class);
+    private static final Logger logger = LoggerFactory.getLogger(StopChunkservers.class);
     private static StopChunkservers only;
 
     private static class Real extends StopChunkservers
