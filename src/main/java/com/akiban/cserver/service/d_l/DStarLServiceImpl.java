@@ -52,7 +52,6 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             usingSchema.set(schema);
         }
 
-        @Override
         public void createTable(String schema, String ddl) {
             try {
                 ddlFunctions.createTable(new SessionImpl(), schema, ddl);
@@ -89,7 +88,6 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             }
         }
 
-        @Override
         public void writeRow(String schema, String table, String fields) {
             try {
                 final Session session = new SessionImpl();

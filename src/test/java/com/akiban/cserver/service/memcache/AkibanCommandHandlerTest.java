@@ -15,10 +15,12 @@
 
 package com.akiban.cserver.service.memcache;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDefCache;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiOutputter;
+import com.akiban.cserver.api.HapiProcessedGetRequest;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.session.Session;
@@ -51,7 +53,7 @@ public final class AkibanCommandHandlerTest {
 
         @Override
         public void processRequest(Session session, HapiGetRequest request,
-                                   Outputter outputter, OutputStream outputStream)
+                                   HapiOutputter outputter, OutputStream outputStream)
                 throws HapiRequestException
         {
             assertEquals("schema", expectedSchema, request.getSchema());
@@ -63,14 +65,19 @@ public final class AkibanCommandHandlerTest {
             assertEquals("predicate value", expectedValue, predicate.getValue());
 
             try {
-                outputter.output(null, null, null, outputStream);
+                outputter.output(null, null, outputStream);
             } catch (IOException e) {
                 throw new RuntimeException("unexpected", e);
             }
         }
+
+        @Override
+        public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+            return null;
+        }
     }
 
-    private static class MockedOutputter implements HapiProcessor.Outputter
+    private static class MockedOutputter implements HapiOutputter
     {
         private final String string;
         private final Charset charset;
@@ -81,7 +88,7 @@ public final class AkibanCommandHandlerTest {
         }
 
         @Override
-        public void output(HapiGetRequest request, RowDefCache rowDefCache, List<RowData> rows,
+        public void output(HapiProcessedGetRequest request, List<RowData> rows,
                            OutputStream outputStream) throws IOException
         {
             outputStream.write( string.getBytes(charset) );
@@ -99,7 +106,7 @@ public final class AkibanCommandHandlerTest {
         final byte[] expectedBytes = testString.getBytes(CHARSET);
 
         final MockedHapiProcessor processor = new MockedHapiProcessor("schema", "table", "column", "value");
-        final HapiProcessor.Outputter outputter = new MockedOutputter(testString);
+        final HapiOutputter outputter = new MockedOutputter(testString);
 
         final byte[] actualBytes = AkibanCommandHandler.getBytesForGets(
                 session, "schema:table:column=value",

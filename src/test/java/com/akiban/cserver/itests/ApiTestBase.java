@@ -160,6 +160,11 @@ public class ApiTestBase {
         session = null;
     }
 
+    protected final HapiProcessor hapi(MemcacheService.WhichHapi whichHapi) {
+        memcache().setHapiProcessor(whichHapi);
+        return hapi();
+    }
+
     protected final HapiProcessor hapi() {
         return sm.getMemcacheService();
     }

@@ -20,13 +20,16 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.session.Session;
+import com.akiban.cserver.service.session.SessionImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -59,7 +62,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private final MemcacheMXBean manageBean;
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
-        public Outputter getFormat() {
+        public HapiOutputter getFormat() {
             return manageBean.getOutputFormat().getOutputter();
         }
     };
@@ -79,24 +82,46 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         this.serviceManager = ServiceManagerImpl.get();
 
         ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
-        String defaultOutputName = config.getProperty("cserver", "memcached.output.format", OutputFormat.JSON.name());
+
         OutputFormat defaultOutput;
-        try {
-            defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
-            defaultOutput = OutputFormat.JSON;
+        {
+            String defaultOutputName = config.getProperty("cserver", "memcached.output.format", OutputFormat.JSON.name());
+            try {
+                defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
+                defaultOutput = OutputFormat.JSON;
+            }
         }
-        manageBean = new ManageBean(WhichHapi.FETCHROWS, defaultOutput);
+
+        WhichHapi defaultHapi;
+        {
+            String defaultHapiName = config.getProperty("cserver", "memcached.processor", WhichHapi.SCANROWS.name());
+            try {
+                defaultHapi = WhichHapi.valueOf(defaultHapiName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                LOG.warn("Default memcache outputter not found, using JSON: " + defaultHapiName);
+                defaultHapi = WhichHapi.FETCHROWS;
+            }
+        }
+
+        manageBean = new ManageBean(defaultHapi, defaultOutput);
     }
 
     @Override
-    public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
+    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
         final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
 
         processor.processRequest(session, request, outputter, outputStream);
+    }
+
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
+
+        return processor.findHapiRequestIndex(session, request);
     }
 
     @Override
@@ -315,6 +340,19 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         @Override
         public WhichHapi[] getAvailableHapiProcessors() {
             return WhichHapi.values();
+        }
+
+        @Override
+        public String chooseIndex(String request) {
+            try {
+                HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
+                Index index = processAs.get().whichItem.getHapiProcessor().findHapiRequestIndex(
+                        new SessionImpl(), getRequest
+                );
+                return index == null ? "null" : index.toString();
+            } catch (HapiRequestException e) {
+                throw new RuntimeException(e.getMessage());
+            }
         }
     }
 }

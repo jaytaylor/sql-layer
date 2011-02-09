@@ -15,9 +15,11 @@
 
 package com.akiban.cserver.itests.hapi;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.HapiGetRequest;
-import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
@@ -27,6 +29,7 @@ import com.akiban.cserver.service.memcache.ParsedHapiGetRequest;
 import com.akiban.cserver.service.memcache.outputter.JsonOutputter;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.OnlyIf;
 import com.akiban.junit.Parameterization;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.Strings;
@@ -137,7 +140,7 @@ import static org.junit.Assert.*;
  *  <li>if <tt>test.write_rows</tt> is true, the rows defined in <tt>setup.write_rows</tt> will be written</li>
  *  <li>the <tt>GET</tt> will be issued to
  *      {@link com.akiban.cserver.service.memcache.MemcacheService#processRequest(Session, HapiGetRequest,
- *      HapiProcessor.Outputter, OutputStream)}</li>
+ *      HapiOutputter, OutputStream)}</li>
  *  <li>the result will be compared against <tt>test.expected</tt>
  * </ol>
  * </p>
@@ -150,6 +153,7 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String COMMENT = "comment";
 
     private static final String PASSING_DEFAULT = "passing_default";
+    private static final String PROCESSORS_DEFAULT = "processors_default";
 
     private static final String SETUP = "setup";
     private static final String SETUP_SCHEMA = "schema";
@@ -157,7 +161,7 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String SETUP_TABLES = "tables";
     private static final String SETUP_WRITE_ROWS = "write_rows";
     private static final String[] SETUP_KEYS_REQUIRED = {SETUP_TABLES, SETUP_WRITE_ROWS};
-    private static final String[] SETUP_KEYS_OPTIONAL = {SETUP_SCHEMA};
+    private static final String[] SETUP_KEYS_OPTIONAL = {SETUP_SCHEMA, PROCESSORS_DEFAULT};
 
     private static final String TESTS = "tests";
     private static final String TEST_WRITE_ROWS = "write_rows";
@@ -167,10 +171,11 @@ public final class JsonHapiIT extends ApiTestBase {
     private static final String TEST_GET = "get";
     private static final String TEST_EXPECT = "expect result";
     private static final String TEST_ERROR = "expect error";
+    private static final String TEST_INDEX = "expect index";
     private static final String TEST_PROCESSORS = "processors";
     private static final String[] TEST_KEYS_REQUIRED = {TEST_GET};
     private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING, TEST_EXPECT, TEST_ERROR,
-                                                        COMMENT, TEST_PROCESSORS};
+                                                        COMMENT, TEST_PROCESSORS, TEST_INDEX};
     private static final String[] DEFAULT_TEST_PROCESSORS = {"FETCHROWS", "SCANROWS"};
 
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
@@ -198,14 +203,27 @@ public final class JsonHapiIT extends ApiTestBase {
     }
 
     private static class TestSetupInfo {
+        final List<String> defaultProcessors;
         final String schema;
         final List<String> ddls;
         final Map<String,JSONArray> writeRows;
 
-        private TestSetupInfo(String schema, List<String> ddls, Map<String,JSONArray> writeRows) {
+        private TestSetupInfo(String schema, List<String> ddls, Map<String,JSONArray> writeRows, JSONArray processors)
+        throws JSONException
+        {
             this.schema = schema;
             this.ddls = ddls;
             this.writeRows = writeRows;
+            if (processors == null) {
+                this.defaultProcessors = Collections.unmodifiableList( Arrays.asList(DEFAULT_TEST_PROCESSORS));
+            }
+            else {
+                List<String> defaultProcessors = new ArrayList<String>();
+                for(int i=0, len=processors.length(); i < len; ++i) {
+                    defaultProcessors.add( processors.getString(i) );
+                }
+                this.defaultProcessors = Collections.unmodifiableList( defaultProcessors );
+            }
         }
 
         @Override
@@ -219,12 +237,18 @@ public final class JsonHapiIT extends ApiTestBase {
         final String getQuery;
         final Object expect;
         final HapiRequestException.ReasonCode errorExpect;
+        final String expectIndexName;
+        final boolean expectIndexOnGroup;
 
-        private TestRunInfo(boolean writeRows, String getQuery, Object expect, String errorExpect) {
+        private TestRunInfo(boolean writeRows, String getQuery, Object expect, String errorExpect,
+                            String expectIndex, boolean expectIndexOnGroup)
+        {
             this.writeRows = writeRows;
             this.getQuery = getQuery;
             this.expect = expect;
             this.errorExpect = errorExpect == null ? null : HapiRequestException.ReasonCode.valueOf(errorExpect);
+            this.expectIndexName = expectIndex;
+            this.expectIndexOnGroup = expectIndexOnGroup;
         }
 
         @Override
@@ -303,7 +327,7 @@ public final class JsonHapiIT extends ApiTestBase {
                 else {
                     param = Parameterization.failing(paramName(name, testName), null, null, null);
                 }
-                String[] processors = extractProcessors(test);
+                List<String> processors = extractProcessors(test, setupInfo);
                 addParams(params, param, processors);
             } catch (JSONException e) {
                 params.add( Parameterization.create(paramName(name, testName), e, null, null) );
@@ -312,7 +336,7 @@ public final class JsonHapiIT extends ApiTestBase {
         return params;
     }
 
-    private static void addParams(List<Parameterization> params, Parameterization basic, String[] processors) {
+    private static void addParams(List<Parameterization> params, Parameterization basic, List<String> processors) {
         for (String hapiProcessor : processors) {
             List<Object> paramArgs = new ArrayList<Object>(basic.getArgsAsList());
             TestExtraParam extraParam = new TestExtraParam(hapiProcessor);
@@ -326,14 +350,14 @@ public final class JsonHapiIT extends ApiTestBase {
         }
     }
 
-    private static String[] extractProcessors(JSONObject test) throws JSONException {
+    private static List<String> extractProcessors(JSONObject test, TestSetupInfo setupInfo) throws JSONException {
         JSONArray array = test.optJSONArray(TEST_PROCESSORS);
         if (array == null) {
-            return DEFAULT_TEST_PROCESSORS;
+            return setupInfo.defaultProcessors;
         }
-        String[] ret = new String[array.length()];
-        for(int i=0; i < ret.length; ++i) {
-            ret[i] = array.getString(i);
+        List<String> ret = new ArrayList<String>();
+        for(int i=0, len=array.length(); i < len; ++i) {
+            ret.add(array.getString(i));
         }
         return ret;
     }
@@ -348,7 +372,41 @@ public final class JsonHapiIT extends ApiTestBase {
                     testName, TEST_EXPECT, TEST_ERROR
             ));
         }
-        return new TestRunInfo(writeRows, get, expect, error);
+        final String expectIndex;
+        final boolean expectIndexOnGroup;
+        Object expectIndexObj = test.opt(TEST_INDEX);
+        if (expectIndexObj == null) {
+            expectIndex = null;
+            expectIndexOnGroup = false;
+        }
+        else if (expectIndexObj instanceof String) {
+            expectIndex = (String)expectIndexObj;
+            expectIndexOnGroup = false;
+        }
+        else if (expectIndexObj instanceof JSONObject) {
+            JSONObject jsonObject = (JSONObject)expectIndexObj;
+            if (jsonObject.length() != 1) {
+                throw new JSONException(TEST_INDEX + " json object may only have one key, 'group' or 'utable'");
+            }
+            String key = (String)jsonObject.keys().next();
+            if (key.equalsIgnoreCase("group")) {
+                expectIndex = jsonObject.getString(key);
+                expectIndexOnGroup = true;
+            }
+            else if (key.equalsIgnoreCase("utable")) {
+                expectIndex = jsonObject.getString(key);
+                expectIndexOnGroup = false;
+            }
+            else {
+                throw new JSONException(TEST_INDEX + " json object may only have one key, 'group' or 'utable'");
+            }
+
+        }
+        else {
+            throw new JSONException(TEST_INDEX + " must be a String or JSON object");
+        }
+
+        return new TestRunInfo(writeRows, get, expect, error, expectIndex, expectIndexOnGroup);
     }
 
     private static TestSetupInfo extractTestSetupInfo(JSONObject setupJSON) throws JSONException {
@@ -401,7 +459,8 @@ public final class JsonHapiIT extends ApiTestBase {
         return new TestSetupInfo(
                 schema,
                 Collections.unmodifiableList(ddls),
-                writeRows
+                writeRows,
+                setupJSON.optJSONArray(PROCESSORS_DEFAULT)
         );
     }
 
@@ -449,13 +508,43 @@ public final class JsonHapiIT extends ApiTestBase {
         }
     }
 
+    @Test @OnlyIf("shouldCheckIndex")
+    public void correctIndex() throws HapiRequestException {
+        HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
+        Index expectedIndex = ddl().getAIS(session).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
+        if (runInfo.expectIndexOnGroup) {
+            Table gTable = ddl().getAIS(session).getUserTable(request.getUsingTable()).getGroup().getGroupTable();
+            List<Index> matchingIndexes = new ArrayList<Index>();
+            int indexId = expectedIndex.getIndexId();
+            for (Index gTableIndex : gTable.getIndexes()) {
+                if (gTableIndex.getIndexId() == indexId) {
+                    matchingIndexes.add(gTableIndex);
+                }
+            }
+            assertEquals("too many matching indexes: " + matchingIndexes.toString(), 1, matchingIndexes.size());
+            expectedIndex = matchingIndexes.get(0);
+        }
+        assertNotNull(
+                String.format("no index %s on %s", runInfo.expectIndexName, request.getUsingTable()),
+                expectedIndex);
+        Index actualIndex = hapi(hapiProcessor).findHapiRequestIndex(session, request);
+        assertNotNull("HapiProcessor couldn't resolve index", actualIndex);
+        assertSame("index", expectedIndex, actualIndex);
+        assertEquals("index (expected " + runInfo.expectIndexName + ')',
+                expectedIndex.getIndexId(),
+                actualIndex.getIndexId());
+    }
+
+    public boolean shouldCheckIndex() {
+        return runInfo.expectIndexName != null;
+    }
+
     @Test
     public void get() throws JSONException, HapiRequestException, IOException {
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-            memcache().setHapiProcessor(hapiProcessor);
-            hapi().processRequest(session, request, JsonOutputter.instance(), outputStream);
+            hapi(hapiProcessor).processRequest(session, request, JsonOutputter.instance(), outputStream);
             outputStream.flush();
             String result = new String(outputStream.toByteArray());
             assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);
