@@ -27,8 +27,7 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 public class AtomicSchemaChangesIT extends ApiTestBase
 {
@@ -43,7 +42,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
         try {
             createTable("s", "bad_syntax",
                         "foo bar");
-            assertTrue(false);
+            fail();
         } catch (Throwable e) {
             // expected
         }
@@ -60,7 +59,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
                         "bid int not null key",
                         "pid int",
                         "constraint __akiban_oops foreign key __akiban_oops(pid) references parent(no_such_column)");
-            assertTrue(false);
+            fail();
         } catch (Throwable e) {
             // expected
         }
@@ -77,7 +76,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
                         "bid int not null key",
                         "pid int",
                         "key(xyz)");
-            assertTrue(false);
+            fail();
         } catch (Throwable e) {
             // expected
         }
@@ -93,7 +92,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
             createTable("s", "fail_ais_creation_2",
                         "k int key",
                         "x char");
-            assertTrue(false);
+            fail();
         } catch (Throwable e) {
             // expected
         }

@@ -15,9 +15,7 @@
 
 package com.akiban.cserver.itests.keyupdate;
 
-import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.store.IndexRecordVisitor;
-import com.akiban.cserver.store.TreeRecordVisitor;
 
 import java.util.ArrayList;
 import java.util.List;

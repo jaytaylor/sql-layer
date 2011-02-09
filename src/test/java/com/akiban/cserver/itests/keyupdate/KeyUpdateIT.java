@@ -18,6 +18,7 @@ package com.akiban.cserver.itests.keyupdate;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.itests.ApiTestBase;
+import com.akiban.message.ErrorCode;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -67,6 +68,24 @@ public class KeyUpdateIT extends ApiTestBase
     }
 
     @Test
+    public void testItemPKUpdateCreatingDuplicate() throws Exception
+    {
+        // Set item.iid = 223 for item 222
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
+        TestRow newRow = copyRow(oldRow);
+        TestRow parent = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        assertNotNull(parent);
+        updateRow(newRow, i_iid, 223L, parent);
+        try {
+            dbUpdate(oldRow, newRow);
+            fail();
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
+        checkDB();
+    }
+
+    @Test
     public void testOrderFKUpdate() throws Exception
     {
         // Set order.cid = 0 for order 22
@@ -105,6 +124,24 @@ public class KeyUpdateIT extends ApiTestBase
     }
 
     @Test
+    public void testOrderPKUpdateCreatingDuplicate() throws Exception
+    {
+        // Set order.oid = 21 for order 22
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        TestRow newRow = copyRow(oldRow);
+        TestRow parent = testStore.find(new HKey(customerRowDef, 2L));
+        assertNotNull(parent);
+        updateRow(newRow, o_oid, 21L, parent);
+        try {
+            dbUpdate(oldRow, newRow);
+            fail();
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
+        checkDB();
+    }
+
+    @Test
     public void testCustomerPKUpdate() throws Exception
     {
         // Set customer.cid = 0 for customer 2
@@ -112,6 +149,22 @@ public class KeyUpdateIT extends ApiTestBase
         TestRow newCustomerRow = copyRow(oldCustomerRow);
         updateRow(newCustomerRow, c_cid, 0L, null);
         dbUpdate(oldCustomerRow, newCustomerRow);
+        checkDB();
+    }
+
+    @Test
+    public void testCustomerPKUpdateCreatingDuplicate() throws Exception
+    {
+        // Set customer.cid = 1 for customer 3
+        TestRow oldCustomerRow = testStore.find(new HKey(customerRowDef, 3L));
+        TestRow newCustomerRow = copyRow(oldCustomerRow);
+        updateRow(newCustomerRow, c_cid, 1L, null);
+        try {
+            dbUpdate(oldCustomerRow, newCustomerRow);
+            fail();
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
         checkDB();
     }
 
@@ -327,7 +380,7 @@ public class KeyUpdateIT extends ApiTestBase
                             orderRowDef, row.get(i_oid),
                             itemRowDef, row.get(i_iid));
         } else {
-            assertTrue(false);
+            fail();
         }
         return hKey;
     }
@@ -346,7 +399,7 @@ public class KeyUpdateIT extends ApiTestBase
                             orderRowDef, row.get(i_oid),
                             itemRowDef, row.get(i_iid));
         } else {
-            assertTrue(false);
+            fail();
         }
         row.parent(parent);
         return hKey;

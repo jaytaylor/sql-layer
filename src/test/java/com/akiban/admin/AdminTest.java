@@ -47,7 +47,7 @@ public class AdminTest
         System.setProperty(AKIBAN_ADMIN, "/no/such/directory");
         try {
             Admin admin = Admin.only();
-            Assert.assertTrue(false);
+            Assert.fail();
         } catch (Admin.RuntimeException e) {
             // Expected
         }
@@ -59,7 +59,7 @@ public class AdminTest
         Admin admin = Admin.only();
         try {
             admin.get("this is not a key");
-            Assert.assertTrue(false);
+            Assert.fail();
         } catch (Admin.BadKeyException e) {
             // Expected
         }

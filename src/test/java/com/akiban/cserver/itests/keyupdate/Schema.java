@@ -19,20 +19,20 @@ import com.akiban.cserver.RowDef;
 
 public class Schema
 {
-    static int customerId;
-    static int c_cid;
-    static int c_cx;
+    static Integer customerId;
+    static Integer c_cid;
+    static Integer c_cx;
     static RowDef customerRowDef;
-    static int orderId;
-    static int o_oid;
-    static int o_cid;
-    static int o_ox;
+    static Integer orderId;
+    static Integer o_oid;
+    static Integer o_cid;
+    static Integer o_ox;
     static RowDef orderRowDef;
-    static int itemId;
-    static int i_cid;
-    static int i_oid;
-    static int i_iid;
-    static int i_ix;
+    static Integer itemId;
+    static Integer i_cid;
+    static Integer i_oid;
+    static Integer i_iid;
+    static Integer i_ix;
     static RowDef itemRowDef;
     static RowDef groupRowDef;
 }

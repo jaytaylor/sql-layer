@@ -17,12 +17,13 @@ package com.akiban.cserver.itests.keyupdate;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.api.dml.scan.NewRow;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.assertEquals;
-
-import java.util.*;
 
 public class HKey implements Comparable<HKey>
 {
@@ -33,7 +34,7 @@ public class HKey implements Comparable<HKey>
     {
         int h = 0;
         for (Object element : elements) {
-            h = h * 9987001 + (element instanceof UserTable ? ((UserTable)element).getTableId() : element.hashCode());
+            h = h * 9987001 + (element instanceof UserTable ? ((UserTable) element).getTableId() : element.hashCode());
         }
         return h;
     }
@@ -102,7 +103,7 @@ public class HKey implements Comparable<HKey>
                 if (iElement instanceof UserTable) {
                     c = ((UserTable) iElement).getTableId() - ((UserTable) jElement).getTableId();
                 } else {
-                    c = ((Comparable) iElement).compareTo(jElement);
+                    c = ((Comparable)iElement).compareTo(jElement);
                 }
             }
         }
@@ -126,12 +127,12 @@ public class HKey implements Comparable<HKey>
         return new HKey(elements.toArray());
     }
 
-    public HKey(Object ... elements)
+    public HKey(Object... elements)
     {
         this.elements = new ArrayList<Object>();
         for (Object element : elements) {
             if (element instanceof RowDef) {
-                element = ((RowDef)element).userTable();
+                element = ((RowDef) element).userTable();
             }
             this.elements.add(element);
         }

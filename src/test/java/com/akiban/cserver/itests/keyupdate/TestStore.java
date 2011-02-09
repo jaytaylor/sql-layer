@@ -15,53 +15,57 @@
 
 package com.akiban.cserver.itests.keyupdate;
 
-import com.akiban.cserver.*;
+import com.akiban.cserver.IndexDef;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.dml.ColumnSelector;
 import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.store.*;
+import com.akiban.cserver.store.IndexRecordVisitor;
+import com.akiban.cserver.store.PersistitStore;
+import com.akiban.cserver.store.TreeRecordVisitor;
 
-import java.util.*;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 // TestStore is Store-like. Not worth the effort to make it completely compatible.
 
 public class TestStore
 {
-    // Store-ish interface
+    // Store-ish interface. Update delegate first, so that if it throws an exception, map is left alone.
 
     public void writeRow(Session session, TestRow row)
         throws Exception
     {
-        map.put(row.hKey(), row);
         delegate.writeRow(session, row.toRowData());
-
+        map.put(row.hKey(), row);
     }
 
     public void deleteRow(Session session, TestRow row)
         throws Exception
     {
-        map.remove(row.hKey());
         delegate.deleteRow(session, row.toRowData());
+        map.remove(row.hKey());
     }
 
     public void updateRow(Session session, TestRow oldRow, TestRow newRow, ColumnSelector columnSelector)
         throws Exception
     {
-        TestRow currentRow = map.remove(oldRow.hKey());
-        TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
-        map.put(mergedRow.hKey(), mergedRow);
         delegate.updateRow(session,
                            oldRow.toRowData(),
                            newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
                            columnSelector);
+        TestRow currentRow = map.remove(oldRow.hKey());
+        TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
+        map.put(mergedRow.hKey(), mergedRow);
     }
 
     public void traverse(Session session, RowDef rowDef, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
         throws Exception
     {
+        delegate.traverse(session, rowDef, realVisitor);
         for (Map.Entry<HKey, TestRow> entry : map.entrySet()) {
             testVisitor.visit(entry.getKey().objectArray(), entry.getValue());
         }
-        delegate.traverse(session, rowDef, realVisitor);
     }
 
     public void traverse(Session session, IndexDef indexDef, IndexRecordVisitor visitor)

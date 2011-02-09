@@ -15,7 +15,6 @@
 
 package com.akiban.cserver.itests.keyupdate;
 
-import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 
 public class TestRow extends NiceRow

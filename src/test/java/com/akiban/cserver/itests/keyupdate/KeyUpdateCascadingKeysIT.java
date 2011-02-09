@@ -18,17 +18,19 @@ package com.akiban.cserver.itests.keyupdate;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.itests.ApiTestBase;
+import com.akiban.message.ErrorCode;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Map;
 
 import static com.akiban.cserver.itests.keyupdate.Schema.*;
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 
 // Like KeyUpdateIT, but with cascading keys
 
-public class KeyUpdate2IT extends ApiTestBase
+public class KeyUpdateCascadingKeysIT extends ApiTestBase
 {
     @Before
     public void before() throws Exception
@@ -63,6 +65,22 @@ public class KeyUpdate2IT extends ApiTestBase
         TestRow newRow = copyRow(oldRow);
         updateRow(newRow, i_iid, 0L);
         dbUpdate(oldRow, newRow);
+        checkDB();
+    }
+
+    @Test
+    public void testItemPKUpdateCreatingDuplicate() throws Exception
+    {
+        // Set item.iid = 223 for item 222
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
+        TestRow newRow = copyRow(oldRow);
+        updateRow(newRow, i_iid, 223L);
+        try {
+            dbUpdate(oldRow, newRow);
+            fail();
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
         checkDB();
     }
 
@@ -105,6 +123,22 @@ public class KeyUpdate2IT extends ApiTestBase
     }
 
     @Test
+    public void testOrderPKUpdateCreatingDuplicate() throws Exception
+    {
+        // Set order.oid = 21 for order 22
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        TestRow newRow = copyRow(oldRow);
+        updateRow(newRow, o_oid, 21L);
+        try {
+            dbUpdate(oldRow, newRow);
+            fail();
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
+        checkDB();
+    }
+
+    @Test
     public void testCustomerPKUpdate() throws Exception
     {
         // Set customer.cid = 0 for customer 2
@@ -112,6 +146,22 @@ public class KeyUpdate2IT extends ApiTestBase
         TestRow newCustomerRow = copyRow(oldCustomerRow);
         updateRow(newCustomerRow, c_cid, 0L);
         dbUpdate(oldCustomerRow, newCustomerRow);
+        checkDB();
+    }
+
+    @Test
+    public void testCustomerPKUpdateCreatingDuplicate() throws Exception
+    {
+        // Set customer.cid = 1 for customer 3
+        TestRow oldCustomerRow = testStore.find(new HKey(customerRowDef, 3L));
+        TestRow newCustomerRow = copyRow(oldCustomerRow);
+        updateRow(newCustomerRow, c_cid, 1L);
+        try {
+            dbUpdate(oldCustomerRow, newCustomerRow);
+            fail();
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
         checkDB();
     }
 
@@ -168,8 +218,6 @@ public class KeyUpdate2IT extends ApiTestBase
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
         testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
         assertEquals(testVisitor.records(), realVisitor.records());
-        // Check indexes
-        RecordCollectingIndexRecordVisistor indexVisitor;
         // For a schema with cascading keys, all PK indexes are hkey equivalent, so there's nothing else
         // to check.
         // TODO: Secondary indexes
@@ -256,7 +304,7 @@ public class KeyUpdate2IT extends ApiTestBase
                             orderRowDef, row.get(i_oid),
                             itemRowDef, row.get(i_iid));
         } else {
-            assertTrue(false);
+            fail();
         }
         return hKey;
     }
