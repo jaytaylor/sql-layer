@@ -52,9 +52,9 @@ parser.add_option(
   )
 
 parser.add_option(
-    "--group",
+    "--groups",
     default = "",
-    help = "Akiban group to load."
+    help = "Akiban groups to load (comma-separated list of groups)."
   )
 
 parser.add_option(
@@ -79,8 +79,8 @@ if not os.path.isfile(options.mysql_jar):
     print "MySQL JDBC JAR file at %s not present." % options.mysql_jar
     sys.exit(1)
 
-if options.group == "":
-    print "An Akiban group needs to be specified."
+if options.groups == "":
+    print "At least one Akiban group needs to be specified."
     sys.exit(1)
 
 if options.source_schema == "":
@@ -91,6 +91,8 @@ if options.target_schema == "":
     print "A target schema needs to be specified."
     sys.exit(1)
 
+# build a list of groups to load
+groups = [group for group in options.groups.split(",")]
 
 blk_cmd = "java -ea -cp %s:%s " % (options.ak_jar, options.mysql_jar)
 blk_cmd += "com.akiban.cserver.util.BulkLoaderClient --cserver %s " % options.akserver
@@ -99,7 +101,8 @@ if options.mysql_pass != "":
     blk_cmd += "--password %s " % options.mysql_pass
 blk_cmd += "--temp %s " % options.temp_schema
 blk_cmd += "--source %s:%s " % (options.target_schema, options.source_schema)
-blk_cmd += "--group %s" % options.group
+for group in groups:
+    blk_cmd += "--group %s " % group
 
 # go ahead and execute the bulkloader
 os.system(blk_cmd)
