@@ -53,6 +53,7 @@ cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 cp -p target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
+mv bin/akloader ${RPM_BUILD_ROOT}/usr/bin
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
@@ -77,6 +78,7 @@ fi
 %files
 %defattr(-,root,root,0755)
 %attr(755,root,root) %{_sbindir}/akserver
+%attr(755,root,root) %{_bindir}/akloader
 %attr(755,root,root) /etc/rc.d/init.d/akiban-server
 %attr(755,%{username},%{username}) /usr/share/%{username}*
 %attr(755,%{username},%{username}) %config(noreplace) /%{_sysconfdir}/%{username}
