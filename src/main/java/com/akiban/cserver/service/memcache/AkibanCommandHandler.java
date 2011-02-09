@@ -23,8 +23,6 @@ import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -44,6 +42,8 @@ import com.thimbleware.jmemcached.protocol.Command;
 import com.thimbleware.jmemcached.protocol.CommandMessage;
 import com.thimbleware.jmemcached.protocol.ResponseMessage;
 import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -71,7 +71,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      */
     private final HapiProcessor hapiProcessor;
     private final DefaultChannelGroup channelGroup;
-    private static final Log LOG = LogFactory.getLog(MemcacheService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MemcacheService.class);
     private final FormatGetter formatGetter;
 
     public AkibanCommandHandler(HapiProcessor hapiProcessor, DefaultChannelGroup channelGroup, FormatGetter formatGetter)
