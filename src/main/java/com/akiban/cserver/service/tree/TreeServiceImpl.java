@@ -29,7 +29,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import com.persistit.logging.Log4JAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +45,6 @@ import com.persistit.Volume;
 import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
-import com.persistit.logging.ApacheCommonsLogAdapter;
 
 public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
