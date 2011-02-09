@@ -21,10 +21,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.log4j.Level;
+import com.akiban.util.LogLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.util.Command;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DB
 {
@@ -58,7 +61,7 @@ public class DB
         Command command =
                 dbPassword == null
                 ? Command.logOutput(logger,
-                                    Level.INFO,
+                                    LogLevel.INFO,
                                     String.format("%s/bin/mysql", mysqlInstallDir()),
                                     "-h",
                                     dbHost,
@@ -67,7 +70,7 @@ public class DB
                                     "-u",
                                     dbUser)
                 : Command.logOutput(logger,
-                                    Level.INFO,
+                        LogLevel.INFO,
                                     String.format("%s/bin/mysql", mysqlInstallDir()),
                                     "-h",
                                     dbHost,

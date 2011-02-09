@@ -27,7 +27,8 @@ import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.session.Session;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -52,7 +53,7 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
 import javax.management.ObjectName;
 
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
-    private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MemcacheServiceImpl.class);
 
     private final MemcacheMXBean manageBean;
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
@@ -64,7 +65,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     // Service vars
     private final ServiceManager serviceManager;
-    private static final Logger log = Logger.getLogger(MemcacheServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(MemcacheServiceImpl.class);
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;

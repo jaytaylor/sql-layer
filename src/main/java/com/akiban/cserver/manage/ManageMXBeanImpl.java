@@ -20,7 +20,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CustomQuery;
@@ -29,7 +30,7 @@ import com.akiban.cserver.store.Store;
 import com.akiban.util.Strings;
 
 public class ManageMXBeanImpl implements ManageMXBean {
-    private static final Logger LOG = Logger.getLogger(ManageMXBeanImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ManageMXBeanImpl.class);
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     private final String versionString;
     private final CServer cserver;

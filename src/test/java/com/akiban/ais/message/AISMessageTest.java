@@ -18,9 +18,6 @@ package com.akiban.ais.message;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.akiban.ais.BaseTestCase;
 import com.akiban.ais.io.MySQLSource;
@@ -36,15 +33,6 @@ import com.akiban.network.NetworkHandlerFactory;
 
 public class AISMessageTest extends BaseTestCase
 {
-    static
-    {
-        Logger rootLogger = Logger.getLogger("");
-        Handler[] handlers = rootLogger.getHandlers();
-        for (Handler handler : handlers) {
-            handler.setLevel(Level.WARNING);
-        }
-    }
-
     public void test() throws Exception
     {
         if(isDatabaseAvailable() == false) {

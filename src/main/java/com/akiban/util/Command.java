@@ -26,8 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class Command
 {
@@ -51,12 +51,12 @@ public abstract class Command
         return new PrintOutput(env, output, commandLine);
     }
 
-    public static Command logOutput(Logger log, Level level, String ... commandLine)
+    public static Command logOutput(Logger log, LogLevel level, String ... commandLine)
     {
         return new LogOutput(null, log, level, commandLine);
     }
 
-    public static Command logOutput(Map<String, String> env, Logger log, Level level, String ... commandLine)
+    public static Command logOutput(Map<String, String> env, Logger log, LogLevel level, String ... commandLine)
     {
         return new LogOutput(env, log, level, commandLine);
     }
@@ -160,7 +160,7 @@ public abstract class Command
         return buffer.toString();
     }
 
-    private static final Logger logger = Logger.getLogger(Command.class);
+    private static final Logger logger = LoggerFactory.getLogger(Command.class);
 
     private final String[] env;
     private final String[] commandLine;
@@ -291,11 +291,17 @@ public abstract class Command
 
     private static class LogOutput extends Command
     {
-        LogOutput(Map<String, String> env, Logger log, Level level, String ... commandLine)
+        LogOutput(Map<String, String> env, Logger log, LogLevel level, String ... commandLine)
         {
             super(env, commandLine);
             this.log = log;
-            this.level = level;
+            if (level == null) {
+                log.error("level is none; assuming error");
+                this.level = LogLevel.ERROR;
+            }
+            else {
+                this.level = level;
+            }
         }
 
         @Override
@@ -308,23 +314,41 @@ public abstract class Command
         }
 
         private final Logger log;
-        private final Level level;
+        private final LogLevel level;
 
         private class LogOutputConsumer extends Consumer
         {
+            private final static String MESSAGE_FORMAT = "{}: {}";
             @Override
             public void handleLine(String line)
             {
-                String message = String.format("%s: %s", label, line);
-                switch (level.toInt()) {
-                    case Level.DEBUG_INT: log.debug(message); break;
-                    //Project Godot disabled temporarily
-		    //case Level.TRACE_INT: log.trace(message); break;
-                    case Level.INFO_INT: log.info(message); break;
-                    case Level.WARN_INT: log.warn(message); break;
-                    case Level.ERROR_INT: log.error(message); break;
-                    case Level.FATAL_INT: log.fatal(message); break;
-                    default: assert false; break;
+                switch (level) {
+
+//                    case Level.DEBUG_INT: log.debug(message); break;
+//                    //Project Godot disabled temporarily
+//		    //case Level.TRACE_INT: log.trace(message); break;
+//                    case Level.INFO_INT: log.info(message); break;
+//                    case Level.WARN_INT: log.warn(message); break;
+//                    case Level.ERROR_INT: log.error(message); break;
+//                    case Level.FATAL_INT: log.fatal(message); break;
+//                    default: assert false; break;
+                    case TRACE:
+                        log.trace(MESSAGE_FORMAT, label, line);
+                        break;
+                    case DEBUG:
+                        log.debug(MESSAGE_FORMAT, label, line);
+                        break;
+                    case INFO:
+                        log.info(MESSAGE_FORMAT, label, line);
+                        break;
+                    case WARN:
+                        log.warn(MESSAGE_FORMAT, label, line);
+                        break;
+                    default:
+                        log.error("Unknown log level {}. Assuming ERROR", level);
+                    case ERROR:
+                        log.error(MESSAGE_FORMAT, label, line);
+                        break;
                 }
             }
 

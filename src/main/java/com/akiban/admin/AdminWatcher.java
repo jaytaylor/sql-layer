@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -103,7 +104,7 @@ class AdminWatcher extends Thread implements Watcher
 
     // State
 
-    private static final Logger logger = Logger.getLogger(AdminWatcher.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdminWatcher.class);
 
     private final ZookeeperBasedAdmin admin;
     private final ExecutorService threadPool = Executors.newCachedThreadPool();

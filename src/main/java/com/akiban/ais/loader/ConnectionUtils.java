@@ -15,18 +15,20 @@
 
 package com.akiban.ais.loader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Logger;
 
 
 public class ConnectionUtils
 {
-    private static Logger logger = Logger.getLogger(ConnectionUtils.class.getName());
+    private static Logger logger = LoggerFactory.getLogger(ConnectionUtils.class.getName());
     
 
     public static boolean executeMultiQuery(Connection connection, String multiQuery) throws SQLException
