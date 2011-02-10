@@ -650,6 +650,11 @@ public class PersistitStore implements CServerConstants, Store {
                                     hEx.getKey());
                         }
                     }
+
+                    // The row being deleted might be the parent of rows that now become orphans. The hkeys
+                    // of these rows need to be maintained.
+                    propagateDownGroup(session, hEx);
+
                     if (updateListeners.isEmpty()) {
                         transaction.commit(forceToDisk);
                     } else {
@@ -789,7 +794,6 @@ public class PersistitStore implements CServerConstants, Store {
         Key hKey = exchange.getKey();
         KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
         while (exchange.next(filter)) {
-            // Get the current row (under the top-level row being updated)
             Value value = exchange.getValue();
             int descendentRowDefId =
                 CServerUtil.getInt(value.getEncodedBytes(),

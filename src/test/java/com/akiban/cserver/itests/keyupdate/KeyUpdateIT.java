@@ -205,6 +205,57 @@ public class KeyUpdateIT extends ApiTestBase
         checkDB();
     }
 
+    @Test
+    public void testItemDelete() throws Exception
+    {
+        TestRow itemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
+        dbDelete(itemRow);
+        checkDB();
+        // Revert change
+        dbInsert(itemRow);
+        checkDB();
+        checkInitialState();
+    }
+
+    @Test
+    public void testOrderDelete() throws Exception
+    {
+        TestRow orderRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
+        // Propagate change to order 22's items
+        for (long iid = 221; iid <= 223; iid++) {
+            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, iid));
+            TestRow newItemRow = copyRow(oldItemRow);
+            newItemRow.hKey(hKey(newItemRow, null));
+            testStore.deleteTestRow(oldItemRow);
+            testStore.writeTestRow(newItemRow);
+        }
+        dbDelete(orderRow);
+        checkDB();
+        // Revert change
+        for (long iid = 221; iid <= 223; iid++) {
+            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, null, orderRowDef, 22L, itemRowDef, iid));
+            TestRow newItemRow = copyRow(oldItemRow);
+            newItemRow.hKey(hKey(newItemRow, orderRow));
+            testStore.deleteTestRow(oldItemRow);
+            testStore.writeTestRow(newItemRow);
+        }
+        dbInsert(orderRow);
+        checkDB();
+        checkInitialState();
+    }
+
+    @Test
+    public void testCustomerDelete() throws Exception
+    {
+        TestRow customerRow = testStore.find(new HKey(customerRowDef, 2L));
+        dbDelete(customerRow);
+        checkDB();
+        // Revert change
+        dbInsert(customerRow);
+        checkDB();
+        checkInitialState();
+    }
+
     private void createSchema() throws InvalidOperationException
     {
         // customer
@@ -449,6 +500,11 @@ public class KeyUpdateIT extends ApiTestBase
     private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
     {
         testStore.updateRow(session, oldRow, newRow, null);
+    }
+
+    private void dbDelete(TestRow row) throws Exception
+    {
+        testStore.deleteRow(session, row);
     }
 
     private HKey hKey(TestRow row)
