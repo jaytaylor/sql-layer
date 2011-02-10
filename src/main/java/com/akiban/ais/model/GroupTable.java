@@ -21,7 +21,7 @@ import java.util.List;
 
 public class GroupTable extends Table
 {
-    public static GroupTable create(AkibaInformationSchema ais,
+    public static GroupTable create(AkibanInformationSchema ais,
                                         String schemaName,
                                         String tableName,
                                         Integer tableId)
@@ -31,7 +31,7 @@ public class GroupTable extends Table
         return groupTable;
     }
 
-    public GroupTable(AkibaInformationSchema ais, String schemaName, String tableName, Integer tableId)
+    public GroupTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
         engine = "AKIBANDB";

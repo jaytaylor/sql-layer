@@ -15,8 +15,6 @@
 
 package com.akiban.cserver.itests.bugs.bug704443;
 
-import com.akiban.ais.io.CSVTarget;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -24,8 +22,6 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Test;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;

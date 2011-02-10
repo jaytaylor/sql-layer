@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -128,7 +128,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     }
 
     @Override
-    public AkibaInformationSchema getAIS(final Session session) {
+    public AkibanInformationSchema getAIS(final Session session) {
         return schemaManager().getAis(session);
     }
 
@@ -158,7 +158,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
-        AkibaInformationSchema ais = getAIS(session);
+        AkibanInformationSchema ais = getAIS(session);
         Table table = ais.getTable(tableName);
         if (table == null) {
             throw new NoSuchTableException(tableName);
@@ -168,7 +168,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
-        AkibaInformationSchema ais = getAIS(session);
+        AkibanInformationSchema ais = getAIS(session);
         UserTable table = ais.getUserTable(tableName);
         if (table == null) {
             throw new NoSuchTableException(tableName);
@@ -225,7 +225,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
         }
         
         final Index firstIndex = indexesToAdd.iterator().next();
-        final AkibaInformationSchema ais = getAIS(session);
+        final AkibanInformationSchema ais = getAIS(session);
         final UserTable table = ais.getUserTable(firstIndex.getTableName());
         
         if (table == null) {

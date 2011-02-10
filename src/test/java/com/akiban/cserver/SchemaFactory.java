@@ -16,7 +16,7 @@
 package com.akiban.cserver;
 
 import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.cserver.store.SchemaManager;
 import com.persistit.exception.PersistitException;
 
@@ -29,14 +29,14 @@ public class SchemaFactory
 
     public RowDefCache rowDefCache(String[] ddl) throws Exception
     {
-        AkibaInformationSchema ais = ais(ddl);
+        AkibanInformationSchema ais = ais(ddl);
         RowDefCache rowDefCache = new FakeRowDefCache();
         rowDefCache.setAIS(ais);
         rowDefCache.fixUpOrdinals(null);
         return rowDefCache;
     }
 
-    public AkibaInformationSchema ais(String[] ddl) throws Exception
+    public AkibanInformationSchema ais(String[] ddl) throws Exception
     {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {

@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import com.akiban.cserver.service.session.Session;
-import com.akiban.message.AkibaSendConnection;
+import com.akiban.message.AkibanSendConnection;
 import com.akiban.message.Request;
 
 public class AdminIntroductionRequest extends Request
@@ -42,7 +42,7 @@ public class AdminIntroductionRequest extends Request
     }
 
     @Override
-    public void execute(AkibaSendConnection connection, Session session) throws Exception
+    public void execute(AkibanSendConnection connection, Session session) throws Exception
     {
         // Executes in mysql head
     }

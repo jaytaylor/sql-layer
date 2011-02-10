@@ -18,7 +18,7 @@ package com.akiban.ais.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -31,7 +31,7 @@ import com.akiban.ais.model.UserTable;
 
 public class DDLGenerator
 {
-    public List<String> createAllGroupTables(AkibaInformationSchema ais)
+    public List<String> createAllGroupTables(AkibanInformationSchema ais)
     {
         List<String> ddl = new ArrayList<String>();
         for (GroupTable groupTable : ais.getGroupTables().values()) {
@@ -41,7 +41,7 @@ public class DDLGenerator
         return ddl;
     }
 
-    public List<String> dropAllGroupTables(AkibaInformationSchema ais)
+    public List<String> dropAllGroupTables(AkibanInformationSchema ais)
     {
         List<String> ddl = new ArrayList<String>();
         for (GroupTable groupTable : ais.getGroupTables().values()) {

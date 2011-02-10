@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.akiban.network.AkibanNetworkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,6 @@ import com.akiban.message.ErrorResponse;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.Request;
 import com.akiban.message.Response;
-import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -320,12 +320,12 @@ public class BulkLoaderClient
     public class ChannelNotifier implements CommEventNotifier
     {
         @Override
-        public void onConnect(AkibaNetworkHandler handler)
+        public void onConnect(AkibanNetworkHandler handler)
         {
         }
 
         @Override
-        public void onDisconnect(AkibaNetworkHandler handler)
+        public void onDisconnect(AkibanNetworkHandler handler)
         {
             handler.disconnectWorker();
         }

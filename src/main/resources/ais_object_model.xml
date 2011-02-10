@@ -17,7 +17,7 @@
 -->
 
 <model>
-	<object name="type" tableName="akiba_information_schema.types">
+	<object name="type" tableName="akiban_information_schema.types">
 		<attr name="name" type="String" />
 		<attr name="parameters" type="Integer" />
 		<attr name="fixedSize" type="Boolean" />
@@ -28,31 +28,31 @@
                 parameters, 
                 fixed_size, 
                 max_size_bytes 
-            from akiba_information_schema.types
+            from akiban_information_schema.types
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.types(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.types(
                 type_name, 
                 parameters,
                 fixed_size,
                 max_size_bytes
             ) values (?, ?, ?, ?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.types]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.types]]></sql>
 	</object>
 
-	<object name="group" tableName="akiba_information_schema.groups">
+	<object name="group" tableName="akiban_information_schema.groups">
 		<attr name="groupName" type="String" />
 		<sql action="read"><![CDATA[
             select 
                 group_name 
-            from akiba_information_schema.groups
+            from akiban_information_schema.groups
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.groups(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.groups(
                 group_name
             ) values (?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.groups]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.groups]]></sql>
 	</object>
 
-	<object name="table" tableName="akiba_information_schema.tables">
+	<object name="table" tableName="akiban_information_schema.tables">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
 		<attr name="tableType" type="String" />
@@ -67,9 +67,9 @@
                 table_id,
                 group_name,
                 migration_usage
-            from akiba_information_schema.tables
+            from akiban_information_schema.tables
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.tables(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.tables(
                 schema_name,
                 table_name,
                 table_type,
@@ -77,10 +77,10 @@
                 group_name,
                 migration_usage
             ) values (?, ?, ?, ?, ?, ?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.tables]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.tables]]></sql>
 	</object>
 
-	<object name="column" tableName="akiba_information_schema.columns">
+	<object name="column" tableName="akiban_information_schema.columns">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
 		<attr name="columnName" type="String" />
@@ -115,9 +115,9 @@
                 prefix_size,
                 character_set,
                 collation
-            from akiba_information_schema.columns
+            from akiban_information_schema.columns
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.columns(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.columns(
                 schema_name, 
                 table_name, 
                 column_name, 
@@ -135,10 +135,10 @@
                 character_set,
                 collation
             ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.columns]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.columns]]></sql>
 	</object>
 
-	<object name="join" tableName="akiba_information_schema.joins">
+	<object name="join" tableName="akiban_information_schema.joins">
 		<attr name="joinName" type="String" />
 		<attr name="parentSchemaName" type="String" />
 		<attr name="parentTableName" type="String" />
@@ -159,9 +159,9 @@
                 join_weight,
                 grouping_usage,
                 source_types
-            from akiba_information_schema.joins
+            from akiban_information_schema.joins
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.joins(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.joins(
                 join_name, 
                 parent_schema_name, 
                 parent_table_name, 
@@ -172,10 +172,10 @@
                 grouping_usage,
                 source_types
             ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.joins]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.joins]]></sql>
 	</object>
 
-	<object name="joinColumn" tableName="akiba_information_schema.join_columns">
+	<object name="joinColumn" tableName="akiban_information_schema.join_columns">
 		<attr name="joinName" type="String" />
 		<attr name="parentSchemaName" type="String" />
 		<attr name="parentTableName" type="String" />
@@ -192,9 +192,9 @@
                 child_schema_name, 
                 child_table_name, 
                 child_column_name 
-            from akiba_information_schema.join_columns
+            from akiban_information_schema.join_columns
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.join_columns(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.join_columns(
                 join_name, 
                 parent_schema_name, 
                 parent_table_name, 
@@ -203,10 +203,10 @@
                 child_table_name, 
                 child_column_name 
             ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.join_columns]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.join_columns]]></sql>
 	</object>
 
-	<object name="index" tableName="akiba_information_schema.indexes">
+	<object name="index" tableName="akiban_information_schema.indexes">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
 		<attr name="indexName" type="String" />
@@ -221,9 +221,9 @@
                 index_id, 
                 table_constraint, 
                 is_unique 
-            from akiba_information_schema.indexes
+            from akiban_information_schema.indexes
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.indexes(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.indexes(
                 schema_name, 
                 table_name, 
                 index_name, 
@@ -231,10 +231,10 @@
                 table_constraint, 
                 is_unique 
             ) values (?, ?, ?, ?, ?, ?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.indexes]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.indexes]]></sql>
 	</object>
 
-	<object name="indexColumn" tableName="akiba_information_schema.index_columns">
+	<object name="indexColumn" tableName="akiban_information_schema.index_columns">
 		<attr name="schemaName" type="String" />
 		<attr name="tableName" type="String" />
 		<attr name="indexName" type="String" />
@@ -251,9 +251,9 @@
                 ordinal_position, 
                 is_ascending,
                 indexed_length
-            from akiba_information_schema.index_columns
+            from akiban_information_schema.index_columns
         ]]></sql>
-		<sql action="write"><![CDATA[insert into akiba_information_schema.index_columns(
+		<sql action="write"><![CDATA[insert into akiban_information_schema.index_columns(
                 schema_name, 
                 table_name, 
                 index_name, 
@@ -262,7 +262,7 @@
                 is_ascending,
                 indexed_length
             ) values (?, ?, ?, ?, ?, ?, ?)]]></sql>
-		<sql action="cleanup"><![CDATA[delete from akiba_information_schema.index_columns]]></sql>
+		<sql action="cleanup"><![CDATA[delete from akiban_information_schema.index_columns]]></sql>
 	</object>
 
 </model>

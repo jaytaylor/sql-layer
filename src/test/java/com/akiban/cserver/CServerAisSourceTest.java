@@ -25,7 +25,7 @@ import org.junit.Test;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
 
@@ -33,7 +33,7 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
 
     private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
 
-    private AkibaInformationSchema ais;
+    private AkibanInformationSchema ais;
 
     @Before
     public void setUp() throws Exception {
@@ -54,7 +54,7 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
 
         // Retrieve AIS data from Chunk Server
         final Source source = new CServerAisSource(store);
-        final AkibaInformationSchema aisCopy = new Reader(source).load();
+        final AkibanInformationSchema aisCopy = new Reader(source).load();
 
         // new Writer(new SqlTextTarget(new PrintWriter(new
         // FileWriter("/tmp/ais1.txt")))).save(ais);
@@ -72,11 +72,11 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
 
         // Retrieve AIS data from Chunk Server
         final Source source1 = new CServerAisSource(store);
-        final AkibaInformationSchema aisCopy1 = new Reader(source1).load();
+        final AkibanInformationSchema aisCopy1 = new Reader(source1).load();
         new Writer(target).save(aisCopy1);
 
         final Source source2 = new CServerAisSource(store);
-        final AkibaInformationSchema aisCopy2 = new Reader(source2).load();
+        final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
 
         // new Writer(new SqlTextTarget(new PrintWriter(new
         // FileWriter("/tmp/ais1.txt")))).save(ais);
@@ -86,17 +86,17 @@ public class CServerAisSourceTest extends CServerTestCase implements CServerCons
         assertTrue(equals(ais, aisCopy2));
 
         final Source source3 = new CServerAisSource(store);
-        final AkibaInformationSchema aisCopy3 = new Reader(source3).load();
+        final AkibanInformationSchema aisCopy3 = new Reader(source3).load();
         assertTrue(equals(ais, aisCopy3));
     }
 
-    private boolean equals(final AkibaInformationSchema ais1,
-            final AkibaInformationSchema ais2) throws Exception {
+    private boolean equals(final AkibanInformationSchema ais1,
+            final AkibanInformationSchema ais2) throws Exception {
         final ByteBuffer bb1 = ByteBuffer.allocate(100000);
         final ByteBuffer bb2 = ByteBuffer.allocate(100000);
 
-        new Writer(new MessageTarget(bb1)).save((AkibaInformationSchema) ais1);
-        new Writer(new MessageTarget(bb2)).save((AkibaInformationSchema) ais2);
+        new Writer(new MessageTarget(bb1)).save((AkibanInformationSchema) ais1);
+        new Writer(new MessageTarget(bb2)).save((AkibanInformationSchema) ais2);
         bb1.flip();
         bb2.flip();
         if (bb1.limit() != bb2.limit()) {

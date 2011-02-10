@@ -25,9 +25,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class AkibaInformationSchema implements Serializable, Traversable
+public class AkibanInformationSchema implements Serializable, Traversable
 {
-    public AkibaInformationSchema()
+    public AkibanInformationSchema()
     {
         for (Type type : Types.types()) {
             addType(type);
@@ -35,7 +35,7 @@ public class AkibaInformationSchema implements Serializable, Traversable
         charsetAndCollation = CharsetAndCollation.intern(DEFAULT_CHARSET, DEFAULT_COLLATION);
     }
 
-    public AkibaInformationSchema(AkibaInformationSchema ais)
+    public AkibanInformationSchema(AkibanInformationSchema ais)
     {
         this();
         groups.putAll(ais.getGroups());
@@ -45,12 +45,12 @@ public class AkibaInformationSchema implements Serializable, Traversable
     }
 
 
-    // AkibaInformationSchema interface
+    // AkibanInformationSchema interface
 
     public String getDescription()
     {
         StringBuilder buffer = new StringBuilder();
-        buffer.append("AkibaInformationSchema(");
+        buffer.append("AkibanInformationSchema(");
 
         boolean first = true;
         for (Group group : groups.values()) {
@@ -198,7 +198,7 @@ public class AkibaInformationSchema implements Serializable, Traversable
         }
     }
 
-    // AkibaInformationSchema interface
+    // AkibanInformationSchema interface
 
     public void addGroup(Group group)
     {

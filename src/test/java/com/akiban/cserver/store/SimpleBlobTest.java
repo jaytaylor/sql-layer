@@ -23,7 +23,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerTestCase;
 import com.akiban.cserver.RowData;

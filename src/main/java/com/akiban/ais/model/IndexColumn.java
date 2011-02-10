@@ -69,7 +69,7 @@ public class IndexColumn implements Serializable, ModelNames
         this.indexedLength = indexedLength;
     }
     
-    public static IndexColumn create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static IndexColumn create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         IndexColumn indexColumn = null;
         String schemaName = (String) map.get(indexColumn_schemaName);

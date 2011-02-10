@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -32,7 +32,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.service.session.Session;
@@ -42,8 +41,8 @@ import com.persistit.exception.PersistitException;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
- * RowDef objects from the AkibaInformationSchema. The translation is done in
- * the {@link #setAIS(AkibaInformationSchema)} method.
+ * RowDef objects from the AkibanInformationSchema. The translation is done in
+ * the {@link #setAIS(AkibanInformationSchema)} method.
  * 
  * @author peter
  */
@@ -133,12 +132,12 @@ public class RowDefCache implements CServerConstants {
     }
 
     /**
-     * Receive an instance of the AkibaInformationSchema, crack it and produce
+     * Receive an instance of the AkibanInformationSchema, crack it and produce
      * the RowDef instances it defines.
      * 
      * @param ais
      */
-    public synchronized void setAIS(final AkibaInformationSchema ais) {
+    public synchronized void setAIS(final AkibanInformationSchema ais) {
         for (final UserTable table : ais.getUserTables().values()) {
             putRowDef(createUserTableRowDef(ais, table));
         }
@@ -263,7 +262,7 @@ public class RowDefCache implements CServerConstants {
         return String.format("%s$$%s$$%s$$%s", groupName, schemaName, tableName, indexName);
     }
 
-    private RowDef createUserTableRowDef(AkibaInformationSchema ais, UserTable table) {
+    private RowDef createUserTableRowDef(AkibanInformationSchema ais, UserTable table) {
         RowDef rowDef = new RowDef(table);
         // parentRowDef
         int[] parentJoinFields;
@@ -322,7 +321,7 @@ public class RowDefCache implements CServerConstants {
 
     }
 
-    private RowDef createGroupTableRowDef(AkibaInformationSchema ais,
+    private RowDef createGroupTableRowDef(AkibanInformationSchema ais,
             GroupTable table) {
         RowDef rowDef = new RowDef(table);
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();

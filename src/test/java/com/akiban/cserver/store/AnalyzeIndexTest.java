@@ -77,7 +77,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
 
     @Test
     public void testGroupTableStatistics() throws Exception {
-        final RowDef rowDef = rowDef("_akiba_a");
+        final RowDef rowDef = rowDef("_akiban_a");
         store.analyzeTable(session, rowDef.getRowDefId());
         final TableStatistics ts = new TableStatistics(rowDef.getRowDefId());
         store.getIndexManager().populateTableStatistics(session, ts);
@@ -110,7 +110,7 @@ public class AnalyzeIndexTest extends AbstractScanBase {
 // This test breaks the build - need to populate and then drop a different table.
 //    @Test
 //    public void testDropTable() throws Exception {
-//        final RowDef rowDef = groupRowDef("_akiba_srt");
+//        final RowDef rowDef = groupRowDef("_akiban_srt");
 //        store.analyzeTable(rowDef.getRowDefId());
 //        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
 //            store.analyzeTable(userRowDef.getRowDefId());

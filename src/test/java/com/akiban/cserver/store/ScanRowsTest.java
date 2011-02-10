@@ -37,7 +37,7 @@ public class ScanRowsTest extends AbstractScanBase {
 
     @Test
     public void testScanRows() throws Exception {
-        final RowDef rowDef = rowDef("_akiba_a");
+        final RowDef rowDef = rowDef("_akiban_a");
         final int fc = rowDef.getFieldCount();
         final RowData start = new RowData(new byte[256]);
         final RowData end = new RowData(new byte[256]);
@@ -213,7 +213,7 @@ public class ScanRowsTest extends AbstractScanBase {
 
     @Test
     public void testScanFlags() throws Exception {
-        final RowDef rowDef = rowDef("_akiba_a");
+        final RowDef rowDef = rowDef("_akiban_a");
         final int fc = rowDef.getFieldCount();
         final RowData start = new RowData(new byte[256]);
         final RowData end = new RowData(new byte[256]);
@@ -357,7 +357,7 @@ public class ScanRowsTest extends AbstractScanBase {
     public void testBug234() throws Exception {
         // Populates the a, aa and aaa tables, but inserts no
         // aaaa rows.
-        final RowDef rowDef = rowDef("_akiba_a");
+        final RowDef rowDef = rowDef("_akiban_a");
         final RowDef userRowDef = rowDef("aaaa");
         int col = findFieldIndex(rowDef, "aaaa$aaaa1");
 

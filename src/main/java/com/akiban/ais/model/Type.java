@@ -97,7 +97,7 @@ public class Type implements Serializable, ModelNames
         this.encoding = encoding;
     }
 
-    public static void create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static void create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         String name = (String) map.get(type_name);
         Integer typeParameters = (Integer) map.get(type_parameters);

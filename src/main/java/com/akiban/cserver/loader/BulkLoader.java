@@ -27,7 +27,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.store.PersistitStore;
 import com.akiban.cserver.store.Store;
@@ -89,7 +89,7 @@ public class BulkLoader extends Thread
     // BulkLoader interface
 
     // For testing
-    BulkLoader(AkibaInformationSchema ais,
+    BulkLoader(AkibanInformationSchema ais,
                String group,
                String artifactsSchema,
                TaskGenerator.Actions actions)
@@ -109,7 +109,7 @@ public class BulkLoader extends Thread
     }
 
     public static synchronized BulkLoader start(Store store,
-                                                AkibaInformationSchema ais,
+                                                AkibanInformationSchema ais,
                                                 List<String> groups,
                                                 String artifactsSchema,
                                                 Map<String, String> sourceSchemas,
@@ -159,7 +159,7 @@ public class BulkLoader extends Thread
     }
 
     public BulkLoader(Store store,
-                      AkibaInformationSchema ais,
+                      AkibanInformationSchema ais,
                       List<String> groups,
                       String artifactsSchema,
                       Map<String, String> sourceSchemas,
@@ -210,7 +210,7 @@ public class BulkLoader extends Thread
         return groups;
     }
 
-    AkibaInformationSchema ais()
+    AkibanInformationSchema ais()
     {
         return ais;
     }
@@ -328,7 +328,7 @@ public class BulkLoader extends Thread
     private List<String> groups;
     private Map<String, String> sourceSchemas;
     private PersistitStore persistitStore;
-    private AkibaInformationSchema ais;
+    private AkibanInformationSchema ais;
     private TaskGenerator.Actions taskGeneratorActions;
     private Exception termination = null;
     private Tracker tracker;

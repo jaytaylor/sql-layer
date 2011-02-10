@@ -17,7 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Map;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
@@ -32,7 +32,7 @@ import com.akiban.ais.model.UserTable;
 
 public class Reader
 {
-    private AkibaInformationSchema ais;
+    private AkibanInformationSchema ais;
     private final Source source;
     private final ArraySource cache = new ArraySource();
 
@@ -197,13 +197,13 @@ public class Reader
         source.close();
     }
 
-    public AkibaInformationSchema load() throws Exception
+    public AkibanInformationSchema load() throws Exception
     {
-        load(new AkibaInformationSchema());
+        load(new AkibanInformationSchema());
         return ais;
     }
 
-    public AkibaInformationSchema load(final AkibaInformationSchema ais) throws Exception
+    public AkibanInformationSchema load(final AkibanInformationSchema ais) throws Exception
     {
     	this.ais = ais;
         try {

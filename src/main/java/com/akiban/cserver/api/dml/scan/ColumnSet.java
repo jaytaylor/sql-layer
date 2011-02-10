@@ -64,7 +64,7 @@ public final class ColumnSet {
      * low-order byte corresponding to column 0, and a 1 or 0 for each column specifying whether that column should
      * be scanned.
      * See the
-     * <a href="https://akibainc.onconfluence.com/display/db/Message+Compendium#MessageCompendium-ScanRowsRequest">
+     * <a href="https://akibaninc.onconfluence.com/display/db/Message+Compendium#MessageCompendium-ScanRowsRequest">
      * message compendium's definition of ScanRowsRequest</a> for more information.
      * @param columns the columns to pack to bytes
      * @return the columns desired

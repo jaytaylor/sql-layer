@@ -18,9 +18,9 @@ package com.akiban.cserver.loader;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.apache.velocity.VelocityContext;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
@@ -44,7 +44,7 @@ public class GenerateParentByMergeTask extends GenerateParentTask
                                      UserTable table,
                                      GenerateParentTask parentTask,
                                      GenerateChildTask childTask,
-                                     AkibaInformationSchema ais) throws Exception
+                                     AkibanInformationSchema ais) throws Exception
     {
         super(loader, table);
         // Merged table contains columns of child, and hkey columns of parent that don't participate in the join.

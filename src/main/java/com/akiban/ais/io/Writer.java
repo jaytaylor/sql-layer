@@ -17,7 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Collection;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
@@ -40,7 +40,7 @@ public class Writer implements ModelNames
         this.target = target;
     }
 
-    private void saveTypes(AkibaInformationSchema ais) throws Exception
+    private void saveTypes(AkibanInformationSchema ais) throws Exception
     {
         Collection<Type> types = ais.getTypes();
         target.writeCount(types.size());
@@ -49,7 +49,7 @@ public class Writer implements ModelNames
         }
     }
 
-    private void saveGroups(AkibaInformationSchema ais) throws Exception
+    private void saveGroups(AkibanInformationSchema ais) throws Exception
     {
         target.writeCount(ais.getGroups().size());
         for (Group group : ais.getGroups().values()) {
@@ -57,7 +57,7 @@ public class Writer implements ModelNames
         }
     }
 
-    private void saveTables(AkibaInformationSchema ais) throws Exception
+    private void saveTables(AkibanInformationSchema ais) throws Exception
     {
         target.writeCount(ais.getGroupTables().size() + ais.getUserTables().size());
         for (GroupTable groupTable : ais.getGroupTables().values()) {
@@ -74,7 +74,7 @@ public class Writer implements ModelNames
         }
     }
 
-    private void saveColumns(AkibaInformationSchema ais) throws Exception
+    private void saveColumns(AkibanInformationSchema ais) throws Exception
     {
         target.writeCount(nColumns);
         for (GroupTable groupTable : ais.getGroupTables().values()) {
@@ -92,7 +92,7 @@ public class Writer implements ModelNames
         }
     }
 
-    private void saveJoins(AkibaInformationSchema ais) throws Exception
+    private void saveJoins(AkibanInformationSchema ais) throws Exception
     {
         target.writeCount(ais.getJoins().size());
         for (Join join : ais.getJoins().values()) {
@@ -101,7 +101,7 @@ public class Writer implements ModelNames
         }
     }
 
-    private void saveJoinColumns(AkibaInformationSchema ais) throws Exception
+    private void saveJoinColumns(AkibanInformationSchema ais) throws Exception
     {
         target.writeCount(nJoinColumns);
         for (Join join : ais.getJoins().values()) {
@@ -111,7 +111,7 @@ public class Writer implements ModelNames
         }
     }
 
-    private void saveIndexes(AkibaInformationSchema ais) throws Exception
+    private void saveIndexes(AkibanInformationSchema ais) throws Exception
     {
         target.writeCount(nIndexes);
         for (UserTable userTable : ais.getUserTables().values()) {
@@ -128,7 +128,7 @@ public class Writer implements ModelNames
         }
     }
 
-    private void saveIndexColumns(AkibaInformationSchema ais) throws Exception
+    private void saveIndexColumns(AkibanInformationSchema ais) throws Exception
     {
         target.writeCount(nIndexColumns);
         for (UserTable userTable : ais.getUserTables().values()) {
@@ -152,7 +152,7 @@ public class Writer implements ModelNames
         target.close();
     }
 
-    public void save(AkibaInformationSchema ais) throws Exception
+    public void save(AkibanInformationSchema ais) throws Exception
     {
         try {
             target.deleteAll();

@@ -17,7 +17,7 @@ package com.akiban.cserver.api;
 
 import java.util.Collection;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -121,7 +121,7 @@ public interface DDLFunctions {
      * Gets the AIS from the Store.
      * @return returns the store's AIS.
      */
-    AkibaInformationSchema getAIS(Session session);
+    AkibanInformationSchema getAIS(Session session);
 
     /**
      * Resolves the given table ID to its table's name.

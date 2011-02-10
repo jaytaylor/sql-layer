@@ -17,7 +17,7 @@ package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.cserver.api.DDLFunctionsImpl;
 import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.cserver.store.SchemaManager;
@@ -142,12 +142,12 @@ public class AtomicSchemaChangesIT extends ApiTestBase
         }
     }
 
-    private AkibaInformationSchema ais()
+    private AkibanInformationSchema ais()
     {
         return ddl().getAIS(session);
     }
 
-    private ByteBuffer serialize(AkibaInformationSchema ais) throws Exception
+    private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
         ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
         new Writer(new MessageTarget(buffer)).save(ais);

@@ -2,12 +2,12 @@
 #set -x
 
 #
-# Akiba chunkserver agent start/stop script for CentOS 4.x
-# author: Thomas Jones-Low <tjoneslo@akibainc.com>
+# Akiban chunkserver agent start/stop script for CentOS 4.x
+# author: Thomas Jones-Low <tjoneslo@akibaninc.com>
 # date: 2009-12-18
 #
 # chkconfig: 2345 55 45
-# description: starts/stops Akiba build agent
+# description: starts/stops Akiban build agent
 #
 # processname: chunkserver
 # pidfile: /usr/local/chunkserver/logs/chunkserver.pid

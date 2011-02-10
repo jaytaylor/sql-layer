@@ -21,7 +21,7 @@ import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Target;
 
 public class CSVTarget extends Target
@@ -119,7 +119,7 @@ public class CSVTarget extends Target
 
     private PrintWriter output;
 
-    public static String toString(AkibaInformationSchema ais) throws Exception
+    public static String toString(AkibanInformationSchema ais) throws Exception
     {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(stream);

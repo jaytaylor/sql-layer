@@ -30,7 +30,7 @@ package com.akiban.cserver;
  * intended for tests that start and stop all the
  * services once for each test.  
  */
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.cserver.service.ServiceManager;
 import com.akiban.cserver.service.UnitTestServiceFactory;
 import com.akiban.cserver.service.session.Session;
@@ -61,9 +61,9 @@ public abstract class CServerTestSuite {
         rowDefCache = null;
     }
 
-    protected static AkibaInformationSchema setUpAisForTests(
+    protected static AkibanInformationSchema setUpAisForTests(
             final String resourceName) throws Exception {
-        final AkibaInformationSchema ais = ((PersistitStoreSchemaManager) schemaManager)
+        final AkibanInformationSchema ais = ((PersistitStoreSchemaManager) schemaManager)
                 .getAisForTests(resourceName);
         rowDefCache.clear();
         rowDefCache.setAIS(ais);

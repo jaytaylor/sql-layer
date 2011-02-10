@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerTestSuite;
@@ -53,7 +53,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
         CServerTestSuite.setUpSuite();
         
         //rowDefCache.setAIS(ais0);
-        final AkibaInformationSchema ais = setUpAisForTests(DDL_FILE_NAME);
+        final AkibanInformationSchema ais = setUpAisForTests(DDL_FILE_NAME);
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getName().getTableName().startsWith("a")) {
                 tableMap.put(table.getName().getSchemaName() + "."

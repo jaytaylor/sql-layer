@@ -23,7 +23,7 @@ import java.io.PrintWriter;
 import com.akiban.ais.io.CSVTarget;
 import com.akiban.ais.io.MySQLTarget;
 import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Target;
 
 public class AISWriter
@@ -73,7 +73,7 @@ public class AISWriter
 
     private void run() throws Exception
     {
-        AkibaInformationSchema ais = (AkibaInformationSchema) new ObjectInputStream(System.in).readObject();
+        AkibanInformationSchema ais = (AkibanInformationSchema) new ObjectInputStream(System.in).readObject();
         if (mysqlHost != null) {
             Target target = new MySQLTarget(mysqlHost, mysqlUser, mysqlPassword, mysqlPort);
             new Writer(target).save(ais);

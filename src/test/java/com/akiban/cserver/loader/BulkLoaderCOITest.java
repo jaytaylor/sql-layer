@@ -19,13 +19,13 @@ import java.sql.SQLException;
 import java.util.IdentityHashMap;
 import java.util.List;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
@@ -37,11 +37,11 @@ public class BulkLoaderCOITest extends TestCase
     @Test
     public void testCOI() throws ClassNotFoundException, SQLException
     {
-        final AkibaInformationSchema ais = ais();
+        final AkibanInformationSchema ais = ais();
         checkTasks(ais, bulkLoad(ais));
     }
 
-    private AkibaInformationSchema ais()
+    private AkibanInformationSchema ais()
     {
         AISBuilder builder = new AISBuilder();
         // customer(cid) pk: cid
@@ -75,10 +75,10 @@ public class BulkLoaderCOITest extends TestCase
         builder.addJoinToGroup("coi", "co", 0);
         builder.addJoinToGroup("coi", "oi", 0);
         builder.groupingIsComplete();
-        return builder.akibaInformationSchema();
+        return builder.akibanInformationSchema();
     }
 
-    private IdentityHashMap<UserTable, TableTasks> bulkLoad(AkibaInformationSchema ais)
+    private IdentityHashMap<UserTable, TableTasks> bulkLoad(AkibanInformationSchema ais)
         throws ClassNotFoundException, SQLException
     {
         TaskGenerator.Actions actions = new MySQLTaskGeneratorActions(ais);
@@ -87,7 +87,7 @@ public class BulkLoaderCOITest extends TestCase
         return bulkLoader.tasks();
     }
 
-    private void checkTasks(AkibaInformationSchema ais, IdentityHashMap<UserTable, TableTasks> tasks)
+    private void checkTasks(AkibanInformationSchema ais, IdentityHashMap<UserTable, TableTasks> tasks)
     {
         UserTable customer = ais.getUserTable("schema", "customer");
         UserTable order = ais.getUserTable("schema", "order");

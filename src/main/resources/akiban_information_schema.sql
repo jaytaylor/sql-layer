@@ -13,25 +13,25 @@
 -- along with this program.  If not, see http://www.gnu.org/licenses.
 --
 
-drop database if exists akiba_objects;
-drop database if exists akiba_information_schema;
+drop database if exists akiban_objects;
+drop database if exists akiban_information_schema;
 
-create database akiba_information_schema;
-create database akiba_objects;
+create database akiban_information_schema;
+create database akiban_objects;
 
 -- These grants ensure a user exists if it doesn't already. This is done so that drop user succeeds, so that
 -- create user succeeds. All this is necessary to make sure that a user exists whether or not it
 -- existed before this script was run.
-grant usage on *.* to akiba;
-grant usage on *.* to akiba@'localhost';
-drop user akiba;
-drop user akiba@'localhost';
-create user akiba identified by 'akibaDB';
-create user akiba@'localhost' identified by 'akibaDB';
-grant all on akiba_information_schema.* to akiba, akiba@'localhost';
-grant all on akiba_objects.* to akiba, akiba@'localhost';
+grant usage on *.* to akiban;
+grant usage on *.* to akiban@'localhost';
+drop user akiban;
+drop user akiban@'localhost';
+create user akiban identified by 'akibanDB';
+create user akiban@'localhost' identified by 'akibanDB';
+grant all on akiban_information_schema.* to akiban, akiban@'localhost';
+grant all on akiban_objects.* to akiban, akiban@'localhost';
 
-use akiba_information_schema;
+use akiban_information_schema;
 
 create table groups(
     group_name        varchar(64) not null,
@@ -56,7 +56,7 @@ create table tables(
 ) engine=akibandb;
 
 -- Column information, combining information copied from the mysql
--- information schema and akiba information.
+-- information schema and akiban information.
 -- group_* columns: In columns of USER tables, the group_* columns refer to columns
 --     in GROUP tables. In GROUP tables, these columns are null.
 -- parent_* columns: In columns of USER tables, these columns specify column-level

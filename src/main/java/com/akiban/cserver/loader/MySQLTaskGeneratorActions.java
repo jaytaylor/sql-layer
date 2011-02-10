@@ -17,7 +17,7 @@ package com.akiban.cserver.loader;
 
 import java.util.IdentityHashMap;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
@@ -83,7 +83,7 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
 
     // MySQLTaskGeneratorActions
 
-    public MySQLTaskGeneratorActions(AkibaInformationSchema ais)
+    public MySQLTaskGeneratorActions(AkibanInformationSchema ais)
     {
         this.ais = ais;
     }
@@ -103,5 +103,5 @@ public class MySQLTaskGeneratorActions implements TaskGenerator.Actions
 
     // State
 
-    private final AkibaInformationSchema ais;
+    private final AkibanInformationSchema ais;
 }

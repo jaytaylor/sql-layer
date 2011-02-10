@@ -1,25 +1,25 @@
--- akiba_information_schema database
+-- akiban_information_schema database
 
-source src/main/resources/akiba_information_schema.sql
-use akiba_information_schema;
+source src/main/resources/akiban_information_schema.sql
+use akiban_information_schema;
 
 drop database if exists data_dictionary_test;
 create database data_dictionary_test;
 
 -- don't forget the grants to allow access
-grant all on data_dictionary_test.* to akiba, akiba@'localhost';
+grant all on data_dictionary_test.* to akiban, akiban@'localhost';
 
 -- -----------------------------------------------------------------------------
 
-use akiba_information_schema;
+use akiban_information_schema;
 
 -- Tables
 
 -- -- Group
-insert into tables values('akiba_objects', 'coi', 'GROUP', 0, null, null, null);
+insert into tables values('akiban_objects', 'coi', 'GROUP', 0, null, null, null);
 
 -- -- User
-insert into tables values('data_dictionary_test', 'customer', 'USER', 1,  'akiba_objects', 'coi', null);
+insert into tables values('data_dictionary_test', 'customer', 'USER', 1,  'akiban_objects', 'coi', null);
 insert into tables values('data_dictionary_test', 'order', 'USER', 2, 'data_dictionary_test', 'customer', 0);
 insert into tables values('data_dictionary_test', 'item', 'USER', 3, 'data_dictionary_test', 'order', 0);
 
@@ -28,39 +28,39 @@ insert into tables values('data_dictionary_test', 'item', 'USER', 3, 'data_dicti
 
 -- -- Group
 
-insert into columns values('akiba_objects', 'coi', 'customer$customer_id', 0,
+insert into columns values('akiban_objects', 'coi', 'customer$customer_id', 0,
                             'INT', null, null, 0,
                              null, null, null,
                              null, null, null);
-insert into columns values('akiba_objects', 'coi', 'customer$customer_name', 1,
+insert into columns values('akiban_objects', 'coi', 'customer$customer_name', 1,
                             'VARCHAR', 100, null, 0,
                             null, null, null,
                             null, null, null);
-insert into columns values('akiba_objects', 'coi', 'order$order_id', 2,
+insert into columns values('akiban_objects', 'coi', 'order$order_id', 2,
                             'INT', null, null, 0,
                             null, null, null,
                             null, null, null);
-insert into columns values('akiba_objects', 'coi', 'order$customer_id', 3,
+insert into columns values('akiban_objects', 'coi', 'order$customer_id', 3,
                             'INT', null, null, 0,
                             null, null, null,
                             null, null, null);
-insert into columns values('akiba_objects', 'coi', 'order$order_date', 4,
+insert into columns values('akiban_objects', 'coi', 'order$order_date', 4,
                             'INT', null, null, 0,
                             null, null, null,
                             null, null, null);
-insert into columns values('akiba_objects', 'coi', 'item$order_id', 5,
+insert into columns values('akiban_objects', 'coi', 'item$order_id', 5,
                             'INT', null, null, 0,
                             null, null, null,
                             null, null, null);
-insert into columns values('akiba_objects', 'coi', 'item$part_id', 6,
+insert into columns values('akiban_objects', 'coi', 'item$part_id', 6,
                             'INT', null, null, 0,
                             null, null, null,
                             null, null, null);
-insert into columns values('akiba_objects', 'coi', 'item$quantity', 7,
+insert into columns values('akiban_objects', 'coi', 'item$quantity', 7,
                             'INT', null, null, 0,
                             null, null, null,
                             null, null, null);
-insert into columns values('akiba_objects', 'coi', 'item$unit_price', 8,
+insert into columns values('akiban_objects', 'coi', 'item$unit_price', 8,
                             'INT', null, null, 0,
                             null, null, null,
                             null, null, null);
@@ -69,51 +69,51 @@ insert into columns values('akiba_objects', 'coi', 'item$unit_price', 8,
 
 insert into columns values('data_dictionary_test', 'customer', 'customer_id', 0,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'customer$customer_id',
+                            'akiban_objects', 'coi', 'customer$customer_id',
                             null, null, null);
 insert into columns values('data_dictionary_test', 'customer', 'customer_name', 1,
                             'VARCHAR', 100, null, 0,
-                            'akiba_objects', 'coi', 'customer$customer_name',
+                            'akiban_objects', 'coi', 'customer$customer_name',
                             null, null, null);
 insert into columns values('data_dictionary_test', 'order', 'order_id', 0,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'order$order_id',
+                            'akiban_objects', 'coi', 'order$order_id',
                             null, null, null);
 insert into columns values('data_dictionary_test', 'order', 'customer_id', 1,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'order$customer_id',
+                            'akiban_objects', 'coi', 'order$customer_id',
                             'data_dictionary_test', 'customer', 'customer_id');
 insert into columns values('data_dictionary_test', 'order', 'order_date', 2,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'order$order_date',
+                            'akiban_objects', 'coi', 'order$order_date',
                             null, null, null);
 insert into columns values('data_dictionary_test', 'item', 'order_id', 0,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'item$order_id',
+                            'akiban_objects', 'coi', 'item$order_id',
                             'data_dictionary_test', 'order', 'order_id');
 insert into columns values('data_dictionary_test', 'item', 'part_id', 1,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'item$part_id',
+                            'akiban_objects', 'coi', 'item$part_id',
                             null, null, null);
 insert into columns values('data_dictionary_test', 'item', 'quantity', 2,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'item$quantity',
+                            'akiban_objects', 'coi', 'item$quantity',
                             null, null, null);
 insert into columns values('data_dictionary_test', 'item', 'unit_price', 3,
                             'INT', null, null, 0,
-                            'akiba_objects', 'coi', 'item$unit_price',
+                            'akiban_objects', 'coi', 'item$unit_price',
                             null, null, null);
 
 -- Indexes 
-insert into indexes values ('akiba_objects', 'coi', 'coi_customer_PK', 0, 'PRIMARY KEY', 1);
-insert into index_columns values ('akiba_objects', 'coi', 'coi_customer_PK', 'customer$customer_id', 0, 1); 
+insert into indexes values ('akiban_objects', 'coi', 'coi_customer_PK', 0, 'PRIMARY KEY', 1);
+insert into index_columns values ('akiban_objects', 'coi', 'coi_customer_PK', 'customer$customer_id', 0, 1);
 
-insert into indexes values ('akiba_objects', 'coi', 'coi_order_PK', 0, 'PRIMARY KEY', 1);
-insert into index_columns values ('akiba_objects', 'coi', 'coi_order_PK', 'order$order_id', 0, 1);
+insert into indexes values ('akiban_objects', 'coi', 'coi_order_PK', 0, 'PRIMARY KEY', 1);
+insert into index_columns values ('akiban_objects', 'coi', 'coi_order_PK', 'order$order_id', 0, 1);
 
-insert into indexes values ('akiba_objects', 'coi', 'coi_item_PK', 0, 'PRIMARY KEY', 1);
-insert into index_columns  values ('akiba_objects', 'coi', 'coi_item_PK', 'order$order_id', 0, 1);
-insert into index_columns  values ('akiba_objects', 'coi', 'coi_item_PK', 'item$part_id', 1, 1);
+insert into indexes values ('akiban_objects', 'coi', 'coi_item_PK', 0, 'PRIMARY KEY', 1);
+insert into index_columns  values ('akiban_objects', 'coi', 'coi_item_PK', 'order$order_id', 0, 1);
+insert into index_columns  values ('akiban_objects', 'coi', 'coi_item_PK', 'item$part_id', 1, 1);
 
 insert into indexes values ('data_dictionary_test', 'customer', 'customer_PK', 0, 'PRIMARY KEY', 1);
 insert into index_columns values ('data_dictionary_test', 'customer', 'customer_PK', 'customer_id', 0, 1); 
@@ -128,7 +128,7 @@ insert into index_columns values ('data_dictionary_test', 'item', 'item_PK', 'pa
  
 -- Groups
 
-insert into groups values('coi', 'akiba_objects', 'coi');
+insert into groups values('coi', 'akiban_objects', 'coi');
 
 -- -----------------------------------------------------------------------------
 
@@ -161,7 +161,7 @@ create table item(
 
 -- GROUP TABLES
 
-use akiba_objects;
+use akiban_objects;
 
 create table coi(
     customer$customer_id int not null,

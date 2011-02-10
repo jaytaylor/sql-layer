@@ -18,7 +18,7 @@ package com.akiban.cserver.store;
 import java.util.List;
 import java.util.SortedMap;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.exception.PersistitException;
 
@@ -136,7 +136,7 @@ public interface SchemaManager {
             String schemaName) throws Exception;
 
     /**
-     * Constructs (if necessary) and returns an AkibaInformationSchema object
+     * Constructs (if necessary) and returns an AkibanInformationSchema object
      * derived from the current set of tables defined in all schemas. In
      * addition, the returned AIS contains table definitions for the
      * akiban_information_schema tables themselves.
@@ -144,7 +144,7 @@ public interface SchemaManager {
      * @return
      * @throws Exception
      */
-    AkibaInformationSchema getAis(Session session);
+    AkibanInformationSchema getAis(Session session);
 
     /**
      * Construct and return as a single String the entire set of create table

@@ -18,7 +18,7 @@ package com.akiban.cserver.itests.alter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -54,7 +54,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     public void createIndexInvalidTable() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         // Attempt to add index to unknown table
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "index", null, false);
         ddl().getAIS(session).getUserTables().remove(new TableName("test", "t"));
         ddl().createIndexes(session, getAllIndexes(ais));
@@ -62,7 +62,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     
     @Test(expected=IndexAlterException.class) 
     public void createIndexMultipleTables() throws InvalidOperationException {
-        AkibaInformationSchema ais = new AkibaInformationSchema();
+        AkibanInformationSchema ais = new AkibanInformationSchema();
         UserTable.create(ais, "test", "t1", 1);
         UserTable.create(ais, "test", "t2", 1);
         // Attempt to add indexes to multiple tables
@@ -75,7 +75,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     public void createIndexInvalidTableId() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         // Attempt to add to unknown table id
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         ais.getUserTables().values().iterator().next().setTableId(-1);
         addIndexToAIS(ais, "test", "t", "id", null, false);
         ddl().createIndexes(session, getAllIndexes(ais));
@@ -85,7 +85,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     public void createIndexPrimaryKey() throws InvalidOperationException {
         int tId = createTable("test", "atable", "id int");
         // Attempt to a primary key
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "atable");
         Index.create(ais, table, "PRIMARY", 1, false, "PRIMARY");
         ddl().createIndexes(session, getAllIndexes(ais));
@@ -95,7 +95,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     public void createIndexDuplicateIndexName() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         // Attempt to add duplicate index name
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "PRIMARY", new String[]{"id"}, false);
         ddl().createIndexes(session, getAllIndexes(ais));
     }
@@ -104,7 +104,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     public void createIndexWrongColumName() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         // Attempt to add duplicate index name
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Table curTable = ddl().getAIS(session).getTable("test", "t");
         Index index = Index.create(ais, table, "id", -1, false, "KEY");
@@ -117,7 +117,7 @@ public final class CreateIndexesTest extends AlterTestBase {
     public void createIndexWrongColumType() throws InvalidOperationException {
         int tId = createTable("test", "t", "id int primary key");
         // Attempt to add duplicate index name
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Table curTable = ddl().getAIS(session).getTable("test", "t");
         Index index = Index.create(ais, table, "id", -1, false, "KEY");
@@ -136,7 +136,7 @@ public final class CreateIndexesTest extends AlterTestBase {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         
         // Create non-unique index on varchar
-        AkibaInformationSchema ais = createAISWithTable(tId); 
+        AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"name"}, false);
         ddl().createIndexes(session, getAllIndexes(ais));
         
@@ -161,7 +161,7 @@ public final class CreateIndexesTest extends AlterTestBase {
         expectRowCount(tId, 2);
         
         // Create non-unique index on varchar
-        AkibaInformationSchema ais = createAISWithTable(tId); 
+        AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"name"}, false);
         ddl().createIndexes(session, getAllIndexes(ais));
         
@@ -203,7 +203,7 @@ public final class CreateIndexesTest extends AlterTestBase {
         expectRowCount(iId, 5);
         
         // Create index on an varchar (note: in the "middle" of a group, shifts IDs after, etc)
-        AkibaInformationSchema ais = createAISWithTable(oId);
+        AkibanInformationSchema ais = createAISWithTable(oId);
         addIndexToAIS(ais, "coi", "o", "tag", new String[]{"tag"}, false);
         ddl().createIndexes(session, getAllIndexes(ais));
         
@@ -237,7 +237,7 @@ public final class CreateIndexesTest extends AlterTestBase {
         expectRowCount(tId, 3);
         
         // Create non-unique compound index on two varchars
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"first","last"}, false);
         ddl().createIndexes(session, getAllIndexes(ais));
         
@@ -263,7 +263,7 @@ public final class CreateIndexesTest extends AlterTestBase {
         expectRowCount(tId, 3);
         
         // Create unique index on a char(2)
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "state", new String[]{"state"}, true);
         ddl().createIndexes(session, getAllIndexes(ais));
         
@@ -289,7 +289,7 @@ public final class CreateIndexesTest extends AlterTestBase {
         expectRowCount(tId, 3);
         
         // Create unique index on an int, non-unique index on decimal
-        AkibaInformationSchema ais = createAISWithTable(tId);
+        AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "otherId", new String[]{"otherId"}, true);
         addIndexToAIS(ais, "test", "t", "price", new String[]{"price"}, false);
         ddl().createIndexes(session, getAllIndexes(ais));
