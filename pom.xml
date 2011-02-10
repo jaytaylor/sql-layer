@@ -133,6 +133,13 @@
             <version>1.6.1</version>
         </dependency>
         <dependency>
+            <!-- TODO remove this once we get packaging under control, so that we can dynamically set the logger -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.6.1</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.thimbleware.jmemcached</groupId>
             <artifactId>jmemcached-core</artifactId>
             <version>0.9.1</version>
