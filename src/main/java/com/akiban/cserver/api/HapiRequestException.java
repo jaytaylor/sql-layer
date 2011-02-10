@@ -39,25 +39,33 @@ public final class HapiRequestException extends  Exception {
     }
 
     private final ReasonCode reasonCode;
+    private final String message;
 
     public HapiRequestException(String message, ReasonCode reasonCode) {
         super(message);
         this.reasonCode = reasonCode == null ? ReasonCode.UNKNOWN : reasonCode;
+        this.message = message;
     }
 
     public HapiRequestException(String message, Exception cause) {
         super(message, cause);
         this.reasonCode = ReasonCode.EXCEPTION_THROWN;
+        this.message = message;
     }
 
     public HapiRequestException(String message, Throwable cause, ReasonCode reasonCode) {
         super(message, cause);
         this.reasonCode = reasonCode == null ? ReasonCode.UNKNOWN : reasonCode;
+        this.message = message;
     }
 
     @Override
     public String getMessage() {
         return "<" + reasonCode + ">: " + super.getMessage();
+    }
+
+    public String getSimpleMessage() {
+        return message;
     }
 
     public ReasonCode getReasonCode() {

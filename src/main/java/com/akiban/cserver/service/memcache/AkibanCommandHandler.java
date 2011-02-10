@@ -24,6 +24,8 @@ import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -45,6 +47,7 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory.USASCII;
 
 /**
  * Processes CommandMessage and generate ResponseMessage, shared among all channels.
@@ -55,19 +58,68 @@ import org.slf4j.LoggerFactory;
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
     private static final String VERSION_STRING = getVersionString();
-
-    private static String getVersionString() {
-        String version = String.format("Akiban Server version %s using jmemcached %s",
-                CServer.VERSION_STRING,
-                MemCacheDaemon.memcachedVersion);
-        return version.replace('\r', ' ').replace('\n', ' ');
-    }
-
     private static final String MODULE = AkibanCommandHandler.class.toString();
     private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
+
+    private static class UnsupportedMemcachedException extends UnsupportedOperationException {
+        private final Command command;
+        UnsupportedMemcachedException(Command command) {
+            super(command.name());
+            this.command = command;
+        }
+    }
+
+    private static String getVersionString() {
+        String version = String.format("Akiban Server version <%s> using jmemcached %s",
+                CServer.VERSION_STRING,
+                MemCacheDaemon.memcachedVersion);
+        return version.replaceAll("[\r\n]", " ");
+    }
+
+    private static ChannelBuffer forException(Throwable e) {
+        StringBuilder sb = new StringBuilder("SERVER_ERROR ");
+        if (e instanceof HapiRequestException) {
+            HapiRequestException hre = (HapiRequestException)e;
+            sb.append(hre.getReasonCode().name());
+            if (e.getMessage()!=null) {
+                sb.append(": ").append(hre.getSimpleMessage().replaceAll("[\r\n]", " "));
+            }
+
+            if (hre.getReasonCode().warrantsErrorLogging()) {
+                LOG.error("Bad HapiRequestException", hre);
+            }
+            else {
+                LOG.info("HapiRequestException, probably due to user error", hre);
+            }
+        }
+        else if (e instanceof UnsupportedMemcachedException) {
+            UnsupportedMemcachedException ume = (UnsupportedMemcachedException)e;
+            sb.append("unsupported memcache request: " ).append(ume.command.name());
+            LOG.trace("Unsupported memcache request", ume);
+        }
+        else if (e instanceof UnknownCommandException) {
+            LOG.trace("unknown memcache command", e);
+            sb.append(e.getMessage().replaceAll("[\\r\\n]", " "));
+        }
+        else if (e != null) {
+            sb.append("unknown exception ").append(e.getClass().getCanonicalName());
+            if (e.getMessage()!=null) {
+                sb.append(": ").append(e.getMessage().replaceAll("[\\r\\n]", " "));
+            }
+            LOG.error("Unknown exception", e);
+        }
+        else {
+            sb.append("null exception!");
+            LOG.error("null exception!", new Exception("current stack trace"));
+        }
+        sb.append("\r\n");
+        return ChannelBuffers.wrappedBuffer( sb.toString().getBytes(USASCII) );
+    }
+
     static interface FormatGetter {
         HapiOutputter getFormat();
     }
+
     private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
         @Override
         protected Session initialValue() {
@@ -121,7 +173,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
             LOG.trace("netty exception on client shutdown", exception);
         }
         else {
-            Channels.write(ctx.getChannel(), ExceptionHelper.forException(exception, LOG));
+            Channels.write(ctx.getChannel(), forException(exception));
         }
     }
 
@@ -165,7 +217,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
             case DELETE:
             case STATS:
             case FLUSH_ALL:
-                throw new UnsupportedOperationException(cmdOp.name());
+                throw new UnsupportedMemcachedException(cmdOp);
 
             default:
                 throw new UnknownCommandException("unknown command:" + cmdOp);
