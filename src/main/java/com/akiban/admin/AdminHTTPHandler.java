@@ -21,8 +21,8 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.mortbay.jetty.handler.AbstractHandler;
 
 import com.akiban.admin.action.ClearConfig;
@@ -149,7 +149,7 @@ class AdminHTTPHandler extends AbstractHandler
     // the smaller number.
     private static final int MAX_VALUE_SIZE = 1000 * 1000;
     private static final Object GLOBAL_ADMIN_LOCK = new Object();
-    private static final Log logger = LogFactory.getLog(AdminHTTPHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdminHTTPHandler.class);
 
     private static final String GET = "GET";
     private static final String PUT = "PUT";

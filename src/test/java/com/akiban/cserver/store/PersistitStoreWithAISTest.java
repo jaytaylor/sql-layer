@@ -244,10 +244,8 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
                 while (rc.collectNextRow(payload))
                     ;
                 payload.flip();
-                RowData rowData = new RowData(payload.array(),
-                        payload.position(), payload.limit());
-                for (int p = rowData.getBufferStart(); p < rowData
-                        .getBufferEnd();) {
+                RowData rowData = new RowData(payload.array(), payload.position(), payload.limit());
+                for (int p = rowData.getBufferStart(); p < rowData.getBufferEnd();) {
                     rowData.prepareRow(p);
                     p = rowData.getRowEnd();
                     scanCount++;
@@ -372,63 +370,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
     }
 
     @Test
-    public void testDropTable() throws Exception {
-        final TestData td = new TestData(5, 5, 5, 5);
-        td.insertTestRows();
-        Volume volume = getDefaultVolume();
-        assertNotNull(volume.getTree(td.defCOI.getTreeName(), false));
-        assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
-        assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
-        final DDLFunctions ddlf = new DDLFunctionsImpl();
-
-        ddlf.dropTable(session, new TableName(SCHEMA, "order"));
-        assertEquals(0, td.defO.getTableStatus().getRowCount());
-        assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
-        //
-        // TODO -- add these values back in once truncate doesn't truncate
-        // all tables.
-        // ddlf.dropTable(session, TableId.of(td.defI.getRowDefId()));
-        // assertNotNull(volume.getTree(td.defI.getPkTreeName(), false));
-        // assertTrue(store.getTableManager()
-        // .getTableStatus(session, td.defI.getRowDefId()).isDeleted());
-        //
-        // ddlf.dropTable(session, TableId.of(td.defA.getRowDefId()));
-        // assertTrue(store.getTableManager()
-        // .getTableStatus(session, td.defA.getRowDefId()).isDeleted());
-        //
-        // ddlf.dropTable(session, TableId.of(td.defC.getRowDefId()));
-        // assertTrue(store.getTableManager()
-        // .getTableStatus(session, td.defC.getRowDefId()).isDeleted());
-        //
-        // ddlf.dropTable(session, TableId.of(td.defO.getRowDefId()));
-        // assertNotNull(volume.getTree(td.defO.getPkTreeName(), false));
-        // assertTrue(store.getTableManager()
-        // .getTableStatus(session, td.defO.getRowDefId()).isDeleted());
-        //
-        // ddlf.dropTable(session, TableId.of(td.defX.getRowDefId()));
-
-        assertTrue(isGone(td.defCOI));
-        assertTrue(isGone(td.defO));
-        assertTrue(isGone(td.defI));
-        assertTrue(isGone(td.defX));
-        assertTrue(isGone(td.defA));
-    }
-
-    // public void testDropSchema() throws Exception {
-    // //
-    // Volume volume = store.getDb().getVolume(PersistitStore.VOLUME_NAME);
-    // for (int loop = 0; loop < 20; loop++) {
-    // final TestData td = new TestData(10, 10, 10, 10);
-    // td.insertTestRows();
-    // store.dropSchema(SCHEMA);
-    // assertTrue(isGone(td.defCOI.getTreeName()));
-    // assertTrue(isGone(td.defO.getPkTreeName()));
-    // assertTrue(isGone(td.defI.getPkTreeName()));
-    // }
-    // }
-
-    @Test
-    public void testBug47() throws Exception {
+    public void testBug686910() throws Exception {
         //
         for (int loop = 0; loop < 5; loop++) {
             final TestData td = new TestData(5, 5, 5, 5);
@@ -544,6 +486,11 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
                 ErrorCode actualError = null;
                 try {
                     switch (depth) {
+                        case 0:
+                        case 1:
+                        case 2:
+                            break;
+/*
                     case 0:
                         // TODO - for now we can't do cascading DELETE so we
                         // expect an error
@@ -562,6 +509,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
                         expectedError = ErrorCode.FK_CONSTRAINT_VIOLATION;
                         store.deleteRow(session, td.rowI);
                         break;
+*/
                     case 3:
                         expectedError = null;
                         if (td.xid % 2 == 0) {

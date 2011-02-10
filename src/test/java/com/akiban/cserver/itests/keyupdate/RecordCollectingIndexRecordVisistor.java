@@ -13,19 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.d_l;
+package com.akiban.cserver.itests.keyupdate;
 
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
+import com.akiban.cserver.store.IndexRecordVisitor;
 
-//    void createTable(String schema, String ddl);
-    void createTable(String ddl);
+import java.util.ArrayList;
+import java.util.List;
 
-    void dropTable(String schema, String tableName);
-    void dropTable(String tableName);
-    void dropGroup(String groupName);
+class RecordCollectingIndexRecordVisistor extends IndexRecordVisitor
+{
+    @Override
+    public void visit(List<Object> key)
+    {
+        records.add(key);
+    }
 
-//    void writeRow(String schema, String table, String fields);
-    void writeRow(String table, String fields);
+    public List<List<Object>> records()
+    {
+        return records;
+    }
+
+    private final List<List<Object>> records = new ArrayList<List<Object>>();
 }

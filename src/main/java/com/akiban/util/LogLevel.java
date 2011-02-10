@@ -13,19 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.d_l;
+package com.akiban.util;
 
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
-
-//    void createTable(String schema, String ddl);
-    void createTable(String ddl);
-
-    void dropTable(String schema, String tableName);
-    void dropTable(String tableName);
-    void dropGroup(String groupName);
-
-//    void writeRow(String schema, String table, String fields);
-    void writeRow(String table, String fields);
+public enum LogLevel {
+    TRACE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
 }

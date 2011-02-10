@@ -13,19 +13,37 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.d_l;
+package com.akiban.cserver.itests.keyupdate;
 
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
+import com.akiban.cserver.api.dml.scan.NiceRow;
 
-//    void createTable(String schema, String ddl);
-    void createTable(String ddl);
+public class TestRow extends NiceRow
+{
+    public TestRow(int tableId)
+    {
+        super(tableId);
+    }
 
-    void dropTable(String schema, String tableName);
-    void dropTable(String tableName);
-    void dropGroup(String groupName);
+    public HKey hKey()
+    {
+        return hKey;
+    }
 
-//    void writeRow(String schema, String table, String fields);
-    void writeRow(String table, String fields);
+    public void hKey(HKey hKey)
+    {
+        this.hKey = hKey;
+    }
+
+    public TestRow parent()
+    {
+        return parent;
+    }
+
+    public void parent(TestRow parent)
+    {
+        this.parent = parent;
+    }
+
+    private HKey hKey;
+    private TestRow parent;
 }

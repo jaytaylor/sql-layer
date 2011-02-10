@@ -99,7 +99,7 @@ public final class LegacyRowWrapper extends NewRow
     @Override
     public Map<Integer, Object> getFields()
     {
-        throw new UnsupportedOperationException();
+        return niceRow().getFields();
     }
 
     @Override

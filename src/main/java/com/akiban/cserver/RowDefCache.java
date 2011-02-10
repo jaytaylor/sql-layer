@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
@@ -52,7 +52,7 @@ public class RowDefCache implements CServerConstants {
     // TODO: For debugging - remove this
     private static volatile RowDefCache LATEST;
 
-    private static final Log LOG = LogFactory.getLog(RowDefCache.class
+    private static final Logger LOG = LoggerFactory.getLogger(RowDefCache.class
             .getName());
 
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();

@@ -13,19 +13,26 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.d_l;
+package com.akiban.cserver.itests.keyupdate;
 
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.store.TreeRecordVisitor;
 
-//    void createTable(String schema, String ddl);
-    void createTable(String ddl);
+import java.util.ArrayList;
+import java.util.List;
 
-    void dropTable(String schema, String tableName);
-    void dropTable(String tableName);
-    void dropGroup(String groupName);
+class RecordCollectingTreeRecordVisistor extends TreeRecordVisitor
+{
+    @Override
+    public void visit(Object[] key, NewRow row)
+    {
+        records.add(new TreeRecord(key, row));
+    }
 
-//    void writeRow(String schema, String table, String fields);
-    void writeRow(String table, String fields);
+    public List<TreeRecord> records()
+    {
+        return records;
+    }
+
+    private final List<TreeRecord> records = new ArrayList<TreeRecord>();
 }

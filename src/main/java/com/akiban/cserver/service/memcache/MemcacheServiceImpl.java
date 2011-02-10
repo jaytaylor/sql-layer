@@ -30,9 +30,6 @@ import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -53,11 +50,13 @@ import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryResponseEncoder
 import com.thimbleware.jmemcached.protocol.text.MemcachedCommandDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedFrameDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.ObjectName;
 
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
-    private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MemcacheServiceImpl.class);
 
     private final MemcacheMXBean manageBean;
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
@@ -69,7 +68,6 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     // Service vars
     private final ServiceManager serviceManager;
-    private static final Log log = LogFactory.getLog(MemcacheServiceImpl.class);
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
@@ -133,7 +131,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             final String portString = serviceManager.getConfigurationService()
                     .getProperty("cserver", "memcached.port");
 
-            log.info("Starting memcache service on port " + portString);
+            LOG.info("Starting memcache service on port " + portString);
 
             this.port = Integer.parseInt(portString);
             final InetSocketAddress addr = new InetSocketAddress(port);
@@ -150,7 +148,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     @Override
     public void stop() {
-        log.info("Stopping memcache service");
+        LOG.info("Stopping memcache service");
         stopDaemon();
         store.set(null);
     }
@@ -184,17 +182,17 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         Channel serverChannel = bootstrap.bind(addr);
         allChannels.add(serverChannel);
 
-        log.info("Listening on " + addr);
+        LOG.info("Listening on " + addr);
     }
 
     private void stopDaemon() {
-        log.info("Shutting down daemon");
+        LOG.info("Shutting down daemon");
 
         ChannelGroupFuture future = allChannels.close();
         future.awaitUninterruptibly();
 
         if (!future.isCompleteSuccess()) {
-            log.error("Failed to close all network channels");
+            LOG.error("Failed to close all network channels");
         }
 
         channelFactory.releaseExternalResources();

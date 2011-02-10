@@ -24,8 +24,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.UserTable;
@@ -288,7 +288,7 @@ public class BulkLoader extends Thread
 
     // State
 
-    private static final Log logger = LogFactory.getLog(Tracker.class);
+    private static final Logger logger = LoggerFactory.getLogger(Tracker.class);
 
     private static final String TEMPLATE_DROP_BULK_LOAD_SCHEMA = "drop schema if exists %s";
     private static final String TEMPLATE_CREATE_BULK_LOAD_SCHEMA = "create schema %s";

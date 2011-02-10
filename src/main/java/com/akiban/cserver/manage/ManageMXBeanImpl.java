@@ -15,21 +15,16 @@
 
 package com.akiban.cserver.manage;
 
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.log4j.Logger;
 
 import com.akiban.cserver.CServer;
 import com.akiban.cserver.CustomQuery;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.Store;
-import com.akiban.util.Strings;
 
 public class ManageMXBeanImpl implements ManageMXBean {
-    private static final Logger LOG = Logger.getLogger(ManageMXBeanImpl.class);
     private final CServer cserver;
 
     private Class<?> customClass;

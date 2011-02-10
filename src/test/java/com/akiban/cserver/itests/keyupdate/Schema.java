@@ -13,19 +13,26 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.d_l;
+package com.akiban.cserver.itests.keyupdate;
 
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
+import com.akiban.cserver.RowDef;
 
-//    void createTable(String schema, String ddl);
-    void createTable(String ddl);
-
-    void dropTable(String schema, String tableName);
-    void dropTable(String tableName);
-    void dropGroup(String groupName);
-
-//    void writeRow(String schema, String table, String fields);
-    void writeRow(String table, String fields);
+public class Schema
+{
+    static Integer customerId;
+    static Integer c_cid;
+    static Integer c_cx;
+    static RowDef customerRowDef;
+    static Integer orderId;
+    static Integer o_oid;
+    static Integer o_cid;
+    static Integer o_ox;
+    static RowDef orderRowDef;
+    static Integer itemId;
+    static Integer i_cid;
+    static Integer i_oid;
+    static Integer i_iid;
+    static Integer i_ix;
+    static RowDef itemRowDef;
+    static RowDef groupRowDef;
 }

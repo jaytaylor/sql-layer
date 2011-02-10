@@ -542,7 +542,7 @@ public class AISBuilderTest
                 join.getChild() == ais.getUserTable("s", "d")) {
                 count++;
             } else {
-                Assert.assertTrue(false);
+                Assert.fail();
             }
         }
 
@@ -652,7 +652,7 @@ public class AISBuilderTest
                 join.getChild() == ais.getUserTable("s", "d")) {
                 count++;
             } else {
-                Assert.assertTrue(false);
+                Assert.fail();
             }
         }
         // AISPrinter.print(ais);
@@ -779,7 +779,7 @@ public class AISBuilderTest
         builder.addTableToGroup("group", "s", "t");
         try {
             builder.addJoinToGroup("group", "tt", 0);
-            Assert.assertTrue(false);
+            Assert.fail();
         } catch (AISBuilder.GroupStructureException e) {
             // expected
         }
@@ -835,14 +835,14 @@ public class AISBuilderTest
         builder.removeJoinFromGroup("g", "pkjoin");
         try {
             builder.addJoinToGroup("g", "ukjoin", 0);
-            Assert.assertTrue(false);
+            Assert.fail();
         } catch (AISBuilder.UngroupableJoinException e) {
             // expected
         }
         // Add nk join to group
         try {
             builder.addJoinToGroup("g", "nkjoin", 0);
-            Assert.assertTrue(false);
+            Assert.fail();
         } catch (Exception e) {
             // expected
         }

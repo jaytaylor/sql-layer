@@ -42,15 +42,6 @@ public class UserTable extends Table
     }
 
     @Override
-    public String toString()
-    {
-        return
-            getGroup() == null
-            ? "UserTable(" + tableName + ", group(null))"
-            : "UserTable(" + tableName + ", group(" + getGroup().getName() + "))";
-    }
-
-    @Override
     protected void addIndex(Index index)
     {
         super.addIndex(index);
@@ -293,10 +284,6 @@ public class UserTable extends Table
         return branchHKey;
     }
 
-    /**
-     * @deprecated
-     * @return
-     */
     public List<Column> allHKeyColumns()
     {
         assert getGroup() != null;

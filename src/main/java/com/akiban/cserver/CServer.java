@@ -16,8 +16,8 @@
 package com.akiban.cserver;
 
 import com.akiban.util.Strings;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.cserver.manage.ManageMXBean;
 import com.akiban.cserver.manage.ManageMXBeanImpl;
@@ -38,7 +38,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
 
-    private static final Log LOG = LogFactory.getLog(CServer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CServer.class.getName());
 
     /**
      * Config property name and default for the port on which the CServer will

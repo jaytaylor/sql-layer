@@ -18,6 +18,7 @@ package com.akiban.cserver.api.dml.scan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -59,14 +60,6 @@ public final class ColumnSetTest {
         assertBytes("[ ]", empty);
     }
 
-    private static void assertBytes(String expected, Set<Integer> actual) {
-        final byte[] actualBytes =  ColumnSet.packToLegacy(actual);
-        assertEquals("bytes", expected, bytesToHex(actualBytes));
-
-        Set<Integer> unpacked = ColumnSet.unpackFromLegacy(actualBytes);
-        assertEquals("unpacked set", actual, unpacked);
-    }
-
     @Test
     public void testBytesToHex() {
         assertEquals("empty array", "[ ]", bytesToHex(new byte[] {} ));
@@ -77,6 +70,37 @@ public final class ColumnSetTest {
         assertEquals("one byte array", "[ 11100000 10100000 ]", bytesToHex(new byte[] {7, 5} ));
         assertEquals("one byte array", "[ 00000000 10000000 ]", bytesToHex(new byte[] {(byte)0, 1} ));
 
+    }
+
+    @Test
+    public void handleEighthBitSet() {
+        final Set<Integer> columns = new HashSet<Integer>();
+        columns.addAll(Arrays.asList(0,7,8));
+        assertBytes("[ 10000001 10000000 ]", columns);
+    }
+
+    @Test
+    public void threeByteWrongOutput() {
+        final Set<Integer> columnsFitsTwo = new HashSet<Integer>();
+        columnsFitsTwo.addAll(Arrays.asList(0,1,2,3,4,5,10,11,15));
+        assertBytes("[ 11111100 00110001 ]", columnsFitsTwo);
+
+        final Set<Integer> columnsFitsThree = new HashSet<Integer>();
+        columnsFitsThree.addAll(Arrays.asList(0,1,2,3,4,5,10,11,15,16));
+        assertBytes("[ 11111100 00110001 10000000 ]", columnsFitsThree);
+
+        // The second byte was getting lost internally to packToLegacy (turned out to be a ByteBuffer copy error)
+        final Set<Integer> columnsActualCase = new HashSet<Integer>();
+        columnsActualCase.addAll(Arrays.asList(0,1,2,3,4,10,11,15,16,17,18,19,20,21,22,23));
+        assertBytes("[ 11111000 00110001 11111111 ]", columnsActualCase);
+    }
+    
+    private static void assertBytes(String expected, Set<Integer> actual) {
+        final byte[] actualBytes =  ColumnSet.packToLegacy(actual);
+        assertEquals("bytes", expected, bytesToHex(actualBytes));
+
+        Set<Integer> unpacked = ColumnSet.unpackFromLegacy(actualBytes);
+        assertEquals("unpacked set", actual, unpacked);
     }
 
     private static String bytesToHex(byte[] actualBytes) {

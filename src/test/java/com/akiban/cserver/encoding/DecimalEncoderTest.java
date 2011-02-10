@@ -89,7 +89,7 @@ public final class DecimalEncoderTest {
         DecimalEncoder.decodeAndParse(bytes, 0, precision, scale, AkibanAppender.of(sb));
         BigDecimal actual = new BigDecimal(sb.toString());
 
-        assertEquals(label + ": BigDecimal", new BigDecimal(expected), actual);
+        assertEquals(label + ": BigDecimal", new BigDecimal(expected).toPlainString(), actual.toPlainString());
         assertEquals(label + ": String", expected, sb.toString());
     }
 
@@ -120,5 +120,17 @@ public final class DecimalEncoderTest {
         }
 
         assertEquals("bytes", Arrays.toString(expected), Arrays.toString(actual));
+    }
+
+    @Test
+    public void testZeroValues() {
+        doTest("0 in (1,0)", "0", 1, 0, "0x80");
+        doTest("0 in (4,0)", "0", 4, 0, "0x8000");
+        doTest("0 in (8,0)", "0", 8, 0, "0x80000000");
+        doTest("0 in (30,0)", "0", 30, 0, "0x8000000000000000000000000000");
+        doTest("0 in (8,1)", "0.0", 8, 1, "0x8000000000");
+        doTest("0 in (8,2)", "0.00", 8, 2, "0x80000000");
+        doTest("0 in (10,4)", "0.0000", 10, 4, "0x8000000000");
+        doTest("0 in (30,8)", "0.00000000", 10, 8, "0x8000000000000000000000000000");
     }
 }
