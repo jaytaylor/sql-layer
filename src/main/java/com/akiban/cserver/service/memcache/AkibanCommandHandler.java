@@ -16,8 +16,6 @@
 package com.akiban.cserver.service.memcache;
 
 import java.io.ByteArrayOutputStream;
-import java.util.Map;
-import java.util.Set;
 
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiOutputter;
@@ -37,7 +35,6 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
 import com.akiban.cserver.api.HapiProcessor;
-import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.LocalCacheElement;
 import com.thimbleware.jmemcached.MemCacheDaemon;
@@ -113,7 +110,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      * Turn CommandMessages into executions against the CS and then pass on downstream message
      */
     @Override
-    @SuppressWarnings("unchecked")
     public void messageReceived(ChannelHandlerContext context, MessageEvent event) throws Exception {
         if (!(event.getMessage() instanceof CommandMessage)) {
             // Ignore what this encoder can't encode.
@@ -121,6 +117,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
             return;
         }
 
+        @SuppressWarnings("unchecked")
         CommandMessage<CacheElement> command = (CommandMessage<CacheElement>) event.getMessage();
         Command cmdOp = command.cmd;
 
@@ -136,41 +133,36 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
             LOG.debug(msg.toString());
         }
 
+        LOG.trace(cmdOp.name());
         Channel channel = event.getChannel();
         switch(cmdOp) {
             case GET:
-            case GETS:      handleGets(context, command, channel);      break;
-            case SET:       handleSet(context, command, channel);       break;
-            case CAS:       handleCas(context, command, channel);       break;
-            case ADD:       handleAdd(context, command, channel);       break;
-            case REPLACE:   handleReplace(context, command, channel);   break;
-            case APPEND:    handleAppend(context, command, channel);    break;
-            case PREPEND:   handlePrepend(context, command, channel);   break;
-            case INCR:      handleIncr(context, command, channel);      break;
-            case DECR:      handleDecr(context, command, channel);      break;
-            case DELETE:    handleDelete(context, command, channel);    break;
-            case STATS:     handleStats(context, command, channel);     break;
-            case VERSION:   handleVersion(context, command, channel);   break;
-            case QUIT:      handleQuit(channel);                        break;
-            case FLUSH_ALL: handleFlush(context, command, channel);     break;
+            case GETS:
+                handleGets(context, command, channel);
+                break;
+            case QUIT:
+                handleQuit(channel);
+                break;
+            case VERSION:
+                handleVersion(context, command, channel);
+                break;
+
+            case SET:
+            case CAS:
+            case ADD:
+            case REPLACE:
+            case APPEND:
+            case PREPEND:
+            case INCR:
+            case DECR:
+            case DELETE:
+            case STATS:
+            case FLUSH_ALL:
+                throw new UnsupportedOperationException(cmdOp.name());
+
             default:
-                if(cmdOp == null) {
-                    handleNoOp(context, command);
-                }
-                else {
-                    throw new UnknownCommandException("unknown command:" + cmdOp);
-                }
+                throw new UnknownCommandException("unknown command:" + cmdOp);
         }
-    }
-
-    protected void handleNoOp(ChannelHandlerContext context, CommandMessage<CacheElement> command) {
-        Channels.fireMessageReceived(context, new ResponseMessage(command));
-    }
-
-    protected void handleFlush(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        boolean flushSuccess = false;
-        // flushSuccess = cache.flush_all(command.time)
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withFlushResponse(flushSuccess), channel.getRemoteAddress());
     }
 
     protected void handleQuit(Channel channel) {
@@ -181,70 +173,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         ResponseMessage responseMessage = new ResponseMessage(command);
         responseMessage.version = MemCacheDaemon.memcachedVersion;
         Channels.fireMessageReceived(context, responseMessage, channel.getRemoteAddress());
-    }
-
-    protected void handleStats(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-//        String option = "";
-//        if(command.keys.size() > 0) {
-//            option = new String(command.keys.get(0));
-//        }
-        Map<String, Set<String>> statResponse = null;
-        // statResponse = cache.stat(option)
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withStatResponse(statResponse), channel.getRemoteAddress());
-    }
-
-    protected void handleDelete(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Cache.DeleteResponse dr = null;
-        //dr = cache.delete(command.keys.get(0), command.time);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withDeleteResponse(dr), channel.getRemoteAddress());
-    }
-
-    protected void handleDecr(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Integer incrDecrResp = null;
-        //incDecrResp = cache.get_add(command.keys.get(0), -1 * command.incrAmount);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withIncrDecrResponse(incrDecrResp), channel.getRemoteAddress());
-    }
-
-    protected void handleIncr(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Integer incrDecrResp = null;
-        //incRecrResp = cache.get_add(command.keys.get(0), command.incrAmount); // TODO support default value and expiry!!
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withIncrDecrResponse(incrDecrResp), channel.getRemoteAddress());
-    }
-
-    protected void handlePrepend(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Cache.StoreResponse ret = null;
-        //ret = cache.prepend(command.element);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
-    }
-
-    protected void handleAppend(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Cache.StoreResponse ret = null;
-        //ret = cache.append(command.element);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
-    }
-
-    protected void handleReplace(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Cache.StoreResponse ret = null;
-        //ret = cache.replace(command.element);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
-    }
-
-    protected void handleAdd(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Cache.StoreResponse ret = null;
-        //ret = cache.add(command.element);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
-    }
-
-    protected void handleCas(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Cache.StoreResponse ret = null;
-        //ret = cache.cas(command.cas_key, command.element);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
-    }
-
-    protected void handleSet(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
-        Cache.StoreResponse ret = null;
-        //ret = cache.set(command.element);
-        Channels.fireMessageReceived(context, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
     }
 
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel)
