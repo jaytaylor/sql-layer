@@ -32,6 +32,10 @@ public final class HapiRequestException extends  Exception {
         ReasonCode(int code) {
             this.code = code;
         }
+
+        public boolean warrantsErrorLogging() {
+            return this.equals(INTERNAL_ERROR) || this.equals(EXCEPTION_THROWN);
+        }
     }
 
     private final ReasonCode reasonCode;

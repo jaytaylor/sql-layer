@@ -19,6 +19,7 @@ import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.api.HapiRequestException.ReasonCode;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,11 +40,20 @@ final class ExceptionHelper {
         return Collections.unmodifiableMap(map);
     }
 
-    static ChannelBuffer forException(Throwable t) {
+    static ChannelBuffer forException(Throwable e, Logger logger) {
         ChannelBuffer buff = null;
-        if (t instanceof HapiRequestException) {
-            HapiRequestException hre = (HapiRequestException)t;
+        if (e instanceof HapiRequestException) {
+            HapiRequestException hre = (HapiRequestException)e;
             buff = BUFFERS_MAP.get(hre.getReasonCode());
+            if (hre.getReasonCode().warrantsErrorLogging()) {
+                logger.error("Bad HapiRequestException", hre);
+            }
+            else {
+                logger.info("HapiRequestException, probably due to user error", hre);
+            }
+        }
+        else {
+            logger.error("Unknown exception", e);
         }
         if (buff == null) {
             buff = DEFAULT_ERROR;
