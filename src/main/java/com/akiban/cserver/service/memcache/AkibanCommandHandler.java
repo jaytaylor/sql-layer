@@ -131,18 +131,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         CommandMessage<CacheElement> command = (CommandMessage<CacheElement>) event.getMessage();
         Command cmdOp = command.cmd;
 
-        if(LOG.isDebugEnabled()) {
-            StringBuilder msg = new StringBuilder();
-            msg.append(command.cmd);
-            if(command.element != null) {
-                msg.append(" ").append(command.element.getKeystring());
-            }
-            for(int i = 0; i < command.keys.size(); ++i) {
-                msg.append(" ").append(command.keys.get(i));
-            }
-            LOG.debug(msg.toString());
-        }
-
         LOG.trace(cmdOp.name());
         Channel channel = event.getChannel();
         switch(cmdOp) {
@@ -189,6 +177,21 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     throws HapiRequestException
     {
         final CacheElement[] results = new CacheElement[command.keys.size()];
+
+        if(LOG.isTraceEnabled()) {
+            StringBuilder msg = new StringBuilder();
+            msg.append(command.cmd);
+            if(command.element != null) {
+                msg.append(" ").append(command.element.getKeystring());
+            }
+            else {
+                msg.append(" null_command_element");
+            }
+            for(int i = 0; i < command.keys.size(); ++i) {
+                msg.append(" ").append(command.keys.get(i));
+            }
+            LOG.trace(msg.toString());
+        }
 
         int index = 0;
         for (String key : command.keys) {
