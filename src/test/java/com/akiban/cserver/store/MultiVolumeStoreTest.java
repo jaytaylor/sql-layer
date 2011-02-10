@@ -53,7 +53,7 @@ public class MultiVolumeStoreTest extends CServerTestCase {
         // properly distributed.
         final Collection<Property> properties = new ArrayList<Property>();
         properties.add(property("cserver", "treespace.1",
-                "test2/_akiba_customer:${datapath}/${schema}_customer.v0,create,pageSize:8K,"
+                "test2/_akiban_customer:${datapath}/${schema}_customer.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("cserver", "treespace.2",
                 "test*:${datapath}/${schema}.v0,create,pageSize:8K,"

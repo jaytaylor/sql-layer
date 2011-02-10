@@ -114,7 +114,7 @@ public class RowDefCacheTest
             "create table child (",
             "   id int,",
             "   primary key(id),",
-            "   constraint `__akiban_fk0` foreign key `akibafk` (id) references parent(id)",
+            "   constraint `__akiban_fk0` foreign key `akibanfk` (id) references parent(id)",
             ") engine = akibandb;"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
@@ -932,7 +932,7 @@ public class RowDefCacheTest
             "   a int,",
             "   x int,",
             "   primary key(c, d),",
-            "   constraint `__akiban_fk0` foreign key `akibafk` (b, a) references parent(b, a)",
+            "   constraint `__akiban_fk0` foreign key `akibanfk` (b, a) references parent(b, a)",
             ") engine = akibandb;"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);

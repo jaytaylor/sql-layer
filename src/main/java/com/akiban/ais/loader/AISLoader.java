@@ -18,7 +18,7 @@
  *      -properties file listing the network configuration (addressing)
  *      -database user and password for each head
  *      -DDL file
- *      -Akiba Information Schema
+ *      -Akiban Information Schema
  */
 package com.akiban.ais.loader;
 

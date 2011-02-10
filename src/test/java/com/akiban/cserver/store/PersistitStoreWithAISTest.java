@@ -70,7 +70,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
         final RowDef defI = rowDef("item");
         final RowDef defA = rowDef("address");
         final RowDef defX = rowDef("component");
-        final RowDef defCOI = rowDef("_akiba_customer");
+        final RowDef defCOI = rowDef("_akiban_customer");
         final RowData rowC = new RowData(new byte[256]);
         final RowData rowO = new RowData(new byte[256]);
         final RowData rowI = new RowData(new byte[256]);
@@ -727,7 +727,7 @@ public class PersistitStoreWithAISTest extends CServerTestCase implements
     // store.getDb().getTransaction().run(new TransactionRunnable() {
     // public void runTransaction() throws RollbackException {
     // for (int index = 1; index < 13; index++) {
-    // final String treeName = "_akiba_customer$$" + index;
+    // final String treeName = "_akiban_customer$$" + index;
     // try {
     // final Exchange exchange = store.getExchange(treeName);
     // exchange.to("testBug283").store();

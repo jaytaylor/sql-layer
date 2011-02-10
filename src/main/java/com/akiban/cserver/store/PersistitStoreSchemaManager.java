@@ -80,7 +80,7 @@ import com.persistit.exception.PersistitException;
 public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         SchemaManager, AfterStart {
 
-    static final String AIS_DDL_NAME = "akiba_information_schema.ddl";
+    static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
 
     static final String BY_ID = "byId";
 
@@ -101,7 +101,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private final static String SEMI_COLON = ";";
 
-    private final static String AKIBAN_INFORMATION_SCHEMA = "akiba_information_schema";
+    private final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
 
     private static List<TableDefinition> aisSchema = readAisSchema();
 
@@ -831,7 +831,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
             final String canonical = SchemaDef.canonicalStatement(statement);
             TableDefinition def = new TableDefinition(tableId++,
-                    "akiba_information_schema", matcher.group(1), canonical);
+                    "akiban_information_schema", matcher.group(1), canonical);
             definitions.add(def);
         }
         return Collections.unmodifiableList(definitions);

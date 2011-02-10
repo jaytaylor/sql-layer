@@ -669,7 +669,7 @@ public class AISBuilderTest
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
         builder.groupingIsComplete();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         DDLGenerator ddlGenerator = new DDLGenerator();
         print(ddlGenerator.dropAllGroupTables(ais));
         print(ddlGenerator.createAllGroupTables(ais));

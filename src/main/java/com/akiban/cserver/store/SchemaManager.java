@@ -136,7 +136,7 @@ public interface SchemaManager {
             String schemaName) throws Exception;
 
     /**
-     * Constructs (if necessary) and returns an AkibaInformationSchema object
+     * Constructs (if necessary) and returns an AkibanInformationSchema object
      * derived from the current set of tables defined in all schemas. In
      * addition, the returned AIS contains table definitions for the
      * akiban_information_schema tables themselves.

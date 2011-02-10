@@ -571,17 +571,17 @@ public class AISBuilderTest
         builder.joinTables("co", "s", "c", "s", "o");
         builder.joinColumns("co", "s", "c", "c_id", "s", "o", "c_id");
 
-        builder.createGroup("group_01", "akiba_objects", "customers");
+        builder.createGroup("group_01", "akiban_objects", "customers");
         builder.addTableToGroup("group_01", "s", "c");
         builder.addJoinToGroup("group_01", "co", 1);
         builder.groupingIsComplete();
 
         builder.akibanInformationSchema().checkIntegrity();
 
-        builder.createGroup("group_02", "akiba_objects", "orders");
+        builder.createGroup("group_02", "akiban_objects", "orders");
         builder.moveTreeToEmptyGroup("s", "o", "group_02");
 
-        //Assert.assertEquals("number of joins", 0, builder.akibaInformationSchema().getJoins().size());
+        //Assert.assertEquals("number of joins", 0, builder.akibanInformationSchema().getJoins().size());
 
         builder.akibanInformationSchema().checkIntegrity();
 
@@ -732,12 +732,12 @@ public class AISBuilderTest
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
         builder.groupingIsComplete();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         DDLGenerator ddlGenerator = new DDLGenerator();
         print(ddlGenerator.dropAllGroupTables(ais));
         print(ddlGenerator.createAllGroupTables(ais));
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 */
 

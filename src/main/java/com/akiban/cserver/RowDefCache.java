@@ -41,7 +41,7 @@ import com.persistit.exception.PersistitException;
 
 /**
  * Caches RowDef instances. In this incarnation, this class also constructs
- * RowDef objects from the AkibaInformationSchema. The translation is done in
+ * RowDef objects from the AkibanInformationSchema. The translation is done in
  * the {@link #setAIS(AkibanInformationSchema)} method.
  * 
  * @author peter
@@ -132,7 +132,7 @@ public class RowDefCache implements CServerConstants {
     }
 
     /**
-     * Receive an instance of the AkibaInformationSchema, crack it and produce
+     * Receive an instance of the AkibanInformationSchema, crack it and produce
      * the RowDef instances it defines.
      * 
      * @param ais

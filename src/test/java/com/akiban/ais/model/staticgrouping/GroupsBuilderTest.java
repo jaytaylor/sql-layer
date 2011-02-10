@@ -123,7 +123,7 @@ public class GroupsBuilderTest {
         aisBuilder.joinColumns("join2", "s", "order", "id", "s", "item", "oid");
 
         aisBuilder.basicSchemaIsComplete();
-        aisBuilder.createGroup("group1", "akiba_objects", "_akiba_customer");
+        aisBuilder.createGroup("group1", "akiban_objects", "_akiban_customer");
         aisBuilder.addTableToGroup("group1", "s", "customer");
         aisBuilder.addJoinToGroup("group1", "join3", 1);
         aisBuilder.addJoinToGroup("group1", "join2", 1);

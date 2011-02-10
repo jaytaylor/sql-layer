@@ -108,11 +108,11 @@ public class DDLSourceTest {
         assertTrue(
                 "s1.one missing",
                 schemaDef.getGroupMap().containsKey(
-                        new SchemaDef.CName("akiba_objects", "one")));
+                        new SchemaDef.CName("akiban_objects", "one")));
         assertTrue(
                 "s2.one missing",
                 schemaDef.getGroupMap().containsKey(
-                        new SchemaDef.CName("akiba_objects", "one$0")));
+                        new SchemaDef.CName("akiban_objects", "one$0")));
 
         AkibanInformationSchema ais = new DDLSource().buildAISFromString(ddl);
         assertEquals("user tables", 2, ais.getUserTables().size());

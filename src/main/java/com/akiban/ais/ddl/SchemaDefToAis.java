@@ -417,7 +417,7 @@ public class SchemaDefToAis {
     }
 
     private String groupTableName(final CName group) {
-        return "_akiba_" + group.getName();
+        return "_akiban_" + group.getName();
     }
 
 }

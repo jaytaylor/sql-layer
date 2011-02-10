@@ -379,7 +379,7 @@ public class DDLSource extends Source {
      * @return
      */
     private String groupTableName(final CName groupName) {
-        return "_akiba_" + groupName.getName();
+        return "_akiban_" + groupName.getName();
     }
 
     private CName groupName(final CName rootTable) {
@@ -391,16 +391,16 @@ public class DDLSource extends Source {
             }
             groupNames.put(rootTable, ret);
         }
-        return new CName("akiba_objects", ret);
+        return new CName("akiban_objects", ret);
     }
 
     /**
      * Schema name generator for groups
      * 
-     * @return "akiba_objects"
+     * @return "akiban_objects"
      */
     private String groupSchemaName() {
-        return "akiba_objects";
+        return "akiban_objects";
     }
 
     /**
@@ -772,7 +772,7 @@ public class DDLSource extends Source {
 
     @Override
     public void readTypes(Receiver typeReceiver) throws Exception {
-        // Types are now added implicitly by the AkibaInformationSchema
+        // Types are now added implicitly by the AkibanInformationSchema
         // constructor.
     }
 
@@ -823,7 +823,7 @@ public class DDLSource extends Source {
         }
 
         for (final CName userTableName : schemaDef.getUserTableMap().keySet()) {
-            if (userTableName.getSchema().equals("akiba_objects")) {
+            if (userTableName.getSchema().equals("akiban_objects")) {
                 continue;
             }
             final UserTableDef utDef = addImpliedGroupTable(tablesInGroups,

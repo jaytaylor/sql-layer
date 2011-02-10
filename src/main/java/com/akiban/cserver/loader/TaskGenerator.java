@@ -30,7 +30,7 @@ import com.akiban.ais.model.UserTable;
 
 /*
  * The algorithm for generating tasks is discussed here:
- * http://akibainc.onconfluence.com/display/db/An+Akiban+Bulk+Loader
+ * http://akibaninc.onconfluence.com/display/db/An+Akiban+Bulk+Loader
  * in the section "Algorithm for generating tasks".
  */
 

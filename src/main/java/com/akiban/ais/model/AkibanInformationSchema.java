@@ -45,12 +45,12 @@ public class AkibanInformationSchema implements Serializable, Traversable
     }
 
 
-    // AkibaInformationSchema interface
+    // AkibanInformationSchema interface
 
     public String getDescription()
     {
         StringBuilder buffer = new StringBuilder();
-        buffer.append("AkibaInformationSchema(");
+        buffer.append("AkibanInformationSchema(");
 
         boolean first = true;
         for (Group group : groups.values()) {
@@ -198,7 +198,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
         }
     }
 
-    // AkibaInformationSchema interface
+    // AkibanInformationSchema interface
 
     public void addGroup(Group group)
     {

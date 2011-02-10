@@ -46,20 +46,20 @@ public class PersistitStoreIndexManager implements IndexManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreIndexManager.class.getName());
 
-    private final static String ANALYSIS_TABLE_NAME = "akiba_information_schema.index_analysis";
+    private final static String ANALYSIS_TABLE_NAME = "akiban_information_schema.index_analysis";
 
     private final static int DEFAULT_SAMPLE_SIZE = 32;
 
     private final static int STARTING_TREE_DEPTH = 2;
 
     /**
-     * Field number in index_analysis table. Change if akiba_inormation_schema
+     * Field number in index_analysis table. Change if akiban_inormation_schema
      * changes.
      */
     private final static int ROW_COUNT_FIELD_INDEX = 6;
 
     /**
-     * Field number in index_analysis table. Change if akiba_inormation_schema
+     * Field number in index_analysis table. Change if akiban_inormation_schema
      * changes.
      */
     private final static int ROW_DATA_FIELD_INDEX = 5;

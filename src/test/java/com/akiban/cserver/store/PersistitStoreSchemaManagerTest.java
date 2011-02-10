@@ -174,7 +174,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     @Test
     public void addChildToProtectedTable() throws Exception {
         createTable(ErrorCode.JOIN_TO_PROTECTED_TABLE, SCHEMA, "create table one (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiba_information_schema.tables (table_id) ) engine=akibandb;");
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiban_information_schema.tables (table_id) ) engine=akibandb;");
 
 
         createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
@@ -391,7 +391,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
     
     private static String readAisSchema() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("create schema if not exists `akiba_information_schema`;");
+        sb.append("create schema if not exists `akiban_information_schema`;");
             sb.append(CServerUtil.NEW_LINE);
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 CServer.class.getClassLoader()

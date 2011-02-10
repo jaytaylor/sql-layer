@@ -156,12 +156,12 @@ public class MySQLTarget extends Target
     private PreparedStatement writeIndexColumnStmt;
 
     private static final String writeGroup =
-        "insert into akiba_information_schema.groups(" +
+        "insert into akiban_information_schema.groups(" +
         "    group_name" +
         ") values (?)";
 
     private static final String writeTable =
-        "insert into akiba_information_schema.tables(" +
+        "insert into akiban_information_schema.tables(" +
         "    schema_name, " +
         "    table_name, " +
         "    table_type, " +
@@ -170,7 +170,7 @@ public class MySQLTarget extends Target
         ") values (?, ?, ?, ?, ?)";
 
     private static final String writeColumn =
-        "insert into akiba_information_schema.columns(" +
+        "insert into akiban_information_schema.columns(" +
         "    schema_name, " +
         "    table_name, " +
         "    column_name, " +
@@ -186,7 +186,7 @@ public class MySQLTarget extends Target
         ") values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String writeJoin =
-        "insert into akiba_information_schema.joins(" +
+        "insert into akiban_information_schema.joins(" +
         "    join_name, " +
         "    parent_schema_name, " +
         "    parent_table_name, " +
@@ -197,7 +197,7 @@ public class MySQLTarget extends Target
         ") values (?, ?, ?, ?, ?, ?, ?)";
 
     private static final String writeJoinColumn =
-        "insert into akiba_information_schema.join_columns(" +
+        "insert into akiban_information_schema.join_columns(" +
         "    join_name, " +
         "    parent_schema_name, " +
         "    parent_table_name, " +
@@ -208,7 +208,7 @@ public class MySQLTarget extends Target
         ") values (?, ?, ?, ?, ?, ?, ?)";
 
     private static final String writeIndex =
-        "insert into akiba_information_schema.indexes(" +
+        "insert into akiban_information_schema.indexes(" +
         "    schema_name, " +
         "    table_name, " +
         "    index_name, " +
@@ -218,7 +218,7 @@ public class MySQLTarget extends Target
         ") values (?, ?, ?, ?, ?, ?)";
 
     private static final String writeIndexColumn =
-        "insert into akiba_information_schema.index_columns(" +
+        "insert into akiban_information_schema.index_columns(" +
         "    schema_name, " +
         "    table_name, " +
         "    index_name, " +
