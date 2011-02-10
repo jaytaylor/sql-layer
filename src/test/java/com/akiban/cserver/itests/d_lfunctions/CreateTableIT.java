@@ -27,6 +27,7 @@ import org.junit.Test;
 import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 
 public final class CreateTableIT extends ApiTestBase {
@@ -101,11 +102,11 @@ public final class CreateTableIT extends ApiTestBase {
      */
     @Test
     public void bug696321_defaultParams() throws InvalidOperationException {
-        int tid = createTable("test", "t", "c1 FIXED NULL");
-        Table table = getUserTable(tid);
-        Collection<Column> columns = table.getColumns();
+        final int tid = createTable("test", "t", "c1 FIXED NULL");
+        final Table table = getUserTable(tid);
+        final Collection<Column> columns = table.getColumns();
         assertEquals(1, columns.size());
-        Column col = columns.iterator().next();
+        final Column col = columns.iterator().next();
         assertEquals(Types.DECIMAL, col.getType());
         assertEquals(10, col.getTypeParameter1().intValue());
         assertEquals(0, col.getTypeParameter2().intValue());
@@ -114,11 +115,11 @@ public final class CreateTableIT extends ApiTestBase {
 
     @Test
     public void bug696321_specifiedParams() throws InvalidOperationException {
-        int tid = createTable("test", "t", "c1 FIXED(23,5)");
-        Table table = getUserTable(tid);
-        Collection<Column> columns = table.getColumns();
+        final int tid = createTable("test", "t", "c1 FIXED(23,5)");
+        final Table table = getUserTable(tid);
+        final Collection<Column> columns = table.getColumns();
         assertEquals(1, columns.size());
-        Column col = columns.iterator().next();
+        final Column col = columns.iterator().next();
         assertEquals(Types.DECIMAL, col.getType());
         assertEquals(23, col.getTypeParameter1().intValue());
         assertEquals(5, col.getTypeParameter2().intValue());
@@ -129,8 +130,29 @@ public final class CreateTableIT extends ApiTestBase {
      * REAL data type causes NPE
      */
     @Test
-    public void bug696325() throws InvalidOperationException {
-        int tid = createTable("test", "t", "c1 REAL(1,0) NULL");
+    public void bug696325_defaultParams() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "c1 REAL NULL");
+        final Table table = getUserTable(tid);
+        final Collection<Column> columns = table.getColumns();
+        assertEquals(1, columns.size());
+        final Column col = columns.iterator().next();
+        assertEquals(Types.DOUBLE, col.getType());
+        assertNull(col.getTypeParameter1());
+        assertNull(col.getTypeParameter2());
+        ddl().dropTable(session, table.getName());
+    }
+
+    @Test
+    public void bug696325_specifiedParams() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "c1 REAL(1,0) NULL");
+        final Table table = getUserTable(tid);
+        final Collection<Column> columns = table.getColumns();
+        assertEquals(1, columns.size());
+        final Column col = columns.iterator().next();
+        assertEquals(Types.DOUBLE, col.getType());
+        assertEquals(1, col.getTypeParameter1().intValue());
+        assertEquals(0, col.getTypeParameter2().intValue());
+        ddl().dropTable(session, table.getName());
     }
 
     /*

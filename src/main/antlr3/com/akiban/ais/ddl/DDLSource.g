@@ -299,9 +299,9 @@ decimal_data_type returns [String type]
     : DECIMAL {$type = "DECIMAL";} 
 	| NUMERIC {$type = "DECIMAL";}
 	| DEC {$type = "DECIMAL";}
-	| REAL {$type = "REAL";}
 	| FIXED {$type = "DECIMAL";}
-	| DOUBLE {$type = "DOUBLE";}
+	| DOUBLE {$type = "DOUBLE";}	// Technically should depend on MySQL's REAL_AS_FLOAT
+	| REAL {$type = "DOUBLE";}	
 	| FLOAT {$type = "FLOAT";}
     ;
 
