@@ -28,8 +28,8 @@ import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.persistit.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.cserver.CServerConstants;
 import com.akiban.cserver.CServerUtil;
@@ -58,7 +58,7 @@ public class PersistitStore implements CServerConstants, Store {
 
     final static int INITIAL_BUFFER_SIZE = 1024;
 
-    private static final Log LOG = LogFactory.getLog(PersistitStore.class
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class
             .getName());
 
     private static final Tap WRITE_ROW_TAP = Tap.add(new Tap.PerThread(

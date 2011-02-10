@@ -13,18 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.memcache;
+package com.akiban.cserver.api;
 
-@SuppressWarnings("unused") // these are queried/set via JMX
-public interface MemcacheMXBean {
+import com.akiban.cserver.RowDef;
+import com.akiban.cserver.api.common.NoSuchTableException;
 
-    MemcacheService.OutputFormat getOutputFormat();
-    void setOutputFormat(MemcacheService.OutputFormat whichFormat);
-    MemcacheService.OutputFormat[] getAvailableOutputFormats();
+import java.io.IOException;
+import java.util.Set;
 
-    MemcacheService.WhichHapi getHapiProcessor();
-    void setHapiProcessor(MemcacheService.WhichHapi whichProcessor);
-    MemcacheService.WhichHapi[] getAvailableHapiProcessors();
-
-    String chooseIndex(String request);
+public interface HapiProcessedGetRequest extends HapiGetRequest {
+    Set<String> getProjectedTables();
+    RowDef getRowDef(int tableId) throws IOException;
 }

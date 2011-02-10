@@ -19,9 +19,8 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.RowDef;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.api.HapiGetRequest;
-import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiOutputter;
+import com.akiban.cserver.api.HapiProcessedGetRequest;
 import com.akiban.util.AkibanAppender;
 
 import java.io.IOException;
@@ -33,7 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class JsonOutputter implements HapiProcessor.Outputter {
+public final class JsonOutputter implements HapiOutputter {
     private static final JsonOutputter instance = new JsonOutputter();
 
     public static JsonOutputter instance() {
@@ -42,12 +41,13 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
     private JsonOutputter() {}
 
-    private static void writeEmptyChildren(PrintWriter pr, final RowDef def, Set<String> saw_children)
+    private static void writeEmptyChildren(PrintWriter pr, final RowDef def, Set<String> saw_children, HapiProcessedGetRequest request)
     {
         for(Join j: def.userTable().getChildJoins()) {
             UserTable child = j.getChild();
             String childName = child.getName().getTableName();
-            if(saw_children == null || saw_children.contains(childName) == false) {
+            if(request.getProjectedTables().contains(childName)
+                    && (saw_children == null || saw_children.contains(childName) == false)) {
                 pr.write(",\"@");
                 pr.write(childName);
                 pr.write("\":[]");
@@ -56,7 +56,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
     }
 
     @Override
-    public void output(HapiGetRequest request, RowDefCache cache, List<RowData> list, OutputStream outputStream)  throws IOException {
+    public void output(HapiProcessedGetRequest request, List<RowData> list, OutputStream outputStream) throws IOException {
         PrintWriter pr = new PrintWriter(outputStream);
 
         if (list.isEmpty()) {
@@ -73,7 +73,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
 
         for(RowData data : list) {
             final int def_id = data.getRowDefId();
-            final RowDef def = cache.getRowDef(def_id);
+            final RowDef def = request.getRowDef(def_id);
             final int parent_def_id = def.getParentRowDefId();
 
             if(defIdStack.isEmpty()) {
@@ -86,7 +86,7 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             }
             else if(defIdStack.peekLast().equals(def_id)) {
                 // another leaf on current branch (add to current open array)
-                writeEmptyChildren(pr, def, null); // sawChildStack *should* be empty anyway
+                writeEmptyChildren(pr, def, null, request); // sawChildStack *should* be empty anyway
                 pr.write("},");
             }
             else if(defIdStack.peekLast().equals(parent_def_id)) {
@@ -102,8 +102,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             else {
                 // a) parent sibling branch, or
                 // b) up the tree to a previously known parent (close array for each step up)
-                RowDef d = cache.getRowDef(defIdStack.removeLast());
-                writeEmptyChildren(pr, d, sawChildStack.removeLast());
+                RowDef d = request.getRowDef(defIdStack.removeLast());
+                writeEmptyChildren(pr, d, sawChildStack.removeLast(), request);
                 
                 pr.write("}]");
                 int pop_count = 0;
@@ -111,9 +111,9 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
                     if(pop_count++ > 0) {
                         pr.write(" ]");
                     }
-                    
-                    d = cache.getRowDef(defIdStack.removeLast());
-                    writeEmptyChildren(pr, d, sawChildStack.removeLast());
+
+                    d = request.getRowDef(defIdStack.removeLast());
+                    writeEmptyChildren(pr, d, sawChildStack.removeLast(), request);
                     pr.write("}");
                 }
 
@@ -136,8 +136,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             }
 
             pr.write('{');
-            data.toJSONString(cache, appender);
-        }
+            data.toJSONString(request.getRowDef(data.getRowDefId()), appender);
+            }
 
         boolean first = true;
         while (defIdStack.size() > 1) {
@@ -146,8 +146,8 @@ public final class JsonOutputter implements HapiProcessor.Outputter {
             } else {
                 pr.write(']');
             }
-            RowDef d = cache.getRowDef(defIdStack.removeLast());
-            writeEmptyChildren(pr, d, sawChildStack.removeLast());
+            RowDef d = request.getRowDef(defIdStack.removeLast());
+            writeEmptyChildren(pr, d, sawChildStack.removeLast(), request);
             pr.write('}');
         }
         pr.write("]}");

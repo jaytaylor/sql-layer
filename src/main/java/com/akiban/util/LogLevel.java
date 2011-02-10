@@ -13,18 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.memcache;
+package com.akiban.util;
 
-@SuppressWarnings("unused") // these are queried/set via JMX
-public interface MemcacheMXBean {
-
-    MemcacheService.OutputFormat getOutputFormat();
-    void setOutputFormat(MemcacheService.OutputFormat whichFormat);
-    MemcacheService.OutputFormat[] getAvailableOutputFormats();
-
-    MemcacheService.WhichHapi getHapiProcessor();
-    void setHapiProcessor(MemcacheService.WhichHapi whichProcessor);
-    MemcacheService.WhichHapi[] getAvailableHapiProcessors();
-
-    String chooseIndex(String request);
+public enum LogLevel {
+    TRACE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
 }

@@ -18,8 +18,8 @@ package com.akiban.admin;
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.mortbay.jetty.Server;
 
 import com.akiban.admin.action.ClearConfig;
@@ -193,7 +193,7 @@ public class AdminService
     public static final int DEFAULT_ADMIN_SERVICE_PORT = 8764;
     public static final int DEFAULT_ADMIN_HTTP_PORT = 8765;
 
-    private static final Log logger = LogFactory.getLog(AdminService.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
     private static final String LOCALHOST = "localhost";
     private static final int MYSQL_RETRY_DELAY_MSEC = 5000;
 

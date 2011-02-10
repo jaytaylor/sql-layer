@@ -497,8 +497,7 @@ public class RowData {
         return sb.toString();
     }
 
-    public void toJSONString(final RowDefCache cache, AkibanAppender sb) throws IOException {
-        final RowDef rowDef = cache.getRowDef(getRowDefId());
+    public void toJSONString(final RowDef rowDef, AkibanAppender sb) throws IOException {
         for(int i = 0; i < getFieldCount(); i++) {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());

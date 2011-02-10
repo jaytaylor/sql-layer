@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -13,18 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.cserver.service.memcache;
+package com.akiban.cserver.api.ddl;
 
-@SuppressWarnings("unused") // these are queried/set via JMX
-public interface MemcacheMXBean {
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 
-    MemcacheService.OutputFormat getOutputFormat();
-    void setOutputFormat(MemcacheService.OutputFormat whichFormat);
-    MemcacheService.OutputFormat[] getAvailableOutputFormats();
+public final class UnsupportedDropException extends DDLException {
+    public UnsupportedDropException(InvalidOperationException e) {
+        super(e);
+    }
 
-    MemcacheService.WhichHapi getHapiProcessor();
-    void setHapiProcessor(MemcacheService.WhichHapi whichProcessor);
-    MemcacheService.WhichHapi[] getAvailableHapiProcessors();
-
-    String chooseIndex(String request);
+    public UnsupportedDropException(ErrorCode code, String message) {
+        super(code, message);
+    }
 }

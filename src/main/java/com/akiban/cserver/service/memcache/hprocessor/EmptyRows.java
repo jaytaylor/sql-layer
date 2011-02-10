@@ -15,11 +15,12 @@
 
 package com.akiban.cserver.service.memcache.hprocessor;
 
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
-import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.session.Session;
 
 import java.io.IOException;
@@ -37,15 +38,19 @@ public class EmptyRows implements HapiProcessor {
     {}
 
     @Override
-    public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream) throws HapiRequestException {
+    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream) throws HapiRequestException {
         try {
             outputter.output(
-                    request,
-                    ServiceManagerImpl.get().getStore().getRowDefCache(),
+                    new DummyProcessedRequest(request),
                     new ArrayList<RowData>(),
                     outputStream);
         } catch (IOException e) {
             throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }
+    }
+
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        return null;
     }
 }

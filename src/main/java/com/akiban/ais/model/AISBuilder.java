@@ -15,11 +15,6 @@
 
 package com.akiban.ais.model;
 
-/* GWT: issue
- import org.apache.commons.logging.Log;
- import org.apache.commons.logging.LogFactory;
- */
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -801,11 +796,6 @@ public class AISBuilder {
         }
 
     }
-
-    /*
-     * GWT: issue private static final Log LOG =
-     * LogFactory.getLog(AISBuilder.class.getName());
-     */
 
     private static int tableGeneratorBase = 25000;
 

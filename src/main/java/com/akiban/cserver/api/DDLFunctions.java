@@ -21,6 +21,7 @@ import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -35,6 +36,7 @@ import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
 
@@ -73,29 +75,46 @@ public interface DDLFunctions {
             GenericInvalidOperationException;
 
     /**
-     * Drops a table if it exists, and possibly its children.
+     * Drops a table if it exists.
      * @param tableName the table to drop
      * @throws NullPointerException if tableName is null
      * @throws ProtectedTableDDLException if the given table is protected
      * @throws ForeignConstraintDDLException if dropping this table would create a foreign key violation
+     * @throws UnsupportedDropException if this table is not a leaf table
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void dropTable(Session session, TableName tableName)
-    throws  ProtectedTableDDLException,
+            throws ProtectedTableDDLException,
             ForeignConstraintDDLException,
+            UnsupportedDropException,
             GenericInvalidOperationException;
 
     /**
      * Drops a table if it exists, and possibly its children.
      * @param schemaName the schema to drop
-     * @throws NullPointerException if tableId is null
+     * @throws NullPointerException if schemaName is null
      * @throws ProtectedTableDDLException if the given schema contains protected tables
      * @throws ForeignConstraintDDLException if dropping this schema would create a foreign key violation
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void dropSchema(Session session, String schemaName)
-            throws  ProtectedTableDDLException,
+            throws ProtectedTableDDLException,
             ForeignConstraintDDLException,
+            GenericInvalidOperationException;
+
+     /**
+     * Drops all tables associated with the group
+     * @param groupName the group to drop
+     * @throws NullPointerException if groupName is null
+     * @throws ProtectedTableDDLException if the given group contains protected tables
+     * @throws ForeignConstraintDDLException if dropping this group would create a foreign key violation
+     * @throws GenericInvalidOperationException if some other exception occurred
+     */
+    void dropGroup(Session session, String groupName)
+            throws ProtectedTableDDLException,
+            ForeignConstraintDDLException,
+            NoSuchTableException,
+            UnsupportedDropException,
             GenericInvalidOperationException;
 
     /**
@@ -141,6 +160,14 @@ public interface DDLFunctions {
      * @throws NoSuchTableException if the given table doesn't exist
      */
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException;
+    /**
+     * Resolves the given table to its UserTable
+     * @param session the session
+     * @param tableName the table to look up
+     * @return the Table
+     * @throws NoSuchTableException if the given table doesn't exist
+     */
+    public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException;
 
     /**
      * Resolves the given table ID to its RowDef

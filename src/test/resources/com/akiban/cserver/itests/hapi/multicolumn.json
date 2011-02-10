@@ -1,0 +1,202 @@
+{
+
+"setup" : {
+    "processors_default" : ["scanrows"],
+
+    "tables" : [
+        [ "p1",
+            "pid int key",
+            "status1 int",
+            "status2 int",
+            "KEY p1_multi (status1, status2)"
+        ],
+
+        [ "c1",
+            "cid int key",
+            "pid int",
+            "firstname varchar(32)",
+            "midinitial varchar(1)",
+            "lastname varchar(32)",
+            "CONSTRAINT __akiban_fk_c1 FOREIGN KEY __akiban_fk_c1 (pid) REFERENCES p1(pid)",
+            "UNIQUE KEY name_by_last(lastname, firstname, midinitial)",
+            "UNIQUE KEY name_by_first(firstname, lastname, midinitial)"
+        ]
+    ],
+
+    "write_rows" : {
+        "p1"    : [ [1, 1, 2],
+                    [2, 1, 2],
+                    [3, 2, 3],
+                    [4, 2, 4]
+        ],
+        "c1"    : [ [1, 1, "John", "Q", "Public"],
+                    [2, 3, "John", "B", "Good"],
+                    [3, 1, "John", "A", "Public"]
+        ]
+    }
+},
+
+"tests" : {
+    "p1 nochildren" : {
+        "get"           : "test:p1:status1=2,status2=4",
+        "expect index"  : "p1_multi",
+        "expect result" :
+        {
+            "@p1" : [
+                {
+                    "pid" : 4,
+                    "status1" : 2,
+                    "status2" : 4,
+                    "@c1" : []
+                }
+            ]
+        }
+    },
+
+    "lastname" : {
+        "get"           : "test:c1:lastname=Public",
+        "expect index"  : "name_by_last",
+        "expect result" :
+        {
+            "@c1" : [
+                {
+                    "cid" : 3,
+                    "pid" : 1,
+                    "firstname"  : "John",
+                    "midinitial" : "A",
+                    "lastname"   : "Public"
+                },
+                {
+                    "cid" : 1,
+                    "pid" : 1,
+                    "firstname"  : "John",
+                    "midinitial" : "Q",
+                    "lastname"   : "Public"
+                }
+            ]
+        }
+    },
+
+    "firstname, lastname" : {
+        "get"           : "test:c1:firstname=John,lastname=Public",
+        "expect index"  : "name_by_first",
+        "expect result" :
+        {
+            "@c1" : [
+                {
+                    "cid" : 3,
+                    "pid" : 1,
+                    "firstname"  : "John",
+                    "midinitial" : "A",
+                    "lastname"   : "Public"
+                },
+                {
+                    "cid" : 1,
+                    "pid" : 1,
+                    "firstname"  : "John",
+                    "midinitial" : "Q",
+                    "lastname"   : "Public"
+                }
+            ]
+        }
+    },
+
+    "midinitial" : {
+        "get"           : "test:c1:midinitial=B",
+        "expect error"  : "UNSUPPORTED_REQUEST"
+    },
+
+    "with_depth" : {
+        "get"           : "test:p1:(c1)firstname=John",
+        "expect index"  : {"group" : "name_by_first"},
+        "comment"       : "should use index c1.name_by_first",
+        "expect result" :
+        {
+            "@p1" : [
+                {
+                    "pid"     : 3,
+                    "status1" : 2,
+                    "status2" : 3,
+                    "@c1" : [
+                        {
+                            "cid" : 2,
+                            "pid" : 3,
+                            "firstname" : "John",
+                            "midinitial": "B",
+                            "lastname"  : "Good"
+                        }
+                    ]
+                },
+                {
+                    "pid"     : 1,
+                    "status1" : 1,
+                    "status2" : 2,
+                    "@c1" : [
+                        {
+                            "cid" : 3,
+                            "pid" : 1,
+                            "firstname" : "John",
+                            "midinitial": "A",
+                            "lastname"  : "Public"
+                        },
+                        {
+                            "cid" : 1,
+                            "pid" : 1,
+                            "firstname" : "John",
+                            "midinitial": "Q",
+                            "lastname"  : "Public"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    "with depth empty" :
+    {
+        "get"           : "test:p1:(c1)firstname=Nemo",
+        "expect index"  : {"group" : "name_by_first"},
+        "expect result" :
+        {
+            "@p1" : []
+        }
+    },
+
+    "all children by id" :
+    {
+        "passing"       : false,
+        "comment"       : "bug 714771",
+        
+        "get"           : "test:c1:cid>0",
+        "expect index"  : "PRIMARY",
+        "expect result" :
+        {
+            "@c1" :
+            [
+                {
+                    "cid" : 1,
+                    "pid" : 1,
+                    "firstname" : "John",
+                    "midinitial": "Q",
+                    "lastname"  : "Public"
+                },
+                {
+                    "cid" : 2,
+                    "pid" : 3,
+                    "firstname" : "John",
+                    "midinitial": "B",
+                    "lastname"  : "Good"
+                },
+                {
+                    "cid" : 3,
+                    "pid" : 1,
+                    "firstname" : "John",
+                    "midinitial": "A",
+                    "lastname"  : "Public"
+                }
+            ]
+        }
+    }
+}
+
+}

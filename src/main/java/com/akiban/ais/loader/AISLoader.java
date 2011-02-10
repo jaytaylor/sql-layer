@@ -38,12 +38,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.logging.Logger;
 
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.ddl.SqlTextTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibaInformationSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -54,7 +55,7 @@ import com.akiban.ais.model.AkibaInformationSchema;
  */
 public class AISLoader
 {
-    private static final Logger logger = Logger.getLogger(AISLoader.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(AISLoader.class.getName());
 
     public static void main(final String[] args) throws Exception
     {
@@ -73,7 +74,7 @@ public class AISLoader
             propFile.close();
         }
         catch (IOException ioe) {
-            logger.severe("IO exception on properties file load: " + ioe.getMessage());
+            logger.error("IO exception on properties file load: " + ioe.getMessage());
         }
 
         // parse the config file
@@ -92,7 +93,7 @@ public class AISLoader
             (addressDBIP == null))
         {
             // this is an error
-            logger.severe("Address incomplete: " + addressDBIP +":" + addressDBPort);
+            logger.error("Address incomplete: " + addressDBIP +":" + addressDBPort);
         }
     }
 
@@ -110,7 +111,7 @@ public class AISLoader
             }
         } catch (NullPointerException e)
         {
-            logger.severe("Null pointer exception on fetch: " + e.getMessage());
+            logger.error("Null pointer exception on fetch: " + e.getMessage());
         }
 
         return array;
@@ -136,7 +137,7 @@ public class AISLoader
             return array;
         } catch (NullPointerException e)
         {
-            logger.severe("Null pointer exception on fetch: " + e.getMessage());
+            logger.error("Null pointer exception on fetch: " + e.getMessage());
             return null;
         }
     }
@@ -160,7 +161,7 @@ public class AISLoader
         String tableStatements = null;
 
         // generate AIS
-        logger.warning("Setting AIS schema file to: " + aisSchemaFileName.getAbsolutePath());
+        logger.error("Setting AIS schema file to: " + aisSchemaFileName.getAbsolutePath());
         try
         {
             groupingDefinition = this.loadTextFile(groupingFileName.getPath());
@@ -202,11 +203,11 @@ public class AISLoader
             }
         }
         catch (Exception e)  {
-            logger.severe ("Failed to generate the AIS:" + e.getMessage());
-            logger.severe ("groupingDefinition:");
-            logger.severe (groupingDefinition);
-            logger.severe ("tableStatements:");
-            logger.severe (tableStatements);
+            logger.error ("Failed to generate the AIS:" + e.getMessage());
+            logger.error ("groupingDefinition:");
+            logger.error (groupingDefinition);
+            logger.error ("tableStatements:");
+            logger.error (tableStatements);
             throw new RuntimeException("Failed to complete setup", e);
         }
     }
@@ -226,11 +227,11 @@ public class AISLoader
             target.writeGroupTableDDL(ais);
             return buffer.toString();
         } catch (Exception e)  {
-            logger.severe ("Failed to generate the AIS:" + e.getMessage());
-            logger.severe ("groupingDefinition:");
-            logger.severe (groupingDefinition);
-            logger.severe ("tableStatements:");
-            logger.severe (tableStatements);
+            logger.error ("Failed to generate the AIS:" + e.getMessage());
+            logger.error ("groupingDefinition:");
+            logger.error (groupingDefinition);
+            logger.error ("tableStatements:");
+            logger.error (tableStatements);
             throw new RuntimeException("Failed to generate AIS", e);
         }
     }
@@ -246,9 +247,9 @@ public class AISLoader
         }
         catch (Exception e)
         {
-            logger.severe("Failed to reload the AIS: " + e.getMessage());
-            logger.severe("aisSchema: " + aisSchema);
-            logger.severe("aisData: " + aisData);
+            logger.error("Failed to reload the AIS: " + e.getMessage());
+            logger.error("aisSchema: " + aisSchema);
+            logger.error("aisData: " + aisData);
             throw new RuntimeException(e);
         }
     }

@@ -19,7 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.admin.config.ChunkserverConfig;
 import com.akiban.admin.config.ClusterConfig;
@@ -159,7 +160,7 @@ public abstract class Admin
     public static final String AKIBAN_ADMIN = "akiban.admin";
 
     protected static final byte[] EMPTY_VALUE = new byte[0];
-    protected static final Logger logger = Logger.getLogger(Admin.class);
+    protected static final Logger logger = LoggerFactory.getLogger(Admin.class);
     private static Admin only = null;
 
     private final String adminInitializer;
