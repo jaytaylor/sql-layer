@@ -17,6 +17,7 @@ package com.akiban.cserver.service.memcache;
 
 import java.io.ByteArrayOutputStream;
 
+import com.akiban.cserver.CServer;
 import com.akiban.cserver.api.HapiGetRequest;
 import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiRequestException;
@@ -52,6 +53,15 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
+    private static final String VERSION_STRING = getVersionString();
+
+    private static String getVersionString() {
+        String version = String.format("Akiban Server version %s using jmemcached %s",
+                CServer.VERSION_STRING,
+                MemCacheDaemon.memcachedVersion);
+        return version.replace('\r', ' ').replace('\n', ' ');
+    }
+
     private static final String MODULE = AkibanCommandHandler.class.toString();
     private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
     static interface FormatGetter {
@@ -171,23 +181,21 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
     protected void handleVersion(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel) {
         ResponseMessage responseMessage = new ResponseMessage(command);
-        responseMessage.version = MemCacheDaemon.memcachedVersion;
+        responseMessage.version = VERSION_STRING;
         Channels.fireMessageReceived(context, responseMessage, channel.getRemoteAddress());
     }
 
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel)
     throws HapiRequestException
     {
-        String key = command.keys.get(0);
+        final CacheElement[] results = new CacheElement[command.keys.size()];
 
-        byte[] result_bytes;
-        result_bytes = getBytesForGets(session.get(), key, hapiProcessor, formatGetter.getFormat());
-        
-        CacheElement[] results = null;
-        if(result_bytes != null) {
+        int index = 0;
+        for (String key : command.keys) {
+            final byte[] result_bytes = getBytesForGets(session.get(), key, hapiProcessor, formatGetter.getFormat());
             LocalCacheElement element = new LocalCacheElement(key);
             element.setData(result_bytes);
-            results = new CacheElement[] { element };
+            results[index++] = element;
         }
 
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
