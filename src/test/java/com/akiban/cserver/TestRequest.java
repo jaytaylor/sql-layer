@@ -18,7 +18,7 @@ package com.akiban.cserver;
 import java.nio.ByteBuffer;
 
 import com.akiban.cserver.service.session.Session;
-import com.akiban.message.AkibaSendConnection;
+import com.akiban.message.AkibanSendConnection;
 import com.akiban.message.Message;
 import com.akiban.message.Request;
 
@@ -84,7 +84,7 @@ public class TestRequest extends Request
     }
 
     @Override
-    public void execute(AkibaSendConnection connection, Session session) throws Exception
+    public void execute(AkibanSendConnection connection, Session session) throws Exception
     {
         connection.send(new TestResponse(id, responseSize));
     }
