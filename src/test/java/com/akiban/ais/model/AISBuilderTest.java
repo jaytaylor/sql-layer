@@ -28,13 +28,13 @@ public class AISBuilderTest
     {
         AISBuilder builder = new AISBuilder();
         builder.basicSchemaIsComplete();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(0, ais.getUserTables().size());
         Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -45,13 +45,13 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -64,7 +64,7 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
@@ -74,7 +74,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -105,7 +105,7 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
@@ -130,7 +130,7 @@ public class AISBuilderTest
         );
         Assert.assertFalse("equal names: " + groupCol1, groupCol1.equals(groupCol2));
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -151,7 +151,7 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "groupschema", "coi");
         builder.addJoinToGroup("group", "co", 0);
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
@@ -161,7 +161,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -183,7 +183,7 @@ public class AISBuilderTest
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
         builder.addJoinToGroup("group", "co", 0);
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
@@ -193,7 +193,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -223,7 +223,7 @@ public class AISBuilderTest
         builder.createGroup("group", "groupschema", "coi");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
@@ -240,7 +240,7 @@ public class AISBuilderTest
         Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
         Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -273,7 +273,7 @@ public class AISBuilderTest
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
         {
-            AkibanInformationSchema ais = builder.akibaInformationSchema();
+            AkibanInformationSchema ais = builder.akibanInformationSchema();
             Assert.assertEquals(3, ais.getUserTables().size());
             Assert.assertEquals(1, ais.getGroupTables().size());
             Assert.assertEquals(1, ais.getGroups().size());
@@ -294,7 +294,7 @@ public class AISBuilderTest
         // Step 2 -- clear
         builder.clearGroupings();
         {
-            AkibanInformationSchema ais = builder.akibaInformationSchema();
+            AkibanInformationSchema ais = builder.akibanInformationSchema();
             Assert.assertEquals(3, ais.getUserTables().size());
             Assert.assertEquals(0, ais.getGroupTables().size());
             Assert.assertEquals(0, ais.getGroups().size());
@@ -307,7 +307,7 @@ public class AISBuilderTest
         builder.addJoinToGroup("group2", "co", 0);
         builder.addJoinToGroup("group2", "oi", 0);
         {
-            AkibanInformationSchema ais = builder.akibaInformationSchema();
+            AkibanInformationSchema ais = builder.akibanInformationSchema();
             Assert.assertEquals(3, ais.getUserTables().size());
             Assert.assertEquals(1, ais.getGroupTables().size());
             Assert.assertEquals(1, ais.getGroups().size());
@@ -325,7 +325,7 @@ public class AISBuilderTest
             Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
         }
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
 
@@ -357,7 +357,7 @@ public class AISBuilderTest
         builder.createGroup("group", "groupschema", "coi");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
@@ -398,7 +398,7 @@ public class AISBuilderTest
         groupTable = group.getGroupTable();
         Assert.assertEquals(0, groupTable.getColumns().size());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -423,7 +423,7 @@ public class AISBuilderTest
         builder.createGroup("group", "groupschema", "coi");
         builder.addTableToGroup("group", "schema", "customer");
         builder.addJoinToGroup("group", "co", 0);
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
         Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
@@ -433,7 +433,7 @@ public class AISBuilderTest
         Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
         Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -450,13 +450,13 @@ public class AISBuilderTest
         builder.addTableToGroup("group", "schema", "customer");
         builder.removeTableFromGroup("group", "schema", "customer");
         builder.deleteGroup("group");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -482,13 +482,13 @@ public class AISBuilderTest
         builder.addJoinToGroup("group", "co", 0);
         builder.removeJoinFromGroup("group", "co");
         builder.deleteGroup("group");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
         Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(1, ais.getJoins().size());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -524,7 +524,7 @@ public class AISBuilderTest
         builder.addJoinToGroup("source", "bc", 0);
         builder.addJoinToGroup("source", "bd", 0);
         builder.createGroup("target", "g", "target_table");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(4, ais.getUserTables().size());
         Assert.assertEquals(2, ais.getGroupTables().size());
         Assert.assertEquals(2, ais.getGroups().size());
@@ -546,7 +546,7 @@ public class AISBuilderTest
             }
         }
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -576,17 +576,17 @@ public class AISBuilderTest
         builder.addJoinToGroup("group_01", "co", 1);
         builder.groupingIsComplete();
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
 
         builder.createGroup("group_02", "akiba_objects", "orders");
         builder.moveTreeToEmptyGroup("s", "o", "group_02");
 
         //Assert.assertEquals("number of joins", 0, builder.akibaInformationSchema().getJoins().size());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
 
         builder.groupingIsComplete();
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -630,7 +630,7 @@ public class AISBuilderTest
         builder.addJoinToGroup("source", "bd", 0);
         builder.createGroup("target", "g", "target_table");
         builder.addTableToGroup("target", "s", "z");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(5, ais.getUserTables().size());
         Assert.assertEquals(2, ais.getGroupTables().size());
         Assert.assertEquals(2, ais.getGroups().size());
@@ -657,7 +657,7 @@ public class AISBuilderTest
         }
         // AISPrinter.print(ais);
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -670,7 +670,7 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         // Check autoinc state
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
         Assert.assertEquals(3, table.getColumns().size());
         Assert.assertEquals(table.getColumn("y"), table.getAutoIncrementColumn());
@@ -678,7 +678,7 @@ public class AISBuilderTest
         Assert.assertEquals(5L, table.getColumn("y").getInitialAutoIncrementValue().longValue());
         Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -691,7 +691,7 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         // Check autoinc state
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
         Assert.assertEquals(3, table.getColumns().size());
         Assert.assertEquals(null, table.getAutoIncrementColumn());
@@ -699,7 +699,7 @@ public class AISBuilderTest
         Assert.assertEquals(null, table.getColumn("y").getInitialAutoIncrementValue());
         Assert.assertEquals(null, table.getColumn("z").getInitialAutoIncrementValue());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
 /*
@@ -784,13 +784,13 @@ public class AISBuilderTest
             // expected
         }
         builder.groupingIsComplete();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         Table userTable = ais.getTable("s", "t");
         userTable.getColumns();
         Table groupTable = ais.getTable("s", "g");
         groupTable.getColumns();
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -850,7 +850,7 @@ public class AISBuilderTest
         // Done
         builder.groupingIsComplete();
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -865,12 +865,12 @@ public class AISBuilderTest
         builder.index("schema", "customer", "idx_customer_name_partial", false, "KEY");
         builder.indexColumn("schema", "customer", "idx_customer_name_partial", "customer_name", 0, true, 5);
         builder.basicSchemaIsComplete();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("schema", "customer");
         Assert.assertNull(table.getIndex("idx_customer_name").getColumns().get(0).getIndexedLength());
         Assert.assertEquals(5, table.getIndex("idx_customer_name_partial").getColumns().get(0).getIndexedLength().intValue());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -878,13 +878,13 @@ public class AISBuilderTest
     {
         AISBuilder builder = new AISBuilder();
         builder.basicSchemaIsComplete();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         CharsetAndCollation charsetAndCollation = ais.getCharsetAndCollation();
         Assert.assertNotNull(charsetAndCollation);
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -893,14 +893,14 @@ public class AISBuilderTest
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "customer");
         builder.basicSchemaIsComplete();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("schema", "customer");
         CharsetAndCollation charsetAndCollation = table.getCharsetAndCollation();
         Assert.assertNotNull(charsetAndCollation);
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -910,7 +910,7 @@ public class AISBuilderTest
         builder.userTable("schema", "customer");
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "schema", "customer_group");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         builder.addTableToGroup("group", "schema", "customer");
         builder.groupingIsComplete();
         GroupTable table = ais.getGroupTable("schema", "customer_group");
@@ -919,7 +919,7 @@ public class AISBuilderTest
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -929,7 +929,7 @@ public class AISBuilderTest
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("schema", "customer");
         Column column = table.getColumn("customer_name");
         CharsetAndCollation charsetAndCollation = column.getCharsetAndCollation();
@@ -937,7 +937,7 @@ public class AISBuilderTest
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -948,7 +948,7 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "schema", "customer_group");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         builder.addTableToGroup("group", "schema", "customer");
         builder.groupingIsComplete();
         GroupTable table = ais.getGroupTable("schema", "customer_group");
@@ -958,7 +958,7 @@ public class AISBuilderTest
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
         Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 
     @Test
@@ -969,7 +969,7 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, "another_charset", "another_collation");
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "schema", "customer_group");
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         builder.addTableToGroup("group", "schema", "customer");
         builder.groupingIsComplete();
         UserTable userTable = ais.getUserTable("schema", "customer");
@@ -985,6 +985,6 @@ public class AISBuilderTest
         Assert.assertEquals("another_charset", charsetAndCollation.charset());
         Assert.assertEquals("another_collation", charsetAndCollation.collation());
 
-        builder.akibaInformationSchema().checkIntegrity();
+        builder.akibanInformationSchema().checkIntegrity();
     }
 }

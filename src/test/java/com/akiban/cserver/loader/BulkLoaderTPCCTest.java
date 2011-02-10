@@ -91,7 +91,7 @@ public class BulkLoaderTPCCTest extends TestCase
         builder.addJoinToGroup("coi", "co", 0);
         builder.addJoinToGroup("coi", "ool", 0);
         builder.groupingIsComplete();
-        return builder.akibaInformationSchema();
+        return builder.akibanInformationSchema();
     }
 
     private IdentityHashMap<UserTable, TableTasks> bulkLoad(AkibanInformationSchema ais)

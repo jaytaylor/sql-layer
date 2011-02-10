@@ -75,7 +75,7 @@ public class BulkLoaderCOITest extends TestCase
         builder.addJoinToGroup("coi", "co", 0);
         builder.addJoinToGroup("coi", "oi", 0);
         builder.groupingIsComplete();
-        return builder.akibaInformationSchema();
+        return builder.akibanInformationSchema();
     }
 
     private IdentityHashMap<UserTable, TableTasks> bulkLoad(AkibanInformationSchema ais)

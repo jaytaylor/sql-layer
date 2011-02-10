@@ -34,7 +34,7 @@ public final class DDLGeneratorTest {
         builder.addTableToGroup("myGroup", "schema", "table");
         builder.groupingIsComplete();
 
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",

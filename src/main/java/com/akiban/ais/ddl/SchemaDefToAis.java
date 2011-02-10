@@ -245,7 +245,7 @@ public class SchemaDefToAis {
         computeColumnMapAndPositions();
 
         AISBuilder builder = new AISBuilder();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
 
         // loop through user tables and add to AIS
@@ -399,7 +399,7 @@ public class SchemaDefToAis {
         if (!schemaDef.getGroupMap().isEmpty())
             builder.groupingIsComplete();
 
-        return builder.akibaInformationSchema();
+        return builder.akibanInformationSchema();
     }
 
     private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex) {

@@ -50,7 +50,7 @@ public class Schemapedia
         importColumns(connection);
         importIndexes(connection);
         importForeignKeys(connection);
-        return aisBuilder.akibaInformationSchema();
+        return aisBuilder.akibanInformationSchema();
     }
 
     private void importColumns(DB.Connection connection)

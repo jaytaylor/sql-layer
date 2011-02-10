@@ -572,7 +572,7 @@ public class AISBuilder {
 
     // API for getting the created AIS
 
-    public AkibanInformationSchema akibaInformationSchema() {
+    public AkibanInformationSchema akibanInformationSchema() {
         LOG.info("getting AIS");
         return ais;
     }

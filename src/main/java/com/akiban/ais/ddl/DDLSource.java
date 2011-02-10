@@ -936,7 +936,7 @@ public class DDLSource extends Source {
         //computeColumnMapAndPositions();
         
         AISBuilder builder = new AISBuilder();
-        AkibanInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         int indexIdGenerator = 0;
 
         // loop through user tables and add to AIS
@@ -1073,7 +1073,7 @@ public class DDLSource extends Source {
         }
         if (!schemaDef.getGroupMap().isEmpty()) builder.groupingIsComplete();
 
-        return builder.akibaInformationSchema();
+        return builder.akibanInformationSchema();
     }
     
 }

@@ -133,7 +133,7 @@ public class GroupsBuilderTest {
         expectedGrouping.joinTables("s", "customer", "s", "order").column("id", "cid");
         expectedGrouping.joinTables("s", "order", "s", "item").column("id", "oid");
 
-        Grouping actualGrouping = GroupsBuilder.fromAis(aisBuilder.akibaInformationSchema(), "s");
+        Grouping actualGrouping = GroupsBuilder.fromAis(aisBuilder.akibanInformationSchema(), "s");
         
         assertEquals("groupings", expectedGrouping.getGrouping().toString(), actualGrouping.toString());
 
