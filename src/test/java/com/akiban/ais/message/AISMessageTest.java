@@ -27,7 +27,7 @@ import com.akiban.ais.model.Source;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.NettyAkibanConnectionImpl;
-import com.akiban.network.AkibaNetworkHandler;
+import com.akiban.network.AkibanNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -91,13 +91,13 @@ public class AISMessageTest extends BaseTestCase
     private static class ServerEventHandler implements CommEventNotifier
     {
         @Override
-        public void onConnect(AkibaNetworkHandler networkHandler)
+        public void onConnect(AkibanNetworkHandler networkHandler)
         {
             executor.execute(new MessageHandler(NettyAkibanConnectionImpl.createConnection(networkHandler)));
         }
 
         @Override
-        public void onDisconnect(AkibaNetworkHandler networkHandler)
+        public void onDisconnect(AkibanNetworkHandler networkHandler)
         {
         }
 

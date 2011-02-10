@@ -22,7 +22,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.NettyAkibanConnectionImpl;
-import com.akiban.network.AkibaNetworkHandler;
+import com.akiban.network.AkibanNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -70,11 +70,11 @@ public class MySQLToNetwork
                                                 new CommEventNotifier()
                                                 {
                                                     @Override
-                                                    public void onConnect(AkibaNetworkHandler newHandler)
+                                                    public void onConnect(AkibanNetworkHandler newHandler)
                                                     {
                                                     }
                                                     @Override
-                                                    public void onDisconnect(AkibaNetworkHandler handler)
+                                                    public void onDisconnect(AkibanNetworkHandler handler)
                                                     {
                                                     }
                                                 });
