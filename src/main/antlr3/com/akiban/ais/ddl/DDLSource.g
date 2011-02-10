@@ -18,6 +18,7 @@ INDEX = 'index' ;
 KEY = 'key';
 FOREIGN = 'foreign';
 UNIQUE = 'unique';
+SIGNED = 'signed';
 UNSIGNED = 'unsigned';
 ENGINE = 'engine';
 VARYING = 'varying';
@@ -34,6 +35,7 @@ DOUBLE = 'double';
 FLOAT = 'float';
 DEC = 'dec';
 DECIMAL = 'decimal';
+FIXED = 'fixed';
 NUMERIC = 'numeric';
 DATE = 'date';
 DATETIME = 'datetime';
@@ -249,11 +251,13 @@ collation[SchemaDef schema]
 data_type_def returns [String type, String len1, String len2]
 	: data_type {$type = $data_type.type;} (length_constraint {$len1 = $length_constraint.len1;})?
 	| numeric_data_type {$type = $numeric_data_type.type;}  
-	   (length_constraint {$len1 = $length_constraint.len1;})? 
-	   (UNSIGNED {$type=$type + " UNSIGNED";})?
+	  (length_constraint {$len1 = $length_constraint.len1;})? 
+	  (SIGNED)?
+	  (UNSIGNED {$type=$type + " UNSIGNED";})?
 	| decimal_data_type {$type = $decimal_data_type.type;}
-      (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
-      (UNSIGNED {$type=$type + " UNSIGNED";})?
+	  (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
+	  (SIGNED)?
+	  (UNSIGNED {$type=$type + " UNSIGNED";})?
 	| enum_or_set_data_type {$type = $enum_or_set_data_type.type; $len1 = $enum_or_set_data_type.len1;}
 	;
 
@@ -293,9 +297,10 @@ numeric_data_type returns [String type]
 
 decimal_data_type returns [String type]
     : DECIMAL {$type = "DECIMAL";} 
-	| NUMERIC {$type = "NUMERIC";}
-	| DEC {$type = "DEC";}
+	| NUMERIC {$type = "DECIMAL";}
+	| DEC {$type = "DECIMAL";}
 	| REAL {$type = "REAL";}
+	| FIXED {$type = "DECIMAL";}
 	| DOUBLE {$type = "DOUBLE";}
 	| FLOAT {$type = "FLOAT";}
     ;

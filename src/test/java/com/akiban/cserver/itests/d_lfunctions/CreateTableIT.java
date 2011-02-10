@@ -15,12 +15,16 @@
 
 package com.akiban.cserver.itests.d_lfunctions;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.Types;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.ddl.UnsupportedDataTypeException;
-import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.itests.ApiTestBase;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
@@ -80,7 +84,7 @@ public final class CreateTableIT extends ApiTestBase {
     }
 
     /*
-     * Intitial auto increment value is incorrect
+     * Initial auto increment value is incorrect
      */
     @Test
     public void bug696169() throws Exception {
@@ -96,8 +100,29 @@ public final class CreateTableIT extends ApiTestBase {
      * FIXED data type causes parse error
      */
     @Test
-    public void bug696321() throws InvalidOperationException {
+    public void bug696321_defaultParams() throws InvalidOperationException {
         int tid = createTable("test", "t", "c1 FIXED NULL");
+        Table table = getUserTable(tid);
+        Collection<Column> columns = table.getColumns();
+        assertEquals(1, columns.size());
+        Column col = columns.iterator().next();
+        assertEquals(Types.DECIMAL, col.getType());
+        assertEquals(10, col.getTypeParameter1().intValue());
+        assertEquals(0, col.getTypeParameter2().intValue());
+        ddl().dropTable(session, table.getName());
+    }
+
+    @Test
+    public void bug696321_specifiedParams() throws InvalidOperationException {
+        int tid = createTable("test", "t", "c1 FIXED(23,5)");
+        Table table = getUserTable(tid);
+        Collection<Column> columns = table.getColumns();
+        assertEquals(1, columns.size());
+        Column col = columns.iterator().next();
+        assertEquals(Types.DECIMAL, col.getType());
+        assertEquals(23, col.getTypeParameter1().intValue());
+        assertEquals(5, col.getTypeParameter2().intValue());
+        ddl().dropTable(session, table.getName());
     }
 
     /*
@@ -160,6 +185,7 @@ public final class CreateTableIT extends ApiTestBase {
     /*
      * CREATE TABLE .. SELECT .. FROM .. is parse error
      */
+    @Test
     public void bug706347() throws InvalidOperationException {
         int tid1 = createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 INT NULL, PRIMARY KEY(c1))");
         ddl().createTable(session, "test", "c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(c1)) SELECT c1,c2 FROM src");
