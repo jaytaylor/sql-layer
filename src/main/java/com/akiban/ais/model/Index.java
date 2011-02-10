@@ -25,7 +25,7 @@ import java.util.Map;
 
 public class Index implements Serializable, ModelNames, Traversable
 {
-    public static Index create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         Index index = null;
         String schemaName = (String) map.get(index_schemaName);
@@ -41,7 +41,7 @@ public class Index implements Serializable, ModelNames, Traversable
         return index;
     }
 
-    public static Index create(AkibaInformationSchema ais,
+    public static Index create(AkibanInformationSchema ais,
                                Table table,
                                String indexName,
                                Integer indexId,

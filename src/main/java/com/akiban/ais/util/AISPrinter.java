@@ -19,7 +19,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
@@ -33,22 +33,22 @@ import com.akiban.ais.model.Visitor;
 
 public class AISPrinter
 {
-    public static void print(AkibaInformationSchema ais) throws Exception
+    public static void print(AkibanInformationSchema ais) throws Exception
     {
         print(ais, System.out);
     }
 
-    public static void print(AkibaInformationSchema ais, PrintStream output) throws Exception
+    public static void print(AkibanInformationSchema ais, PrintStream output) throws Exception
     {
         ais.traversePreOrder(visitor(new PrintWriter(output)));
     }
 
-    public static void print(AkibaInformationSchema ais, PrintWriter output) throws Exception
+    public static void print(AkibanInformationSchema ais, PrintWriter output) throws Exception
     {
         ais.traversePreOrder(visitor(output));
     }
 
-    public static String toString(AkibaInformationSchema ais) throws Exception
+    public static String toString(AkibanInformationSchema ais) throws Exception
     {
         StringWriter aisBuffer = new StringWriter();
         print(ais, new PrintWriter(aisBuffer));

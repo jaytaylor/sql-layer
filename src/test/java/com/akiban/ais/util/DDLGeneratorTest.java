@@ -20,7 +20,7 @@ import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 
 public final class DDLGeneratorTest {
 
@@ -34,7 +34,7 @@ public final class DDLGeneratorTest {
         builder.addTableToGroup("myGroup", "schema", "table");
         builder.groupingIsComplete();
 
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibaInformationSchema();
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",

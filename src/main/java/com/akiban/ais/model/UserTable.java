@@ -19,7 +19,7 @@ import java.util.*;
 
 public class UserTable extends Table
 {
-    public static UserTable create(AkibaInformationSchema ais,
+    public static UserTable create(AkibanInformationSchema ais,
                                    String schemaName,
                                    String tableName,
                                    Integer tableId)
@@ -29,7 +29,7 @@ public class UserTable extends Table
         return userTable;
     }
 
-    public UserTable(AkibaInformationSchema ais, String schemaName, String tableName, Integer tableId)
+    public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
         migrationUsage = MigrationUsage.AKIBAN_STANDARD;

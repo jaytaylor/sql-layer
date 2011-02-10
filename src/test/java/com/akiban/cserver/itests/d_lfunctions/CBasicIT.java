@@ -15,9 +15,7 @@
 
 package com.akiban.cserver.itests.d_lfunctions;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.RowData;
 import com.akiban.cserver.api.common.NoSuchTableException;
@@ -175,7 +173,7 @@ public final class CBasicIT extends ApiTestBase {
         final int tableId1 = createTable("testSchema", "customer", "id int key");
         ddl().dropTable(session, tableName("testSchema", "customer"));
 
-        AkibaInformationSchema ais = ddl().getAIS(session);
+        AkibanInformationSchema ais = ddl().getAIS(session);
         assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
         ddl().dropTable(session, tableName("testSchema", "customer")); // should be a no-op; testing it doesn't fail
 
@@ -194,7 +192,7 @@ public final class CBasicIT extends ApiTestBase {
         final String groupName = ddl().getAIS(session).getUserTable("test", "t").getGroup().getName();
         ddl().dropGroup(session, groupName);
 
-        AkibaInformationSchema ais = ddl().getAIS(session);
+        AkibanInformationSchema ais = ddl().getAIS(session);
         assertNull("expected no table", ais.getUserTable("test", "t"));
         assertNull("expected no group", ais.getGroup(groupName));
 

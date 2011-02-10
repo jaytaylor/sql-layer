@@ -18,7 +18,7 @@ package com.akiban.cserver.itests.alter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -30,18 +30,18 @@ import com.akiban.cserver.api.common.ResolutionException;
 import com.akiban.cserver.itests.ApiTestBase;
 
 public class AlterTestBase extends ApiTestBase {
-    public AkibaInformationSchema createAISWithTable(int tableId) throws NoSuchTableException, ResolutionException {
+    public AkibanInformationSchema createAISWithTable(int tableId) throws NoSuchTableException, ResolutionException {
         TableName tname = tableName(tableId);
         String schemaName = tname.getSchemaName();
         String tableName = tname.getTableName();
 
-        AkibaInformationSchema ais = new AkibaInformationSchema();
+        AkibanInformationSchema ais = new AkibanInformationSchema();
         UserTable.create(ais, schemaName, tableName, tableId);
         
         return ais;
     }
 
-    public Index addIndexToAIS(AkibaInformationSchema ais, String sname, String tname, String iname, 
+    public Index addIndexToAIS(AkibanInformationSchema ais, String sname, String tname, String iname,
             String[] refColumns, boolean isUnique) {
         Table table = ais.getTable(sname, tname);
         Table curTable = ddl().getAIS(session).getTable(sname, tname);
@@ -62,7 +62,7 @@ public class AlterTestBase extends ApiTestBase {
         return index;
     }
     
-    public List<Index> getAllIndexes(AkibaInformationSchema ais)
+    public List<Index> getAllIndexes(AkibanInformationSchema ais)
     {
         ArrayList<Index> indexes = new ArrayList<Index>();
         for(UserTable tbl : ais.getUserTables().values()) {

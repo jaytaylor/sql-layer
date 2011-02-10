@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.persistit.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,6 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
@@ -107,7 +107,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private SchemaDef schemaDef;
 
-    private AkibaInformationSchema ais;
+    private AkibanInformationSchema ais;
 
     private ByteBuffer aisSafeCopy;
 
@@ -291,7 +291,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             return;
         }
 
-        final AkibaInformationSchema ais = getAis(session);
+        final AkibanInformationSchema ais = getAis(session);
         final Table table = ais.getTable(schemaName, tableName);
         if (table == null) {
             return;
@@ -587,7 +587,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @param session
      */
     @Override
-    public AkibaInformationSchema getAis(final Session session) {
+    public AkibanInformationSchema getAis(final Session session) {
         return ais;
     }
 
@@ -602,7 +602,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
                     wasTimestamp = saveTimestamp;
                 }
-                AkibaInformationSchema newAis;
+                AkibanInformationSchema newAis;
                 final StringBuilder sb = new StringBuilder();
                 final Map<TableName, Integer> idMap = assembleSchema(session,
                         sb, true, false, false);
@@ -655,7 +655,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    public AkibaInformationSchema getAisForTests(final String schema)
+    public AkibanInformationSchema getAisForTests(final String schema)
             throws Exception {
         final StringBuilder sb = new StringBuilder();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -769,7 +769,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         // append the Group table definitions
         if (withGroupTables) {
-            final AkibaInformationSchema ais = getAis(session);
+            final AkibanInformationSchema ais = getAis(session);
             final List<String> statements = new DDLGenerator()
                     .createAllGroupTables(ais);
             for (final String statement : statements) {
@@ -1157,12 +1157,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         timer.cancel();
     }
 
-    private void preserveAIS(AkibaInformationSchema newAIS) throws Exception
+    private void preserveAIS(AkibanInformationSchema newAIS) throws Exception
     {
         ByteBuffer buffer = ByteBuffer.allocate(aisSafeCopy == null
                                                 ? INITIAL_AIS_BUFFER_SIZE
                                                 : aisSafeCopy.limit() + AIS_BUFFER_GROWTH);
-        AkibaInformationSchema currentAIS = ais;
+        AkibanInformationSchema currentAIS = ais;
         while (ais == currentAIS) {
             try {
                 new Writer(new MessageTarget(buffer)).save(newAIS);

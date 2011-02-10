@@ -34,6 +34,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
@@ -57,7 +58,6 @@ import com.akiban.ais.io.Writer;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -219,7 +219,7 @@ public class DDLSource extends Source {
         }
 
         final DDLSource source = new DDLSource();
-        final AkibaInformationSchema ais = source.buildAIS(iFileName);
+        final AkibanInformationSchema ais = source.buildAIS(iFileName);
         // AISPrinter.print(ais);
 
         if (format.compareTo(SQL_FORMAT) == 0) {
@@ -298,13 +298,13 @@ public class DDLSource extends Source {
         this.baseId = baseId;
     }
 
-    public AkibaInformationSchema buildAIS(final String fileName)
+    public AkibanInformationSchema buildAIS(final String fileName)
             throws Exception {
         ddlSourceName = fileName;
         return buildAIS(new FileStream(fileName));
     }
 
-    public AkibaInformationSchema buildAISFromString(final String string)
+    public AkibanInformationSchema buildAISFromString(final String string)
             throws Exception {
         return buildAIS(new StringStream(string));
     }
@@ -337,11 +337,11 @@ public class DDLSource extends Source {
         computeColumnMapAndPositions();
     }
 
-    private AkibaInformationSchema buildAIS(final ANTLRStringStream stringStream)
+    private AkibanInformationSchema buildAIS(final ANTLRStringStream stringStream)
             throws Exception {
         parseSchemaDef(stringStream);
-        AkibaInformationSchema ais = new Reader(this)
-                .load(new AkibaInformationSchema());
+        AkibanInformationSchema ais = new Reader(this)
+                .load(new AkibanInformationSchema());
         return ais;
     }
 
@@ -549,8 +549,8 @@ public class DDLSource extends Source {
                             // TODO: This isn't really correct: if collation is specified but not 
                             // charset, the collation's default charset should be used.
                             // But to do this we need to add a charset/collation database.
-                            def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
-                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
+                            def.charset == null ? AkibanInformationSchema.DEFAULT_CHARSET : def.charset,
+                            def.collate == null ? AkibanInformationSchema.DEFAULT_COLLATION : def.collate));
                     columnReceiver.receive(map(column, groupSchemaName(),
                             groupTableName, groupColumnName, def.gposition,
                             def.typeName, longValue(def.typeParam1),
@@ -560,8 +560,8 @@ public class DDLSource extends Source {
                             // TODO: This isn't really correct: if collation is specified but not 
                             // charset, the collation's default charset should be used.
                             // But to do this we need to add a charset/collation database.
-                            def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset,
-                            def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate));
+                            def.charset == null ? AkibanInformationSchema.DEFAULT_CHARSET : def.charset,
+                            def.collate == null ? AkibanInformationSchema.DEFAULT_COLLATION : def.collate));
                 }
             }
         }
@@ -919,7 +919,7 @@ public class DDLSource extends Source {
         }
     }
     
-    public AkibaInformationSchema buildAISFromBuilder(final String string) throws RecognitionException, Exception
+    public AkibanInformationSchema buildAISFromBuilder(final String string) throws RecognitionException, Exception
     {
         DDLSourceLexer lex = new DDLSourceLexer(new StringStream(string));
         CommonTokenStream tokens = new CommonTokenStream(lex);
@@ -936,7 +936,7 @@ public class DDLSource extends Source {
         //computeColumnMapAndPositions();
         
         AISBuilder builder = new AISBuilder();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibaInformationSchema();
         int indexIdGenerator = 0;
 
         // loop through user tables and add to AIS
@@ -971,8 +971,8 @@ public class DDLSource extends Source {
                 column.setAutoIncrement(def.autoincrement == null ? false : true);
                 column.setTypeParameter1(longValue(def.typeParam1));
                 column.setTypeParameter2(longValue(def.typeParam2));
-                column.setCharset(def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET : def.charset);
-                column.setCollation(def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION : def.collate);
+                column.setCharset(def.charset == null ? AkibanInformationSchema.DEFAULT_CHARSET : def.charset);
+                column.setCollation(def.collate == null ? AkibanInformationSchema.DEFAULT_COLLATION : def.collate);
             }
             
             // pk index

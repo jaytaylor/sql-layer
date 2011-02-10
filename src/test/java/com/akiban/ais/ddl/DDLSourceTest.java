@@ -30,11 +30,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.junit.Test;
 
 import com.akiban.ais.io.CSVTarget;
 import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
@@ -60,7 +60,7 @@ public class DDLSourceTest {
     @Test
     public void testParseEnumAndSet() throws Exception {
         DDLSource parser = new DDLSource();
-        AkibaInformationSchema ais = parser.buildAIS(DDL_FILE_NAME);
+        AkibanInformationSchema ais = parser.buildAIS(DDL_FILE_NAME);
 
         final Table enumTable = ais.getTable(new TableName(SCHEMA_NAME,
                 "with_enum"));
@@ -86,9 +86,9 @@ public class DDLSourceTest {
 
     @Test
     public void testFKParse() throws Exception {
-        final AkibaInformationSchema ais1 = new DDLSource()
+        final AkibanInformationSchema ais1 = new DDLSource()
                 .buildAIS(XXXXXXXX_DDL_FILE_NAME);
-        final AkibaInformationSchema ais2 = new DDLSource()
+        final AkibanInformationSchema ais2 = new DDLSource()
                 .buildAIS(XXXXXXXX_FK_DDL_FILE_NAME);
         final StringWriter aisw1 = new StringWriter();
         final StringWriter aisw2 = new StringWriter();
@@ -114,7 +114,7 @@ public class DDLSourceTest {
                 schemaDef.getGroupMap().containsKey(
                         new SchemaDef.CName("akiba_objects", "one$0")));
 
-        AkibaInformationSchema ais = new DDLSource().buildAISFromString(ddl);
+        AkibanInformationSchema ais = new DDLSource().buildAISFromString(ddl);
         assertEquals("user tables", 2, ais.getUserTables().size());
         assertEquals("group tables", 2, ais.getGroupTables().size());
         UserTable s1 = ais.getUserTable("s1", "one");
@@ -315,7 +315,7 @@ public class DDLSourceTest {
     @Test
     public void charsetAndCollate() throws Exception {
         DDLSource parser = new DDLSource();
-        AkibaInformationSchema ais = parser.buildAIS(DDL_FILE_NAME);
+        AkibanInformationSchema ais = parser.buildAIS(DDL_FILE_NAME);
 
         final Table utf8Table = ais.getTable(new TableName(SCHEMA_NAME,
                 "with_utf8"));

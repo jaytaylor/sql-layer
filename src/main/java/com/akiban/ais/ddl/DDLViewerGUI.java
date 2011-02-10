@@ -45,7 +45,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.util.MySqlStatementSplitter;
@@ -147,7 +147,7 @@ public class DDLViewerGUI {
             createStatements.append(createStatement);
         }
 
-        AkibaInformationSchema ais = new DDLSource().buildAISFromString(createStatements.toString());
+        AkibanInformationSchema ais = new DDLSource().buildAISFromString(createStatements.toString());
         return GroupsBuilder.fromAis(ais, "NONE");
     }
 

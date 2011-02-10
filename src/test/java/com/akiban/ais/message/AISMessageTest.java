@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 import com.akiban.ais.BaseTestCase;
 import com.akiban.ais.io.MySQLSource;
 import com.akiban.ais.io.Reader;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.MessageRegistry;
@@ -40,13 +40,13 @@ public class AISMessageTest extends BaseTestCase
         }
         
         MessageRegistry.initialize().registerModule("com.akiban.ais");
-        AkibaInformationSchema ais = readAISFromMySQL();
+        AkibanInformationSchema ais = readAISFromMySQL();
         startServer(ais);
-        AkibaInformationSchema ais2 = runClient();
+        AkibanInformationSchema ais2 = runClient();
         checkAIS(ais, ais2);
     }
 
-    private ByteBuffer serialize(AkibaInformationSchema ais) throws Exception
+    private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
         ByteBuffer payload = ByteBuffer.wrap(new byte[1000000]);
         AISResponse aisResponse = new AISResponse(ais);
@@ -55,18 +55,18 @@ public class AISMessageTest extends BaseTestCase
         return payload;
     }
 
-    private void checkAIS(AkibaInformationSchema ais1, AkibaInformationSchema ais2) throws Exception
+    private void checkAIS(AkibanInformationSchema ais1, AkibanInformationSchema ais2) throws Exception
     {
         assertEquals(serialize(ais1), serialize(ais2));
     }
 
-    private void startServer(AkibaInformationSchema ais)
+    private void startServer(AkibanInformationSchema ais)
     {
         ServerEventHandler serverEventHandler = new ServerEventHandler(ais);
         NetworkHandlerFactory.initializeNetwork("localhost", "8080", serverEventHandler);
     }
 
-    private AkibaInformationSchema runClient() throws Exception
+    private AkibanInformationSchema runClient() throws Exception
     {
         //NetworkHandlerFactory.initializeNetworkClient(null);
         AkibanConnection connection =
@@ -79,7 +79,7 @@ public class AISMessageTest extends BaseTestCase
 */
     }
 
-    private AkibaInformationSchema readAISFromMySQL() throws Exception
+    private AkibanInformationSchema readAISFromMySQL() throws Exception
     {
         // Read ais from mysql
         Source mysqlSource = new MySQLSource(getDatabaseHost(), getDatabasePort(), getRootUserName(), getRootPassword());
@@ -101,12 +101,12 @@ public class AISMessageTest extends BaseTestCase
         {
         }
 
-        public ServerEventHandler(AkibaInformationSchema ais)
+        public ServerEventHandler(AkibanInformationSchema ais)
         {
             this.ais = ais;
         }
 
-        private AkibaInformationSchema ais;
+        private AkibanInformationSchema ais;
 
         private class MessageHandler implements Runnable
         {

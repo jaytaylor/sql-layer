@@ -18,7 +18,7 @@ package com.akiban.cserver.store;
 import java.util.List;
 import java.util.SortedMap;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.cserver.service.session.Session;
 import com.persistit.exception.PersistitException;
 
@@ -144,7 +144,7 @@ public interface SchemaManager {
      * @return
      * @throws Exception
      */
-    AkibaInformationSchema getAis(Session session);
+    AkibanInformationSchema getAis(Session session);
 
     /**
      * Construct and return as a single String the entire set of create table

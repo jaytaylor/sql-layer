@@ -15,8 +15,6 @@
 
 package com.akiban.cserver.service.d_l;
 
-import com.akiban.ais.model.AkibaInformationSchema;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
 import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.DDLFunctions;
@@ -31,8 +29,6 @@ import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.service.session.SessionImpl;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {

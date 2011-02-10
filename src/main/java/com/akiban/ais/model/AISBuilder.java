@@ -40,14 +40,14 @@ public class AISBuilder {
     }
 
     public AISBuilder(NameGenerator nameGenerator) {
-        this(new AkibaInformationSchema(), nameGenerator);
+        this(new AkibanInformationSchema(), nameGenerator);
     }
 
-    public AISBuilder(AkibaInformationSchema ais) {
+    public AISBuilder(AkibanInformationSchema ais) {
         this(ais, new DefaultNameGenerator());
     }
 
-    public AISBuilder(AkibaInformationSchema ais, NameGenerator nameGenerator) {
+    public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator) {
         LOG.trace("creating builder");
         this.ais = ais;
         this.nameGenerator = nameGenerator;
@@ -572,7 +572,7 @@ public class AISBuilder {
 
     // API for getting the created AIS
 
-    public AkibaInformationSchema akibaInformationSchema() {
+    public AkibanInformationSchema akibaInformationSchema() {
         LOG.info("getting AIS");
         return ais;
     }
@@ -799,7 +799,7 @@ public class AISBuilder {
 
     private static int tableGeneratorBase = 25000;
 
-    private final AkibaInformationSchema ais;
+    private final AkibanInformationSchema ais;
     private Map<String, ForwardTableReference> forwardReferences = // join name
                                                                    // ->
                                                                    // ForwardTableReference

@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.apache.velocity.VelocityContext;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.AISTextGenerator;
@@ -49,7 +49,7 @@ public class GenerateFinalByMergeTask extends GenerateFinalTask
     public GenerateFinalByMergeTask(BulkLoader loader,
                                     UserTable table,
                                     GenerateParentTask parentTask,
-                                    AkibaInformationSchema ais)
+                                    AkibanInformationSchema ais)
         throws Exception
     {
         super(loader, table);

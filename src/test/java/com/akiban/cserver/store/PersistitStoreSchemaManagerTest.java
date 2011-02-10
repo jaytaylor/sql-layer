@@ -29,12 +29,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
@@ -108,7 +108,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                 "create table myvarchartest1(id int key, name varchar(85) character set UTF8) engine=akibandb");
         createTable(SCHEMA,
                 "create table myvarchartest2(id int key, name varchar(86) character set utf8) engine=akibandb");
-        AkibaInformationSchema ais = manager.getAis(session);
+        AkibanInformationSchema ais = manager.getAis(session);
         Column c1 = ais.getTable(SCHEMA, "myvarchartest1").getColumn("name");
         Column c2 = ais.getTable(SCHEMA, "myvarchartest2").getColumn("name");
         assertEquals("UTF8", c1.getCharsetAndCollation().charset());
@@ -199,7 +199,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        AkibaInformationSchema ais = manager.getAis(session);
+        AkibanInformationSchema ais = manager.getAis(session);
         assertEquals("ais size", base + 1, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "one");
         assertEquals("number of index", 1, table.getIndexes().size());
@@ -306,7 +306,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
                    "create table `my_schema`.two (id int, one_id int, PRIMARY KEY (id), " +
                    "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
-        AkibaInformationSchema ais = manager.getAis(session);
+        AkibanInformationSchema ais = manager.getAis(session);
         assertEquals("ais size", base + 2, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "two");
         assertEquals("number of index", 2, table.getIndexes().size());
@@ -330,7 +330,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
 
     @Test
     public void testDeleteDefinitionTwoTablesTwoVolumes() throws Exception {
-        AkibaInformationSchema ais;
+        AkibanInformationSchema ais;
 
         createTable("drupal_a", "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `drupal_a`",
