@@ -1063,11 +1063,19 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     AKIBAN_INFORMATION_SCHEMA, statement);
         }
 
+        for(SchemaDef.ColumnDef col : tableDef.getColumns()) {
+            final String typeName = col.getType();
+            if(typeName.equals("ENUM") || typeName.equals("SET") || typeName.equals("BIT")) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_DATA_TYPE,
+                                                    "column %s is unsupported type %s", col.getName(), typeName);
+            }
+        }
+
         final SchemaDef.IndexDef parentJoin = SchemaDef.getAkibanJoin(tableDef);
         if (parentJoin == null) {
             return;
         }
-
+        
         String parentSchema = parentJoin.getParentSchema();
         if (parentSchema == null) {
             parentSchema = (tableDef.getCName().getSchema() == null) ? schemaName

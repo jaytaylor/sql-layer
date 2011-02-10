@@ -564,6 +564,10 @@ public class SchemaDef {
             return name;
         }
 
+        public String getType() {
+            return typeName;
+        }
+
         public Long defaultAutoIncrement() {
             return autoincrement;
         }

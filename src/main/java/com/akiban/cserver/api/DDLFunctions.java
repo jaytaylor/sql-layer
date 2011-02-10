@@ -36,6 +36,7 @@ import com.akiban.cserver.api.ddl.NoPrimaryKeyException;
 import com.akiban.cserver.api.ddl.ParseException;
 import com.akiban.cserver.api.ddl.ProtectedTableDDLException;
 import com.akiban.cserver.api.ddl.UnsupportedCharsetException;
+import com.akiban.cserver.api.ddl.UnsupportedDataTypeException;
 import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.SchemaId;
@@ -63,7 +64,7 @@ public interface DDLFunctions {
      * exists
      */
     void createTable(Session session, String schema, String ddlText)
-    throws ParseException,
+            throws ParseException,
             UnsupportedCharsetException,
             ProtectedTableDDLException,
             DuplicateTableNameException,
@@ -72,6 +73,7 @@ public interface DDLFunctions {
             JoinToWrongColumnsException,
             NoPrimaryKeyException,
             DuplicateColumnNameException,
+            UnsupportedDataTypeException,
             GenericInvalidOperationException;
 
     /**

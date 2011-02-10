@@ -16,20 +16,47 @@
 package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.ddl.UnsupportedDataTypeException;
+import com.akiban.cserver.api.ddl.UnsupportedDropException;
 import com.akiban.cserver.itests.ApiTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 
 public final class CreateTableIT extends ApiTestBase {
+    void createExpectException(Class c, String schema, String table, String definition) {
+        try {
+            createTable(schema, table, definition);
+            Assert.fail("Expected exception " + c.getName());
+        }
+        catch(Throwable t) {
+            assertEquals(c, t.getClass());
+        }
+    }
+    
+
     /*
-     * ENUM parsing and AIS support
-     * Note: ENUM unsupported for Halo
+     * TODO: ENUM parsing and AIS support (unsupported for Halo)
      */
-    @Test(expected=InvalidOperationException.class)//(expected=UnsupportedDataTypeException.class)
-    public void bug686972() throws InvalidOperationException {
-        int tid = createTable("test", "t", "c1 enum('a','b','c')");
+    @Test
+    public void bug686972_enum() throws InvalidOperationException {
+        createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 enum('a','b','c')");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 ENUM('a','b','c')");
+
+        // Expand test when supporting ENUM
+    }
+
+    /*
+     * TODO: SET parsing and AIS support (unsupported for Halo)
+     */
+    @Test
+    public void bug686972_set() throws InvalidOperationException {
+        createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 set('a','b','c')");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 SET('a','b','c')");
+        
+        // Expand test when supporting SET
     }
 
     /*
@@ -82,8 +109,7 @@ public final class CreateTableIT extends ApiTestBase {
     }
 
     /*
-     * Short create statement causes StringIndexOutOfBoundsException from
-     * SchemaDef.canonicalStatement
+     * Short create statement causes StringIndexOutOfBoundsException from SchemaDef.canonicalStatement
      */
     @Test
     public void bug705920() throws InvalidOperationException {
@@ -91,16 +117,14 @@ public final class CreateTableIT extends ApiTestBase {
     }
 
     /*
-     * BIT datatype is unsupported
-     * Note: BIT unsupported for Halo
+     * TODO: BIT data type support (unsupported for Halo)
      */
-    @Test(expected=InvalidOperationException.class)//(expected=UnsupportedDataTypeException.class)
+    @Test
     public void bug705980() throws InvalidOperationException {
-        int tid1 = createTable("test", "t1", "c1 BIT");
-        int tid2 = createTable("test", "t1", "c1 BIT(0)");  // => BIT(1)
-        int tid3 = createTable("test", "t2", "c1 BIT(1)");  // Min
-        int tid4 = createTable("test", "t3", "c1 BIT(64)"); // Max
-        int tid5 = createTable("test", "t4", "c1 BIT(65)"); // Too big
+        createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 bit(8)");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 BIT(8)");
+        
+        // Expand test when supporting BIT (min, max, default type param, etc)
     }
     
     /*
