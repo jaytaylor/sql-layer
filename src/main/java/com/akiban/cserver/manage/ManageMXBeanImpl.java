@@ -30,8 +30,6 @@ import com.akiban.util.Strings;
 
 public class ManageMXBeanImpl implements ManageMXBean {
     private static final Logger LOG = Logger.getLogger(ManageMXBeanImpl.class);
-    private static final String VERSION_STRING_FILE = "version/akserver_version";
-    private final String versionString;
     private final CServer cserver;
 
     private Class<?> customClass;
@@ -39,15 +37,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     public ManageMXBeanImpl(final CServer cserver) {
         this.cserver = cserver;
-        String version;
-        try {
-            version = Strings.join(Strings.dumpResource(null,
-                    VERSION_STRING_FILE));
-        } catch (IOException e) {
-            LOG.warn("Couldn't read resource file");
-            version = "Error: " + e;
-        }
-        versionString = version;
     }
 
     @Override
@@ -211,6 +200,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public String getVersionString() {
-        return versionString;
+        return CServer.VERSION_STRING;
     }
 }
