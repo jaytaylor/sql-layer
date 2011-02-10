@@ -15,7 +15,6 @@
 
 package com.akiban.cserver.manage;
 
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,14 +23,8 @@ import com.akiban.cserver.CServer;
 import com.akiban.cserver.CustomQuery;
 import com.akiban.cserver.service.session.SessionImpl;
 import com.akiban.cserver.store.Store;
-import com.akiban.util.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ManageMXBeanImpl implements ManageMXBean {
-    private static final Logger LOG = LoggerFactory.getLogger(ManageMXBeanImpl.class);
-    private static final String VERSION_STRING_FILE = "version/akserver_version";
-    private final String versionString;
     private final CServer cserver;
 
     private Class<?> customClass;
@@ -39,15 +32,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     public ManageMXBeanImpl(final CServer cserver) {
         this.cserver = cserver;
-        String version;
-        try {
-            version = Strings.join(Strings.dumpResource(null,
-                    VERSION_STRING_FILE));
-        } catch (IOException e) {
-            LOG.warn("Couldn't read resource file");
-            version = "Error: " + e;
-        }
-        versionString = version;
     }
 
     @Override
@@ -211,6 +195,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public String getVersionString() {
-        return versionString;
+        return CServer.VERSION_STRING;
     }
 }
