@@ -733,8 +733,6 @@ public class PersistitStore implements CServerConstants, Store {
                         !fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getParentJoinFields())) {
                         deleteRow(session, oldRowData);
                         writeRow(session, mergedRowData);
-                        // Propagate hkey changes to children whose hkeys are computed from this row.
-                        propagateDownGroup(session, hEx);
                     } else {
                         packRowData(hEx, rowDef, mergedRowData);
                         // Store the h-row
