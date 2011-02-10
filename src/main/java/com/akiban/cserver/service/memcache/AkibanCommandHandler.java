@@ -114,7 +114,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     {
         Throwable exception = e.getCause();
         if (exception.getCause() == null
-                && exception instanceof IOException
+                && exception.getClass().equals(IOException.class)
                 && "Connection reset by peer".equals(exception.getMessage())
                 )
         {
