@@ -1065,7 +1065,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         for(SchemaDef.ColumnDef col : tableDef.getColumns()) {
             final String typeName = col.getType();
-            if(typeName.equals("ENUM") || typeName.equals("SET") || typeName.equals("BIT")) {
+            if(ais.getType(typeName) == null ||
+               typeName.equals("ENUM") || typeName.equals("SET") || typeName.equals("BIT")) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_DATA_TYPE,
                                                     "column %s is unsupported type %s", col.getName(), typeName);
             }
