@@ -1105,8 +1105,9 @@ public class SchemaDef {
     }
 
     private static void strip(StringBuilder sb, final String s) {
-        if (sb.substring(0, s.length()).equalsIgnoreCase(s)) {
-            sb.delete(0, s.length());
+        final int sLen = s.length();
+        if (sb.length() >= sLen && sb.substring(0, sLen).equalsIgnoreCase(s)) {
+            sb.delete(0, sLen);
         }
     }
 

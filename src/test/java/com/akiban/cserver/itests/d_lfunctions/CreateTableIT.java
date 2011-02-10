@@ -160,7 +160,9 @@ public final class CreateTableIT extends ApiTestBase {
      */
     @Test
     public void bug705920() throws InvalidOperationException {
-        int tid = createTable("test", "t", "c1 int");
+        createTable("test", "t", "c1 int"); // Bug case
+        createTable("x", "y", "z int"); // As short as you could get
+        dropAllTables();
     }
 
     /*
