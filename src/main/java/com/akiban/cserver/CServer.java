@@ -15,6 +15,7 @@
 
 package com.akiban.cserver;
 
+import com.akiban.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +28,15 @@ import com.akiban.cserver.service.ServiceManagerImpl;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 
+import java.io.IOException;
+
 /**
  * @author peter
  */
 public class CServer implements CServerConstants, Service<CServer>, JmxManageable {
+
+    private static final String VERSION_STRING_FILE = "version/akserver_version";
+    public static final String VERSION_STRING = getVersionString();
 
     private static final Logger LOG = LoggerFactory.getLogger(CServer.class.getName());
 
@@ -130,6 +136,17 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
     @Override
     public Class<CServer> castClass() {
         return CServer.class;
+    }
+
+    private static String getVersionString()
+    {
+        try {
+            return Strings.join(Strings.dumpResource(null,
+                    VERSION_STRING_FILE));
+        } catch (IOException e) {
+            LOG.warn("Couldn't read resource file");
+            return "Error: " + e;
+        }
     }
 
     /**
