@@ -20,6 +20,25 @@ import java.util.List;
 
 public class HKeySegment
 {
+    @Override
+    public String toString()
+    {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(table().getName().getTableName());
+        buffer.append(": (");
+        boolean firstColumn = true;
+        for (HKeyColumn hKeyColumn : columns()) {
+            if (firstColumn) {
+                firstColumn = false;
+            } else {
+                buffer.append(", ");
+            }
+            buffer.append(hKeyColumn.toString());
+        }
+        buffer.append(")");
+        return buffer.toString();
+    }
+
     public HKeySegment(HKey hKey, UserTable table)
     {
         this.hKey = hKey;

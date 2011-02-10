@@ -85,8 +85,13 @@ public class TableName implements Serializable, Comparable<TableName>
         }
         TableName o = (TableName) obj;
 
-        return getSchemaName().equals(o.getSchemaName()) &&
-               getTableName().equals(o.getTableName());
+        return equals(o.getSchemaName(), o.getTableName());
+    }
+    
+    public boolean equals(String schema, String table)
+    {
+        return getSchemaName().equals(schema) &&
+                getTableName().equals(table);
     }
 
     @Override

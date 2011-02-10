@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
@@ -85,7 +85,7 @@ public class TaskGenerator
         }
     }
 
-    private static final Log logger = LogFactory.getLog(TaskGenerator.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(TaskGenerator.class.getName());
 
     private final BulkLoader loader;
     private final Actions actions;

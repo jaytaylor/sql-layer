@@ -16,9 +16,8 @@
 package com.akiban.cserver.service.memcache.outputter;
 
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.api.HapiGetRequest;
-import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiOutputter;
+import com.akiban.cserver.api.HapiProcessedGetRequest;
 import com.akiban.cserver.service.jmx.JmxManageable;
 
 import java.io.IOException;
@@ -26,7 +25,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class DummyOutputter implements HapiProcessor.Outputter, JmxManageable {
+public final class DummyOutputter implements HapiOutputter, JmxManageable {
 
     @SuppressWarnings("unused") // jmx
     public interface DummyOutputterMXBean {
@@ -44,7 +43,7 @@ public final class DummyOutputter implements HapiProcessor.Outputter, JmxManagea
     private DummyOutputter() {}
 
     @Override
-    public void output(HapiGetRequest request, RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException {
         outputStream.write(string.get().getBytes());
     }
 

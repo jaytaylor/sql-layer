@@ -347,6 +347,8 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
 
         if (fracFull + fracPartial > 0)
             sb.append(hadOutput ? "." : "0.");
+        else if(hadOutput == false)
+            sb.append("0");
 
         for (int i = 0; i < fracFull; ++i) {
             int x = miUnpack(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;
@@ -371,6 +373,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
         decodeAndParse(fieldDef, rowData, AkibanAppender.of(sb));
         final String createdStr = sb.toString();
         try {
+            assert createdStr.isEmpty() == false;
             return new BigDecimal(createdStr);
         } catch (NumberFormatException e) {
             throw new NumberFormatException(createdStr);

@@ -16,15 +16,14 @@
 package com.akiban.cserver.service.memcache.outputter;
 
 import com.akiban.cserver.RowData;
-import com.akiban.cserver.RowDefCache;
-import com.akiban.cserver.api.HapiGetRequest;
-import com.akiban.cserver.api.HapiProcessor;
+import com.akiban.cserver.api.HapiOutputter;
+import com.akiban.cserver.api.HapiProcessedGetRequest;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-public final class RawByteOutputter implements HapiProcessor.Outputter{
+public final class RawByteOutputter implements HapiOutputter {
     private static final RawByteOutputter instance = new RawByteOutputter();
 
     public static RawByteOutputter instance() {
@@ -34,7 +33,7 @@ public final class RawByteOutputter implements HapiProcessor.Outputter{
     private RawByteOutputter() {}
 
     @Override
-    public void output(HapiGetRequest request, RowDefCache rowDefCache, List<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException {
         for(RowData data : rows) {
             outputStream.write(data.getBytes(), data.getRowStart(), data.getRowSize());
         }

@@ -54,12 +54,6 @@ public class RowDef implements TreeLink {
     private final FieldDef[] fieldDefs;
 
     /**
-     * Denotes position within a group; this value is used to identify a table
-     * within the group structure in the hkey.
-     */
-    private int ordinal;
-
-    /**
      * Field(s) that constitute the foreign key by which this row is joined to
      * its parent table.
      */
@@ -115,6 +109,13 @@ public class RowDef implements TreeLink {
     private final byte[][] varLenFieldMap;
 
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+
+    /**
+     * A bandage. Marks whether or not the RowDef has been deleted (e.g. during
+     * a dropTable operation). Determines whether to save or remove the TableStatus.
+     */
+    private boolean isDeleted = false;
+
 
     public RowDef(Table table) {
         this.table = table;
@@ -456,7 +457,7 @@ public class RowDef implements TreeLink {
     public void setOrdinal(final int ordinal) {
         tableStatus.setOrdinal(ordinal);
     }
-
+    
     public boolean isUserTable() {
         return !isGroupTable();
     }
@@ -513,6 +514,15 @@ public class RowDef implements TreeLink {
     public void setUserTableRowDefs(final RowDef[] userTableRowDefs) {
         this.userTableRowDefs = userTableRowDefs;
     }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
 
     /*
      * Populate various fields needed for autoincrement processing. Likely to
@@ -645,12 +655,13 @@ public class RowDef implements TreeLink {
     @Override
     public boolean equals(final Object o) {
         final RowDef def = (RowDef) o;
-        return def.getRowDefId() == def.getRowDefId()
+        return this == def ||
+               def.getRowDefId() == def.getRowDefId()
                 && CServerUtil.equals(table.getName(), def.table.getName())
                 && CServerUtil.equals(treeName, def.treeName)
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexDefs, def.indexDefs)
-                && ordinal == def.ordinal
+                && getOrdinal() == def.getOrdinal()
                 && Arrays.equals(parentJoinFields, def.parentJoinFields);
 
     }

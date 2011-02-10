@@ -20,16 +20,16 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.ais.model.Index;
 import com.akiban.cserver.api.HapiGetRequest;
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.api.HapiRequestException;
 import com.akiban.cserver.service.ServiceStartupException;
 import com.akiban.cserver.service.config.ConfigurationService;
 import com.akiban.cserver.service.jmx.JmxManageable;
 import com.akiban.cserver.service.session.Session;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
+import com.akiban.cserver.service.session.SessionImpl;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -50,23 +50,24 @@ import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryResponseEncoder
 import com.thimbleware.jmemcached.protocol.text.MemcachedCommandDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedFrameDecoder;
 import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.ObjectName;
 
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
-    private static final Logger LOG = Logger.getLogger(MemcacheServiceImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MemcacheServiceImpl.class);
 
     private final MemcacheMXBean manageBean;
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
-        public Outputter getFormat() {
+        public HapiOutputter getFormat() {
             return manageBean.getOutputFormat().getOutputter();
         }
     };
 
     // Service vars
     private final ServiceManager serviceManager;
-    private static final Log log = LogFactory.getLog(MemcacheServiceImpl.class);
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
@@ -79,24 +80,46 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         this.serviceManager = ServiceManagerImpl.get();
 
         ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
-        String defaultOutputName = config.getProperty("cserver", "memcached.output.format", OutputFormat.JSON.name());
+
         OutputFormat defaultOutput;
-        try {
-            defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
-            defaultOutput = OutputFormat.JSON;
+        {
+            String defaultOutputName = config.getProperty("cserver", "memcached.output.format", OutputFormat.JSON.name());
+            try {
+                defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
+                defaultOutput = OutputFormat.JSON;
+            }
         }
-        manageBean = new ManageBean(WhichHapi.FETCHROWS, defaultOutput);
+
+        WhichHapi defaultHapi;
+        {
+            String defaultHapiName = config.getProperty("cserver", "memcached.processor", WhichHapi.SCANROWS.name());
+            try {
+                defaultHapi = WhichHapi.valueOf(defaultHapiName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                LOG.warn("Default memcache outputter not found, using JSON: " + defaultHapiName);
+                defaultHapi = WhichHapi.FETCHROWS;
+            }
+        }
+
+        manageBean = new ManageBean(defaultHapi, defaultOutput);
     }
 
     @Override
-    public void processRequest(Session session, HapiGetRequest request, Outputter outputter, OutputStream outputStream)
+    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
             throws HapiRequestException
     {
         final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
 
         processor.processRequest(session, request, outputter, outputStream);
+    }
+
+    @Override
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
+        final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
+
+        return processor.findHapiRequestIndex(session, request);
     }
 
     @Override
@@ -108,7 +131,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             final String portString = serviceManager.getConfigurationService()
                     .getProperty("cserver", "memcached.port");
 
-            log.info("Starting memcache service on port " + portString);
+            LOG.info("Starting memcache service on port " + portString);
 
             this.port = Integer.parseInt(portString);
             final InetSocketAddress addr = new InetSocketAddress(port);
@@ -125,7 +148,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     @Override
     public void stop() {
-        log.info("Stopping memcache service");
+        LOG.info("Stopping memcache service");
         stopDaemon();
         store.set(null);
     }
@@ -159,17 +182,17 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         Channel serverChannel = bootstrap.bind(addr);
         allChannels.add(serverChannel);
 
-        log.info("Listening on " + addr);
+        LOG.info("Listening on " + addr);
     }
 
     private void stopDaemon() {
-        log.info("Shutting down daemon");
+        LOG.info("Shutting down daemon");
 
         ChannelGroupFuture future = allChannels.close();
         future.awaitUninterruptibly();
 
         if (!future.isCompleteSuccess()) {
-            log.error("Failed to close all network channels");
+            LOG.error("Failed to close all network channels");
         }
 
         channelFactory.releaseExternalResources();
@@ -315,6 +338,19 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         @Override
         public WhichHapi[] getAvailableHapiProcessors() {
             return WhichHapi.values();
+        }
+
+        @Override
+        public String chooseIndex(String request) {
+            try {
+                HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
+                Index index = processAs.get().whichItem.getHapiProcessor().findHapiRequestIndex(
+                        new SessionImpl(), getRequest
+                );
+                return index == null ? "null" : index.toString();
+            } catch (HapiRequestException e) {
+                throw new RuntimeException(e.getMessage());
+            }
         }
     }
 }

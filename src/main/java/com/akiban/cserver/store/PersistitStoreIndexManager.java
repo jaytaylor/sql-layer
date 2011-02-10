@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.cserver.IndexDef;
 import com.akiban.cserver.IndexDef.I2H;
@@ -44,8 +44,7 @@ import com.persistit.exception.RollbackException;
 
 public class PersistitStoreIndexManager implements IndexManager {
 
-    private static final Log LOG = LogFactory
-            .getLog(PersistitStoreIndexManager.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreIndexManager.class.getName());
 
     private final static String ANALYSIS_TABLE_NAME = "akiba_information_schema.index_analysis";
 

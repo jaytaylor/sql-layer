@@ -26,4 +26,5 @@ public interface MemcacheMXBean {
     void setHapiProcessor(MemcacheService.WhichHapi whichProcessor);
     MemcacheService.WhichHapi[] getAvailableHapiProcessors();
 
+    String chooseIndex(String request);
 }

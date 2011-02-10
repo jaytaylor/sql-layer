@@ -15,7 +15,8 @@
 
 package com.akiban.junit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.junit.Ignore;
 import org.junit.internal.builders.IgnoredClassRunner;
 import org.junit.runner.Runner;
@@ -69,7 +70,7 @@ public final class NamedParameterizedRunner extends Suite
 	public static @interface TestParameters {
 	}
 
-    private final static Logger logger = Logger.getLogger(NamedParameterizedRunner.class);
+    private final static Logger logger = LoggerFactory.getLogger(NamedParameterizedRunner.class);
     private final List<Runner> runners;
 
     /**

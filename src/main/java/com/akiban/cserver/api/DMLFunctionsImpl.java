@@ -58,7 +58,8 @@ import com.akiban.cserver.store.RowCollector;
 import com.akiban.cserver.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.ArgumentValidation;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
@@ -67,7 +68,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final Object OPEN_CURSORS = new Object();
 
-    private final static Logger logger = Logger.getLogger(DMLFunctionsImpl.class);
+    private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
     private final DDLFunctions ddlFunctions;
 
     public DMLFunctionsImpl(DDLFunctions ddlFunctions) {

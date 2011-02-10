@@ -15,6 +15,7 @@
 
 package com.akiban.cserver.service.memcache;
 
+import com.akiban.cserver.api.HapiOutputter;
 import com.akiban.cserver.api.HapiProcessor;
 import com.akiban.cserver.service.memcache.hprocessor.EmptyRows;
 import com.akiban.cserver.service.memcache.hprocessor.Fetchrows;
@@ -59,13 +60,13 @@ public interface MemcacheService extends HapiProcessor {
         PLAIN(RowDataStringOutputter.instance()),
         ECHO(RequestEchoOutputter.instance())
         ;
-        private final Outputter outputter;
+        private final HapiOutputter outputter;
 
-        OutputFormat(Outputter outputter) {
+        OutputFormat(HapiOutputter outputter) {
             this.outputter = outputter;
         }
 
-        public Outputter getOutputter() {
+        public HapiOutputter getOutputter() {
             return outputter;
         }
     }
