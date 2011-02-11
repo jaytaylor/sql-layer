@@ -33,7 +33,7 @@ import java.io.IOException;
 /**
  * @author peter
  */
-public class AkServer implements CServerConstants, Service<AkServer>, JmxManageable {
+public class AkServer implements AkServerConstants, Service<AkServer>, JmxManageable {
 
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();

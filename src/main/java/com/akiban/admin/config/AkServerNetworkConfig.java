@@ -20,7 +20,7 @@ import com.akiban.admin.Address;
 // Represents chunkserver address, port & lead config, specified in /config/cluster.properties
 // For configuration details of a single chunkserver, the class to use is ChunkserverConfig
 
-public class ChunkserverNetworkConfig
+public class AkServerNetworkConfig
 {
     @Override
     public String toString()
@@ -31,13 +31,13 @@ public class ChunkserverNetworkConfig
     @Override
     public boolean equals(Object o)
     {
-        ChunkserverNetworkConfig that = (ChunkserverNetworkConfig) o;
+        AkServerNetworkConfig that = (AkServerNetworkConfig) o;
         return this.name.equals(that.name) &&
                this.address.equals(that.address) &&
                this.lead == that.lead;
     }
 
-    public ChunkserverNetworkConfig(String name, Address address, boolean lead)
+    public AkServerNetworkConfig(String name, Address address, boolean lead)
     {
         this.name = name;
         this.address = address;

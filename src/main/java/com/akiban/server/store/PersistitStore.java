@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.akiban.ais.model.*;
+import com.akiban.server.AkServerConstants;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -31,8 +33,6 @@ import com.persistit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.CServerConstants;
-import com.akiban.server.CServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
@@ -54,7 +54,7 @@ import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 
-public class PersistitStore implements CServerConstants, Store {
+public class PersistitStore implements AkServerConstants, Store {
 
     final static int INITIAL_BUFFER_SIZE = 1024;
 
@@ -707,8 +707,8 @@ public class PersistitStore implements CServerConstants, Store {
                             // Get the current row (under the top-level row being updated)
                             Value value = hEx.getValue();
                             int descendentRowDefId =
-                                CServerUtil.getInt(value.getEncodedBytes(),
-                                                   RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+                                AkServerUtil.getInt(value.getEncodedBytes(),
+                                        RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
                             RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
                             RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
                             expandRowData(hEx, descendentRowDef, descendentRowData);
@@ -1303,7 +1303,7 @@ public class PersistitStore implements CServerConstants, Store {
                 .getEncodedBytes(), 0, size);
         int storedTableId = treeService.aisToStore(rowDef,
                 rowData.getRowDefId());
-        CServerUtil.putInt(hEx.getValue().getEncodedBytes(),
+        AkServerUtil.putInt(hEx.getValue().getEncodedBytes(),
                 RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
                 storedTableId);
         hEx.getValue().setEncodedSize(size);
@@ -1327,7 +1327,7 @@ public class PersistitStore implements CServerConstants, Store {
                     "Corrupt RowData at " + exchange.getKey());
         }
 
-        int rowDefId = CServerUtil.getInt(valueBytes, RowData.O_ROW_DEF_ID
+        int rowDefId = AkServerUtil.getInt(valueBytes, RowData.O_ROW_DEF_ID
                 - RowData.LEFT_ENVELOPE_SIZE);
         rowDefId = treeService.storeToAis(exchange.getVolume(), rowDefId);
         if (rowDef != null) {
@@ -1352,16 +1352,16 @@ public class PersistitStore implements CServerConstants, Store {
         // Assemble the Row in a byte array to allow column
         // elision
         //
-        CServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_A, rowDataSize);
-        CServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_A,
+        AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_A, rowDataSize);
+        AkServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_A,
                 RowData.SIGNATURE_A);
         System.arraycopy(valueBytes, 0, rowDataBytes, RowData.O_FIELD_COUNT,
                 size);
-        CServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_B + rowDataSize,
+        AkServerUtil.putChar(rowDataBytes, RowData.O_SIGNATURE_B + rowDataSize,
                 RowData.SIGNATURE_B);
-        CServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
+        AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
                 rowDataSize);
-        CServerUtil.putInt(rowDataBytes, RowData.O_ROW_DEF_ID, rowDefId);
+        AkServerUtil.putInt(rowDataBytes, RowData.O_ROW_DEF_ID, rowDefId);
         rowData.prepareRow(0);
     }
 

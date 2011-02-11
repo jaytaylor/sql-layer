@@ -33,7 +33,7 @@ import com.akiban.server.store.Store;
  * @author peter
  * 
  */
-public class CServerAisTarget extends Target {
+public class AkServerAisTarget extends Target {
 
     private final Store store;
     
@@ -70,7 +70,7 @@ public class CServerAisTarget extends Target {
     public void close() throws SQLException {
     }
 
-    public CServerAisTarget(final Store store) {
+    public AkServerAisTarget(final Store store) {
         this.store = store;
 
     }

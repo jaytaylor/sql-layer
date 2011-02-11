@@ -30,7 +30,7 @@ import com.akiban.message.MessageRegistry;
 import com.akiban.message.MessageRegistryBase;
 import com.akiban.util.Command;
 
-public class CServerLifecycleTest {
+public class AkServerLifecycleTest {
     private static final int N = 5;
     private static final int N_REQUESTS = 10;
 

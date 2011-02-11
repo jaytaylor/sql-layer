@@ -15,7 +15,7 @@
 
 package com.akiban.server;
 
-public interface CServerConstants {
+public interface AkServerConstants {
 //    public final static short OK = 1;
 //    public final static short END = 2;
 //    public final static short ERR = 100;

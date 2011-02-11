@@ -28,13 +28,13 @@ import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.Store;
 
-public class CServerAisSource extends Source {
+public class AkServerAisSource extends Source {
 
     private final Store store;
 
     private final Session session = new SessionImpl();
     
-    public CServerAisSource(final Store store) throws Exception {
+    public AkServerAisSource(final Store store) throws Exception {
         this.store = store;
     }
 

@@ -29,7 +29,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
 
-public class CServerAisSourceTest extends AkServerTestCase implements CServerConstants {
+public class AkServerAisSourceTest extends AkServerTestCase implements AkServerConstants {
 
     private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
 
@@ -49,11 +49,11 @@ public class CServerAisSourceTest extends AkServerTestCase implements CServerCon
     @Test
     public void testCServerAis() throws Exception {
         // Store AIS data in Chunk Server
-        final Target target = new CServerAisTarget(store);
+        final Target target = new AkServerAisTarget(store);
         new Writer(target).save(ais);
 
         // Retrieve AIS data from Chunk Server
-        final Source source = new CServerAisSource(store);
+        final Source source = new AkServerAisSource(store);
         final AkibanInformationSchema aisCopy = new Reader(source).load();
 
         // new Writer(new SqlTextTarget(new PrintWriter(new
@@ -67,15 +67,15 @@ public class CServerAisSourceTest extends AkServerTestCase implements CServerCon
     @Test
     public void testReloadAIS() throws Exception {
         // Store AIS data in Chunk Server
-        final Target target = new CServerAisTarget(store);
+        final Target target = new AkServerAisTarget(store);
         new Writer(target).save(ais);
 
         // Retrieve AIS data from Chunk Server
-        final Source source1 = new CServerAisSource(store);
+        final Source source1 = new AkServerAisSource(store);
         final AkibanInformationSchema aisCopy1 = new Reader(source1).load();
         new Writer(target).save(aisCopy1);
 
-        final Source source2 = new CServerAisSource(store);
+        final Source source2 = new AkServerAisSource(store);
         final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
 
         // new Writer(new SqlTextTarget(new PrintWriter(new
@@ -85,7 +85,7 @@ public class CServerAisSourceTest extends AkServerTestCase implements CServerCon
 
         assertTrue(equals(ais, aisCopy2));
 
-        final Source source3 = new CServerAisSource(store);
+        final Source source3 = new AkServerAisSource(store);
         final AkibanInformationSchema aisCopy3 = new Reader(source3).load();
         assertTrue(equals(ais, aisCopy3));
     }

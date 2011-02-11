@@ -22,7 +22,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 
-public class CServerUtil {
+public class AkServerUtil {
 
     private final static boolean BIG_ENDIAN = false;
 

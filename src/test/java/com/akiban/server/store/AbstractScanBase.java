@@ -22,19 +22,19 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.AkServerTestSuite;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.CServerConstants;
-import com.akiban.server.CServerTestSuite;
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerConstants;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.util.ByteBufferFactory;
 
-public abstract class AbstractScanBase extends CServerTestSuite implements CServerConstants {
+public abstract class AbstractScanBase extends AkServerTestSuite implements AkServerConstants {
 
     protected final static String DDL_FILE_NAME = "scan_rows_test.ddl";
 
@@ -50,7 +50,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
 
     @BeforeClass
     public static void baseSetUpSuite() throws Exception {
-        CServerTestSuite.setUpSuite();
+        AkServerTestSuite.setUpSuite();
         
         //rowDefCache.setAIS(ais0);
         final AkibanInformationSchema ais = setUpAisForTests(DDL_FILE_NAME);
@@ -65,7 +65,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
 
     @AfterClass
     public static void baseTearDownSuite() throws Exception {
-        CServerTestSuite.tearDownSuite();
+        AkServerTestSuite.tearDownSuite();
         tableMap.clear();
     }
 
@@ -211,7 +211,7 @@ public abstract class AbstractScanBase extends CServerTestSuite implements CServ
         final StringBuilder sb = new StringBuilder();
         for (final RowData rowData : result) {
             sb.append(rowData.toString(rowDefCache));
-            sb.append(CServerUtil.NEW_LINE);
+            sb.append(AkServerUtil.NEW_LINE);
         }
         return sb.toString();
     }

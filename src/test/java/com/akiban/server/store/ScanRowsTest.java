@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 
@@ -390,7 +390,7 @@ public class ScanRowsTest extends AbstractScanBase {
         final StringBuilder sb = new StringBuilder();
         for (final RowData rowData : result) {
             sb.append(rowData.toString(rowDefCache));
-            sb.append(CServerUtil.NEW_LINE);
+            sb.append(AkServerUtil.NEW_LINE);
         }
         return sb.toString();
     }

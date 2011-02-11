@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
@@ -206,7 +206,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         if (isFixedAllocation) {
             return DEFAULT_BUFFER_COUNT;
         }
-        final long allocation = (long) ((CServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
+        final long allocation = (long) ((AkServerUtil.availableMemory() - MEMORY_RESERVATION) * PERSISTIT_ALLOCATION_FRACTION);
         final int allocationPerBuffer = (int) (bufferSize * 1.5);
         return Math.max(512, (int) (allocation / allocationPerBuffer));
     }

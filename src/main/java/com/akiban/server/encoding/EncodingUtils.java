@@ -19,7 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 import com.persistit.Key;
@@ -52,19 +52,19 @@ abstract class EncodingUtils {
                final int width) {
         switch (width) {
             case 1:
-                CServerUtil.putByte(bytes, offset, (byte) value);
+                AkServerUtil.putByte(bytes, offset, (byte) value);
                 break;
             case 2:
-                CServerUtil.putShort(bytes, offset, (short) value);
+                AkServerUtil.putShort(bytes, offset, (short) value);
                 break;
             case 3:
-                CServerUtil.putMediumInt(bytes, offset, (int) value);
+                AkServerUtil.putMediumInt(bytes, offset, (int) value);
                 break;
             case 4:
-                CServerUtil.putInt(bytes, offset, (int) value);
+                AkServerUtil.putInt(bytes, offset, (int) value);
                 break;
             case 8:
-                CServerUtil.putLong(bytes, offset, value);
+                AkServerUtil.putLong(bytes, offset, value);
                 break;
             default:
                 throw new IllegalStateException("Width not supported");
@@ -76,20 +76,20 @@ abstract class EncodingUtils {
                 final int width) {
         switch (width) {
             case 1:
-                CServerUtil.putByte(bytes, offset, (int) (value < 0 ? 0 : value));
+                AkServerUtil.putByte(bytes, offset, (int) (value < 0 ? 0 : value));
                 break;
             case 2:
-                CServerUtil.putShort(bytes, offset, (int) (value < 0 ? 0 : value));
+                AkServerUtil.putShort(bytes, offset, (int) (value < 0 ? 0 : value));
                 break;
             case 3:
-                CServerUtil.putMediumInt(bytes, offset, (int) (value < 0 ? 0
+                AkServerUtil.putMediumInt(bytes, offset, (int) (value < 0 ? 0
                         : value));
                 break;
             case 4:
-                CServerUtil.putInt(bytes, offset, (int) (value < 0 ? 0 : value));
+                AkServerUtil.putInt(bytes, offset, (int) (value < 0 ? 0 : value));
                 break;
             case 8:
-                CServerUtil.putLong(bytes, offset, value);
+                AkServerUtil.putLong(bytes, offset, value);
                 break;
             default:
                 throw new IllegalStateException("Width not supported");
@@ -183,16 +183,16 @@ abstract class EncodingUtils {
             case 0:
                 break;
             case 1:
-                CServerUtil.putByte(bytes, offset, size);
+                AkServerUtil.putByte(bytes, offset, size);
                 break;
             case 2:
-                CServerUtil.putChar(bytes, offset, size);
+                AkServerUtil.putChar(bytes, offset, size);
                 break;
             case 3:
-                CServerUtil.putMediumInt(bytes, offset, size);
+                AkServerUtil.putMediumInt(bytes, offset, size);
                 break;
             case 4:
-                CServerUtil.putInt(bytes, offset, size);
+                AkServerUtil.putInt(bytes, offset, size);
                 break;
             default:
                 throw new Error("Missing case");
@@ -207,7 +207,7 @@ abstract class EncodingUtils {
                              final Key key) {
         final long location = fieldDef.getRowDef().fieldLocation(rowData,
                 fieldDef.getFieldIndex());
-        key.append(CServerUtil.decodeMySQLString(rowData.getBytes(),
+        key.append(AkServerUtil.decodeMySQLString(rowData.getBytes(),
                 (int) location, (int) (location >>> 32), fieldDef));
     }
 

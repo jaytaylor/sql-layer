@@ -39,7 +39,7 @@ import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
-public abstract class CServerTestSuite {
+public abstract class AkServerTestSuite {
 
     protected static Store store;
     protected static SchemaManager schemaManager;

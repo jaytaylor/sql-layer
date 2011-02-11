@@ -18,7 +18,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -61,7 +61,7 @@ public abstract class TreeRecordVisitor
     private NewRow row() throws PersistitException, InvalidOperationException
     {
         Value value = exchange.getValue();
-        int rowDefId = CServerUtil.getInt(value.getEncodedBytes(), RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+        int rowDefId = AkServerUtil.getInt(value.getEncodedBytes(), RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
         rowDefId = store.treeService.storeToAis(exchange.getVolume(), rowDefId);
         RowDef rowDef = store.rowDefCache.getRowDef(rowDefId);
         RowData rowData = new RowData(EMPTY_BYTE_ARRAY);

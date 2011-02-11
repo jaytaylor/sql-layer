@@ -21,7 +21,7 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Properties;
 
-public class ChunkServerState
+public class AkServerState
 {
     public boolean up()
     {
@@ -46,7 +46,7 @@ public class ChunkServerState
         return buffer.toString();
     }
 
-    ChunkServerState(String name, String config) throws UnknownHostException
+    AkServerState(String name, String config) throws UnknownHostException
     {
         Properties properties = new Properties();
         try {

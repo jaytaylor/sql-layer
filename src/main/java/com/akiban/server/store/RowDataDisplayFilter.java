@@ -18,7 +18,7 @@
  */
 package com.akiban.server.store;
 
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.tree.TreeService;
@@ -71,7 +71,7 @@ class RowDataDisplayFilter implements DisplayFilter {
         try {
             if (!protectedTree) {
                 final Value value = exchange.getValue();
-                int rowDefId = CServerUtil.getInt(value.getEncodedBytes(),
+                int rowDefId = AkServerUtil.getInt(value.getEncodedBytes(),
                         RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
                 rowDefId = treeService.storeToAis(exchange.getVolume(),
                         rowDefId);

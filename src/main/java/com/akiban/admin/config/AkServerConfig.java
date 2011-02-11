@@ -19,7 +19,7 @@ import java.util.Properties;
 
 import com.akiban.admin.AdminValue;
 
-public class ChunkserverConfig
+public class AkServerConfig
 {
     public String datapath()
     {
@@ -47,7 +47,7 @@ public class ChunkserverConfig
         return Integer.valueOf(properties.getProperty(PROPERTY_MAX_HEAP_MB, DEFAULT_MAX_HEAP_MB));
     }
 
-    public ChunkserverConfig(AdminValue adminValue)
+    public AkServerConfig(AdminValue adminValue)
     {
         this.properties = adminValue.properties();
     }

@@ -139,15 +139,15 @@ public class FieldDef {
         FieldDef def = (FieldDef) o;
         return type == def.type && columnName == def.columnName
                 && encoding == def.encoding && column.getPosition() == def.column.getPosition()
-                && CServerUtil.equals(typeParameter1, def.typeParameter1)
-                && CServerUtil.equals(typeParameter2, def.typeParameter2);
+                && AkServerUtil.equals(typeParameter1, def.typeParameter1)
+                && AkServerUtil.equals(typeParameter2, def.typeParameter2);
     }
 
     @Override
     public int hashCode() {
         return type.hashCode() ^ columnName.hashCode() ^ encoding.hashCode()
-                ^ column.getPosition() ^ CServerUtil.hashCode(typeParameter1)
-                ^ CServerUtil.hashCode(typeParameter2);
+                ^ column.getPosition() ^ AkServerUtil.hashCode(typeParameter1)
+                ^ AkServerUtil.hashCode(typeParameter2);
     }
 
     private FieldDef(Column column,

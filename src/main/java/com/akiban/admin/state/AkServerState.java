@@ -22,7 +22,7 @@ import java.util.Properties;
 import com.akiban.admin.Admin;
 import com.akiban.admin.AdminValue;
 
-public class ChunkserverState
+public class AkServerState
 {
     public int version()
     {
@@ -52,13 +52,13 @@ public class ChunkserverState
         return buffer.toString();
     }
 
-    public ChunkserverState(boolean up, boolean lead)
+    public AkServerState(boolean up, boolean lead)
     {
         this.up = up;
         this.lead = lead;
     }
 
-    public ChunkserverState(AdminValue adminValue) throws UnknownHostException
+    public AkServerState(AdminValue adminValue) throws UnknownHostException
     {
         this.version = adminValue.version();
         Properties properties = adminValue.properties();

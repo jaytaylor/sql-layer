@@ -162,7 +162,7 @@ public class RowDef implements TreeLink {
             for (int j = 0; j < count; j += 16) {
                 for (int k = 0; k < 16; k++) {
                     sb.append((k % 8) == 0 ? "   " : " ");
-                    CServerUtil.hex(sb, fieldCoordinates[i][j + k], 8);
+                    AkServerUtil.hex(sb, fieldCoordinates[i][j + k], 8);
                 }
                 sb.append("\n");
             }
@@ -352,13 +352,13 @@ public class RowDef implements TreeLink {
         sb.append("rowStart=" + rowData.getRowStart() + " rowEnd="
                 + rowData.getRowEnd() + " rowSize=" + rowData.getRowSize());
         for (int i = 0; i < fieldDefs.length; i++) {
-            sb.append(CServerUtil.NEW_LINE);
+            sb.append(AkServerUtil.NEW_LINE);
             sb.append(i + ": " + fieldDefs[i] + "  ");
             final long fieldLocation = fieldLocation(rowData, i);
             final int offset = (int) fieldLocation;
             final int width = (int) (fieldLocation >>> 32);
             sb.append(" offset=" + offset + " width=" + width + "==>");
-            sb.append(CServerUtil.hex(rowData.getBytes(), offset, width));
+            sb.append(AkServerUtil.hex(rowData.getBytes(), offset, width));
         }
         return sb.toString();
     }
@@ -565,7 +565,7 @@ public class RowDef implements TreeLink {
                 width = fieldDef.getMaxStorageSize();
             } else {
                 voffset += fieldDef.getMaxStorageSize();
-                width = CServerUtil.varWidth(voffset);
+                width = AkServerUtil.varWidth(voffset);
             }
             for (int i = 0; i < bit; i++) {
                 int from = fieldCoordinates[byteIndex][i];
@@ -657,8 +657,8 @@ public class RowDef implements TreeLink {
         final RowDef def = (RowDef) o;
         return this == def ||
                def.getRowDefId() == def.getRowDefId()
-                && CServerUtil.equals(table.getName(), def.table.getName())
-                && CServerUtil.equals(treeName, def.treeName)
+                && AkServerUtil.equals(table.getName(), def.table.getName())
+                && AkServerUtil.equals(treeName, def.treeName)
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexDefs, def.indexDefs)
                 && getOrdinal() == def.getOrdinal()
@@ -670,7 +670,7 @@ public class RowDef implements TreeLink {
     public int hashCode() {
         return getRowDefId()
                 ^ table.getName().hashCode()
-                ^ CServerUtil.hashCode(treeName)
+                ^ AkServerUtil.hashCode(treeName)
                 ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(parentJoinFields);
     }

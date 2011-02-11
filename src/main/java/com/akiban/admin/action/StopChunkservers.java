@@ -17,11 +17,11 @@ package com.akiban.admin.action;
 
 import java.io.IOException;
 
+import com.akiban.admin.config.AkServerNetworkConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.admin.Admin;
-import com.akiban.admin.config.ChunkserverNetworkConfig;
 import com.akiban.admin.config.ClusterConfig;
 import com.akiban.util.Command;
 
@@ -48,17 +48,17 @@ public abstract class StopChunkservers
         public void run() throws Command.Exception, IOException
         {
             ClusterConfig clusterConfig = Admin.only().clusterConfig();
-            for (ChunkserverNetworkConfig chunkserver : clusterConfig.chunkservers().values()) {
-                logger.info(String.format("Stopping %s", chunkserver));
+            for (AkServerNetworkConfig akServer : clusterConfig.chunkservers().values()) {
+                logger.info(String.format("Stopping %s", akServer));
                 Command command = Command.printOutput(System.out,
                                                       "ssh",
                                                       "root@localhost",
                                                       "service",
                                                       "chunkserverd",
                                                       "stop",
-                                                      Integer.toString(chunkserver.address().port()));
+                                                      Integer.toString(akServer.address().port()));
                 int status = command.run();
-                logger.info(String.format("Stopping %s, status: %s", chunkserver, status));
+                logger.info(String.format("Stopping %s, status: %s", akServer, status));
             }
         }
     }

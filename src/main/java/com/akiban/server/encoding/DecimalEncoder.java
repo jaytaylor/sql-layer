@@ -18,7 +18,7 @@ package com.akiban.server.encoding;
 import java.math.BigDecimal;
 
 import com.akiban.ais.model.Type;
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
@@ -287,7 +287,7 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             errSb.append(fieldDef.getTypeParameter1()).append(',').append(fieldDef.getTypeParameter2());
             errSb.append(")] 0x");
             final int bytesLen = (int) (locationAndOffset >>> 32);
-            CServerUtil.hex(AkibanAppender.of(errSb), rowData.getBytes(), location, bytesLen);
+            AkServerUtil.hex(AkibanAppender.of(errSb), rowData.getBytes(), location, bytesLen);
             errSb.append(": ").append( e.getMessage() );
             throw new EncodingException(errSb.toString(), e);
         }

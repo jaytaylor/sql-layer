@@ -18,7 +18,7 @@ package com.akiban.server.encoding;
 import java.nio.ByteBuffer;
 
 import com.akiban.ais.model.Type;
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
@@ -63,7 +63,7 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
                          AkibanAppender sb, final Quote quote) {
         final ByteBuffer myBuffer = toObject(fieldDef, rowData);
         sb.append("0x");
-        CServerUtil.hex(sb, myBuffer.array(), 0, myBuffer.limit());
+        AkServerUtil.hex(sb, myBuffer.array(), 0, myBuffer.limit());
     }
 
     @Override

@@ -137,11 +137,11 @@ public class TableStatistics {
                 if (!first) {
                     sb.append(",");
                 }
-                sb.append(CServerUtil.NEW_LINE);
+                sb.append(AkServerUtil.NEW_LINE);
                 sb.append("  ");
                 sb.append(sample);
             }
-            sb.append(CServerUtil.NEW_LINE);
+            sb.append(AkServerUtil.NEW_LINE);
             sb.append("]");
             return sb.toString();
         }

@@ -40,6 +40,8 @@ import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.AkServerAisTarget;
+import com.akiban.server.AkServerUtil;
 import com.persistit.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +56,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.AkServer;
-import com.akiban.server.CServerAisTarget;
-import com.akiban.server.CServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
@@ -641,7 +641,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         }
                         try {
                             final Store store = serviceManager.getStore();
-                            new Writer(new CServerAisTarget(store)).save(newAis);
+                            new Writer(new AkServerAisTarget(store)).save(newAis);
                         } catch (Exception e) {
                             LOG.warn("Exception while storing AIS tables", e);
                         }
@@ -661,10 +661,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader().getResourceAsStream(schema)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
-            sb.append(statement).append(CServerUtil.NEW_LINE);
+            sb.append(statement).append(AkServerUtil.NEW_LINE);
         }
         for (final TableDefinition tableStruct : aisSchema) {
-            sb.append(tableStruct.getDDL()).append(CServerUtil.NEW_LINE);
+            sb.append(tableStruct.getDDL()).append(AkServerUtil.NEW_LINE);
         }
         schemaDef = SchemaDef.parseSchema(sb.toString());
         ais = new SchemaDefToAis(schemaDef, true).getAis();
@@ -723,10 +723,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             if (withCreateSchemaStatements) {
                 sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
                 TableName.escape(AKIBAN_INFORMATION_SCHEMA, sb);
-                sb.append(SEMI_COLON).append(CServerUtil.NEW_LINE);
+                sb.append(SEMI_COLON).append(AkServerUtil.NEW_LINE);
             }
             for (final TableDefinition td : aisSchema) {
-                sb.append(td.getDDL()).append(CServerUtil.NEW_LINE);
+                sb.append(td.getDDL()).append(AkServerUtil.NEW_LINE);
                 idMap.put(new TableName(td.getSchemaName(), td.getTableName()),
                         td.getTableId());
             }
@@ -747,14 +747,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         if (withCreateSchemaStatements) {
                             sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
                             TableName.escape(schemaName, sb);
-                            sb.append(SEMI_COLON).append(CServerUtil.NEW_LINE);
+                            sb.append(SEMI_COLON).append(AkServerUtil.NEW_LINE);
                         }
                         while (ex.next()) {
                             final String tableName = ex.getKey().indexTo(-1)
                                     .decodeString();
                             final TableDefinition td = getTableDefinition(
                                     session, schemaName, tableName);
-                            sb.append(td.getDDL()).append(CServerUtil.NEW_LINE);
+                            sb.append(td.getDDL()).append(AkServerUtil.NEW_LINE);
                             int tableId = treeService.storeToAis(link,
                                     td.getTableId());
                             idMap.put(
@@ -774,7 +774,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     .createAllGroupTables(ais);
             for (final String statement : statements) {
                 if (!statement.contains(AKIBAN_INFORMATION_SCHEMA)) {
-                    sb.append(statement).append(CServerUtil.NEW_LINE);
+                    sb.append(statement).append(AkServerUtil.NEW_LINE);
                 }
             }
         }

@@ -19,16 +19,16 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.server.AkServerConstants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.server.CServerConstants;
 import com.akiban.server.AkServerTestCase;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 
-public class SimpleBlobTest extends AkServerTestCase implements CServerConstants {
+public class SimpleBlobTest extends AkServerTestCase implements AkServerConstants {
 
     private final static String SIMPLE_BLOB_TEST_DDL = "simple_blob_test.ddl";
 

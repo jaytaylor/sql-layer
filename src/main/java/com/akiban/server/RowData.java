@@ -146,7 +146,7 @@ public class RowData {
         } else {
             validateRow(offset);
             rowStart = offset;
-            rowEnd = offset + CServerUtil.getInt(bytes, O_LENGTH_A + offset);
+            rowEnd = offset + AkServerUtil.getInt(bytes, O_LENGTH_A + offset);
             return true;
         }
     }
@@ -156,24 +156,24 @@ public class RowData {
         if (offset < 0 || offset + MINIMUM_RECORD_LENGTH > bufferEnd) {
             throw new CorruptRowDataException("Invalid offset: " + offset);
         } else {
-            final int recordLength = CServerUtil.getInt(bytes, O_LENGTH_A
+            final int recordLength = AkServerUtil.getInt(bytes, O_LENGTH_A
                     + offset);
             if (recordLength < 0 || recordLength + offset > bufferEnd) {
                 throw new CorruptRowDataException("Invalid record length: "
                         + recordLength + " at offset: " + offset);
             }
-            if (CServerUtil.getChar(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
+            if (AkServerUtil.getChar(bytes, O_SIGNATURE_A + offset) != SIGNATURE_A) {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
             }
-            final int trailingLength = CServerUtil.getInt(bytes, offset
+            final int trailingLength = AkServerUtil.getInt(bytes, offset
                     + recordLength + O_LENGTH_B);
             if (trailingLength != recordLength) {
                 throw new CorruptRowDataException(
                         "Invalid trailing record length " + trailingLength
                                 + " in record at offset: " + offset);
             }
-            if (CServerUtil.getChar(bytes, offset + recordLength
+            if (AkServerUtil.getChar(bytes, offset + recordLength
                     + O_SIGNATURE_B) != SIGNATURE_B) {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
@@ -231,11 +231,11 @@ public class RowData {
     }
 
     public int getFieldCount() {
-        return CServerUtil.getChar(bytes, rowStart + O_FIELD_COUNT);
+        return AkServerUtil.getChar(bytes, rowStart + O_FIELD_COUNT);
     }
 
     public int getRowDefId() {
-        return CServerUtil.getInt(bytes, rowStart + O_ROW_DEF_ID);
+        return AkServerUtil.getInt(bytes, rowStart + O_ROW_DEF_ID);
     }
 
     public byte[] getBytes() {
@@ -270,7 +270,7 @@ public class RowData {
             throw new IllegalArgumentException(String.format("Bad location: {offset=%d width=%d start=%d end=%d}",
                     offset, width, rowStart, rowEnd));
         }
-        return CServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
+        return AkServerUtil.getUnsignedIntegerByWidth(bytes, offset, width);
     }
 
     public String getStringValue(final int offset, final int width,
@@ -282,7 +282,7 @@ public class RowData {
             throw new IllegalArgumentException("Bad location: " + offset + ":"
                     + width);
         }
-        return CServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
+        return AkServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
     public int setupNullMap(BitSet nullMap, int nullMapOffset,
@@ -310,9 +310,9 @@ public class RowData {
         final int fieldCount = rowDef.getFieldCount();
         int offset = rowStart;
 
-        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        AkServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+        AkServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
 
         offset = setupNullMap(nullMap, nullMapOffset, offset, fieldCount);
         // If the row is a projection, then the field array list is less than
@@ -332,11 +332,11 @@ public class RowData {
             }
         }
 
-        CServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        AkServerUtil.putChar(bytes, offset, SIGNATURE_B);
         offset += 6;
         final int length = offset - rowStart;
-        CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
-        CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
+        AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
+        AkServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
         rowEnd = offset;
     }
 
@@ -353,9 +353,9 @@ public class RowData {
             throw new IllegalArgumentException("Too many values.");
         }
         int offset = rowStart;
-        CServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
-        CServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
-        CServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
+        AkServerUtil.putChar(bytes, offset + O_SIGNATURE_A, SIGNATURE_A);
+        AkServerUtil.putInt(bytes, offset + O_ROW_DEF_ID, rowDef.getRowDefId());
+        AkServerUtil.putChar(bytes, offset + O_FIELD_COUNT, fieldCount);
         offset = offset + O_NULL_MAP;
         for (int index = 0; index < fieldCount; index += 8) {
             int b = 0;
@@ -390,18 +390,18 @@ public class RowData {
                     } catch (Exception e) {
                         throw EncodingException.dueTo(e);
                     }
-                    final int width = CServerUtil.varWidth(vmax);
+                    final int width = AkServerUtil.varWidth(vmax);
                     switch (width) {
                     case 0:
                         break;
                     case 1:
-                        CServerUtil.putByte(bytes, offset, (byte) vlength);
+                        AkServerUtil.putByte(bytes, offset, (byte) vlength);
                         break;
                     case 2:
-                        CServerUtil.putChar(bytes, offset, (char) vlength);
+                        AkServerUtil.putChar(bytes, offset, (char) vlength);
                         break;
                     case 3:
-                        CServerUtil.putMediumInt(bytes, offset, (int) vlength);
+                        AkServerUtil.putMediumInt(bytes, offset, (int) vlength);
                         break;
                     }
                     offset += width;
@@ -420,11 +420,11 @@ public class RowData {
                 }
             }
         }
-        CServerUtil.putChar(bytes, offset, SIGNATURE_B);
+        AkServerUtil.putChar(bytes, offset, SIGNATURE_B);
         offset += 6;
         final int length = offset - rowStart;
-        CServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
-        CServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
+        AkServerUtil.putInt(bytes, rowStart + O_LENGTH_A, length);
+        AkServerUtil.putInt(bytes, offset + O_LENGTH_B, length);
         rowEnd = offset;
     }
 
@@ -432,7 +432,7 @@ public class RowData {
     {
         // Offset is in low 32 bits of fieldLocation return value
         int offset = (int) fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
-        CServerUtil.putLong(bytes, offset, rowId);
+        AkServerUtil.putLong(bytes, offset, rowId);
     }
 
     /**
@@ -469,7 +469,7 @@ public class RowData {
                 sb.append("RowData?(rowDefId=");
                 sb.append(getRowDefId());
                 sb.append(": ");
-                CServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
+                AkServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
             } else {
                 sb.append(rowDef.getTableName());
                 for (int i = 0; i < getFieldCount(); i++) {
@@ -489,7 +489,7 @@ public class RowData {
         } catch (Exception e) {
             int size = Math.min(getRowSize(), 64);
             if (size > 0 && rowStart >= 0) {
-                sb.append(CServerUtil.dump(bytes, rowStart, size));
+                sb.append(AkServerUtil.dump(bytes, rowStart, size));
             }
             return sb.toString();
         }

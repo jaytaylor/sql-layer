@@ -22,7 +22,7 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
   
   
-public class CServerJmxManage {
+public class AkServerJmxManage {
   
 
     public static int jmxport;

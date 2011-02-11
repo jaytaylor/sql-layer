@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.AkServerUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
 import com.akiban.server.AkServerTestCase;
-import com.akiban.server.CServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.service.config.Property;
 import com.akiban.message.ErrorCode;
@@ -382,7 +382,7 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
     private void assertDDLS(String... statements) throws Exception{
         StringBuilder sb = new StringBuilder(AIS_CREATE_STATEMENTS);
         for (final String s : statements) {
-            sb.append(s).append(";").append(CServerUtil.NEW_LINE);
+            sb.append(s).append(";").append(AkServerUtil.NEW_LINE);
         }
         final String expected = sb.toString();
         final String actual = manager.schemaString(session, false);
@@ -392,14 +392,14 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
     private static String readAisSchema() {
         final StringBuilder sb = new StringBuilder();
         sb.append("create schema if not exists `akiban_information_schema`;");
-            sb.append(CServerUtil.NEW_LINE);
+            sb.append(AkServerUtil.NEW_LINE);
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader()
                         .getResourceAsStream(PersistitStoreSchemaManager.AIS_DDL_NAME)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
             final String canonical = DDLSource.canonicalStatement(statement);
             sb.append(canonical);
-            sb.append(CServerUtil.NEW_LINE);
+            sb.append(AkServerUtil.NEW_LINE);
         }
         return sb.toString();
     }

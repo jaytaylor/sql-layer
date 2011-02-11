@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.akiban.server.CServerUtil;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.ConfigurationServiceImpl;
 import com.akiban.server.service.config.Property;
@@ -179,7 +179,7 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
 
         @Override
         protected void unloadProperties() throws IOException {
-            CServerUtil.cleanUpDirectory(tmpDir);
+            AkServerUtil.cleanUpDirectory(tmpDir);
         }
 
         @Override
