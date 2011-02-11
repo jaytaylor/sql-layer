@@ -48,12 +48,14 @@ import com.akiban.cserver.api.dml.scan.CursorState;
 import com.akiban.cserver.api.dml.scan.LegacyOutputConverter;
 import com.akiban.cserver.api.dml.scan.LegacyOutputRouter;
 import com.akiban.cserver.api.dml.scan.LegacyRowOutput;
+import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NiceRow;
 import com.akiban.cserver.api.dml.scan.RowOutput;
 import com.akiban.cserver.api.dml.scan.RowOutputException;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
 import com.akiban.cserver.api.dml.scan.ScanRequest;
+import com.akiban.cserver.api.dml.scan.WrappingRowOutput;
 import com.akiban.cserver.encoding.EncodingException;
 import com.akiban.cserver.service.session.Session;
 import com.akiban.cserver.store.RowCollector;
@@ -564,21 +566,27 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         }
 
         // Store.truncate() gets rid of the entire group, so roll our own by doing a table scan
-        ScanRequest all = new ScanAllRequest(tableId, keyColumns);
+        LegacyOutputRouter output = new LegacyOutputRouter(65535, true);
+        output.addHandler(new LegacyOutputRouter.Handler() {
+            private RowData rowData = new RowData();
+            private LegacyRowWrapper rowWrapper = new LegacyRowWrapper();
 
-        RowOutput output = new RowOutput() {
-            @Override
-            public void output(NewRow row) throws RowOutputException {
+            public void handleRow(byte[] bytes, int offset, int length) throws RowOutputException {
+                rowData.reset(bytes, offset, length);
+                rowData.prepareRow(offset);
+                rowWrapper.setRowData(rowData);
                 try {
-                    deleteRow(session, row);
+                    deleteRow(session, rowWrapper);
                 } catch (InvalidOperationException e) {
                     throw new RowOutputException(e);
                 }
             }
-        };
+        });
+
 
         final CursorId cursorId;
         try {
+            ScanRequest all = new ScanAllRequest(tableId, keyColumns);
             cursorId = openCursor(session, all);
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
