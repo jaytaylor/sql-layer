@@ -17,7 +17,10 @@ package com.akiban.cserver.itests.truncate;
 
 import com.akiban.ais.model.Table;
 import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.RowData;
+import com.akiban.cserver.RowDef;
 import com.akiban.cserver.api.dml.ForeignKeyConstraintDMLException;
+import com.akiban.cserver.api.dml.scan.LegacyRowWrapper;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.ScanAllRequest;
 import com.akiban.cserver.api.dml.scan.ScanFlag;
@@ -188,10 +191,33 @@ public final class TruncateTableIT extends ApiTestBase {
     }
 
     @Test
-    public void bug717210() throws InvalidOperationException {
+    public void bug717210_createRowInternal() throws InvalidOperationException {
         int tableId = createTable("test", "t", "c1 BLOB(100)");
 
         writeRows(createNewRow(tableId, "123", -1L));
+        expectRowCount(tableId, 1);
+        expectFullRows(tableId, createNewRow(tableId, "123"));
+
+        dml().truncateTable(session, tableId);
+    }
+
+    @Test
+    public void bug717210_createRowRaw() throws InvalidOperationException {
+        final int tableId = createTable("test", "t", "c1 BLOB(100)");
+        
+        final RowDef rowDef = rowDefCache().getRowDef("test.t");
+        final byte id = (byte)rowDef.getRowDefId();
+        assertEquals(id, rowDef.getRowDefId());
+
+        // Raw row data taken rom dumping a writeRowRequest. Ugly but only way to reproduce the bug currently.
+        // Fix/remove need by investigating the TextEncoder with TEXT and BLOB types.
+        final byte[] rawData = new byte[]{34, 0, 0, 0, 65, 66, id, 0,  1,  0,  0,  0,  0,  4,  0, 0, 0,
+                                           0, 0, 0, 0,  0,  0,  0, 3, 49, 50, 51, 66, 65, 34,  0, 0, 0};
+        assertEquals(34, rawData.length);
+        final LegacyRowWrapper newRow = new LegacyRowWrapper(new RowData(rawData));
+        newRow.toRowData().prepareRow(0);
+
+        writeRows(newRow);
         expectRowCount(tableId, 1);
         expectFullRows(tableId, createNewRow(tableId, "123"));
 
