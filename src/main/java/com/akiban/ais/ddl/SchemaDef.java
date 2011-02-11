@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 
-import com.akiban.ais.model.Index;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -110,10 +109,21 @@ public class SchemaDef {
         currentColumn = null;
     }
 
-    void addColumn(final String columnName, final String typeName,
-            final String param1, final String param2) {
-        final int uposition = currentColumn == null ? 0
-                : currentColumn.uposition + 1;
+    void addColumn(final String columnName, String typeName, String param1, String param2) {
+        // MySQL: BIT(0) => BIT(1)
+        if(typeName.equals("BIT") && param1 != null && param1.equals("0")) {
+            param1 = "1";
+        }
+
+        // SQL: FLOAT(P) => FLOAT for P in [0,24], DOUBLE for P in [25,53]
+        if(typeName.equals("FLOAT") && param1 != null && param2 == null) {
+            if(Long.parseLong(param1) > 24L) {
+                typeName = "DOUBLE";
+            }
+            param1 = param2 = null;
+        }
+
+        final int uposition = currentColumn == null ? 0 : currentColumn.uposition + 1;
         currentColumn = new ColumnDef(columnName);
         currentColumn.typeName = typeName;
         currentColumn.typeParam1 = param1;

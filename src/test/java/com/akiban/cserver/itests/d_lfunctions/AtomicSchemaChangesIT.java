@@ -83,24 +83,6 @@ public class AtomicSchemaChangesIT extends ApiTestBase
         checkInitialSchema();
     }
 
-    @Test
-    public void tryFailAISCreation_2() throws Exception
-    {
-        createInitialSchema();
-        checkInitialSchema();
-        try {
-            createTable("s", "fail_ais_creation_2",
-                        "k int key",
-                        "x char");
-            fail();
-        } catch (Throwable e) {
-            // expected
-        }
-        checkInitialSchema();
-    }
-
-    // TODO: Try BIT column
-
     private void createInitialSchema() throws Exception
     {
         createTable("s", "parent",
