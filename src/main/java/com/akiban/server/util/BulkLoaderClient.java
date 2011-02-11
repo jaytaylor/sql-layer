@@ -56,7 +56,7 @@ public class BulkLoaderClient
     private void run() throws Exception
     {
         startNetwork();
-        connection = new AkibanConnectionImpl(cserverHost, cserverPort);
+        connection = new AkibanConnectionImpl(akserverHost, akserverPort);
         logger.info(String.format("Got connection: %s", connection));
         int exitCode = 0;
         try {
@@ -116,7 +116,7 @@ public class BulkLoaderClient
             logger.error("Caught exception", e);
             throw e;
         } finally {
-            logger.info("Closing cserver connection");
+            logger.info("Closing akserver connection");
             connection.close();
             logger.info(String.format("Exit code: %s", exitCode));
             System.exit(exitCode);
@@ -188,14 +188,14 @@ public class BulkLoaderClient
                     String target = targetAndSource.substring(0, colon);
                     String source = targetAndSource.substring(colon + 1);
                     sourceSchemas.put(target, source);
-                } else if (flag.equals("--cserver")) {
+                } else if (flag.equals("--akserver")) {
                     String hostAndPort = args[a++];
                     int colon = hostAndPort.indexOf(':');
                     if (colon < 0) {
                         usage(null);
                     } else {
-                        cserverHost = hostAndPort.substring(0, colon);
-                        cserverPort = Integer.parseInt(hostAndPort
+                        akserverHost = hostAndPort.substring(0, colon);
+                        akserverPort = Integer.parseInt(hostAndPort
                                 .substring(colon + 1));
                     }
                 } else if (flag.equals("--group")) {
@@ -207,13 +207,13 @@ public class BulkLoaderClient
         } catch (Exception e) {
             usage(e);
         }
-        if (cserverHost == null) {
+        if (akserverHost == null) {
             usage(null);
         }
         if (!monitor && (dbHost == null || dbUser == null || groups.isEmpty())) {
             usage(null);
         }
-        logger.info(String.format("cserver: %s:%s", cserverHost, cserverPort));
+        logger.info(String.format("akserver: %s:%s", akserverHost, akserverPort));
         logger.info(String.format("monitor: %s", monitor));
         if (!monitor) {
             logger.info(String.format("resume: %s", resume));
@@ -265,8 +265,8 @@ public class BulkLoaderClient
     }
 
     private static final String[] USAGE = {
-            "aload [--resume] [--nocleanup] --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ --cserver CSERVER_HOST:CSERVER_PORT [--temp TEMP_SCHEMA] (--source TARGET_SCHEMA:SOURCE_SCHEMA)*",
-            "aload [--monitor] --cserver CSERVER_HOST:CSERVER_PORT",
+            "aload [--resume] [--nocleanup] --mysql MYSQL_HOST[:MYSQL_PORT] --user USER [--password PASSWORD] (--group GROUP)+ --akserver AKSERVER_HOST:AKSERVER_PORT [--temp TEMP_SCHEMA] (--source TARGET_SCHEMA:SOURCE_SCHEMA)*",
+            "aload [--monitor] --akserver AKSERVER_HOST:AKSERVER_PORT",
             "",
             "Copies data from a MySQL database into a chunkserver. Data is transformed in the MySQL database, before it ",
             "is written to the chunkserver. ",
@@ -275,7 +275,7 @@ public class BulkLoaderClient
             "PASSWORD if provided. Only the named GROUPs will be copied. At least one GROUP must be specified, and ",
             "multiple GROUPs may be specified, (repeating the --group flag for each).",
             "",
-            "The chunkserver being loaded is located at CSERVER_HOST:CSERVER_PORT.",
+            "The chunkserver being loaded is located at AKSERVER_HOST:AKSERVER_PORT.",
             "The database being loaded must already have a schema installed. Loading will add data to presumably empty tables.",
             "By default, the source and target schema names are assumed to match. If they don't, then source schema names",
             "can be specified using one or more --source specifications. For example --source abc:def will copy data from",
@@ -301,8 +301,8 @@ public class BulkLoaderClient
     private static final int TIME_BETWEEN_REQUESTS_MSEC = 10 * 1000; // 10 sec
 
     private AkibanConnection connection;
-    private String cserverHost;
-    private int cserverPort;
+    private String akserverHost;
+    private int akserverPort;
     private boolean monitor = false;
     private boolean resume = false;
     private boolean cleanup = false;

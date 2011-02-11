@@ -74,7 +74,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     }
 
     @Override
-    public AkServer getCServer() {
+    public AkServer getAkSserver() {
         return getService(AkServer.class);
     }
 

@@ -169,7 +169,7 @@ create table types(
     max_size_bytes      bigint not null
 ) engine=akibandb;
 
--- Index Histogram data computed by CServer when requested by
+-- Index Histogram data computed by AkSserver when requested by
 -- ANALYZE TABLE. Column key_string is for human consumption
 -- only.  Column index_row_data contains a RowData-formatted
 -- byte array to be sent as part of the histogram.

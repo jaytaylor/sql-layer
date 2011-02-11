@@ -52,11 +52,11 @@ public class AkServerConfig
         this.properties = adminValue.properties();
     }
 
-    private static final String PROPERTY_DATAPATH = "cserver.datapath";
-    private static final String PROPERTY_VERBOSE = "cserver.verbose";
-    private static final String PROPERTY_MYSQL_INSTALL_DIR = "cserver.mysql_install_dir";
-    private static final String PROPERTY_JAR_FILE = "cserver.jar_file";
-    private static final String PROPERTY_MAX_HEAP_MB = "cserver.max_heap_mb";
+    private static final String PROPERTY_DATAPATH = "akserver.datapath";
+    private static final String PROPERTY_VERBOSE = "akserver.verbose";
+    private static final String PROPERTY_MYSQL_INSTALL_DIR = "akserver.mysql_install_dir";
+    private static final String PROPERTY_JAR_FILE = "akserver.jar_file";
+    private static final String PROPERTY_MAX_HEAP_MB = "akserver.max_heap_mb";
 
     private static final String DEFAULT_MYSQL_INSTALL_DIR = "/usr/local/vanilla";
     private static final String DEFAULT_JAR_FILE = "akiban-server-1.0-SNAPSHOT-jar-with-dependencies.jar";

@@ -52,10 +52,10 @@ public class MultiVolumeStoreTest extends AkServerTestCase {
         // Set up multi-volume treespace policy so we can be sure schema is
         // properly distributed.
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("cserver", "treespace.1",
+        properties.add(property("akserver", "treespace.1",
                 "test2/_akiban_customer:${datapath}/${schema}_customer.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "treespace.2",
+        properties.add(property("akserver", "treespace.2",
                 "test*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);

@@ -72,13 +72,13 @@ public class TreeServiceImplTest extends AkServerTestCase {
     @Test
     public void buildValidSchemaMap() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("cserver", "treespace.a",
+        properties.add(property("akserver", "treespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "treespace.b",
+        properties.add(property("akserver", "treespace.b",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "treespace.c",
+        properties.add(property("akserver", "treespace.c",
                 "test*/_schema_:${datapath}/${schema}${tree}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);
@@ -106,8 +106,8 @@ public class TreeServiceImplTest extends AkServerTestCase {
     @Test
     public void buildInvalidSchemaMaps() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("cserver", "treespace.a", "drupal*"));
-        properties.add(property("cserver", "treespace.b", "liveops*"));
+        properties.add(property("akserver", "treespace.a", "drupal*"));
+        properties.add(property("akserver", "treespace.b", "liveops*"));
         baseSetUp(properties);
         try {
             final TreeServiceImpl treeService = (TreeServiceImpl) ServiceManagerImpl
@@ -123,10 +123,10 @@ public class TreeServiceImplTest extends AkServerTestCase {
     @Test
     public void testCreateVolume() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("cserver", "treespace.a",
+        properties.add(property("akserver", "treespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("cserver", "treespace.b",
+        properties.add(property("akserver", "treespace.b",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);

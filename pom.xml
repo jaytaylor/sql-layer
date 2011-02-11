@@ -186,7 +186,7 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <portNames>
-                                <portName>cserver.port</portName>
+                                <portName>akserver.port</portName>
                                 <portName>debug.port</portName>
                             </portNames>
                         </configuration>
@@ -265,7 +265,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.6</version>
             <configuration>
-                <argLine>-Xmx512m -Xms128m -Dcserver.port=${cserver.port} ${akiban.test.extraJvmArgs}</argLine>
+                <argLine>-Xmx512m -Xms128m -Dakserver.port=${akserver.port} ${akiban.test.extraJvmArgs}</argLine>
                 <includes>
                     <include>**/*Test.java</include>
                     <include>**/*Test?.java</include>

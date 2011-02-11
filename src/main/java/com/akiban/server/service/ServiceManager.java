@@ -32,7 +32,7 @@ public interface ServiceManager extends ServiceManagerMXBean {
 
     ConfigurationService getConfigurationService();
     
-    AkServer getCServer();
+    AkServer getAkSserver();
 
     Store getStore();
     

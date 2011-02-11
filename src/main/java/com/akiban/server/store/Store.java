@@ -71,7 +71,7 @@ public interface Store extends Service<Store> {
 
     /**
      * Version of newRowCollector used in tests and a couple of sites local to
-     * cserver. Eliminates having to serialize a ScanRowsRequestt to convey
+     * akserver. Eliminates having to serialize a ScanRowsRequestt to convey
      * these parameters.
      * 
      * @param rowDefId

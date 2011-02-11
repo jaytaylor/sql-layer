@@ -53,7 +53,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     private static final Logger LOG = LoggerFactory.getLogger(TreeServiceImpl.class
             .getName());
 
-    private static final String SERVER_MODULE_NAME = "cserver";
+    private static final String SERVER_MODULE_NAME = "akserver";
 
     private static final String PERSISTIT_MODULE_NAME = "persistit";
 
@@ -127,11 +127,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         // This section modifies the properties gotten from the
         // default configuration plus chunkserver.properties. It
         //
-        // (a) copies cserver.datapath to datapath
+        // (a) copies akserver.datapath to datapath
         // (b) sets the buffersize property if null
         // (c) sets the buffercount property if null.
         //
-        // Copies the cserver.datapath property to the Persistit properties set.
+        // Copies the akserver.datapath property to the Persistit properties set.
         // This allows Persistit to perform substitution of ${datapath} with
         // the server-specified home directory.
         //

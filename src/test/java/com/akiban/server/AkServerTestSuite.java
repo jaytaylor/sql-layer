@@ -23,10 +23,10 @@ package com.akiban.server;
  * the test ends.
  * 
  * 
- * This class differs from CServerTestCase: this base
+ * This class differs from AkSserverTestCase: this base
  * class is intended for tests that start the services, load
  * a fairly large amount of data, and then perform numerous
- * tests on the same environment. CServerTestCase is 
+ * tests on the same environment. AkSserverTestCase is
  * intended for tests that start and stop all the
  * services once for each test.  
  */

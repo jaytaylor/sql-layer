@@ -44,7 +44,7 @@ public class AkServerJmxManage {
 	    if (url==null)   url = new JMXServiceURL(jmxurl);
 	    if (jmxc==null)  jmxc = JMXConnectorFactory.connect(url, null);
 	    if (mbsc==null)  mbsc = jmxc.getMBeanServerConnection();
-    	    if (mbean==null) mbean = new ObjectName("com.akiban:type=CSERVER");
+    	    if (mbean==null) mbean = new ObjectName("com.akiban:type=AKSERVER");
 
     }
  

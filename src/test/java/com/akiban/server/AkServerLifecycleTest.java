@@ -39,18 +39,18 @@ public class AkServerLifecycleTest {
     @Test
     public void testStartupShutdown() throws Exception {
         for (int i = 0; i < N; i++) {
-            AkServer cserver = startChunkServer();
-            stopChunkServer(cserver);
+            AkServer akserver = startChunkServer();
+            stopChunkServer(akserver);
         }
     }
 
     @Test
     public void testShutdownWithClosedConnections() throws Exception {
         for (int i = 0; i < N; i++) {
-            AkServer cserver = startChunkServer();
+            AkServer akserver = startChunkServer();
             try {
                 AkibanConnection connection = new AkibanConnectionImpl(
-                        LOCALHOST, cserver.port());
+                        LOCALHOST, akserver.port());
                 for (int r = 0; r < N_REQUESTS; r++) {
                     TestRequest request = new TestRequest(r, 10, 10);
                     TestResponse response = (TestResponse) connection
@@ -59,7 +59,7 @@ public class AkServerLifecycleTest {
                 }
                 connection.close();
             } finally {
-                stopChunkServer(cserver);
+                stopChunkServer(akserver);
             }
         }
     }
@@ -67,10 +67,10 @@ public class AkServerLifecycleTest {
     @Test
     public void testShutdownWithOpenConnections() throws Exception {
         for (int i = 0; i < N; i++) {
-            AkServer cserver = startChunkServer();
+            AkServer akserver = startChunkServer();
             try {
                 AkibanConnection connection = new AkibanConnectionImpl(
-                        LOCALHOST, cserver.port());
+                        LOCALHOST, akserver.port());
                 for (int r = 0; r < N_REQUESTS; r++) {
                     TestRequest request = new TestRequest(r, 10, 10);
                     TestResponse response = (TestResponse) connection
@@ -78,7 +78,7 @@ public class AkServerLifecycleTest {
                     Assert.assertEquals(r, response.id());
                 }
             } finally {
-                stopChunkServer(cserver);
+                stopChunkServer(akserver);
             }
         }
     }
@@ -98,17 +98,17 @@ public class AkServerLifecycleTest {
         } finally {
             System.setProperties(originalProperties);
         }
-        AkServer cserver = serviceManager.getCServer();
-        Assert.assertTrue(listeningOnPort(cserver.port()));
+        AkServer akserver = serviceManager.getAkSserver();
+        Assert.assertTrue(listeningOnPort(akserver.port()));
         MessageRegistry.reset();
         initializeMessageRegistry();
-        return cserver;
+        return akserver;
     }
 
-    private void stopChunkServer(AkServer cserver) throws Exception {
+    private void stopChunkServer(AkServer akserver) throws Exception {
         serviceManager.stopServices();
         serviceManager = null;
-        Assert.assertTrue(!listeningOnPort(cserver.port()));
+        Assert.assertTrue(!listeningOnPort(akserver.port()));
         MessageRegistry.reset();
     }
 

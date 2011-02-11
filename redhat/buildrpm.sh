@@ -36,7 +36,7 @@ rpm_env()
 # prepare source tarballs for rpm build to consume
 tarball()
 {
-	local name=cserver
+	local name=akserver
 	local randir=/tmp/${RANDOM}
 	local cdir=${randir}/${name}
 	rm -rf ${cdir} rpmbuild ../target ${name}.tar.gz

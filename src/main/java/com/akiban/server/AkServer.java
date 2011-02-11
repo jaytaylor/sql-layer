@@ -41,21 +41,21 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
 
     /**
-     * Config property name and default for the port on which the CServer will
+     * Config property name and default for the port on which the AkSserver will
      * listen for requests.
      *
-     * /** Port on which the CServer will listen for requests.
+     * /** Port on which the AkSserver will listen for requests.
      */
-    private static final int CSERVER_PORT = Integer.parseInt(System.getProperty(
-            "cserver.port", DEFAULT_CSERVER_PORT_STRING));
+    private static final int AKSERVER_PORT = Integer.parseInt(System.getProperty(
+            "akserver.port", DEFAULT_AKSERVER_PORT_STRING));
 
     /**
-     * Interface on which this cserver instance will listen. TODO - allow
+     * Interface on which this akserver instance will listen. TODO - allow
      * multiple NICs
      */
 
-    private static final String CSERVER_HOST = System.getProperty(
-            "cserver.host", DEFAULT_CSERVER_HOST_STRING);
+    private static final String AKSERVER_HOST = System.getProperty(
+            "akserver.host", DEFAULT_AKSERVER_HOST_STRING);
 
     private static final boolean TCP_NO_DELAY =
         Boolean.parseBoolean(System.getProperty("com.akiban.server.tcpNoDelay", "true"));
@@ -64,10 +64,10 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
      * Name of this chunkserver. Must match one of the entries in
      * /config/cluster.properties (managed by Admin).
      */
-    private static final String CSERVER_NAME = System.getProperty("cserver.name");
+    private static final String AKSERVER_NAME = System.getProperty("akserver.name");
 
     
-    private final int cserverPort = CSERVER_PORT; // TODO - get from
+    private final int akserverPort = AKSERVER_PORT; // TODO - get from
                                                   // ConfigurationService
 
     private volatile Thread _shutdownHook;
@@ -75,16 +75,16 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
     private final JmxObjectInfo jmxObjectInfo;
 
     public AkServer() {
-        this.jmxObjectInfo = new JmxObjectInfo("CSERVER", new ManageMXBeanImpl(
+        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(
                 this), ManageMXBean.class);
     }
 
     @Override
     public void start() throws Exception {
         LOG.warn(String.format("Starting chunkserver %s on port %s",
-                CSERVER_NAME, CSERVER_PORT));
+                AKSERVER_NAME, AKSERVER_PORT));
         Tap.registerMXBean();
-        LOG.warn(String.format("Started chunkserver %s on port %s", CSERVER_NAME, CSERVER_PORT));
+        LOG.warn(String.format("Started chunkserver %s on port %s", AKSERVER_NAME, AKSERVER_PORT));
         _shutdownHook = new Thread(new Runnable() {
             public void run() {
                 try {
@@ -110,11 +110,11 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
     }
 
     public String host() {
-        return CSERVER_HOST;
+        return AKSERVER_HOST;
     }
 
     public int port() {
-        return cserverPort;
+        return akserverPort;
     }
 
     public ServiceManager getServiceManager()

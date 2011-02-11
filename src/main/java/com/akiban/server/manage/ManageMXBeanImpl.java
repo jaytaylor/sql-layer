@@ -25,13 +25,13 @@ import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean {
-    private final AkServer cserver;
+    private final AkServer akserver;
 
     private Class<?> customClass;
     private AtomicReference<CustomQuery> runningQuery = new AtomicReference<CustomQuery>();
 
-    public ManageMXBeanImpl(final AkServer cserver) {
-        this.cserver = cserver;
+    public ManageMXBeanImpl(final AkServer akserver) {
+        this.akserver = akserver;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public int getNetworkPort() {
-        return cserver.port();
+        return akserver.port();
     }
 
     @Override
@@ -68,22 +68,22 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public boolean isVerboseLoggingEnabled() {
-        return cserver.getServiceManager().getStore().isVerbose();
+        return akserver.getServiceManager().getStore().isVerbose();
     }
 
     @Override
     public void disableVerboseLogging() {
-        cserver.getServiceManager().getStore().setVerbose(false);
+        akserver.getServiceManager().getStore().setVerbose(false);
     }
 
     @Override
     public void enableVerboseLogging() {
-        cserver.getServiceManager().getStore().setVerbose(true);
+        akserver.getServiceManager().getStore().setVerbose(true);
     }
 
     @Override
     public boolean isDeferIndexesEnabled() {
-        return cserver.getServiceManager().getStore().isDeferIndexes();
+        return akserver.getServiceManager().getStore().isDeferIndexes();
     }
 
     @Override
@@ -139,7 +139,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
         if (runningQuery.get() == null) {
             try {
                 final CustomQuery cq = (CustomQuery) (customClass.newInstance());
-                cq.setServiceManager(cserver.getServiceManager());
+                cq.setServiceManager(akserver.getServiceManager());
                 cq.setParameters(params.split(" "));
                 runningQuery.set(cq);
                 new Thread(new Runnable() {
@@ -190,7 +190,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     private Store getStore() {
-        return cserver.getServiceManager().getStore();
+        return akserver.getServiceManager().getStore();
     }
 
     @Override

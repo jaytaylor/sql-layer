@@ -37,7 +37,7 @@ import javax.management.ObjectName;
 
 /**
  * Extension of DefaultServiceFactory that creates mock services for unit tests.
- * Specifically, this class is used by tests that need to run the CServer and
+ * Specifically, this class is used by tests that need to run the AkSserver and
  * PersistitStore code methods, but which do not need the JmxRegistryService and
  * NetworkService implementations to be functional.
  * 
@@ -45,7 +45,7 @@ import javax.management.ObjectName;
  * 
  */
 public class UnitTestServiceFactory extends DefaultServiceFactory {
-    private final static File TESTDIR = new File("/tmp/cserver-junit");
+    private final static File TESTDIR = new File("/tmp/akserver-junit");
     private final MockJmxRegistryService jmxRegistryService = new MockJmxRegistryService();
     private final TestConfigService configService = new TestConfigService();
     private final MockNetworkService networkService = new MockNetworkService(
@@ -164,10 +164,10 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
             Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>(
                     super.loadProperties());
             tmpDir = makeTempDatapathDirectory();
-            Property.Key datapathKey = new Property.Key("cserver", "datapath");
+            Property.Key datapathKey = new Property.Key("akserver", "datapath");
             ret.put(datapathKey,
                     new Property(datapathKey, tmpDir.getAbsolutePath()));
-            Property.Key fixedKey = new Property.Key("cserver", "fixed");
+            Property.Key fixedKey = new Property.Key("akserver", "fixed");
             ret.put(fixedKey, new Property(fixedKey, "true"));
             if (extraProperties != null) {
                 for (final Property property : extraProperties) {
@@ -200,7 +200,7 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
                 TESTDIR.deleteOnExit();
             }
 
-            File tmpFile = File.createTempFile("cserver-unitdata", "", TESTDIR);
+            File tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
             if (!tmpFile.delete()) {
                 throw new IOException("Couldn't delete file: " + tmpFile);
             }

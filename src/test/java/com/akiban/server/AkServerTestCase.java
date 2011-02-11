@@ -22,9 +22,9 @@ package com.akiban.server;
  * to use a temporary directory that will be cleaned up when
  * the test ends.
  * 
- * This class differs from CServerTestSuite: this base
+ * This class differs from AkSserverTestSuite: this base
  * class is intended for tests that start and stop all the
- * services once for each test.  CServerTestSuite
+ * services once for each test.  AkSserverTestSuite
  * is intended for tests that start the services, load
  * a fairly large amount of data, and then perform numerous
  * tests on the same environment.

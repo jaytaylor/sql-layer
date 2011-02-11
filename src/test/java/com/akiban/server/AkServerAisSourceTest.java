@@ -47,7 +47,7 @@ public class AkServerAisSourceTest extends AkServerTestCase implements AkServerC
     }
 
     @Test
-    public void testCServerAis() throws Exception {
+    public void testAkSserverAis() throws Exception {
         // Store AIS data in Chunk Server
         final Target target = new AkServerAisTarget(store);
         new Writer(target).save(ais);
