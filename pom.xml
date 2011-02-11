@@ -223,7 +223,7 @@
                     <archive>
                         <manifest>
                             <!--mainClass>com.akiban.ais.MySQLToNetwork</mainClass-->
-                        <mainClass>com.akiban.server.CServer</mainClass>
+                        <mainClass>com.akiban.server.AkServer</mainClass>
                     </manifest>
                 </archive>
             </configuration>
