@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.d_l.DStarLServiceImpl;
 import com.akiban.server.service.jmx.JmxManageable;
@@ -74,8 +74,8 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
     }
 
     @Override
-    public CServer getCServer() {
-        return getService(CServer.class);
+    public AkServer getCServer() {
+        return getService(AkServer.class);
     }
 
     @Override

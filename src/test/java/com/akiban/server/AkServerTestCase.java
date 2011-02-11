@@ -48,7 +48,7 @@ import com.akiban.server.store.Store;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
 
-public abstract class CServerTestCase {
+public abstract class AkServerTestCase {
 
     protected Store store;
     protected SchemaManager schemaManager;

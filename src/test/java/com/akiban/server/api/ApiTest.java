@@ -22,12 +22,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.server.CServerTestCase;
+import com.akiban.server.AkServerTestCase;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
-public final class ApiTest extends CServerTestCase {
+public final class ApiTest extends AkServerTestCase {
 
     private class ApiPair {
         final DMLFunctionsImpl dml;

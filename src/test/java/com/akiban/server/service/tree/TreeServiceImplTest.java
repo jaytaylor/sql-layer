@@ -24,9 +24,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedMap;
 
+import com.akiban.server.AkServerTestCase;
 import org.junit.Test;
 
-import com.akiban.server.CServerTestCase;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.session.Session;
@@ -36,7 +36,7 @@ import com.persistit.Exchange;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 
-public class TreeServiceImplTest extends CServerTestCase {
+public class TreeServiceImplTest extends AkServerTestCase {
 
     private class TestLink implements TreeLink {
         final String schemaName;

@@ -26,19 +26,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.akiban.server.AkServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.server.CServer;
-import com.akiban.server.CServerTestCase;
+import com.akiban.server.AkServerTestCase;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.config.Property;
 import com.akiban.util.ByteBufferFactory;
 import com.akiban.util.MySqlStatementSplitter;
 
-public class MultiVolumeStoreTest extends CServerTestCase {
+public class MultiVolumeStoreTest extends AkServerTestCase {
 
     private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
     private final static String DEFAULT_SCHEMA = "default_schema";
@@ -63,7 +63,7 @@ public class MultiVolumeStoreTest extends CServerTestCase {
         // Load the data_dictionary_test tables into three different schemas.
         //
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CServer.class.getClassLoader().getResourceAsStream(
+                AkServer.class.getClassLoader().getResourceAsStream(
                         DDL_FILE_NAME)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
             if (statement.startsWith("create")) {

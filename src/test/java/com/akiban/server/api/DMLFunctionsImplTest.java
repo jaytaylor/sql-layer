@@ -28,7 +28,7 @@ import java.util.NoSuchElementException;
 
 import org.junit.Test;
 
-import com.akiban.server.CServerTestCase;
+import com.akiban.server.AkServerTestCase;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -36,7 +36,7 @@ import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.store.RowCollector;
 
-public final class DMLFunctionsImplTest extends CServerTestCase {
+public final class DMLFunctionsImplTest extends AkServerTestCase {
     
     private static class StringRowCollector implements RowCollector {
         private final List<String> strings;

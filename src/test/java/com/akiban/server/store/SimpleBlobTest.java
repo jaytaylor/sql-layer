@@ -24,11 +24,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.server.CServerConstants;
-import com.akiban.server.CServerTestCase;
+import com.akiban.server.AkServerTestCase;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 
-public class SimpleBlobTest extends CServerTestCase implements CServerConstants {
+public class SimpleBlobTest extends AkServerTestCase implements CServerConstants {
 
     private final static String SIMPLE_BLOB_TEST_DDL = "simple_blob_test.ddl";
 

@@ -15,7 +15,7 @@
 
 package com.akiban.server.service;
 
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.ConfigurationServiceImpl;
 import com.akiban.server.service.jmx.JmxRegistryService;
@@ -39,7 +39,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<SessionService> sessionService;
     private Service<ConfigurationService> configurationService;
     private Service<NetworkService> networkService;
-    private Service<CServer> chunkserverService;
+    private Service<AkServer> chunkserverService;
 
     private Service<TreeService> treeService;
     private Service<Store> storeService;
@@ -64,9 +64,9 @@ public class DefaultServiceFactory implements ServiceFactory {
     }
 
     @Override
-    public Service<CServer> chunkserverService() {
+    public Service<AkServer> chunkserverService() {
         if (chunkserverService == null) {
-            final CServer chunkserver = new CServer();
+            final AkServer chunkserver = new AkServer();
             chunkserverService = chunkserver;
         }
         return chunkserverService;

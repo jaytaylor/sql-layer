@@ -33,12 +33,12 @@ import java.io.IOException;
 /**
  * @author peter
  */
-public class CServer implements CServerConstants, Service<CServer>, JmxManageable {
+public class AkServer implements CServerConstants, Service<AkServer>, JmxManageable {
 
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
 
-    private static final Logger LOG = LoggerFactory.getLogger(CServer.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
 
     /**
      * Config property name and default for the port on which the CServer will
@@ -74,7 +74,7 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
     
     private final JmxObjectInfo jmxObjectInfo;
 
-    public CServer() {
+    public AkServer() {
         this.jmxObjectInfo = new JmxObjectInfo("CSERVER", new ManageMXBeanImpl(
                 this), ManageMXBean.class);
     }
@@ -129,13 +129,13 @@ public class CServer implements CServerConstants, Service<CServer>, JmxManageabl
 
 
     @Override
-    public CServer cast() {
+    public AkServer cast() {
         return this;
     }
 
     @Override
-    public Class<CServer> castClass() {
-        return CServer.class;
+    public Class<AkServer> castClass() {
+        return AkServer.class;
     }
 
     private static String getVersionString()

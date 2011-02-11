@@ -15,7 +15,7 @@
 
 package com.akiban.server.service;
 
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -32,7 +32,7 @@ public interface ServiceManager extends ServiceManagerMXBean {
 
     ConfigurationService getConfigurationService();
     
-    CServer getCServer();
+    AkServer getCServer();
 
     Store getStore();
     

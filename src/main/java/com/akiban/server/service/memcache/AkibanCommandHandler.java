@@ -18,7 +18,7 @@ package com.akiban.server.service.memcache;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiRequestException;
@@ -71,7 +71,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
     private static String getVersionString() {
         String version = String.format("Akiban Server version <%s> using jmemcached %s",
-                CServer.VERSION_STRING,
+                AkServer.VERSION_STRING,
                 MemCacheDaemon.memcachedVersion);
         return version.replaceAll("[\r\n]", " ");
     }

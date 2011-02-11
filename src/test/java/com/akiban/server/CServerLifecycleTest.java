@@ -39,7 +39,7 @@ public class CServerLifecycleTest {
     @Test
     public void testStartupShutdown() throws Exception {
         for (int i = 0; i < N; i++) {
-            CServer cserver = startChunkServer();
+            AkServer cserver = startChunkServer();
             stopChunkServer(cserver);
         }
     }
@@ -47,7 +47,7 @@ public class CServerLifecycleTest {
     @Test
     public void testShutdownWithClosedConnections() throws Exception {
         for (int i = 0; i < N; i++) {
-            CServer cserver = startChunkServer();
+            AkServer cserver = startChunkServer();
             try {
                 AkibanConnection connection = new AkibanConnectionImpl(
                         LOCALHOST, cserver.port());
@@ -67,7 +67,7 @@ public class CServerLifecycleTest {
     @Test
     public void testShutdownWithOpenConnections() throws Exception {
         for (int i = 0; i < N; i++) {
-            CServer cserver = startChunkServer();
+            AkServer cserver = startChunkServer();
             try {
                 AkibanConnection connection = new AkibanConnectionImpl(
                         LOCALHOST, cserver.port());
@@ -83,7 +83,7 @@ public class CServerLifecycleTest {
         }
     }
 
-    private CServer startChunkServer() throws Exception {
+    private AkServer startChunkServer() throws Exception {
         MessageRegistry.reset(); // In case a message registry is left over from
                                  // a previous test in the same JVM.
         serviceManager = UnitTestServiceFactory
@@ -98,14 +98,14 @@ public class CServerLifecycleTest {
         } finally {
             System.setProperties(originalProperties);
         }
-        CServer cserver = serviceManager.getCServer();
+        AkServer cserver = serviceManager.getCServer();
         Assert.assertTrue(listeningOnPort(cserver.port()));
         MessageRegistry.reset();
         initializeMessageRegistry();
         return cserver;
     }
 
-    private void stopChunkServer(CServer cserver) throws Exception {
+    private void stopChunkServer(AkServer cserver) throws Exception {
         serviceManager.stopServices();
         serviceManager = null;
         Assert.assertTrue(!listeningOnPort(cserver.port()));

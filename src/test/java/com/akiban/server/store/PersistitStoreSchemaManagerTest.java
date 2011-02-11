@@ -39,15 +39,15 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.CServer;
-import com.akiban.server.CServerTestCase;
+import com.akiban.server.AkServer;
+import com.akiban.server.AkServerTestCase;
 import com.akiban.server.CServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.service.config.Property;
 import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
 
-public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
+public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
 
     private final static String AIS_CREATE_STATEMENTS = readAisSchema();
     private final static String SCHEMA = "my_schema";
@@ -394,7 +394,7 @@ public final class PersistitStoreSchemaManagerTest extends CServerTestCase {
         sb.append("create schema if not exists `akiban_information_schema`;");
             sb.append(CServerUtil.NEW_LINE);
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CServer.class.getClassLoader()
+                AkServer.class.getClassLoader()
                         .getResourceAsStream(PersistitStoreSchemaManager.AIS_DDL_NAME)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
             final String canonical = DDLSource.canonicalStatement(statement);

@@ -53,7 +53,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.CServerAisTarget;
 import com.akiban.server.CServerUtil;
 import com.akiban.server.InvalidOperationException;
@@ -659,7 +659,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             throws Exception {
         final StringBuilder sb = new StringBuilder();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CServer.class.getClassLoader().getResourceAsStream(schema)));
+                AkServer.class.getClassLoader().getResourceAsStream(schema)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
             sb.append(statement).append(CServerUtil.NEW_LINE);
         }
@@ -819,7 +819,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         List<TableDefinition> definitions = new ArrayList<TableDefinition>();
         int tableId = AIS_BASE_TABLE_ID;
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CServer.class.getClassLoader()
+                AkServer.class.getClassLoader()
                         .getResourceAsStream(AIS_DDL_NAME)));
         final Pattern pattern = Pattern.compile("create table "
                 + AKIBAN_INFORMATION_SCHEMA + ".(\\w+).*");

@@ -35,7 +35,7 @@ import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.CServerUtil;
 import com.akiban.util.MySqlStatementSplitter;
 
@@ -57,7 +57,7 @@ public class SchemaDefToAisTest {
     private AkibanInformationSchema buildAISfromResource(final String resourceName) throws Exception {
         final StringBuilder sb = new StringBuilder();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CServer.class.getClassLoader().getResourceAsStream(resourceName)));
+                AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
             sb.append(statement).append(CServerUtil.NEW_LINE);
         }

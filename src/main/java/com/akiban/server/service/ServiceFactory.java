@@ -15,7 +15,7 @@
 
 package com.akiban.server.service;
 
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -35,7 +35,7 @@ public interface ServiceFactory
 
     Service<NetworkService> networkService();
 
-    Service<CServer> chunkserverService();
+    Service<AkServer> chunkserverService();
     
     Service<TreeService> treeService();
     

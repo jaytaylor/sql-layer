@@ -19,18 +19,18 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.akiban.server.CServer;
+import com.akiban.server.AkServer;
 import com.akiban.server.CustomQuery;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean {
-    private final CServer cserver;
+    private final AkServer cserver;
 
     private Class<?> customClass;
     private AtomicReference<CustomQuery> runningQuery = new AtomicReference<CustomQuery>();
 
-    public ManageMXBeanImpl(final CServer cserver) {
+    public ManageMXBeanImpl(final AkServer cserver) {
         this.cserver = cserver;
     }
 
@@ -195,6 +195,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public String getVersionString() {
-        return CServer.VERSION_STRING;
+        return AkServer.VERSION_STRING;
     }
 }
