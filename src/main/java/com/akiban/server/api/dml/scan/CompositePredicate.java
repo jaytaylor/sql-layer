@@ -15,7 +15,7 @@
 
 // NOT FINISHED
 
-//package com.akiban.cserver.api.dml.scan;
+//package com.akiban.server.api.dml.scan;
 //
 //import java.util.Arrays;
 //import java.util.EnumSet;

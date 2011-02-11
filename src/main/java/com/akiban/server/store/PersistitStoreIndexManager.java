@@ -85,7 +85,7 @@ public class PersistitStoreIndexManager implements IndexManager {
     }
 
     /* (non-Javadoc)
-     * @see com.akiban.cserver.store.IndexManager#analyzeTable(com.akiban.cserver.service.session.Session, com.akiban.cserver.RowDef)
+     * @see com.akiban.server.store.IndexManager#analyzeTable(com.akiban.server.service.session.Session, com.akiban.server.RowDef)
      */
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef) throws Exception {
@@ -93,7 +93,7 @@ public class PersistitStoreIndexManager implements IndexManager {
     }
 
     /* (non-Javadoc)
-     * @see com.akiban.cserver.store.IndexManager#analyzeTable(com.akiban.cserver.service.session.Session, com.akiban.cserver.RowDef, int)
+     * @see com.akiban.server.store.IndexManager#analyzeTable(com.akiban.server.service.session.Session, com.akiban.server.RowDef, int)
      */
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize)
@@ -104,7 +104,7 @@ public class PersistitStoreIndexManager implements IndexManager {
     }
 
     /* (non-Javadoc)
-     * @see com.akiban.cserver.store.IndexManager#deleteIndexAnalysis(com.akiban.cserver.service.session.Session, com.akiban.cserver.IndexDef)
+     * @see com.akiban.server.store.IndexManager#deleteIndexAnalysis(com.akiban.server.service.session.Session, com.akiban.server.IndexDef)
      */
     @Override
     public void deleteIndexAnalysis(final Session session, final IndexDef indexDef) throws PersistitException {
@@ -143,7 +143,7 @@ public class PersistitStoreIndexManager implements IndexManager {
     }
 
     /* (non-Javadoc)
-     * @see com.akiban.cserver.store.IndexManager#analyzeIndex(com.akiban.cserver.service.session.Session, com.akiban.cserver.IndexDef, int)
+     * @see com.akiban.server.store.IndexManager#analyzeIndex(com.akiban.server.service.session.Session, com.akiban.server.IndexDef, int)
      */
     @Override
     public void analyzeIndex(final Session session, final IndexDef indexDef, final int sampleSize)
@@ -330,7 +330,7 @@ public class PersistitStoreIndexManager implements IndexManager {
     }
 
     /* (non-Javadoc)
-     * @see com.akiban.cserver.store.IndexManager#populateTableStatistics(com.akiban.cserver.service.session.Session, com.akiban.cserver.TableStatistics)
+     * @see com.akiban.server.store.IndexManager#populateTableStatistics(com.akiban.server.service.session.Session, com.akiban.server.TableStatistics)
      */
     @Override
     public void populateTableStatistics(final Session session, final TableStatistics tableStatistics)
