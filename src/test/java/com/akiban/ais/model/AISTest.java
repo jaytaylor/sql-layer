@@ -28,7 +28,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import com.akiban.cserver.SchemaFactory;
+import com.akiban.server.SchemaFactory;
 
 public class AISTest
 {

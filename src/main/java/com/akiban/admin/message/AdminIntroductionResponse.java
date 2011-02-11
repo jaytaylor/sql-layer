@@ -17,7 +17,7 @@ package com.akiban.admin.message;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.cserver.service.session.Session;
+import com.akiban.server.service.session.Session;
 import com.akiban.message.AkibanSendConnection;
 import com.akiban.message.Request;
 

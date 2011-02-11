@@ -31,7 +31,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 
-import com.akiban.admin.state.ChunkserverState;
+import com.akiban.admin.state.AkServerState;
 
 public class ZookeeperBasedAdmin extends Admin
 {
@@ -214,9 +214,9 @@ public class ZookeeperBasedAdmin extends Admin
         logger.info(String.format("Setting chunkserver state for %s to up",
                                   AdminKey.stateChunkserverName(chunkserverName)));
         try {
-            ChunkserverState chunkserverState = chunkserverState(chunkserverName);
-            chunkserverState.up(true);
-            saveChunkserverState(chunkserverName, chunkserverState);
+            AkServerState akServerState = chunkserverState(chunkserverName);
+            akServerState.up(true);
+            saveChunkserverState(chunkserverName, akServerState);
         } catch (UnknownHostException e) {
             throw new RuntimeException
                 (String.format("Caught exception while marking %s as up", chunkserverName), e);
@@ -228,9 +228,9 @@ public class ZookeeperBasedAdmin extends Admin
         logger.info(String.format("Setting chunkserver state for %s to down",
                                   AdminKey.stateChunkserverName(chunkserverName)));
         try {
-            ChunkserverState chunkserverState = chunkserverState(chunkserverName);
-            chunkserverState.up(false);
-            saveChunkserverState(chunkserverName, chunkserverState);
+            AkServerState akServerState = chunkserverState(chunkserverName);
+            akServerState.up(false);
+            saveChunkserverState(chunkserverName, akServerState);
         } catch (UnknownHostException e) {
             throw new RuntimeException
                 (String.format("Caught exception while marking %s as down", chunkserverName), e);

@@ -36,7 +36,7 @@ launch_service()
 
     # the JAR file we use to launch the akiban server
     if [ "x$JAR_FILE" == "x" ]; then
-        JAR_FILE="${akiban_home}/target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+        JAR_FILE="${akiban_home}/target/akiban-server-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
     fi
 
     if [ "x$AKIBAN_CONF" == "x" ]; then

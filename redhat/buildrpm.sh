@@ -36,7 +36,7 @@ rpm_env()
 # prepare source tarballs for rpm build to consume
 tarball()
 {
-	local name=cserver
+	local name=akserver
 	local randir=/tmp/${RANDOM}
 	local cdir=${randir}/${name}
 	rm -rf ${cdir} rpmbuild ../target ${name}.tar.gz
@@ -68,9 +68,9 @@ if [ ${PUBLISH} -gt 0 ];then
 	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${BZR_REVISION}
 	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${BZR_REVISION}/* /var/www/latest/"
 	ssh skeswani@172.16.20.117 /var/www/rpms/createrepo.sh
-	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 "mkdir -p /var/www/rpms/akiban-server/${BZR_REVISION}"
-	scp -i ~/.ssh/akibanweb -r rpmbuild/RPMS/noarch/*.rpm ubuntu@50.16.188.89:/var/www/rpms/akiban-server/${BZR_REVISION}
-	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 /var/www/rpms/createrepo.sh
+#	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 "mkdir -p /var/www/rpms/akiban-server/${BZR_REVISION}"
+#	scp -i ~/.ssh/akibanweb -r rpmbuild/RPMS/noarch/*.rpm ubuntu@50.16.188.89:/var/www/rpms/akiban-server/${BZR_REVISION}
+#	ssh -i ~/.ssh/akibanweb ubuntu@50.16.188.89 /var/www/rpms/createrepo.sh
 fi
 }
 
