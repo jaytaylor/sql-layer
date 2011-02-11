@@ -19,8 +19,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -66,7 +68,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private static final String MODULE_NAME = DMLFunctionsImpl.class
             .getCanonicalName();
     private static final AtomicLong cursorsCount = new AtomicLong();
-    private static final Object OPEN_CURSORS = new Object();
+    private static final Object OPEN_CURSORS_MAP = new Object();
 
     private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
     private final DDLFunctions ddlFunctions;
@@ -138,13 +140,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         Object old = session.put(MODULE_NAME, cursorId, new ScanData(request, cursor));
         assert old == null : old;
 
-        Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
+        Map<CursorId,Cursor> cursors = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
         if (cursors == null) {
-            cursors = new HashSet<CursorId>();
-            session.put(MODULE_NAME, OPEN_CURSORS, cursors);
+            cursors = new HashMap<CursorId,Cursor>();
+            session.put(MODULE_NAME, OPEN_CURSORS_MAP, cursors);
         }
-        boolean addWorked = cursors.add(cursorId);
-        assert addWorked : String.format("%s -> %s", cursor, cursors);
+        Cursor oldCursor = cursors.put(cursorId, cursor);
+        assert oldCursor == null : String.format("%s -> %s conflicted with %s", cursor, cursors, oldCursor);
         return cursorId;
     }
 
@@ -417,21 +419,20 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (scanData == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
+        Map<CursorId,Cursor> cursors = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
         // cursors should not be null, since the cursor isn't null and creating
         // it guarantees a Set<Cursor>
-        boolean removeWorked = cursors.remove(cursorId);
-        assert removeWorked : String.format("%s %s -> %s", cursorId, scanData,
-                cursors);
+        Cursor removedCursor = cursors.remove(cursorId);
+        removedCursor.getRowCollector().close();
     }
 
     @Override
     public Set<CursorId> getCursors(Session session) {
-        Set<CursorId> cursors = session.get(MODULE_NAME, OPEN_CURSORS);
+        Map<CursorId,Cursor> cursors = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
         if (cursors == null) {
             return Collections.emptySet();
         }
-        return Collections.unmodifiableSet(cursors);
+        return Collections.unmodifiableSet(cursors.keySet());
     }
 
     @Override
