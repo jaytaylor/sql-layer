@@ -35,8 +35,8 @@ import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
-import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerUtil;
+import com.akiban.server.CServer;
+import com.akiban.server.CServerUtil;
 import com.akiban.util.MySqlStatementSplitter;
 
 public class SchemaDefToAisTest {
