@@ -231,7 +231,7 @@ public class BulkLoaderClient
     {
         MessageRegistry.reset();
         MessageRegistry.initialize();
-        MessageRegistry.only().registerModule("com.akiban.cserver.message");
+        MessageRegistry.only().registerModule("com.akiban.server.message");
         MessageRegistry.only().registerModule("com.akiban.message");
         ChannelNotifier notifier = new ChannelNotifier();
         // Why oh why does every user of initializeNetwork have to listen? This program doesn't have to listen.

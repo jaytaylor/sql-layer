@@ -116,7 +116,7 @@ public class CServerLifecycleTest {
         if (MessageRegistry.only() == null) {
             new TestMessageRegistry();
             MessageRegistry.only().registerModule("com.akiban.message");
-            MessageRegistry.only().registerModule("com.akiban.cserver");
+            MessageRegistry.only().registerModule("com.akiban.server");
         }
     }
 
@@ -139,8 +139,8 @@ public class CServerLifecycleTest {
     public class TestMessageRegistry extends MessageRegistryBase {
         private TestMessageRegistry() {
             super(10);
-            register(1, "com.akiban.cserver.TestRequest");
-            register(2, "com.akiban.cserver.TestResponse");
+            register(1, "com.akiban.server.TestRequest");
+            register(2, "com.akiban.server.TestResponse");
         }
     }
 }

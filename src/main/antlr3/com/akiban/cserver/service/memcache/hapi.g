@@ -25,11 +25,11 @@ tokens {
 }
 
 @header {
-	package com.akiban.cserver.service.memcache;
+	package com.akiban.server.service.memcache;
 }
 
 @lexer::header {
-	package com.akiban.cserver.service.memcache;
+	package com.akiban.server.service.memcache;
 }
 
 @lexer::members {

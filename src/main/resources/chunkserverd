@@ -32,7 +32,7 @@ RETVAL=0
 jmxport=7071
 rmiport=8081
 debugport=9091
-jar=akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar
+jar=akiban-server-0.0.2-SNAPSHOT-jar-with-dependencies.jar
 
 prog="nohup java"
 defaultmemory="512"

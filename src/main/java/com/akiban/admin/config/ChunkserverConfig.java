@@ -59,7 +59,7 @@ public class ChunkserverConfig
     private static final String PROPERTY_MAX_HEAP_MB = "cserver.max_heap_mb";
 
     private static final String DEFAULT_MYSQL_INSTALL_DIR = "/usr/local/vanilla";
-    private static final String DEFAULT_JAR_FILE = "akiban-cserver-1.0-SNAPSHOT-jar-with-dependencies.jar";
+    private static final String DEFAULT_JAR_FILE = "akiban-server-1.0-SNAPSHOT-jar-with-dependencies.jar";
     private static final String DEFAULT_MAX_HEAP_MB = "512";
 
     private final Properties properties;
