@@ -16,6 +16,7 @@
 package com.akiban.cserver.itests.d_lfunctions;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
@@ -28,7 +29,10 @@ import org.junit.Test;
 import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 public final class CreateTableIT extends ApiTestBase {
@@ -115,10 +119,15 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void bug706008() throws InvalidOperationException {
         // SERIAL => BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.
-        int tid1 = createTable("test", "t", "c1 SERIAL");
+        int tid1 = createAndCheckColumn("c1 SERIAL", Types.U_BIGINT, null, null);
+        Table table = getUserTable(tid1);
+        assertFalse(table.getColumn("c1").getNullable());
+        Index index = table.getIndex("c1");
+        assertNotNull(index);
+        assertTrue(index.isUnique());   
 
         // [int type] SERIAL DEFAULT VALUE => [int type] NOT NULL AUTO_INCREMENT UNIQUE.
-        int tid2 = createTable("test", "t", "c1 int SERIAL DEFAULT VALUE");
+        //int tid2 = createTable("test", "t", "c1 int SERIAL DEFAULT VALUE");
     }
 
     // CREATE TABLE .. LIKE .. is parse error

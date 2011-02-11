@@ -110,21 +110,30 @@ public class SchemaDef {
     }
 
     void addColumn(final String columnName, String typeName, String param1, String param2) {
+        final int uposition = currentColumn == null ? 0 : currentColumn.uposition + 1;
+        currentColumn = new ColumnDef(columnName);
+        
         // MySQL: BIT(0) => BIT(1)
         if(typeName.equals("BIT") && param1 != null && param1.equals("0")) {
             param1 = "1";
         }
-
         // SQL: FLOAT(P) => FLOAT for P in [0,24], DOUBLE for P in [25,53]
-        if(typeName.equals("FLOAT") && param1 != null && param2 == null) {
+        else if(typeName.equals("FLOAT") && param1 != null && param2 == null) {
             if(Long.parseLong(param1) > 24L) {
                 typeName = "DOUBLE";
             }
-            param1 = param2 = null;
+            param1 = null;
+        }
+        // MySQL: SERIAL => BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+        else if(typeName.equals("SERIAL")){
+            typeName = "BIGINT UNSIGNED";
+            currentColumn.nullable = false;
+            autoIncrement();
+            startColumnOption();
+            seeUNIQUE();
+            endColumnOption();
         }
 
-        final int uposition = currentColumn == null ? 0 : currentColumn.uposition + 1;
-        currentColumn = new ColumnDef(columnName);
         currentColumn.typeName = typeName;
         currentColumn.typeParam1 = param1;
         currentColumn.typeParam2 = param2;

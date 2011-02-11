@@ -86,6 +86,7 @@ WITH = 'with';
 PARSER = 'parser';
 FULLTEXT = 'fulltext';
 SPATIAL = 'spatial';
+SERIAL = 'serial';
 }
 
 
@@ -252,13 +253,12 @@ data_type_def returns [String type, String len1, String len2]
 	: data_type {$type = $data_type.type;} (length_constraint {$len1 = $length_constraint.len1;})?
 	| numeric_data_type {$type = $numeric_data_type.type;}  
 	  (length_constraint {$len1 = $length_constraint.len1;})? 
-	  (SIGNED)?
-	  (UNSIGNED {$type=$type + " UNSIGNED";})?
+	  (SIGNED | UNSIGNED {$type=$type + " UNSIGNED";})?
 	| decimal_data_type {$type = $decimal_data_type.type;}
 	  (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
-	  (SIGNED)?
-	  (UNSIGNED {$type=$type + " UNSIGNED";})?
+	  (SIGNED | UNSIGNED {$type=$type + " UNSIGNED";})?
 	| enum_or_set_data_type {$type = $enum_or_set_data_type.type; $len1 = $enum_or_set_data_type.len1;}
+	| SERIAL {$type = "SERIAL";}
 	;
 
 data_type returns [String type]
