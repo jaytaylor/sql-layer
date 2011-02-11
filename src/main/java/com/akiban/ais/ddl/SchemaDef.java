@@ -563,7 +563,8 @@ public class SchemaDef {
                 return;
             }
             try {
-                this.autoincrement = Long.parseLong(autoIncrement);
+                // See bug696169, AUTO_INCREMENT=N should set initial value to N-1
+                this.autoincrement = Long.parseLong(autoIncrement) - 1L;
             } catch (NumberFormatException e) {
                 throw new SchemaDefException(
                         "Not a valid AUTO_INCREMENT value: " + autoIncrement);

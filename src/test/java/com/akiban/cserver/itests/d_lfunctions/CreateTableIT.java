@@ -68,6 +68,7 @@ public final class CreateTableIT extends ApiTestBase {
     public void bug696169() throws Exception {
         ddl().createTable(session, "test", "CREATE TABLE t(c1 INT AUTO_INCREMENT KEY) AUTO_INCREMENT=10");
         final int tid = tableId("test", "t");
+        // This value gets sent as last_row_id so everything lines up on the adapter, where all auto_inc stuff is done
         assertEquals(9, store().getTableStatistics(session, tid).getAutoIncrementValue());
     }
 
