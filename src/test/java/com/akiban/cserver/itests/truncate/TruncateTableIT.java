@@ -186,4 +186,15 @@ public final class TruncateTableIT extends ApiTestBase {
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
         assertEquals("Rows scanned", 0, rows.size());
     }
+
+    @Test
+    public void bug717210() throws InvalidOperationException {
+        int tableId = createTable("test", "t", "c1 BLOB(100)");
+
+        writeRows(createNewRow(tableId, "123", -1L));
+        expectRowCount(tableId, 1);
+        expectFullRows(tableId, createNewRow(tableId, "123"));
+
+        dml().truncateTable(session, tableId);
+    }
 }
