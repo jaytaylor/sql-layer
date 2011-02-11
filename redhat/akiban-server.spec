@@ -13,7 +13,7 @@ Group:          Development/Libraries
 License:        AGPL
 URL:            http://akiban.com/
 
-Source0:       cserver.tar.gz
+Source0:       akserver.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
 Requires:      java >= 1.6.0
@@ -31,7 +31,7 @@ Akiban Server is the main server for the Akiban Orthogonal Architecture.
 For more information see http://akiban.com/
 
 %prep
-%setup -q -n cserver
+%setup -q -n akserver
 
 %build
 mvn -B -Dmaven.test.skip=true -DBZR_REVISION=%{release} clean install
@@ -50,8 +50,8 @@ cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/server.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p conf/config/jvm.options ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
-cp -p target/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-cserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p target/akiban-server-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-kserver-0.0.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
 mv bin/akloader ${RPM_BUILD_ROOT}/usr/bin
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
