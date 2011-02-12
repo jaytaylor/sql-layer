@@ -25,7 +25,7 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
-public final class SpuriousDuplicateKeyTest extends ApiTestBase {
+public final class SpuriousDuplicateKeyIT extends ApiTestBase {
     @Test
     public void simpleOnce() throws Exception {
         simpleTestCase();

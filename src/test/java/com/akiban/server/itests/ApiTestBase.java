@@ -135,7 +135,11 @@ public class ApiTestBase {
     }
 
     protected ApiTestBase()
-    {}
+    {
+        assertTrue("Please name integration tests FooIT instead of FooTest",
+                this.getClass().getSimpleName().endsWith("IT")
+        );
+    }
 
     private DMLFunctions dml;
     private DDLFunctions ddl;

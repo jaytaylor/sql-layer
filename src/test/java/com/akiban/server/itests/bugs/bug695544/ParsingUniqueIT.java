@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public final class ParsingUNIQUETest extends ApiTestBase {
+public final class ParsingUniqueIT extends ApiTestBase {
     private final static String SCHEMA = "sc1";
     private final static String TABLE = "tb1";
     private int tableId;

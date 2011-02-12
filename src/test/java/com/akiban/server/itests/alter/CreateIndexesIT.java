@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 
-public final class CreateIndexesTest extends AlterTestBase {
+public final class CreateIndexesIT extends AlterTestBase {
     /*
      * Test DDL.createIndexes() API 
      */

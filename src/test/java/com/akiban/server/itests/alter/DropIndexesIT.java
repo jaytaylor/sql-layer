@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
 
-public final class DropIndexesTest extends AlterTestBase {
+public final class DropIndexesIT extends AlterTestBase {
     /*
      * Test DDL.dropIndexes() API 
      */
