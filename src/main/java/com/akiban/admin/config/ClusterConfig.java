@@ -39,14 +39,14 @@ public class ClusterConfig
         return zookeeper;
     }
 
-    public Map<String, ChunkserverNetworkConfig> chunkservers()
+    public Map<String, AkServerNetworkConfig> chunkservers()
     {
         return Collections.unmodifiableMap(chunkservers);
     }
 
-    public ChunkserverNetworkConfig leadChunkserver()
+    public AkServerNetworkConfig leadChunkserver()
     {
-        return leadChunkserver;
+        return leadAkServer;
     }
 
     public ClusterConfig(AdminValue adminValue) 
@@ -64,11 +64,11 @@ public class ClusterConfig
                 Address address;
                 boolean lead = value.charAt(0) == '*';
                 address = lead ? new Address(value.substring(1).trim()) : new Address(value);
-                ChunkserverNetworkConfig chunkserverNetworkConfig = new ChunkserverNetworkConfig(key, address, lead);
+                AkServerNetworkConfig akServerNetworkConfig = new AkServerNetworkConfig(key, address, lead);
                 if (lead) {
-                    leadChunkserver = chunkserverNetworkConfig;
+                    leadAkServer = akServerNetworkConfig;
                 }
-                chunkservers.put(key, chunkserverNetworkConfig);
+                chunkservers.put(key, akServerNetworkConfig);
             }
         }
     }
@@ -80,6 +80,6 @@ public class ClusterConfig
     private Address mysql;
     private Address admin;
     private Address zookeeper;
-    private final Map<String, ChunkserverNetworkConfig> chunkservers = new HashMap<String, ChunkserverNetworkConfig>();
-    private ChunkserverNetworkConfig leadChunkserver;
+    private final Map<String, AkServerNetworkConfig> chunkservers = new HashMap<String, AkServerNetworkConfig>();
+    private AkServerNetworkConfig leadAkServer;
 }

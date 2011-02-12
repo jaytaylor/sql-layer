@@ -1,8 +1,8 @@
-akiban-cserver.iml
-akiban-cserver.ipr
-akiban-cserver.iws
+akiban-server.iml
+akiban-server.ipr
+akiban-server.iws
 src/main/antlr3/com/akiban/ais/ddl/output/
-src/main/antlr3/com/akiban/cserver/service/memcache/output/
+src/main/antlr3/com/akiban/server/service/memcache/output/
 velocity.log
 debian/debhelper.log
 debian/files

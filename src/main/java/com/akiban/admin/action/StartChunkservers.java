@@ -19,12 +19,12 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.akiban.admin.config.AkServerConfig;
+import com.akiban.admin.config.AkServerNetworkConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.admin.Admin;
-import com.akiban.admin.config.ChunkserverConfig;
-import com.akiban.admin.config.ChunkserverNetworkConfig;
 import com.akiban.admin.config.ClusterConfig;
 import com.akiban.util.Command;
 
@@ -50,8 +50,8 @@ public abstract class StartChunkservers
         public void run() throws Command.Exception, IOException
         {
             ClusterConfig clusterConfig = Admin.only().clusterConfig();
-            for (ChunkserverNetworkConfig chunkserver : clusterConfig.chunkservers().values()) {
-                logger.info(String.format("Starting %s", chunkserver));
+            for (AkServerNetworkConfig akServer : clusterConfig.chunkservers().values()) {
+                logger.info(String.format("Starting %s", akServer));
                 Command command =
                     Command.printOutput(System.out,
                                         "ssh",
@@ -59,11 +59,11 @@ public abstract class StartChunkservers
                                         "service",
                                         "chunkserverd",
                                         "start",
-                                        Integer.toString(chunkserver.address().port()),
-                                        chunkserver.name(),
+                                        Integer.toString(akServer.address().port()),
+                                        akServer.name(),
                                         clusterConfig.zookeeper().host().getHostAddress());
                 int status = command.run();
-                logger.info(String.format("Starting %s, status: %s", chunkserver, status));
+                logger.info(String.format("Starting %s, status: %s", akServer, status));
             }
         }
 
@@ -82,14 +82,14 @@ public abstract class StartChunkservers
                 {
                     try {
                         ClusterConfig clusterConfig = Admin.only().clusterConfig();
-                        ChunkserverConfig chunkserverConfig = Admin.only().chunkserverConfig();
+                        AkServerConfig akServerConfig = Admin.only().chunkserverConfig();
                         String akibanAdmin = String.format("-Dakiban.admin=%s", Admin.only().initializer());
-                        String maxHeap = String.format("-Xmx%sm", chunkserverConfig.maxHeapMB());
+                        String maxHeap = String.format("-Xmx%sm", akServerConfig.maxHeapMB());
                         String jarFileLocation = String.format("%s/chunk-server/%s",
-                                                               chunkserverConfig.mysqlInstallDir(),
-                                                               chunkserverConfig.jarFile());
-                        for (ChunkserverNetworkConfig chunkserverNetworkConfig : clusterConfig.chunkservers().values()) {
-                            logger.info(String.format("Starting %s", chunkserverNetworkConfig));
+                                                               akServerConfig.mysqlInstallDir(),
+                                                               akServerConfig.jarFile());
+                        for (AkServerNetworkConfig akServerNetworkConfig : clusterConfig.chunkservers().values()) {
+                            logger.info(String.format("Starting %s", akServerNetworkConfig));
                             // Options copied from system-test/build.xml, start-chunkserver-target, except:
                             // - com.persistit.showgui omitted
                             // - com.akiban.config omitted, so that config is loaded from admin
@@ -105,7 +105,7 @@ public abstract class StartChunkservers
                                                     "-jar",
                                                     jarFileLocation);
                             int status = command.run();
-                            logger.info(String.format("%s exited, status: %s", chunkserverNetworkConfig, status));
+                            logger.info(String.format("%s exited, status: %s", akServerNetworkConfig, status));
                         }
                     } catch (Exception e) {
                         logger.error("Caught exception while starting chunkservers", e);
