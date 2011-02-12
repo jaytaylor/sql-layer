@@ -42,7 +42,7 @@ import com.akiban.cserver.InvalidOperationException;
 import com.akiban.cserver.api.dml.scan.NewRow;
 import com.akiban.cserver.api.dml.scan.NewRowBuilder;
 
-public final class COIbasicTest extends ApiTestBase {
+public final class COIBasicIT extends ApiTestBase {
     private static class TableIds {
         public final int c;
         public final int o;

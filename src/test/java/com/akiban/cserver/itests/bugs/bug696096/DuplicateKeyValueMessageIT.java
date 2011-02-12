@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import static junit.framework.Assert.*;
 
-public final class DuplicateKeyValueMessageTest extends ApiTestBase {
+public final class DuplicateKeyValueMessageIT extends ApiTestBase {
     private int tableId;
 
     @Before
