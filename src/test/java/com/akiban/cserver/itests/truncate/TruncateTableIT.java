@@ -190,39 +190,26 @@ public final class TruncateTableIT extends ApiTestBase {
         assertEquals("Rows scanned", 0, rows.size());
     }
 
+    // Ultimate problem was misinterpreting blob(100). Delete test instead of update if it breaks (e.g. due to rowdata
+    // changes) as there are tests elsewhere confirming proper handling of blob(L)
     @Test
-    public void bug717210_createRowInternal() throws InvalidOperationException {
+    public void bug717210() throws InvalidOperationException {
+
         int tableId = createTable("test", "t", "c1 BLOB(100)");
-
-        writeRows(createNewRow(tableId, "123", -1L));
-        expectRowCount(tableId, 1);
-        expectFullRows(tableId, createNewRow(tableId, "123"));
-
-        dml().truncateTable(session, tableId);
-    }
-
-    @Test
-    public void bug717210_createRowRaw() throws InvalidOperationException {
-        final int tableId = createTable("test", "t", "c1 BLOB(100)");
-        
         final RowDef rowDef = rowDefCache().getRowDef("test.t");
         final byte id = (byte)rowDef.getRowDefId();
         assertEquals(id, rowDef.getRowDefId());
 
-        // Raw row data taken rom dumping a writeRowRequest. Ugly but only way to reproduce the bug currently.
-        // Fix/remove need by investigating the TextEncoder with TEXT and BLOB types.
-        final byte[] rawData = new byte[]{34, 0, 0, 0, 65, 66, id, 0,  1,  0,  0,  0,  0,  4,  0, 0, 0,
-                                           0, 0, 0, 0,  0,  0,  0, 3, 49, 50, 51, 66, 65, 34,  0, 0, 0};
+        // Row data is malformed due to adapter saying it is a tinyblob and server saying it is a blob
+        final byte[] rawData = new byte[]{34, 0, 0, 0, 65, 66, 2, 0, id,  0,  0,  0,  0,  4, 0, 0, 0,
+                                           0, 0, 0, 0,  0, 0,  0, 3, 49, 50, 51, 66, 65, 34, 0, 0, 0};
         assertEquals(34, rawData.length);
         final LegacyRowWrapper newRow = new LegacyRowWrapper(new RowData(rawData));
         newRow.toRowData().prepareRow(0);
-
         writeRows(newRow);
         expectRowCount(tableId, 1);
 
-        // Requires fix for original bug since it tries to convert the RowData incorreclty
-        //expectFullRows(tableId, createNewRow(tableId, "123"));
-
+        // This no longer attempts to convert the RowData to a string so the being malformed is "ok"
         dml().truncateTable(session, tableId);
     }
 }
