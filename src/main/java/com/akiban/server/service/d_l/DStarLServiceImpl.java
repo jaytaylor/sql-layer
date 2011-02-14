@@ -15,7 +15,12 @@
 
 package com.akiban.server.service.d_l;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.staticgrouping.Group;
+import com.akiban.ais.model.staticgrouping.Grouping;
+import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
+import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DDLFunctionsImpl;
@@ -29,6 +34,9 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {
@@ -61,7 +69,6 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             createTable(usingSchema.get(), ddl);
         }
 
-        @Override
         public void dropTable(String schema, String tableName) {
             try {
                 ddlFunctions.dropTable(new SessionImpl(), new TableName(schema, tableName));
@@ -82,6 +89,28 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             } catch (InvalidOperationException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public void dropAllGroups() {
+            for(String groupName : ddlFunctions.getAIS(new SessionImpl()).getGroups().keySet()) {
+                dropGroup(groupName);
+            }
+        }
+
+        @Override
+        public List<String> getGrouping() {
+            return getGrouping(usingSchema.get());
+        }
+
+        public List<String> getGrouping(String schema) {
+            AkibanInformationSchema ais = ddlFunctions.getAIS(new SessionImpl());
+            Grouping grouping = GroupsBuilder.fromAis(ais, schema);
+
+            stripAISFromGrouping(grouping);
+
+            String groupingString = grouping.toString();
+            return Arrays.asList(groupingString.split("\\n"));
         }
 
         public void writeRow(String schema, String table, String fields) {
@@ -107,6 +136,34 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             writeRow(usingSchema.get(), table, fields);
         }
     };
+
+    private static void stripAISFromGrouping(Grouping grouping) {
+        List<Group> groupsToRemove = grouping.traverse(new GroupingVisitorStub<List<Group>>() {
+            private final List<Group> ret = new ArrayList<Group>();
+
+            @Override
+            public void visitGroup(Group group, TableName rootTable) {
+                if (rootTable.getSchemaName().equals("akiban_information_schema")) {
+                    ret.add(group);
+                }
+            }
+
+            @Override
+            public boolean startVisitingChildren() {
+                return false;
+            }
+
+            @Override
+            public List<Group> end() {
+                return ret;
+            }
+        });
+
+        GroupsBuilder manipulator = new GroupsBuilder(grouping);
+        for (Group group : groupsToRemove) {
+            manipulator.dropGroup(group.getGroupName());
+        }
+    }
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
