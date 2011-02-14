@@ -495,31 +495,31 @@ public class PersistitStore implements CServerConstants, Store {
                     hEx.clear();
                     Key hKey = hEx.getKey();
                     UserTable table = rowDef.userTable();
-                    LOG.error(String.format("table: %s, hKey: %s", table, table.hKey()));
+                    // LOG.error(String.format("table: %s, hKey: %s", table, table.hKey()));
                     List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
                     List<HKeySegment> hKeySegments = table.hKey().segments();
                     int s = 0;
                     while (s < hKeySegments.size()) {
                         HKeySegment segment = hKeySegments.get(s++);
-                        LOG.error(String.format("segment: %s", segment));
+                        // LOG.error(String.format("segment: %s", segment));
                         RowDef segmentRowDef = rowDefCache.getRowDef(segment.table().getTableId());
-                        LOG.error(String.format("segmentRowDef: %s", segmentRowDef));
+                        // LOG.error(String.format("segmentRowDef: %s", segmentRowDef));
                         hKey.append(segmentRowDef.getOrdinal());
                         List<HKeyColumn> hKeyColumns = segment.columns();
                         int c = 0;
                         while (c < hKeyColumns.size()) {
                             HKeyColumn hKeyColumn = hKeyColumns.get(c++);
-                            LOG.error(String.format("segment column: %s", hKeyColumn));
+                            // LOG.error(String.format("segment column: %s", hKeyColumn));
                             Column column = hKeyColumn.column();
                             RowDef columnTableRowDef = rowDefCache.getRowDef(column.getTable().getTableId());
                             if (pkColumns.contains(column)) {
-                                LOG.error(String.format("Appending pk column %s, position %s, field def: %s",
-                                                        column, column.getPosition(), columnTableRowDef.getFieldDef(column.getPosition())));
+                                // LOG.error(String.format("Appending pk column %s, position %s, field def: %s",
+                                //                         column, column.getPosition(), columnTableRowDef.getFieldDef(column.getPosition())));
                                 appendKeyField(hKey, columnTableRowDef.getFieldDef(column.getPosition()), rowData);
                             } else {
                                 hKey.append(null);
                             }
-                            LOG.error(String.format("Orphan hkey prefix: %s", hKey));
+                            // LOG.error(String.format("Orphan hkey prefix: %s", hKey));
                         }
                     }
                     propagateDownGroup(session, hEx);
