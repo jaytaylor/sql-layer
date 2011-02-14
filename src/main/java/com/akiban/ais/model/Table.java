@@ -27,7 +27,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return tableName.toString();
     }
 
-    public static Table create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static Table create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         String tableType = (String) map.get(table_tableType);
         String schemaName = (String) map.get(table_schemaName);
@@ -61,14 +61,14 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return map;
     }
 
-    protected Table(AkibaInformationSchema ais, String schemaName, String tableName, Integer tableId)
+    protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
     }
 
-    public AkibaInformationSchema getAIS()
+    public AkibanInformationSchema getAIS()
     {
         return ais;
     }
@@ -325,7 +325,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     // State
 
-    protected AkibaInformationSchema ais;
+    protected AkibanInformationSchema ais;
     protected Group group;
     protected TableName tableName;
     private Integer tableId;

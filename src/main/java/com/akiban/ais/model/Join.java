@@ -28,7 +28,7 @@ import com.akiban.ais.gwtutils.SerializableEnumSet;
 
 public class Join implements Serializable, ModelNames, Traversable, HasGroup
 {
-    public static Join create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static Join create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         String parentSchemaName = (String) map.get(join_parentSchemaName);
         String parentTableName = (String) map.get(join_parentTableName);
@@ -56,7 +56,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         return join;
     }
 
-    public static Join create(AkibaInformationSchema ais,
+    public static Join create(AkibanInformationSchema ais,
                               String joinName,
                               UserTable parent,
                               UserTable child)
@@ -112,7 +112,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         return buffer.toString();
     }
 
-    public AkibaInformationSchema getAIS()
+    public AkibanInformationSchema getAIS()
     {
         return ais;
     }
@@ -241,7 +241,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         traversePreOrder(visitor);
     }
 
-    private Join(AkibaInformationSchema ais, String joinName, UserTable parent, UserTable child)
+    private Join(AkibanInformationSchema ais, String joinName, UserTable parent, UserTable child)
     {
         this.ais = ais;
         this.joinName = joinName;
@@ -297,7 +297,7 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
 
     // State
 
-    private AkibaInformationSchema ais;
+    private AkibanInformationSchema ais;
     private String joinName;
     private Integer weight;
     private UserTable parent;

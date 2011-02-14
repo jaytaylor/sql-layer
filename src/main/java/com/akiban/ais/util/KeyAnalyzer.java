@@ -18,7 +18,7 @@ package com.akiban.ais.util;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
@@ -26,7 +26,7 @@ import com.akiban.ais.model.UserTable;
 public class KeyAnalyzer implements Schemapedia.Analyzer
 {
     @Override
-    public void analyze(AkibaInformationSchema ais)
+    public void analyze(AkibanInformationSchema ais)
     {
         for (UserTable table : ais.getUserTables().values()) {
             String schema = table.getName().getSchemaName();

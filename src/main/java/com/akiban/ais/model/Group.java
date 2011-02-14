@@ -21,12 +21,12 @@ import java.util.Map;
 
 public class Group implements Serializable, ModelNames
 {
-    public static Group create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         return create(ais, (String) map.get(group_name));
     }
 
-    public static Group create(AkibaInformationSchema ais, String groupName)
+    public static Group create(AkibanInformationSchema ais, String groupName)
     {
         Group group = new Group(groupName);
         ais.addGroup(group);

@@ -24,7 +24,7 @@ public class Column implements Serializable, ModelNames
     private static final Long DECIMAL_DEFAULT_PRECISION = 10L;
     private static final Long DECIMAL_DEFAULT_SCALE = 0L;
 
-    public static Column create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static Column create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         Column column = null;
         String schemaName = (String) map.get(column_schemaName);

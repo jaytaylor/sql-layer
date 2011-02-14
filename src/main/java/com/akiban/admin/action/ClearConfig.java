@@ -20,7 +20,7 @@ import java.util.Collection;
 
 import com.akiban.admin.Admin;
 import com.akiban.admin.AdminKey;
-import com.akiban.admin.config.ChunkserverNetworkConfig;
+import com.akiban.admin.config.AkServerNetworkConfig;
 
 public abstract class ClearConfig
 {
@@ -45,15 +45,15 @@ public abstract class ClearConfig
         {
             // Delete /config files
             Admin admin = Admin.only();
-            Collection<ChunkserverNetworkConfig> chunkservers = admin.clusterConfig().chunkservers().values();
+            Collection<AkServerNetworkConfig> akServers = admin.clusterConfig().chunkservers().values();
             for (String key : AdminKey.CONFIG_KEYS) {
                 admin.delete(key, -1);
             }
             // Delete /config itself
             admin.deleteDirectory(AdminKey.CONFIG_BASE);
             // Delete /state files
-            for (ChunkserverNetworkConfig chunkserver : chunkservers) {
-                admin.delete(AdminKey.stateChunkserverName(chunkserver.name()), -1);
+            for (AkServerNetworkConfig akServer : akServers) {
+                admin.delete(AdminKey.stateChunkserverName(akServer.name()), -1);
             }
             // Delete /state itself
             admin.deleteDirectory(AdminKey.STATE_BASE);

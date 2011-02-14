@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class JoinColumn implements Serializable, ModelNames
 {
-    public static void create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static void create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         String parentSchemaName = (String) map.get(joinColumn_parentSchemaName);
         String parentTableName = (String) map.get(joinColumn_parentTableName);

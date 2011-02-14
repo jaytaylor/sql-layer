@@ -22,26 +22,21 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.AkServerUtil;
 import org.junit.Test;
 
-import com.akiban.ais.io.CSVTarget;
-import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.cserver.CServer;
-import com.akiban.cserver.CServerUtil;
+import com.akiban.server.AkServer;
 import com.akiban.util.MySqlStatementSplitter;
 
 public class SchemaDefToAisTest {
@@ -59,24 +54,24 @@ public class SchemaDefToAisTest {
         "latin1_german2_ci", "utf8_general_ci", 
         "utf8_general_ci"};
     
-    private AkibaInformationSchema buildAISfromResource(final String resourceName) throws Exception {
+    private AkibanInformationSchema buildAISfromResource(final String resourceName) throws Exception {
         final StringBuilder sb = new StringBuilder();
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                CServer.class.getClassLoader().getResourceAsStream(resourceName)));
+                AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
-            sb.append(statement).append(CServerUtil.NEW_LINE);
+            sb.append(statement).append(AkServerUtil.NEW_LINE);
         }
         return buildAISfromString(sb.toString());
     }
     
-    private AkibaInformationSchema buildAISfromString(final String schema) throws Exception {
+    private AkibanInformationSchema buildAISfromString(final String schema) throws Exception {
         final SchemaDef schemaDef = SchemaDef.parseSchema(schema);
         return new SchemaDefToAis(schemaDef, true).getAis();
     }
     
     @Test
     public void testParseEnumAndSet() throws Exception {
-        AkibaInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
+        AkibanInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
 
         final Table enumTable = ais.getTable(new TableName(SCHEMA_NAME,
                 "with_enum"));
@@ -289,7 +284,7 @@ public class SchemaDefToAisTest {
 
     @Test
     public void charsetAndCollate() throws Exception {
-        AkibaInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
+        AkibanInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
 
         final Table utf8Table = ais.getTable(new TableName(SCHEMA_NAME,
                 "with_utf8"));

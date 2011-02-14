@@ -28,10 +28,10 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
-import com.akiban.ais.model.AkibaInformationSchema;
 
 public final class CSVTest {
     private static class TestBufferedReader extends BufferedReader {
@@ -84,7 +84,7 @@ public final class CSVTest {
             is.close();
         }
 
-        final AkibaInformationSchema ais1;
+        final AkibanInformationSchema ais1;
         final String aisCSV;
         {
             DDLSource ddlSource = new DDLSource();
@@ -98,7 +98,7 @@ public final class CSVTest {
         }
 
         TestBufferedReader aisReader = new TestBufferedReader( new StringReader(aisCSV), 5 );
-        final AkibaInformationSchema ais2;
+        final AkibanInformationSchema ais2;
         try {
             ais2 = new Reader( new CSVSource(aisReader) ).load();
         } catch (Exception e) {

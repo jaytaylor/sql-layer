@@ -19,12 +19,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
+import com.akiban.admin.state.AkServerState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.admin.config.ChunkserverConfig;
+import com.akiban.admin.config.AkServerConfig;
 import com.akiban.admin.config.ClusterConfig;
-import com.akiban.admin.state.ChunkserverState;
 
 public abstract class Admin
 {
@@ -106,24 +106,24 @@ public abstract class Admin
         return new ClusterConfig(get(AdminKey.CONFIG_CLUSTER));
     }
 
-    public final ChunkserverConfig chunkserverConfig()
+    public final AkServerConfig chunkserverConfig()
     {
-        return new ChunkserverConfig(get(AdminKey.CONFIG_CHUNKSERVER));
+        return new AkServerConfig(get(AdminKey.CONFIG_CHUNKSERVER));
     }
 
     // For use by this package
 
-    final ChunkserverState chunkserverState(String chunkserverName) throws UnknownHostException
+    final AkServerState chunkserverState(String chunkserverName) throws UnknownHostException
     {
         String chunkserverStateName = AdminKey.stateChunkserverName(chunkserverName);
-        return new ChunkserverState(get(chunkserverStateName));
+        return new AkServerState(get(chunkserverStateName));
     }
 
-    final void saveChunkserverState(String chunkserverName, ChunkserverState chunkserverState)
+    final void saveChunkserverState(String chunkserverName, AkServerState akServerState)
         throws StaleUpdateException
     {
         String chunkserverStateName = AdminKey.stateChunkserverName(chunkserverName);
-        set(chunkserverStateName, chunkserverState.version(), chunkserverState.toPropertiesString());
+        set(chunkserverStateName, akServerState.version(), akServerState.toPropertiesString());
     }
 
     // For use by subclasses
