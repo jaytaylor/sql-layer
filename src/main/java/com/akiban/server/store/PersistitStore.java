@@ -486,6 +486,44 @@ public class PersistitStore implements AkServerConstants, Store {
                                     hEx.getKey(), deferIndexes);
                     }
 
+                    // The row being inserted might be the parent of orphan rows already present. The hkeys of these
+                    // orphan rows need to be maintained. The hkeys of interest contain the PK from the inserted row,
+                    // and nulls for other hkey fields nearer the root.
+                    // TODO: optimizations
+                    // - If we knew that no descendent table had an orphan (e.g. store this info in TableStatus),
+                    // then this propagation could be skipped.
+                    hEx.clear();
+                    Key hKey = hEx.getKey();
+                    UserTable table = rowDef.userTable();
+                    // LOG.error(String.format("table: %s, hKey: %s", table, table.hKey()));
+                    List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
+                    List<HKeySegment> hKeySegments = table.hKey().segments();
+                    int s = 0;
+                    while (s < hKeySegments.size()) {
+                        HKeySegment segment = hKeySegments.get(s++);
+                        // LOG.error(String.format("segment: %s", segment));
+                        RowDef segmentRowDef = rowDefCache.getRowDef(segment.table().getTableId());
+                        // LOG.error(String.format("segmentRowDef: %s", segmentRowDef));
+                        hKey.append(segmentRowDef.getOrdinal());
+                        List<HKeyColumn> hKeyColumns = segment.columns();
+                        int c = 0;
+                        while (c < hKeyColumns.size()) {
+                            HKeyColumn hKeyColumn = hKeyColumns.get(c++);
+                            // LOG.error(String.format("segment column: %s", hKeyColumn));
+                            Column column = hKeyColumn.column();
+                            RowDef columnTableRowDef = rowDefCache.getRowDef(column.getTable().getTableId());
+                            if (pkColumns.contains(column)) {
+                                // LOG.error(String.format("Appending pk column %s, position %s, field def: %s",
+                                //                         column, column.getPosition(), columnTableRowDef.getFieldDef(column.getPosition())));
+                                appendKeyField(hKey, columnTableRowDef.getFieldDef(column.getPosition()), rowData);
+                            } else {
+                                hKey.append(null);
+                            }
+                            // LOG.error(String.format("Orphan hkey prefix: %s", hKey));
+                        }
+                    }
+                    propagateDownGroup(session, hEx);
+
                     TX_COMMIT_TAP.in();
                     if (updateListeners.isEmpty()) {
                         transaction.commit(forceToDisk);
@@ -620,6 +658,11 @@ public class PersistitStore implements AkServerConstants, Store {
                                     hEx.getKey());
                         }
                     }
+
+                    // The row being deleted might be the parent of rows that now become orphans. The hkeys
+                    // of these rows need to be maintained.
+                    propagateDownGroup(session, hEx);
+
                     if (updateListeners.isEmpty()) {
                         transaction.commit(forceToDisk);
                     } else {
@@ -698,31 +741,6 @@ public class PersistitStore implements AkServerConstants, Store {
                         !fieldsEqual(rowDef, oldRowData, mergedRowData, rowDef.getParentJoinFields())) {
                         deleteRow(session, oldRowData);
                         writeRow(session, mergedRowData);
-                        // Propagate hkey changes to children whose hkeys are computed from this row.
-                        // TODO: Optimizations
-                        // - Don't have to visit children that contain their own hkey
-                        // - Don't have to visit children whose hkey contains no changed column
-                        KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
-                        while (hEx.next(filter)) {
-                            // Get the current row (under the top-level row being updated)
-                            Value value = hEx.getValue();
-                            int descendentRowDefId =
-                                AkServerUtil.getInt(value.getEncodedBytes(),
-                                        RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
-                            RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
-                            RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
-                            expandRowData(hEx, descendentRowDef, descendentRowData);
-                            // Delete the current row from the tree
-                            hEx.remove();
-                            // ... and from the indexes
-                            for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
-                                if (!indexDef.isHKeyEquivalent()) {
-                                    deleteIndex(session, indexDef, descendentRowDef, descendentRowData, hEx.getKey());
-                                }
-                            }
-                            // Reinsert it, recomputing the hkey
-                            writeRow(session, descendentRowData);
-                        }
                     } else {
                         packRowData(hEx, rowDef, mergedRowData);
                         // Store the h-row
@@ -761,6 +779,44 @@ public class PersistitStore implements AkServerConstants, Store {
         } finally {
             releaseExchange(session, hEx);
             UPDATE_ROW_TAP.out();
+        }
+    }
+
+    private void propagateDownGroup(Session session, Exchange exchange)
+        throws PersistitException, InvalidOperationException
+    {
+        // exchange is positioned at a row R that has just been replaced by R', (because we're processing an update
+        // that has to be implemented as delete/insert). hKey is the hkey of R. The replacement, R', is already present.
+        // For each descendent* D of R, this method deletes and reinserts D. Reinsertion of D causes its hkey to be
+        // recomputed. This may depend on an ancestor being updated (if part of D's hkey comes from the parent's
+        // PK index). That's OK because updates are processed preorder, (i.e., ancestors before descendents).
+        // This method will modify the state of exchange.
+        //
+        // * D is a descendent of R means that D is below R in the group. I.e., hkey(R) is a prefix of hkey(D).
+        //
+        // TODO: Optimizations
+        // - Don't have to visit children that contain their own hkey
+        // - Don't have to visit children whose hkey contains no changed column
+        Key hKey = exchange.getKey();
+        KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
+        while (exchange.next(filter)) {
+            Value value = exchange.getValue();
+            int descendentRowDefId =
+                AkServerUtil.getInt(value.getEncodedBytes(),
+                                    RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+            RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
+            RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
+            expandRowData(exchange, descendentRowDef, descendentRowData);
+            // Delete the current row from the tree
+            exchange.remove();
+            // ... and from the indexes
+            for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
+                if (!indexDef.isHKeyEquivalent()) {
+                    deleteIndex(session, indexDef, descendentRowDef, descendentRowData, exchange.getKey());
+                }
+            }
+            // Reinsert it, recomputing the hkey
+            writeRow(session, descendentRowData);
         }
     }
 
