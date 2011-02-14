@@ -18,7 +18,7 @@
  *      -properties file listing the network configuration (addressing)
  *      -database user and password for each head
  *      -DDL file
- *      -Akiba Information Schema
+ *      -Akiban Information Schema
  */
 package com.akiban.ais.loader;
 
@@ -42,7 +42,7 @@ import java.util.StringTokenizer;
 import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.ddl.SqlTextTarget;
 import com.akiban.ais.io.Writer;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,7 +219,7 @@ public class AISLoader
             final String aisDDL = groupingDefinition + tableStatements;
 
             final DDLSource source = new DDLSource();
-            final AkibaInformationSchema ais = source.buildAISFromString(aisDDL);
+            final AkibanInformationSchema ais = source.buildAISFromString(aisDDL);
             final StringWriter buffer = new StringWriter();
             final PrintWriter pw = new PrintWriter(buffer);
             SqlTextTarget target = new SqlTextTarget(pw);

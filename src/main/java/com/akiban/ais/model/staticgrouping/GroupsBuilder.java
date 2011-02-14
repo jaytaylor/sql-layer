@@ -22,7 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
@@ -201,7 +201,7 @@ public final class GroupsBuilder
     }
 
 
-    public static Grouping fromAis(AkibaInformationSchema ais, String defaultSchema) {
+    public static Grouping fromAis(AkibanInformationSchema ais, String defaultSchema) {
         GroupsBuilder builder = new GroupsBuilder(defaultSchema);
 
         for (UserTable uTable : ais.getUserTables().values()) {

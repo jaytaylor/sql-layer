@@ -28,7 +28,7 @@ import com.akiban.ais.io.CSVSource;
 import com.akiban.ais.io.MessageSource;
 import com.akiban.ais.io.MySQLSource;
 import com.akiban.ais.io.Reader;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Source;
 
 public class AISReader
@@ -80,7 +80,7 @@ public class AISReader
 
     private void run() throws Exception
     {
-        AkibaInformationSchema ais = null;
+        AkibanInformationSchema ais = null;
         if (mysqlHost != null) {
             Source source = new MySQLSource(mysqlHost, Integer.toString(mysqlPort), mysqlUser, mysqlPassword);
             ais = new Reader(source).load();
@@ -88,7 +88,7 @@ public class AISReader
             Source source = new CSVSource(new BufferedReader(new FileReader(csvFilename)));
             ais = new Reader(source).load();
         } else if (javaFilename != null) {
-            ais = (AkibaInformationSchema) new ObjectInputStream(new FileInputStream(javaFilename)).readObject();
+            ais = (AkibanInformationSchema) new ObjectInputStream(new FileInputStream(javaFilename)).readObject();
         } else if (messageFilename != null) {
             FileInputStream fileInput = new FileInputStream(messageFilename);
             FileChannel fileChannel = fileInput.getChannel();

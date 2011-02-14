@@ -31,7 +31,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.cserver.service.session.Session;
+import com.akiban.server.service.session.Session;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.MessageRegistryBase;

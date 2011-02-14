@@ -24,18 +24,18 @@ import java.util.List;
 import java.util.Set;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 
 public class Schemapedia
 {
     public static void main(String[] args) throws Exception
     {
         Schemapedia schemapedia = new Schemapedia(args);
-        AkibaInformationSchema ais = schemapedia.importSchemas();
+        AkibanInformationSchema ais = schemapedia.importSchemas();
         schemapedia.analyze(ais);
     }
 
-    public AkibaInformationSchema importSchemas() throws Exception
+    public AkibanInformationSchema importSchemas() throws Exception
     {
         DB.Connection connection = db.new Connection();
         // Visit each schema
@@ -50,7 +50,7 @@ public class Schemapedia
         importColumns(connection);
         importIndexes(connection);
         importForeignKeys(connection);
-        return aisBuilder.akibaInformationSchema();
+        return aisBuilder.akibanInformationSchema();
     }
 
     private void importColumns(DB.Connection connection)
@@ -191,7 +191,7 @@ public class Schemapedia
         this.aisBuilder = new AISBuilder();
     }
 
-    public void analyze(AkibaInformationSchema ais)
+    public void analyze(AkibanInformationSchema ais)
     {
         analyzer.analyze(ais);
     }
@@ -234,6 +234,6 @@ public class Schemapedia
 
     public interface Analyzer
     {
-        void analyze(AkibaInformationSchema ais);
+        void analyze(AkibanInformationSchema ais);
     }
 }

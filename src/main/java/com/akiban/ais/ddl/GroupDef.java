@@ -29,7 +29,7 @@ public final class GroupDef {
     }
 
     public void seeHeaderGroupSchema(String text) {
-        assert "akiba_objects".equals(text): "saw groupschema" + text;
+        assert "akiban_objects".equals(text): "saw groupschema" + text;
     }
 
     public GroupsBuilder getGroupsBuilder() {

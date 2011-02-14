@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import org.antlr.runtime.RecognitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,6 @@ import com.akiban.ais.ddl.SchemaDef.ColumnDef;
 import com.akiban.ais.ddl.SchemaDef.IndexDef;
 import com.akiban.ais.ddl.SchemaDef.UserTableDef;
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -61,7 +61,7 @@ public class SchemaDefToAis {
     private final static String AKIBANDB_ENGINE_NAME = "akibandb";
 
     private final SchemaDef schemaDef;
-    private final AkibaInformationSchema ais;
+    private final AkibanInformationSchema ais;
 
     public SchemaDefToAis(final SchemaDef schemaDef, final boolean akibandbOnly)
             throws RecognitionException, Exception {
@@ -69,7 +69,7 @@ public class SchemaDefToAis {
         this.ais = buildAISFromBuilder(akibandbOnly);
     }
 
-    public AkibaInformationSchema getAis() {
+    public AkibanInformationSchema getAis() {
         return ais;
     }
 
@@ -239,13 +239,13 @@ public class SchemaDefToAis {
         }
     }
 
-    private AkibaInformationSchema buildAISFromBuilder(
+    private AkibanInformationSchema buildAISFromBuilder(
             final boolean akibandbOnly) throws RecognitionException, Exception {
         addImpliedGroups();
         computeColumnMapAndPositions();
 
         AISBuilder builder = new AISBuilder();
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
 
         // loop through user tables and add to AIS
@@ -283,9 +283,9 @@ public class SchemaDefToAis {
                         : true);
                 column.setTypeParameter1(longValue(def.typeParam1));
                 column.setTypeParameter2(longValue(def.typeParam2));
-                column.setCharset(def.charset == null ? AkibaInformationSchema.DEFAULT_CHARSET
+                column.setCharset(def.charset == null ? AkibanInformationSchema.DEFAULT_CHARSET
                         : def.charset);
-                column.setCollation(def.collate == null ? AkibaInformationSchema.DEFAULT_COLLATION
+                column.setCollation(def.collate == null ? AkibanInformationSchema.DEFAULT_COLLATION
                         : def.collate);
                 column.setInitialAutoIncrementValue(def.defaultAutoIncrement());
             }
@@ -399,7 +399,7 @@ public class SchemaDefToAis {
         if (!schemaDef.getGroupMap().isEmpty())
             builder.groupingIsComplete();
 
-        return builder.akibaInformationSchema();
+        return builder.akibanInformationSchema();
     }
 
     private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex) {
@@ -417,7 +417,7 @@ public class SchemaDefToAis {
     }
 
     private String groupTableName(final CName group) {
-        return "_akiba_" + group.getName();
+        return "_akiban_" + group.getName();
     }
 
 }

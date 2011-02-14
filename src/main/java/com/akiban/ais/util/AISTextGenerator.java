@@ -21,7 +21,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 
 public class AISTextGenerator
 {
@@ -35,7 +35,7 @@ public class AISTextGenerator
         return stringWriter.toString();
     }
 
-    public AISTextGenerator(AkibaInformationSchema ais) throws Exception
+    public AISTextGenerator(AkibanInformationSchema ais) throws Exception
     {
         this.ais = ais;
         velocity = new VelocityEngine();
@@ -48,6 +48,6 @@ public class AISTextGenerator
         velocity.init();
     }
 
-    private final AkibaInformationSchema ais;
+    private final AkibanInformationSchema ais;
     private final VelocityEngine velocity;
 }

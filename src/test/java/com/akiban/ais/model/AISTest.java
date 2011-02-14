@@ -28,7 +28,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import com.akiban.cserver.SchemaFactory;
+import com.akiban.server.SchemaFactory;
 
 public class AISTest
 {
@@ -43,7 +43,7 @@ public class AISTest
             "    col0 int not null ",
             ") engine = akibandb;"
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = ais.getUserTable("s", "t");
         int expectedPosition = 0;
         for (Column column : table.getColumns()) {
@@ -67,7 +67,7 @@ public class AISTest
             "    key i(col5, col4, col3) ",
             ") engine = akibandb;"
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = ais.getUserTable("s", "t");
         Index index = table.getIndex("i");
         Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
@@ -98,7 +98,7 @@ public class AISTest
             "    primary key (col5, col4, col3) ",
             ") engine = akibandb;"
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = ais.getUserTable("s", "t");
         PrimaryKey pk = table.getPrimaryKey();
         Iterator<Column> indexColumnScan = pk.getColumns().iterator();
@@ -128,7 +128,7 @@ public class AISTest
             "   constraint `__akiban_fk` foreign key (c0, c1) references parent(p1, p0)",
             ") engine = akibandb;",
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         Join join = ais.getUserTable("s", "child").getParentJoin();
         Iterator<JoinColumn> joinColumns = join.getJoinColumns().iterator();
         JoinColumn joinColumn = joinColumns.next();
@@ -162,7 +162,7 @@ public class AISTest
             "   constraint `__akiban_fk_io` foreign key (oid) references `order`(oid)",
             ") engine = akibandb;",
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
@@ -226,7 +226,7 @@ public class AISTest
             "   constraint `__akiban_fk_io` foreign key (oid0, oid1) references `order`(oid0, oid1)",
             ") engine = akibandb;",
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
@@ -298,7 +298,7 @@ public class AISTest
             "   constraint `__akiban_fk_io` foreign key (cid, oid) references `order`(cid, oid)",
             ") engine = akibandb;",
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
@@ -364,7 +364,7 @@ public class AISTest
             "   constraint `__akiban_fk_io` foreign key (cid0, cid1, oid0, oid1) references `order`(cid0, cid1, oid0, oid1)",
             ") engine = akibandb;",
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
@@ -441,7 +441,7 @@ public class AISTest
             "   constraint `__akiban_fk_ac` foreign key (cid) references customer(cid)",
             ") engine = akibandb;",
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         GroupTable coi = customer.getGroup().getGroupTable();
@@ -499,7 +499,7 @@ public class AISTest
             "    b int",
             ") engine = akibandb;"
         };
-        AkibaInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = (UserTable) ais.getTable("s", "t");
         // check columns
         checkColumns(table.getColumns(), "a", "b");

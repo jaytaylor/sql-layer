@@ -20,7 +20,7 @@ import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -118,7 +118,7 @@ public class SqlTextTarget extends Target {
 		}
 	}
 
-	public void writeGroupTableDDL(final AkibaInformationSchema ais) throws Exception {
+	public void writeGroupTableDDL(final AkibanInformationSchema ais) throws Exception {
 		for (final GroupTable table : ais.getGroupTables().values()) {
 			writer.println();
 			writer.print("create table `" + table.getName().getSchemaName() + "`.`"

@@ -2,10 +2,10 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.akiban</groupId>
-    <artifactId>akiban-cserver</artifactId>
+    <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
     <version>0.0.2-SNAPSHOT</version>
-    <name>akiban-cserver</name>
+    <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
         <BZR_REVISION></BZR_REVISION>
@@ -133,6 +133,13 @@
             <version>1.6.1</version>
         </dependency>
         <dependency>
+            <!-- TODO remove this once we get packaging under control, so that we can dynamically set the logger -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.6.1</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.thimbleware.jmemcached</groupId>
             <artifactId>jmemcached-core</artifactId>
             <version>0.9.1</version>
@@ -179,7 +186,7 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <portNames>
-                                <portName>cserver.port</portName>
+                                <portName>akserver.port</portName>
                                 <portName>debug.port</portName>
                             </portNames>
                         </configuration>
@@ -216,7 +223,7 @@
                     <archive>
                         <manifest>
                             <!--mainClass>com.akiban.ais.MySQLToNetwork</mainClass-->
-                        <mainClass>com.akiban.cserver.CServer</mainClass>
+                        <mainClass>com.akiban.server.AkServer</mainClass>
                     </manifest>
                 </archive>
             </configuration>
@@ -258,7 +265,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.6</version>
             <configuration>
-                <argLine>-Xmx512m -Xms128m -Dcserver.port=${cserver.port} ${akiban.test.extraJvmArgs}</argLine>
+                <argLine>-Xmx512m -Xms128m -Dakserver.port=${akserver.port} ${akiban.test.extraJvmArgs}</argLine>
                 <includes>
                     <include>**/*Test.java</include>
                     <include>**/*Test?.java</include>

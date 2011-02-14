@@ -18,11 +18,11 @@ package com.akiban.ais;
 import com.akiban.ais.io.MySQLSource;
 import com.akiban.ais.io.Reader;
 import com.akiban.ais.message.AISResponse;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.NettyAkibanConnectionImpl;
-import com.akiban.network.AkibaNetworkHandler;
+import com.akiban.network.AkibanNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -59,22 +59,22 @@ public class MySQLToNetwork
         sendAISToNetwork(readAISFromMySQL());
     }
 
-    private AkibaInformationSchema readAISFromMySQL() throws Exception
+    private AkibanInformationSchema readAISFromMySQL() throws Exception
     {
         return new Reader(new MySQLSource(dbHost, dbPort, dbUsername, dbPassword)).load();
     }
 
-    private void sendAISToNetwork(AkibaInformationSchema ais) throws Exception
+    private void sendAISToNetwork(AkibanInformationSchema ais) throws Exception
     {
         NetworkHandlerFactory.initializeNetwork("localhost", "9999",
                                                 new CommEventNotifier()
                                                 {
                                                     @Override
-                                                    public void onConnect(AkibaNetworkHandler newHandler)
+                                                    public void onConnect(AkibanNetworkHandler newHandler)
                                                     {
                                                     }
                                                     @Override
-                                                    public void onDisconnect(AkibaNetworkHandler handler)
+                                                    public void onDisconnect(AkibanNetworkHandler handler)
                                                     {
                                                     }
                                                 });

@@ -20,7 +20,7 @@ import static junit.framework.Assert.assertEquals;
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.ais.model.AkibanInformationSchema;
 
 public final class DDLGeneratorTest {
 
@@ -30,15 +30,15 @@ public final class DDLGeneratorTest {
         builder.userTable("schema", "table");
         builder.column("schema", "table", "col", 0, "decimal unsigned", 11L, 3L, true, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("myGroup", "akiba_objects", "_group0");
+        builder.createGroup("myGroup", "akiban_objects", "_group0");
         builder.addTableToGroup("myGroup", "schema", "table");
         builder.groupingIsComplete();
 
-        AkibaInformationSchema ais = builder.akibaInformationSchema();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",
-                "create table `akiba_objects`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint, key `table$PRIMARY`(`table$__akiban_pk`)) engine=akibandb",
+                "create table `akiban_objects`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint, key `table$PRIMARY`(`table$__akiban_pk`)) engine=akibandb",
                 generator.createTable(ais.getGroup("myGroup").getGroupTable()));
     }
 }

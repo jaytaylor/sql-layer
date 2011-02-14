@@ -20,11 +20,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 
-import com.akiban.cserver.InvalidOperationException;
-import com.akiban.cserver.service.network.RequestHandler;
-import com.akiban.cserver.service.network.SingleSendBuffer;
-import com.akiban.cserver.service.session.Session;
-import com.akiban.cserver.service.session.SessionImpl;
+import com.akiban.server.InvalidOperationException;
+import com.akiban.server.service.network.RequestHandler;
+import com.akiban.server.service.network.SingleSendBuffer;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionImpl;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.ErrorResponse;
 import com.akiban.message.Message;

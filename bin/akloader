@@ -95,7 +95,7 @@ if options.target_schema == "":
 groups = [group for group in options.groups.split(",")]
 
 blk_cmd = "java -ea -cp %s:%s " % (options.ak_jar, options.mysql_jar)
-blk_cmd += "com.akiban.cserver.util.BulkLoaderClient --cserver %s " % options.akserver
+blk_cmd += "com.akiban.server.util.BulkLoaderClient --akserver %s " % options.akserver
 blk_cmd += "--mysql %s --user %s " % (options.mysql_host, options.mysql_user)
 if options.mysql_pass != "":
     blk_cmd += "--password %s " % options.mysql_pass

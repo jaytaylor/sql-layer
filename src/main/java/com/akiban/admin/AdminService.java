@@ -18,6 +18,8 @@ package com.akiban.admin;
 import java.io.IOException;
 import java.util.Map;
 
+import com.akiban.admin.state.AkServerState;
+import com.akiban.network.AkibanNetworkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.mortbay.jetty.Server;
@@ -25,15 +27,13 @@ import org.mortbay.jetty.Server;
 import com.akiban.admin.action.ClearConfig;
 import com.akiban.admin.action.StartChunkservers;
 import com.akiban.admin.action.StopChunkservers;
-import com.akiban.admin.config.ChunkserverNetworkConfig;
+import com.akiban.admin.config.AkServerNetworkConfig;
 import com.akiban.admin.config.ClusterConfig;
 import com.akiban.admin.message.AdminIntroductionRequest;
 import com.akiban.admin.message.AdminIntroductionResponse;
-import com.akiban.admin.state.ChunkserverState;
 import com.akiban.message.AkibanConnection;
 import com.akiban.message.MessageRegistry;
 import com.akiban.message.NettyAkibanConnectionImpl;
-import com.akiban.network.AkibaNetworkHandler;
 import com.akiban.network.CommEventNotifier;
 import com.akiban.network.NetworkHandlerFactory;
 
@@ -159,9 +159,9 @@ public class AdminService
         try {
             ClusterConfig clusterConfig = admin.clusterConfig();
             // clusterConfig.chunkservers() describes the chunkservers that are expected to be present.
-            for (Map.Entry<String, ChunkserverNetworkConfig> entry : clusterConfig.chunkservers().entrySet()) {
+            for (Map.Entry<String, AkServerNetworkConfig> entry : clusterConfig.chunkservers().entrySet()) {
                 String chunkserverName = entry.getKey();
-                ChunkserverNetworkConfig chunkserverNetworkConfig = entry.getValue();
+                AkServerNetworkConfig akServerNetworkConfig = entry.getValue();
                 // Get the chunkserver state file, if it exists
                 String chunkserverStateName = AdminKey.stateChunkserverName(chunkserverName);
                 AdminValue value = admin.get(chunkserverStateName);
@@ -169,7 +169,7 @@ public class AdminService
                     // Initial state of unknown chunkserver *should* be down.
                     admin.set(chunkserverStateName,
                               null,
-                              new ChunkserverState(false, chunkserverNetworkConfig.lead()).toPropertiesString());
+                              new AkServerState(false, akServerNetworkConfig.lead()).toPropertiesString());
                 }
             }
         } catch (Admin.StaleUpdateException e) {
@@ -203,13 +203,13 @@ public class AdminService
     public class ChannelNotifier implements CommEventNotifier
     {
         @Override
-        public void onConnect(AkibaNetworkHandler handler)
+        public void onConnect(AkibanNetworkHandler handler)
         {
             logger.error("AdminService.ChannelNotifier.onConnect shouldn't be called.");
         }
 
         @Override
-        public void onDisconnect(AkibaNetworkHandler handler)
+        public void onDisconnect(AkibanNetworkHandler handler)
         {
             logger.error("AdminService.ChannelNotifier.onDisconnect shouldn't be called.");
         }

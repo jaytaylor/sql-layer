@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class Column implements Serializable, ModelNames
 {
-    public static Column create(AkibaInformationSchema ais, Map<String, Object> map)
+    public static Column create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         Column column = null;
         String schemaName = (String) map.get(column_schemaName);
