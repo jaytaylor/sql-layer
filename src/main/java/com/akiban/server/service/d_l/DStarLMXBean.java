@@ -15,17 +15,22 @@
 
 package com.akiban.server.service.d_l;
 
+import java.util.List;
+
+@SuppressWarnings("unused") // jmx
 public interface DStarLMXBean {
     String getUsingSchema();
     void setUsingSchema(String schema);
 
-//    void createTable(String schema, String ddl);
     void createTable(String ddl);
 
-    void dropTable(String schema, String tableName);
     void dropTable(String tableName);
+
     void dropGroup(String groupName);
 
-//    void writeRow(String schema, String table, String fields);
+    void dropAllGroups();
+
     void writeRow(String table, String fields);
+
+    List<String> getGrouping();
 }
