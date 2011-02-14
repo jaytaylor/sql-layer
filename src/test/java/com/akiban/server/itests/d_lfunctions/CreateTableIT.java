@@ -36,20 +36,14 @@ import static org.junit.Assert.assertTrue;
 
 
 public final class CreateTableIT extends ApiTestBase {
-    // TODO: ENUM parsing and AIS support (unsupported for Halo)
+    // TODO: ENUM/SET parsing and AIS support (unsupported for Halo)
     @Test
-    public void bug686972_enum() throws InvalidOperationException {
+    public void bug686972() throws InvalidOperationException {
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 enum('a','b','c')");
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 ENUM('a','b','c')");
-        // Expand test when supporting ENUM
-    }
-
-    // TODO: SET parsing and AIS support (unsupported for Halo)
-    @Test
-    public void bug686972_set() throws InvalidOperationException {
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 set('a','b','c')");
         createExpectException(UnsupportedDataTypeException.class, "test", "t", "c1 SET('a','b','c')");
-        // Expand test when supporting SET
+        // Expand test when supporting ENUM and SEt
     }
 
     // Using 'text' as a column identifier causes parse error
@@ -79,13 +73,13 @@ public final class CreateTableIT extends ApiTestBase {
     // FIXED data type causes parse error
     @Test
     public void bug696321() throws InvalidOperationException {
-        createAndCheckColumn("c1 FIXED NULL", Types.DECIMAL, 10L, 0L);
+        createCheckColumnDrop("c1 FIXED NULL", Types.DECIMAL, 10L, 0L);
     }
 
     // REAL data type causes NPE
     @Test
     public void bug696325() throws InvalidOperationException {
-        createAndCheckColumn("c1 REAL(1,0) NULL", Types.DOUBLE, 1L, 0L);
+        createCheckColumnDrop("c1 REAL(1,0) NULL", Types.DOUBLE, 1L, 0L);
     }
 
     // Short create statement causes StringIndexOutOfBoundsException from SchemaDef.canonicalStatement
@@ -106,7 +100,7 @@ public final class CreateTableIT extends ApiTestBase {
     // CHAR(0) data type fails, assert during AIS construction
     @Test
     public void bug705993() throws InvalidOperationException {
-        int tid = createAndCheckColumn("c1 CHAR(0) NULL", Types.CHAR, 0L, null);
+        int tid = createCheckColumn("c1 CHAR(0) NULL", Types.CHAR, 0L, null);
         // We support a superset of the inserts for CHAR(0) compared to MySQL, which should be OK
         writeRows(createNewRow(tid, "a", -1L),
                   createNewRow(tid, null, -1L));
@@ -119,7 +113,7 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void bug706008() throws InvalidOperationException {
         // SERIAL => BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.
-        int tid1 = createAndCheckColumn("c1 SERIAL", Types.U_BIGINT, null, null);
+        int tid1 = createCheckColumn("c1 SERIAL", Types.U_BIGINT, null, null);
         Table table = getUserTable(tid1);
         assertFalse(table.getColumn("c1").getNullable());
         Index index = table.getIndex("c1");
@@ -146,17 +140,42 @@ public final class CreateTableIT extends ApiTestBase {
         int tid2 = tableId("test", "dst");
     }
 
+    // BLOB(L) always created as type blob
+    @Test
+    public void bug717842() throws InvalidOperationException {
+        // blob(L): L=0 => blob, L<2^8 => tiny, L<2^16 => blob, L<2^24 => medium, L<2^32 => large
+        createCheckColumnDrop("c1 blob(0)", Types.BLOB, null, null);
+        createCheckColumnDrop("c1 blob(1)", Types.TINYBLOB, null, null);
+        createCheckColumnDrop("c1 blob(255)", Types.TINYBLOB, null, null);
+        createCheckColumnDrop("c1 blob(256)", Types.BLOB, null, null);
+        createCheckColumnDrop("c1 blob(65535)", Types.BLOB, null, null);
+        createCheckColumnDrop("c1 blob(65536)", Types.MEDIUMBLOB, null, null);
+        createCheckColumnDrop("c1 blob(16777215)", Types.MEDIUMBLOB, null, null);
+        createCheckColumnDrop("c1 blob(16777216)", Types.LONGBLOB, null, null);
+        createCheckColumnDrop("c1 blob(4294967295)", Types.LONGBLOB, null, null);
+        
+        // Text should be the same
+        createCheckColumnDrop("c1 text(0)", Types.TEXT, null, null);
+        createCheckColumnDrop("c1 text(1)", Types.TINYTEXT, null, null);
+        createCheckColumnDrop("c1 text(255)", Types.TINYTEXT, null, null);
+        createCheckColumnDrop("c1 text(256)", Types.TEXT, null, null);
+        createCheckColumnDrop("c1 text(65535)", Types.TEXT, null, null);
+        createCheckColumnDrop("c1 text(65536)", Types.MEDIUMTEXT, null, null);
+        createCheckColumnDrop("c1 text(16777215)", Types.MEDIUMTEXT, null, null);
+        createCheckColumnDrop("c1 text(16777216)", Types.LONGTEXT, null, null);
+        createCheckColumnDrop("c1 text(4294967295)", Types.LONGTEXT, null, null);
+    }
     
     @Test
     public void charTypeDefaultParameter() throws InvalidOperationException {
-        int tid = createAndCheckColumn("c1 CHAR NULL", Types.CHAR, 1L, null);
+        int tid = createCheckColumn("c1 CHAR NULL", Types.CHAR, 1L, null);
         writeRows(createNewRow(tid, "a", -1L));
         expectFullRows(tid, createNewRow(tid, "a"));
     }
 
     @Test
     public void charTypeWithParameter() throws InvalidOperationException {
-        int tid = createAndCheckColumn("c1 CHAR(5) NULL", Types.CHAR, 5L, null);
+        int tid = createCheckColumn("c1 CHAR(5) NULL", Types.CHAR, 5L, null);
         writeRows(createNewRow(tid, "a", -1L),
                   createNewRow(tid, "abc", -1L),
                   createNewRow(tid, "xxxxx", -1L));
@@ -168,19 +187,15 @@ public final class CreateTableIT extends ApiTestBase {
 
     @Test
     public void floatSingleParamConversions() throws InvalidOperationException {
-        int tid = createAndCheckColumn("c1 float(0)", Types.FLOAT, null, null);
-        ddl().dropTable(session, tableName(tid));
-        tid = createAndCheckColumn("c1 float(24)", Types.FLOAT, null, null);
-        ddl().dropTable(session, tableName(tid));
-        tid = createAndCheckColumn("c1 float(25)", Types.DOUBLE, null, null);
-        ddl().dropTable(session, tableName(tid));
-        tid = createAndCheckColumn("c1 float(53)", Types.DOUBLE, null, null);
-        ddl().dropTable(session, tableName(tid));
+        createCheckColumnDrop("c1 float(0)", Types.FLOAT, null, null);
+        createCheckColumnDrop("c1 float(24)", Types.FLOAT, null, null);
+        createCheckColumnDrop("c1 float(25)", Types.DOUBLE, null, null);
+        createCheckColumnDrop("c1 float(53)", Types.DOUBLE, null, null);
     }
 
     @Test
     public void realTypeDefaultParam() throws InvalidOperationException {
-        createAndCheckColumn("c1 REAL NULL", Types.DOUBLE, null, null);
+        createCheckColumn("c1 REAL NULL", Types.DOUBLE, null, null);
     }
 
     
@@ -194,7 +209,8 @@ public final class CreateTableIT extends ApiTestBase {
         }
     }
 
-    private int createAndCheckColumn(String columnDecl, Type type, Long typeParam1, Long typeParam2) throws InvalidOperationException {
+    private int createCheckColumn(String columnDecl, Type type, Long typeParam1, Long typeParam2)
+            throws InvalidOperationException {
         final int tid = createTable("test", "t", columnDecl);
         final Table table = getUserTable(tid);
         final Collection<Column> columns = table.getColumns();
@@ -205,4 +221,11 @@ public final class CreateTableIT extends ApiTestBase {
         assertEquals(typeParam2, column.getTypeParameter2());
         return tid;
     }
+
+    private void createCheckColumnDrop(String columnDecl, Type type, Long typeParam1, Long typeParam2)
+            throws InvalidOperationException {
+        int tid = createCheckColumn(columnDecl, type, typeParam1, typeParam2);
+        ddl().dropTable(session, tableName(tid));
+    }
 }
+
