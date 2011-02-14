@@ -117,7 +117,21 @@ public class SchemaDef {
         if(typeName.equals("BIT") && param1 != null && param1.equals("0")) {
             param1 = "1";
         }
-        // SQL: FLOAT(P) => FLOAT for P in [0,24], DOUBLE for P in [25,53]
+        // MySQL: BLOB/TEXT(L): L=0 => blob, L<2^8 => tiny, L<2^16 => blob, L<2^24 => medium, L<2^32 => large
+        else if((typeName.equals("BLOB") || typeName.equals("TEXT")) && param1 != null) {
+            final long len = Long.parseLong(param1);
+            if(len >= 1L<<24) {
+                typeName = "LONG" + typeName;
+            }
+            else if(len >= 1L<<16) {
+                typeName = "MEDIUM" + typeName;
+            }
+            else if(len > 0 && len < 1L<<8) {
+                typeName = "TINY" + typeName;
+            }
+            param1 = null;
+        }
+        // SQL: FLOAT(P): 0<=P<=24 => FLOAT,  25<=P<=53 => DOUBLE
         else if(typeName.equals("FLOAT") && param1 != null && param2 == null) {
             if(Long.parseLong(param1) > 24L) {
                 typeName = "DOUBLE";

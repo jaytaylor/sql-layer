@@ -143,7 +143,6 @@ public final class CreateTableIT extends ApiTestBase {
     // BLOB(L) always created as type blob
     @Test
     public void bug717842() throws InvalidOperationException {
-        // blob(L): L=0 => blob, L<2^8 => tiny, L<2^16 => blob, L<2^24 => medium, L<2^32 => large
         createCheckColumnDrop("c1 blob(0)", Types.BLOB, null, null);
         createCheckColumnDrop("c1 blob(1)", Types.TINYBLOB, null, null);
         createCheckColumnDrop("c1 blob(255)", Types.TINYBLOB, null, null);
