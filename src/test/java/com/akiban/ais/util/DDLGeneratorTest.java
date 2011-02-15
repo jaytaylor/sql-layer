@@ -38,7 +38,51 @@ public final class DDLGeneratorTest {
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",
-                "create table `akiban_objects`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint, key `table$PRIMARY`(`table$__akiban_pk`)) engine=akibandb",
+                "create table `akiban_objects`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint NOT NULL, key `table$PRIMARY`(`table$__akiban_pk`)) engine=akibandb",
                 generator.createTable(ais.getGroup("myGroup").getGroupTable()));
+    }
+
+    @Test
+    public void testColumnCharset() throws Exception {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "table");
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf8", null);
+        builder.basicSchemaIsComplete();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET utf8) engine=akibandb",
+                     new DDLGenerator().createTable(ais.getTable("schema", "table")));
+    }
+
+    @Test
+    public void testColumnCollation() throws Exception {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "table");
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "utf8_bin");
+        builder.basicSchemaIsComplete();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE utf8_bin) engine=akibandb",
+                     new DDLGenerator().createTable(ais.getTable("schema", "table")));
+    }
+
+    @Test
+    public void testColumnNotNull() throws Exception {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "table");
+        builder.column("schema", "table", "c1", 0, "int", null, null, false, false, null, null);
+        builder.basicSchemaIsComplete();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        assertEquals("create table `schema`.`table`(`c1` int NOT NULL) engine=akibandb",
+                    new DDLGenerator().createTable(ais.getTable("schema", "table")));
+    }
+
+    @Test
+    public void testColumnAutoIncrement() throws Exception {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "table");
+        builder.column("schema", "table", "c1", 0, "int", null, null, true, true, null, null);
+        builder.basicSchemaIsComplete();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        assertEquals("create table `schema`.`table`(`c1` int AUTO_INCREMENT) engine=akibandb",
+                     new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 }

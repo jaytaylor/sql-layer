@@ -971,8 +971,8 @@ public class DDLSource extends Source {
                 column.setAutoIncrement(def.autoincrement == null ? false : true);
                 column.setTypeParameter1(longValue(def.typeParam1));
                 column.setTypeParameter2(longValue(def.typeParam2));
-                column.setCharset(def.charset == null ? AkibanInformationSchema.DEFAULT_CHARSET : def.charset);
-                column.setCollation(def.collate == null ? AkibanInformationSchema.DEFAULT_COLLATION : def.collate);
+                column.setCharset(def.charset);
+                column.setCollation(def.collate);
             }
             
             // pk index

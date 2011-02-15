@@ -20,7 +20,9 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
+import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.itests.ApiTestBase;
 import org.junit.Assert;
@@ -31,6 +33,7 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -131,16 +134,52 @@ public final class CreateTableIT extends ApiTestBase {
     // CREATE TABLE .. LIKE .. is parse error
     @Test
     public void bug706344() throws InvalidOperationException {
-        int tid1 = createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 CHAR(10) NULL, PRIMARY KEY(c1)");
+        createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 CHAR(10) NULL, PRIMARY KEY(c1)");
         ddl().createTable(session, "test", "CREATE TABLE dst LIKE src");
-        int tid2 = tableId("test", "dst");
+        final int tid = tableId("test", "dst");
+        final Table table = getUserTable(tid);
+        assertEquals(table.getColumns().size(), 2);
+        final Column c1 = table.getColumn("c1");
+        assertNotNull(c1);
+        assertEquals(c1.getType(), Types.INT);
+        assertNull(c1.getTypeParameter1());
+        assertNull(c1.getTypeParameter2());
+        assertFalse(c1.getNullable());
+        assertEquals(0L, c1.getInitialAutoIncrementValue().longValue());
+        final Column c2 = table.getColumn("c2");
+        assertNotNull(c2);
+        assertEquals(c2.getType(), Types.CHAR);
+        assertEquals(c2.getTypeParameter1().longValue(), 10L);
+        assertNull(c2.getTypeParameter2());
+        assertTrue(c2.getNullable());
+        assertNull(c2.getInitialAutoIncrementValue());
+        assertEquals(table.getIndexes().size(), 1);
+        final Index index = table.getIndex("PRIMARY");
+        assertNotNull(index);
+        assertEquals(1, index.getColumns().size());
+
+        dropAllTables();
+
+        // Different schemas
+        final int origTid = createTable("schema1", "orig", "c1 int key");
+        ddl().createTable(session, "schema2", "create table copy like schema1.orig");
+        assertEquals(origTid, tableId("schema1", "orig"));
+        tableId("schema2", "copy");
+
+        try {
+            ddl().createTable(session, "foo", "create table atable like orig");
+            Assert.fail("Expected InvalidOperationException exception");
+        } catch(InvalidOperationException e) {
+            assertEquals(ErrorCode.NO_SUCH_TABLE, e.getCode());
+        }
     }
 
     // CREATE TABLE .. SELECT .. FROM .. is parse error
-    @Test
+    // Note: Fixing would require parsing/computing the result column set of any valid SELECT statement
+    @Test(expected=ParseException.class)
     public void bug706347() throws InvalidOperationException {
         int tid1 = createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 INT NULL, PRIMARY KEY(c1))");
-        ddl().createTable(session, "test", "c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(c1)) SELECT c1,c2 FROM src");
+        ddl().createTable(session, "test", "create table dst(c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(c1)) SELECT c1,c2 FROM src");
         int tid2 = tableId("test", "dst");
     }
 

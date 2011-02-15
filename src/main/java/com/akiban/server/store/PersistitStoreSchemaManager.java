@@ -164,8 +164,28 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
-        final SchemaDef.UserTableDef tableDef = parseTableStatement(
-                defaultSchemaName, canonical);
+        SchemaDef.UserTableDef tableDef = parseTableStatement(defaultSchemaName,
+                                                              canonical);
+        if(tableDef.isLikeTableDef() == true) {
+            final SchemaDef.CName srcName = tableDef.getLikeCName();
+            final String srcSchema = srcName.getSchema() != null ?
+                                     srcName.getSchema() :
+                                     defaultSchemaName;
+            final Table table = getAis(session).getTable(srcSchema,
+                                                         srcName.getName());
+            if(table == null) {
+                throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE,
+                        String.format("Unknown source table [%s] %s",
+                                      srcSchema, srcName.getName()));
+            }
+            final SchemaDef.CName dstName = tableDef.getCName();
+            final String dstSchema = dstName.getSchema() != null ?
+                                     dstName.getSchema() :
+                                     defaultSchemaName;
+            DDLGenerator gen = new DDLGenerator(dstSchema, dstName.getName());
+            canonical = gen.createTable(table);
+            tableDef = parseTableStatement(defaultSchemaName, canonical);
+        }
         String schemaName = tableDef.getCName().getSchema();
         if (schemaName == null) {
             final StringBuilder sb = new StringBuilder(CREATE_TABLE);

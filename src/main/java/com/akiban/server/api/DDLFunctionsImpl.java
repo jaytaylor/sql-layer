@@ -70,7 +70,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ParseException.class, ioe);
             throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
-            throw new GenericInvalidOperationException(e);
+            throw new GenericInvalidOperationException(ioe);
         }
     }
 

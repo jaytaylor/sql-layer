@@ -109,6 +109,11 @@ public class SchemaDef {
         currentColumn = null;
     }
 
+    void addLikeTable(final CName destName, final CName sourceName) {
+        addTable(destName);
+        currentTable.likeName = sourceName;
+    }
+
     void addColumn(final String columnName, final String typeName, final String param1, final String param2) {
         final int uposition = currentColumn == null ? 0 : currentColumn.uposition + 1;
         currentColumn = new ColumnDef(columnName);
@@ -699,6 +704,7 @@ public class SchemaDef {
     public static class UserTableDef {
         CName groupName;
         CName name;
+        CName likeName;
         List<ColumnDef> columns = new ArrayList<ColumnDef>();
         List<String> primaryKey = new ArrayList<String>();
         List<String> childJoinColumns = new ArrayList<String>();
@@ -717,6 +723,14 @@ public class SchemaDef {
 
         public CName getCName() {
             return name;
+        }
+
+        public CName getLikeCName() {
+            return likeName;
+        }
+
+        public boolean isLikeTableDef() {
+            return likeName != null;
         }
 
         public List<ColumnDef> getColumns() {

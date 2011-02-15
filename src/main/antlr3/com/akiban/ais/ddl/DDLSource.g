@@ -119,7 +119,7 @@ cname[SchemaDef schema] returns[CName cname]
     ;
     
 schema_ddl[SchemaDef schema]
-    : (table[$schema] | use[$schema]) SEMICOLON
+    : (table[$schema] | use[$schema]) SEMICOLON?
     ;
  
 use[SchemaDef schema]
@@ -127,8 +127,10 @@ use[SchemaDef schema]
     ; 
     
 table[SchemaDef schema]
-	: CREATE TABLE (IF NOT EXISTS)? table_spec[$schema]
-	;
+	: CREATE TABLE (IF NOT EXISTS)? 
+	  (table_spec[$schema] | 
+	   dst=cname[$schema] 'like' src=cname[$schema] {$schema.addLikeTable($dst.cname, $src.cname);})
+ 	;
 
 table_spec[SchemaDef schema]
 	: table_name[$schema] LEFT_PAREN
