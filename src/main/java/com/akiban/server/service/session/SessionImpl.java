@@ -27,19 +27,19 @@ public final class SessionImpl implements Session
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T get(String module, Object key) {
+    public <T> T get(Class<?> module, Object key) {
         return (T) map.get(new Key(module, key));
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T put(String module, Object key, T item) {
+    public <T> T put(Class<?> module, Object key, T item) {
         return (T) map.put(new Key(module, key), item);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T remove(String module, Object key) {
+    public <T> T remove(Class<?> module, Object key) {
         return (T) map.remove(new Key(module, key));
     }
 
@@ -60,10 +60,10 @@ public final class SessionImpl implements Session
     
     private static class Key
     {
-        private final String module;
+        private final Class<?> module;
         private final Object key;
 
-        Key(String module, Object key) {
+        Key(Class<?> module, Object key) {
             ArgumentValidation.notNull("module", module);
             this.module = module;
             this.key = key;

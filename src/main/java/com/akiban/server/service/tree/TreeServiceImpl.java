@@ -396,11 +396,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
     }
 
     private List<Exchange> exchangeList(final Session session, final Tree tree) {
-        Map<Tree, List<Exchange>> map = session.get("persistit", "exchangemap");
+        Map<Tree, List<Exchange>> map = session.get(TreeServiceImpl.class, "exchangemap");
         List<Exchange> list;
         if (map == null) {
             map = new HashMap<Tree, List<Exchange>>();
-            session.put("persistit", "exchangemap", map);
+            session.put(TreeServiceImpl.class, "exchangemap", map);
             list = new ArrayList<Exchange>();
             map.put(tree, list);
         } else {
