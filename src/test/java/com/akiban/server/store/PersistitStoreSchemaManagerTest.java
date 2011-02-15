@@ -29,22 +29,22 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.AkServerUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.ddl.DDLSource;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.message.ErrorCode;
 import com.akiban.server.AkServer;
 import com.akiban.server.AkServerTestCase;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.service.config.Property;
-import com.akiban.message.ErrorCode;
 import com.akiban.util.MySqlStatementSplitter;
 
 public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
@@ -70,6 +70,10 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp();
         manager = getSchemaManager();
+        // This sets the TableFlusher thread to flush more aggressively.
+        // Is intended to stimulate RollbackExceptions.
+        // TODO - remove when TableFlusher has been replaced.
+        ((PersistitStoreSchemaManager)manager).rescheduleTableFlusher(500);
         base = manager.getAis(session).getUserTables().size();
         assertTables("user tables");
         assertDDLS();
@@ -207,6 +211,22 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
         assertTrue("index isn't primary: " + index, index.isPrimaryKey());
 
         manager.deleteTableDefinition(session, SCHEMA, "one");
+    }
+    
+    @Test
+    public void testBug712605() throws Exception {
+        long time = System.currentTimeMillis();
+        int rollbacks = 0;
+        // try this for 10 seconds.
+        while (System.currentTimeMillis() - time < 20000) {
+            try {
+            createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+            manager.deleteTableDefinition(session, SCHEMA, "one");
+            } catch (Exception e) {
+                rollbacks++;
+            }
+        }
+        assertEquals(0, rollbacks);
     }
 
     @Test

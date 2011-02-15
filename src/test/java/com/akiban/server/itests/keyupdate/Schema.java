@@ -19,20 +19,52 @@ import com.akiban.server.RowDef;
 
 public class Schema
 {
+    // For all KeyUpdate*IT
     static Integer customerId;
-    static Integer c_cid;
-    static Integer c_cx;
     static RowDef customerRowDef;
     static Integer orderId;
+    static RowDef orderRowDef;
+    static Integer itemId;
+    static RowDef itemRowDef;
+    static RowDef groupRowDef;
+    // For KeyUpdateIT and KeyUpdateCascadingKeysIT
+    static Integer c_cid;
+    static Integer c_cx;
     static Integer o_oid;
     static Integer o_cid;
     static Integer o_ox;
-    static RowDef orderRowDef;
-    static Integer itemId;
     static Integer i_cid;
     static Integer i_oid;
     static Integer i_iid;
     static Integer i_ix;
-    static RowDef itemRowDef;
-    static RowDef groupRowDef;
+    // For KeyUpdateWithMoreComplexSchemaIT
+    static Integer c_cid1;
+    static Integer c_cid2;
+    static Integer c_s1;
+    static Integer c_s2;
+    static Integer c_s3;
+    static Integer c_s4;
+    static Integer c_s5;
+    static Integer c_s6;
+    static Integer o_oid1;
+    static Integer o_oid2;
+    static Integer o_cid1;
+    static Integer o_cid2;
+    static Integer o_s1;
+    static Integer o_s2;
+    static Integer o_s3;
+    static Integer o_s4;
+    static Integer o_s5;
+    static Integer o_s6;
+    static Integer o_s7;
+    static Integer o_s8;
+    static Integer i_iid1;
+    static Integer i_iid2;
+    static Integer i_oid1;
+    static Integer i_oid2;
+    static Integer i_s1;
+    static Integer i_s2;
+    static Integer i_s3;
+    static Integer i_s4;
+    static Integer i_s5;
 }

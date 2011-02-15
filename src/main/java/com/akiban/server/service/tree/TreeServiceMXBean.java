@@ -13,9 +13,8 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service;
+package com.akiban.server.service.tree;
 
-public interface ServiceManagerMXBean {
-    boolean isStartupBlocked();
-    void resumeStartup();
+public interface TreeServiceMXBean {
+    void flushAll() throws Exception;
 }

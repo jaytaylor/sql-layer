@@ -27,8 +27,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.service.jmx.JmxManageable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +48,7 @@ import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 
-public class TreeServiceImpl implements TreeService, Service<TreeService> {
+public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxManageable {
 
     private final static int MEGA = 1024 * 1024;
 
@@ -86,11 +88,25 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<String, SchemaNode>();
 
-    private Persistit db;
+    private final AtomicReference<Persistit> dbRef = new AtomicReference<Persistit>();
 
     private int volumeOffsetCounter = 0;
 
     private final Map<Volume, Integer> translationMap = new WeakHashMap<Volume, Integer>();
+
+    private final TreeServiceMXBean bean = new TreeServiceMXBean() {
+        @Override
+        public void flushAll() throws Exception {
+            final Persistit db = dbRef.get();
+            try {
+                db.flush();
+                db.copyBackPages();
+            } catch (Exception e) {
+                LOG.error("flush failed", e);
+                throw e;
+            }
+        }
+    };
 
     static class SchemaNode {
         final Pattern pattern;
@@ -118,7 +134,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     public synchronized void start() throws Exception {
         configService = ServiceManagerImpl.get().getConfigurationService();
-        assert db == null;
+        assert getDb() == null;
         // TODO - remove this when sure we don't need it
         assert INSTANCE_COUNT.incrementAndGet() == 1;
         final Properties properties = configService.getModuleConfiguration(
@@ -158,7 +174,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         //
         // Now we're ready to create the Persistit instance.
         //
-        db = new Persistit();
+        Persistit db = new Persistit();
+        dbRef.set(db);
         db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
         db.initialize(properties);
         buildSchemaMap();
@@ -212,10 +229,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     public synchronized void stop() throws Exception {
+        Persistit db = getDb();
         if (db != null) {
             db.shutdownGUI();
             db.close();
-            db = null;
+            dbRef.set(null);
         }
         // TODO - remove this when sure we don't need it
         assert INSTANCE_COUNT.decrementAndGet() == 0;
@@ -233,7 +251,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     @Override
     public Persistit getDb() {
-        return db;
+        return dbRef.get();
     }
 
     @Override
@@ -265,17 +283,18 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     @Override
     public Transaction getTransaction(final Session session) {
-        return db.getTransaction();
+        return getDb().getTransaction();
     }
 
     @Override
     public long getTimestamp(final Session session) {
-        return db.getTransaction().getTimestamp();
+        return getDb().getTransaction().getTimestamp();
     }
 
     @Override
     public void visitStorage(final Session session, final TreeVisitor visitor,
             final String treeName) throws Exception {
+        Persistit db = getDb();
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
@@ -360,7 +379,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             throws PersistitException {
         try {
             final String vstring = volumeForTree(schemaName, treeName);
-            final Volume volume = db.loadVolume(vstring);
+            final Volume volume = getDb().loadVolume(vstring);
             if (SCHEMA_TREE_NAME.equals(treeName)) {
                 tableIdOffset(volume);
             } else {
@@ -398,6 +417,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             throws InvalidVolumeSpecificationException {
         SchemaNode defaultSchemaNode = null;
         final String concatenatedName = schemaName + "/" + treeName;
+        final Persistit db = getDb();
         for (final Entry<String, SchemaNode> entry : schemaMap.entrySet()) {
             if (".default".equals(entry.getKey())) {
                 defaultSchemaNode = entry.getValue();
@@ -491,5 +511,10 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             }
         }
         return true;
+    }
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("TreeService", bean, TreeServiceMXBean.class);
     }
 }
