@@ -88,6 +88,10 @@ fi
 
 %post
 alternatives --install /etc/%{username}/config %{username} /etc/%{username}/default.conf/ 0
+# make akiban start/shutdown automatically
+if [ -x /sbin/chkconfig ]; then
+    /sbin/chkconfig --add akiban-server
+fi
 exit 0
 
 %postun
