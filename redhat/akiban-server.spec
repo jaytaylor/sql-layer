@@ -16,7 +16,7 @@ URL:            http://akiban.com/
 Source0:       akserver.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
-Requires:      java >= 1.6.0
+Requires:      jre >= 1.6.0
 Requires(pre): user(akiban)
 Requires(pre): group(akiban)
 Requires(pre): shadow-utils
@@ -88,11 +88,23 @@ fi
 
 %post
 alternatives --install /etc/%{username}/config %{username} /etc/%{username}/default.conf/ 0
+# make akiban start/shutdown automatically
+if [ -x /sbin/chkconfig ]; then
+    /sbin/chkconfig --add akiban-server
+fi
 exit 0
 
 %postun
 # only delete alternative on removal, not upgrade
 if [ "$1" = "0" ]; then
+    # stop akiban-server before uninstalling it
+    if [ -x %{_sysconfdir}/init.d/akiban-server ]; then
+        %{_sysconfdir}/init.d/akiban-server stop > /dev/null
+        # don't start it automatically anymore
+        if [ -x /sbin/chkconfig ]; then
+            /sbin/chkconfig --del akiban-server
+        fi
+    fi
     alternatives --remove %{username} /etc/%{username}/default.conf/
 fi
 exit 0
