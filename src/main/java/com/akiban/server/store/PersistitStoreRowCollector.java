@@ -90,6 +90,8 @@ public class PersistitStoreRowCollector implements RowCollector {
 
     private int indexPinnedKeySize;
 
+    // true: scan table
+    // false: scan index
     private boolean traverseMode;
 
     private int prefixModeIndexField = -1;
@@ -512,9 +514,7 @@ public class PersistitStoreRowCollector implements RowCollector {
 
         final Key hKey = hEx.getKey();
 
-        if (indexDef == null) {
-            traverseMode = true;
-        }
+        traverseMode = indexDef == null;
 
         while (true) {
             //
@@ -632,9 +632,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                     // Get the rest of the value
                     hEx.fetch();
                 }
-                if (isDeepMode()
-                        && depth > projectedRowDefs[projectedRowDefs.length - 1]
-                                .getHKeyDepth()) {
+                if (isDeepMode() && depth > projectedRowDefs[projectedRowDefs.length - 1].getHKeyDepth()) {
                     int level = pendingRowData.length - 1;
                     prepareRow(hEx, level, null, 0);// TODO!!!
                     if (level < pendingFromLevel) {

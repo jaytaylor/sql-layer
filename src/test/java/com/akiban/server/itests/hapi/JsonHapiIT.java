@@ -496,7 +496,11 @@ public final class JsonHapiIT extends ApiTestBase {
                     JSONArray columns = rows.getJSONArray(rowNum);
                     NewRow row = new NiceRow(tableId);
                     for(int col=0, COLS=columns.length(); col < COLS; ++col) {
-                        row.put(col, columns.get(col));
+                        Object value = columns.get(col);
+                        if (JSONObject.NULL.equals(value)) {
+                            value = null;
+                        }
+                        row.put(col, value);
                     }
                     try {
                         dml().writeRow(session, row);
