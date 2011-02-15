@@ -1,94 +1,102 @@
 grammar DDLSource;
 
 tokens {
-
-LEFT_PAREN = '(';
-RIGHT_PAREN = ')';
-LEFT_BRACKET = '\{';
-RIGHT_BRACKET = '\}';
+// Symbols
 COMMA = ',';
-SEMICOLON = ';';
-DOT	=	 '.';
+DOT	= '.';
 EQUALS = '=';
-USE = 'use';
-TABLE = 'table';
-CREATE = 'create';
-PRIMARY = 'primary';
-INDEX = 'index' ;
-KEY = 'key';
-FOREIGN = 'foreign';
-UNIQUE = 'unique';
-SIGNED = 'signed';
-UNSIGNED = 'unsigned';
-ENGINE = 'engine';
-VARYING = 'varying';
-BINARY = 'binary';
-VARBINARY = 'varbinary';
-TINYINT = 'tinyint';
-SMALLINT = 'smallint';
-MEDIUMINT = 'mediumint';
-INT = 'int';
-INTEGER = 'integer';
+LEFT_BRACKET = '\{';
+LEFT_PAREN = '(';
+RIGHT_BRACKET = '\}';
+RIGHT_PAREN = ')';
+SEMICOLON = ';';
+
+// Numeric types
 BIGINT = 'bigint';
-REAL = 'real';
-DOUBLE = 'double';
-FLOAT = 'float';
+BIT = 'bit' ;
 DEC = 'dec';
 DECIMAL = 'decimal';
+DOUBLE = 'double';
 FIXED = 'fixed';
+FLOAT = 'float';
+INT = 'int';
+INTEGER = 'integer';
+MEDIUMINT = 'mediumint';
 NUMERIC = 'numeric';
-DATE = 'date';
-DATETIME = 'datetime';
-TIMESTAMP = 'timestamp';
-TIME = 'time';
-YEAR = 'year';
+REAL = 'real';
+SERIAL = 'serial';
+SMALLINT = 'smallint';
+TINYINT = 'tinyint';
+
+// String types
+BINARY = 'binary';
+BLOB = 'blob';
 CHAR = 'char';
 CHARACTER = 'character';
-VARCHAR = 'varchar';
-TINYBLOB = 'tinyblob';
-BLOB = 'blob';
-MEDIUMBLOB = 'mediumblob';
-LONGBLOB = 'longblob';
-TINYTEXT = 'tinytext';
-TEXT = 'text';
-MEDIUMTEXT = 'mediumtext';
-LONGTEXT = 'longtext';
-BIT = 'bit' ;
-VARBIT = 'varbit' ;
 ENUM = 'enum';
+LONGBLOB = 'longblob';
+LONGTEXT = 'longtext';
+MEDIUMBLOB = 'mediumblob';
+MEDIUMTEXT = 'mediumtext';
 SET = 'set';
-NOT = 'not' ;
-IF = 'if' ;
-EXISTS = 'exists' ;
-TEMPORARY = 'temporary' ;
-NULL = 'null' ;
-DEFAULT = 'default' ;
-AUTO_INCREMENT = 'auto_increment';
-CHARSET = 'charset';
-COLLATE = 'collate';
-REFERENCES = 'references';
-ASC = 'asc';
-DESC = 'desc';
-ON = 'on';
-DELETE = 'delete';
-UPDATE = 'update';
-MCOMMENT = 'comment';
-CONSTRAINT = 'constraint';
-RESTRICT = 'restrict';
-CASCADE = 'cascade';
-NO = 'no';
-ACTION = 'action';
-USING = 'using';
-BTREE = 'btree';
-HASH = 'hash';
-KEY_BLOCK_SIZE = 'key_block_size';
-WITH = 'with';
-PARSER = 'parser';
+TEXT = 'text';
+TINYBLOB = 'tinyblob';
+TINYTEXT = 'tinytext';
+VARBINARY = 'varbinary';
+VARCHAR = 'varchar';
+
+// Date types
+DATE = 'date';
+DATETIME = 'datetime';
+TIME = 'time';
+TIMESTAMP = 'timestamp';
+YEAR = 'year';
+
+// Other types
 FULLTEXT = 'fulltext';
 SPATIAL = 'spatial';
-SERIAL = 'serial';
-}
 
+// Other keywords
+ACTION = 'action';
+ASC = 'asc';
+AUTO_INCREMENT = 'auto_increment';
+BTREE = 'btree';
+CASCADE = 'cascade';
+CHARSET = 'charset';
+COLLATE = 'collate';
+CONSTRAINT = 'constraint';
+CREATE = 'create';
+DEFAULT = 'default';
+DELETE = 'delete';
+DESC = 'desc';
+ENGINE = 'engine';
+EXISTS = 'exists' ;
+FOREIGN = 'foreign';
+HASH = 'hash';
+IF = 'if' ;
+INDEX = 'index' ;
+KEY_BLOCK_SIZE = 'key_block_size';
+KEY = 'key';
+MCOMMENT = 'comment';
+NO = 'no';
+NOT = 'not' ;
+NULL = 'null' ;
+ON = 'on';
+PARSER = 'parser';
+PRIMARY = 'primary';
+REFERENCES = 'references';
+RESTRICT = 'restrict';
+SIGNED = 'signed';
+TABLE = 'table';
+TEMPORARY = 'temporary' ;
+UNIQUE = 'unique';
+UNSIGNED = 'unsigned';
+UPDATE = 'update';
+USE = 'use';
+USING = 'using';
+VARYING = 'varying';
+WITH = 'with';
+}
 
 @header {
 package com.akiban.ais.ddl;
@@ -160,17 +168,17 @@ column_constraints[SchemaDef schema]
 	;
 
 column_constraint[SchemaDef schema]
-	: NULL {$schema.nullable(true);}
-	| NOT NULL {$schema.nullable(false);}
-	| DEFAULT qvalue  {$schema.otherConstraint("DEFAULT=" + $qvalue.text);}
-	| AUTO_INCREMENT {$schema.autoIncrement();}
-	| ON UPDATE qvalue
-	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
+	: AUTO_INCREMENT {$schema.autoIncrement();}
 	| character_set[$schema]
 	| collation[$schema]
+	| DEFAULT qvalue {$schema.otherConstraint("DEFAULT=" + $qvalue.text);}
 	| ID {$schema.otherConstraint($ID.text);}
 	| KEY {$schema.seeKEY();}
+	| NULL {$schema.nullable(true);}
+	| NOT NULL {$schema.nullable(false);}
+	| ON UPDATE qvalue
 	| PRIMARY {$schema.seePRIMARY();}
+	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
 	| UNIQUE {$schema.seeUNIQUE();}
 	;
 
@@ -235,10 +243,10 @@ reference_column[SchemaDef schema]
     ;
     
 reference_option returns [String option]
-	: RESTRICT {$option = "RESTRICT";}
-	| CASCADE {$option = "CASCADE";}
-	| SET NULL {$option = "SET NULL";}
+	: CASCADE {$option = "CASCADE";}
 	| NO ACTION {$option = "NO ACTION";}
+	| RESTRICT {$option = "RESTRICT";}
+	| SET NULL {$option = "SET NULL";}
 	;
 	
 character_set[SchemaDef schema]
@@ -262,46 +270,37 @@ data_type_def returns [String type, String len1, String len2]
 	;
 
 data_type returns [String type]
-	: CHARACTER VARYING {$type = "VARCHAR";}
-	| BIT VARYING {$type = "VARBIT";}
+	: BIT {$type = "BIT";}
+	| BINARY {$type = "BINARY";}
+	| BLOB {$type = "BLOB";}
+	| (CHAR | CHARACTER) {$type = "CHAR";}
 	| DATE {$type = "DATE";}
 	| DATETIME {$type = "DATETIME";}
-	| TIMESTAMP {$type = "TIMESTAMP";}
-	| TIME {$type = "TIME";}
-	| YEAR {$type = "YEAR";}
-	| CHAR {$type = "CHAR";}
-	| CHARACTER {$type = "CHAR";}
-	| VARCHAR {$type = "VARCHAR";}
-	| TINYBLOB {$type = "TINYBLOB";}
-	| BLOB {$type = "BLOB";}
 	| MEDIUMBLOB {$type = "MEDIUMBLOB";}
 	| LONGBLOB {$type = "LONGBLOB";}
+	| LONGTEXT {$type = "LONGTEXT";}
+	| MEDIUMTEXT {$type = "MEDIUMTEXT";}
 	| TINYTEXT {$type = "TINYTEXT";}
 	| TEXT {$type = "TEXT";}
-	| MEDIUMTEXT {$type = "MEDIUMTEXT";}
-	| LONGTEXT {$type = "LONGTEXT";}
-	| BIT {$type = "BIT";}
-	| VARBIT {$type = "VARBIT";}
-	| BINARY {$type = "BINARY";}
+	| TIMESTAMP {$type = "TIMESTAMP";}
+	| TIME {$type = "TIME";}
+	| TINYBLOB {$type = "TINYBLOB";}
 	| VARBINARY {$type = "VARBINARY";}
+	| (VARCHAR | CHARACTER VARYING) {$type = "VARCHAR";}
+	| YEAR {$type = "YEAR";}
 	;
 	
 numeric_data_type returns [String type]
-	: TINYINT {$type = "TINYINT";}
-	| SMALLINT {$type = "SMALLINT";}
+	: BIGINT {$type = "BIGINT";}
+	| (INT | INTEGER) {$type = "INT";}
 	| MEDIUMINT {$type = "MEDIUMINT";}
-	| INT {$type = "INT";}
-	| INTEGER {$type = "INT";}
-	| BIGINT {$type = "BIGINT";}
+	| SMALLINT {$type = "SMALLINT";}
+	| TINYINT {$type = "TINYINT";}
 	;
 
 decimal_data_type returns [String type]
-    : DECIMAL {$type = "DECIMAL";} 
-	| NUMERIC {$type = "DECIMAL";}
-	| DEC {$type = "DECIMAL";}
-	| FIXED {$type = "DECIMAL";}
-	| DOUBLE {$type = "DOUBLE";}	// Technically should depend on MySQL's REAL_AS_FLOAT
-	| REAL {$type = "DOUBLE";}	
+    : (DECIMAL | DEC | FIXED | NUMERIC) {$type = "DECIMAL";} 
+	| (DOUBLE | REAL) {$type = "DOUBLE";}   // Technically should depend on MySQL's REAL_AS_FLOAT
 	| FLOAT {$type = "FLOAT";}
     ;
 
@@ -323,15 +322,24 @@ count_quoted_strings returns [int count]
     : TICKVALUE {$count = 1;} (COMMA TICKVALUE {$count++;})*;	
     	
 qname returns [String name]
-	:	(ID  {$name = $ID.text; } )
-	|   (QNAME {$name = $QNAME.text.substring(1, $QNAME.text.length()-1); }  )
+	: (ID {$name = $ID.text;})
+	| (QNAME {$name = $QNAME.text.substring(1, $QNAME.text.length()-1);})
+	| (qname_from_unquoted_token {$name = $qname_from_unquoted_token.name;})
+	;
+
+// Tokens that can be used as unquoted identifiers, emperically identified
+qname_from_unquoted_token  returns [String name]
+	: (ACTION | AUTO_INCREMENT | BIT | BTREE | CHARSET | COMMENT | DATE | 
+	   DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NO | 
+	   PARSER | SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | YEAR)
+	   {$name = tokenNames[input.LA(-1)];}
 	;
 
 qvalue returns [String value]
-    :   ID {$value = $ID.text;}
-    |   NUMBER {$value = $NUMBER.text;}
-    |   TICKVALUE {$value = $TICKVALUE.text;}
-    |   NULL
+    : ID {$value = $ID.text;}
+    | NUMBER {$value = $NUMBER.text;}
+    | TICKVALUE {$value = $TICKVALUE.text;}
+    | NULL
     ;
   
 /*------------------------------------------------------------------

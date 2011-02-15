@@ -49,6 +49,11 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void bug687146() throws InvalidOperationException {
         int tid = createTable("test", "t", "entry int primary key, text varchar (2000)");
+        writeRows(createNewRow(tid, 1, "foo"),
+                  createNewRow(tid, 2, "bar"));
+        expectFullRows(tid,
+                       createNewRow(tid, 1L, "foo"),
+                       createNewRow(tid, 2L, "bar"));
     }
 
 
