@@ -45,25 +45,25 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     private final Object INTERNAL_LOCK = new Object();
 
     @Override
-    public final String getProperty(String module, String propertyName,
+    public final String getProperty(String propertyName,
             String defaultValue) {
-        Property property = internalGetProperty(module, propertyName);
+        Property property = internalGetProperty(propertyName);
         return (property == null) ? defaultValue : property.getValue();
     }
 
     @Override
-    public final String getProperty(String module, String propertyName)
+    public final String getProperty(String propertyName)
             throws PropertyNotDefinedException {
-        Property property = internalGetProperty(module, propertyName);
+        Property property = internalGetProperty(propertyName);
         if (property == null) {
-            throw new PropertyNotDefinedException(module, propertyName);
+            throw new PropertyNotDefinedException(propertyName);
         }
         return property.getValue();
     }
 
-    private Property internalGetProperty(String module, String propertyName) {
+    private Property internalGetProperty(String propertyName) {
         final Map<Property.Key, Property> map = internalGetProperties();
-        Property.Key key = new Property.Key(module, propertyName);
+        Property.Key key = Property.parseKey(propertyName);
         return map.get(key);
     }
 
@@ -74,19 +74,23 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     @Override
     public ModuleConfiguration getModuleConfiguration(String module) {
-        final String moduleString = module;
+        final String moduleString = module + '.';
         return new ModuleConfiguration() {
+
+            private String key(String propertyName) {
+                return moduleString + propertyName;
+            }
+
             @Override
             public String getProperty(String propertyName, String defaultValue) {
-                return ConfigurationServiceImpl.this.getProperty(moduleString,
-                        propertyName, defaultValue);
+                return ConfigurationServiceImpl.this.getProperty(
+                        key(propertyName), defaultValue);
             }
 
             @Override
             public String getProperty(String propertyName)
                     throws PropertyNotDefinedException {
-                return ConfigurationServiceImpl.this.getProperty(moduleString,
-                        propertyName);
+                return ConfigurationServiceImpl.this.getProperty(key(propertyName));
             }
 
             @Override

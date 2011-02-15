@@ -19,21 +19,19 @@ public interface ConfigurationService
 {
     /**
      * Gets the specified property, or a default if the property isn't set.
-     * @param module the property's module namespace
      * @param propertyName the property's name
      * @param defaultValue the default value to return, if the given property isn't found
      * @return the property's value, or the given default
      */
-    String getProperty(String module, String propertyName, String defaultValue);
+    String getProperty(String propertyName, String defaultValue);
 
     /**
      * Gets the specified property.
-     * @param module the property's namespace
      * @param propertyName the property name
      * @return the specified property's value
      * @throws PropertyNotDefinedException if the given module and property are not defined.
      */
-    String getProperty(String module, String propertyName) throws PropertyNotDefinedException;
+    String getProperty(String propertyName) throws PropertyNotDefinedException;
 
     /**
      * Gets a ModuleConfiguration for the specified module. This ModuleConfiguration represents a view
