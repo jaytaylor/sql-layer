@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.service.jmx.JmxManageable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 
-public class TreeServiceImpl implements TreeService, Service<TreeService> {
+public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxManageable {
 
     private final static int MEGA = 1024 * 1024;
 
@@ -92,6 +93,20 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     private int volumeOffsetCounter = 0;
 
     private final Map<Volume, Integer> translationMap = new WeakHashMap<Volume, Integer>();
+
+    private final TreeServiceMXBean bean = new TreeServiceMXBean() {
+        @Override
+        public void flushAll() throws Exception {
+            final Persistit db = dbRef.get();
+            try {
+                db.flush();
+                db.copyBackPages();
+            } catch (Exception e) {
+                LOG.error("flush failed", e);
+                throw e;
+            }
+        }
+    };
 
     static class SchemaNode {
         final Pattern pattern;
@@ -496,5 +511,10 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             }
         }
         return true;
+    }
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("TreeService", bean, TreeServiceMXBean.class);
     }
 }
