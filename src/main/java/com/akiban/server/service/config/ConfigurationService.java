@@ -17,8 +17,6 @@ package com.akiban.server.service.config;
 
 public interface ConfigurationService
 {
-    public final static String NEWLINE = System.getProperty("line.separator");
-
     /**
      * Gets the specified property, or a default if the property isn't set.
      * @param module the property's module namespace
