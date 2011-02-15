@@ -44,12 +44,6 @@ public final class SessionImpl implements Session
     }
 
     @Override
-    public boolean isCanceled()
-    {
-        return false;
-    }
-    
-    @Override
     public void close()
     {
         // For now do nothing to any cached resources.

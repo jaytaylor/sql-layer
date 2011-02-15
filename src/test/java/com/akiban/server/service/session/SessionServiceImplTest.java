@@ -299,13 +299,7 @@ public final class SessionServiceImplTest {
         public <T> T remove(Class<?> module, Object key) {
             throw new UnsupportedOperationException();
         }
-        
-        @Override
-        public boolean isCanceled()
-        {
-            return false;
-        }
-        
+
         @Override
         public void close()
         {
