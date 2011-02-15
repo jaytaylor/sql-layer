@@ -97,6 +97,14 @@ exit 0
 %postun
 # only delete alternative on removal, not upgrade
 if [ "$1" = "0" ]; then
+    # stop akiban-server before uninstalling it
+    if [ -x %{_sysconfdir}/init.d/akiban-server ]; then
+        %{_sysconfdir}/init.d/akiban-server stop > /dev/null
+        # don't start it automatically anymore
+        if [ -x /sbin/chkconfig ]; then
+            /sbin/chkconfig --del akiban-server
+        fi
+    fi
     alternatives --remove %{username} /etc/%{username}/default.conf/
 fi
 exit 0
