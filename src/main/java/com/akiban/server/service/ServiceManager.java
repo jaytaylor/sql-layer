@@ -24,7 +24,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
-public interface ServiceManager extends ServiceManagerMXBean {
+public interface ServiceManager {
 
     void startServices() throws Exception;
 
