@@ -94,6 +94,7 @@ UNSIGNED = 'unsigned';
 UPDATE = 'update';
 USE = 'use';
 USING = 'using';
+VALUE = 'value';
 VARYING = 'varying';
 WITH = 'with';
 }
@@ -181,6 +182,7 @@ column_constraint[SchemaDef schema]
 	| ON UPDATE qvalue
 	| PRIMARY {$schema.seePRIMARY();}
 	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
+	| SERIAL DEFAULT VALUE {$schema.serialDefaultValue();}
 	| UNIQUE {$schema.seeUNIQUE();}
 	;
 
@@ -332,8 +334,8 @@ qname returns [String name]
 // Tokens that can be used as unquoted identifiers, emperically identified
 qname_from_unquoted_token  returns [String name]
 	: (ACTION | AUTO_INCREMENT | BIT | BTREE | CHARSET | COMMENT | DATE | 
-	   DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NO | 
-	   PARSER | SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | YEAR)
+	   DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NO | PARSER
+	   SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR)
 	   {$name = tokenNames[input.LA(-1)];}
 	;
 

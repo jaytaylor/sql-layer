@@ -494,6 +494,14 @@ public class SchemaDef {
         currentColumn = null;
     }
 
+    void serialDefaultValue() {
+        currentColumn.nullable = false;
+        autoIncrement();
+        startColumnOption();
+        seeUNIQUE();
+        endColumnOption();
+    }
+
     /**
      * Updates the currentColumn to canonical types if it is an alias (SERIAL, BLOB(100), etc)
      */
@@ -529,11 +537,7 @@ public class SchemaDef {
         // MySQL: SERIAL => BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
         else if(typeName.equals("SERIAL")){
             typeName = "BIGINT UNSIGNED";
-            currentColumn.nullable = false;
-            autoIncrement();
-            startColumnOption();
-            seeUNIQUE();
-            endColumnOption();
+            serialDefaultValue();
         }
         currentColumn.typeName = typeName;
         currentColumn.typeParam1 = param1;

@@ -120,15 +120,25 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void bug706008() throws InvalidOperationException {
         // SERIAL => BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE.
-        int tid1 = createCheckColumn("c1 SERIAL", Types.U_BIGINT, null, null);
-        Table table = getUserTable(tid1);
-        assertFalse(table.getColumn("c1").getNullable());
-        Index index = table.getIndex("c1");
-        assertNotNull(index);
-        assertTrue(index.isUnique());   
+        final int tid1 = createCheckColumn("c1 SERIAL", Types.U_BIGINT, null, null);
+        final Table table1 = getUserTable(tid1);
+        assertFalse(table1.getColumn("c1").getNullable());
+        assertNotNull(table1.getColumn("c1").getInitialAutoIncrementValue());
+        assertTrue(table1.getIndex("c1").isUnique());
+        ddl().dropTable(session, tableName(tid1));
 
         // [int type] SERIAL DEFAULT VALUE => [int type] NOT NULL AUTO_INCREMENT UNIQUE.
-        //int tid2 = createTable("test", "t", "c1 int SERIAL DEFAULT VALUE");
+        final int tid2 = createCheckColumn("c1 tinyint SERIAL DEFAULT VALUE", Types.TINYINT, null, null);
+        final Table table2 = getUserTable(tid2);
+        assertFalse(table2.getColumn("c1").getNullable());
+        assertNotNull(table2.getColumn("c1").getInitialAutoIncrementValue());
+        assertTrue(table2.getIndex("c1").isUnique());
+        dropAllTables();
+
+        createCheckColumnDrop("c1 smallint SERIAL DEFAULT VALUE", Types.SMALLINT, null, null);
+        createCheckColumnDrop("c1 int SERIAL DEFAULT VALUE", Types.INT, null, null);
+        createCheckColumnDrop("c1 mediumint SERIAL DEFAULT VALUE", Types.MEDIUMINT, null, null);
+        createCheckColumnDrop("c1 bigint SERIAL DEFAULT VALUE", Types.BIGINT, null, null);
     }
 
     // CREATE TABLE .. LIKE .. is parse error
