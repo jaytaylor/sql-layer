@@ -1,102 +1,93 @@
 grammar DDLSource;
 
 tokens {
-// Symbols
-COMMA = ',';
-DOT	= '.';
-EQUALS = '=';
-LEFT_BRACKET = '\{';
+
 LEFT_PAREN = '(';
-RIGHT_BRACKET = '\}';
 RIGHT_PAREN = ')';
+LEFT_BRACKET = '\{';
+RIGHT_BRACKET = '\}';
+COMMA = ',';
 SEMICOLON = ';';
-
-// Numeric types
-BIGINT = 'bigint';
-BIT = 'bit' ;
-DEC = 'dec';
-DECIMAL = 'decimal';
-DOUBLE = 'double';
-FIXED = 'fixed';
-FLOAT = 'float';
-INT = 'int';
-INTEGER = 'integer';
-MEDIUMINT = 'mediumint';
-NUMERIC = 'numeric';
-REAL = 'real';
-SERIAL = 'serial';
-SMALLINT = 'smallint';
-TINYINT = 'tinyint';
-
-// String types
-BINARY = 'binary';
-BLOB = 'blob';
-CHAR = 'char';
-CHARACTER = 'character';
-ENUM = 'enum';
-LONGBLOB = 'longblob';
-LONGTEXT = 'longtext';
-MEDIUMBLOB = 'mediumblob';
-MEDIUMTEXT = 'mediumtext';
-SET = 'set';
-TEXT = 'text';
-TINYBLOB = 'tinyblob';
-TINYTEXT = 'tinytext';
-VARBINARY = 'varbinary';
-VARCHAR = 'varchar';
-
-// Date types
-DATE = 'date';
-DATETIME = 'datetime';
-TIME = 'time';
-TIMESTAMP = 'timestamp';
-YEAR = 'year';
-
-// Other types
-FULLTEXT = 'fulltext';
-SPATIAL = 'spatial';
-
-// Other keywords
-ACTION = 'action';
-ASC = 'asc';
-AUTO_INCREMENT = 'auto_increment';
-BTREE = 'btree';
-CASCADE = 'cascade';
-CHARSET = 'charset';
-COLLATE = 'collate';
-CONSTRAINT = 'constraint';
-CREATE = 'create';
-DEFAULT = 'default';
-DELETE = 'delete';
-DESC = 'desc';
-ENGINE = 'engine';
-EXISTS = 'exists' ;
-FOREIGN = 'foreign';
-HASH = 'hash';
-IF = 'if' ;
-INDEX = 'index' ;
-KEY_BLOCK_SIZE = 'key_block_size';
-KEY = 'key';
-MCOMMENT = 'comment';
-NO = 'no';
-NOT = 'not' ;
-NULL = 'null' ;
-ON = 'on';
-PARSER = 'parser';
-PRIMARY = 'primary';
-REFERENCES = 'references';
-RESTRICT = 'restrict';
-SIGNED = 'signed';
+DOT	=	 '.';
+EQUALS = '=';
+USE = 'use';
 TABLE = 'table';
-TEMPORARY = 'temporary' ;
+CREATE = 'create';
+PRIMARY = 'primary';
+INDEX = 'index' ;
+KEY = 'key';
+FOREIGN = 'foreign';
 UNIQUE = 'unique';
 UNSIGNED = 'unsigned';
-UPDATE = 'update';
-USE = 'use';
-USING = 'using';
-VALUE = 'value';
+ENGINE = 'engine';
 VARYING = 'varying';
+BINARY = 'binary';
+VARBINARY = 'varbinary';
+TINYINT = 'tinyint';
+SMALLINT = 'smallint';
+MEDIUMINT = 'mediumint';
+INT = 'int';
+INTEGER = 'integer';
+BIGINT = 'bigint';
+REAL = 'real';
+DOUBLE = 'double';
+FLOAT = 'float';
+DEC = 'dec';
+DECIMAL = 'decimal';
+NUMERIC = 'numeric';
+DATE = 'date';
+DATETIME = 'datetime';
+TIMESTAMP = 'timestamp';
+TIME = 'time';
+YEAR = 'year';
+CHAR = 'char';
+CHARACTER = 'character';
+VARCHAR = 'varchar';
+TINYBLOB = 'tinyblob';
+BLOB = 'blob';
+MEDIUMBLOB = 'mediumblob';
+LONGBLOB = 'longblob';
+TINYTEXT = 'tinytext';
+TEXT = 'text';
+MEDIUMTEXT = 'mediumtext';
+LONGTEXT = 'longtext';
+BIT = 'bit' ;
+ENUM = 'enum';
+SET = 'set';
+NOT = 'not' ;
+IF = 'if' ;
+EXISTS = 'exists' ;
+TEMPORARY = 'temporary' ;
+NULL = 'null' ;
+DEFAULT = 'default' ;
+AUTO_INCREMENT = 'auto_increment';
+CHARSET = 'charset';
+COLLATE = 'collate';
+REFERENCES = 'references';
+ASC = 'asc';
+DESC = 'desc';
+ON = 'on';
+DELETE = 'delete';
+UPDATE = 'update';
+MCOMMENT = 'comment';
+CONSTRAINT = 'constraint';
+RESTRICT = 'restrict';
+CASCADE = 'cascade';
+NO = 'no';
+ACTION = 'action';
+USING = 'using';
+BTREE = 'btree';
+HASH = 'hash';
+KEY_BLOCK_SIZE = 'key_block_size';
 WITH = 'with';
+PARSER = 'parser';
+FULLTEXT = 'fulltext';
+SPATIAL = 'spatial';
+FIXED = 'fixed';
+SIGNED = 'signed';
+SERIAL = 'serial';
+VALUE = 'value';
+LIKE = 'like';
 }
 
 @header {
@@ -130,7 +121,7 @@ use[SchemaDef schema]
 table[SchemaDef schema]
 	: CREATE TABLE (IF NOT EXISTS)? 
 	  (table_spec[$schema] | 
-	   dst=cname[$schema] 'like' src=cname[$schema] {$schema.addLikeTable($dst.cname, $src.cname);})
+	   dst=cname[$schema] LIKE src=cname[$schema] {$schema.addLikeTable($dst.cname, $src.cname);})
  	;
 
 table_spec[SchemaDef schema]
@@ -171,19 +162,19 @@ column_constraints[SchemaDef schema]
 	;
 
 column_constraint[SchemaDef schema]
-	: AUTO_INCREMENT {$schema.autoIncrement();}
+	: NULL {$schema.nullable(true);}
+	| NOT NULL {$schema.nullable(false);}
+	| DEFAULT qvalue  {$schema.otherConstraint("DEFAULT=" + $qvalue.text);}
+	| AUTO_INCREMENT {$schema.autoIncrement();}
+	| ON UPDATE qvalue
+	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
 	| character_set[$schema]
 	| collation[$schema]
-	| DEFAULT qvalue {$schema.otherConstraint("DEFAULT=" + $qvalue.text);}
 	| ID {$schema.otherConstraint($ID.text);}
 	| KEY {$schema.seeKEY();}
-	| NULL {$schema.nullable(true);}
-	| NOT NULL {$schema.nullable(false);}
-	| ON UPDATE qvalue
 	| PRIMARY {$schema.seePRIMARY();}
-	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
-	| SERIAL DEFAULT VALUE {$schema.serialDefaultValue();}
 	| UNIQUE {$schema.seeUNIQUE();}
+	| SERIAL DEFAULT VALUE {$schema.serialDefaultValue();}
 	;
 
 key_constraint[SchemaDef schema]
@@ -247,10 +238,10 @@ reference_column[SchemaDef schema]
     ;
     
 reference_option returns [String option]
-	: CASCADE {$option = "CASCADE";}
-	| NO ACTION {$option = "NO ACTION";}
-	| RESTRICT {$option = "RESTRICT";}
+	: RESTRICT {$option = "RESTRICT";}
+	| CASCADE {$option = "CASCADE";}
 	| SET NULL {$option = "SET NULL";}
+	| NO ACTION {$option = "NO ACTION";}
 	;
 	
 character_set[SchemaDef schema]
@@ -274,32 +265,32 @@ data_type_def returns [String type, String len1, String len2]
 	;
 
 data_type returns [String type]
-	: BIT {$type = "BIT";}
-	| BINARY {$type = "BINARY";}
-	| BLOB {$type = "BLOB";}
-	| (CHAR | CHARACTER) {$type = "CHAR";}
-	| DATE {$type = "DATE";}
+	: DATE {$type = "DATE";}
 	| DATETIME {$type = "DATETIME";}
-	| MEDIUMBLOB {$type = "MEDIUMBLOB";}
-	| LONGBLOB {$type = "LONGBLOB";}
-	| LONGTEXT {$type = "LONGTEXT";}
-	| MEDIUMTEXT {$type = "MEDIUMTEXT";}
-	| TINYTEXT {$type = "TINYTEXT";}
-	| TEXT {$type = "TEXT";}
 	| TIMESTAMP {$type = "TIMESTAMP";}
 	| TIME {$type = "TIME";}
-	| TINYBLOB {$type = "TINYBLOB";}
-	| VARBINARY {$type = "VARBINARY";}
-	| (VARCHAR | CHARACTER VARYING) {$type = "VARCHAR";}
 	| YEAR {$type = "YEAR";}
+	| (CHAR | CHARACTER) {$type = "CHAR";}
+	| (VARCHAR | (CHAR | CHARACTER) VARYING) {$type = "VARCHAR";}
+	| TINYBLOB {$type = "TINYBLOB";}
+	| BLOB {$type = "BLOB";}
+	| MEDIUMBLOB {$type = "MEDIUMBLOB";}
+	| LONGBLOB {$type = "LONGBLOB";}
+	| TINYTEXT {$type = "TINYTEXT";}
+	| TEXT {$type = "TEXT";}
+	| MEDIUMTEXT {$type = "MEDIUMTEXT";}
+	| LONGTEXT {$type = "LONGTEXT";}
+	| BIT {$type = "BIT";}
+	| BINARY {$type = "BINARY";}
+	| VARBINARY {$type = "VARBINARY";}
 	;
 	
 numeric_data_type returns [String type]
-	: BIGINT {$type = "BIGINT";}
-	| (INT | INTEGER) {$type = "INT";}
-	| MEDIUMINT {$type = "MEDIUMINT";}
+	: TINYINT {$type = "TINYINT";}
 	| SMALLINT {$type = "SMALLINT";}
-	| TINYINT {$type = "TINYINT";}
+	| MEDIUMINT {$type = "MEDIUMINT";}
+	| (INT | INTEGER) {$type = "INT";}
+	| BIGINT {$type = "BIGINT";}
 	;
 
 decimal_data_type returns [String type]
@@ -326,8 +317,8 @@ count_quoted_strings returns [int count]
     : TICKVALUE {$count = 1;} (COMMA TICKVALUE {$count++;})*;	
     	
 qname returns [String name]
-	: (ID {$name = $ID.text;})
-	| (QNAME {$name = $QNAME.text.substring(1, $QNAME.text.length()-1);})
+	:	(ID  {$name = $ID.text; } )
+	|   (QNAME {$name = $QNAME.text.substring(1, $QNAME.text.length()-1); }  )
 	| (qname_from_unquoted_token {$name = $qname_from_unquoted_token.name;})
 	;
 
@@ -340,10 +331,10 @@ qname_from_unquoted_token  returns [String name]
 	;
 
 qvalue returns [String value]
-    : ID {$value = $ID.text;}
-    | NUMBER {$value = $NUMBER.text;}
-    | TICKVALUE {$value = $TICKVALUE.text;}
-    | NULL
+    :   ID {$value = $ID.text;}
+    |   NUMBER {$value = $NUMBER.text;}
+    |   TICKVALUE {$value = $TICKVALUE.text;}
+    |   NULL
     ;
   
 /*------------------------------------------------------------------
