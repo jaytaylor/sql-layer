@@ -55,14 +55,14 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         public boolean collectNextRow(ByteBuffer payload) {
             checkOpen();
             if (strings.isEmpty()) {
-                throw new NoSuchElementException();
+                return false;
             }
             String string = strings.remove(0);
             payload.putInt(string.length());
             payload.put(string.getBytes());
             ++deliveredRows;
 
-            return ! strings.isEmpty();
+            return true;
         }
 
         @Override
@@ -236,22 +236,5 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         }
 
         doScan(s.cursor, s.cursorId, s.output, 0);
-    }
-
-    @Test
-    public void testTheTestClasses() {
-        final String[] stringsArray = new String[] {"Hello", "world", "how are you"};
-        StringRowCollector rc = new StringRowCollector(4, stringsArray);
-        StringRowOutput output = new StringRowOutput();
-
-        while (rc.collectNextRow(output.getOutputBuffer())) {
-            output.wroteRow();
-        }
-        output.wroteRow();
-
-        assertEquals("rc rows collected", 3, rc.getDeliveredRows());
-        assertEquals("rows written", 3, output.getRowsCount());
-
-        assertEquals("rows", Arrays.asList(stringsArray), output.getStrings());
     }
 }
