@@ -27,6 +27,8 @@ public interface DStarLMXBean {
     void dropTable(String tableName);
 
     void dropGroup(String groupName);
+    
+    void dropGroupBySchema(String schemaName);
 
     void dropAllGroups();
 

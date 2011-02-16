@@ -15,8 +15,18 @@
 
 package com.akiban.server.service.d_l;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
@@ -32,12 +42,6 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
-
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {
 
@@ -80,6 +84,20 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
         @Override
         public void dropTable(String tableName) {
             dropTable(usingSchema.get(), tableName);
+        }
+
+        @Override
+        public void dropGroupBySchema(String schemaName)
+        {
+            AkibanInformationSchema ais = ddlFunctions.getAIS(new SessionImpl());
+            for(TableName table : ais.getGroupTables().keySet())
+            {
+                String currentSchema = table.getSchemaName();
+                if (currentSchema.equals(schemaName)) {
+                    String groupName = table.getTableName();
+                    dropGroup(groupName);
+                }
+            }
         }
 
         @Override
