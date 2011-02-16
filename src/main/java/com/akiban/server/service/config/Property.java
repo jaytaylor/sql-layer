@@ -23,7 +23,7 @@ public final class Property implements Comparable<Property> {
         private final String module;
         private final String name;
 
-        public Key(String module, String name) {
+        private Key(String module, String name) {
             ArgumentValidation.notNull("module", module);
             ArgumentValidation.notNull("property name", name);
             this.module = module;
