@@ -544,23 +544,6 @@ public class SchemaDef {
         currentColumn.typeParam2 = param2;
     }
 
-    /**
-     * Checks (via assert) that the comment doesn't appear to be an old-style
-     * grouping.
-     * 
-     * @param text
-     *            the text of the comment, including slash-star and star-slash.
-     */
-    void comment(final String text) {
-        if (text != null) {
-            StringBuilder inner = new StringBuilder(text.substring(2,
-                    text.length() - 2).trim());
-            inner.setLength("schema".length());
-            assert !"schema".equals(inner.toString()) : "found grouping comment "
-                    + text;
-        }
-    }
-
     private UserTableDef getUserTableDef(final CName tableName) {
         UserTableDef def = userTableMap.get(tableName);
         if (def == null) {

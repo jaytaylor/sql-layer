@@ -102,8 +102,7 @@ package com.akiban.ais.ddl;
 }
 
 schema[SchemaDef schema]
-	: MULTILINE_COMMENT ? {$schema.comment($MULTILINE_COMMENT.text); }
-    schema_ddl[$schema] + EOF
+	: schema_ddl[$schema]+ EOF
     ;
     
 cname[SchemaDef schema] returns[CName cname]
