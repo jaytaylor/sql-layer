@@ -103,7 +103,7 @@ public abstract class AkServerTestCase {
         return ais;
     }
     
-    protected Property property(final String module, final String name, final String value) {
-        return new Property(new Property.Key(module, name), value);
+    protected Property property(final String name, final String value) {
+        return new Property(Property.parseKey(name), value);
     }
 }

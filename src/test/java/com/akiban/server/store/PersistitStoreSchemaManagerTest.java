@@ -62,10 +62,10 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
         // Set up multi-volume treespace policy so we can be sure schema is
         // properly distributed.
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("akserver", "treespace.a",
+        properties.add(property("akserver.treespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("akserver", "treespace",
+        properties.add(property("akserver.treespace",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp();

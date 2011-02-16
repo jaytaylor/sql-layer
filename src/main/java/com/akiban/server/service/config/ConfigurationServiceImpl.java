@@ -74,17 +74,16 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     @Override
     public ModuleConfiguration getModuleConfiguration(String module) {
-        final String moduleString = module + '.';
+        final String moduleString = module;
         return new ModuleConfiguration() {
 
             private String key(String propertyName) {
-                return moduleString + propertyName;
+                return moduleString + '.' + propertyName;
             }
 
             @Override
             public String getProperty(String propertyName, String defaultValue) {
-                return ConfigurationServiceImpl.this.getProperty(
-                        key(propertyName), defaultValue);
+                return ConfigurationServiceImpl.this.getProperty(key(propertyName), defaultValue);
             }
 
             @Override
@@ -254,7 +253,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 requiredKeyStrings.add(key);
                 final String module = key.substring("REQUIRED.".length());
                 for (String name : properties.getProperty(key).split(",\\s*")) {
-                    toSet.add(new Property.Key(module, name));
+                    toSet.add(Property.parseKey(module + '.' +name));
                 }
             }
         }

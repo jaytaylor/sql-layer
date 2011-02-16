@@ -55,8 +55,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
     private static final Logger LOG = LoggerFactory.getLogger(TreeServiceImpl.class
             .getName());
 
-    private static final String SERVER_MODULE_NAME = "akserver";
-
     private static final String PERSISTIT_MODULE_NAME = "persistit";
 
     private static final String DATAPATH_PROP_NAME = "datapath";
@@ -78,7 +76,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
 
     private final static float PERSISTIT_ALLOCATION_FRACTION = 0.5f;
 
-    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "fixed";
+    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -151,14 +149,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
         // This allows Persistit to perform substitution of ${datapath} with
         // the server-specified home directory.
         //
-        final String datapath = configService.getProperty(SERVER_MODULE_NAME,
-                DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
+        final String datapath = configService.getProperty(
+                "akserver." + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
         final boolean isFixedAllocation = "true".equals(configService
-                .getProperty(SERVER_MODULE_NAME,
-                        FIXED_ALLOCATION_PROPERTY_NAME, "false"));
+                .getProperty(FIXED_ALLOCATION_PROPERTY_NAME, "false"));
         if (!properties.contains(BUFFER_SIZE_PROP_NAME)) {
             properties.setProperty(BUFFER_SIZE_PROP_NAME,
                     String.valueOf(DEFAULT_BUFFER_SIZE));
@@ -443,8 +440,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
     }
 
     void buildSchemaMap() {
-        final Properties properties = configService.getModuleConfiguration(
-                SERVER_MODULE_NAME).getProperties();
+        final Properties properties = configService.getModuleConfiguration("akserver").getProperties();
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();
