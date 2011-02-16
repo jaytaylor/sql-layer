@@ -33,12 +33,13 @@ import com.akiban.ais.model.UserTable;
 
 public class DDLGenerator
 {
-    private String useSchemaName;
-    private String useTableName;
+    private final String useSchemaName;
+    private final String useTableName;
 
 
-    public DDLGenerator()
-    {}
+    public DDLGenerator() {
+        this(null,null);
+    }
 
     public DDLGenerator(final String schemaName, final String tableName) {
         this.useSchemaName = schemaName;
