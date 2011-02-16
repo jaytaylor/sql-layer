@@ -250,6 +250,21 @@ public final class CreateTableIT extends ApiTestBase {
         createCheckColumn("c1 REAL NULL", Types.DOUBLE, null, null);
     }
 
+    @Test
+    public void createStatementsWithComments() throws InvalidOperationException {
+        // Failed on second one with NPE in refreshSchema, found in mtr/engine/funcs/rpl_trigger
+        ddl().createTable(session, "test", "create table t210 (f1 int, f2 int) /* slave local */");
+        tableName("test", "t210");
+        ddl().createTable(session, "test", "create table t310 (f3 int) /* slave local */");
+        tableName("test", "t310");
+
+        // Other cases that should work
+        ddl().createTable(session, "test", "create table t1(id int key /*pkey*/, name varchar(32) /* fname */) engine=akibandb");
+        assertEquals(2, getUserTable(tableId("test","t1")).getColumns().size());
+        ddl().createTable(session, "test", "create table t2(id int key, --pkey\nname varchar(32) -- name\n) engine=akibandb");
+        assertEquals(2, getUserTable(tableId("test","t2")).getColumns().size());
+    }
+
     
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
