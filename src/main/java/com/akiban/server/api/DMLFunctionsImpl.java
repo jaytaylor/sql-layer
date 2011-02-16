@@ -39,6 +39,7 @@ import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.*;
+import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -235,6 +236,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throws CursorIsFinishedException,
                    CursorIsUnknownException,
                    RowOutputException,
+                   BufferFullException,
                    GenericInvalidOperationException
 
     {
@@ -313,6 +315,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final PooledConverter converter = getPooledConverter(output, scanColumns);
         try {
             return scanSome(session, cursorId, converter.getLegacyOutput(), limit);
+        }
+        catch (BufferFullException e) {
+            throw new RowOutputException(e);
         } finally {
             releasePooledConverter(converter);
         }
@@ -343,6 +348,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
      * @throws GenericInvalidOperationException
      *             see
      *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     * @throws BufferFullException
+     *             see
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
      * @see #scanSome(Session, CursorId, LegacyRowOutput , int)
      */
     protected static boolean doScan(Cursor cursor,
@@ -351,7 +359,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                                     int limit)
             throws CursorIsFinishedException,
                    RowOutputException,
-                   GenericInvalidOperationException {
+                   GenericInvalidOperationException,
+                   BufferFullException {
         assert cursor != null;
         assert cursorId != null;
         assert output != null;
@@ -376,25 +385,22 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             cursor.setScanning();
             boolean limitReached = (limit == 0);
             final ByteBuffer buffer = output.getOutputBuffer();
-            int bufferLastPos = buffer.position();
 
-            boolean mayHaveMore = true;
-            while (mayHaveMore && (!limitReached)) {
-                mayHaveMore = rc.collectNextRow(buffer);
-
-                final int bufferPos = buffer.position();
-                assert bufferPos >= bufferLastPos : String.format(
-                        "false: %d >= %d", bufferPos, bufferLastPos);
-                if (bufferPos == bufferLastPos) {
-                    // The previous iteration of rc.collectNextRow() said
-                    // there'd be more, but there wasn't
-                    break;
+            while (!limitReached) {
+                final int bufferLastPos = buffer.position();
+                if (!rc.collectNextRow(buffer)) {
+                    if (rc.hasMore()) {
+                        throw new BufferFullException();
+                    }
+                    cursor.setFinished();
+                    return false;
                 }
 
+                final int bufferPos = buffer.position();
+                assert bufferPos > bufferLastPos : String.format(
+                        "false: %d >= %d", bufferPos, bufferLastPos);
+
                 output.wroteRow();
-                bufferLastPos = buffer.position(); // wroteRow() may have
-                                                   // changed this, so we get it
-                                                   // again
                 if (limit > 0) {
                     limitReached = (--limit) == 0;
                 }
@@ -405,6 +411,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                 cursor.setFinished();
             }
             return hasMore;
+        } catch (BufferFullException e) {
+            cursor.setFinished();
+            throw e;
         } catch (Exception e) {
             cursor.setFinished();
             throw new GenericInvalidOperationException(e);
@@ -596,6 +605,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
+        } catch (BufferFullException e) {
+            throw new RuntimeException("Internal error, buffer full: " + e);
         } finally {
             try {
                 closeCursor(session, cursorId);

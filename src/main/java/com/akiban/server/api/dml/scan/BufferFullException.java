@@ -15,21 +15,5 @@
 
 package com.akiban.server.api.dml.scan;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.dml.DMLException;
-import com.akiban.message.ErrorCode;
-
-public final class RowOutputException extends DMLException {
-
-    public RowOutputException(String message) {
-        super(ErrorCode.ROW_OUTPUT, message);
-    }
-
-    public RowOutputException(BufferFullException e) {
-        super(ErrorCode.ROW_OUTPUT, "internal buffer too small", e);
-    }
-
-    public RowOutputException(InvalidOperationException e) {
-        super(e);
-    }
+public final class BufferFullException extends Exception {
 }

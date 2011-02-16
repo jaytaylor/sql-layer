@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.akiban.server.api.dml.scan.BufferFullException;
 import org.junit.Test;
 
 import com.akiban.server.AkServerTestCase;
@@ -54,14 +55,14 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         public boolean collectNextRow(ByteBuffer payload) {
             checkOpen();
             if (strings.isEmpty()) {
-                throw new NoSuchElementException();
+                return false;
             }
             String string = strings.remove(0);
             payload.putInt(string.length());
             payload.put(string.getBytes());
             ++deliveredRows;
 
-            return ! strings.isEmpty();
+            return true;
         }
 
         @Override
@@ -172,7 +173,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansNoLimit() throws InvalidOperationException {
+    public void scansNoLimit() throws InvalidOperationException, BufferFullException {
         final TestingStruct s = new TestingStruct("Hi", "there", "pooh bear", "how are you there");
 
         try {
@@ -190,7 +191,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansWithLimit() throws InvalidOperationException {
+    public void scansWithLimit() throws InvalidOperationException, BufferFullException {
         final TestingStruct s = new TestingStruct("hi", "world", "and", "universe", "too");
 
         try {
@@ -226,7 +227,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scanEmptyRC() throws InvalidOperationException {
+    public void scanEmptyRC() throws InvalidOperationException, BufferFullException {
         final TestingStruct s = new TestingStruct();
         try {
             assertFalse("expected end", doScan(s.cursor, s.cursorId, s.output, 0));
@@ -235,22 +236,5 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         }
 
         doScan(s.cursor, s.cursorId, s.output, 0);
-    }
-
-    @Test
-    public void testTheTestClasses() {
-        final String[] stringsArray = new String[] {"Hello", "world", "how are you"};
-        StringRowCollector rc = new StringRowCollector(4, stringsArray);
-        StringRowOutput output = new StringRowOutput();
-
-        while (rc.collectNextRow(output.getOutputBuffer())) {
-            output.wroteRow();
-        }
-        output.wroteRow();
-
-        assertEquals("rc rows collected", 3, rc.getDeliveredRows());
-        assertEquals("rows written", 3, output.getRowsCount());
-
-        assertEquals("rows", Arrays.asList(stringsArray), output.getStrings());
     }
 }

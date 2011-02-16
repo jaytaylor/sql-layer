@@ -29,6 +29,7 @@ import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.api.dml.UnsupportedModificationException;
+import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.CursorIsUnknownException;
@@ -116,11 +117,13 @@ public interface DMLFunctions {
      * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
      * @throws RowOutputException if the given RowOutput threw an exception while writing a row
      * @throws GenericInvalidOperationException if some other exception occurred
+     * @throws BufferFullException if the output buffer couldn't fit the rows
      */
     boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, int limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
+            BufferFullException,
             GenericInvalidOperationException;
     /**
      * <p>Performs a scan using the given cursor. This scan optionally limits the number of rows scanned, and passes

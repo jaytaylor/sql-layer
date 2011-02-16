@@ -23,6 +23,7 @@ import static org.junit.Assert.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,6 +40,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
+import com.akiban.server.api.dml.scan.BufferFullException;
+import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.store.Store;
@@ -228,6 +231,16 @@ public class ApiTestBase {
 
     protected static RuntimeException unexpectedException(Throwable cause) {
         return new RuntimeException("unexpected exception", cause);
+    }
+
+    protected final List<RowData> scanFull(ByteBuffer buffer, ScanRequest request) {
+        try {
+            return RowDataOutput.scanFull(session, dml(), buffer, request);
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
+        } catch (BufferFullException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {

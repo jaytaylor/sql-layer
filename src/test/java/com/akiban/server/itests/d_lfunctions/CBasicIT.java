@@ -143,7 +143,7 @@ public final class CBasicIT extends ApiTestBase {
      * @throws InvalidOperationException if something failed
      */
     @Test
-    public void partialRowScanLegacy() throws InvalidOperationException {
+    public void partialRowScanLegacy() throws InvalidOperationException, BufferFullException {
         final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         expectRowCount(tableId, 0);
