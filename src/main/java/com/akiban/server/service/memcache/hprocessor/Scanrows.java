@@ -43,6 +43,8 @@ import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -62,6 +64,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.akiban.server.api.HapiRequestException.ReasonCode.*;
 
 public class Scanrows implements HapiProcessor, JmxManageable {
+    private static final Logger LOG = LoggerFactory.getLogger(Scanrows.class);
     private static final Class<?> MODULE = Scanrows.class;
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
@@ -259,7 +262,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                     range.scanFlagsInt()
             );
             List<RowData> rows = null;
-            while(rows != null) {
+            while(rows == null) {
                 try {
                     rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
                 } catch (BufferFullException e) {
@@ -320,6 +323,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private ByteBuffer getBuffer(Session session) {
         ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
         if (buffer == null) {
+            LOG.debug("allocating new buffer");
             buffer = ByteBuffer.allocate(bufferSize.get());
             session.put(MODULE, SESSION_BUFFER, buffer);
         }
@@ -332,6 +336,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private void increaseBuffer(Session session) {
         ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
         assert buffer != null : "null buffer; must call getBuffer before increaseBuffer";
+        LOG.info("doubling buffer from capacity {}", buffer.capacity());
         session.put(MODULE, SESSION_BUFFER, ByteBuffer.allocate(buffer.capacity() * 2));
     }
 
