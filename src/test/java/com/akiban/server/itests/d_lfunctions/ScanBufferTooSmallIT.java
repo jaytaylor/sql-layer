@@ -15,18 +15,27 @@
 
 package com.akiban.server.itests.d_lfunctions;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.HapiGetRequest;
+import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.itests.ApiTestBase;
+import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.memcache.SimplePredicate;
+import com.akiban.server.service.memcache.hprocessor.Scanrows;
+import com.akiban.server.service.memcache.outputter.DummyOutputter;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 public final class ScanBufferTooSmallIT extends ApiTestBase {
 
@@ -55,12 +64,43 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
         );
     }
 
-    @Test(timeout=5000,expected= BufferFullException.class)
-    public void bufferTooSmall() throws InvalidOperationException, BufferFullException {
+    @Test(timeout=5000,expected=BufferFullException.class)
+    public void viaScanFull() throws InvalidOperationException, BufferFullException {
         int coiId = ddl().getAIS(session).getTable("ts", "c").getGroup().getGroupTable().getTableId();
         ScanRequest request = new ScanAllRequest(coiId, new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, 5, 6)));
         ByteBuffer buffer = ByteBuffer.allocate(10);
         buffer.mark();
         RowDataOutput.scanFull(session, dml(), buffer, request);
+    }
+
+
+    @Test(timeout=5000,expected=HapiRequestException.class)
+    public void viaHapi() throws HapiRequestException {
+        final HapiGetRequest request = new HapiGetRequest() {
+            @Override
+            public String getSchema() {
+                return "ts";
+            }
+
+            @Override
+            public String getTable() {
+                return "c";
+            }
+
+            @Override
+            public TableName getUsingTable() {
+                return new TableName("ts", "c");
+            }
+
+            @Override
+            public List<Predicate> getPredicates() {
+                return Arrays.<Predicate>asList(
+                        new SimplePredicate(getUsingTable(), "cid", Predicate.Operator.EQ, "1")
+                );
+            }
+        };
+        Scanrows scanrows = Scanrows.instance();
+        scanrows.getMXBean().setBufferCapacity(10);
+        hapi(MemcacheService.WhichHapi.SCANROWS).processRequest(session, request, DummyOutputter.instance(), new ByteArrayOutputStream(1));
     }
 }

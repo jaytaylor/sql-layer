@@ -615,4 +615,8 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("HapiP-Scanrows", bean, ScanrowsMXBean.class);
     }
+
+    public final ScanrowsMXBean getMXBean() {
+        return bean;
+    }
 }
