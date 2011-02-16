@@ -58,7 +58,7 @@ import static com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory.
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 {
     private static final String VERSION_STRING = getVersionString();
-    private static final String MODULE = AkibanCommandHandler.class.toString();
+    private static final Class<?> MODULE = AkibanCommandHandler.class;
     private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
 
     private static class UnsupportedMemcachedException extends UnsupportedOperationException {

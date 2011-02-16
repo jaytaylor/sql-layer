@@ -995,11 +995,11 @@ public class PersistitStore implements AkServerConstants, Store {
 
     private List<RowCollector> collectorsForTableId(final Session session,
             final int tableId) {
-        Map<Integer, List<RowCollector>> map = session.get("store",
+        Map<Integer, List<RowCollector>> map = session.get(PersistitStore.class,
                 "collectors");
         if (map == null) {
             map = new HashMap<Integer, List<RowCollector>>();
-            session.put("store", "collectors", map);
+            session.put(PersistitStore.class, "collectors", map);
         }
         List<RowCollector> list = map.get(tableId);
         if (list == null) {

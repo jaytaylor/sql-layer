@@ -42,7 +42,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         return instance;
     }
 
-    private static final String MODULE = Fetchrows.class.toString();
+    private static final Class<?> MODULE = Fetchrows.class;
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
     private final AtomicInteger capacity = new AtomicInteger(65536);

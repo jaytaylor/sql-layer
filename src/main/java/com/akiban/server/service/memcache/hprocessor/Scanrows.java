@@ -61,7 +61,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.akiban.server.api.HapiRequestException.ReasonCode.*;
 
 public class Scanrows implements HapiProcessor, JmxManageable {
-    private static final String MODULE = Scanrows.class.toString();
+    private static final Class<?> MODULE = Scanrows.class;
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
     private static final AtomicInteger bufferSize = new AtomicInteger(65535);

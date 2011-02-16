@@ -66,8 +66,7 @@ import org.slf4j.LoggerFactory;
 
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
-    private static final String MODULE_NAME = DMLFunctionsImpl.class
-            .getCanonicalName();
+    private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final Object OPEN_CURSORS_MAP = new Object();
 
