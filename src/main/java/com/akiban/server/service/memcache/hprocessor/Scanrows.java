@@ -330,14 +330,15 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         else {
             buffer.clear();
         }
+        buffer.mark();
         return buffer;
     }
 
     private void increaseBuffer(Session session) {
-        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
-        assert buffer != null : "null buffer; must call getBuffer before increaseBuffer";
-        LOG.info("doubling buffer from capacity {}", buffer.capacity());
-        session.put(MODULE, SESSION_BUFFER, ByteBuffer.allocate(buffer.capacity() * 2));
+        session.remove(MODULE, SESSION_BUFFER);
+        int capacity = bufferSize.get();
+        bufferSize.set( capacity * 2 );
+        LOG.info("doubling capacity from {}", capacity);
     }
 
     private RowDataStruct getScanRange(Session session, HapiGetRequest request)

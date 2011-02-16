@@ -24,7 +24,6 @@ import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.memcache.SimplePredicate;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.DummyOutputter;
@@ -36,6 +35,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 public final class ScanBufferTooSmallIT extends ApiTestBase {
 
@@ -73,8 +74,7 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
         RowDataOutput.scanFull(session, dml(), buffer, request);
     }
 
-
-    @Test(timeout=5000,expected=HapiRequestException.class)
+    @Test(timeout=5000)
     public void viaHapi() throws HapiRequestException {
         final HapiGetRequest request = new HapiGetRequest() {
             @Override
@@ -101,6 +101,8 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
         };
         Scanrows scanrows = Scanrows.instance();
         scanrows.getMXBean().setBufferCapacity(10);
-        hapi(MemcacheService.WhichHapi.SCANROWS).processRequest(session, request, DummyOutputter.instance(), new ByteArrayOutputStream(1));
+        scanrows.processRequest(session, request, DummyOutputter.instance(), new ByteArrayOutputStream(1));
+        final int capacity = scanrows.getMXBean().getBufferCapacity();
+        assertTrue("buffer capacity is " + capacity, capacity > 10);
     }
 }
