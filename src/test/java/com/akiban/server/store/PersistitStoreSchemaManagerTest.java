@@ -216,17 +216,11 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
     @Test
     public void testBug712605() throws Exception {
         long time = System.currentTimeMillis();
-        int rollbacks = 0;
         // try this for 10 seconds.
         while (System.currentTimeMillis() - time < 20000) {
-            try {
             createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
             manager.deleteTableDefinition(session, SCHEMA, "one");
-            } catch (Exception e) {
-                rollbacks++;
-            }
         }
-        assertEquals(0, rollbacks);
     }
 
     @Test

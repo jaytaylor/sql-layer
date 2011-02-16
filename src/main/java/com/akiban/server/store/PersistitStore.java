@@ -530,10 +530,15 @@ public class PersistitStore implements AkServerConstants, Store {
                     } else {
                         final KeyState keyState = new KeyState(hEx.getKey());
                         transaction.commit(new CommitListener() {
+                            @Override
                             public void committed() {
                                 for (final CommittedUpdateListener cul : updateListeners) {
                                     cul.inserted(keyState, rowDef, rowData);
                                 }
+                            }
+                            @Override
+                            public void rolledBack() {
+                                // nothing to do
                             }
                         }, forceToDisk);
                     }
@@ -668,10 +673,15 @@ public class PersistitStore implements AkServerConstants, Store {
                     } else {
                         final KeyState keyState = new KeyState(hEx.getKey());
                         transaction.commit(new CommitListener() {
+                            @Override
                             public void committed() {
                                 for (final CommittedUpdateListener cul : updateListeners) {
                                     cul.deleted(keyState, rowDef, rowData);
                                 }
+                            }
+                            @Override
+                            public void rolledBack() {
+                                // nothing to do
                             }
                         }, forceToDisk);
                     }
@@ -760,10 +770,15 @@ public class PersistitStore implements AkServerConstants, Store {
                     } else {
                         final KeyState keyState = new KeyState(hEx.getKey());
                         transaction.commit(new CommitListener() {
+                            @Override
                             public void committed() {
                                 for (final CommittedUpdateListener cul : updateListeners) {
                                     cul.updated(keyState, rowDef, oldRowData, mergedRowData);
                                 }
+                            }
+                            @Override
+                            public void rolledBack() {
+                                // nothing to do
                             }
                         }, forceToDisk);
                     }
