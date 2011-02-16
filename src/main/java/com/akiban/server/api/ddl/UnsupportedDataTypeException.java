@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -18,12 +18,12 @@ package com.akiban.server.api.ddl;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.message.ErrorCode;
 
-public final class UnsupportedDropException extends DDLException {
-    public UnsupportedDropException(InvalidOperationException e) {
+public class UnsupportedDataTypeException extends DDLException {
+    public UnsupportedDataTypeException(InvalidOperationException e) {
         this(e.getMessage());
     }
 
-    public UnsupportedDropException(String message) {
-        super(ErrorCode.UNSUPPORTED_DROP, message);
+    public UnsupportedDataTypeException(String message) {
+        super(ErrorCode.UNSUPPORTED_DATA_TYPE, message);
     }
 }

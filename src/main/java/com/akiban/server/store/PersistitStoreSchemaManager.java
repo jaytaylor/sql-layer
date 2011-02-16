@@ -166,8 +166,28 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final boolean useOldId) throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
-        final SchemaDef.UserTableDef tableDef = parseTableStatement(
-                defaultSchemaName, canonical);
+        SchemaDef.UserTableDef tableDef = parseTableStatement(defaultSchemaName,
+                                                              canonical);
+        if(tableDef.isLikeTableDef() == true) {
+            final SchemaDef.CName srcName = tableDef.getLikeCName();
+            final String srcSchema = srcName.getSchema() != null ?
+                                     srcName.getSchema() :
+                                     defaultSchemaName;
+            final Table table = getAis(session).getTable(srcSchema,
+                                                         srcName.getName());
+            if(table == null) {
+                throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE,
+                        String.format("Unknown source table [%s] %s",
+                                      srcSchema, srcName.getName()));
+            }
+            final SchemaDef.CName dstName = tableDef.getCName();
+            final String dstSchema = dstName.getSchema() != null ?
+                                     dstName.getSchema() :
+                                     defaultSchemaName;
+            DDLGenerator gen = new DDLGenerator(dstSchema, dstName.getName());
+            canonical = gen.createTable(table);
+            tableDef = parseTableStatement(defaultSchemaName, canonical);
+        }
         String schemaName = tableDef.getCName().getSchema();
         if (schemaName == null) {
             final StringBuilder sb = new StringBuilder(CREATE_TABLE);
@@ -1093,11 +1113,20 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     AKIBAN_INFORMATION_SCHEMA, statement);
         }
 
+        for(SchemaDef.ColumnDef col : tableDef.getColumns()) {
+            final String typeName = col.getType();
+            if(ais.getType(typeName) == null ||
+               typeName.equals("ENUM") || typeName.equals("SET") || typeName.equals("BIT")) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_DATA_TYPE,
+                                                    "column %s is unsupported type %s", col.getName(), typeName);
+            }
+        }
+
         final SchemaDef.IndexDef parentJoin = SchemaDef.getAkibanJoin(tableDef);
         if (parentJoin == null) {
             return;
         }
-
+        
         String parentSchema = parentJoin.getParentSchema();
         if (parentSchema == null) {
             parentSchema = (tableDef.getCName().getSchema() == null) ? schemaName

@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 
-import com.akiban.ais.model.Index;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -110,15 +109,19 @@ public class SchemaDef {
         currentColumn = null;
     }
 
-    void addColumn(final String columnName, final String typeName,
-            final String param1, final String param2) {
-        final int uposition = currentColumn == null ? 0
-                : currentColumn.uposition + 1;
+    void addLikeTable(final CName destName, final CName sourceName) {
+        addTable(destName);
+        currentTable.likeName = sourceName;
+    }
+
+    void addColumn(final String columnName, final String typeName, final String param1, final String param2) {
+        final int uposition = currentColumn == null ? 0 : currentColumn.uposition + 1;
         currentColumn = new ColumnDef(columnName);
         currentColumn.typeName = typeName;
         currentColumn.typeParam1 = param1;
         currentColumn.typeParam2 = param2;
         currentColumn.uposition = uposition;
+        convertColumnAlias();
         currentTable.columns.add(currentColumn);
     }
 
@@ -491,6 +494,56 @@ public class SchemaDef {
         currentColumn = null;
     }
 
+    void serialDefaultValue() {
+        currentColumn.nullable = false;
+        autoIncrement();
+        startColumnOption();
+        seeUNIQUE();
+        endColumnOption();
+    }
+
+    /**
+     * Updates the currentColumn to canonical types if it is an alias (SERIAL, BLOB(100), etc)
+     */
+    void convertColumnAlias() {
+        String typeName = currentColumn.typeName;
+        String param1 = currentColumn.typeParam1;
+        String param2 = currentColumn.typeParam2;
+        // MySQL: BIT(0) => BIT(1)
+        if(typeName.equals("BIT") && param1 != null && param1.equals("0")) {
+            param1 = "1";
+        }
+        // MySQL: BLOB/TEXT(L): L=0 => blob, L<2^8 => tiny, L<2^16 => blob, L<2^24 => medium, L<2^32 => large
+        else if((typeName.equals("BLOB") || typeName.equals("TEXT")) && param1 != null) {
+            final long len = Long.parseLong(param1);
+            if(len >= 1L<<24) {
+                typeName = "LONG" + typeName;
+            }
+            else if(len >= 1L<<16) {
+                typeName = "MEDIUM" + typeName;
+            }
+            else if(len > 0 && len < 1L<<8) {
+                typeName = "TINY" + typeName;
+            }
+            param1 = null;
+        }
+        // SQL: FLOAT(P): 0<=P<=24 => FLOAT,  25<=P<=53 => DOUBLE
+        else if(typeName.equals("FLOAT") && param1 != null && param2 == null) {
+            if(Long.parseLong(param1) > 24L) {
+                typeName = "DOUBLE";
+            }
+            param1 = null;
+        }
+        // MySQL: SERIAL => BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+        else if(typeName.equals("SERIAL")){
+            typeName = "BIGINT UNSIGNED";
+            serialDefaultValue();
+        }
+        currentColumn.typeName = typeName;
+        currentColumn.typeParam1 = param1;
+        currentColumn.typeParam2 = param2;
+    }
+
     /**
      * Checks (via assert) that the comment doesn't appear to be an old-style
      * grouping.
@@ -553,7 +606,8 @@ public class SchemaDef {
                 return;
             }
             try {
-                this.autoincrement = Long.parseLong(autoIncrement);
+                // See bug696169, AUTO_INCREMENT=N should set initial value to N-1
+                this.autoincrement = Long.parseLong(autoIncrement) - 1L;
             } catch (NumberFormatException e) {
                 throw new SchemaDefException(
                         "Not a valid AUTO_INCREMENT value: " + autoIncrement);
@@ -562,6 +616,10 @@ public class SchemaDef {
 
         public String getName() {
             return name;
+        }
+
+        public String getType() {
+            return typeName;
         }
 
         public Long defaultAutoIncrement() {
@@ -650,6 +708,7 @@ public class SchemaDef {
     public static class UserTableDef {
         CName groupName;
         CName name;
+        CName likeName;
         List<ColumnDef> columns = new ArrayList<ColumnDef>();
         List<String> primaryKey = new ArrayList<String>();
         List<String> childJoinColumns = new ArrayList<String>();
@@ -668,6 +727,14 @@ public class SchemaDef {
 
         public CName getCName() {
             return name;
+        }
+
+        public CName getLikeCName() {
+            return likeName;
+        }
+
+        public boolean isLikeTableDef() {
+            return likeName != null;
         }
 
         public List<ColumnDef> getColumns() {
@@ -1101,8 +1168,9 @@ public class SchemaDef {
     }
 
     private static void strip(StringBuilder sb, final String s) {
-        if (sb.substring(0, s.length()).equalsIgnoreCase(s)) {
-            sb.delete(0, s.length());
+        final int sLen = s.length();
+        if (sb.length() >= sLen && sb.substring(0, sLen).equalsIgnoreCase(s)) {
+            sb.delete(0, sLen);
         }
     }
 

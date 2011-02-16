@@ -42,6 +42,7 @@ import com.akiban.server.api.ddl.NoPrimaryKeyException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.api.ddl.UnsupportedCharsetException;
+import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaId;
@@ -61,13 +62,15 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             ProtectedTableDDLException, DuplicateTableNameException,
             GroupWithProtectedTableException, JoinToUnknownTableException,
             JoinToWrongColumnsException, NoPrimaryKeyException,
-            DuplicateColumnNameException, GenericInvalidOperationException {
+            DuplicateColumnNameException, UnsupportedDataTypeException,
+            GenericInvalidOperationException {
         try {
             schemaManager().createTableDefinition(session, schema, ddlText, false);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ParseException.class, ioe);
-            throw new GenericInvalidOperationException(e);
+            throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
+            throw new GenericInvalidOperationException(ioe);
         }
     }
 
@@ -85,8 +88,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
         // Halo spec: may only drop leaf tables through DDL interface
         if(userTable == null || userTable.getChildJoins().isEmpty() == false) {
-            throw new UnsupportedDropException(ErrorCode.UNSUPPORTED_OPERATION,
-                                               "Cannot drop non-leaf table " + userTable.getName());
+            throw new UnsupportedDropException(String.format("Cannot drop non-leaf table [%s]", table.getName()));
         }
 
         try {
