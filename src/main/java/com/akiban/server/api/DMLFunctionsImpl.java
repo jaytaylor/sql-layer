@@ -39,6 +39,7 @@ import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.*;
+import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -235,6 +236,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throws CursorIsFinishedException,
                    CursorIsUnknownException,
                    RowOutputException,
+                   BufferFullException,
                    GenericInvalidOperationException
 
     {
@@ -313,6 +315,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final PooledConverter converter = getPooledConverter(output, scanColumns);
         try {
             return scanSome(session, cursorId, converter.getLegacyOutput(), limit);
+        }
+        catch (BufferFullException e) {
+            throw new RowOutputException(e);
         } finally {
             releasePooledConverter(converter);
         }
@@ -351,7 +356,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                                     int limit)
             throws CursorIsFinishedException,
                    RowOutputException,
-                   GenericInvalidOperationException {
+                   GenericInvalidOperationException,
+                   BufferFullException {
         assert cursor != null;
         assert cursorId != null;
         assert output != null;
@@ -596,6 +602,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
+        } catch (BufferFullException e) {
+            throw new RuntimeException("Internal error, buffer full: " + e);
         } finally {
             try {
                 closeCursor(session, cursorId);

@@ -34,6 +34,7 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.LegacyScanRequest;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -257,7 +258,14 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                     range.indexId(),
                     range.scanFlagsInt()
             );
-            List<RowData> rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
+            List<RowData> rows = null;
+            while(rows != null) {
+                try {
+                    rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
+                } catch (BufferFullException e) {
+                    increaseBuffer(session);
+                }
+            }
 
             outputter.output(
                     new DefaultProcessedRequest(request, session, ddlFunctions),
@@ -319,6 +327,12 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             buffer.clear();
         }
         return buffer;
+    }
+
+    private void increaseBuffer(Session session) {
+        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
+        assert buffer != null : "null buffer; must call getBuffer before increaseBuffer";
+        session.put(MODULE, SESSION_BUFFER, ByteBuffer.allocate(buffer.capacity() * 2));
     }
 
     private RowDataStruct getScanRange(Session session, HapiGetRequest request)

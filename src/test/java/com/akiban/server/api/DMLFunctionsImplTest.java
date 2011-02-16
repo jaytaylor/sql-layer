@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.akiban.server.api.dml.scan.BufferFullException;
 import org.junit.Test;
 
 import com.akiban.server.AkServerTestCase;
@@ -172,7 +173,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansNoLimit() throws InvalidOperationException {
+    public void scansNoLimit() throws InvalidOperationException, BufferFullException {
         final TestingStruct s = new TestingStruct("Hi", "there", "pooh bear", "how are you there");
 
         try {
@@ -190,7 +191,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansWithLimit() throws InvalidOperationException {
+    public void scansWithLimit() throws InvalidOperationException, BufferFullException {
         final TestingStruct s = new TestingStruct("hi", "world", "and", "universe", "too");
 
         try {
@@ -226,7 +227,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scanEmptyRC() throws InvalidOperationException {
+    public void scanEmptyRC() throws InvalidOperationException, BufferFullException {
         final TestingStruct s = new TestingStruct();
         try {
             assertFalse("expected end", doScan(s.cursor, s.cursorId, s.output, 0));

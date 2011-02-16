@@ -16,6 +16,7 @@
 package com.akiban.server.itests.d_lfunctions;
 
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -54,8 +55,8 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
         );
     }
 
-    @Test(timeout=5000)
-    public void bufferTooSmall() throws InvalidOperationException {
+    @Test(timeout=5000,expected= BufferFullException.class)
+    public void bufferTooSmall() throws InvalidOperationException, BufferFullException {
         int coiId = ddl().getAIS(session).getTable("ts", "c").getGroup().getGroupTable().getTableId();
         ScanRequest request = new ScanAllRequest(coiId, new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, 5, 6)));
         ByteBuffer buffer = ByteBuffer.allocate(10);

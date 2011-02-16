@@ -29,7 +29,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.RowData;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
-import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.itests.ApiTestBase;
 import org.junit.Test;
 
@@ -150,9 +149,9 @@ public final class COIBasicIT extends ApiTestBase {
 
         writeRows(cRow, oRow, iRow);
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        List<RowData> cRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.c));
-        List<RowData> oRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.o));
-        List<RowData> iRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.i));
+        List<RowData> cRows = scanFull(buffer, scanAllRequest(tids.c));
+        List<RowData> oRows = scanFull(buffer, scanAllRequest(tids.o));
+        List<RowData> iRows = scanFull(buffer, scanAllRequest(tids.i));
 
         assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
@@ -183,9 +182,9 @@ public final class COIBasicIT extends ApiTestBase {
 
         writeRows(cRow, oRow, iRow);
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        List<RowData> cRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.c));
-        List<RowData> oRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.o));
-        List<RowData> iRows = RowDataOutput.scanFull(session, dml(), buffer, scanAllRequest(tids.i));
+        List<RowData> cRows = scanFull(buffer, scanAllRequest(tids.c));
+        List<RowData> oRows = scanFull(buffer, scanAllRequest(tids.o));
+        List<RowData> iRows = scanFull(buffer, scanAllRequest(tids.i));
 
         assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
