@@ -121,6 +121,36 @@ public final class AkibanCommandHandlerTest {
         assertEquals("result elements", 1, result.length);
     }
 
+    @Test
+    public void onlyOneKey() throws HapiRequestException {
+        final MockedHapiProcessor processor = new MockedHapiProcessor("schema", "table", "column", "value");
+        final String testString = "hi there";
+        final HapiOutputter outputter = new MockedOutputter(testString);
+
+        CacheElement[] result = AkibanCommandHandler.handleGetKeys(null, null,
+                Arrays.asList("schema:table:column=value"),
+                new SessionImpl(), processor, outputter);
+
+        final byte[] expectedBytes = testString.getBytes(CHARSET);
+        assertArrayEquals("bytes", expectedBytes, result[0].getData());
+        assertEquals("result elements", 1, result.length);
+    }
+
+    @Test(expected=HapiRequestException.class)
+    public void firstKeyEmpty() throws HapiRequestException {
+        final MockedHapiProcessor processor = new MockedHapiProcessor("schema", "table", "column", "value");
+        final String testString = "hi there";
+        final HapiOutputter outputter = new MockedOutputter(testString);
+
+        CacheElement[] result = AkibanCommandHandler.handleGetKeys(null, null,
+                Arrays.asList("", "schema:table:column=value"),
+                new SessionImpl(), processor, outputter);
+
+        final byte[] expectedBytes = testString.getBytes(CHARSET);
+        assertArrayEquals("bytes", expectedBytes, result[0].getData());
+        assertEquals("result elements", 1, result.length);
+    }
+
     private static void testWriteBytes(Session session, String testString) throws HapiRequestException {
         final byte[] expectedBytes = testString.getBytes(CHARSET);
 

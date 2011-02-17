@@ -248,7 +248,12 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
                                               Session session, HapiProcessor processor, HapiOutputter outputter)
             throws HapiRequestException
     {
-        final CacheElement[] results = new CacheElement[keys.size()];
+        if (keys.size() == 0) {
+            return new CacheElement[0];
+        }
+
+        final boolean ignoreLastKey = keys.get(keys.size()-1).length() == 0;
+        final CacheElement[] results = new CacheElement[ ignoreLastKey ? keys.size() - 1 : keys.size() ];
 
         if(LOG.isTraceEnabled()) {
             StringBuilder msg = new StringBuilder();
@@ -267,6 +272,10 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         int index = 0;
         for (String key : keys) {
+            if (index == results.length) {
+                assert ignoreLastKey : String.format("index=%d, results.length=%d", index, results.length);
+                break;
+            }
             final byte[] result_bytes = getBytesForGets(session, key, processor, outputter);
             LocalCacheElement element = new LocalCacheElement(key);
             element.setData(result_bytes);
