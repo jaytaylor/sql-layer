@@ -69,7 +69,7 @@ DESC = 'desc';
 ON = 'on';
 DELETE = 'delete';
 UPDATE = 'update';
-MCOMMENT = 'comment';
+COMMENT = 'comment';
 CONSTRAINT = 'constraint';
 RESTRICT = 'restrict';
 CASCADE = 'cascade';
@@ -102,8 +102,7 @@ package com.akiban.ais.ddl;
 }
 
 schema[SchemaDef schema]
-	: MULTILINE_COMMENT ? {$schema.comment($MULTILINE_COMMENT.text); }
-    schema_ddl[$schema] + EOF
+	: schema_ddl[$schema]+ EOF
     ;
     
 cname[SchemaDef schema] returns[CName cname]
@@ -141,7 +140,7 @@ table_suffix[SchemaDef schema]
 	| (DEFAULT? character_set[$schema])
 	| (DEFAULT? collation[$schema])
 	| (ID EQUALS qvalue)
-	| (MCOMMENT EQUALS? qvalue)
+	| (COMMENT EQUALS? qvalue)
 	;
 	
 table_element[SchemaDef schema]
@@ -167,7 +166,7 @@ column_constraint[SchemaDef schema]
 	| DEFAULT qvalue  {$schema.otherConstraint("DEFAULT=" + $qvalue.text);}
 	| AUTO_INCREMENT {$schema.autoIncrement();}
 	| ON UPDATE qvalue
-	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
+	| COMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
 	| character_set[$schema]
 	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
@@ -230,7 +229,7 @@ index_option[SchemaDef schema]
 	: KEY_BLOCK_SIZE EQUALS qvalue
 	| index_type[$schema]
 	| WITH PARSER qname
-	| MCOMMENT qvalue
+	| COMMENT qvalue
 	;
 	
 reference_column[SchemaDef schema]
@@ -340,13 +339,13 @@ qvalue returns [String value]
 /*------------------------------------------------------------------
  * LEXER RULES
  *------------------------------------------------------------------*/
-WS : ( '\t' | ' ' | '\r' | '\n' | '\u000C' )+ 	{ $channel = HIDDEN; } ;
 TICKVALUE: '\'' (~ '\'')* '\'';
 fragment DIGIT :   '0'..'9' ;
 NUMBER 	:	('-')? (DIGIT | DOT)+;
 QNAME : '`' (.)* '`' ;
 ID : ('a'..'z' | '_') ('a'..'z' | DIGIT | '_' | '$')*;
-COMMENT: '--' (~('\r' | '\n'))* ('\r' | '\n')  { $channel = HIDDEN; } ;
-IGNORE: ('/*' | '*/')+  { $channel = HIDDEN; } ;
-MULTILINE_COMMENT :   '/*' (options {greedy=false;} : .)* '*/';
+               
+WS : ('\t' | ' ' | '\r' | '\n' | '\u000C')+ {$channel=HIDDEN;};
+SQL_LINE_COMMENT : '-- ' (~('\r'|'\n'))* '\r'? '\n' {$channel=HIDDEN;};
+SQL_MULTILINE_COMMENT : '/*' (options {greedy=false;} : .)* '*/' {$channel=HIDDEN;};
 

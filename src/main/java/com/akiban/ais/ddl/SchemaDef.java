@@ -544,23 +544,6 @@ public class SchemaDef {
         currentColumn.typeParam2 = param2;
     }
 
-    /**
-     * Checks (via assert) that the comment doesn't appear to be an old-style
-     * grouping.
-     * 
-     * @param text
-     *            the text of the comment, including slash-star and star-slash.
-     */
-    void comment(final String text) {
-        if (text != null) {
-            StringBuilder inner = new StringBuilder(text.substring(2,
-                    text.length() - 2).trim());
-            inner.setLength("schema".length());
-            assert !"schema".equals(inner.toString()) : "found grouping comment "
-                    + text;
-        }
-    }
-
     private UserTableDef getUserTableDef(final CName tableName) {
         UserTableDef def = userTableMap.get(tableName);
         if (def == null) {
@@ -1128,24 +1111,9 @@ public class SchemaDef {
 
     public static String canonicalStatement(final String s) {
         final StringBuilder sb = new StringBuilder();
-        boolean sc = false;
-        boolean ws = false;
-        for (int i = 0; i < s.length(); i++) {
-            final char c = s.charAt(i);
-            if (c > ' ') {
-                if (ws) {
-                    if (sb.length() > 0) {
-                        sb.append(' ');
-                    }
-                    ws = false;
-                }
-                sb.append(c);
-                sc = c == ';';
-            } else {
-                ws = true;
-            }
-        }
-        if (!sc) {
+        final String trimmed = s.trim();
+        sb.append(trimmed);
+        if(trimmed.endsWith(";") == false) {
             sb.append(';');
         }
         strip(sb, CREATE_TABLE);

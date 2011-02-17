@@ -250,6 +250,30 @@ public final class CreateTableIT extends ApiTestBase {
         createCheckColumn("c1 REAL NULL", Types.DOUBLE, null, null);
     }
 
+    @Test
+    public void createStatementsWithComments() throws InvalidOperationException {
+        // Failed on second one with NPE in refreshSchema, found in mtr/engine/funcs/rpl_trigger
+        ddl().createTable(session, "test", "create table t210 (f1 int, f2 int) /* slave local */");
+        tableName("test", "t210");
+        ddl().createTable(session, "test", "create table t310 (f3 int) /* slave local */");
+        tableName("test", "t310");
+
+        // Long comment (with and without embedded newlines)
+        ddl().createTable(session, "test", "create table t1(id int key /*pkey*/, name varchar(32) /* fname \n with two line comment*/) engine=akibandb");
+        assertEquals(2, getUserTable(tableId("test","t1")).getColumns().size());
+
+        // Line comments (only with trailing newlines, parses cleanly)
+        ddl().createTable(session, "test", "create table t2(id int key, -- pkey \nname varchar(32)\n) engine=akibandb -- after comment\n");
+        assertEquals(2, getUserTable(tableId("test","t2")).getColumns().size());
+
+        // Line comment (no traling newline, parse warning due to no EOL but should still succeed)
+        ddl().createTable(session, "test", "create table t3(id int key) engine=akibandb -- eolcomment");
+        assertEquals(1, getUserTable(tableId("test","t3")).getColumns().size());
+
+        // Confirm all still there
+        assertEquals(5, getUserTables().size());
+    }
+
     
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
