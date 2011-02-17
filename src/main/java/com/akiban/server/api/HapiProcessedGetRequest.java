@@ -15,6 +15,7 @@
 
 package com.akiban.server.api;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.RowDef;
 
 import java.io.IOException;
@@ -22,5 +23,14 @@ import java.util.Set;
 
 public interface HapiProcessedGetRequest extends HapiGetRequest {
     Set<String> getProjectedTables();
+
+    /**
+     * deprecated Rely on AIS for schema
+     * @param tableId
+     * @return
+     * @throws IOException
+     */
     RowDef getRowDef(int tableId) throws IOException;
+
+    AkibanInformationSchema akibanInformationSchema();
 }

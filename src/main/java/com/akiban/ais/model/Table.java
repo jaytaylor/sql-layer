@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.server.RowDef;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -293,6 +295,16 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return columnMap;
     }
 
+    public void rowDef(RowDef rowDef)
+    {
+        this.rowDef = rowDef;
+    }
+
+    public RowDef rowDef()
+    {
+        return rowDef;
+    }
+
     private void ensureColumnsUpToDate()
     {
         if (columnsStale) {
@@ -336,4 +348,5 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
+    private transient RowDef rowDef;
 }

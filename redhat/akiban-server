@@ -11,11 +11,26 @@
 
 export JAR_FILE=/usr/share/akiban/akiban-server.jar
 export AKIBAN_CONF=/etc/akiban
-export AKIBNA_OWNR=akiban
+export AKIBAN_OWNR="akiban"
 NAME="akiban"
 log_file=/var/log/akiban/server_stdout.log
 pid_file=/var/run/akiban/server.pid
 AKIBAN_PROG=/usr/sbin/akserver
+
+# Use LSB init script functions for printing messages, if possible
+lsb_functions="/lib/lsb/init-functions"
+if test -f $lsb_functions ; then
+  . $lsb_functions
+else
+  log_success_msg()
+  {
+    echo " SUCCESS! $@"
+  }
+  log_failure_msg()
+  {
+    echo " ERROR! $@"
+  }
+fi
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -26,24 +41,26 @@ case "$1" in
             status -p $pid_file akiban
             exit 1
         fi
-        echo -n "Starting Akiban: "
         su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file -j $JAR_FILE -c $AKIBAN_CONF" > $log_file 2>&1
-        echo "OK"
+        if [ $? -ne 0 ]; then
+            log_failure_msg "Starting Akiban"
+        fi
+        log_success_msg "Starting Akiban"
         ;;
     stop)
-        echo -n "Shutdown Akiban: "
         status -p $pid_file akiban > /dev/null 2>&1
         if [ $? -ne 0 ]; then
-            echo "FAIL"
+            log_failure_msg "Shutdown Akiban"
             rm -f $pid_file
             exit 1
         fi
         su $AKIBAN_OWNR -c "kill `cat $pid_file`"
         rm -f $pid_file
-        echo "OK"
+        log_success_msg "Shutdown Akiban"
         ;;
     reload|restart)
         $0 stop
+        sleep 5
         $0 start
         ;;
     status)
