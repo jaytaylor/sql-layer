@@ -238,14 +238,30 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel)
     throws HapiRequestException
     {
-        final CacheElement[] results = handleGetKeys(command.cmd, command.element, command.keys,
+
+        if(LOG.isTraceEnabled()) {
+            StringBuilder msg = new StringBuilder();
+            msg.append(command.cmd);
+            if(command.element != null) {
+                msg.append(" ").append(command.element.getKeystring());
+            }
+            else {
+                msg.append(" null_command_element");
+            }
+            for(int i = 0; i < command.keys.size(); ++i) {
+                msg.append(" ").append(command.keys.get(i));
+            }
+            LOG.trace(msg.toString());
+        }
+
+        final CacheElement[] results = handleGetKeys(command.keys,
                 session.get(), hapiProcessor, formatGetter.getFormat());
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
     }
 
-    static final CacheElement[] handleGetKeys(Command cmd, CacheElement cacheElement, List<String> keys,
-                                              Session session, HapiProcessor processor, HapiOutputter outputter)
+    static CacheElement[] handleGetKeys(List<String> keys,
+                                        Session session, HapiProcessor processor, HapiOutputter outputter)
             throws HapiRequestException
     {
         if (keys.size() == 0) {
@@ -254,21 +270,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
 
         final boolean ignoreLastKey = keys.get(keys.size()-1).length() == 0;
         final CacheElement[] results = new CacheElement[ ignoreLastKey ? keys.size() - 1 : keys.size() ];
-
-        if(LOG.isTraceEnabled()) {
-            StringBuilder msg = new StringBuilder();
-            msg.append(cmd);
-            if(cacheElement != null) {
-                msg.append(" ").append(cacheElement.getKeystring());
-            }
-            else {
-                msg.append(" null_command_element");
-            }
-            for(int i = 0; i < keys.size(); ++i) {
-                msg.append(" ").append(keys.get(i));
-            }
-            LOG.trace(msg.toString());
-        }
 
         int index = 0;
         for (String key : keys) {

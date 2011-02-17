@@ -27,7 +27,6 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.thimbleware.jmemcached.CacheElement;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -112,7 +111,7 @@ public final class AkibanCommandHandlerTest {
         final String testString = "hi there";
         final HapiOutputter outputter = new MockedOutputter(testString);
 
-        CacheElement[] result = AkibanCommandHandler.handleGetKeys(null, null,
+        CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("schema:table:column=value", ""),
                 new SessionImpl(), processor, outputter);
 
@@ -127,7 +126,7 @@ public final class AkibanCommandHandlerTest {
         final String testString = "hi there";
         final HapiOutputter outputter = new MockedOutputter(testString);
 
-        CacheElement[] result = AkibanCommandHandler.handleGetKeys(null, null,
+        CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("schema:table:column=value"),
                 new SessionImpl(), processor, outputter);
 
@@ -142,7 +141,7 @@ public final class AkibanCommandHandlerTest {
         final String testString = "hi there";
         final HapiOutputter outputter = new MockedOutputter(testString);
 
-        CacheElement[] result = AkibanCommandHandler.handleGetKeys(null, null,
+        CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("", "schema:table:column=value"),
                 new SessionImpl(), processor, outputter);
 
