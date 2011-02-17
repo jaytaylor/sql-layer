@@ -20,6 +20,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.RowData;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
@@ -60,7 +61,7 @@ public final class AkibanCommandHandlerTest {
             assertEquals("select table", expectedTable, request.getTable());
             assertEquals("using table", new TableName(expectedSchema, expectedTable), request.getUsingTable());
             assertEquals("predicate count", 1, request.getPredicates().size());
-            HapiGetRequest.Predicate predicate = request.getPredicates().get(0);
+            HapiPredicate predicate = request.getPredicates().get(0);
             assertEquals("predicate column", expectedColumn, predicate.getColumnName());
             assertEquals("predicate value", expectedValue, predicate.getValue());
 

@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiGetRequest;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -78,7 +79,7 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
     private String table;
     private String usingTable;
     private TableName usingTableName;
-    private final List<Predicate> predicates = new ArrayList<Predicate>();
+    private final List<HapiPredicate> predicates = new ArrayList<HapiPredicate>();
 
     @Override
     public String getSchema() {
@@ -99,7 +100,7 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
     }
 
     @Override
-    public List<Predicate> getPredicates() {
+    public List<HapiPredicate> getPredicates() {
         return Collections.unmodifiableList(predicates);
     }
 
@@ -116,8 +117,8 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
         this.schema = schema;
     }
 
-    void addPredicate(String columnName, SimplePredicate.Operator operator, String value) {
-        predicates.add( new SimplePredicate(getUsingTable(), columnName, operator, value) );
+    void addPredicate(String columnName, SimpleHapiPredicate.Operator operator, String value) {
+        predicates.add( new SimpleHapiPredicate(getUsingTable(), columnName, operator, value) );
     }
 
     @Override
@@ -128,7 +129,7 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
         if (!using.getTableName().equals(getTable())) {
             builder.append('(').append(using.getTableName()).append(')');
         }
-        for (Predicate predicate : predicates) {
+        for (HapiPredicate predicate : predicates) {
             predicate.appendToSB(builder, using).append(',');
         }
         builder.setLength(builder.length()-1);

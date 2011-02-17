@@ -17,15 +17,34 @@ package com.akiban.server.api;
 
 import com.akiban.ais.model.TableName;
 
-import java.util.List;
+public interface HapiPredicate {
+    TableName getTableName();
 
-public interface HapiGetRequest {
-    String getSchema();
+    String getColumnName();
 
-    String getTable();
+    Operator getOp();
 
-    TableName getUsingTable();
+    String getValue();
 
-    List<HapiPredicate> getPredicates();
+    StringBuilder appendToSB(StringBuilder builder, TableName usingTable);
 
+    public enum Operator {
+        EQ("=="),
+        NE("!="),
+        GT(">"),
+        GTE(">="),
+        LT("<"),
+        LTE("<=")
+        ;
+
+        final private String toString;
+        Operator(String toString) {
+            this.toString = toString;
+        }
+
+        @Override
+        public String toString() {
+            return toString;
+        }
+    }
 }
