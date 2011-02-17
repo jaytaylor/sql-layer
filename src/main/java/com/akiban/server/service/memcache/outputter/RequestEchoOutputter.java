@@ -16,8 +16,8 @@
 package com.akiban.server.service.memcache.outputter;
 
 import com.akiban.server.RowData;
-import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessedGetRequest;
 
 import java.io.IOException;
@@ -45,10 +45,10 @@ public class RequestEchoOutputter implements HapiOutputter {
         writer.printf("schema:       %s\n", request.getSchema());
         writer.printf("select table: %s\n", request.getTable());
         writer.printf("using  table: %s\n", request.getUsingTable());
-        List<HapiGetRequest.HapiPredicate> predicates = request.getPredicates();
+        List<HapiPredicate> predicates = request.getPredicates();
         writer.printf("%d predicate%s\n", predicates.size(), predicates.size()==1 ? "" : "s");
         int predicateCount = 1;
-        for (HapiGetRequest.HapiPredicate predicate : predicates) {
+        for (HapiPredicate predicate : predicates) {
             writer.printf("%d:\n", predicateCount++);
             writer.printf("  table:  %s\n", predicate.getTableName());
             writer.printf("  column: %s\n", predicate.getColumnName());

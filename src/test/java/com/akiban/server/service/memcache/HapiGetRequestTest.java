@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiGetRequest;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
@@ -28,7 +29,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 
-import static com.akiban.server.api.HapiGetRequest.HapiPredicate.Operator.*;
+import static com.akiban.server.api.HapiPredicate.Operator.*;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -49,7 +50,7 @@ public final class HapiGetRequestTest {
             request.addPredicate(columnName, operator, value);
             assertEquals("predicates.size()", oldsize+1, request.getPredicates().size());
 
-            HapiGetRequest.HapiPredicate actual = request.getPredicates().get(oldsize);
+            HapiPredicate actual = request.getPredicates().get(oldsize);
             SimpleHapiPredicate expected
                     = new SimpleHapiPredicate(request.getUsingTable(), columnName, operator, value);
 

@@ -20,6 +20,7 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -96,7 +97,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
             throws HapiRequestException
     {
         ArgumentValidation.notNull("outputter", outputter);
-        HapiGetRequest.HapiPredicate predicate = extractLimitedPredicate(request);
+        HapiPredicate predicate = extractLimitedPredicate(request);
 
         final RowDefCache cache = store.getRowDefCache();
         final List<RowData> list;
@@ -122,7 +123,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         }
     }
 
-    private static HapiGetRequest.HapiPredicate extractLimitedPredicate(HapiGetRequest request) throws HapiRequestException {
+    private static HapiPredicate extractLimitedPredicate(HapiGetRequest request) throws HapiRequestException {
         if (request.getPredicates().size() != 1) {
             complain("You may only specify one predicate (for now!) -- saw %s", request.getPredicates());
         }
@@ -130,7 +131,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
             complain("You may not specify a different SELECT table and USING table (for now!) -- %s != %s",
                     request.getTable(), request.getUsingTable().getTableName());
         }
-        HapiGetRequest.HapiPredicate predicate = request.getPredicates().iterator().next();
+        HapiPredicate predicate = request.getPredicates().iterator().next();
         if (!predicate.getTableName().equals(request.getUsingTable())) {
             complain("Can't have different SELECT table and predicate table (for now!) %s != %s",
                     predicate.getTableName(), request.getUsingTable()

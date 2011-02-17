@@ -18,6 +18,7 @@ package com.akiban.server.itests.d_lfunctions;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.HapiGetRequest;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;

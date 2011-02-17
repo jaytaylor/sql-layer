@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache.hprocessor;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiGetRequest;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessedGetRequest;
 
 import java.util.List;
