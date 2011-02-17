@@ -19,13 +19,13 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.util.ArgumentValidation;
 
-public class SimplePredicate implements HapiGetRequest.Predicate {
+public class SimpleHapiPredicate implements HapiGetRequest.Predicate {
     private final TableName tableName;
     private final String columnName;
     private final Operator op;
     private final String value;
 
-    public SimplePredicate(TableName tableName, String columnName, Operator op, String value) {
+    public SimpleHapiPredicate(TableName tableName, String columnName, Operator op, String value) {
         ArgumentValidation.notNull("table name", tableName);
         ArgumentValidation.notNull("column name", columnName);
         ArgumentValidation.notNull("operator", op);
@@ -75,7 +75,7 @@ public class SimplePredicate implements HapiGetRequest.Predicate {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        SimplePredicate predicate = (SimplePredicate) o;
+        SimpleHapiPredicate predicate = (SimpleHapiPredicate) o;
 
         if (!columnName.equals(predicate.columnName)) return false;
         if (op != predicate.op) return false;

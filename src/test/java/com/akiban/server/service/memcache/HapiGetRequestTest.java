@@ -43,15 +43,15 @@ public final class HapiGetRequestTest {
         }
 
         HapiGetRequestBuilder predicate(
-                String columnName, SimplePredicate.Operator operator, String value
+                String columnName, SimpleHapiPredicate.Operator operator, String value
        ) {
             int oldsize = request.getPredicates().size();
             request.addPredicate(columnName, operator, value);
             assertEquals("predicates.size()", oldsize+1, request.getPredicates().size());
 
             HapiGetRequest.Predicate actual = request.getPredicates().get(oldsize);
-            SimplePredicate expected
-                    = new SimplePredicate(request.getUsingTable(), columnName, operator, value);
+            SimpleHapiPredicate expected
+                    = new SimpleHapiPredicate(request.getUsingTable(), columnName, operator, value);
 
             assertEquals("predicate", expected, actual);
             assertEquals("predicate hash", expected.hashCode(), actual.hashCode());

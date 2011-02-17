@@ -84,13 +84,13 @@ predicate [ParsedHapiGetRequest request]
 	: s=string o=op p=string { request.addPredicate(s, o, p); }
 	;
 
-op returns [SimplePredicate.Operator op]
-	: EQ {$op = SimplePredicate.Operator.EQ; }
-	| NE {$op = SimplePredicate.Operator.NE; }
-	| GT {$op = SimplePredicate.Operator.GT; }
-	| GTE {$op = SimplePredicate.Operator.GTE; }
-	| LT {$op = SimplePredicate.Operator.LT; }
-	| LTE {$op = SimplePredicate.Operator.LTE; }
+op returns [SimpleHapiPredicate.Operator op]
+	: EQ {$op = SimpleHapiPredicate.Operator.EQ; }
+	| NE {$op = SimpleHapiPredicate.Operator.NE; }
+	| GT {$op = SimpleHapiPredicate.Operator.GT; }
+	| GTE {$op = SimpleHapiPredicate.Operator.GTE; }
+	| LT {$op = SimpleHapiPredicate.Operator.LT; }
+	| LTE {$op = SimpleHapiPredicate.Operator.LTE; }
 	;
 
 string returns [String string]

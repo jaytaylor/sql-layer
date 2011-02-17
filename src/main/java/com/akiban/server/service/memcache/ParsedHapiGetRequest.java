@@ -116,8 +116,8 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
         this.schema = schema;
     }
 
-    void addPredicate(String columnName, SimplePredicate.Operator operator, String value) {
-        predicates.add( new SimplePredicate(getUsingTable(), columnName, operator, value) );
+    void addPredicate(String columnName, SimpleHapiPredicate.Operator operator, String value) {
+        predicates.add( new SimpleHapiPredicate(getUsingTable(), columnName, operator, value) );
     }
 
     @Override

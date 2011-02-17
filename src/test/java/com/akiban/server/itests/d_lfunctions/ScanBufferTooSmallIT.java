@@ -24,7 +24,7 @@ import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.SimplePredicate;
+import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.DummyOutputter;
 import org.junit.Before;
@@ -95,7 +95,7 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
             @Override
             public List<Predicate> getPredicates() {
                 return Arrays.<Predicate>asList(
-                        new SimplePredicate(getUsingTable(), "cid", Predicate.Operator.EQ, "1")
+                        new SimpleHapiPredicate(getUsingTable(), "cid", Predicate.Operator.EQ, "1")
                 );
             }
         };
