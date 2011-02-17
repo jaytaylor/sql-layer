@@ -1111,24 +1111,9 @@ public class SchemaDef {
 
     public static String canonicalStatement(final String s) {
         final StringBuilder sb = new StringBuilder();
-        boolean sc = false;
-        boolean ws = false;
-        for (int i = 0; i < s.length(); i++) {
-            final char c = s.charAt(i);
-            if (c > ' ') {
-                if (ws) {
-                    if (sb.length() > 0) {
-                        sb.append(' ');
-                    }
-                    ws = false;
-                }
-                sb.append(c);
-                sc = c == ';';
-            } else {
-                ws = true;
-            }
-        }
-        if (!sc) {
+        final String trimmed = s.trim();
+        sb.append(trimmed);
+        if(trimmed.endsWith(";") == false) {
             sb.append(';');
         }
         strip(sb, CREATE_TABLE);

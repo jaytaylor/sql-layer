@@ -29,11 +29,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.ddl.SchemaDef;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -417,7 +417,7 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
                 AkServer.class.getClassLoader()
                         .getResourceAsStream(PersistitStoreSchemaManager.AIS_DDL_NAME)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
-            final String canonical = DDLSource.canonicalStatement(statement);
+            final String canonical = SchemaDef.canonicalStatement(statement);
             sb.append(canonical);
             sb.append(AkServerUtil.NEW_LINE);
         }
