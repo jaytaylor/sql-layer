@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.itests.truncate;
+package com.akiban.server.itests.d_lfunctions;
 
 import com.akiban.ais.model.Table;
 import com.akiban.server.InvalidOperationException;
