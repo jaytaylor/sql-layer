@@ -26,11 +26,14 @@ import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.thimbleware.jmemcached.CacheElement;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -101,6 +104,21 @@ public final class AkibanCommandHandlerTest {
         Session session = new SessionImpl();
         testWriteBytes(session, "first test");
         testWriteBytes(session, "second test");
+    }
+
+    @Test // bug 720970
+    public void ignoreTrailingEmptyKey() throws HapiRequestException {
+        final MockedHapiProcessor processor = new MockedHapiProcessor("schema", "table", "column", "value");
+        final String testString = "hi there";
+        final HapiOutputter outputter = new MockedOutputter(testString);
+
+        CacheElement[] result = AkibanCommandHandler.handleGetKeys(null, null,
+                Arrays.asList("schema:table:column=value", ""),
+                new SessionImpl(), processor, outputter);
+
+        final byte[] expectedBytes = testString.getBytes(CHARSET);
+        assertArrayEquals("bytes", expectedBytes, result[0].getData());
+        assertEquals("result elements", 1, result.length);
     }
 
     private static void testWriteBytes(Session session, String testString) throws HapiRequestException {

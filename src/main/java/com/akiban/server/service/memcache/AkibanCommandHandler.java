@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.api.HapiGetRequest;
@@ -237,33 +238,41 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel)
     throws HapiRequestException
     {
-        final CacheElement[] results = new CacheElement[command.keys.size()];
+        final CacheElement[] results = handleGetKeys(command.cmd, command.element, command.keys,
+                session.get(), hapiProcessor, formatGetter.getFormat());
+        ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
+        Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
+    }
+
+    static final CacheElement[] handleGetKeys(Command cmd, CacheElement cacheElement, List<String> keys,
+                                              Session session, HapiProcessor processor, HapiOutputter outputter)
+            throws HapiRequestException
+    {
+        final CacheElement[] results = new CacheElement[keys.size()];
 
         if(LOG.isTraceEnabled()) {
             StringBuilder msg = new StringBuilder();
-            msg.append(command.cmd);
-            if(command.element != null) {
-                msg.append(" ").append(command.element.getKeystring());
+            msg.append(cmd);
+            if(cacheElement != null) {
+                msg.append(" ").append(cacheElement.getKeystring());
             }
             else {
                 msg.append(" null_command_element");
             }
-            for(int i = 0; i < command.keys.size(); ++i) {
-                msg.append(" ").append(command.keys.get(i));
+            for(int i = 0; i < keys.size(); ++i) {
+                msg.append(" ").append(keys.get(i));
             }
             LOG.trace(msg.toString());
         }
 
         int index = 0;
-        for (String key : command.keys) {
-            final byte[] result_bytes = getBytesForGets(session.get(), key, hapiProcessor, formatGetter.getFormat());
+        for (String key : keys) {
+            final byte[] result_bytes = getBytesForGets(session, key, processor, outputter);
             LocalCacheElement element = new LocalCacheElement(key);
             element.setData(result_bytes);
             results[index++] = element;
         }
-
-        ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
-        Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
+        return results;
     }
 
     static byte[] getBytesForGets(Session sessionLocal, String key,
