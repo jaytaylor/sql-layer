@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.memcache.hprocessor;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -34,6 +35,7 @@ import java.util.Set;
 final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
     private final DDLFunctions ddlFunctions;
     private final Set<String> projectedTables;
+    private final Session session;
 
     DefaultProcessedRequest(HapiGetRequest request, Session session) throws HapiRequestException {
         this(request, session, new DDLFunctionsImpl());
@@ -43,6 +45,7 @@ final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
             throws HapiRequestException
     {
         super(request);
+        this.session = session;
         this.ddlFunctions = ddlFunctions;
 
         final UserTable resultRoot;
@@ -103,5 +106,11 @@ final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
         } catch (NoSuchTableException e) {
             throw new IOException(e);
         }
+    }
+
+    @Override
+    public AkibanInformationSchema akibanInformationSchema()
+    {
+        return ddlFunctions.getAIS(session);
     }
 }

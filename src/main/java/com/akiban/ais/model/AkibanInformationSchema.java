@@ -16,14 +16,7 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 public class AkibanInformationSchema implements Serializable, Traversable
 {
@@ -115,6 +108,12 @@ public class AkibanInformationSchema implements Serializable, Traversable
     public UserTable getUserTable(final TableName tableName)
     {
         return userTables.get(tableName);
+    }
+
+    public synchronized UserTable getUserTable(int tableId)
+    {
+        ensureUserTablesByIdExists();
+        return userTablesById.get(tableId);
     }
 
     public GroupTable getGroupTable(final String schemaName, final String tableName)
@@ -401,6 +400,21 @@ public class AkibanInformationSchema implements Serializable, Traversable
         checkTypesNames(out);
     }
 
+    synchronized void invalidateTableIdMap()
+    {
+        userTablesById = null;
+    }
+
+    private void ensureUserTablesByIdExists()
+    {
+        if (userTablesById == null) {
+            userTablesById = new HashMap<Integer, UserTable>();
+            for (UserTable userTable : userTables.values()) {
+                userTablesById.put(userTable.getTableId(), userTable);
+            }
+        }
+    }
+
     // State
 
     public static final String DEFAULT_CHARSET = "latin1";
@@ -408,6 +422,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
 
     private Map<String, Group> groups = new TreeMap<String, Group>();
     private Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
+    private Map<Integer, UserTable> userTablesById = null;
     private Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();

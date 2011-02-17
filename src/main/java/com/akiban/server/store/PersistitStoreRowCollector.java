@@ -90,6 +90,8 @@ public class PersistitStoreRowCollector implements RowCollector {
 
     private int indexPinnedKeySize;
 
+    // true: scan table
+    // false: scan index
     private boolean traverseMode;
 
     private int prefixModeIndexField = -1;
@@ -586,6 +588,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                         final int keySize = hKey.getEncodedSize();
                         hKey.setEncodedSize(hKey.getIndex());
                         hEx.fetch();
+                        // TODO: ORPHANS - Don't assume the row with the current key actually exists.
                         prepareRow(hEx, level, rowDef,
                                 rowDef.getColumnOffset());
                         hKey.setEncodedSize(keySize);
@@ -632,16 +635,15 @@ public class PersistitStoreRowCollector implements RowCollector {
                     // Get the rest of the value
                     hEx.fetch();
                 }
-                if (isDeepMode()
-                        && depth > projectedRowDefs[projectedRowDefs.length - 1]
-                                .getHKeyDepth()) {
+                if (isDeepMode() && depth > projectedRowDefs[projectedRowDefs.length - 1].getHKeyDepth()) {
                     int level = pendingRowData.length - 1;
-                    prepareRow(hEx, level, null, 0);// TODO!!!
+                    prepareRow(hEx, level, null, 0);// TODO!!! Peter -- what needed to be done?
                     if (level < pendingFromLevel) {
                         pendingFromLevel = level;
                     }
                     pendingToLevel = level + 1;
                 } else {
+                    // TODO: ORPHANS - below depth, set deeper rows to all null.
                     for (int level = projectedRowDefs.length; --level >= 0;) {
                         if (depth == projectedRowDefs[level].getHKeyDepth()) {
                             prepareRow(hEx, level,

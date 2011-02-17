@@ -15,10 +15,10 @@
 
 package com.akiban.server.service.memcache.outputter;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
-import com.akiban.server.RowDef;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.util.AkibanAppender;
@@ -26,131 +26,162 @@ import com.akiban.util.AkibanAppender;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-public final class JsonOutputter implements HapiOutputter {
-    private static final JsonOutputter instance = new JsonOutputter();
-
-    public static JsonOutputter instance() {
-        return instance;
-    }
-
-    private JsonOutputter() {}
-
-    private static void writeEmptyChildren(PrintWriter pr, final RowDef def, Set<String> saw_children, HapiProcessedGetRequest request)
+public final class JsonOutputter implements HapiOutputter
+{
+    public static JsonOutputter instance()
     {
-        for(Join j: def.userTable().getChildJoins()) {
-            UserTable child = j.getChild();
-            String childName = child.getName().getTableName();
-            if(request.getProjectedTables().contains(childName)
-                    && (saw_children == null || saw_children.contains(childName) == false)) {
-                pr.write(",\"@");
-                pr.write(childName);
-                pr.write("\":[]");
-            }
-        }
+        return INSTANCE;
     }
 
     @Override
-    public void output(HapiProcessedGetRequest request, List<RowData> list, OutputStream outputStream) throws IOException {
-        PrintWriter pr = new PrintWriter(outputStream);
-
-        if (list.isEmpty()) {
-            pr.write("{\"@");
-            pr.write(request.getTable());
-            pr.write("\":[]}");
-            pr.flush();
-            return;
-        }
-
-        AkibanAppender appender = AkibanAppender.of(pr);
-        Deque<Integer> defIdStack = new ArrayDeque<Integer>();
-        Deque<Set<String>> sawChildStack = new ArrayDeque<Set<String>>();
-
-        for(RowData data : list) {
-            final int def_id = data.getRowDefId();
-            final RowDef def = request.getRowDef(def_id);
-            final int parent_def_id = def.getParentRowDefId();
-
-            if(defIdStack.isEmpty()) {
-                defIdStack.add(parent_def_id);
-                defIdStack.add(def_id);
-                sawChildStack.add(new HashSet<String>());
-                pr.write("{\"@");
-                pr.print(def.getTableName());
-                pr.write("\":[");
-            }
-            else if(defIdStack.peekLast().equals(def_id)) {
-                // another leaf on current branch (add to current open array)
-                writeEmptyChildren(pr, def, null, request); // sawChildStack *should* be empty anyway
-                pr.write("},");
-            }
-            else if(defIdStack.peekLast().equals(parent_def_id)) {
-                // down the tree, new child branch (new open array)
-                defIdStack.add(def_id);
-                sawChildStack.peekLast().add(def.getTableName());
-                sawChildStack.add(new HashSet<String>());
-
-                pr.write(",\"@");
-                pr.print(def.getTableName());
-                pr.write("\":[");
-            }
-            else {
-                // a) parent sibling branch, or
-                // b) up the tree to a previously known parent (close array for each step up)
-                RowDef d = request.getRowDef(defIdStack.removeLast());
-                writeEmptyChildren(pr, d, sawChildStack.removeLast(), request);
-                
-                pr.write("}]");
-                int pop_count = 0;
-                while(!defIdStack.peekLast().equals(parent_def_id)) {
-                    if(pop_count++ > 0) {
-                        pr.write(" ]");
-                    }
-
-                    d = request.getRowDef(defIdStack.removeLast());
-                    writeEmptyChildren(pr, d, sawChildStack.removeLast(), request);
-                    pr.write("}");
-                }
-
-                if(pop_count == 0) {
-                    // Was parent sibling branch
-                    pr.write(",\"@");
-                    pr.print(def.getTableName());
-                    pr.write("\":[");
-                }
-                else {
-                    // Was child of a known parent
-                    pr.write(',');
-                }
-                
-                defIdStack.add(def_id);
-                if(!sawChildStack.isEmpty()) {
-                    sawChildStack.peekLast().add(def.getTableName());
-                }
-                sawChildStack.add(new HashSet<String>());
-            }
-
-            pr.write('{');
-            data.toJSONString(request.getRowDef(data.getRowDefId()), appender);
-            }
-
-        boolean first = true;
-        while (defIdStack.size() > 1) {
-            if (first == true) {
-                first = false;
-            } else {
-                pr.write(']');
-            }
-            RowDef d = request.getRowDef(defIdStack.removeLast());
-            writeEmptyChildren(pr, d, sawChildStack.removeLast(), request);
-            pr.write('}');
-        }
-        pr.write("]}");
-        pr.flush();
+    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream)
+        throws IOException
+    {
+        ais = request.akibanInformationSchema();
+        computeExpectedChildren(request);
+        input = rows.iterator();
+        output = new PrintWriter(outputStream);
+        appender = AkibanAppender.of(output);
+        advanceInput();
+        output.write('{');
+        UserTable queryRoot = queryRoot(request);
+        generateChildOutput(queryRoot.getDepth(), QUERY_ROOT_PARENT, true);
+        output.write('}');
+        output.flush();
     }
+
+    private void generateChildOutput(int depth, int parentTableId, boolean firstSibling) throws IOException
+    {
+        // Each pass through this loop will encounter a different child type. The rows of each type
+        // are consecutive, and are handled by generateTableOutput. The missingChildren set tracks
+        // observed types. Anything left at the end is a child of type parentTableId that had no rows
+        // in the query result. These have to be rendered according to the spec.
+        Set<Integer> missingChildren = new HashSet<Integer>(expectedChildren.get(parentTableId));
+        int previousTableId = -1;
+        while (row != null && rowDepth == depth) {
+            if (firstSibling) {
+                firstSibling = false;
+            } else {
+                output.write(',');
+            }
+            Integer tableId = rowTable.getTableId();
+            assert tableId != previousTableId : rowTable;
+            missingChildren.remove(tableId);
+            output.write("\"@");
+            output.write(rowTable.getName().getTableName());
+            output.write("\":[");
+            generateTableOutput(rowTable);
+            output.write(']');
+            previousTableId = tableId;
+        }
+        assert rowDepth < depth : rowTable;
+        // For each missing child: Generate output similar to above, except that there were no rows.
+        // So we'll see output of this form: "@foo":[]
+        for (Integer tableId : missingChildren) {
+            if (firstSibling) {
+                firstSibling = false;
+            } else {
+                output.write(',');
+            }
+            UserTable table = ais.getUserTable(tableId);
+            output.write("\"@");
+            output.write(table.getName().getTableName());
+            output.write("\":[]");
+        }
+    }
+
+    private void generateTableOutput(UserTable table) throws IOException
+    {
+        // Generate output for consecutive rows of the same table
+        boolean firstSibling = true;
+        while (row != null && rowTable == table) {
+            if (firstSibling) {
+                firstSibling = false;
+            } else {
+                output.write(',');
+            }
+            // Generate output for row
+            output.write('{');
+            int tableId = rowTable.getTableId();
+            row.toJSONString(rowTable.rowDef(), appender);
+            advanceInput();
+            // Go to the next row. generateChildOutput then takes care of the children, including children present
+            // in the schema but not present in the data. If the next row is not actually a child, then
+            // generateChildOutput is still necessary to handle the missing children.
+            Integer tableDepth = table.getDepth();
+            assert rowDepth <= tableDepth + 1;
+            generateChildOutput(tableDepth + 1, tableId, false);
+            output.write('}');
+        }
+    }
+
+    private void advanceInput()
+    {
+        if (input.hasNext()) {
+            row = input.next();
+            rowTable = ais.getUserTable(row.getRowDefId());
+            rowDepth = rowTable.getDepth();
+        } else {
+            row = null;
+            rowTable = null;
+            rowDepth = -1;
+        }
+    }
+
+    private UserTable queryRoot(HapiProcessedGetRequest request)
+    {
+        return ais.getUserTable(request.getSchema(), request.getTable());
+    }
+
+    private void computeExpectedChildren(HapiProcessedGetRequest request)
+    {
+        expectedChildren = new HashMap<Integer, Set<Integer>>();
+        // Find the tables of interest
+        List<UserTable> tables = new ArrayList<UserTable>();
+        String schemaName = request.getSchema();
+        for (String tableName : request.getProjectedTables()) {
+            UserTable table = ais.getUserTable(schemaName, tableName);
+            assert table != null : String.format("%s.%s", schemaName, tableName);
+            tables.add(table);
+        }
+        // Sort by depth so that expectedChildren can be computed in one pass
+        Collections.sort(tables,
+                         new Comparator<UserTable>()
+                         {
+                             @Override
+                             public int compare(UserTable x, UserTable y)
+                             {
+                                 return x.getDepth() - y.getDepth();
+                             }
+                         });
+        // For each table in tables, add table to expectedChildren of parent.
+        for (UserTable table : tables) {
+            Set<Integer> replaced = expectedChildren.put(table.getTableId(), new HashSet<Integer>());
+            assert replaced == null : table;
+            Join parentJoin = table.getParentJoin();
+            if (parentJoin != null) {
+                UserTable parent = parentJoin.getParent();
+                Set<Integer> expectedChildrenOfParent = expectedChildren.get(parent.getTableId());
+                if (expectedChildrenOfParent != null) {
+                    expectedChildrenOfParent.add(table.getTableId());
+                }
+            }
+        }
+        // Set expected children of the entire query. Because of sorting, query root is at position 0.
+        expectedChildren.put(QUERY_ROOT_PARENT, new HashSet<Integer>(Arrays.asList(tables.get(0).getTableId())));
+    }
+
+    private static final JsonOutputter INSTANCE = new JsonOutputter();
+    private final static int QUERY_ROOT_PARENT = -1;
+
+    private AkibanInformationSchema ais;
+    private Map<Integer, Set<Integer>> expectedChildren;
+    private Iterator<RowData> input;
+    private PrintWriter output;
+    private AkibanAppender appender;
+    private RowData row;
+    private UserTable rowTable;
+    private int rowDepth;
 }

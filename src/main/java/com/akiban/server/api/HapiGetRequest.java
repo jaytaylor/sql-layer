@@ -20,12 +20,23 @@ import com.akiban.ais.model.TableName;
 import java.util.List;
 
 public interface HapiGetRequest {
+    /**
+     * The name of the schema containing the tables involved in this request. Matches getUsingTable().getSchemaName().
+     * @return The name of the schema containing the tables involved in this request.
+     */
     String getSchema();
 
+    /**
+     * Rootmost table to be retrieved by this request.
+     * @return The name (without schema) of the rootmost table to be retrieved.
+     */
     String getTable();
 
+    /**
+     * The table whose columns are restricted by this request.
+     * @return The schema and table name of the table whose columns are restricted by this request.
+     */
     TableName getUsingTable();
 
     List<HapiPredicate> getPredicates();
-
 }

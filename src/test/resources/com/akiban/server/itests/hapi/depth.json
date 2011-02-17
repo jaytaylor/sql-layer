@@ -40,17 +40,23 @@
     "write_rows" : {
         "customer"  : [ [11, "Alpha", "Mrs"],
                         [19, "Bravo", "Miss"],
-                        [18, "Charlie", "Mr"]
+                        [18, "Charlie", "Mr"],
+                        [30, "Devo", "Akron"],
+                        [31, "Elvis", "Chelsea"],
+                        [32, "Floyd", "Wall"]
         ],
         "orders"    : [ [21, 11, "1/1/2001"],
                         [22, 11, "2/2/2002"],
-                        [23, 18, "2/2/2002"]
+                        [23, 18, "2/2/2002"],
+                        [300, 30, "3/3/2003"]
         ],
         "item"      : [ [31, 21, 1111],
-                        [32, 23, 2222]
+                        [32, 23, 2222],
+                        [3000, 300, 3333]
         ],
         "address"   : [ [41, 11, "500 Harrison"],
-                        [42, 19, "1 Akiban Way"]
+                        [42, 19, "1 Akiban Way"],
+                        [300, 30, "Ohio"]
         ]
     }
 },
@@ -231,6 +237,69 @@
                             ]
                         }
                     ]
+                }
+            ]
+        }
+    },
+
+    "address after item" : {
+        "get"           : "coi:customer:cid=30",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid"   : 30,
+                    "name"  : "Devo",
+                    "address" : "Akron",
+                    "@orders" :
+                    [
+                        {
+                            "oid"   : 300,
+                            "c_id"  : 30,
+                            "when"  : "3/3/2003",
+                            "@item" : [
+                                {
+                                    "iid"   : 3000,
+                                    "o_id"  : 300,
+                                    "sku"   : 3333
+                                }
+                            ]
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "aid"   : 300,
+                            "c_id"  : 30,
+                            "street": "Ohio"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    "customer after empty customer" : {
+        "get"           : "coi:customer:cid>=31",
+        "processors" : ["scanrows"],
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid"   : 31,
+                    "name"  : "Elvis",
+                    "address" : "Chelsea",
+                    "@orders" : [],
+                    "@address" : []
+                },
+                {
+                    "cid"   : 32,
+                    "name"  : "Floyd",
+                    "address" : "Wall",
+                    "@orders" : [],
+                    "@address" : []
                 }
             ]
         }

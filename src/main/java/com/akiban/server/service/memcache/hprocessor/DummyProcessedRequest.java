@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.memcache.hprocessor;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.HapiGetRequest;
 
@@ -33,6 +34,12 @@ final class DummyProcessedRequest extends BaseHapiProcessedGetRequest {
 
     @Override
     public RowDef getRowDef(int tableId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AkibanInformationSchema akibanInformationSchema()
+    {
         throw new UnsupportedOperationException();
     }
 }
