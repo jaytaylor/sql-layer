@@ -239,6 +239,31 @@ public class SchemaDefToAis {
         }
     }
 
+    private static class GroupNamer {
+        private final Set<String> names = new HashSet<String>();
+
+        public String name(CName cname) {
+            return name(cname.getName());
+        }
+
+        public String name(final String name) {
+            if (names.add(name)) {
+                return name;
+            }
+
+            int i = 1;
+            StringBuilder builder = new StringBuilder(name).append('$');
+            final int appendAt = builder.length();
+            String ret;
+
+            while (!names.add(ret = builder.toString())) {
+                builder.setLength(appendAt);
+                builder.append(i++);
+            }
+            return ret;
+        }
+    }
+
     private AkibanInformationSchema buildAISFromBuilder(
             final boolean akibandbOnly) throws RecognitionException, Exception {
         addImpliedGroups();
@@ -283,10 +308,8 @@ public class SchemaDefToAis {
                         : true);
                 column.setTypeParameter1(longValue(def.typeParam1));
                 column.setTypeParameter2(longValue(def.typeParam2));
-                column.setCharset(def.charset == null ? AkibanInformationSchema.DEFAULT_CHARSET
-                        : def.charset);
-                column.setCollation(def.collate == null ? AkibanInformationSchema.DEFAULT_COLLATION
-                        : def.collate);
+                column.setCharset(def.charset);
+                column.setCollation(def.collate);
                 column.setInitialAutoIncrementValue(def.defaultAutoIncrement());
             }
 
@@ -366,11 +389,12 @@ public class SchemaDefToAis {
         builder.basicSchemaIsComplete();
 
         // loop through group tables and add to AIS
+        GroupNamer namer = new GroupNamer();
         for (CName group : schemaDef.getGroupMap().keySet()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Group = " + group.getName());
-            }
-            builder.createGroup(group.getName(), group.getSchema(),
+            String groupName = namer.name(group);
+            LOG.debug("Group = {}" + groupName);
+
+            builder.createGroup(groupName, group.getSchema(),
                     groupTableName(group));
 
             List<CName> tablesInGroup = depthFirstSortedUserTables(group);
@@ -382,7 +406,7 @@ public class SchemaDefToAis {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Group Root Table = " + table.getName());
                     }
-                    builder.addTableToGroup(group.getName(), table.getSchema(),
+                    builder.addTableToGroup(groupName, table.getSchema(),
                             table.getName());
                 } else {
                     if (LOG.isDebugEnabled()) {
@@ -391,7 +415,7 @@ public class SchemaDefToAis {
                     if (akibanFK.referenceTable != null) {
                         String joinName = constructFKJoinName(tableDef,
                                 akibanFK);
-                        builder.addJoinToGroup(group.getName(), joinName, 0);
+                        builder.addJoinToGroup(groupName, joinName, 0);
                     }
                 }
             }

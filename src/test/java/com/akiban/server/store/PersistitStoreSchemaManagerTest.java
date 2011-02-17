@@ -29,11 +29,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.ddl.SchemaDef;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -62,10 +62,10 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
         // Set up multi-volume treespace policy so we can be sure schema is
         // properly distributed.
         final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("akserver", "treespace.a",
+        properties.add(property("akserver.treespace.a",
                 "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("akserver", "treespace",
+        properties.add(property("akserver.treespace",
                 "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp();
@@ -216,17 +216,11 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
     @Test
     public void testBug712605() throws Exception {
         long time = System.currentTimeMillis();
-        int rollbacks = 0;
         // try this for 10 seconds.
         while (System.currentTimeMillis() - time < 20000) {
-            try {
             createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
             manager.deleteTableDefinition(session, SCHEMA, "one");
-            } catch (Exception e) {
-                rollbacks++;
-            }
         }
-        assertEquals(0, rollbacks);
     }
 
     @Test
@@ -417,7 +411,7 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
                 AkServer.class.getClassLoader()
                         .getResourceAsStream(PersistitStoreSchemaManager.AIS_DDL_NAME)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
-            final String canonical = DDLSource.canonicalStatement(statement);
+            final String canonical = SchemaDef.canonicalStatement(statement);
             sb.append(canonical);
             sb.append(AkServerUtil.NEW_LINE);
         }

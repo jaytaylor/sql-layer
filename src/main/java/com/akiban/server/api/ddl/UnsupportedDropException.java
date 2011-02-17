@@ -20,10 +20,10 @@ import com.akiban.message.ErrorCode;
 
 public final class UnsupportedDropException extends DDLException {
     public UnsupportedDropException(InvalidOperationException e) {
-        super(e);
+        this(e.getMessage());
     }
 
-    public UnsupportedDropException(ErrorCode code, String message) {
-        super(code, message);
+    public UnsupportedDropException(String message) {
+        super(ErrorCode.UNSUPPORTED_DROP, message);
     }
 }

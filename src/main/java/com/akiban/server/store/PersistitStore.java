@@ -523,10 +523,15 @@ public class PersistitStore implements AkServerConstants, Store {
                     } else {
                         final KeyState keyState = new KeyState(hEx.getKey());
                         transaction.commit(new CommitListener() {
+                            @Override
                             public void committed() {
                                 for (final CommittedUpdateListener cul : updateListeners) {
                                     cul.inserted(keyState, rowDef, rowData);
                                 }
+                            }
+                            @Override
+                            public void rolledBack() {
+                                // nothing to do
                             }
                         }, forceToDisk);
                     }
@@ -661,10 +666,15 @@ public class PersistitStore implements AkServerConstants, Store {
                     } else {
                         final KeyState keyState = new KeyState(hEx.getKey());
                         transaction.commit(new CommitListener() {
+                            @Override
                             public void committed() {
                                 for (final CommittedUpdateListener cul : updateListeners) {
                                     cul.deleted(keyState, rowDef, rowData);
                                 }
+                            }
+                            @Override
+                            public void rolledBack() {
+                                // nothing to do
                             }
                         }, forceToDisk);
                     }
@@ -753,10 +763,15 @@ public class PersistitStore implements AkServerConstants, Store {
                     } else {
                         final KeyState keyState = new KeyState(hEx.getKey());
                         transaction.commit(new CommitListener() {
+                            @Override
                             public void committed() {
                                 for (final CommittedUpdateListener cul : updateListeners) {
                                     cul.updated(keyState, rowDef, oldRowData, mergedRowData);
                                 }
+                            }
+                            @Override
+                            public void rolledBack() {
+                                // nothing to do
                             }
                         }, forceToDisk);
                     }
@@ -988,11 +1003,11 @@ public class PersistitStore implements AkServerConstants, Store {
 
     private List<RowCollector> collectorsForTableId(final Session session,
             final int tableId) {
-        Map<Integer, List<RowCollector>> map = session.get("store",
+        Map<Integer, List<RowCollector>> map = session.get(PersistitStore.class,
                 "collectors");
         if (map == null) {
             map = new HashMap<Integer, List<RowCollector>>();
-            session.put("store", "collectors", map);
+            session.put(PersistitStore.class, "collectors", map);
         }
         List<RowCollector> list = map.get(tableId);
         if (list == null) {

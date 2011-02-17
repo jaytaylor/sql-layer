@@ -56,6 +56,6 @@ public final class ApiTest extends AkServerTestCase {
         apiPair.ddl.createTable(session, "sc1", "CREATE TABLE t1(c1 TINYINT   AUTO_INCREMENT NULL KEY ) AUTO_INCREMENT=10");
         final int tableId = apiPair.ddl.getTableId(session, new TableName("sc1", "t1"));
         TableStatistics tableStats = apiPair.dml.getTableStatistics(session, tableId, false);
-        assertEquals("autoinc value", 10L, tableStats.getAutoIncrementValue());
+        assertEquals("autoinc value", 9L, tableStats.getAutoIncrementValue());
     }
 }

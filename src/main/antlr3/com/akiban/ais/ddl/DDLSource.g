@@ -52,7 +52,6 @@ TEXT = 'text';
 MEDIUMTEXT = 'mediumtext';
 LONGTEXT = 'longtext';
 BIT = 'bit' ;
-VARBIT = 'varbit' ;
 ENUM = 'enum';
 SET = 'set';
 NOT = 'not' ;
@@ -70,7 +69,7 @@ DESC = 'desc';
 ON = 'on';
 DELETE = 'delete';
 UPDATE = 'update';
-MCOMMENT = 'comment';
+COMMENT = 'comment';
 CONSTRAINT = 'constraint';
 RESTRICT = 'restrict';
 CASCADE = 'cascade';
@@ -84,8 +83,12 @@ WITH = 'with';
 PARSER = 'parser';
 FULLTEXT = 'fulltext';
 SPATIAL = 'spatial';
+FIXED = 'fixed';
+SIGNED = 'signed';
+SERIAL = 'serial';
+VALUE = 'value';
+LIKE = 'like';
 }
-
 
 @header {
 package com.akiban.ais.ddl;
@@ -99,8 +102,7 @@ package com.akiban.ais.ddl;
 }
 
 schema[SchemaDef schema]
-	: MULTILINE_COMMENT ? {$schema.comment($MULTILINE_COMMENT.text); }
-    schema_ddl[$schema] + EOF
+	: schema_ddl[$schema]+ EOF
     ;
     
 cname[SchemaDef schema] returns[CName cname]
@@ -108,7 +110,7 @@ cname[SchemaDef schema] returns[CName cname]
     ;
     
 schema_ddl[SchemaDef schema]
-    : (table[$schema] | use[$schema]) SEMICOLON
+    : (table[$schema] | use[$schema]) SEMICOLON?
     ;
  
 use[SchemaDef schema]
@@ -116,8 +118,10 @@ use[SchemaDef schema]
     ; 
     
 table[SchemaDef schema]
-	: CREATE TABLE (IF NOT EXISTS)? table_spec[$schema]
-	;
+	: CREATE TABLE (IF NOT EXISTS)? 
+	  (table_spec[$schema] | 
+	   dst=cname[$schema] LIKE src=cname[$schema] {$schema.addLikeTable($dst.cname, $src.cname);})
+ 	;
 
 table_spec[SchemaDef schema]
 	: table_name[$schema] LEFT_PAREN
@@ -136,7 +140,7 @@ table_suffix[SchemaDef schema]
 	| (DEFAULT? character_set[$schema])
 	| (DEFAULT? collation[$schema])
 	| (ID EQUALS qvalue)
-	| (MCOMMENT EQUALS? qvalue)
+	| (COMMENT EQUALS? qvalue)
 	;
 	
 table_element[SchemaDef schema]
@@ -162,13 +166,14 @@ column_constraint[SchemaDef schema]
 	| DEFAULT qvalue  {$schema.otherConstraint("DEFAULT=" + $qvalue.text);}
 	| AUTO_INCREMENT {$schema.autoIncrement();}
 	| ON UPDATE qvalue
-	| MCOMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
+	| COMMENT EQUALS? qvalue {$schema.addColumnComment($qvalue.text);}
 	| character_set[$schema]
 	| collation[$schema]
 	| ID {$schema.otherConstraint($ID.text);}
 	| KEY {$schema.seeKEY();}
 	| PRIMARY {$schema.seePRIMARY();}
 	| UNIQUE {$schema.seeUNIQUE();}
+	| SERIAL DEFAULT VALUE {$schema.serialDefaultValue();}
 	;
 
 key_constraint[SchemaDef schema]
@@ -224,7 +229,7 @@ index_option[SchemaDef schema]
 	: KEY_BLOCK_SIZE EQUALS qvalue
 	| index_type[$schema]
 	| WITH PARSER qname
-	| MCOMMENT qvalue
+	| COMMENT qvalue
 	;
 	
 reference_column[SchemaDef schema]
@@ -249,25 +254,23 @@ collation[SchemaDef schema]
 data_type_def returns [String type, String len1, String len2]
 	: data_type {$type = $data_type.type;} (length_constraint {$len1 = $length_constraint.len1;})?
 	| numeric_data_type {$type = $numeric_data_type.type;}  
-	   (length_constraint {$len1 = $length_constraint.len1;})? 
-	   (UNSIGNED {$type=$type + " UNSIGNED";})?
+	  (length_constraint {$len1 = $length_constraint.len1;})? 
+	  (SIGNED | UNSIGNED {$type=$type + " UNSIGNED";})?
 	| decimal_data_type {$type = $decimal_data_type.type;}
-      (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
-      (UNSIGNED {$type=$type + " UNSIGNED";})?
+	  (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
+	  (SIGNED | UNSIGNED {$type=$type + " UNSIGNED";})?
 	| enum_or_set_data_type {$type = $enum_or_set_data_type.type; $len1 = $enum_or_set_data_type.len1;}
+	| SERIAL {$type = "SERIAL";}
 	;
 
 data_type returns [String type]
-	: CHARACTER VARYING {$type = "VARCHAR";}
-	| BIT VARYING {$type = "VARBIT";}
-	| DATE {$type = "DATE";}
+	: DATE {$type = "DATE";}
 	| DATETIME {$type = "DATETIME";}
 	| TIMESTAMP {$type = "TIMESTAMP";}
 	| TIME {$type = "TIME";}
 	| YEAR {$type = "YEAR";}
-	| CHAR {$type = "CHAR";}
-	| CHARACTER {$type = "CHAR";}
-	| VARCHAR {$type = "VARCHAR";}
+	| (CHAR | CHARACTER) {$type = "CHAR";}
+	| (VARCHAR | (CHAR | CHARACTER) VARYING) {$type = "VARCHAR";}
 	| TINYBLOB {$type = "TINYBLOB";}
 	| BLOB {$type = "BLOB";}
 	| MEDIUMBLOB {$type = "MEDIUMBLOB";}
@@ -277,7 +280,6 @@ data_type returns [String type]
 	| MEDIUMTEXT {$type = "MEDIUMTEXT";}
 	| LONGTEXT {$type = "LONGTEXT";}
 	| BIT {$type = "BIT";}
-	| VARBIT {$type = "VARBIT";}
 	| BINARY {$type = "BINARY";}
 	| VARBINARY {$type = "VARBINARY";}
 	;
@@ -286,17 +288,13 @@ numeric_data_type returns [String type]
 	: TINYINT {$type = "TINYINT";}
 	| SMALLINT {$type = "SMALLINT";}
 	| MEDIUMINT {$type = "MEDIUMINT";}
-	| INT {$type = "INT";}
-	| INTEGER {$type = "INT";}
+	| (INT | INTEGER) {$type = "INT";}
 	| BIGINT {$type = "BIGINT";}
 	;
 
 decimal_data_type returns [String type]
-    : DECIMAL {$type = "DECIMAL";} 
-	| NUMERIC {$type = "NUMERIC";}
-	| DEC {$type = "DEC";}
-	| REAL {$type = "REAL";}
-	| DOUBLE {$type = "DOUBLE";}
+    : (DECIMAL | DEC | FIXED | NUMERIC) {$type = "DECIMAL";} 
+	| (DOUBLE | REAL) {$type = "DOUBLE";}   // Technically should depend on MySQL's REAL_AS_FLOAT
 	| FLOAT {$type = "FLOAT";}
     ;
 
@@ -320,6 +318,15 @@ count_quoted_strings returns [int count]
 qname returns [String name]
 	:	(ID  {$name = $ID.text; } )
 	|   (QNAME {$name = $QNAME.text.substring(1, $QNAME.text.length()-1); }  )
+	| (qname_from_unquoted_token {$name = $qname_from_unquoted_token.name;})
+	;
+
+// Tokens that can be used as unquoted identifiers, emperically identified
+qname_from_unquoted_token  returns [String name]
+	: (ACTION | AUTO_INCREMENT | BIT | BTREE | CHARSET | COMMENT | DATE | 
+	   DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NO | PARSER
+	   SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR)
+	   {$name = tokenNames[input.LA(-1)];}
 	;
 
 qvalue returns [String value]
@@ -332,13 +339,13 @@ qvalue returns [String value]
 /*------------------------------------------------------------------
  * LEXER RULES
  *------------------------------------------------------------------*/
-WS : ( '\t' | ' ' | '\r' | '\n' | '\u000C' )+ 	{ $channel = HIDDEN; } ;
 TICKVALUE: '\'' (~ '\'')* '\'';
 fragment DIGIT :   '0'..'9' ;
 NUMBER 	:	('-')? (DIGIT | DOT)+;
 QNAME : '`' (.)* '`' ;
 ID : ('a'..'z' | '_') ('a'..'z' | DIGIT | '_' | '$')*;
-COMMENT: '--' (~('\r' | '\n'))* ('\r' | '\n')  { $channel = HIDDEN; } ;
-IGNORE: ('/*' | '*/')+  { $channel = HIDDEN; } ;
-MULTILINE_COMMENT :   '/*' (options {greedy=false;} : .)* '*/';
+               
+WS : ('\t' | ' ' | '\r' | '\n' | '\u000C')+ {$channel=HIDDEN;};
+SQL_LINE_COMMENT : '-- ' (~('\r'|'\n'))* '\r'? '\n' {$channel=HIDDEN;};
+SQL_MULTILINE_COMMENT : '/*' (options {greedy=false;} : .)* '*/' {$channel=HIDDEN;};
 

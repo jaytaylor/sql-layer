@@ -13,26 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.api.ddl;
 
-import java.util.List;
+import com.akiban.server.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 
-@SuppressWarnings("unused") // jmx
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
+public class UnsupportedDataTypeException extends DDLException {
+    public UnsupportedDataTypeException(InvalidOperationException e) {
+        this(e.getMessage());
+    }
 
-    void createTable(String ddl);
-
-    void dropTable(String tableName);
-
-    void dropGroup(String groupName);
-    
-    void dropGroupBySchema(String schemaName);
-
-    void dropAllGroups();
-
-    void writeRow(String table, String fields);
-
-    List<String> getGrouping();
+    public UnsupportedDataTypeException(String message) {
+        super(ErrorCode.UNSUPPORTED_DATA_TYPE, message);
+    }
 }

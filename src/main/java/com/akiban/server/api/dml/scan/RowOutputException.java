@@ -25,6 +25,10 @@ public final class RowOutputException extends DMLException {
         super(ErrorCode.ROW_OUTPUT, message);
     }
 
+    public RowOutputException(BufferFullException e) {
+        super(ErrorCode.ROW_OUTPUT, "internal buffer too small", e);
+    }
+
     public RowOutputException(InvalidOperationException e) {
         super(e);
     }

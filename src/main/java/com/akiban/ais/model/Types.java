@@ -17,7 +17,9 @@ package com.akiban.ais.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Definitive declaration of supported data types. The fields in each Type
@@ -89,9 +91,10 @@ public class Types {
 	// here are not used. MaxByteSize numbers here are not used.
 	//
 	public static Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY");
-	public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR");
+	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY");
+    public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR");
 	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR");
-
+    //
 	// BLOB and TEXT types.  Currently handled identically. The maxByteSize values
 	// here are used in computing the correct prefix size.  The maximum allow size
 	// is constrained in Column.
@@ -108,20 +111,19 @@ public class Types {
 	// DECIMAL types. The maxByteSize values are computed in Column as they are fixed for
 	// a given instance. Numbers are a maximum possible (ie, decimal(65,30));
 	//
-    public static Type DECIMAL =      new Type("decimal", 2, true, 30L,    "DECIMAL");
+    public static Type DECIMAL =      new Type("decimal", 2, true, 30L, "DECIMAL");
     public static Type U_DECIMAL =    new Type("decimal unsigned", 2, true, 30L, "U_DECIMAL");
 	//
-	// Probably not handled correctly.
-	//
-	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY");
-	public static Type BIT =          new Type("bit", 1, true, 9L, "BIT");
-	//
-	// Set and Enum
+	// Halo unsupported
 	//
 	public static Type ENUM =         new Type("enum", 1, true, 2L, "U_INT");
 	public static Type SET =          new Type("set", 1, true, 8L, "U_INT");
-	
+    public static Type BIT =          new Type("bit", 1, true, 9L, "BIT");
+
+
     private final static List<Type> types = listOfTypes();
+    private final static Map<Type,Long[]> defaultParams = mapOfDefaults();
+    
 
 	private static List<Type> listOfTypes() {
 	    List<Type> types = new ArrayList<Type>();
@@ -164,8 +166,20 @@ public class Types {
 		return Collections.unmodifiableList(types);
 	}
 
+    private static Map<Type,Long[]> mapOfDefaults() {
+        Map<Type,Long[]> map = new HashMap<Type,Long[]>();
+        map.put(BIT, new Long[]{1L,null});
+        map.put(BINARY, new Long[]{1L,null});
+        map.put(CHAR, new Long[]{1L,null});
+        map.put(DECIMAL, new Long[]{10L,0L});
+        return Collections.unmodifiableMap(map);
+    }
+
 	public static List<Type> types() {
 		return types;
 	}
 
+    public static Map<Type,Long[]> defaultParams() {
+        return defaultParams;
+    }
 }

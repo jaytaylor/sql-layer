@@ -17,26 +17,34 @@ package com.akiban.server.api;
 
 import com.akiban.ais.model.TableName;
 
-import java.util.List;
+public interface HapiPredicate {
+    TableName getTableName();
 
-public interface HapiGetRequest {
-    /**
-     * The name of the schema containing the tables involved in this request. Matches getUsingTable().getSchemaName().
-     * @return The name of the schema containing the tables involved in this request.
-     */
-    String getSchema();
+    String getColumnName();
 
-    /**
-     * Rootmost table to be retrieved by this request.
-     * @return The name (without schema) of the rootmost table to be retrieved.
-     */
-    String getTable();
+    Operator getOp();
 
-    /**
-     * The table whose columns are restricted by this request.
-     * @return The schema and table name of the table whose columns are restricted by this request.
-     */
-    TableName getUsingTable();
+    String getValue();
 
-    List<HapiPredicate> getPredicates();
+    StringBuilder appendToSB(StringBuilder builder, TableName usingTable);
+
+    public enum Operator {
+        EQ("=="),
+        NE("!="),
+        GT(">"),
+        GTE(">="),
+        LT("<"),
+        LTE("<=")
+        ;
+
+        final private String toString;
+        Operator(String toString) {
+            this.toString = toString;
+        }
+
+        @Override
+        public String toString() {
+            return toString;
+        }
+    }
 }

@@ -21,9 +21,6 @@ import java.util.Map;
 
 public class Column implements Serializable, ModelNames
 {
-    private static final Long DECIMAL_DEFAULT_PRECISION = 10L;
-    private static final Long DECIMAL_DEFAULT_SCALE = 0L;
-
     public static Column create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         Column column = null;
@@ -72,84 +69,6 @@ public class Column implements Serializable, ModelNames
     public static Column create(Table table, String columnName, Integer position, Type type)
     {
         return new Column(table, columnName, position, type);
-    }
-
-    /**
-     * @deprecated Use create(Table, String, Integer, Type) instead.
-     * @param table
-     * @param columnName
-     * @param position
-     * @param nullable
-     * @param type
-     * @param autoIncrement
-     * @return
-     */
-    public static Column create(Table table,
-                                String columnName,
-                                Integer position,
-                                Boolean nullable,
-                                Type type,
-                                Boolean autoIncrement)
-    {
-        Column column = new Column(table, columnName, position, type);
-        column.setNullable(nullable);
-        column.setAutoIncrement(autoIncrement);
-        return column;
-    }
-
-    /**
-     * @deprecated Use create(Table, String, Integer, Type) instead. 
-     * @param table
-     * @param columnName
-     * @param position
-     * @param nullable
-     * @param type
-     * @param autoIncrement
-     * @param typeParam1
-     * @return
-     */
-    public static Column create(Table table,
-                                String columnName,
-                                Integer position,
-                                Boolean nullable,
-                                Type type,
-                                Boolean autoIncrement,
-                                Long typeParam1)
-    {
-        Column column = new Column(table, columnName, position, type);
-        column.setNullable(nullable);
-        column.setAutoIncrement(autoIncrement);
-        column.setTypeParameter1(typeParam1);
-        return column;
-    }
-
-    /**
-     * @deprecated Use create(Table, String, Integer, Type) instead. 
-     * @param table
-     * @param columnName
-     * @param position
-     * @param nullable
-     * @param type
-     * @param autoIncrement
-     * @param typeParam1
-     * @param typeParam2
-     * @return
-     */
-    public static Column create(Table table,
-                                String columnName,
-                                Integer position,
-                                Boolean nullable,
-                                Type type,
-                                Boolean autoIncrement,
-                                Long typeParam1,
-                                Long typeParam2)
-    {
-        Column column = new Column(table, columnName, position, type);
-        column.setNullable(nullable);
-        column.setAutoIncrement(autoIncrement);
-        column.setTypeParameter1(typeParam1);
-        column.setTypeParameter2(typeParam2);
-        return column;
     }
 
     public Map<String, Object> map()
@@ -231,18 +150,16 @@ public class Column implements Serializable, ModelNames
     
     public void setTypeParameter1(Long typeParameter1)
     {
-        if ( (typeParameter1 == null && isDecimalType()) ) {
-            return;
+        if(typeParameter1 != null) {
+            this.typeParameter1 = typeParameter1;
         }
-        this.typeParameter1 = typeParameter1;
     }
 
     public void setTypeParameter2(Long typeParameter2)
     {
-        if ( (typeParameter2 == null && isDecimalType()) ) {
-            return;
+        if (typeParameter2 != null) {
+            this.typeParameter2 = typeParameter2;
         }
-        this.typeParameter2 = typeParameter2;
     }
 
     public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
@@ -330,19 +247,13 @@ public class Column implements Serializable, ModelNames
         return nullable;
     }
 
-    private /* final */ boolean isDecimalType() { // Called in ctor; if you make this non-private, make it final!
-        return type.equals(Types.DECIMAL) || type.equals(Types.U_DECIMAL);
-    }
-
     public Long getTypeParameter1()
     {
-        assert ! ((typeParameter1 == null) && isDecimalType()) : type;
         return typeParameter1;
     }
 
     public Long getTypeParameter2()
     {
-        assert ! ((typeParameter2 == null) && isDecimalType()) : type;
         return typeParameter2;
     }
 
@@ -448,8 +359,7 @@ public class Column implements Serializable, ModelNames
      * @return
      */
     private int characterWidth() {
-//
-//  See bug 337
+        // See bug687205
         if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
             return 3;
         } else {
@@ -481,17 +391,17 @@ public class Column implements Serializable, ModelNames
         this.position = position;
         this.type = type;
         this.table.addColumn(this);
-        
-        if(isDecimalType())
-        {
-            setTypeParameter1(DECIMAL_DEFAULT_PRECISION);
-            setTypeParameter2(DECIMAL_DEFAULT_SCALE);
+
+        Long[] defaults = Types.defaultParams().get(type);
+        if(defaults != null) {
+            this.typeParameter1 = defaults[0];
+            this.typeParameter2 = defaults[1];
         }
     }
 
     private long paramCheck(final Number param)
     {
-        if (param == null || param.longValue() < 1) {
+        if (param == null || param.longValue() < 0) {
             throw new IllegalStateException(this + " needs a positive column width parameter");
         }
         return param.longValue();

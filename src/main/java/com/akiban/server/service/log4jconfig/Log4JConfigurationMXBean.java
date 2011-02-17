@@ -13,26 +13,16 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.log4jconfig;
 
-import java.util.List;
+public interface Log4JConfigurationMXBean {
+    String getConfigurationFile();
+    void setConfigurationFile(String configFile);
 
-@SuppressWarnings("unused") // jmx
-public interface DStarLMXBean {
-    String getUsingSchema();
-    void setUsingSchema(String schema);
+    Long getUpdateFrequencyMS();
 
-    void createTable(String ddl);
+    void pollConfigurationFile(String file, long updateFrequencyMS);
+    void pollConfigurationFile(long updateFrequencyMS);
 
-    void dropTable(String tableName);
-
-    void dropGroup(String groupName);
-    
-    void dropGroupBySchema(String schemaName);
-
-    void dropAllGroups();
-
-    void writeRow(String table, String fields);
-
-    List<String> getGrouping();
+    void updateConfigurationFile();
 }

@@ -251,59 +251,8 @@ public class AkibanInformationSchema implements Serializable, Traversable
 
     private String normalizeTypename(String typename)
     {
-        typename = typename.toLowerCase();
-        StringBuilder buffer = new StringBuilder();
-        boolean first = true;
-        for (String token : tokens(typename)) {
-            if (!(token.equals("precision") || token.equals("signed"))) {
-                if (first) {
-                    first = false;
-                } else {
-                    buffer.append(' ');
-                }
-                if (token.equals("integer")) {
-                    token = "int";
-                } else if (token.equals("numeric") || token.equals("dec")) {
-                    token = "decimal";
-                }
-                buffer.append(token);
-            }
-        }
-        typename = buffer.toString();
-        return typename;
-    }
-
-    private List<String> tokens(String x)
-    {
-        x += ' '; // append whitespace to sify loop termination
-        List<String> tokens = new ArrayList<String>();
-        boolean inWhitespace = true;
-        StringBuilder token = new StringBuilder();
-        for (int i = 0; i < x.length(); i++) {
-            char c = x.charAt(i);
-            if (inWhitespace) {
-                if (whitespace(c)) {
-                    // Nothing to do
-                } else {
-                    token.append(c);
-                    inWhitespace = false;
-                }
-            } else {
-                if (whitespace(c)) {
-                    tokens.add(token.toString());
-                    token.setLength(0);
-                    inWhitespace = true;
-                } else {
-                    token.append(c);
-                }
-            }
-        }
-        return tokens;
-    }
-
-    private boolean whitespace(char c)
-    {
-        return c == ' ' || c == '\n' || c == '\t' || c == '\r';
+        // Remove leading whitespace, collapse multiple whitespace, lowercase
+        return typename.trim().replaceAll("\\s+", " ").toLowerCase();
     }
 
     private void checkGroups(List<String> out)

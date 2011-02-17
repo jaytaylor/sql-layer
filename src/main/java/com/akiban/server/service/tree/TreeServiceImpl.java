@@ -27,8 +27,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.service.jmx.JmxManageable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +48,12 @@ import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 
-public class TreeServiceImpl implements TreeService, Service<TreeService> {
+public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxManageable {
 
     private final static int MEGA = 1024 * 1024;
 
     private static final Logger LOG = LoggerFactory.getLogger(TreeServiceImpl.class
             .getName());
-
-    private static final String SERVER_MODULE_NAME = "akserver";
 
     private static final String PERSISTIT_MODULE_NAME = "persistit";
 
@@ -76,7 +76,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private final static float PERSISTIT_ALLOCATION_FRACTION = 0.5f;
 
-    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "fixed";
+    private static final String FIXED_ALLOCATION_PROPERTY_NAME = "akserver.fixed";
 
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
@@ -86,11 +86,25 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<String, SchemaNode>();
 
-    private Persistit db;
+    private final AtomicReference<Persistit> dbRef = new AtomicReference<Persistit>();
 
     private int volumeOffsetCounter = 0;
 
     private final Map<Volume, Integer> translationMap = new WeakHashMap<Volume, Integer>();
+
+    private final TreeServiceMXBean bean = new TreeServiceMXBean() {
+        @Override
+        public void flushAll() throws Exception {
+            final Persistit db = dbRef.get();
+            try {
+                db.flush();
+                db.copyBackPages();
+            } catch (Exception e) {
+                LOG.error("flush failed", e);
+                throw e;
+            }
+        }
+    };
 
     static class SchemaNode {
         final Pattern pattern;
@@ -118,7 +132,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     public synchronized void start() throws Exception {
         configService = ServiceManagerImpl.get().getConfigurationService();
-        assert db == null;
+        assert getDb() == null;
         // TODO - remove this when sure we don't need it
         assert INSTANCE_COUNT.incrementAndGet() == 1;
         final Properties properties = configService.getModuleConfiguration(
@@ -135,14 +149,13 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         // This allows Persistit to perform substitution of ${datapath} with
         // the server-specified home directory.
         //
-        final String datapath = configService.getProperty(SERVER_MODULE_NAME,
-                DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
+        final String datapath = configService.getProperty(
+                "akserver." + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
         final boolean isFixedAllocation = "true".equals(configService
-                .getProperty(SERVER_MODULE_NAME,
-                        FIXED_ALLOCATION_PROPERTY_NAME, "false"));
+                .getProperty(FIXED_ALLOCATION_PROPERTY_NAME, "false"));
         if (!properties.contains(BUFFER_SIZE_PROP_NAME)) {
             properties.setProperty(BUFFER_SIZE_PROP_NAME,
                     String.valueOf(DEFAULT_BUFFER_SIZE));
@@ -158,7 +171,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
         //
         // Now we're ready to create the Persistit instance.
         //
-        db = new Persistit();
+        Persistit db = new Persistit();
+        dbRef.set(db);
         db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
         db.initialize(properties);
         buildSchemaMap();
@@ -212,10 +226,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     public synchronized void stop() throws Exception {
+        Persistit db = getDb();
         if (db != null) {
             db.shutdownGUI();
             db.close();
-            db = null;
+            dbRef.set(null);
         }
         // TODO - remove this when sure we don't need it
         assert INSTANCE_COUNT.decrementAndGet() == 0;
@@ -233,7 +248,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     @Override
     public Persistit getDb() {
-        return db;
+        return dbRef.get();
     }
 
     @Override
@@ -265,17 +280,18 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
 
     @Override
     public Transaction getTransaction(final Session session) {
-        return db.getTransaction();
+        return getDb().getTransaction();
     }
 
     @Override
     public long getTimestamp(final Session session) {
-        return db.getTransaction().getTimestamp();
+        return getDb().getTransaction().getTimestamp();
     }
 
     @Override
     public void visitStorage(final Session session, final TreeVisitor visitor,
             final String treeName) throws Exception {
+        Persistit db = getDb();
         final Volume sysVol = db.getSystemVolume();
         final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
@@ -360,7 +376,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             throws PersistitException {
         try {
             final String vstring = volumeForTree(schemaName, treeName);
-            final Volume volume = db.loadVolume(vstring);
+            final Volume volume = getDb().loadVolume(vstring);
             if (SCHEMA_TREE_NAME.equals(treeName)) {
                 tableIdOffset(volume);
             } else {
@@ -377,11 +393,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     private List<Exchange> exchangeList(final Session session, final Tree tree) {
-        Map<Tree, List<Exchange>> map = session.get("persistit", "exchangemap");
+        Map<Tree, List<Exchange>> map = session.get(TreeServiceImpl.class, "exchangemap");
         List<Exchange> list;
         if (map == null) {
             map = new HashMap<Tree, List<Exchange>>();
-            session.put("persistit", "exchangemap", map);
+            session.put(TreeServiceImpl.class, "exchangemap", map);
             list = new ArrayList<Exchange>();
             map.put(tree, list);
         } else {
@@ -398,6 +414,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             throws InvalidVolumeSpecificationException {
         SchemaNode defaultSchemaNode = null;
         final String concatenatedName = schemaName + "/" + treeName;
+        final Persistit db = getDb();
         for (final Entry<String, SchemaNode> entry : schemaMap.entrySet()) {
             if (".default".equals(entry.getKey())) {
                 defaultSchemaNode = entry.getValue();
@@ -423,8 +440,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
     }
 
     void buildSchemaMap() {
-        final Properties properties = configService.getModuleConfiguration(
-                SERVER_MODULE_NAME).getProperties();
+        final Properties properties = configService.getModuleConfiguration("akserver").getProperties();
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();
@@ -491,5 +507,10 @@ public class TreeServiceImpl implements TreeService, Service<TreeService> {
             }
         }
         return true;
+    }
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("TreeService", bean, TreeServiceMXBean.class);
     }
 }

@@ -83,7 +83,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         OutputFormat defaultOutput;
         {
-            String defaultOutputName = config.getProperty("akserver", "memcached.output.format", OutputFormat.JSON.name());
+            String defaultOutputName = config.getProperty("akserver.memcached.output.format", OutputFormat.JSON.name());
             try {
                 defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
             } catch (IllegalArgumentException e) {
@@ -94,7 +94,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         WhichHapi defaultHapi;
         {
-            String defaultHapiName = config.getProperty("akserver", "memcached.processor", WhichHapi.SCANROWS.name());
+            String defaultHapiName = config.getProperty("akserver.memcached.processor", WhichHapi.SCANROWS.name());
             try {
                 defaultHapi = WhichHapi.valueOf(defaultHapiName.toUpperCase());
             } catch (IllegalArgumentException e) {
@@ -129,7 +129,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
         try {
             final String portString = serviceManager.getConfigurationService()
-                    .getProperty("akserver", "memcached.port");
+                    .getProperty("akserver.memcached.port");
 
             LOG.info("Starting memcache service on port " + portString);
 

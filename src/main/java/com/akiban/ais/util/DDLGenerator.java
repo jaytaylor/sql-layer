@@ -19,18 +19,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
 public class DDLGenerator
 {
+    private final String useSchemaName;
+    private final String useTableName;
+
+
+    public DDLGenerator() {
+        this(null,null);
+    }
+
+    public DDLGenerator(final String schemaName, final String tableName) {
+        this.useSchemaName = schemaName;
+        this.useTableName = tableName;
+    }
+
     public List<String> createAllGroupTables(AkibanInformationSchema ais)
     {
         List<String> ddl = new ArrayList<String>();
@@ -75,13 +90,17 @@ public class DDLGenerator
             }
         }
         // generate ddl
+        final TableName tname = table.getName();
+        final String schemaName = useSchemaName != null ? useSchemaName : tname.getSchemaName();
+        final String tableName = useTableName != null ? useTableName : tname.getTableName();
         return String.format(CREATE_TABLE_TEMPLATE,
-                             quote(table.getName().getSchemaName()),
-                             quote(table.getName().getTableName()),
+                             quote(schemaName),
+                             quote(tableName),
                              commaSeparated(columnDeclarations),
                              pkeyDecl == null ? "" : ", " + pkeyDecl,
                              indexDecls.isEmpty() ? "" : ", " + commaSeparated(indexDecls),
-                             fkeyDecls.isEmpty() ? "" : ", " + commaSeparated(fkeyDecls));
+                             fkeyDecls.isEmpty() ? "" : ", " + commaSeparated(fkeyDecls),
+                             tableOptions(table));
     }
 
     public String dropTable(Table table)
@@ -121,6 +140,25 @@ public class DDLGenerator
         }
         if (typeIsUnsigned) {
             declaration.append(" unsigned");
+        }
+        final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
+        if (charAndCol != null) {
+            if (charAndCol.charset() != null &&
+                charAndCol.charset().equals(AkibanInformationSchema.DEFAULT_CHARSET) == false) {
+                declaration.append(" CHARACTER SET ");
+                declaration.append(charAndCol.charset());
+            }
+            if (charAndCol.collation() != null &&
+                charAndCol.collation().equals(AkibanInformationSchema.DEFAULT_COLLATION) == false) {
+                declaration.append(" COLLATE ");
+                declaration.append(charAndCol.collation());
+            }
+        }
+        if (column.getNullable() == false) {
+            declaration.append(" NOT NULL");
+        }
+        if (column.getInitialAutoIncrementValue() != null) {
+            declaration.append(" AUTO_INCREMENT");
         }
         return declaration.toString();
     }
@@ -168,6 +206,22 @@ public class DDLGenerator
         return declaration.toString();
     }
 
+    private String tableOptions(Table table) {
+        StringBuilder tableOptions = new StringBuilder();
+        final CharsetAndCollation charAndCol = table.getCharsetAndCollation();
+        if (charAndCol.charset() != null &&
+            charAndCol.charset().equals(AkibanInformationSchema.DEFAULT_CHARSET) == false) {
+            tableOptions.append(" CHARSET=");
+            tableOptions.append(charAndCol.charset());
+        }
+        if (charAndCol.collation() != null &&
+            charAndCol.collation().equals(AkibanInformationSchema.DEFAULT_COLLATION) == false) {
+            tableOptions.append(" COLLATE=");
+            tableOptions.append(charAndCol.collation());
+        }
+        return tableOptions.toString();
+    }
+
     private static String commaSeparated(List<String> list)
     {
         StringBuilder buffer = new StringBuilder();
@@ -196,7 +250,8 @@ public class DDLGenerator
     // - primary key declarations
     // - index declarations
     // - foreign key declarations
-    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s%s%s%s) engine=akibandb";
+    // - table options
+    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s%s%s%s)%s engine=akibandb";
     // index declaration in create table statement. Template arguments:
     // - constraint (primary key, key, or unique)
     // - index name

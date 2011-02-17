@@ -73,9 +73,10 @@ public class RowDataOutput implements LegacyRowOutput {
      * @param request the scan request
      * @return the resulting rows
      * @throws InvalidOperationException if thrown at any point during the scan
+     * @throws BufferFullException if the given buffer isn't big enough for the required data
      */
     public static List<RowData> scanFull(Session session, DMLFunctions dml, ByteBuffer buffer, ScanRequest request)
-            throws InvalidOperationException
+            throws InvalidOperationException, BufferFullException
     {
         final RowDataOutput output = new RowDataOutput(buffer);
         CursorId scanCursor = dml.openCursor(session, request);

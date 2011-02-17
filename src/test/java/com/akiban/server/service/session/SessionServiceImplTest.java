@@ -286,26 +286,20 @@ public final class SessionServiceImplTest {
     private static class DummySession implements Session
     {
         @Override
-        public <T> T get(String module, Object key) {
+        public <T> T get(Class<?> module, Object key) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T put(String module, Object key, T item) {
+        public <T> T put(Class<?> module, Object key, T item) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T remove(String module, Object key) {
+        public <T> T remove(Class<?> module, Object key) {
             throw new UnsupportedOperationException();
         }
-        
-        @Override
-        public boolean isCanceled()
-        {
-            return false;
-        }
-        
+
         @Override
         public void close()
         {

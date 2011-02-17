@@ -13,9 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service;
+package com.akiban.server.api.dml.scan;
 
-public interface ServiceManagerMXBean {
-    boolean isStartupBlocked();
-    void resumeStartup();
+public final class BufferFullException extends Exception {
 }

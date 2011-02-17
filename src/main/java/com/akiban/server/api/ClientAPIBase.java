@@ -23,6 +23,8 @@ import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.api.ddl.UnsupportedCharsetException;
+import com.akiban.server.api.ddl.UnsupportedDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.ForeignKeyConstraintDMLException;
 import com.akiban.server.api.dml.NoSuchColumnException;
@@ -91,6 +93,10 @@ abstract class ClientAPIBase {
                     return new JoinToWrongColumnsException(ioe);
                 case DUPLICATE_TABLE:
                     return new DuplicateTableNameException(ioe);
+                case UNSUPPORTED_DROP:
+                    return new UnsupportedDropException(ioe);
+                case UNSUPPORTED_DATA_TYPE:
+                    return new UnsupportedDataTypeException(ioe);
                 case NO_SUCH_TABLE:
                     return new NoSuchTableException(ioe);
                 case NO_SUCH_COLUMN:

@@ -164,10 +164,10 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
             Map<Property.Key, Property> ret = new HashMap<Property.Key, Property>(
                     super.loadProperties());
             tmpDir = makeTempDatapathDirectory();
-            Property.Key datapathKey = new Property.Key("akserver", "datapath");
+            Property.Key datapathKey = Property.parseKey("akserver.datapath");
             ret.put(datapathKey,
                     new Property(datapathKey, tmpDir.getAbsolutePath()));
-            Property.Key fixedKey = new Property.Key("akserver", "fixed");
+            Property.Key fixedKey = Property.parseKey("akserver.fixed");
             ret.put(fixedKey, new Property(fixedKey, "true"));
             if (extraProperties != null) {
                 for (final Property property : extraProperties) {

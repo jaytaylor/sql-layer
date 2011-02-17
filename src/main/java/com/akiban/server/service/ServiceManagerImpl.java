@@ -28,20 +28,19 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.d_l.DStarLServiceImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
+import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
-public class ServiceManagerImpl implements ServiceManager, JmxManageable
+public class ServiceManagerImpl implements ServiceManager
 {
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
     // TODO: Supply the factory externally.
     private final ServiceFactory factory;
     private Map<Class<?>, Service<?>> services; // for each key-val, the ? should be the same; (T.class -> Service<T>)
-
-    private final CountDownLatch blockerLatch = new CountDownLatch(1);
 
     public static void setServiceManager(ServiceManager newInstance)
     {
@@ -115,8 +114,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         
         startAndPut(jmxRegistryService, jmxRegistry);
         startAndPut(factory.configurationService(), jmxRegistry);
-
-        jmxRegistry.register(this);
         
         // TODO -
         // Temporarily I moved this so that services can refer to their predecessors
@@ -133,6 +130,7 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         startAndPut(factory.chunkserverService(), jmxRegistry);
         startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(new DStarLServiceImpl(), jmxRegistry);
+        startAndPut(new Log4JConfigurationServiceImpl(), jmxRegistry);
         afterStart();
     }
 
@@ -215,21 +213,6 @@ public class ServiceManagerImpl implements ServiceManager, JmxManageable
         @SuppressWarnings("unchecked") final Service<T> serviceT = (Service<T>) service;
         assert serviceT.castClass().equals(ofClass) : String.format("%s != %s", serviceT.castClass(), ofClass);
         return serviceT;
-    }
-
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Services", this, ServiceManagerMXBean.class);
-    }
-
-    @Override
-    public boolean isStartupBlocked() {
-        return blockerLatch.getCount() > 0;
-    }
-
-    @Override
-    public void resumeStartup() {
-        blockerLatch.countDown();
     }
 
     /**

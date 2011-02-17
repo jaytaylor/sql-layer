@@ -31,9 +31,11 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.DMLFunctionsImpl;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.LegacyScanRequest;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -42,6 +44,8 @@ import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,7 +65,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.akiban.server.api.HapiRequestException.ReasonCode.*;
 
 public class Scanrows implements HapiProcessor, JmxManageable {
-    private static final String MODULE = Scanrows.class.toString();
+    private static final Logger LOG = LoggerFactory.getLogger(Scanrows.class);
+    private static final Class<?> MODULE = Scanrows.class;
     private static final String SESSION_BUFFER = "SESSION_BUFFER";
 
     private static final AtomicInteger bufferSize = new AtomicInteger(65535);
@@ -186,7 +191,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             }
         }
 
-        void putEquality(HapiGetRequest.Predicate predicate) throws HapiRequestException {
+        void putEquality(HapiPredicate predicate) throws HapiRequestException {
             if (foundInequality) {
                 unsupported("may not combine equality with inequality");
             }
@@ -200,7 +205,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             putPredicate(predicate, end);
         }
 
-        void putBookend(HapiGetRequest.Predicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
+        void putBookend(HapiPredicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
                 throws HapiRequestException
         {
             if(!scanFlags.remove(flagToRemove)) {
@@ -216,7 +221,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             foundInequality = true;
         }
 
-        private int putPredicate(HapiGetRequest.Predicate predicate, NewRow row)
+        private int putPredicate(HapiPredicate predicate, NewRow row)
                 throws HapiRequestException
         {
             Column column;
@@ -257,7 +262,14 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                     range.indexId(),
                     range.scanFlagsInt()
             );
-            List<RowData> rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
+            List<RowData> rows = null;
+            while(rows == null) {
+                try {
+                    rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
+                } catch (BufferFullException e) {
+                    increaseBuffer(session);
+                }
+            }
 
             outputter.output(
                     new DefaultProcessedRequest(request, session, ddlFunctions),
@@ -312,13 +324,22 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private ByteBuffer getBuffer(Session session) {
         ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
         if (buffer == null) {
+            LOG.debug("allocating new buffer");
             buffer = ByteBuffer.allocate(bufferSize.get());
             session.put(MODULE, SESSION_BUFFER, buffer);
         }
         else {
             buffer.clear();
         }
+        buffer.mark();
         return buffer;
+    }
+
+    private void increaseBuffer(Session session) {
+        session.remove(MODULE, SESSION_BUFFER);
+        int capacity = bufferSize.get();
+        bufferSize.set( capacity * 2 );
+        LOG.info("doubling capacity from {}", capacity);
     }
 
     private RowDataStruct getScanRange(Session session, HapiGetRequest request)
@@ -327,7 +348,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         Index index = findHapiRequestIndex(session, request);
         RowDataStruct ret = new RowDataStruct(ddlFunctions, index, request, session);
 
-        for (HapiGetRequest.Predicate predicate : request.getPredicates()) {
+        for (HapiPredicate predicate : request.getPredicates()) {
             switch (predicate.getOp()) {
                 case EQ:
                     ret.putEquality(predicate);
@@ -357,11 +378,11 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         throw new HapiRequestException(message, UNSUPPORTED_REQUEST);
     }
 
-    private static List<String> predicateColumns(List<HapiGetRequest.Predicate> predicates, TableName tableName)
+    private static List<String> predicateColumns(List<HapiPredicate> predicates, TableName tableName)
     throws HapiRequestException
     {
         List<String> columns = new ArrayList<String>();
-        for (HapiGetRequest.Predicate predicate : predicates) {
+        for (HapiPredicate predicate : predicates) {
             if (!tableName.equals(predicate.getTableName())) {
                 throw new HapiRequestException(
                         String.format("predicate %s must be against table %s", predicate, tableName),
@@ -375,13 +396,13 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     private interface IndexPreference {
         Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                          List<HapiGetRequest.Predicate> predicates);
+                                          List<HapiPredicate> predicates);
     }
 
     private static class IdentityPreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiPredicate> predicates) {
             return candidates;
         }
     }
@@ -389,7 +410,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class ColumnOrderPreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiPredicate> predicates) {
             return getBestBucket(candidates, columns, BucketSortOption.HIGHER_IS_BETTER,
                     new IndexBucketSorter() {
                         @Override
@@ -415,9 +436,9 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class UniqunessPreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
-            for (HapiGetRequest.Predicate predicate : predicates) {
-                if (!predicate.getOp().equals(HapiGetRequest.Predicate.Operator.EQ)) {
+                                                 List<HapiPredicate> predicates) {
+            for (HapiPredicate predicate : predicates) {
+                if (!predicate.getOp().equals(HapiPredicate.Operator.EQ)) {
                     return candidates;
                 }
             }
@@ -440,7 +461,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class IndexSizePreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiPredicate> predicates) {
             return getBestBucket(candidates, columns, BucketSortOption.LOWER_IS_BETTER,
                     new IndexBucketSorter() {
                         @Override
@@ -455,7 +476,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class IndexNamePreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiPredicate> predicates) {
             Iterator<Index> iterator = candidates.iterator();
             Index best = iterator.next();
             while (iterator.hasNext()) {
@@ -595,5 +616,9 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("HapiP-Scanrows", bean, ScanrowsMXBean.class);
+    }
+
+    public final ScanrowsMXBean getMXBean() {
+        return bean;
     }
 }
