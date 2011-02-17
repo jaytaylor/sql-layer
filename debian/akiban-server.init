@@ -63,12 +63,37 @@ is_running()
 
 case "$1" in
     start)
+        is_running
+        stat=$?
+        if [ "$stat" = 0 ]; then
+            log_failure_msg "$DESC is already running"
+            exit "$stat"
+        fi
+        # this check is to make sure not to start if a process is running
+        # but no pid file exists
+        ps -ef | grep akiban-server.jar | grep -v grep >/dev/null
+        if [ $? = 0 ]; then
+            log_failure_msg "$DESC is already running but no pidfile exists"
+            exit 1 # not sure what the best error code to return here is?
+        fi
         log_daemon_msg "Starting $DESC"
         start_daemon -b -p "$pidfile" "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
         log_progress_msg "$DESC"
         log_end_msg 0
         ;;
     stop)
+        is_running
+        stat=$?
+        case "$stat" in
+            1) 
+                log_failure_msg "could not access pidfile or PID in pidfile is incorrect for $DESC"
+                exit "$stat"
+                ;;
+            3) 
+                log_failure_msg "$DESC is not running or no pidfile exists"
+                exit "$stat"
+                ;;
+        esac 
         log_daemon_msg "Stopping $DESC"
         if [ -f "$pidfile" ]; then
             killproc -p "$pidfile" "$DAEMON"
@@ -79,6 +104,7 @@ case "$1" in
         ;;
     force-reload|restart)
         set +e; $SELF stop; set -e
+        sleep 5
         $SELF start
         ;;
     status)
@@ -92,8 +118,7 @@ case "$1" in
         exit "$stat"
         ;;
     *)
-        echo "Usage: $SELF start|stop|status|restart|reload"
+        echo "Usage: $SELF start|stop|status|restart|force-reload"
         exit 3
 esac
 
-:
