@@ -132,6 +132,21 @@ public final class Log4JConfigurationMXBeanSingletonTest {
         test.assertAll(null, null);
     }
 
+    @Test
+    public void configurePollUpdate() {
+        final TestConfigurator test = new TestConfigurator();
+        final Log4JConfigurationMXBean bean = test.bean();
+
+        bean.setConfigurationFile("alpha");
+        test.assertAll("alpha", null, sayConfigure("alpha"));
+
+        bean.pollConfigurationFile("beta", 5);
+        test.assertAll("beta", 5L, sayConfigure("alpha"), sayConfigAndWatch("beta", 5));
+
+        bean.updateConfigurationFile();
+        test.assertAll("beta", 5L, sayConfigure("alpha"), sayConfigAndWatch("beta", 5), sayConfigure("beta"));
+    }
+
     private static <E extends RuntimeException> void expectException(Class<E> exceptionClass, Runnable runnable) {
         Exception exception = null;
         try {
