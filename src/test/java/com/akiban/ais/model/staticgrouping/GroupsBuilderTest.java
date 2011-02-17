@@ -122,21 +122,27 @@ public class GroupsBuilderTest {
         aisBuilder.joinTables("join2", "s", "order", "s", "item");
         aisBuilder.joinColumns("join2", "s", "order", "id", "s", "item", "oid");
 
+        aisBuilder.userTable("s2", "customer");
+        aisBuilder.column("s2", "customer", "id", 0, "INT", 4L, null, false, true, null, null);
+        aisBuilder.index("s2", "customer", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        aisBuilder.indexColumn("s2", "customer", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+
         aisBuilder.basicSchemaIsComplete();
         aisBuilder.createGroup("group1", "akiban_objects", "_akiban_customer");
         aisBuilder.addTableToGroup("group1", "s", "customer");
         aisBuilder.addJoinToGroup("group1", "join3", 1);
         aisBuilder.addJoinToGroup("group1", "join2", 1);
+        aisBuilder.createGroup("group2", "akiban_objects", "_akiban_customer$1");
+        aisBuilder.addTableToGroup("group2", "s2", "customer");
 
         GroupsBuilder expectedGrouping = new GroupsBuilder("s");
         expectedGrouping.rootTable("s", "customer", "group1");
         expectedGrouping.joinTables("s", "customer", "s", "order").column("id", "cid");
         expectedGrouping.joinTables("s", "order", "s", "item").column("id", "oid");
+        expectedGrouping.rootTable("s2", "customer", "group2");
 
         Grouping actualGrouping = GroupsBuilder.fromAis(aisBuilder.akibanInformationSchema(), "s");
-        
         assertEquals("groupings", expectedGrouping.getGrouping().toString(), actualGrouping.toString());
-
     }
 
     @Test
