@@ -28,7 +28,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.List;
 
-import static com.akiban.server.api.HapiGetRequest.Predicate.Operator.*;
+import static com.akiban.server.api.HapiGetRequest.HapiPredicate.Operator.*;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -49,7 +49,7 @@ public final class HapiGetRequestTest {
             request.addPredicate(columnName, operator, value);
             assertEquals("predicates.size()", oldsize+1, request.getPredicates().size());
 
-            HapiGetRequest.Predicate actual = request.getPredicates().get(oldsize);
+            HapiGetRequest.HapiPredicate actual = request.getPredicates().get(oldsize);
             SimpleHapiPredicate expected
                     = new SimpleHapiPredicate(request.getUsingTable(), columnName, operator, value);
 

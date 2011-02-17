@@ -19,7 +19,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.util.ArgumentValidation;
 
-public class SimpleHapiPredicate implements HapiGetRequest.Predicate {
+public class SimpleHapiPredicate implements HapiGetRequest.HapiPredicate {
     private final TableName tableName;
     private final String columnName;
     private final Operator op;

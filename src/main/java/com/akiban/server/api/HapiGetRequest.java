@@ -26,9 +26,9 @@ public interface HapiGetRequest {
 
     TableName getUsingTable();
 
-    List<Predicate> getPredicates();
+    List<HapiPredicate> getPredicates();
 
-    interface Predicate {
+    interface HapiPredicate {
         TableName getTableName();
 
         String getColumnName();

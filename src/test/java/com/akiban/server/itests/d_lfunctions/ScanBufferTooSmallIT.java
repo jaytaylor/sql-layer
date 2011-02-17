@@ -93,9 +93,9 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
             }
 
             @Override
-            public List<Predicate> getPredicates() {
-                return Arrays.<Predicate>asList(
-                        new SimpleHapiPredicate(getUsingTable(), "cid", Predicate.Operator.EQ, "1")
+            public List<HapiPredicate> getPredicates() {
+                return Arrays.<HapiPredicate>asList(
+                        new SimpleHapiPredicate(getUsingTable(), "cid", HapiPredicate.Operator.EQ, "1")
                 );
             }
         };

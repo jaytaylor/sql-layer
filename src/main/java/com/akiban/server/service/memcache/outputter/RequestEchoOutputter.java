@@ -45,10 +45,10 @@ public class RequestEchoOutputter implements HapiOutputter {
         writer.printf("schema:       %s\n", request.getSchema());
         writer.printf("select table: %s\n", request.getTable());
         writer.printf("using  table: %s\n", request.getUsingTable());
-        List<HapiGetRequest.Predicate> predicates = request.getPredicates();
+        List<HapiGetRequest.HapiPredicate> predicates = request.getPredicates();
         writer.printf("%d predicate%s\n", predicates.size(), predicates.size()==1 ? "" : "s");
         int predicateCount = 1;
-        for (HapiGetRequest.Predicate predicate : predicates) {
+        for (HapiGetRequest.HapiPredicate predicate : predicates) {
             writer.printf("%d:\n", predicateCount++);
             writer.printf("  table:  %s\n", predicate.getTableName());
             writer.printf("  column: %s\n", predicate.getColumnName());

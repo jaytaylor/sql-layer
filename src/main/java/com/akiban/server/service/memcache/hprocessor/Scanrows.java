@@ -190,7 +190,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             }
         }
 
-        void putEquality(HapiGetRequest.Predicate predicate) throws HapiRequestException {
+        void putEquality(HapiGetRequest.HapiPredicate predicate) throws HapiRequestException {
             if (foundInequality) {
                 unsupported("may not combine equality with inequality");
             }
@@ -204,7 +204,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             putPredicate(predicate, end);
         }
 
-        void putBookend(HapiGetRequest.Predicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
+        void putBookend(HapiGetRequest.HapiPredicate predicate, NewRow bookendRow, ScanFlag flagToRemove)
                 throws HapiRequestException
         {
             if(!scanFlags.remove(flagToRemove)) {
@@ -220,7 +220,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             foundInequality = true;
         }
 
-        private int putPredicate(HapiGetRequest.Predicate predicate, NewRow row)
+        private int putPredicate(HapiGetRequest.HapiPredicate predicate, NewRow row)
                 throws HapiRequestException
         {
             Column column;
@@ -347,7 +347,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         Index index = findHapiRequestIndex(session, request);
         RowDataStruct ret = new RowDataStruct(ddlFunctions, index, request, session);
 
-        for (HapiGetRequest.Predicate predicate : request.getPredicates()) {
+        for (HapiGetRequest.HapiPredicate predicate : request.getPredicates()) {
             switch (predicate.getOp()) {
                 case EQ:
                     ret.putEquality(predicate);
@@ -377,11 +377,11 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         throw new HapiRequestException(message, UNSUPPORTED_REQUEST);
     }
 
-    private static List<String> predicateColumns(List<HapiGetRequest.Predicate> predicates, TableName tableName)
+    private static List<String> predicateColumns(List<HapiGetRequest.HapiPredicate> predicates, TableName tableName)
     throws HapiRequestException
     {
         List<String> columns = new ArrayList<String>();
-        for (HapiGetRequest.Predicate predicate : predicates) {
+        for (HapiGetRequest.HapiPredicate predicate : predicates) {
             if (!tableName.equals(predicate.getTableName())) {
                 throw new HapiRequestException(
                         String.format("predicate %s must be against table %s", predicate, tableName),
@@ -395,13 +395,13 @@ public class Scanrows implements HapiProcessor, JmxManageable {
 
     private interface IndexPreference {
         Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                          List<HapiGetRequest.Predicate> predicates);
+                                          List<HapiGetRequest.HapiPredicate> predicates);
     }
 
     private static class IdentityPreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiGetRequest.HapiPredicate> predicates) {
             return candidates;
         }
     }
@@ -409,7 +409,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class ColumnOrderPreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiGetRequest.HapiPredicate> predicates) {
             return getBestBucket(candidates, columns, BucketSortOption.HIGHER_IS_BETTER,
                     new IndexBucketSorter() {
                         @Override
@@ -435,9 +435,9 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class UniqunessPreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
-            for (HapiGetRequest.Predicate predicate : predicates) {
-                if (!predicate.getOp().equals(HapiGetRequest.Predicate.Operator.EQ)) {
+                                                 List<HapiGetRequest.HapiPredicate> predicates) {
+            for (HapiGetRequest.HapiPredicate predicate : predicates) {
+                if (!predicate.getOp().equals(HapiGetRequest.HapiPredicate.Operator.EQ)) {
                     return candidates;
                 }
             }
@@ -460,7 +460,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class IndexSizePreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiGetRequest.HapiPredicate> predicates) {
             return getBestBucket(candidates, columns, BucketSortOption.LOWER_IS_BETTER,
                     new IndexBucketSorter() {
                         @Override
@@ -475,7 +475,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
     private static class IndexNamePreference implements IndexPreference {
         @Override
         public Collection<Index> applyPreference(Collection<Index> candidates, List<String> columns,
-                                                 List<HapiGetRequest.Predicate> predicates) {
+                                                 List<HapiGetRequest.HapiPredicate> predicates) {
             Iterator<Index> iterator = candidates.iterator();
             Index best = iterator.next();
             while (iterator.hasNext()) {

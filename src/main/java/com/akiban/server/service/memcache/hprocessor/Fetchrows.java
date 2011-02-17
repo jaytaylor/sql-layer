@@ -96,7 +96,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
             throws HapiRequestException
     {
         ArgumentValidation.notNull("outputter", outputter);
-        HapiGetRequest.Predicate predicate = extractLimitedPredicate(request);
+        HapiGetRequest.HapiPredicate predicate = extractLimitedPredicate(request);
 
         final RowDefCache cache = store.getRowDefCache();
         final List<RowData> list;
@@ -122,7 +122,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         }
     }
 
-    private static HapiGetRequest.Predicate extractLimitedPredicate(HapiGetRequest request) throws HapiRequestException {
+    private static HapiGetRequest.HapiPredicate extractLimitedPredicate(HapiGetRequest request) throws HapiRequestException {
         if (request.getPredicates().size() != 1) {
             complain("You may only specify one predicate (for now!) -- saw %s", request.getPredicates());
         }
@@ -130,7 +130,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
             complain("You may not specify a different SELECT table and USING table (for now!) -- %s != %s",
                     request.getTable(), request.getUsingTable().getTableName());
         }
-        HapiGetRequest.Predicate predicate = request.getPredicates().iterator().next();
+        HapiGetRequest.HapiPredicate predicate = request.getPredicates().iterator().next();
         if (!predicate.getTableName().equals(request.getUsingTable())) {
             complain("Can't have different SELECT table and predicate table (for now!) %s != %s",
                     predicate.getTableName(), request.getUsingTable()

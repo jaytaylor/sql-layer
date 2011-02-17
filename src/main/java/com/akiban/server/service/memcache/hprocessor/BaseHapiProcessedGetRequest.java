@@ -44,7 +44,7 @@ abstract class BaseHapiProcessedGetRequest implements HapiProcessedGetRequest {
     }
 
     @Override
-    public List<Predicate> getPredicates() {
+    public List<HapiPredicate> getPredicates() {
         return request.getPredicates();
     }
 }

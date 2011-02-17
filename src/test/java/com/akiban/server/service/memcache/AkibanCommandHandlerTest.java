@@ -60,7 +60,7 @@ public final class AkibanCommandHandlerTest {
             assertEquals("select table", expectedTable, request.getTable());
             assertEquals("using table", new TableName(expectedSchema, expectedTable), request.getUsingTable());
             assertEquals("predicate count", 1, request.getPredicates().size());
-            HapiGetRequest.Predicate predicate = request.getPredicates().get(0);
+            HapiGetRequest.HapiPredicate predicate = request.getPredicates().get(0);
             assertEquals("predicate column", expectedColumn, predicate.getColumnName());
             assertEquals("predicate value", expectedValue, predicate.getValue());
 
