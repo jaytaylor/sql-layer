@@ -28,6 +28,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.d_l.DStarLServiceImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
+import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
@@ -129,6 +130,7 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.chunkserverService(), jmxRegistry);
         startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(new DStarLServiceImpl(), jmxRegistry);
+        startAndPut(new Log4JConfigurationServiceImpl(), jmxRegistry);
         afterStart();
     }
 
