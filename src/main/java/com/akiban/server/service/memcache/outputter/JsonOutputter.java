@@ -59,26 +59,26 @@ public final class JsonOutputter implements HapiOutputter
         // observed types. Anything left at the end is a child of type parentTableId that had no rows
         // in the query result. These have to be rendered according to the spec.
         Set<Integer> missingChildren = new HashSet<Integer>(expectedChildren.get(parentTableId));
-        int previousTableId = -1;
+        int previousRowTableId = -1;
         while (row != null && rowDepth == depth) {
             if (firstSibling) {
                 firstSibling = false;
             } else {
                 output.write(',');
             }
-            Integer tableId = rowTable.getTableId();
-            assert tableId != previousTableId : rowTable;
-            missingChildren.remove(tableId);
+            Integer rowTableId = rowTable.getTableId();
+            assert rowTableId != previousRowTableId : rowTable;
+            missingChildren.remove(rowTableId);
             output.write("\"@");
             output.write(rowTable.getName().getTableName());
             output.write("\":[");
             generateTableOutput(rowTable);
             output.write(']');
-            previousTableId = tableId;
+            previousRowTableId = rowTableId;
         }
         assert rowDepth < depth : rowTable;
-        // For each missing child: Generate output similar to above, except that there were no rows.
-        // So we'll see output of this form: "@foo":[]
+        // For each missing child: Generate output similar to above. But there were no rows,
+        // so we'll see output of this form: "@foo":[]
         for (Integer tableId : missingChildren) {
             if (firstSibling) {
                 firstSibling = false;
@@ -95,6 +95,7 @@ public final class JsonOutputter implements HapiOutputter
     private void generateTableOutput(UserTable table) throws IOException
     {
         // Generate output for consecutive rows of the same table
+        int tableDepth = table.getDepth();
         boolean firstSibling = true;
         while (row != null && rowTable == table) {
             if (firstSibling) {
@@ -104,15 +105,15 @@ public final class JsonOutputter implements HapiOutputter
             }
             // Generate output for row
             output.write('{');
-            int tableId = rowTable.getTableId();
+            Integer rowTableId = rowTable.getTableId(); // Save this before going to the next row
             row.toJSONString(rowTable.rowDef(), appender);
             advanceInput();
-            // Go to the next row. generateChildOutput then takes care of the children, including children present
-            // in the schema but not present in the data. If the next row is not actually a child, then
-            // generateChildOutput is still necessary to handle the missing children.
-            Integer tableDepth = table.getDepth();
-            assert rowDepth <= tableDepth + 1;
-            generateChildOutput(tableDepth + 1, tableId, false);
+            // We're now at a new row. If the new row is a child of the previous one, then
+            // generateChildOutput then takes care of the children, (including children present
+            // in the schema but not present in the data). If the next row is not a child of the previous
+            // row, then generateChildOutput is still necessary to handle the missing children.
+            assert rowDepth <= tableDepth + 1 : row;
+            generateChildOutput(tableDepth + 1, rowTableId, false);
             output.write('}');
         }
     }
