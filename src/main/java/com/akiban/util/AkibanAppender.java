@@ -41,7 +41,7 @@ public abstract class AkibanAppender {
 
         @Override
         public void append(Object o) {
-            pr.append(o == null ? "null" : o.toString());
+            pr.print(o);
         }
 
         @Override
