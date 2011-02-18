@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
+import com.akiban.server.RowDef;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.util.AkibanAppender;
@@ -105,7 +106,7 @@ public final class JsonOutputter implements HapiOutputter
             // Generate output for row
             output.write('{');
             int tableId = rowTable.getTableId();
-            row.toJSONString(rowTable.rowDef(), appender);
+            row.toJSONString((RowDef) rowTable.rowDef(), appender);
             advanceInput();
             // Go to the next row. generateChildOutput then takes care of the children, including children present
             // in the schema but not present in the data. If the next row is not actually a child, then
