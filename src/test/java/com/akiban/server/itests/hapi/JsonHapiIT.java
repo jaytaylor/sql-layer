@@ -26,7 +26,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
-import com.akiban.server.service.memcache.outputter.JsonOutputter;
+import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.OnlyIf;

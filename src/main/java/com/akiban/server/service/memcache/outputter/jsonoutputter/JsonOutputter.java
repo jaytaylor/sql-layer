@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.memcache.outputter;
+package com.akiban.server.service.memcache.outputter.jsonoutputter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
@@ -41,7 +41,7 @@ public final class JsonOutputter implements HapiOutputter
     {
         ais = request.akibanInformationSchema();
         computeExpectedChildren(request);
-        input = rows.iterator();
+        input = new UnOrphaningIterator(rows.iterator(), null);
         output = new PrintWriter(outputStream);
         appender = AkibanAppender.of(output);
         advanceInput();
