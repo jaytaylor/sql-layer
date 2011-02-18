@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.api.HapiGetRequest;
@@ -237,7 +238,6 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel)
     throws HapiRequestException
     {
-        final CacheElement[] results = new CacheElement[command.keys.size()];
 
         if(LOG.isTraceEnabled()) {
             StringBuilder msg = new StringBuilder();
@@ -254,16 +254,35 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
             LOG.trace(msg.toString());
         }
 
+        final CacheElement[] results = handleGetKeys(command.keys,
+                session.get(), hapiProcessor, formatGetter.getFormat());
+        ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
+        Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
+    }
+
+    static CacheElement[] handleGetKeys(List<String> keys,
+                                        Session session, HapiProcessor processor, HapiOutputter outputter)
+            throws HapiRequestException
+    {
+        if (keys.size() == 0) {
+            return new CacheElement[0];
+        }
+
+        final boolean ignoreLastKey = keys.get(keys.size()-1).length() == 0;
+        final CacheElement[] results = new CacheElement[ ignoreLastKey ? keys.size() - 1 : keys.size() ];
+
         int index = 0;
-        for (String key : command.keys) {
-            final byte[] result_bytes = getBytesForGets(session.get(), key, hapiProcessor, formatGetter.getFormat());
+        for (String key : keys) {
+            if (index == results.length) {
+                assert ignoreLastKey : String.format("index=%d, results.length=%d", index, results.length);
+                break;
+            }
+            final byte[] result_bytes = getBytesForGets(session, key, processor, outputter);
             LocalCacheElement element = new LocalCacheElement(key);
             element.setData(result_bytes);
             results[index++] = element;
         }
-
-        ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
-        Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
+        return results;
     }
 
     static byte[] getBytesForGets(Session sessionLocal, String key,
