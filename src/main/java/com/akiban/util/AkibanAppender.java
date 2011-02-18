@@ -19,8 +19,8 @@ import java.io.PrintWriter;
 
 public abstract class AkibanAppender {
     public abstract void append(Object o);
-    public abstract void write(char c);
-    public abstract void write(String s);
+    public abstract void append(char c);
+    public abstract void append(String s);
     public abstract Appendable getAppendable();
 
     public static AkibanAppender of(StringBuilder stringBuilder) {
@@ -45,12 +45,12 @@ public abstract class AkibanAppender {
         }
 
         @Override
-        public void write(char c) {
+        public void append(char c) {
             pr.print(c);
         }
 
         @Override
-        public void write(String s) {
+        public void append(String s) {
             pr.print(s);
         }
 
@@ -74,12 +74,12 @@ public abstract class AkibanAppender {
         }
 
         @Override
-        public void write(char c) {
+        public void append(char c) {
             sb.append(c);
         }
 
         @Override
-        public void write(String s) {
+        public void append(String s) {
             sb.append(s);
         }
 
