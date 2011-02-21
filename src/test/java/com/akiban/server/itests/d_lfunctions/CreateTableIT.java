@@ -284,7 +284,6 @@ public final class CreateTableIT extends ApiTestBase {
 
     @Test
     public void nationalCharTypeAliases() throws InvalidOperationException {
-        //NCHAR, NVARCHAR, NATIONAL CHAR, and NATIONAL VARCHAR.
         int tid = createCheckColumn("c1 nchar(2)", Types.CHAR, 2L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
         ddl().dropTable(session, tableName(tid));
@@ -298,6 +297,14 @@ public final class CreateTableIT extends ApiTestBase {
         ddl().dropTable(session, tableName(tid));
 
         tid = createCheckColumn("c1 national varchar(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national char varying(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national character varying(255)", Types.VARCHAR, 255L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
         ddl().dropTable(session, tableName(tid));
     }
