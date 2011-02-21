@@ -72,6 +72,8 @@ class UnOrphaningIterator<T> implements Iterator<T>
             if (nextOutput == null && input.hasNext()) {
                 nextOutput = input.next();
                 genealogist.fillInDescendents(previousInput, nextOutput, queue);
+                // Get ready for the next time we have to check whether an item from input is an orphan.
+                previousInput = nextOutput;
                 if (!queue.isEmpty()) {
                     // nextOutput is an orphan. We know this because fillInDescendents just filled in some descendents.
                     // Put nextOutput at the end of the queue so that its filled-in ancestors are seen first.
@@ -79,8 +81,6 @@ class UnOrphaningIterator<T> implements Iterator<T>
                     nextOutput = queue.poll();
                     assert nextOutput != null;
                 }
-                // Get ready for the next time we have to check whether an item from input is an orphan.
-                previousInput = nextOutput;
             }
             if (nextOutput == null) {
                 done = true;
