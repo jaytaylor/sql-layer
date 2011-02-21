@@ -90,6 +90,9 @@ VALUE = 'value';
 LIKE = 'like';
 BOOL = 'bool';
 BOOLEAN = 'boolean';
+NATIONAL = 'national';
+NCHAR = 'nchar';
+NVARCHAR = 'nvarchar';
 }
 
 @header {
@@ -272,7 +275,9 @@ data_type returns [String type]
 	| TIME {$type = "TIME";}
 	| YEAR {$type = "YEAR";}
 	| (CHAR | CHARACTER) {$type = "CHAR";}
+	| (NCHAR | NATIONAL (CHAR | CHARACTER)) {$type = "NCHAR";}
 	| (VARCHAR | (CHAR | CHARACTER) VARYING) {$type = "VARCHAR";}
+	| (NVARCHAR | NATIONAL ((CHAR | CHARACTER) VARYING | VARCHAR)) {$type = "NVARCHAR";}
 	| TINYBLOB {$type = "TINYBLOB";}
 	| BLOB {$type = "BLOB";}
 	| MEDIUMBLOB {$type = "MEDIUMBLOB";}
@@ -325,9 +330,9 @@ qname returns [String name]
 
 // Tokens that can be used as unquoted identifiers, emperically identified
 qname_from_unquoted_token  returns [String name]
-	: (ACTION | AUTO_INCREMENT | BIT | BOOL | BOOLEAN | BTREE | CHARSET | COMMENT | 
-	   DATE | DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NO | 
-	   PARSER SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR)
+	: (ACTION | AUTO_INCREMENT | BIT | BOOL | BOOLEAN | BTREE | CHARSET | COMMENT | DATE | 
+	   DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NATIONAL | NCHAR | NO | 
+	   NVARCHAR | PARSER SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR)
 	   {$name = tokenNames[input.LA(-1)];}
 	;
 
