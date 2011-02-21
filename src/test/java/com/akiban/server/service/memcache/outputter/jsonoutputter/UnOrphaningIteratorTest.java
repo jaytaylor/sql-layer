@@ -74,6 +74,14 @@ public class UnOrphaningIteratorTest
               "p", "pq", "pqr", "pqrs", "pqrst");
     }
 
+    @Test
+    public void testMissingRoot()
+    {
+        check(fillIn("ab"), "a", "ab");
+        check(fillIn("abc"), "a", "ab", "abc");
+        check(fillIn("abcd"), "a", "ab", "abc", "abcd");
+    }
+
     private Iterator<String> fillIn(String... input)
     {
         return new UnOrphaningIterator<String>(Arrays.asList(input).iterator(), new TestGenealogist());
@@ -95,6 +103,10 @@ public class UnOrphaningIteratorTest
         @Override
         public void fillInDescendents(String x, String y, Queue<String> missing)
         {
+            if (x == null) {
+                // y is first element of input iterator
+                x = "";
+            }
             if (y.startsWith(x)) {
                 for (int n = x.length() + 1; n < y.length(); n++) {
                     missing.add(y.substring(0, n));

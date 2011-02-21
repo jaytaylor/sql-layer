@@ -29,9 +29,9 @@ public class RowDataGenealogist implements Genealogist<RowData>
     @Override
     public void fillInDescendents(RowData x, RowData y, Queue<RowData> missing)
     {
-        UserTable xTable = queryTables.get(x.getRowDefId()).table;
+        UserTable xTable = x == null ? null : queryTables.get(x.getRowDefId()).table;
         UserTable yTable = queryTables.get(y.getRowDefId()).table;
-        if (xTable.getDepth() + 1 < yTable.getDepth()) {
+        if ((xTable == null ? 0 : xTable.getDepth() + 1) < yTable.getDepth()) {
             // x and y are at least two levels apart, so y could be an orphan. Now check to see if
             // x is an ancestor of y.
             UserTable yAncestor = yTable;

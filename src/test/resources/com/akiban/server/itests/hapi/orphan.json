@@ -119,6 +119,108 @@
             ]
         }
     },
+    "orphan:_oia" : {
+        "get" : "coia:customer:cid=14",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : 14,
+                            "oid" : 14,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 14,
+                                    "oid" : 14,
+                                    "iid" : 14
+                                }
+                            ]
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "cid" : 14,
+                            "aid" : 14
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "orphan:c_ia" : {
+        "get" : "coia:customer:cid=13",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : 13,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : null,
+                            "oid" : null,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 13,
+                                    "oid" : 13,
+                                    "iid" : 13
+                                }
+                            ]
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "cid" : 13,
+                            "aid" : 13
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "orphan:__ia" : {
+        "get" : "coia:customer:cid=12",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : null,
+                            "oid" : null,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 12,
+                                    "oid" : 12,
+                                    "iid" : 12
+                                }
+                            ]
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "cid" : 12,
+                            "aid" : 12
+                        }
+                    ]
+                }
+            ]
+        }
+    },
     "orphan:co_a" : {
         "get" : "coia:customer:cid=11",
         "expect result" :
@@ -146,6 +248,33 @@
             ]
         }
     },
+    "orphan:_o_a" : {
+        "get" : "coia:customer:cid=10",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : 10,
+                            "oid" : 10,
+                            "@item" : []
+                        }
+                    ],
+                    "@address" :
+                    [
+                        {
+                            "cid" : 10,
+                            "aid" : 10
+                        }
+                    ]
+                }
+            ]
+        }
+    },
     "orphan:c__a" : {
         "get" : "coia:customer:cid=9",
         "expect result" :
@@ -160,6 +289,26 @@
                         {
                             "cid" : 9,
                             "aid" : 9
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "orphan:___a" : {
+        "get" : "coia:customer:cid=8",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" : [],
+                    "@address" :
+                    [
+                        {
+                            "cid" : 8,
+                            "aid" : 8
                         }
                     ]
                 }
@@ -194,6 +343,34 @@
             ]
         }
     },
+    "orphan:_oi_" : {
+        "get" : "coia:customer:cid=6",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : 6,
+                            "oid" : 6,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 6,
+                                    "oid" : 6,
+                                    "iid" : 6
+                                }
+                            ]
+                        }
+                    ],
+                    "@address" : []
+                }
+            ]
+        }
+    },
     "orphan:c_i_" : {
         "get" : "coia:customer:cid=5",
         "expect result" :
@@ -215,6 +392,76 @@
                                     "iid" : 5
                                 }
                             ]
+                        }
+                    ],
+                    "@address" : []
+                }
+            ]
+        }
+    },
+    "orphan:__i_" : {
+        "get" : "coia:customer:cid=4",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : null,
+                            "oid" : null,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 4,
+                                    "oid" : 4,
+                                    "iid" : 4
+                                }
+                            ]
+                        }
+                    ],
+                    "@address" : []
+                }
+            ]
+        }
+    },
+    "orphan:co__" : {
+        "get" : "coia:customer:cid=3",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : 3,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : 3,
+                            "oid" : 3,
+                            "@item" : []
+                        }
+                    ],
+                    "@address" : []
+                }
+            ]
+        }
+    },
+    "orphan:_o__" : {
+        "get" : "coia:customer:cid=2",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : 2,
+                            "oid" : 2,
+                            "@item" : []
                         }
                     ],
                     "@address" : []

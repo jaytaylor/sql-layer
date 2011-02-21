@@ -54,13 +54,8 @@ class UnOrphaningIterator<T> implements Iterator<T>
     {
         this.genealogist = genealogist;
         this.input = input;
-        if (input.hasNext()) {
-            nextOutput = input.next();
-            previousInput = nextOutput;
-            done = false;
-        } else {
-            done = true;
-        }
+        done = false;
+        advanceIfNecessary();
     }
 
     // For use by this class
