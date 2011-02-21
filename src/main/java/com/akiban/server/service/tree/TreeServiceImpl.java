@@ -360,7 +360,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
         return tableIdOffset(volume);
     }
 
-    private synchronized int tableIdOffset(final Volume volume) {
+    private int tableIdOffset(final Volume volume) {
         return ((Integer)volume.getAppCache()).intValue();
     }
 
