@@ -16,7 +16,6 @@
 package com.akiban.server.service.memcache.outputter.jsonoutputter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
 import com.akiban.server.api.HapiOutputter;
@@ -40,16 +39,36 @@ public final class JsonOutputter implements HapiOutputter
         throws IOException
     {
         ais = request.akibanInformationSchema();
-        genealogist = new RowDataGenealogist(ais, request.getSchema(), request.getProjectedTables());
+        UserTable queryRoot = queryRoot(request);
+        genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
         input = new UnOrphaningIterator<RowData>(rows.iterator(), genealogist);
         output = new PrintWriter(outputStream);
         appender = AkibanAppender.of(output);
         advanceInput();
         output.write('{');
-        UserTable queryRoot = queryRoot(request);
-        generateChildOutput(queryRoot.getDepth(), QUERY_ROOT_PARENT, true);
+        int queryRootParentId =
+            queryRoot.getParentJoin() == null ? ROOT_PARENT : queryRoot.getParentJoin().getParent().getTableId();
+        generateChildOutput(queryRoot.getDepth(), queryRootParentId, true);
         output.write('}');
         output.flush();
+    }
+
+    private UserTable queryRoot(HapiProcessedGetRequest request)
+    {
+        return ais.getUserTable(request.getSchema(), request.getTable());
+    }
+
+    private Set<UserTable> projectedTables(HapiProcessedGetRequest request)
+    {
+        Set<UserTable> projectedTables = new HashSet<UserTable>();
+        String schemaName = request.getSchema();
+        // Find the tables of interest
+        for (String tableName : request.getProjectedTables()) {
+            UserTable table = ais.getUserTable(schemaName, tableName);
+            assert table != null : String.format("%s.%s", schemaName, tableName);
+            projectedTables.add(table);
+        }
+        return projectedTables;
     }
 
     private void generateChildOutput(int depth, int parentTableId, boolean firstSibling) throws IOException
@@ -131,12 +150,7 @@ public final class JsonOutputter implements HapiOutputter
         }
     }
 
-    private UserTable queryRoot(HapiProcessedGetRequest request)
-    {
-        return ais.getUserTable(request.getSchema(), request.getTable());
-    }
-
-    final static int QUERY_ROOT_PARENT = -1;
+    final static int ROOT_PARENT = -1;
     private static final JsonOutputter INSTANCE = new JsonOutputter();
 
     private AkibanInformationSchema ais;

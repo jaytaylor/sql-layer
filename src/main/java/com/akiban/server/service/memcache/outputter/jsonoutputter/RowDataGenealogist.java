@@ -15,7 +15,6 @@
 
 package com.akiban.server.service.memcache.outputter.jsonoutputter;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
@@ -29,7 +28,7 @@ public class RowDataGenealogist implements Genealogist<RowData>
     @Override
     public void fillInDescendents(RowData x, RowData y, Queue<RowData> missing)
     {
-        UserTable xTable = x == null ? null : queryTables.get(x.getRowDefId()).table;
+        UserTable xTable = x == null ? queryRootParent : queryTables.get(x.getRowDefId()).table;
         UserTable yTable = queryTables.get(y.getRowDefId()).table;
         if ((xTable == null ? 0 : xTable.getDepth() + 1) < yTable.getDepth()) {
             // x and y are at least two levels apart, so y could be an orphan. Now check to see if
@@ -60,17 +59,10 @@ public class RowDataGenealogist implements Genealogist<RowData>
         return tableInfo.queryChildren;
     }
 
-    public RowDataGenealogist(AkibanInformationSchema ais, String schemaName, Set<String> tableNames)
+    public RowDataGenealogist(UserTable queryRoot, Set<UserTable> projectedTables)
     {
-        queryTables = new HashMap<Integer, TableInfo>();
-        // Find the tables of interest
-        List<UserTable> tables = new ArrayList<UserTable>();
-        for (String tableName : tableNames) {
-            UserTable table = ais.getUserTable(schemaName, tableName);
-            assert table != null : String.format("%s.%s", schemaName, tableName);
-            tables.add(table);
-        }
         // Sort by depth so that queryTables can be computed in one pass
+        List<UserTable> tables = new ArrayList<UserTable>(projectedTables);
         Collections.sort(tables,
                          new Comparator<UserTable>()
                          {
@@ -81,6 +73,7 @@ public class RowDataGenealogist implements Genealogist<RowData>
                              }
                          });
         // For each table in tables, add table to queryTables of parent.
+        queryTables = new HashMap<Integer, TableInfo>();
         for (UserTable table : tables) {
             TableInfo replaced = queryTables.put(table.getTableId(), new TableInfo(table));
             assert replaced == null : table;
@@ -93,10 +86,12 @@ public class RowDataGenealogist implements Genealogist<RowData>
                 }
             }
         }
-        // Set expected children of the entire query. Because of sorting, query root is at position 0.
-        TableInfo queryRootInfo = new TableInfo(null);
-        queryRootInfo.queryChildren.add(tables.get(0).getTableId());
-        queryTables.put(JsonOutputter.QUERY_ROOT_PARENT, queryRootInfo);
+        // Set expected children of the entire query.
+        queryRootParent = queryRoot.getParentJoin() == null ? null : queryRoot.getParentJoin().getParent();
+        int queryRootParentId = queryRootParent == null ? JsonOutputter.ROOT_PARENT : queryRootParent.getTableId();
+        TableInfo queryRootInfo = new TableInfo(queryRootParent);
+        queryRootInfo.queryChildren.add(queryRoot.getTableId());
+        queryTables.put(queryRootParentId, queryRootInfo);
     }
 
     // For use by this class
@@ -114,12 +109,18 @@ public class RowDataGenealogist implements Genealogist<RowData>
 
     // Object state
 
-    private AkibanInformationSchema ais;
+    private UserTable queryRootParent;
     private Map<Integer, TableInfo> queryTables;
     private Map<Integer, RowData> nullRows = new HashMap<Integer, RowData>();
 
     private static class TableInfo
     {
+        @Override
+        public String toString()
+        {
+            return table == null ? "null" : table.toString();
+        }
+
         TableInfo(UserTable table)
         {
             this.table = table;
