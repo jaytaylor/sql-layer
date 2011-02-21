@@ -88,6 +88,8 @@ SIGNED = 'signed';
 SERIAL = 'serial';
 VALUE = 'value';
 LIKE = 'like';
+BOOL = 'bool';
+BOOLEAN = 'boolean';
 }
 
 @header {
@@ -285,7 +287,7 @@ data_type returns [String type]
 	;
 	
 numeric_data_type returns [String type]
-	: TINYINT {$type = "TINYINT";}
+	: (TINYINT | BOOL | BOOLEAN) {$type = "TINYINT";}
 	| SMALLINT {$type = "SMALLINT";}
 	| MEDIUMINT {$type = "MEDIUMINT";}
 	| (INT | INTEGER) {$type = "INT";}
@@ -323,9 +325,9 @@ qname returns [String name]
 
 // Tokens that can be used as unquoted identifiers, emperically identified
 qname_from_unquoted_token  returns [String name]
-	: (ACTION | AUTO_INCREMENT | BIT | BTREE | CHARSET | COMMENT | DATE | 
-	   DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NO | PARSER
-	   SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR)
+	: (ACTION | AUTO_INCREMENT | BIT | BOOL | BOOLEAN | BTREE | CHARSET | COMMENT | 
+	   DATE | DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NO | 
+	   PARSER SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR)
 	   {$name = tokenNames[input.LA(-1)];}
 	;
 
