@@ -356,10 +356,9 @@ public class PersistitStoreIndexManager implements IndexManager {
                     .append(Key.BEFORE);
             List<RowData> rows = new ArrayList<RowData>();
             while (exchange.next()) {
-                final RowData rowData = new RowData(new byte[exchange
-                        .getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
-                store.expandRowData(exchange,
-                        indexAnalysisRowDef, rowData);
+                final RowData rowData =
+                    new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
+                store.expandRowData(exchange, rowData);
                 rows.add(rowData);
             }
 
@@ -380,8 +379,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                         + prefix, indexRowData.getBytes(), 0,
                         indexRowData.getBufferLength());
                 indexRowData.prepareRow(0);
-                histogram
-                        .addSample(new HistogramSample(indexRowData, rowCount));
+                histogram.addSample(new HistogramSample(indexRowData, rowCount));
             }
             if (!histogram.getHistogramSamples().isEmpty()) {
                 tableStatistics.addHistogram(histogram);

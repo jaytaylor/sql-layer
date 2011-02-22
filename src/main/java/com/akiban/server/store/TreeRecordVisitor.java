@@ -60,12 +60,8 @@ public abstract class TreeRecordVisitor
 
     private NewRow row() throws PersistitException, InvalidOperationException
     {
-        Value value = exchange.getValue();
-        int rowDefId = AkServerUtil.getInt(value.getEncodedBytes(), RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
-        rowDefId = store.treeService.storeToAis(exchange.getVolume(), rowDefId);
-        RowDef rowDef = store.rowDefCache.getRowDef(rowDefId);
         RowData rowData = new RowData(EMPTY_BYTE_ARRAY);
-        store.expandRowData(exchange, rowDef, rowData);
+        store.expandRowData(exchange, rowData);
         return new LegacyRowWrapper(rowData);
     }
 

@@ -1,0 +1,86 @@
+{
+"comment" : ["See spec file: ",
+    "https://spreadsheets.google.com/a/akiban.com/ccc?key=0AiGr_XWdHm0edFNSaFZwUXd5SnAtOHlDcTJyOEUzdXc",
+    "wrong parent test: See http://akibainc.onconfluence.com/display/db/Determining+whether+a+row+is+an+orphan"
+],
+
+"setup" : {
+    "processors_default" : [ "scanrows" ],
+    "schema" : "coi",
+    "tables" : [
+        [ "customer",
+            "cid int not null",
+            "primary key(cid)"
+        ],
+
+        [ "orders",
+            "cid int not null",
+            "oid int not null",
+            "primary key(cid, oid)",
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES customer(cid)"
+        ],
+
+        [ "item",
+            "cid int not null",
+            "oid int not null",
+            "iid int not null",
+            "primary key(cid, oid, iid)",
+            "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (cid, oid) REFERENCES orders(cid, oid)"
+        ],
+    ],
+    "write_rows" : {
+        "customer" : [
+            [1]
+        ],
+        "orders" : [
+            [1, 10]
+        ],
+        "item" : [
+            [2, 20, 200]
+        ]
+    }
+},
+
+"tests" : {
+    "wrong parent" : {
+        "passing"       : false,
+        "get" : "coi:customer:cid>=1",
+        "expect result" :
+        {
+            "@customer" :
+            [
+                {
+                    "cid" : 1,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : 1,
+                            "oid" : 10,
+                            "@item" : []
+                        }
+                    ]
+                },
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : null,
+                            "oid" : null,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 2,
+                                    "oid" : 20,
+                                    "iid" : 200
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+
+}

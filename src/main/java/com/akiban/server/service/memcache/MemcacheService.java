@@ -21,7 +21,7 @@ import com.akiban.server.service.memcache.hprocessor.EmptyRows;
 import com.akiban.server.service.memcache.hprocessor.Fetchrows;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.DummyOutputter;
-import com.akiban.server.service.memcache.outputter.JsonOutputter;
+import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.memcache.outputter.RawByteOutputter;
 import com.akiban.server.service.memcache.outputter.RequestEchoOutputter;
 import com.akiban.server.service.memcache.outputter.RowDataStringOutputter;
