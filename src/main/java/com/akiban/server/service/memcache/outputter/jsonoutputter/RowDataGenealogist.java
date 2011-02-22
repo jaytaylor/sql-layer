@@ -129,7 +129,7 @@ public class RowDataGenealogist implements Genealogist<RowData>
         RowData nullRow = nullRows.get(table.getTableId());
         if (nullRow == null) {
             nullRow = new RowData(new byte[1000]); // TODO: 1000 is a guess
-            nullRow.createRow(table.rowDef(), new Object[table.getColumnsIncludingInternal().size()]);
+            nullRow.createRow((RowDef) table.rowDef(), new Object[table.getColumnsIncludingInternal().size()]);
             nullRows.put(table.getTableId(), nullRow);
         }
         return nullRow;

@@ -15,8 +15,6 @@
 
 package com.akiban.ais.model;
 
-import com.akiban.server.RowDef;
-
 import java.io.Serializable;
 import java.util.*;
 
@@ -295,12 +293,13 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return columnMap;
     }
 
-    public void rowDef(RowDef rowDef)
+    public void rowDef(Object rowDef)
     {
+        assert rowDef.getClass().getName().equals("com.akiban.server.RowDef") : rowDef.getClass();
         this.rowDef = rowDef;
     }
 
-    public RowDef rowDef()
+    public Object rowDef()
     {
         return rowDef;
     }
@@ -348,5 +347,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
-    private transient RowDef rowDef;
+    // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
+    // all the RowDef stuff and have it visible to GWT.
+    private transient /*RowDef*/ Object rowDef;
 }

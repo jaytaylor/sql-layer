@@ -467,7 +467,7 @@ public class RowData {
                 sb.append(rowDef.getTableName());
                 for (int i = 0; i < getFieldCount(); i++) {
                     final FieldDef fieldDef = rowDef.getFieldDef(i);
-                    sb.append(i == 0 ? "(" : ",");
+                    sb.append(i == 0 ? '(' : ',');
                     final long location = fieldDef.getRowDef().fieldLocation(
                             this, fieldDef.getFieldIndex());
                     if (location == 0) {
@@ -477,7 +477,7 @@ public class RowData {
                                 Quote.SINGLE_QUOTE);
                     }
                 }
-                sb.append(")");
+                sb.append(')');
             }
         } catch (Exception e) {
             int size = Math.min(getRowSize(), 64);
@@ -494,24 +494,24 @@ public class RowData {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
             if(i != 0) {
-                sb.write(',');
+                sb.append(',');
             }
-            sb.write('"');
+            sb.append('"');
             String fieldName = fieldDef.getName();
             if (fieldName != null
                     && fieldName.length() > 0
                     && (fieldName.charAt(0) == '@' || fieldName.charAt(0) == ':')
             ) {
-                sb.write(':');
+                sb.append(':');
             }
-            sb.write(fieldName);
-            sb.write("\":");
+            sb.append(fieldName);
+            sb.append("\":");
 
             if(location != 0) {
                 fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
             }
             else {
-                sb.write("null");
+                sb.append("null");
             }
         }
     }
