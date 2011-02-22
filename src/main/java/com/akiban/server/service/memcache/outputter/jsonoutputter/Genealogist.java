@@ -27,11 +27,11 @@ public interface Genealogist<T>
      * - h(n-1) is the parent of hn, and
      * - hn is the parent of y.
      * If x is a parent of y, or is not an ancestor of y, then missing is not modified.
-     * The first time fillInDescendents is called for a sequence of objects, x will be null,
+     * The first time fillInMissing is called for a sequence of objects, x will be null,
      * and y will be the first element of the sequence.
      * @param x An object in a hierarchy, or null on the first invocation for a sequence.
      * @param y An object in a hierarchy, never null.
-     * @param missing records filled in descendents of x.
+     * @param missingRows records filled in descendents of x.
      */
-    void fillInDescendents(T x, T y, Queue<T> missing);
+    void fillInMissing(T x, T y, Queue<T> missingRows);
 }

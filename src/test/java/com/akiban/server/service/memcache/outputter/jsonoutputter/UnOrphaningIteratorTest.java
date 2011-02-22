@@ -101,7 +101,7 @@ public class UnOrphaningIteratorTest
     private static class TestGenealogist implements Genealogist<String>
     {
         @Override
-        public void fillInDescendents(String x, String y, Queue<String> missing)
+        public void fillInMissing(String x, String y, Queue<String> missing)
         {
             if (x == null) {
                 // y is first element of input iterator
