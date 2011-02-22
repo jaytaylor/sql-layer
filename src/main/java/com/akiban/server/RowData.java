@@ -285,6 +285,18 @@ public class RowData {
         return AkServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
+    public void appendStringValue(final int offset, final int width,
+                                 final FieldDef fieldDef, AkibanAppender appender) {
+        if (offset == 0 && width == 0) {
+            return;
+        }
+        if (offset < rowStart || offset + width >= rowEnd) {
+            throw new IllegalArgumentException("Bad location: " + offset + ":"
+                    + width);
+        }
+        AkServerUtil.appendMySQLString(bytes, offset, width, fieldDef, appender);
+    }
+
     public int setupNullMap(BitSet nullMap, int nullMapOffset,
             int currentOffset, int fieldCount) {
         int offset = currentOffset + O_NULL_MAP;

@@ -44,7 +44,7 @@ public final class JsonOutputter implements HapiOutputter
         computeExpectedChildren(request);
         input = rows.iterator();
         output = new PrintWriter(outputStream);
-        appender = AkibanAppender.of(output);
+        appender = AkibanAppender.of(outputStream, output);
         advanceInput();
         output.write('{');
         UserTable queryRoot = queryRoot(request);

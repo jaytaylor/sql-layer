@@ -21,6 +21,7 @@ import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
+import java.nio.charset.Charset;
 
 public class AkServerUtil {
 
@@ -378,36 +379,42 @@ public class AkServerUtil {
      * @param bytes
      * @param offset
      * @param width
-     * @param declaredWidth
      * @return
      */
     public static String decodeMySQLString(byte[] bytes, final int offset,
             final int width, final FieldDef fieldDef) {
+        StringBuilder sb = new StringBuilder();
+        appendMySQLString(bytes, offset, width, fieldDef, AkibanAppender.of(sb));
+        return sb.toString();
+    }
+
+    public static void appendMySQLString(byte[] bytes, final int offset,
+                                           final int width, final FieldDef fieldDef, AkibanAppender appender) {
         // TODO - this is a temporary hack to handle storage engine bug.
         if (width == 0) {
-            return null;
+            return;
         }
 
         final int prefixSize = fieldDef.getPrefixSize();
         int length;
         switch (prefixSize) {
-        case 0:
-            length = 0;
-            break;
-        case 1:
-            length = getByte(bytes, offset);
-            break;
-        case 2:
-            length = getChar(bytes, offset);
-            break;
-        case 3:
-            length = getMediumInt(bytes, offset);
-            break;
-        case 4:
-            length = getInt(bytes, offset);
-            break;
-        default:
-            throw new Error("No such case");
+            case 0:
+                length = 0;
+                break;
+            case 1:
+                length = getByte(bytes, offset);
+                break;
+            case 2:
+                length = getChar(bytes, offset);
+                break;
+            case 3:
+                length = getMediumInt(bytes, offset);
+                break;
+            case 4:
+                length = getInt(bytes, offset);
+                break;
+            default:
+                throw new Error("No such case");
         }
         if (length > width) {
             throw new IllegalArgumentException(
@@ -415,11 +422,7 @@ public class AkServerUtil {
         }
 
         // TODO - handle char set, e.g., utf8
-
-        final String s = new String(bytes, offset + prefixSize, width
-                - prefixSize);
-
-        return s;
+        appender.appendBytes(bytes, offset + prefixSize, width - prefixSize, Charset.forName("US-ASCII"));
     }
 
     public static int varWidth(final int length) {
