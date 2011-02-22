@@ -373,12 +373,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
             }
-            if (SCHEMA_TREE_NAME.equals(treeName)) {
-                tableIdOffset(volume);
-            } else {
-                final Volume schemaVolume = mappedVolume(schemaName, SCHEMA_TREE_NAME);
-                int schemaTableId = tableIdOffset(schemaVolume);
-            }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
             throw new IllegalStateException(e);
