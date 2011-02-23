@@ -17,43 +17,42 @@ package com.akiban.server;
 
 import com.akiban.util.AkibanAppender;
 
+import java.nio.charset.Charset;
 import java.util.Formatter;
 
 public enum Quote {
-    NONE {
-        @Override
-        public void append(AkibanAppender sb, String s) {
-            sb.append(s);
-        }
-    },
-    SINGLE_QUOTE {
-        @Override
-        public void append(AkibanAppender sb, String s) {
-            doAppend(sb, s, SINGLE_QUOTE_CHAR, false);
-        }
-    },
-    DOUBLE_QUOTE {
-        @Override
-        public void append(AkibanAppender sb, String s) {
-            doAppend(sb, s, DOUBLE_QUOTE_CHAR, false);
-        }
-    },
-    JSON_QUOTE {
-        @Override
-        public void append(AkibanAppender sb, String s) {
-            doAppend(sb, s, DOUBLE_QUOTE_CHAR, true);
-        }
-    };
-    private static final char SINGLE_QUOTE_CHAR = '\'';
-    private static final char DOUBLE_QUOTE_CHAR = '"';
+    NONE(null, false),
+    SINGLE_QUOTE('\'', false),
+    DOUBLE_QUOTE('"', false),
+    JSON_QUOTE('"', true)
+    ;
 
-    public abstract void append(final AkibanAppender sb, String s);
-    
-    private static void doAppend(AkibanAppender sb, String s, char quote, boolean escapeControlChars) {
+    private final Character quoteChar;
+    private final boolean escapeControlChars;
+
+    Quote(Character quoteChar, boolean escapeControlChars) {
+        this.quoteChar = quoteChar;
+        this.escapeControlChars = escapeControlChars;
+    }
+
+    public void append(AkibanAppender sb, String s) {
+        doAppend(sb, s, quoteChar, escapeControlChars);
+    }
+
+    static void doAppend(AkibanAppender sb, String s, Character quote, boolean escapeControlChars) {
         if (s == null) {
+            sb.append(null);
+            return;
+        }
+        if (quote == null) {
+            if (!escapeControlChars) {
+                // this is not put in as an assert, so that we can unit test it
+                throw new AssertionError("can't escape without quoting, as a simplification to the code");
+            }
             sb.append(s);
             return;
         }
+
         sb.append(quote);
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
