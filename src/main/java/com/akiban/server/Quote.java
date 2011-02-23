@@ -38,7 +38,7 @@ public enum Quote {
 
     private final static Charset ASCII = Charset.forName("US-ASCII");
     private final static Charset UTF8 = Charset.forName("UTF-8");
-    private final static Charset LATIN1 = charset("LATIN-1");
+    private final static Charset LATIN1 = charset("LATIN1");
 
     private static Charset charset(String name) {
         try {
