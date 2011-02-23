@@ -38,6 +38,15 @@ public enum Quote {
 
     private final static Charset ASCII = Charset.forName("US-ASCII");
     private final static Charset UTF8 = Charset.forName("UTF-8");
+    private final static Charset LATIN1 = charset("LATIN-1");
+
+    private static Charset charset(String name) {
+        try {
+            return Charset.forName(name);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     public void append(AkibanAppender sb, String s) {
         doAppend(sb, s, quoteChar, escapeControlChars);
@@ -66,10 +75,10 @@ public enum Quote {
 
     static void writeBytes(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset)
     {
-        if (! (ASCII.equals(charset) || UTF8.equals(charset)) ) {
+        if (! writeBytesCharset(charset) ) {
             throw new IllegalArgumentException(charset.name());
         }
-        int wrote = writeDirect(appender, bytes, offset, length);
+        int wrote = writeDirect(appender, bytes, offset, length, charset);
         assert !(wrote > length) : "wrote " + wrote + " of " + length;
         if (wrote < length) {
             String string = new String(bytes, offset + wrote, length - wrote, charset);
@@ -77,9 +86,26 @@ public enum Quote {
         }
     }
 
-    private static int writeDirect(AkibanAppender appender, byte[] bytes, int offset, int length) {
+    private static boolean writeBytesCharset(Charset charset) {
+        return      ASCII.equals(charset)
+                ||  UTF8.equals(charset)
+                || (LATIN1 != null && LATIN1.equals(charset) )
+                ;
+    }
+
+    private static boolean identityByte(byte b, Charset charset) {
+        if (ASCII.equals(charset) || UTF8.equals(charset)) {
+            return b >= 0;
+        }
+        if (LATIN1 != null && LATIN1.equals(charset)) {
+            return b >= 0x20 && b <= 0x7E;
+        }
+        throw new IllegalArgumentException(charset == null ? "null" : charset.name());
+    }
+
+    private static int writeDirect(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset) {
         int pos = 0;
-        while ( (pos < length) && (bytes[offset+pos] >= 0)) {
+        while ( (pos < length) && identityByte(bytes[offset+pos], charset)) {
             ++pos;
         }
         if (pos > 0) {

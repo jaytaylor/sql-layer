@@ -57,7 +57,7 @@ public class StringEncoder extends EncodingBase<String> {
             final long location = getLocation(fieldDef, rowData);
             if (sb.canAppendBytes()) {
                 ByteBuffer buff = rowData.byteBufferForStringValue((int) location, (int) (location >>> 32), fieldDef);
-                quote.append(sb, buff, fieldDef.getType().encoding());
+                quote.append(sb, buff, fieldDef.column().getCharsetAndCollation().charset());
             }
             else {
                 String s = rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
