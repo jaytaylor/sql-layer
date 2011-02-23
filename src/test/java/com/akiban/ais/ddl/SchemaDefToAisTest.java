@@ -375,6 +375,15 @@ public class SchemaDefToAisTest {
                 fk("parent", false, "ignored", null, "pid"));
     }
 
+    // Invalid data type caused parse failure and invalid AIS
+    @Test
+    public void bug722121() throws Exception {
+        final String schema = "CREATE TABLE test.t(id int NOT NULL, geom geometry NOT NULL, PRIMARY KEY(id), SPATIAL KEY(geom)) engine=akibandb";
+        AkibanInformationSchema ais = buildAISfromString(schema);
+        assertNotNull(ais);
+    }
+
+
     /**
      * Creates the customer-order tables and parses them into a SchemaDef.
      * 
