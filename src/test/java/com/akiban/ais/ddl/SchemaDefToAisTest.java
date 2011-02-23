@@ -381,6 +381,10 @@ public class SchemaDefToAisTest {
         final String schema = "CREATE TABLE test.t(id int NOT NULL, geom geometry NOT NULL, PRIMARY KEY(id), SPATIAL KEY(geom)) engine=akibandb";
         AkibanInformationSchema ais = buildAISfromString(schema);
         assertNotNull(ais);
+        final Table table = ais.getUserTable("test", "t");
+        assertNotNull(table);
+        assertEquals("geometry", table.getColumn("geom").getType().name());
+        assertEquals(2, table.getIndexes().size());
     }
 
 
