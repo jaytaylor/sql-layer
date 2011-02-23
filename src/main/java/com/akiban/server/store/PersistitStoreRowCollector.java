@@ -637,10 +637,11 @@ public class PersistitStoreRowCollector implements RowCollector {
                 }
                 if (isDeepMode() && depth > projectedRowDefs[projectedRowDefs.length - 1].getHKeyDepth()) {
                     int level = pendingRowData.length - 1;
-                    prepareRow(hEx, level, null, 0);// TODO!!! Peter -- what needed to be done?
+                    prepareRow(hEx, level, null, 0);
                     if (level < pendingFromLevel) {
                         pendingFromLevel = level;
                     }
+                    hKey.copyTo(lastKey);
                     pendingToLevel = level + 1;
                 } else {
                     // TODO: ORPHANS - below depth, set deeper rows to all null.
@@ -672,6 +673,8 @@ public class PersistitStoreRowCollector implements RowCollector {
             LOG.debug("Preparing row at " + exchange);
         }
         store.expandRowData(exchange, rowDef, pendingRowData[level]);
+        
+        int differsAtKeySegment = exchange.getKey().firstUniqueSegmentDepth(lastKey);
         //
         // Remove unwanted columns
         //
