@@ -16,7 +16,6 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
