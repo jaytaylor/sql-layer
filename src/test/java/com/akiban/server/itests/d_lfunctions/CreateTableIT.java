@@ -276,6 +276,18 @@ public final class CreateTableIT extends ApiTestBase {
         assertEquals(3, getUserTables().size());
     }
 
+    @Test
+    public void spatialDataTypes() throws InvalidOperationException {
+        createExpectException(UnsupportedDataTypeException.class, "test", "t1", "c1 geometry");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t2", "c1 geometrycollection");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t3", "c1 point");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t4", "c1 multipoint ");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t5", "c1 linestring");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t6", "c1 multilinestring");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t7", "c1 polygon");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t8", "c1 multipolygon");
+    }
+
     
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
