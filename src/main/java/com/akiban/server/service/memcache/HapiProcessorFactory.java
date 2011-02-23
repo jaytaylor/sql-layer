@@ -16,6 +16,7 @@
 package com.akiban.server.service.memcache;
 
 import com.akiban.server.api.HapiProcessor;
+import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
 import com.akiban.server.service.memcache.hprocessor.EmptyRows;
 import com.akiban.server.service.memcache.hprocessor.Fetchrows;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
@@ -30,7 +31,8 @@ enum HapiProcessorFactory {
         public HapiProcessor getHapiProcessor() {
             return Scanrows.instance();
         }
-    }
+    },
+    CACHED(new CachedProcessor())
     ;
 
     private final HapiProcessor processor;
