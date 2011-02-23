@@ -56,7 +56,7 @@ public final class JsonOutputter implements HapiOutputter
             computeExpectedChildren(request);
             this.input = rows.iterator();
             this.output = new PrintWriter(outputStream);
-            this.appender = AkibanAppender.of(this.output);
+            this.appender = AkibanAppender.of(outputStream, this.output);
         }
 
         public void run() throws IOException
