@@ -647,6 +647,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                     if (level < pendingFromLevel) {
                         pendingFromLevel = level;
                     }
+                    hKey.copyTo(lastKey);
                     pendingToLevel = level + 1;
                 } else {
                     // Current row's type is one of the projectedRowDefs.
@@ -677,6 +678,15 @@ public class PersistitStoreRowCollector implements RowCollector {
             LOG.debug("Preparing row at " + exchange);
         }
         store.expandRowData(exchange, pendingRowData[level]);
+        
+        int differsAtKeySegment = exchange.getKey().firstUniqueSegmentDepth(lastKey);
+        //
+        // Remove unwanted columns
+        //
+        if (!isDeepMode()) {
+            pendingRowData[level].elide(columnBitMap, columnOffset
+                    - columnBitMapOffset, columnBitMapWidth);
+        }
     }
 
     void prepareCoveredRow(final Exchange exchange, final int rowDefId,
