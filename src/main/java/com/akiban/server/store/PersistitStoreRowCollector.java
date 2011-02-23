@@ -680,13 +680,6 @@ public class PersistitStoreRowCollector implements RowCollector {
         store.expandRowData(exchange, pendingRowData[level]);
         
         int differsAtKeySegment = exchange.getKey().firstUniqueSegmentDepth(lastKey);
-        //
-        // Remove unwanted columns
-        //
-        if (!isDeepMode()) {
-            pendingRowData[level].elide(columnBitMap, columnOffset
-                    - columnBitMapOffset, columnBitMapWidth);
-        }
     }
 
     void prepareCoveredRow(final Exchange exchange, final int rowDefId,
