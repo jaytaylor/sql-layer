@@ -422,7 +422,8 @@ public class AkServerUtil {
         }
 
         // TODO - handle char set, e.g., utf8
-        appender.appendBytes(bytes, offset + prefixSize, width - prefixSize, Charset.forName("US-ASCII"));
+        appender.appendBytes(bytes, offset + prefixSize, width - prefixSize);
+        assert false : "Yuval needs to fix this";
     }
 
     public static int varWidth(final int length) {

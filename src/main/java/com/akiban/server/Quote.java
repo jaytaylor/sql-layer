@@ -17,6 +17,7 @@ package com.akiban.server;
 
 import com.akiban.util.AkibanAppender;
 
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Formatter;
 
@@ -35,9 +36,47 @@ public enum Quote {
         this.escapeControlChars = escapeControlChars;
     }
 
+    private final static Charset ASCII = Charset.forName("US-ASCII");
+    private final static Charset UTF8 = Charset.forName("UTF-8");
+
     public void append(AkibanAppender sb, String s) {
         doAppend(sb, s, quoteChar, escapeControlChars);
     }
+
+    public void append(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset) {
+        if ( (!appender.canAppendBytes()) || !(ASCII.equals(charset) || UTF8.equals(charset)))
+        {
+            String string = new String(bytes, offset, length, charset);
+            doAppend(appender, string, quoteChar, escapeControlChars);
+            return;
+        }
+        writeBytes(appender, bytes, offset, length, charset);
+    }
+
+    static void writeBytes(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset)
+    {
+        if (! (ASCII.equals(charset) || UTF8.equals(charset)) ) {
+            throw new IllegalArgumentException(charset.name());
+        }
+        int wrote = writeDirect(appender, bytes, offset, length);
+        assert !(wrote > length) : "wrote " + wrote + " of " + length;
+        if (wrote < length) {
+            String string = new String(bytes, offset + wrote, length - wrote, charset);
+            appender.append(string);
+        }
+    }
+
+    private static int writeDirect(AkibanAppender appender, byte[] bytes, int offset, int length) {
+        int pos = 0;
+        while ( (pos < length) && (bytes[offset+pos] >= 0)) {
+            ++pos;
+        }
+        if (pos > 0) {
+            appender.appendBytes(bytes, offset, pos);
+        }
+        return pos;
+    }
+
 
     static void doAppend(AkibanAppender sb, String s, Character quote, boolean escapeControlChars) {
         if (s == null) {
@@ -45,7 +84,7 @@ public enum Quote {
             return;
         }
         if (quote == null) {
-            if (!escapeControlChars) {
+            if (escapeControlChars) {
                 // this is not put in as an assert, so that we can unit test it
                 throw new AssertionError("can't escape without quoting, as a simplification to the code");
             }

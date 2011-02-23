@@ -18,7 +18,6 @@ package com.akiban.util;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 
 public abstract class AkibanAppender {
     public abstract void append(Object o);
@@ -73,6 +72,10 @@ public abstract class AkibanAppender {
         public Appendable getAppendable() {
             return pr;
         }
+
+        protected void flush() {
+            pr.flush();
+        }
     }
 
     private static class AkibanAppenderOS extends AkibanAppenderPW {
@@ -86,6 +89,7 @@ public abstract class AkibanAppender {
         @Override
         public void appendBytes(byte[] bytes, int offset, int length) {
             try {
+                super.flush();
                 os.write(bytes, offset, length);
             } catch (IOException e) {
                 throw new RuntimeException(e);
