@@ -21,6 +21,7 @@ import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public class AkServerUtil {
@@ -383,16 +384,15 @@ public class AkServerUtil {
      */
     public static String decodeMySQLString(byte[] bytes, final int offset,
             final int width, final FieldDef fieldDef) {
-        StringBuilder sb = new StringBuilder();
-        appendMySQLString(bytes, offset, width, fieldDef, AkibanAppender.of(sb));
-        return sb.toString();
+        ByteBuffer buff = byteBufferForMySQLString(bytes, offset, width, fieldDef);
+        return new String(buff.array(), buff.position(), buff.limit() - buff.position());
     }
 
-    public static void appendMySQLString(byte[] bytes, final int offset,
-                                           final int width, final FieldDef fieldDef, AkibanAppender appender) {
+    public static ByteBuffer byteBufferForMySQLString(byte[] bytes, final int offset,
+                                           final int width, final FieldDef fieldDef) {
         // TODO - this is a temporary hack to handle storage engine bug.
         if (width == 0) {
-            return;
+            return null;
         }
 
         final int prefixSize = fieldDef.getPrefixSize();
@@ -422,8 +422,7 @@ public class AkServerUtil {
         }
 
         // TODO - handle char set, e.g., utf8
-        appender.appendBytes(bytes, offset + prefixSize, width - prefixSize);
-        assert false : "Yuval needs to fix this";
+        return ByteBuffer.wrap(bytes, offset + prefixSize, width - prefixSize);
     }
 
     public static int varWidth(final int length) {

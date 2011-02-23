@@ -23,6 +23,8 @@ import com.akiban.server.RowData;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
+import java.nio.ByteBuffer;
+
 public class StringEncoder extends EncodingBase<String> {
     StringEncoder() {
     }
@@ -53,14 +55,14 @@ public class StringEncoder extends EncodingBase<String> {
     public void toString(FieldDef fieldDef, RowData rowData,
                          AkibanAppender sb, final Quote quote) {
         try {
-            if (Quote.JSON_QUOTE.equals(quote)) {
-                sb.append('"');
-                final long location = getLocation(fieldDef, rowData);
-                rowData.appendStringValue((int) location, (int) (location >>> 32), fieldDef, sb);
-                sb.append('"');
+            final long location = getLocation(fieldDef, rowData);
+            if (sb.canAppendBytes()) {
+                ByteBuffer buff = rowData.byteBufferForStringValue((int) location, (int) (location >>> 32), fieldDef);
+                quote.append(sb, buff, fieldDef.getType().encoding());
             }
             else {
-                quote.append(sb, toObject(fieldDef, rowData));
+                String s = rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
+                quote.append(sb, s);
             }
         } catch (EncodingException e) {
             sb.append("null");

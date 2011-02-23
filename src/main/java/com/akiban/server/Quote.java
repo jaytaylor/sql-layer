@@ -18,7 +18,6 @@ package com.akiban.server;
 import com.akiban.util.AkibanAppender;
 
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Formatter;
 
@@ -42,6 +41,10 @@ public enum Quote {
 
     public void append(AkibanAppender sb, String s) {
         doAppend(sb, s, quoteChar, escapeControlChars);
+    }
+
+    public void append(AkibanAppender appender, ByteBuffer byteBuffer, String charset) {
+        append(appender, byteBuffer, Charset.forName(charset));
     }
 
     public void append(AkibanAppender appender, ByteBuffer byteBuffer, Charset charset) {

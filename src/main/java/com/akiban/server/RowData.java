@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
@@ -285,16 +286,15 @@ public class RowData {
         return AkServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
-    public void appendStringValue(final int offset, final int width,
-                                 final FieldDef fieldDef, AkibanAppender appender) {
+    public ByteBuffer byteBufferForStringValue(final int offset, final int width, final FieldDef fieldDef) {
         if (offset == 0 && width == 0) {
-            return;
+            return null;
         }
         if (offset < rowStart || offset + width >= rowEnd) {
             throw new IllegalArgumentException("Bad location: " + offset + ":"
                     + width);
         }
-        AkServerUtil.appendMySQLString(bytes, offset, width, fieldDef, appender);
+        return AkServerUtil.byteBufferForMySQLString(bytes, offset, width, fieldDef);
     }
 
     public int setupNullMap(BitSet nullMap, int nullMapOffset,
