@@ -207,10 +207,14 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throws NoSuchTableException, NoSuchColumnException,
             NoSuchIndexException, GenericInvalidOperationException {
         try {
-            return store().newRowCollector(session, request.getTableId(),
-                    request.getIndexId(), request.getScanFlags(),
-                    request.getStart(), request.getEnd(),
-                    request.getColumnBitMap());
+            return store().newRowCollector(session,
+                                           request.getTableId(),
+                                           request.getIndexId(),
+                                           request.getScanFlags(),
+                                           request.getStart(),
+                                           request.getEnd(),
+                                           request.getColumnBitMap(),
+                                           false /* messageOutput */);
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
@@ -372,13 +376,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final RowCollector rc = cursor.getRowCollector();
         try {
             if (!rc.hasMore()) {
-                cursor.setFinished();
-                if (cursor.isScanning()) {
-                    throw new CursorIsFinishedException(cursorId);
-                }
-                return false;
-            }
-            if (cursor.isScanning() && !(rc.hasMore())) {
                 cursor.setFinished();
                 return false;
             }

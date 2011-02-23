@@ -1036,38 +1036,59 @@ public class PersistitStore implements AkServerConstants, Store {
         return rowDef;
     }
 
-    public RowCollector newRowCollector(final Session session,
-            ScanRowsRequest request) throws InvalidOperationException,
-            PersistitException {
-        NEW_COLLECTOR_TAP.in();
-
-        int rowDefId = request.getTableId();
-        RowData start = request.getStart();
-        RowData end = request.getEnd();
-        int indexId = request.getIndexId();
-        int scanFlags = request.getScanFlags();
-        byte[] columnBitMap = request.getColumnBitMap();
-        final RowDef rowDef = checkRequest(session, rowDefId, start, end,
-                indexId, scanFlags);
-        RowCollector rc = new PersistitStoreRowCollector(session, this,
-                scanFlags, start, end, columnBitMap, rowDef, indexId);
-        NEW_COLLECTOR_TAP.out();
-        return rc;
+    public RowCollector newRowCollector(Session session, ScanRowsRequest request)
+        throws InvalidOperationException, PersistitException
+    {
+        return newRowCollector(session,
+                               request.getTableId(),
+                               request.getIndexId(),
+                               request.getScanFlags(),
+                               request.getStart(),
+                               request.getEnd(),
+                               request.getColumnBitMap(),
+                               true);
     }
 
     @Override
-    public RowCollector newRowCollector(final Session session,
-            final int rowDefId, int indexId, final int scanFlags,
-            RowData start, RowData end, byte[] columnBitMap)
-            throws InvalidOperationException, PersistitException {
+    public RowCollector newRowCollector(Session session,
+                                        int rowDefId,
+                                        int indexId,
+                                        int scanFlags,
+                                        RowData start,
+                                        RowData end,
+                                        byte[] columnBitMap)
+            throws InvalidOperationException, PersistitException
+    {
+        return newRowCollector(session, rowDefId, indexId, scanFlags, start, end, columnBitMap, true);
+    }
 
+    @Override
+    public RowCollector newRowCollector(Session session,
+                                        int rowDefId,
+                                        int indexId,
+                                        int scanFlags,
+                                        RowData start,
+                                        RowData end,
+                                        byte[] columnBitMap,
+                                        boolean messageOutput)
+            throws InvalidOperationException, PersistitException
+    {
         NEW_COLLECTOR_TAP.in();
-        final RowDef rowDef = checkRequest(session, rowDefId, start, end,
-                indexId, scanFlags);
-
-        final RowCollector rc = new PersistitStoreRowCollector(session, this,
-                scanFlags, start, end, columnBitMap, rowDef, indexId);
-
+        RowDef rowDef = checkRequest(session,
+                                     rowDefId,
+                                     start,
+                                     end,
+                                     indexId,
+                                     scanFlags);
+        RowCollector rc = new PersistitStoreRowCollector(session,
+                                                         this,
+                                                         scanFlags,
+                                                         start,
+                                                         end,
+                                                         columnBitMap,
+                                                         rowDef,
+                                                         indexId,
+                                                         messageOutput);
         NEW_COLLECTOR_TAP.out();
         return rc;
     }

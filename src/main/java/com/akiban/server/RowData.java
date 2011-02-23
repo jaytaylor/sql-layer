@@ -99,6 +99,14 @@ public class RowData {
     private int rowStart;
     private int rowEnd;
 
+    // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
+    // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
+    // etc. The essential information is captured by differsFromPredecessorAtKeySegment, which identifies the
+    // hkey segment number at which this RowData's hkey differed from that of the previous RowData.
+    // This field is declared transient to indicate that this value is not copied into a message carrying a
+    // RowData.
+    private transient int differsFromPredecessorAtKeySegment;
+
     public RowData() {
 
     }
@@ -340,6 +348,16 @@ public class RowData {
         rowEnd = offset;
     }
 
+    public RowData copy()
+    {
+        byte[] copyBytes = new byte[rowEnd - rowStart];
+        System.arraycopy(bytes, rowStart, copyBytes, 0, rowEnd - rowStart);
+        RowData copy = new RowData(copyBytes);
+        copy.prepareRow(0);
+        copy.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
+        return copy;
+    }
+
     public void createRow(final RowDef rowDef, final Object[] values) {
         final int fieldCount = rowDef.getFieldCount();
         if (values.length > rowDef.getFieldCount()) {
@@ -537,5 +555,15 @@ public class RowData {
     {
         // Not implemented yet
         throw new UnsupportedOperationException();
+    }
+
+    public int differsFromPredecessorAtKeySegment()
+    {
+        return differsFromPredecessorAtKeySegment;
+    }
+
+    public void differsFromPredecessorAtKeySegment(int differsFromPredecessorAtKeySegment)
+    {
+        this.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
     }
 }

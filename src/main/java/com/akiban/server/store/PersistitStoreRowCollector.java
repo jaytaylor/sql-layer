@@ -116,6 +116,8 @@ public class PersistitStoreRowCollector implements RowCollector {
 
     private int repeatedRows;
 
+    private RowTransport transport;
+
     /**
      * Structure that maps the index key field depth to a RowData's field index.
      * Used to supporting covering index.
@@ -145,9 +147,30 @@ public class PersistitStoreRowCollector implements RowCollector {
         }
     }
 
-    PersistitStoreRowCollector(final Session session, PersistitStore store, final int scanFlags,
-            final RowData start, final RowData end, final byte[] columnBitMap,
-            RowDef rowDef, final int indexId) throws PersistitException {
+    PersistitStoreRowCollector(Session session,
+                               PersistitStore store,
+                               int scanFlags,
+                               RowData start,
+                               RowData end,
+                               byte[] columnBitMap,
+                               RowDef rowDef,
+                               int indexId)
+        throws PersistitException
+    {
+        this(session, store, scanFlags, start, end, columnBitMap, rowDef, indexId, true);
+    }
+
+    PersistitStoreRowCollector(Session session,
+                               PersistitStore store,
+                               int scanFlags,
+                               RowData start,
+                               RowData end,
+                               byte[] columnBitMap,
+                               RowDef rowDef,
+                               int indexId,
+                               boolean messageOutput)
+        throws PersistitException
+    {
         this.id = counter.incrementAndGet();
         this.store = store;
         this.session = session;
@@ -213,6 +236,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                     : (isRightInclusive() && !isPrefixMode() ? Key.LTEQ
                             : Key.LT);
         }
+        this.transport = messageOutput ? new MessageRowTransport() : new RowDataRowTransport();
 
         if (LOG.isTraceEnabled()) {
             LOG.trace("Starting Scan on rowDef=" + rowDef.toString()
@@ -488,6 +512,19 @@ public class PersistitStoreRowCollector implements RowCollector {
     }
 
     /**
+     * Selects and returns the next row in tree-traversal. As a side-effect, this method
+     * affects the value of <tt>more</tt> to indicate whether there are
+     * additional rows in the tree; {@link #hasMore()} returns this value.
+     * Returns null if there are no more rows.
+     */
+    @Override
+    public RowData collectNextRow() throws Exception
+    {
+        sendNextRowToTransport();
+        return more ? ((RowDataRowTransport) transport).rowData() : null;
+    }
+
+    /**
      * Selects the next row in tree-traversal order and puts it into the payload
      * ByteBuffer if there is room. Returns <tt>true</tt> if and only if a row
      * was added to the payload ByteBuffer. As a side-effect, this method
@@ -498,16 +535,21 @@ public class PersistitStoreRowCollector implements RowCollector {
      * fit in payload.
      */
     @Override
-    public boolean collectNextRow(ByteBuffer payload) throws Exception {
+    public boolean collectNextRow(ByteBuffer payload) throws Exception
+    {
+        ((MessageRowTransport) transport).payload(payload);
         int available = payload.limit() - payload.position();
         if (available < 4) {
             throw new IllegalStateException(
-                    "Payload byte buffer must have at least 4 "
-                            + "available bytes: " + available);
+                String.format("Payload byte buffer must have at least 4 available bytes: %s", available));
         }
+        return sendNextRowToTransport();
+    }
+
+    private boolean sendNextRowToTransport() throws Exception
+    {
         if (!more) {
-            deliveredBytes += payload.position();
-            deliveredBuffers++;
+            transport.noMoreRows();
             return false;
         }
 
@@ -528,9 +570,7 @@ public class PersistitStoreRowCollector implements RowCollector {
             //
             if (morePending()) {
 
-                if (deliverRow(pendingRowData[pendingFromLevel],
-                               payload,
-                               pendingFromLevel + 1 == pendingRowData.length)) {
+                if (transport.deliverRow()) {
                     pendingFromLevel++;
                     if (isSingleRowMode() && pendingFromLevel == pendingToLevel) {
                         more = false;
@@ -647,6 +687,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                     if (level < pendingFromLevel) {
                         pendingFromLevel = level;
                     }
+                    hKey.copyTo(lastKey);
                     pendingToLevel = level + 1;
                 } else {
                     // Current row's type is one of the projectedRowDefs.
@@ -677,6 +718,8 @@ public class PersistitStoreRowCollector implements RowCollector {
             LOG.debug("Preparing row at " + exchange);
         }
         store.expandRowData(exchange, pendingRowData[level]);
+        int differsAtKeySegment = exchange.getKey().firstUniqueSegmentDepth(lastKey);
+        pendingRowData[level].differsFromPredecessorAtKeySegment(differsAtKeySegment);
     }
 
     void prepareCoveredRow(final Exchange exchange, final int rowDefId,
@@ -692,7 +735,7 @@ public class PersistitStoreRowCollector implements RowCollector {
         rowData.createRow(rowDef, values);
     }
 
-    boolean deliverRow(RowData rowData, ByteBuffer payload, boolean isLeaf) throws IOException
+    private boolean deliverRow(RowData rowData, ByteBuffer payload, boolean isLeaf) throws IOException
     {
         if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
             int position = payload.position();
@@ -806,5 +849,80 @@ public class PersistitStoreRowCollector implements RowCollector {
     // Used by indexer
     KeyFilter getHFilter() {
         return hFilter;
+    }
+
+    private interface RowTransport
+    {
+        boolean deliverRow();
+        void noMoreRows();
+    }
+
+    private class MessageRowTransport implements RowTransport
+    {
+        @Override
+        public boolean deliverRow()
+        {
+            RowData rowData = pendingRowData[pendingFromLevel];
+            boolean isLeaf = pendingFromLevel + 1 == pendingRowData.length;
+            if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
+                int position = payload.position();
+                payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+                almostDeliveredRows++;
+                if (isLeaf) {
+                    payload.mark();
+                    deliveredRows = almostDeliveredRows;
+                }
+                if (store.isVerbose() && LOG.isDebugEnabled()) {
+                    LOG.info("Select row: "
+                            + rowData.toString(store.getRowDefCache()) + " len="
+                            + rowData.getRowSize() + " position=" + position);
+                }
+                return true;
+            } else {
+                // ScanRowsMoreRequest: deliver a full hierarchy.
+                repeatedRows += pendingFromLevel - (almostDeliveredRows - deliveredRows);
+                pendingFromLevel = 0;
+                // Trim off any non-leaf rows at end of buffer
+                payload.reset();
+                almostDeliveredRows = deliveredRows;
+                return false;
+            }
+        }
+
+        @Override
+        public void noMoreRows()
+        {
+            deliveredBytes += payload.position();
+            deliveredBuffers++;
+        }
+
+        void payload(ByteBuffer payload)
+        {
+            this.payload = payload;
+        }
+
+        private ByteBuffer payload;
+    }
+
+    private class RowDataRowTransport implements RowTransport
+    {
+        @Override
+        public boolean deliverRow()
+        {
+            rowData = pendingRowData[pendingFromLevel].copy();
+            return true;
+        }
+
+        @Override
+        public void noMoreRows()
+        {
+        }
+
+        RowData rowData()
+        {
+            return rowData;
+        }
+
+        private RowData rowData;
     }
 }
