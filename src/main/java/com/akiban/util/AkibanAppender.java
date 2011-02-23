@@ -15,13 +15,19 @@
 
 package com.akiban.util;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 
 public abstract class AkibanAppender {
     public abstract void append(Object o);
     public abstract void append(char c);
     public abstract void append(String s);
     public abstract Appendable getAppendable();
+    public void appendBytes(byte[] bytes, int offset, int length, Charset charset) {
+        append(new String(bytes, offset, length, charset));
+    }
 
     public static AkibanAppender of(StringBuilder stringBuilder) {
         return new AkibanAppenderSB(stringBuilder);
@@ -29,6 +35,10 @@ public abstract class AkibanAppender {
 
     public static AkibanAppender of(PrintWriter printWriter) {
         return new AkibanAppenderPW(printWriter);
+    }
+
+    public static AkibanAppender of(OutputStream outputStream, PrintWriter printWriter) {
+        return new AkibanAppenderOS(outputStream, printWriter);
     }
 
     private static class AkibanAppenderPW extends AkibanAppender
@@ -57,6 +67,31 @@ public abstract class AkibanAppender {
         @Override
         public Appendable getAppendable() {
             return pr;
+        }
+    }
+
+    private static class AkibanAppenderOS extends AkibanAppenderPW {
+        private final static Charset USASCII = Charset.forName("US-ASCII");
+
+        private final OutputStream os;
+
+        private AkibanAppenderOS(OutputStream os, PrintWriter printWriter) {
+            super(printWriter);
+            this.os = os;
+        }
+
+        @Override
+        public void appendBytes(byte[] bytes, int offset, int length, Charset charset) {
+            if(USASCII.equals(charset)) {
+                try {
+                    os.write(bytes, offset, length);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            else {
+                super.appendBytes(bytes, offset, length, charset);
+            }
         }
     }
 

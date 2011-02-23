@@ -16,6 +16,7 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
@@ -52,7 +53,15 @@ public class StringEncoder extends EncodingBase<String> {
     public void toString(FieldDef fieldDef, RowData rowData,
                          AkibanAppender sb, final Quote quote) {
         try {
-            quote.append(sb, toObject(fieldDef, rowData));
+            if (Quote.JSON_QUOTE.equals(quote)) {
+                sb.append('"');
+                final long location = getLocation(fieldDef, rowData);
+                rowData.appendStringValue((int) location, (int) (location >>> 32), fieldDef, sb);
+                sb.append('"');
+            }
+            else {
+                quote.append(sb, toObject(fieldDef, rowData));
+            }
         } catch (EncodingException e) {
             sb.append("null");
         }
