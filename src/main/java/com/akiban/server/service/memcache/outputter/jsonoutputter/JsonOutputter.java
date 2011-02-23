@@ -13,10 +13,9 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.memcache.outputter;
+package com.akiban.server.service.memcache.outputter.jsonoutputter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -44,7 +43,7 @@ public final class JsonOutputter implements HapiOutputter
     }
 
     private static final JsonOutputter INSTANCE = new JsonOutputter();
-    private final static int QUERY_ROOT_PARENT = -1;
+    final static int ROOT_PARENT = -1;
 
     private static class Request
     {
@@ -53,8 +52,9 @@ public final class JsonOutputter implements HapiOutputter
         {
             this.request = request;
             this.ais = request.akibanInformationSchema();
-            computeExpectedChildren(request);
-            this.input = rows.iterator();
+            queryRoot = queryRoot(request);
+            genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
+            this.input = new UnOrphaningIterator<RowData>(rows.iterator(), genealogist);
             this.output = new PrintWriter(outputStream);
             this.appender = AkibanAppender.of(this.output);
         }
@@ -63,10 +63,29 @@ public final class JsonOutputter implements HapiOutputter
         {
             advanceInput();
             output.write('{');
-            UserTable queryRoot = queryRoot(request);
-            generateChildOutput(queryRoot.getDepth(), QUERY_ROOT_PARENT, true);
+            int queryRootParentId =
+                queryRoot.getParentJoin() == null ? ROOT_PARENT : queryRoot.getParentJoin().getParent().getTableId();
+            generateChildOutput(queryRoot.getDepth(), queryRootParentId, true);
             output.write('}');
             output.flush();
+        }
+
+        private UserTable queryRoot(HapiProcessedGetRequest request)
+        {
+            return ais.getUserTable(request.getSchema(), request.getTable());
+        }
+
+        private Set<UserTable> projectedTables(HapiProcessedGetRequest request)
+        {
+            Set<UserTable> projectedTables = new HashSet<UserTable>();
+            String schemaName = request.getSchema();
+            // Find the tables of interest
+            for (String tableName : request.getProjectedTables()) {
+                UserTable table = ais.getUserTable(schemaName, tableName);
+                assert table != null : String.format("%s.%s", schemaName, tableName);
+                projectedTables.add(table);
+            }
+            return projectedTables;
         }
 
         private void generateChildOutput(int depth, int parentTableId, boolean firstSibling) throws IOException
@@ -75,27 +94,27 @@ public final class JsonOutputter implements HapiOutputter
             // are consecutive, and are handled by generateTableOutput. The missingChildren set tracks
             // observed types. Anything left at the end is a child of type parentTableId that had no rows
             // in the query result. These have to be rendered according to the spec.
-            Set<Integer> missingChildren = new HashSet<Integer>(expectedChildren.get(parentTableId));
-            int previousTableId = -1;
+            Set<Integer> missingChildren = new HashSet<Integer>(genealogist.expectedChildren(parentTableId));
+            int previousRowTableId = -1;
             while (row != null && rowDepth == depth) {
                 if (firstSibling) {
                     firstSibling = false;
                 } else {
                     output.write(',');
                 }
-                Integer tableId = rowTable.getTableId();
-                assert tableId != previousTableId : rowTable;
-                missingChildren.remove(tableId);
+                Integer rowTableId = rowTable.getTableId();
+                assert rowTableId != previousRowTableId : rowTable;
+                missingChildren.remove(rowTableId);
                 output.write("\"@");
                 output.write(rowTable.getName().getTableName());
                 output.write("\":[");
                 generateTableOutput(rowTable);
                 output.write(']');
-                previousTableId = tableId;
+                previousRowTableId = rowTableId;
             }
             assert rowDepth < depth : rowTable;
-            // For each missing child: Generate output similar to above, except that there were no rows.
-            // So we'll see output of this form: "@foo":[]
+            // For each missing child: Generate output similar to above. But there were no rows,
+            // so we'll see output of this form: "@foo":[]
             for (Integer tableId : missingChildren) {
                 if (firstSibling) {
                     firstSibling = false;
@@ -108,10 +127,11 @@ public final class JsonOutputter implements HapiOutputter
                 output.write("\":[]");
             }
         }
-
+        
         private void generateTableOutput(UserTable table) throws IOException
         {
             // Generate output for consecutive rows of the same table
+            int tableDepth = table.getDepth();
             boolean firstSibling = true;
             while (row != null && rowTable == table) {
                 if (firstSibling) {
@@ -121,19 +141,19 @@ public final class JsonOutputter implements HapiOutputter
                 }
                 // Generate output for row
                 output.write('{');
-                int tableId = rowTable.getTableId();
+                int rowTableId = rowTable.getTableId(); // Save this before going to the next row
                 row.toJSONString((RowDef) rowTable.rowDef(), appender);
                 advanceInput();
-                // Go to the next row. generateChildOutput then takes care of the children, including children present
-                // in the schema but not present in the data. If the next row is not actually a child, then
-                // generateChildOutput is still necessary to handle the missing children.
-                Integer tableDepth = table.getDepth();
-                assert rowDepth <= tableDepth + 1;
-                generateChildOutput(tableDepth + 1, tableId, false);
+                // We're now at a new row. If the new row is a child of the previous one, then                                           RDG
+                // generateChildOutput then takes care of the children, (including children present
+                // in the schema but not present in the data). If the next row is not a child of the previous
+                // row, then generateChildOutput is still necessary to handle the missing children.
+                assert rowDepth <= tableDepth + 1 : row;
+                generateChildOutput(tableDepth + 1, rowTableId, false);
                 output.write('}');
             }
         }
-
+        
         private void advanceInput()
         {
             if (input.hasNext()) {
@@ -147,52 +167,10 @@ public final class JsonOutputter implements HapiOutputter
             }
         }
 
-        private UserTable queryRoot(HapiProcessedGetRequest request)
-        {
-            return ais.getUserTable(request.getSchema(), request.getTable());
-        }
-
-        private void computeExpectedChildren(HapiProcessedGetRequest request)
-        {
-            expectedChildren = new HashMap<Integer, Set<Integer>>();
-            // Find the tables of interest
-            List<UserTable> tables = new ArrayList<UserTable>();
-            String schemaName = request.getSchema();
-            for (String tableName : request.getProjectedTables()) {
-                UserTable table = ais.getUserTable(schemaName, tableName);
-                assert table != null : String.format("%s.%s", schemaName, tableName);
-                tables.add(table);
-            }
-            // Sort by depth so that expectedChildren can be computed in one pass
-            Collections.sort(tables,
-                             new Comparator<UserTable>()
-                             {
-                                 @Override
-                                 public int compare(UserTable x, UserTable y)
-                                 {
-                                     return x.getDepth() - y.getDepth();
-                                 }
-                             });
-            // For each table in tables, add table to expectedChildren of parent.
-            for (UserTable table : tables) {
-                Set<Integer> replaced = expectedChildren.put(table.getTableId(), new HashSet<Integer>());
-                assert replaced == null : table;
-                Join parentJoin = table.getParentJoin();
-                if (parentJoin != null) {
-                    UserTable parent = parentJoin.getParent();
-                    Set<Integer> expectedChildrenOfParent = expectedChildren.get(parent.getTableId());
-                    if (expectedChildrenOfParent != null) {
-                        expectedChildrenOfParent.add(table.getTableId());
-                    }
-                }
-            }
-            // Set expected children of the entire query. Because of sorting, query root is at position 0.
-            expectedChildren.put(QUERY_ROOT_PARENT, new HashSet<Integer>(Arrays.asList(tables.get(0).getTableId())));
-        }
-
         private HapiProcessedGetRequest request;
         private AkibanInformationSchema ais;
-        private Map<Integer, Set<Integer>> expectedChildren;
+        private UserTable queryRoot;
+        private RowDataGenealogist genealogist;
         private Iterator<RowData> input;
         private PrintWriter output;
         private AkibanAppender appender;

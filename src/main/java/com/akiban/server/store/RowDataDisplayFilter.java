@@ -72,15 +72,13 @@ class RowDataDisplayFilter implements DisplayFilter {
             if (!protectedTree) {
                 final Value value = exchange.getValue();
                 int rowDefId = AkServerUtil.getInt(value.getEncodedBytes(),
-                        RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
-                rowDefId = treeService.storeToAis(exchange.getVolume(),
-                        rowDefId);
-                final RowDef rowDef = persistitStore.getRowDefCache()
-                        .getRowDef(rowDefId);
+                                                   RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
+                rowDefId = treeService.storeToAis(exchange.getVolume(), rowDefId);
+                final RowDef rowDef = persistitStore.getRowDefCache().getRowDef(rowDefId);
                 final int size = value.getEncodedSize() + RowData.ENVELOPE_SIZE;
                 final byte[] bytes = new byte[size];
                 final RowData rowData = new RowData(bytes);
-                persistitStore.expandRowData(exchange, rowDef, rowData);
+                persistitStore.expandRowData(exchange, rowData);
                 return rowData.toString(rowDef);
             }
         } catch (Exception e) {
