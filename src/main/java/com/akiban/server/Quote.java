@@ -64,7 +64,7 @@ public enum Quote {
         int offset = byteBuffer.position();
         int length = byteBuffer.limit() - offset;
         
-        if ( (!appender.canAppendBytes()) || !(ASCII.equals(charset) || UTF8.equals(charset)))
+        if ( (!appender.canAppendBytes()) || !writeBytesCharset(charset))
         {
             String string = new String(bytes, offset, length, charset);
             doAppend(appender, string, quoteChar, escapeControlChars);
