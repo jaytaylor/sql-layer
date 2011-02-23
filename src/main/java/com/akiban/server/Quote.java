@@ -17,6 +17,7 @@ package com.akiban.server;
 
 import com.akiban.util.AkibanAppender;
 
+import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Formatter;
@@ -43,7 +44,14 @@ public enum Quote {
         doAppend(sb, s, quoteChar, escapeControlChars);
     }
 
-    public void append(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset) {
+    public void append(AkibanAppender appender, ByteBuffer byteBuffer, Charset charset) {
+        if (!byteBuffer.hasArray()) {
+            throw new IllegalArgumentException("ByteBuffer needs backing array");
+        }
+        byte[] bytes = byteBuffer.array();
+        int offset = byteBuffer.position();
+        int length = byteBuffer.limit() - offset;
+        
         if ( (!appender.canAppendBytes()) || !(ASCII.equals(charset) || UTF8.equals(charset)))
         {
             String string = new String(bytes, offset, length, charset);
