@@ -25,8 +25,13 @@ public abstract class AkibanAppender {
     public abstract void append(char c);
     public abstract void append(String s);
     public abstract Appendable getAppendable();
-    public void appendBytes(byte[] bytes, int offset, int length, Charset charset) {
-        append(new String(bytes, offset, length, charset));
+
+    public boolean canAppendBytes() {
+        return false;
+    }
+
+    public void appendBytes(byte[] bytes, int offset, int length) {
+        throw new UnsupportedOperationException();
     }
 
     public static AkibanAppender of(StringBuilder stringBuilder) {
@@ -71,8 +76,6 @@ public abstract class AkibanAppender {
     }
 
     private static class AkibanAppenderOS extends AkibanAppenderPW {
-        private final static Charset USASCII = Charset.forName("US-ASCII");
-
         private final OutputStream os;
 
         private AkibanAppenderOS(OutputStream os, PrintWriter printWriter) {
@@ -81,17 +84,17 @@ public abstract class AkibanAppender {
         }
 
         @Override
-        public void appendBytes(byte[] bytes, int offset, int length, Charset charset) {
-            if(USASCII.equals(charset)) {
-                try {
-                    os.write(bytes, offset, length);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+        public void appendBytes(byte[] bytes, int offset, int length) {
+            try {
+                os.write(bytes, offset, length);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            else {
-                super.appendBytes(bytes, offset, length, charset);
-            }
+        }
+
+        @Override
+        public boolean canAppendBytes() {
+            return true;
         }
     }
 
