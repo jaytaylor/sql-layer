@@ -41,16 +41,15 @@ public class BulkLoaderClient
 {
     public static void main(String[] args) 
     {
-	try {
+	    try {
 	        new BulkLoaderClient(args).run();
-	} catch (Exception e)
-	{
-		//die with non-zero return code
-		//java prog does not return correctly when main method throws
-		e.printStackTrace();
-		System.exit(1);
-		
-	}
+	    } catch (Exception e) {
+            //die with non-zero return code
+            //java prog does not return correctly when main method throws
+            e.printStackTrace();
+            System.exit(1);
+
+        }
     }
 
     private void run() throws Exception
@@ -130,8 +129,8 @@ public class BulkLoaderClient
         logger.info(String.format("Received response %s", response));
         if (response instanceof ErrorResponse) {
             ErrorResponse errorResponse = (ErrorResponse) response;
-            logger.info(errorResponse.message());
-            logger.info(errorResponse.remoteStack());
+            logger.error(errorResponse.message());
+            logger.error(errorResponse.remoteStack());
             throw new RuntimeException(errorResponse.message());
         } else {
             BulkLoadResponse bulkLoadResponse = (BulkLoadResponse) response;
