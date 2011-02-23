@@ -42,6 +42,7 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;
+import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.store.Store;
@@ -167,7 +168,7 @@ public class ApiTestBase {
         session = null;
     }
 
-    protected final HapiProcessor hapi(MemcacheService.WhichHapi whichHapi) {
+    protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
         memcache().setHapiProcessor(whichHapi);
         return hapi();
     }

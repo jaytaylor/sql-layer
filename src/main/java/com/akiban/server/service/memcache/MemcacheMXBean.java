@@ -22,9 +22,9 @@ public interface MemcacheMXBean {
     void setOutputFormat(MemcacheService.OutputFormat whichFormat);
     MemcacheService.OutputFormat[] getAvailableOutputFormats();
 
-    MemcacheService.WhichHapi getHapiProcessor();
-    void setHapiProcessor(MemcacheService.WhichHapi whichProcessor);
-    MemcacheService.WhichHapi[] getAvailableHapiProcessors();
+    HapiProcessorFactory getHapiProcessor();
+    void setHapiProcessor(HapiProcessorFactory whichProcessor);
+    HapiProcessorFactory[] getAvailableHapiProcessors();
 
     String chooseIndex(String request);
 }
