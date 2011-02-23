@@ -276,6 +276,39 @@ public final class CreateTableIT extends ApiTestBase {
         assertEquals(3, getUserTables().size());
     }
 
+    @Test
+    public void boolTypeAliases() throws InvalidOperationException {
+        createCheckColumnDrop("c1 bool", Types.TINYINT, null, null);
+        createCheckColumnDrop("c1 boolean", Types.TINYINT, null, null);
+    }
+
+    @Test
+    public void nationalCharTypeAliases() throws InvalidOperationException {
+        int tid = createCheckColumn("c1 nchar(2)", Types.CHAR, 2L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national char(5)", Types.CHAR, 5L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 nvarchar(32)", Types.VARCHAR, 32L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national varchar(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national char varying(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national character varying(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+    }
+
     
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {

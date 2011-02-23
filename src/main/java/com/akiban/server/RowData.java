@@ -352,13 +352,6 @@ public class RowData {
         rowEnd = offset;
     }
 
-    /**
-     * For debugging only, poke some Java values supplied in the values array
-     * into a RowData instance. The conversions are very approximate!
-     * 
-     * @param rowDef
-     * @param values
-     */
     public void createRow(final RowDef rowDef, final Object[] values) {
         final int fieldCount = rowDef.getFieldCount();
         if (values.length > rowDef.getFieldCount()) {

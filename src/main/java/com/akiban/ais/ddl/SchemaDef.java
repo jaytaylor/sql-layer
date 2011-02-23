@@ -527,6 +527,14 @@ public class SchemaDef {
             }
             param1 = null;
         }
+        else if(typeName.equals("NCHAR")) {
+            typeName = "CHAR";
+            currentColumn.charset = "utf8";
+        }
+        else if(typeName.equals("NVARCHAR")) {
+            typeName = "VARCHAR";
+            currentColumn.charset = "utf8";
+        }
         // SQL: FLOAT(P): 0<=P<=24 => FLOAT,  25<=P<=53 => DOUBLE
         else if(typeName.equals("FLOAT") && param1 != null && param2 == null) {
             if(Long.parseLong(param1) > 24L) {

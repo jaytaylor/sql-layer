@@ -220,11 +220,12 @@ public class UserTable extends Table
         }
     }
 
-    public Integer getDepth()
+    public synchronized Integer getDepth()
     {
-        return
-            getGroup() == null ? null :
-            getParentJoin() == null ? 0 : getParentJoin().getParent().getDepth() + 1;
+        if (depth == null && getGroup() != null) {
+            depth = getParentJoin() == null ? 0 : getParentJoin().getParent().getDepth() + 1;
+        }
+        return depth;
     }
 
     public Boolean isLookupTable()
@@ -403,4 +404,5 @@ public class UserTable extends Table
     private transient HKey hKey;
     private transient HKey branchHKey;
     private transient List<Column> allHKeyColumns;
+    private transient Integer depth = null;
 }
