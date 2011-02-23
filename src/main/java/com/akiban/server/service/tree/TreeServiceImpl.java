@@ -90,8 +90,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
 
     private int volumeOffsetCounter = 0;
 
-    private final Map<Volume, Integer> translationMap = new WeakHashMap<Volume, Integer>();
-
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
         public void flushAll() throws Exception {
@@ -362,29 +360,18 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
         return tableIdOffset(volume);
     }
 
-    private synchronized int tableIdOffset(final Volume volume) {
-        Integer offset = translationMap.get(volume);
-        if (offset == null) {
-            offset = Integer.valueOf(volumeOffsetCounter);
-            translationMap.put(volume, offset);
-            volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-        }
-        return offset.intValue();
+    private int tableIdOffset(final Volume volume) {
+        return ((Integer)volume.getAppCache()).intValue();
     }
 
-    public Volume mappedVolume(final String schemaName, final String treeName)
+    public synchronized Volume mappedVolume(final String schemaName, final String treeName)
             throws PersistitException {
         try {
             final String vstring = volumeForTree(schemaName, treeName);
             final Volume volume = getDb().loadVolume(vstring);
-            if (SCHEMA_TREE_NAME.equals(treeName)) {
-                tableIdOffset(volume);
-            } else {
-                final Volume schemaVolume = mappedVolume(schemaName, SCHEMA_TREE_NAME);
-                int schemaTableId = tableIdOffset(schemaVolume);
-                synchronized(this) {
-                    translationMap.put(volume, schemaTableId);
-                }
+            if (volume.getAppCache() == null) {
+                volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
+                volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
             }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
