@@ -385,12 +385,13 @@ public class AkServerUtil {
     public static String decodeMySQLString(byte[] bytes, final int offset,
             final int width, final FieldDef fieldDef) {
         ByteBuffer buff = byteBufferForMySQLString(bytes, offset, width, fieldDef);
-        return new String(buff.array(), buff.position(), buff.limit() - buff.position());
+        return buff == null ? null
+            // TODO - handle char set, e.g., utf8
+            : new String(buff.array(), buff.position(), buff.limit() - buff.position());
     }
 
     public static ByteBuffer byteBufferForMySQLString(byte[] bytes, final int offset,
                                            final int width, final FieldDef fieldDef) {
-        // TODO - this is a temporary hack to handle storage engine bug.
         if (width == 0) {
             return null;
         }
@@ -421,7 +422,6 @@ public class AkServerUtil {
                     "String is wider than available bytes: " + length);
         }
 
-        // TODO - handle char set, e.g., utf8
         return ByteBuffer.wrap(bytes, offset + prefixSize, width - prefixSize);
     }
 
