@@ -93,6 +93,7 @@ BOOLEAN = 'boolean';
 NATIONAL = 'national';
 NCHAR = 'nchar';
 NVARCHAR = 'nvarchar';
+PRECISION = 'precision';
 }
 
 @header {
@@ -301,7 +302,7 @@ numeric_data_type returns [String type]
 
 decimal_data_type returns [String type]
     : (DECIMAL | DEC | FIXED | NUMERIC) {$type = "DECIMAL";} 
-	| (DOUBLE | REAL) {$type = "DOUBLE";}   // Technically should depend on MySQL's REAL_AS_FLOAT
+	| (DOUBLE | DOUBLE PRECISION | REAL) {$type = "DOUBLE";}   // Technically should depend on MySQL's REAL_AS_FLOAT
 	| FLOAT {$type = "FLOAT";}
     ;
 
