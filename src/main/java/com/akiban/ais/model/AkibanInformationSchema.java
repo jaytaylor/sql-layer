@@ -139,7 +139,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     public boolean isTypeSupported(String typename)
     {
         final Type type = getType(typename);
-        return (type != null) && (Types.unsupportedTypes().contains(type) == false);
+        return (Types.unsupportedTypes().contains(type) == false);
     }
 
     public Map<String, Join> getJoins()

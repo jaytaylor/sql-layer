@@ -187,6 +187,7 @@ public class Types {
 
     private static Set<Type> setOfUnsupportedTypes() {
         Set<Type> unsupported = new HashSet<Type>();
+        unsupported.add(null);
         unsupported.add(BIT);
         unsupported.add(ENUM);
         unsupported.add(SET);
