@@ -70,10 +70,10 @@ public enum Quote {
             doAppend(appender, string, quoteChar, escapeControlChars);
             return;
         }
-        writeBytes(appender, bytes, offset, length, charset);
+        writeBytes(appender, bytes, offset, length, charset, this);
     }
 
-    static void writeBytes(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset)
+    static void writeBytes(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset, Quote quote)
     {
         if (! writeBytesCharset(charset) ) {
             throw new IllegalArgumentException(charset.name());

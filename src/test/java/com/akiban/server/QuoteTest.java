@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 import static org.junit.Assert.*;
@@ -61,50 +62,64 @@ public class QuoteTest {
     }
 
     @Test
-    public void writeBytesBasicASCII() {
-        doWriteBytesTest("very basic string", "US-ASCII");
+    public void writeBytesBasicASCII_NONE() {
+        doWriteBytesTest("very basic string", "US-ASCII", "very basic string", Quote.NONE);
     }
 
     @Test
-    public void writeBytesBasicUTF8() {
-        doWriteBytesTest("very basic string", "UTF-8");
+    public void writeBytesBasicUTF8_NONE() {
+        doWriteBytesTest("very basic string", "UTF-8", "very basic string", Quote.NONE);
+    }
+    @Test
+    public void writeBytesBasicUTF8_DOUBLE() {
+        doWriteBytesTest("very basic string", "UTF-8", "\"very basic string\"", Quote.DOUBLE_QUOTE);
     }
 
     @Test(expected=IllegalArgumentException.class)
-    public void writeBytesBasicBadEncoding() {
-        doWriteBytesTest("very basic string", "UTF-16");
+    public void writeBytesBasicBadEncoding() throws UnsupportedEncodingException {
+
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        PrintWriter pr = new PrintWriter(os);
+        AkibanAppender appender = AkibanAppender.of(os, pr);
+        byte[] bytes = "some string".getBytes("UTF-16");
+        Quote.writeBytes(appender, bytes, 0, bytes.length, Charset.forName("UTF-16"), Quote.NONE);
     }
 
     @Test
-    public void writeBytesWithSnowman() {
-        doWriteBytesTest("very wintery ☃ string", "UTF-8");
+    public void writeBytesWithSnowman_JSON() {
+        doWriteBytesTest("very wintery ☃ string", "UTF-8", "\"very wintery ☃ string\"", Quote.JSON_QUOTE);
+    }
+
+    @Test
+    public void writeBytesJSONControlChars() {
+        doWriteBytesTest("very newline \n string", "UTF-8", "\"very newline \\n string\"", Quote.JSON_QUOTE);
     }
 
     @Test
     public void snowmanWithPrepend() {
-        doWriteBytesTest("very wintery ☃ string", "UTF-8", 15, 0);
+        doWriteBytesTest("very wintery ☃ string", "UTF-8", 15, 0, "very wintery ☃ string", Quote.NONE);
     }
 
     @Test
     public void snowmanWithSuffix() {
-        doWriteBytesTest("very wintery ☃ string", "UTF-8", 0, 13);
+        doWriteBytesTest("very wintery ☃ string", "UTF-8", 0, 13, "very wintery ☃ string", Quote.NONE);
     }
 
     @Test
     public void snowmanWithBoth() {
-        doWriteBytesTest("very wintery ☃ string", "UTF-8", 15, 13);
+        doWriteBytesTest("very wintery ☃ string", "UTF-8", 15, 13, "very wintery ☃ string", Quote.NONE);
     }
 
-    public void doWriteBytesTest(String testString, String charsetName) {
-        doWriteBytesTest(testString, charsetName, 0, 0);
+    public void doWriteBytesTest(String testString, String charsetName, String expectedString, Quote quote) {
+        doWriteBytesTest(testString, charsetName, 0, 0, expectedString, quote);
     }
 
-    public void doWriteBytesTest(String testString, String charsetName, int preBytes, int postBytes) {
+    public void doWriteBytesTest(String testString, String charsetName, int preBytes, int postBytes,
+                                 String expectedString, Quote quote) {
         ArgumentValidation.isGTE("prependBytes", preBytes, 0);
 
         Charset charset = Charset.forName(charsetName);
         byte[] testBytes = testString.getBytes(charset);
-        byte[] expectedBytes = testBytes;
 
         if (postBytes > 0) {
             assertFalse("last byte was already 0!", testBytes[testBytes.length - 1] == 0);
@@ -121,16 +136,15 @@ public class QuoteTest {
             testBytes = tmp;
             assertEquals("first byte", 0, testBytes[0]);
         }
-        assertEquals("bytes length", expectedBytes.length, testBytes.length - preBytes - postBytes);
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PrintWriter pr = new PrintWriter(os);
         AkibanAppender appender = AkibanAppender.of(os, pr);
-        Quote.writeBytes(appender, testBytes, preBytes, expectedBytes.length, charset);
+        Quote.writeBytes(appender, testBytes, preBytes, testBytes.length - preBytes - postBytes, charset, quote);
         pr.flush();
 
         String actualString = new String(os.toByteArray(), charset);
-        assertEquals("written string", testString, actualString);
-        assertArrayEquals("written bytes", expectedBytes, os.toByteArray());
+        assertEquals("written string", expectedString, actualString);
+        assertArrayEquals("written bytes", expectedString.getBytes(charset), os.toByteArray());
     }
 }
