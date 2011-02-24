@@ -24,9 +24,9 @@ import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.HapiProcessorFactory;
-import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.SimpleHapiPredicate;
+import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -34,6 +34,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -66,28 +67,70 @@ public final class CachedProcessorIT extends ApiTestBase {
 
         @Override
         public String toString() {
-            return String.format("RowDataStruct(%s, %s)", rowData, Arrays.toString(backingBytes));
+            return String.format("RDS(%s 0x%x, 0x%x)", rowData, rowData.hashCode(), backingBytes.hashCode());
         }
     }
 
     private static class RowDataStructCollector implements HapiOutputter {
-        private final List<RowDataStruct> rowDataStructs = new ArrayList<RowDataStruct>();
+        private final List<List<RowDataStruct>> rowDataStructs = new ArrayList<List<RowDataStruct>>();
         @Override
         public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream)
                 throws IOException {
+            List<RowDataStruct> list = new ArrayList<RowDataStruct>();
             for (RowData row : rows) {
-                rowDataStructs.add(new RowDataStruct(row));
+                list.add(new RowDataStruct(row));
             }
+            rowDataStructs.add(list);
         }
 
-        public List<RowDataStruct> getRowDataStructs() {
+        public List<RowDataStruct> getRowDataStructs(int index) {
             assertFalse("structs are empty!", rowDataStructs.isEmpty());
-            return rowDataStructs;
+            return rowDataStructs.get(index);
+        }
+    }
+
+    private static class CountingCachedProcessor extends CachedProcessor {
+        private final AtomicInteger count = new AtomicInteger(0);
+
+        @Override
+        protected void requestWasProcessed() {
+            count.incrementAndGet();
+        }
+
+        public int getCount() {
+            return count.get();
         }
     }
 
     @Test
     public void sameRows() throws InvalidOperationException, HapiRequestException {
+        CountingCachedProcessor processor = new CountingCachedProcessor();
+        final RowDataStructCollector collector = new RowDataStructCollector();
+
+        processor.processRequest(session, request(), collector, null);
+        processor.processRequest(session, request(), collector, null);
+
+        assertEquals("rows scanned", 3, collector.getRowDataStructs(0).size());
+        assertEquals("row structs", collector.getRowDataStructs(0), collector.getRowDataStructs(1));
+        assertEquals("scanrows invocations", 1, processor.getCount());
+    }
+
+    @Test
+    public void differentRows() throws InvalidOperationException, HapiRequestException {
+        CountingCachedProcessor processor = new CountingCachedProcessor();
+        final RowDataStructCollector collector = new RowDataStructCollector();
+
+        processor.processRequest(session, request(), collector, null);
+        processor.processRequest(session, request("zebra"), collector, null);
+        processor.processRequest(session, request(), collector, null);
+
+        assertEquals("rows scanned", 3, collector.getRowDataStructs(0).size());
+        assertFalse("row structs were equal", collector.getRowDataStructs(0).equals(collector.getRowDataStructs(1)));
+        assertEquals("scanrows invocations", 3, processor.getCount());
+    }
+
+    @Before
+    public void setUp() throws InvalidOperationException {
         final int parent = createTable("testSchema", "parent",
                 "id int key");
         final int zebra = createTable("testSchema", "zebra",
@@ -100,19 +143,13 @@ public final class CachedProcessorIT extends ApiTestBase {
                 createNewRow(zebra, 2L, 1L),
                 createNewRow(parent, 2L)
         );
-
-        final RowDataStructCollector first = new RowDataStructCollector();
-        hapi(HapiProcessorFactory.CACHED).processRequest(session, request(), first, null);
-
-        final RowDataStructCollector second = new RowDataStructCollector();
-        hapi(HapiProcessorFactory.CACHED).processRequest(session, request(), second, null);
-
-        assertEquals("row structs", first.getRowDataStructs(), second.getRowDataStructs());
-        assertEquals("rows scanned", 3, first.getRowDataStructs().size());
     }
 
     private static HapiGetRequest request() throws HapiRequestException {
-        // new but equivalent request each time
+        return request("parent");
+    }
+
+    private static HapiGetRequest request(final String table) throws HapiRequestException {
         return new HapiGetRequest() {
             @Override
             public String getSchema() {
@@ -121,7 +158,7 @@ public final class CachedProcessorIT extends ApiTestBase {
 
             @Override
             public String getTable() {
-                return "parent";
+                return table;
             }
 
             @Override
@@ -134,6 +171,16 @@ public final class CachedProcessorIT extends ApiTestBase {
                 List<HapiPredicate> single = new ArrayList<HapiPredicate>();
                 single.add( new SimpleHapiPredicate(getUsingTable(), "id", HapiPredicate.Operator.EQ, "1"));
                 return single;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                return obj.getClass().equals(this.getClass()) && getTable().equals(((HapiGetRequest) obj).getTable());
+            }
+
+            @Override
+            public int hashCode() {
+                return getTable().hashCode();
             }
         };
     }

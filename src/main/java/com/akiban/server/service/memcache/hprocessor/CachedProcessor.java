@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class CachedProcessor implements HapiProcessor, JmxManageable {
+public class CachedProcessor implements HapiProcessor, JmxManageable {
     private final AtomicReference<HapiProcessorFactory> processorFactory;
 
     private final HapiCacheMXBean bean = new HapiCacheMXBean() {
@@ -86,6 +86,7 @@ public final class CachedProcessor implements HapiProcessor, JmxManageable {
                     lastDelegate = factory.getHapiProcessor();
                 }
                 lastDelegate.processRequest(session, request, replayOutputter, null);
+                requestWasProcessed();
                 lastRequest = request;
                 lastOutputter = replayOutputter;
 
@@ -99,6 +100,9 @@ public final class CachedProcessor implements HapiProcessor, JmxManageable {
         } catch (IOException e) {
             throw new HapiRequestException("While replaying output", e);
         }
+    }
+
+    protected void requestWasProcessed() {
     }
 
     @Override
