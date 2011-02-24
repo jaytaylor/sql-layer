@@ -49,7 +49,7 @@ public enum Quote {
     }
 
     public void append(AkibanAppender sb, String s) {
-        doAppend(sb, s, quoteChar, escapeControlChars);
+        doAppend(sb, s, quoteChar, escapeControlChars, true);
     }
 
     public void append(AkibanAppender appender, ByteBuffer byteBuffer, String charset) {
@@ -67,7 +67,7 @@ public enum Quote {
         if ( (!appender.canAppendBytes()) || !writeBytesCharset(charset))
         {
             String string = new String(bytes, offset, length, charset);
-            doAppend(appender, string, quoteChar, escapeControlChars);
+            doAppend(appender, string, quoteChar, escapeControlChars, true);
             return;
         }
         writeBytes(appender, bytes, offset, length, charset, this);
@@ -78,11 +78,17 @@ public enum Quote {
         if (! writeBytesCharset(charset) ) {
             throw new IllegalArgumentException(charset.name());
         }
-        int wrote = writeDirect(appender, bytes, offset, length, charset);
+        if (quote.quoteChar != null) {
+            appender.append(quote.quoteChar);
+        }
+        int wrote = writeDirect(appender, bytes, offset, length, charset, quote.escapeControlChars);
         assert !(wrote > length) : "wrote " + wrote + " of " + length;
         if (wrote < length) {
             String string = new String(bytes, offset + wrote, length - wrote, charset);
-            appender.append(string);
+            doAppend(appender, string, quote.quoteChar, quote.escapeControlChars, false);
+        }
+        if (quote.quoteChar != null) {
+            appender.append(quote.quoteChar);
         }
     }
 
@@ -103,9 +109,13 @@ public enum Quote {
         throw new IllegalArgumentException(charset == null ? "null" : charset.name());
     }
 
-    private static int writeDirect(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset) {
+    private static int writeDirect(AkibanAppender appender, byte[] bytes, int offset, int length, Charset charset,
+                                   boolean needsEscaping) {
         int pos = 0;
-        while ( (pos < length) && identityByte(bytes[offset+pos], charset)) {
+        while ( (pos < length)
+                && identityByte(bytes[offset+pos], charset)
+                && !(needsEscaping && needsEscaping((char)bytes[offset+pos]))
+        ) {
             ++pos;
         }
         if (pos > 0) {
@@ -114,8 +124,11 @@ public enum Quote {
         return pos;
     }
 
+    private static boolean needsEscaping(char ch) {
+        return Character.isISOControl(ch);
+    }
 
-    static void doAppend(AkibanAppender sb, String s, Character quote, boolean escapeControlChars) {
+    static void doAppend(AkibanAppender sb, String s, Character quote, boolean escapeControlChars, boolean bookends) {
         if (s == null) {
             sb.append(null);
             return;
@@ -129,10 +142,12 @@ public enum Quote {
             return;
         }
 
-        sb.append(quote);
+        if (bookends) {
+            sb.append(quote);
+        }
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
-            if (escapeControlChars && Character.isISOControl(ch)) {
+            if (escapeControlChars && needsEscaping(ch)) {
                 new Formatter(sb.getAppendable()).format("\\u%04x", (int)ch);
             }
             else {
@@ -142,6 +157,8 @@ public enum Quote {
                 sb.append(ch);
             }
         }
-        sb.append(quote);
+        if (bookends) {
+            sb.append(quote);
+        }
     }
 }
