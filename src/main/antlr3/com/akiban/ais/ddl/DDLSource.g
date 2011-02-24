@@ -93,6 +93,14 @@ BOOLEAN = 'boolean';
 NATIONAL = 'national';
 NCHAR = 'nchar';
 NVARCHAR = 'nvarchar';
+GEOMETRY = 'geometry';
+GEOMETRYCOLLECTION = 'geometrycollection';
+POINT = 'point';
+MULTIPOINT  = 'multipoint';
+LINESTRING = 'linestring';
+MULTILINESTRING = 'multilinestring';
+POLYGON = 'polygon';
+MULTIPOLYGON = 'multipolygon';
 PRECISION = 'precision';
 }
 
@@ -266,7 +274,7 @@ data_type_def returns [String type, String len1, String len2]
 	  (decimal_constraint {$len1 = $decimal_constraint.len1; $len2 = $decimal_constraint.len2;})? 
 	  (SIGNED | UNSIGNED {$type=$type + " UNSIGNED";})?
 	| enum_or_set_data_type {$type = $enum_or_set_data_type.type; $len1 = $enum_or_set_data_type.len1;}
-	| SERIAL {$type = "SERIAL";}
+	| spatial_data_type {$type = $spatial_data_type.type;}
 	;
 
 data_type returns [String type]
@@ -290,6 +298,7 @@ data_type returns [String type]
 	| BIT {$type = "BIT";}
 	| BINARY {$type = "BINARY";}
 	| VARBINARY {$type = "VARBINARY";}
+	| SERIAL {$type = "SERIAL";}
 	;
 	
 numeric_data_type returns [String type]
@@ -310,6 +319,17 @@ enum_or_set_data_type returns [String type, String len1]
     : ENUM {$type = "ENUM";} (eset_constraint {$len1 = Integer.toString($eset_constraint.count);})
     | SET {$type = "SET";} (eset_constraint {$len1 = Integer.toString($eset_constraint.count);})
     ;
+
+spatial_data_type returns [String type]
+	: GEOMETRY {$type = "GEOMETRY";}
+	| GEOMETRYCOLLECTION {$type = "GEOMETRYCOLLECTION";}
+	| POINT {$type = "POINT";}
+	| MULTIPOINT  {$type = "MULTIPOINT";}
+	| LINESTRING {$type = "LINESTRING";}
+	| MULTILINESTRING {$type = "MULTILINESTRING";}
+	| POLYGON {$type = "POLYGON";}
+	| MULTIPOLYGON {$type = "MULTIPOLYGON";}
+	;
 
 length_constraint returns [String len1]
 	: LEFT_PAREN NUMBER {$len1 = $NUMBER.text;} RIGHT_PAREN;
@@ -333,7 +353,9 @@ qname returns [String name]
 qname_from_unquoted_token  returns [String name]
 	: (ACTION | AUTO_INCREMENT | BIT | BOOL | BOOLEAN | BTREE | CHARSET | COMMENT | DATE | 
 	   DATETIME | ENGINE | ENUM | FIXED | HASH | KEY_BLOCK_SIZE | NATIONAL | NCHAR | NO | 
-	   NVARCHAR | PARSER SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR)
+	   NVARCHAR | PARSER SERIAL | SIGNED | TEMPORARY | TEXT | TIME | TIMESTAMP | VALUE | YEAR |
+	   GEOMETRY | GEOMETRYCOLLECTION | POINT | MULTIPOINT  | LINESTRING | MULTILINESTRING | 
+	   POLYGON | MULTIPOLYGON)
 	   {$name = tokenNames[input.LA(-1)];}
 	;
 

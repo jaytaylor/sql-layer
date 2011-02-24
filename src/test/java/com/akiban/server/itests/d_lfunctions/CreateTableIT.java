@@ -309,6 +309,18 @@ public final class CreateTableIT extends ApiTestBase {
         ddl().dropTable(session, tableName(tid));
     }
 
+    @Test
+    public void spatialDataTypes() throws InvalidOperationException {
+        createExpectException(UnsupportedDataTypeException.class, "test", "t1", "c1 geometry");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t2", "c1 geometrycollection");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t3", "c1 point");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t4", "c1 multipoint ");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t5", "c1 linestring");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t6", "c1 multilinestring");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t7", "c1 polygon");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t8", "c1 multipolygon");
+    }
+
     // DOUBLE PRECISION alias
     @Test
     public void bug724021() throws InvalidOperationException {
@@ -316,6 +328,7 @@ public final class CreateTableIT extends ApiTestBase {
         createCheckColumnDrop("c1 DOUBLE PRECISION(10,5)", Types.DOUBLE, 10L, 5L);
         createCheckColumnDrop("c1 DOUBLE PRECISION(1,0) NOT NULL", Types.DOUBLE, 1L, 0L);
     }
+
     
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {

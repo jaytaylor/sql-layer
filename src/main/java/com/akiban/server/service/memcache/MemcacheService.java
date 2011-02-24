@@ -17,9 +17,6 @@ package com.akiban.server.service.memcache;
 
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessor;
-import com.akiban.server.service.memcache.hprocessor.EmptyRows;
-import com.akiban.server.service.memcache.hprocessor.Fetchrows;
-import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.DummyOutputter;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.memcache.outputter.RawByteOutputter;
@@ -27,31 +24,8 @@ import com.akiban.server.service.memcache.outputter.RequestEchoOutputter;
 import com.akiban.server.service.memcache.outputter.RowDataStringOutputter;
 
 public interface MemcacheService extends HapiProcessor {
-    void setHapiProcessor(WhichHapi processor);
+    void setHapiProcessor(HapiProcessorFactory processor);
 
-    @SuppressWarnings("unused") // jmx
-    enum WhichHapi {
-        FETCHROWS(Fetchrows.instance()),
-        EMPTY(EmptyRows.instance()),
-        SCANROWS(null) {
-            @Override
-            public HapiProcessor getHapiProcessor() {
-                return Scanrows.instance();
-            }
-        }
-        ;
-
-        private final HapiProcessor processor;
-
-        WhichHapi(HapiProcessor processor) {
-            this.processor = processor;
-        }
-
-        public HapiProcessor getHapiProcessor() {
-            return processor;
-        }
-    }
-    
     @SuppressWarnings("unused") // jmx
     enum OutputFormat {
         JSON(JsonOutputter.instance()),

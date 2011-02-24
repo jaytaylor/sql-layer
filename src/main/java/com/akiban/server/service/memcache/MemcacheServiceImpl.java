@@ -92,14 +92,14 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             }
         }
 
-        WhichHapi defaultHapi;
+        HapiProcessorFactory defaultHapi;
         {
-            String defaultHapiName = config.getProperty("akserver.memcached.processor", WhichHapi.SCANROWS.name());
+            String defaultHapiName = config.getProperty("akserver.memcached.processor", HapiProcessorFactory.SCANROWS.name());
             try {
-                defaultHapi = WhichHapi.valueOf(defaultHapiName.toUpperCase());
+                defaultHapi = HapiProcessorFactory.valueOf(defaultHapiName.toUpperCase());
             } catch (IllegalArgumentException e) {
                 LOG.warn("Default memcache outputter not found, using JSON: " + defaultHapiName);
-                defaultHapi = WhichHapi.FETCHROWS;
+                defaultHapi = HapiProcessorFactory.FETCHROWS;
             }
         }
 
@@ -255,13 +255,13 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     }
 
     @Override
-    public void setHapiProcessor(WhichHapi processor) {
+    public void setHapiProcessor(HapiProcessorFactory processor) {
         manageBean.setHapiProcessor(processor);
     }
 
     private static class ManageBean implements MemcacheMXBean {
         private final AtomicReference<WhichStruct<OutputFormat>> outputAs;
-        private final AtomicReference<WhichStruct<WhichHapi>> processAs;
+        private final AtomicReference<WhichStruct<HapiProcessorFactory>> processAs;
 
         private static class WhichStruct<T> {
             final T whichItem;
@@ -273,8 +273,8 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             }
         }
 
-        ManageBean(WhichHapi whichHapi, OutputFormat outputFormat) {
-            processAs = new AtomicReference<WhichStruct<WhichHapi>>(null);
+        ManageBean(HapiProcessorFactory whichHapi, OutputFormat outputFormat) {
+            processAs = new AtomicReference<WhichStruct<HapiProcessorFactory>>(null);
             outputAs = new AtomicReference<WhichStruct<OutputFormat>>(null);
             setHapiProcessor(whichHapi);
             setOutputFormat(outputFormat);
@@ -311,13 +311,13 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
 
         @Override
-        public WhichHapi getHapiProcessor() {
+        public HapiProcessorFactory getHapiProcessor() {
             return processAs.get().whichItem;
         }
 
         @Override
-        public void setHapiProcessor(WhichHapi whichProcessor) {
-            WhichStruct<WhichHapi> old = processAs.get();
+        public void setHapiProcessor(HapiProcessorFactory whichProcessor) {
+            WhichStruct<HapiProcessorFactory> old = processAs.get();
             if (old != null && old.whichItem.equals(whichProcessor)) {
                 return;
             }
@@ -326,7 +326,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
                 JmxManageable asJmx = (JmxManageable)whichProcessor.getHapiProcessor();
                 objectName = ServiceManagerImpl.get().getJmxRegistryService().register(asJmx);
             }
-            WhichStruct<WhichHapi> newStruct = new WhichStruct<WhichHapi>(whichProcessor, objectName);
+            WhichStruct<HapiProcessorFactory> newStruct = new WhichStruct<HapiProcessorFactory>(whichProcessor, objectName);
 
             old = processAs.getAndSet(newStruct);
 
@@ -336,8 +336,8 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
 
         @Override
-        public WhichHapi[] getAvailableHapiProcessors() {
-            return WhichHapi.values();
+        public HapiProcessorFactory[] getAvailableHapiProcessors() {
+            return HapiProcessorFactory.values();
         }
 
         @Override

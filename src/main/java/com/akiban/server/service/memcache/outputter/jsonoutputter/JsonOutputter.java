@@ -56,7 +56,7 @@ public final class JsonOutputter implements HapiOutputter
             genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
             this.input = new UnOrphaningIterator<RowData>(rows.iterator(), genealogist);
             this.output = new PrintWriter(outputStream);
-            this.appender = AkibanAppender.of(this.output);
+            this.appender = AkibanAppender.of(outputStream, this.output);
         }
 
         public void run() throws IOException
