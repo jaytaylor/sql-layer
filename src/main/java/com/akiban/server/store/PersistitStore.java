@@ -1251,6 +1251,16 @@ public class PersistitStore implements AkServerConstants, Store {
     }
 
     // ---------------------------------
+    boolean hasNullIndexSegments(final RowData rowData, final IndexDef indexDef) {
+        assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
+        for(int i : indexDef.getFields()) {
+            if(rowData.isNull(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void insertIntoIndex(final Session session, final IndexDef indexDef,
             final RowData rowData, final Key hkey, final boolean deferIndexes)
             throws InvalidOperationException, PersistitException {
@@ -1259,7 +1269,7 @@ public class PersistitStore implements AkServerConstants, Store {
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
         final Key key = iEx.getKey();
 
-        if (indexDef.isUnique()) {
+        if (indexDef.isUnique() && !hasNullIndexSegments(rowData, indexDef)) {
             KeyState ks = new KeyState(key);
             key.setDepth(indexDef.getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
