@@ -144,7 +144,7 @@ public final class JsonOutputter implements HapiOutputter
                 int rowTableId = rowTable.getTableId(); // Save this before going to the next row
                 row.toJSONString((RowDef) rowTable.rowDef(), appender);
                 advanceInput();
-                // We're now at a new row. If the new row is a child of the previous one, then                                           RDG
+                // We're now at a new row. If the new row is a child of the previous one, then
                 // generateChildOutput then takes care of the children, (including children present
                 // in the schema but not present in the data). If the next row is not a child of the previous
                 // row, then generateChildOutput is still necessary to handle the missing children.
