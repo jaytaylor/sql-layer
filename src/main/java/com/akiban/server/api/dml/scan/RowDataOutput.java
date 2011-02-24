@@ -25,17 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RowDataOutput implements LegacyRowOutput {
-    private final ByteBuffer buffer;
     private final List<RowData> rowDatas = new ArrayList<RowData>();
-    private int start;
-
-    public RowDataOutput(ByteBuffer buffer) {
-        if(!buffer.hasArray()) {
-            throw new IllegalArgumentException("buffer doesn't have array");
-        }
-        this.buffer = buffer;
-        start = buffer.position();
-    }
 
     public List<RowData> getRowDatas() {
         return rowDatas;
@@ -43,19 +33,18 @@ public class RowDataOutput implements LegacyRowOutput {
 
     @Override
     public ByteBuffer getOutputBuffer() throws RowOutputException {
-        return buffer;
+        return null;
     }
 
     @Override
     public void wroteRow() throws RowOutputException {
-        RowData rowData = new RowData(
-                buffer.array(),
-                start,
-                buffer.position() - start
-        );
-        rowData.prepareRow(start);
+        throw new UnsupportedOperationException("Shouldn't be calling wroteRow for output to an HAPI request");
+    }
+
+    @Override
+    public void addRow(RowData rowData)
+    {
         rowDatas.add(rowData);
-        start = buffer.position();
     }
 
     @Override
@@ -75,10 +64,11 @@ public class RowDataOutput implements LegacyRowOutput {
      * @throws InvalidOperationException if thrown at any point during the scan
      * @throws BufferFullException if the given buffer isn't big enough for the required data
      */
-    public static List<RowData> scanFull(Session session, DMLFunctions dml, ByteBuffer buffer, ScanRequest request)
+    public static List<RowData> scanFull(Session session, DMLFunctions dml, ScanRequest request)
             throws InvalidOperationException, BufferFullException
     {
-        final RowDataOutput output = new RowDataOutput(buffer);
+        final RowDataOutput output = new RowDataOutput();
+        request.setOutputToMessage(false);
         CursorId scanCursor = dml.openCursor(session, request);
         try {
             while(dml.scanSome(session, scanCursor, output, -1))

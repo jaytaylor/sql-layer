@@ -21,6 +21,7 @@ import com.akiban.server.api.dml.TableDefinitionMismatchException;
 public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
     private final int indexId;
     private final int scanFlags;
+    private boolean outputToMessage = true;
 
     @Override
     public int getIndexId() {
@@ -30,6 +31,18 @@ public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
     @Override
     public int getScanFlags() {
         return scanFlags;
+    }
+
+    @Override
+    public boolean getOutputToMessage()
+    {
+        return outputToMessage;
+    }
+
+    @Override
+    public void setOutputToMessage(boolean outputToMessage)
+    {
+        this.outputToMessage = outputToMessage;
     }
 
     public LegacyScanRequest(int tableId, RowData start, RowData end, byte[] columnBitMap, int indexId, int scanFlags)

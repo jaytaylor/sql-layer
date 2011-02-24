@@ -265,7 +265,7 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             List<RowData> rows = null;
             while(rows == null) {
                 try {
-                    rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
+                    rows = RowDataOutput.scanFull(session, dmlFunctions, scanRequest);
                 } catch (BufferFullException e) {
                     increaseBuffer(session);
                 }
@@ -319,20 +319,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         }
 
         return false;
-    }
-
-    private ByteBuffer getBuffer(Session session) {
-        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
-        if (buffer == null) {
-            LOG.debug("allocating new buffer");
-            buffer = ByteBuffer.allocate(bufferSize.get());
-            session.put(MODULE, SESSION_BUFFER, buffer);
-        }
-        else {
-            buffer.clear();
-        }
-        buffer.mark();
-        return buffer;
     }
 
     private void increaseBuffer(Session session) {

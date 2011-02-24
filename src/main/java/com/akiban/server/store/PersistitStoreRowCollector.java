@@ -520,8 +520,10 @@ public class PersistitStoreRowCollector implements RowCollector {
     @Override
     public RowData collectNextRow() throws Exception
     {
+        RowDataRowTransport rowDataRowTransport = (RowDataRowTransport) transport;
+        rowDataRowTransport.clear();
         sendNextRowToTransport();
-        return more ? ((RowDataRowTransport) transport).rowData() : null;
+        return rowDataRowTransport.rowData();
     }
 
     /**
@@ -921,6 +923,11 @@ public class PersistitStoreRowCollector implements RowCollector {
         RowData rowData()
         {
             return rowData;
+        }
+
+        void clear()
+        {
+            rowData = null;
         }
 
         private RowData rowData;

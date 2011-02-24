@@ -233,9 +233,9 @@ public class ApiTestBase {
         return new RuntimeException("unexpected exception", cause);
     }
 
-    protected final List<RowData> scanFull(ByteBuffer buffer, ScanRequest request) {
+    protected final List<RowData> scanFull(ScanRequest request) {
         try {
-            return RowDataOutput.scanFull(session, dml(), buffer, request);
+            return RowDataOutput.scanFull(session, dml(), request);
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         } catch (BufferFullException e) {

@@ -159,6 +159,12 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         }
 
         @Override
+        public void addRow(RowData rowData)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public int getRowsCount() {
             return buffer.getInt(0);
         }

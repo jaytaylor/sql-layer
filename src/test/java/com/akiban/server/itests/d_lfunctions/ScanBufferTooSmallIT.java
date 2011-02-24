@@ -70,9 +70,7 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
     public void viaScanFull() throws InvalidOperationException, BufferFullException {
         int coiId = ddl().getAIS(session).getTable("ts", "c").getGroup().getGroupTable().getTableId();
         ScanRequest request = new ScanAllRequest(coiId, new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, 5, 6)));
-        ByteBuffer buffer = ByteBuffer.allocate(10);
-        buffer.mark();
-        RowDataOutput.scanFull(session, dml(), buffer, request);
+        RowDataOutput.scanFull(session, dml(), request);
     }
 
     @Test(timeout=5000)

@@ -21,6 +21,7 @@ import java.util.Set;
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {
     private final int indexId;
     private final int scanFlags;
+    private boolean outputToMessage = true;
     
     public ScanAllRequest(int tableId, Set<Integer> columnIds) {
         this(tableId, columnIds, 0, null);
@@ -41,5 +42,17 @@ public class ScanAllRequest extends ScanAllRange implements ScanRequest {
     @Override
     public int getScanFlags() {
         return scanFlags;
+    }
+
+    @Override
+    public boolean getOutputToMessage()
+    {
+        return outputToMessage;
+    }
+
+    @Override
+    public void setOutputToMessage(boolean outputToMessage)
+    {
+        this.outputToMessage = outputToMessage;
     }
 }
