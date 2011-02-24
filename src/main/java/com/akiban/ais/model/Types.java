@@ -18,8 +18,10 @@ package com.akiban.ais.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Definitive declaration of supported data types. The fields in each Type
@@ -118,10 +120,19 @@ public class Types {
 	//
 	public static Type ENUM =         new Type("enum", 1, true, 2L, "U_INT");
 	public static Type SET =          new Type("set", 1, true, 8L, "U_INT");
-    public static Type BIT =          new Type("bit", 1, true, 9L, "BIT");
+	public static Type BIT =          new Type("bit", 1, true, 9L, "BIT");
+	public static Type GEOMETRY =           new Type("geometry", 0, false, 0L, "GEOMETRY");
+	public static Type GEOMETRYCOLLECTION = new Type("geometrycollection", 0, false, 0L, "GEOMETRYCOLLECTION");
+	public static Type POINT =              new Type("point", 0, false, 0L, "POINT");
+	public static Type MULTIPOINT =         new Type("multipoint", 0, false, 0L, "MULTIPOINT");
+	public static Type LINESTRING =         new Type("linestring", 0, false, 0L, "LINESTRING");
+	public static Type MULTILINESTRING =    new Type("multilinestring", 0, false, 0L, "MULTILINESTRING");
+	public static Type POLYGON =            new Type("polygon", 0, false, 0L, "POLYGON");
+	public static Type MULTIPOLYGON =       new Type("multipolygon", 0, false, 0L, "MULTIPOLYGON");
 
 
     private final static List<Type> types = listOfTypes();
+    private final static Set<Type> unsupported = setOfUnsupportedTypes();
     private final static Map<Type,Long[]> defaultParams = mapOfDefaults();
     
 
@@ -142,14 +153,22 @@ public class Types {
 		types.add(ENUM);
 		types.add(FLOAT);
 		types.add(U_FLOAT);
+		types.add(GEOMETRY);
+		types.add(GEOMETRYCOLLECTION);
 		types.add(INT);
 		types.add(U_INT);
+		types.add(LINESTRING);
 		types.add(LONGBLOB);
 		types.add(LONGTEXT);
 		types.add(MEDIUMBLOB);
 		types.add(MEDIUMINT);
 		types.add(U_MEDIUMINT);
 		types.add(MEDIUMTEXT);
+		types.add(MULTILINESTRING);
+		types.add(MULTIPOINT);
+		types.add(MULTIPOLYGON);
+		types.add(POINT);
+		types.add(POLYGON);
 		types.add(SET);
 		types.add(SMALLINT);
 		types.add(U_SMALLINT);
@@ -166,6 +185,23 @@ public class Types {
 		return Collections.unmodifiableList(types);
 	}
 
+    private static Set<Type> setOfUnsupportedTypes() {
+        Set<Type> unsupported = new HashSet<Type>();
+        unsupported.add(null);
+        unsupported.add(BIT);
+        unsupported.add(ENUM);
+        unsupported.add(SET);
+        unsupported.add(GEOMETRY);
+        unsupported.add(GEOMETRYCOLLECTION);
+        unsupported.add(POINT);
+        unsupported.add(MULTIPOINT);
+        unsupported.add(LINESTRING);
+        unsupported.add(MULTILINESTRING);
+        unsupported.add(POLYGON);
+        unsupported.add(MULTIPOLYGON);
+        return Collections.unmodifiableSet(unsupported);
+    }
+
     private static Map<Type,Long[]> mapOfDefaults() {
         Map<Type,Long[]> map = new HashMap<Type,Long[]>();
         map.put(BIT, new Long[]{1L,null});
@@ -178,6 +214,10 @@ public class Types {
 	public static List<Type> types() {
 		return types;
 	}
+
+    public static Set<Type> unsupportedTypes() {
+        return unsupported;
+    }
 
     public static Map<Type,Long[]> defaultParams() {
         return defaultParams;
