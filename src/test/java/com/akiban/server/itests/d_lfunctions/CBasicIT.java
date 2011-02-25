@@ -548,5 +548,26 @@ public final class CBasicIT extends ApiTestBase {
         assertEquals("pk", 1, pTable.getIndexes().size());
         assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
         assertEquals(pTable.getGroup(), cTable.getGroup());
+        dropAllTables();
+
+        // Case 4: compatible key that is unnamed, named fk
+        pId = createTable("test", "p", "id int key");
+        cId = createTable("test", "c", "id int key, pid int, key(pid)," +
+                                       "constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references p(id)");
+        pTable = getUserTable(pId);
+        cTable = getUserTable(cId);
+        assertEquals("pk", 1, pTable.getIndexes().size());
+        assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
+        assertEquals(pTable.getGroup(), cTable.getGroup());
+
+        // Case 5: compatible key that is unnamed, unnamed fk
+        pId = createTable("test", "p", "id int key");
+        cId = createTable("test", "c", "id int key, pid int, key(pid)," +
+                                       "constraint __akiban_fk_0 foreign key(pid) references p(id)");
+        pTable = getUserTable(pId);
+        cTable = getUserTable(cId);
+        assertEquals("pk", 1, pTable.getIndexes().size());
+        assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
+        assertEquals(pTable.getGroup(), cTable.getGroup());
     }
 }

@@ -324,7 +324,7 @@ public class SchemaDef {
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
             final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
-            if (equivalent == null) {
+            if (equivalent == null || isAkiban(equivalent)) {
                 real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
