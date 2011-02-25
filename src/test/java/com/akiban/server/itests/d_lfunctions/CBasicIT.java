@@ -519,7 +519,7 @@ public final class CBasicIT extends ApiTestBase {
     public void bug724599() throws InvalidOperationException {
         final int pId = createTable("test", "p", "id int key");
         final int cId = createTable("test", "c", "id int key, pid int, key __akiban_fk_0(pid)," +
-                                    "constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references parent(id)");
+                                    "constraint __akiban_fk_0 foreign key (pid) references p(id)");
         final UserTable pTable = getUserTable(pId);
         final UserTable cTable = getUserTable(cId);
         assertEquals(1, pTable.getIndexes().size());
