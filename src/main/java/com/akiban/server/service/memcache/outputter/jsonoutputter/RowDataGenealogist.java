@@ -29,14 +29,17 @@ public class RowDataGenealogist implements Genealogist<RowData>
     public void fillInMissing(RowData previousRow, RowData row, Queue<RowData> missingRows)
     {
         int differsAt = row.differsFromPredecessorAtKeySegment();
-        UserTable rootmostMissingAncestor = differsAt == 0 ? null : hKeyBoundaries.get(row.getRowDefId())[differsAt];
+        UserTable rootmostMissingAncestor =
+            differsAt == 0
+            ? queryRoot
+            : hKeyBoundaries.get(row.getRowDefId())[differsAt];
         UserTable ancestor = expectedChildren.get(row.getRowDefId()).table;
         nullRowStack.clear();
-        while (ancestor != null && ancestor != rootmostMissingAncestor) {
-            ancestor = ancestor.getParentJoin() == null ? null : ancestor.getParentJoin().getParent();
-            if (ancestor != null) {
-                nullRowStack.push(nullRow(ancestor));
-            }
+        while (ancestor != rootmostMissingAncestor) {
+            assert ancestor != null : row;
+            assert ancestor.getParentJoin() != null : row;
+            ancestor = ancestor.getParentJoin().getParent();
+            nullRowStack.push(nullRow(ancestor));
         }
         while (!nullRowStack.isEmpty()) {
             missingRows.add(nullRowStack.pop());

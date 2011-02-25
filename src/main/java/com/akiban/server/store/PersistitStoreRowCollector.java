@@ -635,6 +635,10 @@ public class PersistitStoreRowCollector implements RowCollector {
                         hEx.fetch();
                         // TODO: ORPHANS - Don't assume the row with the current key actually exists.
                         prepareRow(hEx, level);
+                        if (level + 1 < pendingRowData.length) {
+                            pendingRowData[level + 1].differsFromPredecessorAtKeySegment(rowDef.getHKeyDepth());
+                        }
+                        hKey.copyTo(lastKey);
                         hKey.setEncodedSize(keySize);
 
                         if (level < pendingFromLevel) {
@@ -645,7 +649,6 @@ public class PersistitStoreRowCollector implements RowCollector {
                         }
                     }
                 }
-                hKey.copyTo(lastKey);
                 traverseMode = true;
                 //
                 // Repeat main while-loop to flush any available pending rows
@@ -735,33 +738,6 @@ public class PersistitStoreRowCollector implements RowCollector {
             values[i2r.getRowDataFieldIndex()] = key.decode();
         }
         rowData.createRow(rowDef, values);
-    }
-
-    private boolean deliverRow(RowData rowData, ByteBuffer payload, boolean isLeaf) throws IOException
-    {
-        if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
-            int position = payload.position();
-            payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
-            almostDeliveredRows++;
-            if (isLeaf) {
-                payload.mark();
-                deliveredRows = almostDeliveredRows;
-            }
-            if (store.isVerbose() && LOG.isDebugEnabled()) {
-                LOG.info("Select row: "
-                        + rowData.toString(store.getRowDefCache()) + " len="
-                        + rowData.getRowSize() + " position=" + position);
-            }
-            return true;
-        } else {
-            // ScanRowsMoreRequest: deliver a full hierarchy.
-            repeatedRows += pendingFromLevel - (almostDeliveredRows - deliveredRows);
-            pendingFromLevel = 0;
-            // Trim off any non-leaf rows at end of buffer
-            payload.reset();
-            almostDeliveredRows = deliveredRows;
-            return false;
-        }
     }
 
     boolean isAscending() {
