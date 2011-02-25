@@ -945,7 +945,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 int tableId = treeService
                         .aisToStore(link, rowDef.getRowDefId());
                 exchange.clear().append(tableId).fetch();
-                if (exchange.isValueDefined()) {
+                if (exchange.getValue().isDefined()) {
                     ts.get(exchange.getValue());
                 }
                 // Either there is no stored record, or we loaded it. In either
