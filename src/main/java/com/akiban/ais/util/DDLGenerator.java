@@ -29,6 +29,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 
 public class DDLGenerator
@@ -141,15 +142,16 @@ public class DDLGenerator
         if (typeIsUnsigned) {
             declaration.append(" unsigned");
         }
-        final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
-        if (charAndCol != null) {
+        if (type.equals(Types.CHAR) || type.equals(Types.VARCHAR) || type.equals(Types.TEXT)) {
+            final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
+            final CharsetAndCollation tableCharAndCol = column.getTable().getCharsetAndCollation();
             if (charAndCol.charset() != null &&
-                charAndCol.charset().equals(AkibanInformationSchema.DEFAULT_CHARSET) == false) {
+                charAndCol.charset().equals(tableCharAndCol.charset()) == false) {
                 declaration.append(" CHARACTER SET ");
                 declaration.append(charAndCol.charset());
             }
             if (charAndCol.collation() != null &&
-                charAndCol.collation().equals(AkibanInformationSchema.DEFAULT_COLLATION) == false) {
+                charAndCol.collation().equals(tableCharAndCol.collation()) == false) {
                 declaration.append(" COLLATE ");
                 declaration.append(charAndCol.collation());
             }
@@ -208,10 +210,12 @@ public class DDLGenerator
 
     private String tableOptions(Table table) {
         StringBuilder tableOptions = new StringBuilder();
+        final String engine = table.getEngine() != null ? table.getEngine() : "akibandb";
+        tableOptions.append(" engine=");
+        tableOptions.append(engine);
         final CharsetAndCollation charAndCol = table.getCharsetAndCollation();
-        if (charAndCol.charset() != null &&
-            charAndCol.charset().equals(AkibanInformationSchema.DEFAULT_CHARSET) == false) {
-            tableOptions.append(" CHARSET=");
+        if (charAndCol.charset().equals(AkibanInformationSchema.DEFAULT_CHARSET) == false) {
+            tableOptions.append(" DEFAULT CHARSET=");
             tableOptions.append(charAndCol.charset());
         }
         if (charAndCol.collation() != null &&
@@ -251,7 +255,7 @@ public class DDLGenerator
     // - index declarations
     // - foreign key declarations
     // - table options
-    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s%s%s%s)%s engine=akibandb";
+    private static final String CREATE_TABLE_TEMPLATE = "create table %s.%s(%s%s%s%s)%s";
     // index declaration in create table statement. Template arguments:
     // - constraint (primary key, key, or unique)
     // - index name

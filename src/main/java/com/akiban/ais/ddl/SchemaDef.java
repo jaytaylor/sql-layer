@@ -459,22 +459,26 @@ public class SchemaDef {
     void addCharsetValue(final String charset) {
         if (currentColumn != null) {
             currentColumn.charset = charset;
-        } else if(currentTable != null) {
+        } else {
             currentTable.charset = charset;
-        }
-        else {
-            throw new SchemaDefException("Charset saw with no current column or table");
+            for (final ColumnDef column : currentTable.columns) {
+                if (column.charset == null) {
+                    column.charset = charset;
+                }
+            }
         }
     }
 
     void addCollateValue(final String collate) {
         if (currentColumn != null) {
             currentColumn.collate = collate;
-        } else if(currentTable != null) {
+        } else {
             currentTable.collate = collate;
-        }
-        else {
-            throw new SchemaDefException("Collate saw with no current column or table");
+            for (final ColumnDef column : currentTable.columns) {
+                if (column.collate == null) {
+                    column.collate = collate;
+                }
+            }
         }
     }
 
