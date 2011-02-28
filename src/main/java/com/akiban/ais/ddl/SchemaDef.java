@@ -324,7 +324,7 @@ public class SchemaDef {
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
             final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
-            if (equivalent == null) {
+            if (equivalent == null || isAkiban(equivalent)) {
                 real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
@@ -367,12 +367,13 @@ public class SchemaDef {
         Map<String,IndexDef> seenDefs = new HashMap<String,IndexDef>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
             IndexDef index = handle.real;
-            IndexDef oldIndex = seenDefs.put(index.name, index);
+            IndexDef oldIndex = seenDefs.get(index.name);
             if (oldIndex == null) {
+                seenDefs.put(index.name, index);
                 currentTable.indexes.add(index);
             }
             else {
-                index.addIndexAttributes(oldIndex);
+                oldIndex.addIndexAttributes(index);
             }
         }
     }
@@ -930,7 +931,7 @@ public class SchemaDef {
                 comment = otherIndex.comment;
             }
             qualifiers.addAll(otherIndex.qualifiers);
-
+            constraints.addAll(otherIndex.constraints);
         }
     }
 
