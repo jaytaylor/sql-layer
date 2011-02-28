@@ -951,6 +951,8 @@ public class DDLSource extends Source {
             // engine
             UserTable ut = ais.getUserTable(schemaName, tableName);
             ut.setEngine(utDef.engine);
+            ut.setCharset(utDef.charset);
+            ut.setCollation(utDef.collate);
             
             // auto-increment
             if (utDef.getAutoIncrementColumn() != null && utDef.getAutoIncrementColumn().defaultAutoIncrement() != null){

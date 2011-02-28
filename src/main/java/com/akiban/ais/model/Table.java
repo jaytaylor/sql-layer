@@ -150,6 +150,25 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
             : charsetAndCollation;
     }
 
+    public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
+    {
+        this.charsetAndCollation = charsetAndCollation;
+    }
+
+    public void setCharset(String charset)
+    {
+        if (charset != null) {
+            this.charsetAndCollation = CharsetAndCollation.intern(charset, getCharsetAndCollation().collation());
+        }
+    }
+
+    public void setCollation(String collation)
+    {
+        if (collation != null) {
+            this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
+        }
+    }
+
     protected void addColumn(Column column)
     {
         columnMap.put(column.getName().toLowerCase(), column);
