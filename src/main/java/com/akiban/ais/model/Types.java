@@ -208,6 +208,7 @@ public class Types {
         map.put(BINARY, new Long[]{1L,null});
         map.put(CHAR, new Long[]{1L,null});
         map.put(DECIMAL, new Long[]{10L,0L});
+        map.put(U_DECIMAL, new Long[]{10L,0L});
         return Collections.unmodifiableMap(map);
     }
 

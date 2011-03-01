@@ -62,6 +62,28 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
     }
 
     @Test
+    public void decimalUnsignedHasNoParams() throws InvalidOperationException {
+        int t1Id = createTable("schema", "t1", "id int key, c1 DECIMAL UNSIGNED NULL");
+
+        Set<TableName> t1TableNameSet = new HashSet<TableName>();
+        t1TableNameSet.add(new TableName("schema", "t1"));
+
+        assertEquals("user tables", t1TableNameSet, getUserTables().keySet());
+        assertEquals("group tables size", 1, getGroupTables().size());
+
+        writeRows(createNewRow(t1Id, 1, "42"));
+        expectFullRows(t1Id,createNewRow(t1Id, 1L, new BigDecimal("42")));
+
+        Column column = getUserTable(t1Id).getColumn("c1");
+        assertEquals("decimal unsigned", column.getType().name());
+        assertEquals(Long.valueOf(10), column.getTypeParameter1());
+        assertEquals(Long.valueOf(0), column.getTypeParameter2());
+
+        columnSerializationTest(t1Id);
+    }
+
+
+    @Test
     public void decimalHasOneParams() throws InvalidOperationException {
         int t1Id = createTable("schema", "t1",
                 "c1 DECIMAL(17) NOT NULL,PRIMARY KEY(c1)"
