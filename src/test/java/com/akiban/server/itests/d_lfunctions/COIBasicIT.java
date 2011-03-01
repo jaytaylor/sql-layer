@@ -21,7 +21,6 @@ import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 

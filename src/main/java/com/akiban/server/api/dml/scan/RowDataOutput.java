@@ -19,12 +19,16 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.service.session.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RowDataOutput implements LegacyRowOutput {
+    private final static Logger LOG = LoggerFactory.getLogger(RowDataOutput.class);
+
     private final List<RowData> rowDatas = new ArrayList<RowData>();
 
     public List<RowData> getRowDatas() {
@@ -52,6 +56,12 @@ public class RowDataOutput implements LegacyRowOutput {
         return rowDatas.size();
     }
 
+    @Override
+    public boolean getOutputToMessage()
+    {
+        return false;
+    }
+
     /**
      * Convenience method for doing a full scan (that is, a scan until there are no more rows to be scanned for the
      * request) and returning the rows.
@@ -62,18 +72,20 @@ public class RowDataOutput implements LegacyRowOutput {
      * @param request the scan request
      * @return the resulting rows
      * @throws InvalidOperationException if thrown at any point during the scan
-     * @throws BufferFullException if the given buffer isn't big enough for the required data
      */
     public static List<RowData> scanFull(Session session, DMLFunctions dml, ScanRequest request)
-            throws InvalidOperationException, BufferFullException
+            throws InvalidOperationException
     {
         final RowDataOutput output = new RowDataOutput();
-        request.setOutputToMessage(false);
         CursorId scanCursor = dml.openCursor(session, request);
         try {
             while(dml.scanSome(session, scanCursor, output, -1))
             {}
             return output.getRowDatas();
+        } catch (BufferFullException e) {
+            LOG.error(String.format("This is unexpected, request: %s", request), e);
+            assert false : request;
+            return null;
         } finally {
             dml.closeCursor(session, scanCursor);
         }

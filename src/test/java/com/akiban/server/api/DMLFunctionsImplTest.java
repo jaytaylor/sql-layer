@@ -121,6 +121,12 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         public long getId() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void outputToMessage(boolean outputToMessage)
+        {
+            assert outputToMessage;
+        }
     }
 
     private static class StringRowOutput implements LegacyRowOutput {
@@ -167,6 +173,12 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         @Override
         public int getRowsCount() {
             return buffer.getInt(0);
+        }
+
+        @Override
+        public boolean getOutputToMessage()
+        {
+            return true;
         }
     }
 

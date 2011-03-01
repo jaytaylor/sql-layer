@@ -87,10 +87,6 @@ public interface Store extends Service<Store> {
             final int indexId, final int scanFlags, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception;
 
-    RowCollector newRowCollector(final Session session, final int rowDefId,
-            final int indexId, final int scanFlags, final RowData start,
-            final RowData end, final byte[] columnBitMap, boolean messageOutput) throws Exception;
-
     /**
      * Get the previously saved RowCollector for the specified tableId. Used in
      * processing the ScanRowsMoreRequest message.

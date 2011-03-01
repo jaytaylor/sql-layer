@@ -238,8 +238,6 @@ public class ApiTestBase {
             return RowDataOutput.scanFull(session, dml(), request);
         } catch (InvalidOperationException e) {
             throw new TestException(e);
-        } catch (BufferFullException e) {
-            throw new RuntimeException(e);
         }
     }
 

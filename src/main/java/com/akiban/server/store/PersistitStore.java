@@ -1045,8 +1045,7 @@ public class PersistitStore implements AkServerConstants, Store {
                                request.getScanFlags(),
                                request.getStart(),
                                request.getEnd(),
-                               request.getColumnBitMap(),
-                               true);
+                               request.getColumnBitMap());
     }
 
     @Override
@@ -1057,20 +1056,6 @@ public class PersistitStore implements AkServerConstants, Store {
                                         RowData start,
                                         RowData end,
                                         byte[] columnBitMap)
-            throws InvalidOperationException, PersistitException
-    {
-        return newRowCollector(session, rowDefId, indexId, scanFlags, start, end, columnBitMap, true);
-    }
-
-    @Override
-    public RowCollector newRowCollector(Session session,
-                                        int rowDefId,
-                                        int indexId,
-                                        int scanFlags,
-                                        RowData start,
-                                        RowData end,
-                                        byte[] columnBitMap,
-                                        boolean messageOutput)
             throws InvalidOperationException, PersistitException
     {
         NEW_COLLECTOR_TAP.in();
@@ -1087,8 +1072,7 @@ public class PersistitStore implements AkServerConstants, Store {
                                                          end,
                                                          columnBitMap,
                                                          rowDef,
-                                                         indexId,
-                                                         messageOutput);
+                                                         indexId);
         NEW_COLLECTOR_TAP.out();
         return rc;
     }

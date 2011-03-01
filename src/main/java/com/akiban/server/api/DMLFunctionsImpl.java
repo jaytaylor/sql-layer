@@ -151,8 +151,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         return cursorId;
     }
 
-    private ScanRequest scanAllColumns(final Session session,
-            final ScanRequest request) throws NoSuchTableException {
+    private ScanRequest scanAllColumns(final Session session, final ScanRequest request) throws NoSuchTableException {
         Table table = ddlFunctions.getAIS(session).getTable(
                 ddlFunctions.getTableName(session, request.getTableId())
         );
@@ -200,20 +199,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             public boolean scanAllColumns() {
                 return true;
             }
-
-            @Override
-            public boolean getOutputToMessage()
-            {
-                return outputToMessage;
-            }
-
-            @Override
-            public void setOutputToMessage(boolean outputToMessage)
-            {
-                this.outputToMessage = outputToMessage;
-            }
-
-            private boolean outputToMessage = true;
         };
     }
 
@@ -227,8 +212,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                                            request.getScanFlags(),
                                            request.getStart(),
                                            request.getEnd(),
-                                           request.getColumnBitMap(),
-                                           request.getOutputToMessage());
+                                           request.getColumnBitMap());
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
@@ -394,22 +378,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                 return false;
             }
             cursor.setScanning();
-            if (output.getOutputBuffer() == null) {
-                collectRows(cursor, output, limit);
-            } else {
+            if (output.getOutputToMessage()) {
                 collectRowsIntoBuffer(cursor, output, limit);
+            } else {
+                collectRows(cursor, output, limit);
             }
-            boolean hasMore = !cursor.isFinished();
-            // TODO: I don't think this if is necessary. Should be able to just return !cursor.isFinished()
-            // TODO: Assertion tests it.
             assert !cursor.isFinished() == rc.hasMore();
-            if (hasMore) {
-                hasMore = rc.hasMore();
-                if (!hasMore) {
-                    cursor.setFinished();
-                }
-            }
-            return hasMore;
+            return !cursor.isFinished();
         } catch (BufferFullException e) {
             cursor.setFinished();
             throw e;
@@ -424,6 +399,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         throws Exception
     {
         RowCollector rc = cursor.getRowCollector();
+        rc.outputToMessage(true);
         ByteBuffer buffer = output.getOutputBuffer();
         boolean limitReached = (limit == 0);
         while (!limitReached && !cursor.isFinished()) {
@@ -449,6 +425,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         throws Exception
     {
         RowCollector rc = cursor.getRowCollector();
+        rc.outputToMessage(false);
         boolean limitReached = (limit == 0);
         RowData rowData;
         while (!limitReached && !cursor.isFinished()) {

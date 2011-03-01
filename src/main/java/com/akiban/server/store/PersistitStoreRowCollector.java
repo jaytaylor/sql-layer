@@ -157,20 +157,6 @@ public class PersistitStoreRowCollector implements RowCollector {
                                int indexId)
         throws PersistitException
     {
-        this(session, store, scanFlags, start, end, columnBitMap, rowDef, indexId, true);
-    }
-
-    PersistitStoreRowCollector(Session session,
-                               PersistitStore store,
-                               int scanFlags,
-                               RowData start,
-                               RowData end,
-                               byte[] columnBitMap,
-                               RowDef rowDef,
-                               int indexId,
-                               boolean messageOutput)
-        throws PersistitException
-    {
         this.id = counter.incrementAndGet();
         this.store = store;
         this.session = session;
@@ -235,12 +221,21 @@ public class PersistitStoreRowCollector implements RowCollector {
                     : Key.GT)
                     : (isRightInclusive() && !isPrefixMode() ? Key.LTEQ
                             : Key.LT);
+            this.transport = new MessageRowTransport();
         }
-        this.transport = messageOutput ? new MessageRowTransport() : new RowDataRowTransport();
-
         if (LOG.isTraceEnabled()) {
             LOG.trace("Starting Scan on rowDef=" + rowDef.toString()
                     + ": leafRowDefId=" + leafRowDefId);
+        }
+    }
+
+    public void outputToMessage(boolean outputToMessage)
+    {
+        if (outputToMessage) {
+            // Leave transport alone
+            assert transport instanceof MessageRowTransport;
+        } else {
+            transport = new RowDataRowTransport();
         }
     }
 

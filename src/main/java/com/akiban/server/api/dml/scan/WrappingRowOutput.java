@@ -59,4 +59,10 @@ public class WrappingRowOutput implements LegacyRowOutput {
     final public int getRowsCount() {
         return rows;
     }
+
+    @Override
+    public boolean getOutputToMessage()
+    {
+        return true;
+    }
 }

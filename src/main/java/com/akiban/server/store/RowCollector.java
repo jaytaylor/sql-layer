@@ -57,4 +57,5 @@ public interface RowCollector {
     
     public long getId();
 
+    public void outputToMessage(boolean outputToMessage);
 }

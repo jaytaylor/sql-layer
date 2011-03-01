@@ -27,4 +27,6 @@ public interface LegacyRowOutput {
     void addRow(RowData rowData);
 
     int getRowsCount();
+
+    boolean getOutputToMessage();
 }
