@@ -322,6 +322,14 @@ public final class CreateTableIT extends ApiTestBase {
         createExpectException(UnsupportedDataTypeException.class, "test", "t8", "c1 multipolygon");
     }
 
+    // DOUBLE PRECISION alias
+    @Test
+    public void bug724021() throws InvalidOperationException {
+        createCheckColumnDrop("c1 DOUBLE PRECISION", Types.DOUBLE, null, null);
+        createCheckColumnDrop("c1 DOUBLE PRECISION(10,5)", Types.DOUBLE, 10L, 5L);
+        createCheckColumnDrop("c1 DOUBLE PRECISION(1,0) NOT NULL", Types.DOUBLE, 1L, 0L);
+    }
+
     // default charset on table results in invalid DDL regeneration
     @Test
     public void bug725100() throws InvalidOperationException {
