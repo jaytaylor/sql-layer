@@ -461,6 +461,7 @@ public class SchemaDef {
         if (currentColumn != null) {
             currentColumn.charset = charset;
         } else {
+            currentTable.charset = charset;
             for (final ColumnDef column : currentTable.columns) {
                 if (column.charset == null) {
                     column.charset = charset;
@@ -473,6 +474,7 @@ public class SchemaDef {
         if (currentColumn != null) {
             currentColumn.collate = collate;
         } else {
+            currentTable.collate = collate;
             for (final ColumnDef column : currentTable.columns) {
                 if (column.collate == null) {
                     column.collate = collate;
@@ -708,6 +710,8 @@ public class SchemaDef {
         List<IndexDef> indexes = new ArrayList<IndexDef>();
         UserTableDef parent;
         String engine = "akibandb";
+        String charset;
+        String collate;
         // int id;
         private final List<IndexDefHandle> indexHandles = new ArrayList<IndexDefHandle>();
         private ColumnDef autoIncrementColumn = null;

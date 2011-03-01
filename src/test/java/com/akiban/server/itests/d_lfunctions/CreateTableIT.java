@@ -20,6 +20,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
+import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.ParseException;
@@ -329,7 +330,16 @@ public final class CreateTableIT extends ApiTestBase {
         createCheckColumnDrop("c1 DOUBLE PRECISION(1,0) NOT NULL", Types.DOUBLE, 1L, 0L);
     }
 
-    
+    // default charset on table results in invalid DDL regeneration
+    @Test
+    public void bug725100() throws InvalidOperationException {
+        ddl().createTable(session, "test", "create table t(id int key) default charset=utf8");
+        final int tid = tableId("test", "t");
+        assertEquals("create table `test`.`t`(`id` int, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8",
+                     new DDLGenerator().createTable(getUserTable(tid)));
+    }
+
+
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
             createTable(schema, table, definition);

@@ -222,4 +222,8 @@ public class Types {
     public static Map<Type,Long[]> defaultParams() {
         return defaultParams;
     }
+
+    public static boolean isTextType(Type type) {
+        return type.equals(CHAR) || type.equals(VARCHAR) || type.equals(TEXT);
+    }
 }
