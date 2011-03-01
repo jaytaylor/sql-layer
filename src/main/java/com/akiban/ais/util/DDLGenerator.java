@@ -142,7 +142,7 @@ public class DDLGenerator
         if (typeIsUnsigned) {
             declaration.append(" unsigned");
         }
-        if (type.equals(Types.CHAR) || type.equals(Types.VARCHAR) || type.equals(Types.TEXT)) {
+        if (Types.isTextType(type)) {
             final CharsetAndCollation charAndCol = column.getCharsetAndCollation();
             final CharsetAndCollation tableCharAndCol = column.getTable().getCharsetAndCollation();
             if (charAndCol.charset() != null &&
