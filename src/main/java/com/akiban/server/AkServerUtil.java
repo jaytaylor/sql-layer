@@ -393,7 +393,7 @@ public class AkServerUtil {
             return null;
         }
         Charset usingCharset = Charset.forName(charset);
-        return new String(buffer.array(), buffer.position(), buffer.limit() - buffer.position()/*, usingCharset*/);
+        return new String(buffer.array(), buffer.position(), buffer.limit() - buffer.position(), usingCharset);
 
     }
 
