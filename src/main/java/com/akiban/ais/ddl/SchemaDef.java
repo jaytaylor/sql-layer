@@ -35,6 +35,7 @@ import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 
 import com.akiban.ais.model.Column;
+import org.antlr.runtime.RecognitionException;
 
 /**
  * Structures used to hold the results of parsing DDL statements. DDLSource.g
@@ -1134,7 +1135,15 @@ public class SchemaDef {
     }
 
     public static SchemaDef parseSchema(final String schema) throws Exception {
-        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(schema));
+        return parseSchemaFromStream(new StringStream(schema));
+    }
+
+    public static SchemaDef parseSchemaFromFile(final String fileName) throws Exception {
+        return parseSchemaFromStream(new FileStream(fileName));
+    }
+
+    private static SchemaDef parseSchemaFromStream(ANTLRStringStream stream) throws RecognitionException {
+        DDLSourceLexer lex = new DDLSourceLexer(stream);
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
         final SchemaDef schemaDef = new SchemaDef();

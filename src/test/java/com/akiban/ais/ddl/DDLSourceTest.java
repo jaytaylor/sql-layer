@@ -60,7 +60,7 @@ public class DDLSourceTest {
     @Test
     public void testParseEnumAndSet() throws Exception {
         DDLSource parser = new DDLSource();
-        AkibanInformationSchema ais = parser.buildAIS(DDL_FILE_NAME);
+        AkibanInformationSchema ais = parser.buildAISFromFile(DDL_FILE_NAME);
 
         final Table enumTable = ais.getTable(new TableName(SCHEMA_NAME,
                 "with_enum"));
@@ -87,9 +87,9 @@ public class DDLSourceTest {
     @Test
     public void testFKParse() throws Exception {
         final AkibanInformationSchema ais1 = new DDLSource()
-                .buildAIS(XXXXXXXX_DDL_FILE_NAME);
+                .buildAISFromFile(XXXXXXXX_DDL_FILE_NAME);
         final AkibanInformationSchema ais2 = new DDLSource()
-                .buildAIS(XXXXXXXX_FK_DDL_FILE_NAME);
+                .buildAISFromFile(XXXXXXXX_FK_DDL_FILE_NAME);
         final StringWriter aisw1 = new StringWriter();
         final StringWriter aisw2 = new StringWriter();
         new Writer(new CSVTarget(new PrintWriter(aisw1))).save(ais1);
@@ -315,7 +315,7 @@ public class DDLSourceTest {
     @Test
     public void charsetAndCollate() throws Exception {
         DDLSource parser = new DDLSource();
-        AkibanInformationSchema ais = parser.buildAIS(DDL_FILE_NAME);
+        AkibanInformationSchema ais = parser.buildAISFromFile(DDL_FILE_NAME);
 
         final Table utf8Table = ais.getTable(new TableName(SCHEMA_NAME,
                 "with_utf8"));

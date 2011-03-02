@@ -35,9 +35,7 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.ANTLRStringStream;
-import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.apache.commons.cli.CommandLine;
@@ -57,13 +55,8 @@ import com.akiban.ais.io.Reader;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Source;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 
 /**
@@ -160,7 +153,7 @@ public class DDLSource extends Source {
         }
 
         final DDLSource source = new DDLSource();
-        final AkibanInformationSchema ais = source.buildAIS(iFileName);
+        final AkibanInformationSchema ais = source.buildAISFromFile(iFileName);
         // AISPrinter.print(ais);
 
         if (format.compareTo(SQL_FORMAT) == 0) {
@@ -239,15 +232,15 @@ public class DDLSource extends Source {
         this.baseId = baseId;
     }
 
-    public AkibanInformationSchema buildAIS(final String fileName)
-            throws Exception {
+    public AkibanInformationSchema buildAISFromFile(final String fileName) throws Exception {
         ddlSourceName = fileName;
-        return buildAIS(new SchemaDef.FileStream(fileName));
+        this.schemaDef = SchemaDef.parseSchemaFromFile(fileName);
+        return schemaDefToAis();
     }
 
-    public AkibanInformationSchema buildAISFromString(final String string)
-            throws Exception {
-        return buildAIS(new SchemaDef.StringStream(string));
+    public AkibanInformationSchema buildAISFromString(final String schema) throws Exception {
+        this.schemaDef = SchemaDef.parseSchema(schema);
+        return schemaDefToAis();
     }
 
     private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex)
@@ -821,6 +814,10 @@ public class DDLSource extends Source {
     public AkibanInformationSchema buildAISFromBuilder(final String string) throws RecognitionException, Exception
     {
         this.schemaDef = SchemaDef.parseSchema(string);
+        return schemaDefToAis();
+    }
+
+    private AkibanInformationSchema schemaDefToAis() throws Exception {
         SchemaDefToAis toAis = new SchemaDefToAis(this.schemaDef, false);
         return toAis.getAis();
     }

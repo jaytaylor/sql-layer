@@ -64,6 +64,15 @@ public class AISBuilder {
         }
     }
 
+    /**
+     * Studio may or may not require the static incrementing tableGeneratorBase
+     * that is the default behavior. Let a consumer avoid that for now.
+     * @param offset New offset for tableIdGenerator
+     */
+    public void setTableIdOffset(int offset) {
+        this.tableIdGenerator = offset;
+    }
+
     public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
         UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
