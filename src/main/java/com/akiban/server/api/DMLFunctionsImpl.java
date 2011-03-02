@@ -412,8 +412,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             }
             return hasMore;
         } catch (BufferFullException e) {
-            cursor.setFinished();
-            throw e;
+            throw e; // Don't want this to be handled as an Exception
         } catch (Exception e) {
             cursor.setFinished();
             throw new GenericInvalidOperationException(e);
