@@ -85,7 +85,7 @@ import com.akiban.util.Strings;
 public class DDLSource extends Source {
 
     public class ParseException extends Exception {
-        private ParseException(SchemaDef.SchemaDefException cause) {
+        private ParseException(Exception cause) {
             super(cause.getMessage(), cause);
         }
     }
@@ -271,29 +271,11 @@ public class DDLSource extends Source {
         computeColumnMapAndPositions();
     }
 
-    private AkibanInformationSchema buildAIS(final ANTLRStringStream stringStream)
-            throws Exception {
-        parseSchemaDef(stringStream);
-        AkibanInformationSchema ais = new Reader(this)
-                .load(new AkibanInformationSchema());
-        return ais;
-    }
-
-    public UserTableDef parseCreateTable(final String createTableStatement)
-            throws Exception {
-        DDLSourceLexer lex = new DDLSourceLexer(new SchemaDef.StringStream(
-                createTableStatement));
-        CommonTokenStream tokens = new CommonTokenStream(lex);
-        final DDLSourceParser tsparser = new DDLSourceParser(tokens);
+    public UserTableDef parseCreateTable(final String createTableStatement) throws Exception {
+        this.schemaDef = new SchemaDef();
         try {
-            final SchemaDef schemaDef = new SchemaDef();
-            tsparser.table_spec(schemaDef);
-            if (tsparser.getNumberOfSyntaxErrors() > 0) {
-                throw new RuntimeException("DDLSource reported a syntax error in: "
-                        + ddlSourceName);
-            }
-            return schemaDef.getCurrentTable();
-        } catch (SchemaDef.SchemaDefException e) {
+            return schemaDef.parseCreateTable(createTableStatement);
+        } catch(RuntimeException e) {
             throw new ParseException(e);
         }
     }
