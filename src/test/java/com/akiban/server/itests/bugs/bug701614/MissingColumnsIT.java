@@ -13,12 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.itests.bugs.bug701614;
+package com.akiban.cserver.itests.bugs.bug701580;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.itests.ApiTestBase;
+import com.akiban.ais.model.AkibaInformationSchema;
+import com.akiban.cserver.InvalidOperationException;
+import com.akiban.cserver.api.common.TableId;
+import com.akiban.cserver.api.dml.scan.NewRow;
+import com.akiban.cserver.itests.ApiTestBase;
 import com.akiban.util.Strings;
 import org.junit.Test;
 
@@ -29,20 +30,20 @@ import static org.junit.Assert.assertNotNull;
 public final class MissingColumnsIT extends ApiTestBase {
     @Test
     public void testForMissingColumns() throws InvalidOperationException, IOException {
-        int tableId = loadBlocksTable();
+        TableId tableId = loadBlocksTable();
         writeRows( rows(tableId) );
         expectFullRows(tableId, rows(tableId));
     }
 
-    private int loadBlocksTable() throws InvalidOperationException, IOException {
-        final String blocksDDL = Strings.join(Strings.dumpResource(getClass(), "blocks-table.ddl"));
+    private TableId loadBlocksTable() throws InvalidOperationException, IOException {
+        final String blocksDDL = Strings.readResource("blocks-table.ddl", getClass());
         ddl().createTable(session, "drupal", blocksDDL);
-        AkibanInformationSchema ais = ddl().getAIS(session);
+        AkibaInformationSchema ais = ddl().getAIS(session);
         assertNotNull("drupal.blocks missing from " + ais.getUserTables(), ais.getUserTable("drupal", "blocks"));
-        return tableId("drupal", "blocks");
+        return getTableId("drupal", "blocks");
     }
 
-    private NewRow[] rows(int tableId) {
+    private NewRow[] rows(TableId tableId) {
         return new NewRow[] {
                 createNewRow(tableId, 1L, "user", "0", "garland", 1L, 0L, "left", 0L, 0L, 0L, "", "", -1L),
                 createNewRow(tableId, 2L, "user", "1", "garland", 1L, 0L, "left", 0L, 0L, 0L, "", "", -1L),
