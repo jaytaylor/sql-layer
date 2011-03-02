@@ -169,19 +169,26 @@ public class PersistitStoreRowCollector implements RowCollector {
         if (rowDef.isGroupTable()) {
             this.groupRowDef = rowDef;
         } else {
-            this.groupRowDef = store.getRowDefCache().getRowDef(
-                    rowDef.getGroupRowDefId());
+            this.groupRowDef = store.getRowDefCache().getRowDef(rowDef.getGroupRowDefId());
         }
 
-        this.projectedRowDefs = computeProjectedRowDefs(rowDef,
-                this.groupRowDef, columnBitMap);
+        this.projectedRowDefs = computeProjectedRowDefs(rowDef, this.groupRowDef, columnBitMap);
 
         if (this.projectedRowDefs.length == 0) {
             this.more = false;
         } else {
+            Key.EdgeValue edge;
+            if (isAscending()) {
+                this.direction = isLeftInclusive() ? Key.GTEQ : Key.GT;
+                edge = Key.BEFORE;
+            } else {
+                this.direction = isRightInclusive() && !isPrefixMode() ? Key.LTEQ : Key.LT;
+                edge = Key.AFTER;
+            }
             this.pendingRowData = new RowData[this.projectedRowDefs.length];
-            this.hEx = store.getExchange(session, rowDef, null).append(Key.BEFORE);
+            this.hEx = store.getExchange(session, rowDef, null);
             this.hFilter = computeHFilter(rowDef, start, end);
+            this.hEx.append(edge);
             this.lastKey = new Key(hEx.getKey());
 
             if (indexId != 0) {
@@ -192,40 +199,32 @@ public class PersistitStoreRowCollector implements RowCollector {
                 if (!def.isHKeyEquivalent()) {
                     this.indexDef = def;
                     if (isPrefixMode()) {
-                        prefixModeIndexField = rowDef.getColumnOffset()
-                                + def.getFields()[def.getFields().length - 1];
+                        prefixModeIndexField = rowDef.getColumnOffset() + def.getFields()[def.getFields().length - 1];
                     }
-                    this.iEx = store.getExchange(session, rowDef, indexDef).append(Key.BEFORE);
+                    this.iEx = store.getExchange(session, rowDef, indexDef).append(edge);
                     this.iFilter = computeIFilter(indexDef, rowDef, start, end);
 /* TODO: disabled due to bugs 687212, 687213
-                    coveringFields = computeCoveringIndexFields(rowDef, def,
-                            columnBitMap);
+                    coveringFields = computeCoveringIndexFields(rowDef, def, columnBitMap);
 */
 
                     if (store.isVerbose() && LOG.isInfoEnabled()) {
                         LOG.info("Select using index " + indexDef + " filter="
-                                + iFilter
-                                + (coveringFields != null ? " covering" : ""));
+                                 + iFilter
+                                 + (coveringFields != null ? " covering" : ""));
                     }
                 }
             }
 
             for (int level = 0; level < pendingRowData.length; level++) {
-                pendingRowData[level] = new RowData(
-                        new byte[PersistitStore.INITIAL_BUFFER_SIZE]);
+                pendingRowData[level] = new RowData(new byte[PersistitStore.INITIAL_BUFFER_SIZE]);
             }
 
             this.pendingFromLevel = 0;
             this.pendingToLevel = 0;
-            this.direction = isAscending() ? (isLeftInclusive() ? Key.GTEQ
-                    : Key.GT)
-                    : (isRightInclusive() && !isPrefixMode() ? Key.LTEQ
-                            : Key.LT);
             this.transport = new MessageRowTransport();
         }
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Starting Scan on rowDef=" + rowDef.toString()
-                    + ": leafRowDefId=" + leafRowDefId);
+            LOG.trace("Starting Scan on rowDef=" + rowDef.toString() + ": leafRowDefId=" + leafRowDefId);
         }
     }
 
@@ -235,7 +234,9 @@ public class PersistitStoreRowCollector implements RowCollector {
             // Leave transport alone
             assert transport instanceof MessageRowTransport;
         } else {
-            transport = new RowDataRowTransport();
+            if (transport instanceof MessageRowTransport) {
+                transport = new RowDataRowTransport();
+            }
         }
     }
 
@@ -744,7 +745,7 @@ public class PersistitStoreRowCollector implements RowCollector {
     }
 
     boolean isRightInclusive() {
-        return (scanFlags & SCAN_FLAGS_START_EXCLUSIVE) == 0;
+        return (scanFlags & SCAN_FLAGS_END_EXCLUSIVE) == 0;
     }
 
     boolean isPrefixMode() {
