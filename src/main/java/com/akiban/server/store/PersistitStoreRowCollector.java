@@ -400,7 +400,7 @@ public class PersistitStoreRowCollector implements RowCollector {
             // Tricky: termFromKeySegments reads successive key segments when
             // called this way.
             //
-            return KeyFilter.termFromKeySegments(key, key, true, true);
+            return KeyFilter.termFromKeySegments(key, key, isLeftInclusive(), isRightInclusive());
         } else {
             return KeyFilter.ALL;
         }
@@ -731,7 +731,7 @@ public class PersistitStoreRowCollector implements RowCollector {
     }
 
     boolean isRightInclusive() {
-        return (scanFlags & SCAN_FLAGS_START_EXCLUSIVE) == 0;
+        return (scanFlags & SCAN_FLAGS_END_EXCLUSIVE) == 0;
     }
 
     boolean isPrefixMode() {
