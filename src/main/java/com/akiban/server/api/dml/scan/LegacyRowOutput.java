@@ -15,6 +15,8 @@
 
 package com.akiban.server.api.dml.scan;
 
+import com.akiban.server.RowData;
+
 import java.nio.ByteBuffer;
 
 public interface LegacyRowOutput {
@@ -22,5 +24,9 @@ public interface LegacyRowOutput {
 
     void wroteRow() throws RowOutputException;
 
+    void addRow(RowData rowData);
+
     int getRowsCount();
+
+    boolean getOutputToMessage();
 }

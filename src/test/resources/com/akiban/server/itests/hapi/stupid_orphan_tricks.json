@@ -36,14 +36,15 @@
             [1, 10]
         ],
         "item" : [
-            [2, 20, 200]
+            [1, 99, 100],
+            [2, 20, 200],
+            [2, 20, 201]
         ]
     }
 },
 
 "tests" : {
     "wrong parent" : {
-        "passing"       : false,
         "get" : "coi:customer:cid>=1",
         "expect result" :
         {
@@ -57,6 +58,18 @@
                             "cid" : 1,
                             "oid" : 10,
                             "@item" : []
+                        },
+                        {
+                            "cid" : null,
+                            "oid" : null,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 1,
+                                    "oid" : 99,
+                                    "iid" : 100
+                                }
+                            ]
                         }
                     ]
                 },
@@ -73,6 +86,11 @@
                                     "cid" : 2,
                                     "oid" : 20,
                                     "iid" : 200
+                                },
+                                {
+                                    "cid" : 2,
+                                    "oid" : 20,
+                                    "iid" : 201
                                 }
                             ]
                         }

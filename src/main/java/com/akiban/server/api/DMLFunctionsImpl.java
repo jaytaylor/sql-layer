@@ -151,8 +151,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         return cursorId;
     }
 
-    private ScanRequest scanAllColumns(final Session session,
-            final ScanRequest request) throws NoSuchTableException {
+    private ScanRequest scanAllColumns(final Session session, final ScanRequest request) throws NoSuchTableException {
         Table table = ddlFunctions.getAIS(session).getTable(
                 ddlFunctions.getTableName(session, request.getTableId())
         );
@@ -207,10 +206,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throws NoSuchTableException, NoSuchColumnException,
             NoSuchIndexException, GenericInvalidOperationException {
         try {
-            return store().newRowCollector(session, request.getTableId(),
-                    request.getIndexId(), request.getScanFlags(),
-                    request.getStart(), request.getEnd(),
-                    request.getColumnBitMap());
+            return store().newRowCollector(session,
+                                           request.getTableId(),
+                                           request.getIndexId(),
+                                           request.getScanFlags(),
+                                           request.getStart(),
+                                           request.getEnd(),
+                                           request.getColumnBitMap());
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
@@ -373,49 +375,68 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         try {
             if (!rc.hasMore()) {
                 cursor.setFinished();
-                if (cursor.isScanning()) {
-                    throw new CursorIsFinishedException(cursorId);
-                }
-                return false;
-            }
-            if (cursor.isScanning() && !(rc.hasMore())) {
-                cursor.setFinished();
                 return false;
             }
             cursor.setScanning();
-            boolean limitReached = (limit == 0);
-            final ByteBuffer buffer = output.getOutputBuffer();
-
-            while (!limitReached) {
-                final int bufferLastPos = buffer.position();
-                if (!rc.collectNextRow(buffer)) {
-                    if (rc.hasMore()) {
-                        throw new BufferFullException();
-                    }
-                    cursor.setFinished();
-                    return false;
-                }
-
-                final int bufferPos = buffer.position();
-                assert bufferPos > bufferLastPos : String.format(
-                        "false: %d >= %d", bufferPos, bufferLastPos);
-
-                output.wroteRow();
-                if (limit > 0) {
-                    limitReached = (--limit) == 0;
-                }
+            if (output.getOutputToMessage()) {
+                collectRowsIntoBuffer(cursor, output, limit);
+            } else {
+                collectRows(cursor, output, limit);
             }
-
-            final boolean hasMore = rc.hasMore();
-            if (!hasMore) {
-                cursor.setFinished();
-            }
-            return hasMore;
+            assert !cursor.isFinished() == rc.hasMore();
+            return !cursor.isFinished();
         } catch (BufferFullException e) {
             throw e; // Don't want this to be handled as an Exception
         } catch (Exception e) {
             cursor.setFinished();
             throw new GenericInvalidOperationException(e);
+        }
+    }
+
+    // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
+    private static void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, int limit)
+        throws Exception
+    {
+        RowCollector rc = cursor.getRowCollector();
+        rc.outputToMessage(true);
+        ByteBuffer buffer = output.getOutputBuffer();
+        boolean limitReached = (limit == 0);
+        while (!limitReached && !cursor.isFinished()) {
+            int bufferLastPos = buffer.position();
+            if (!rc.collectNextRow(buffer)) {
+                if (rc.hasMore()) {
+                    throw new BufferFullException();
+                }
+                cursor.setFinished();
+            } else {
+                int bufferPos = buffer.position();
+                assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
+                output.wroteRow();
+                if (limit > 0) {
+                    limitReached = (--limit) == 0;
+                }
+            }
+        }
+    }
+
+    // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
+    private static void collectRows(Cursor cursor, LegacyRowOutput output, int limit)
+        throws Exception
+    {
+        RowCollector rc = cursor.getRowCollector();
+        rc.outputToMessage(false);
+        boolean limitReached = (limit == 0);
+        RowData rowData;
+        while (!limitReached && !cursor.isFinished()) {
+            rowData = rc.collectNextRow();
+            if (rowData == null) {
+                cursor.setFinished();
+            } else {
+                output.addRow(rowData);
+                if (limit > 0) {
+                    limitReached = (--limit) == 0;
+                }
+            }
         }
     }
 

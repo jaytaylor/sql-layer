@@ -35,21 +35,16 @@ import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
 import com.akiban.server.api.dml.scan.LegacyScanRequest;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -60,29 +55,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.akiban.server.api.HapiRequestException.ReasonCode.*;
 
-public class Scanrows implements HapiProcessor, JmxManageable {
-    private static final Logger LOG = LoggerFactory.getLogger(Scanrows.class);
-    private static final Class<?> MODULE = Scanrows.class;
-    private static final String SESSION_BUFFER = "SESSION_BUFFER";
-
-    private static final AtomicInteger bufferSize = new AtomicInteger(65535);
-
-    private final ScanrowsMXBean bean = new ScanrowsMXBean() {
-        @Override
-        public int getBufferCapacity() {
-            return bufferSize.get();
-        }
-
-        @Override
-        public void setBufferCapacity(int bytes) {
-            bufferSize.set(bytes);
-        }
-    };
-
+public class Scanrows implements HapiProcessor {
     public static Scanrows instance() {
         return new Scanrows();
     }
@@ -257,15 +233,10 @@ public class Scanrows implements HapiProcessor, JmxManageable {
                     range.end(),
                     range.columnBitmap(),
                     range.indexId(),
-                    range.scanFlagsInt()
-            );
+                    range.scanFlagsInt());
             List<RowData> rows = null;
             while(rows == null) {
-                try {
-                    rows = RowDataOutput.scanFull(session, dmlFunctions, getBuffer(session), scanRequest);
-                } catch (BufferFullException e) {
-                    increaseBuffer(session);
-                }
+                rows = RowDataOutput.scanFull(session, dmlFunctions, scanRequest);
             }
 
             outputter.output(
@@ -316,27 +287,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
         }
 
         return false;
-    }
-
-    private ByteBuffer getBuffer(Session session) {
-        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
-        if (buffer == null) {
-            LOG.debug("allocating new buffer");
-            buffer = ByteBuffer.allocate(bufferSize.get());
-            session.put(MODULE, SESSION_BUFFER, buffer);
-        }
-        else {
-            buffer.clear();
-        }
-        buffer.mark();
-        return buffer;
-    }
-
-    private void increaseBuffer(Session session) {
-        session.remove(MODULE, SESSION_BUFFER);
-        int capacity = bufferSize.get();
-        bufferSize.set( capacity * 2 );
-        LOG.info("doubling capacity from {}", capacity);
     }
 
     private RowDataStruct getScanRange(Session session, HapiGetRequest request)
@@ -608,14 +558,5 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             indexColumns.add(indexColumn.getColumn().getName());
         }
         return indexColumns;
-    }
-
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("HapiP-Scanrows", bean, ScanrowsMXBean.class);
-    }
-
-    public final ScanrowsMXBean getMXBean() {
-        return bean;
     }
 }
