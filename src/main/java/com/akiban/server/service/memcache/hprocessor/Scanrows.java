@@ -198,9 +198,6 @@ public class Scanrows implements HapiProcessor, JmxManageable {
             scanFlags.remove(ScanFlag.START_AT_BEGINNING);
             scanFlags.remove(ScanFlag.END_AT_END);
 
-            scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
-            scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
-
             putPredicate(predicate, start);
             putPredicate(predicate, end);
         }
