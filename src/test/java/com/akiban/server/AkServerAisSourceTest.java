@@ -29,7 +29,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
 
-public class AkServerAisSourceTest extends AkServerTestCase implements AkServerConstants {
+public class AkServerAisSourceTest extends AkServerTestCase {
 
     private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
 
