@@ -202,20 +202,20 @@ public class AISBuilder {
             UserTable parentTable = ais.getUserTable(forwardTableReference
                     .parentTableName().getSchemaName(), forwardTableReference
                     .parentTableName().getTableName());
-            checkFound(parentTable, "marking basic schema complete",
-                    "parent table", forwardTableReference.parentTableName()
-                            .getDescription());
-            Join join = Join.create(ais, forwardTableReference.joinName(),
-                    parentTable, childTable);
-            for (ForwardColumnReference forwardColumnReference : forwardTableReference
-                    .forwardColumnReferences()) {
-                Column childColumn = forwardColumnReference.childColumn();
-                Column parentColumn = parentTable
-                        .getColumn(forwardColumnReference.parentColumnName());
-                checkFound(childColumn, "marking basic schema complete",
-                        "parent column",
-                        forwardColumnReference.parentColumnName());
-                join.addJoinColumn(parentColumn, childColumn);
+            
+            if (parentTable != null){
+                Join join = Join.create(ais, forwardTableReference.joinName(),
+                        parentTable, childTable);
+                for (ForwardColumnReference forwardColumnReference : forwardTableReference
+                        .forwardColumnReferences()) {
+                    Column childColumn = forwardColumnReference.childColumn();
+                    Column parentColumn = parentTable
+                            .getColumn(forwardColumnReference.parentColumnName());
+                    checkFound(childColumn, "marking basic schema complete",
+                            "parent column",
+                            forwardColumnReference.parentColumnName());
+                    join.addJoinColumn(parentColumn, childColumn);
+                }
             }
         }
         forwardReferences.clear();

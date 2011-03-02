@@ -288,6 +288,8 @@ public class SchemaDefToAis {
             // engine
             UserTable ut = ais.getUserTable(schemaName, tableName);
             ut.setEngine(utDef.engine);
+            ut.setCharset(utDef.charset);
+            ut.setCollation(utDef.collate);
 
             // auto-increment
             if (utDef.getAutoIncrementColumn() != null

@@ -78,7 +78,7 @@ public class Tracker
         this.connection = db == null ? null : db.new Connection();
         this.schema = schema;
         if (this.connection != null) {
-            this.connection.new DDL(TEMPLATE_CREATE_PROGRESS_TABLE, schema).execute();
+            this.connection.new DDL(TEMPLATE_CREATE_PROGRESS_TABLE, schema, MAX_MESSAGE_SIZE).execute();
         }
     }
 
@@ -87,13 +87,16 @@ public class Tracker
         if (connection != null) {
             long nowNsec = System.nanoTime();
             try {
+                if (message.length() > MAX_MESSAGE_SIZE) {
+                    message = message.substring(0, MAX_MESSAGE_SIZE);
+                }
                 connection.new Update(TEMPLATE_LOG_PROGRESS, schema,
                                       ((double) (nowNsec - lastEventTimeNsec)) / ONE_BILLION,
                                       message).execute();
             } catch (SQLException e) {
                 logger.error(String.format(
                         "Unable to record event in %s.progress: %s", schema,
-                        message));
+                        e.getMessage()));
             }
             lastEventTimeNsec = nowNsec;
         }
@@ -101,11 +104,13 @@ public class Tracker
 
     private static final Logger logger = LoggerFactory.getLogger(Tracker.class);
     private static final int ONE_BILLION = 1000 * 1000 * 1000;
+    private static final int MAX_MESSAGE_SIZE = 5000;
     private static final String TEMPLATE_CREATE_PROGRESS_TABLE = "create table if not exists %s.progress("
                                                                  + "    event_id int auto_increment, "
                                                                  + "    time timestamp not null, "
                                                                  + "    event_time_sec double not null, "
-                                                                 + "    message varchar(500), " + "    primary key(event_id)" + ")"
+                                                                 + "    message varchar(%s), "
+                                                                 + "    primary key(event_id)" + ")"
                                                                  + "    engine = myisam";
     private static final String TEMPLATE_LOG_PROGRESS = "insert into %s.progress(time, event_time_sec, message) values (now(), %s, '%s')";
     private static final String TEMPLATE_RECENT_EVENTS = "select event_id, time, event_time_sec, message "

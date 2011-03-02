@@ -20,12 +20,14 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import junit.framework.Assert;
 import org.junit.Test;
 
 import com.akiban.server.SchemaFactory;
@@ -513,6 +515,24 @@ public class AISTest
         assertNull(table.getPrimaryKey());
         assertSame(table.getIndexesIncludingInternal().iterator().next(), table.getPrimaryKeyIncludingInternal().getIndex());
     }
+
+    @Test
+    public void testTypeSupport() throws Exception
+    {
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        // Basic type, case insensitivity and exists
+        assertNotNull(ais.getType("int"));
+        assertNotNull(ais.getType("inT"));
+        assertNotNull(ais.getType("INT"));
+        assertTrue(ais.isTypeSupported("int"));
+        // Type exists but isn't supported
+        assertNotNull(ais.getType("geometry"));
+        assertFalse(ais.isTypeSupported("geometry"));
+        // Unknown type returns null and false
+        assertNull(ais.getType("not_a_real_type"));
+        assertFalse(ais.isTypeSupported("not_a_real_type"));
+    }
+
 
     private void checkHKey(HKey hKey, Object ... elements)
     {

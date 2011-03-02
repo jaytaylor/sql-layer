@@ -13,18 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.memcache;
+package com.akiban.server.service.memcache.hprocessor;
 
-@SuppressWarnings("unused") // these are queried/set via JMX
-public interface MemcacheMXBean {
+import com.akiban.server.service.memcache.HapiProcessorFactory;
 
-    MemcacheService.OutputFormat getOutputFormat();
-    void setOutputFormat(MemcacheService.OutputFormat whichFormat);
-    MemcacheService.OutputFormat[] getAvailableOutputFormats();
-
-    HapiProcessorFactory getHapiProcessor();
-    void setHapiProcessor(HapiProcessorFactory whichProcessor);
-    HapiProcessorFactory[] getAvailableHapiProcessors();
-
-    String chooseIndex(String request);
+@SuppressWarnings("unused") // jmx
+public interface HapiCacheMXBean {
+    HapiProcessorFactory getDelegateProcessor();
+    void setDelegateProcessor(HapiProcessorFactory delegateProcessor);
 }

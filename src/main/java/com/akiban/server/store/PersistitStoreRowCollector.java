@@ -493,7 +493,9 @@ public class PersistitStoreRowCollector implements RowCollector {
      * was added to the payload ByteBuffer. As a side-effect, this method
      * affects the value of <tt>more</tt> to indicate whether there are
      * additional rows in the tree; {@link #hasMore()} returns this value.
-     * 
+     *
+     * Return value is true if hasMore() is false or hasMore() is true but the next row doesn't
+     * fit in payload.
      */
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception {
@@ -526,8 +528,9 @@ public class PersistitStoreRowCollector implements RowCollector {
             //
             if (morePending()) {
 
-                if (deliverRow(pendingRowData[pendingFromLevel], payload,
-                        pendingFromLevel + 1 == pendingRowData.length)) {
+                if (deliverRow(pendingRowData[pendingFromLevel],
+                               payload,
+                               pendingFromLevel + 1 == pendingRowData.length)) {
                     pendingFromLevel++;
                     if (isSingleRowMode() && pendingFromLevel == pendingToLevel) {
                         more = false;
@@ -589,8 +592,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                         hKey.setEncodedSize(hKey.getIndex());
                         hEx.fetch();
                         // TODO: ORPHANS - Don't assume the row with the current key actually exists.
-                        prepareRow(hEx, level, rowDef,
-                                rowDef.getColumnOffset());
+                        prepareRow(hEx, level);
                         hKey.setEncodedSize(keySize);
 
                         if (level < pendingFromLevel) {
@@ -636,19 +638,23 @@ public class PersistitStoreRowCollector implements RowCollector {
                     hEx.fetch();
                 }
                 if (isDeepMode() && depth > projectedRowDefs[projectedRowDefs.length - 1].getHKeyDepth()) {
+                    // Current row's type is deeper that the last projectedRowDef. E.g., projectedRowDefs
+                    // contains [Customer, Order] and the current row is an Item. The last slot in pendingRowData
+                    // gets reused to store the row and should then be immediately delivered on the next pass through
+                    // the loop.
                     int level = pendingRowData.length - 1;
-                    prepareRow(hEx, level, null, 0);// TODO!!! Peter -- what needed to be done?
+                    prepareRow(hEx, level);
                     if (level < pendingFromLevel) {
                         pendingFromLevel = level;
                     }
+                    hKey.copyTo(lastKey);
                     pendingToLevel = level + 1;
                 } else {
+                    // Current row's type is one of the projectedRowDefs.
                     // TODO: ORPHANS - below depth, set deeper rows to all null.
                     for (int level = projectedRowDefs.length; --level >= 0;) {
                         if (depth == projectedRowDefs[level].getHKeyDepth()) {
-                            prepareRow(hEx, level,
-                                    projectedRowDefs[level],
-                                    projectedRowDefs[level].getColumnOffset());
+                            prepareRow(hEx, level);
                             hKey.copyTo(lastKey);
                             if (level < pendingFromLevel) {
                                 pendingFromLevel = level;
@@ -665,20 +671,15 @@ public class PersistitStoreRowCollector implements RowCollector {
         return result;
     }
 
-    void prepareRow(final Exchange exchange, final int level,
-            final RowDef rowDef, final int columnOffset)
-            throws Exception {
+    void prepareRow(final Exchange exchange, final int level)
+            throws Exception
+    {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Preparing row at " + exchange);
         }
-        store.expandRowData(exchange, rowDef, pendingRowData[level]);
-        //
-        // Remove unwanted columns
-        //
-        if (!isDeepMode()) {
-            pendingRowData[level].elide(columnBitMap, columnOffset
-                    - columnBitMapOffset, columnBitMapWidth);
-        }
+        store.expandRowData(exchange, pendingRowData[level]);
+        
+        int differsAtKeySegment = exchange.getKey().firstUniqueSegmentDepth(lastKey);
     }
 
     void prepareCoveredRow(final Exchange exchange, final int rowDefId,
@@ -694,12 +695,11 @@ public class PersistitStoreRowCollector implements RowCollector {
         rowData.createRow(rowDef, values);
     }
 
-    boolean deliverRow(final RowData rowData, final ByteBuffer payload,
-            final boolean isLeaf) throws IOException {
+    boolean deliverRow(RowData rowData, ByteBuffer payload, boolean isLeaf) throws IOException
+    {
         if (rowData.getRowSize() + 4 < payload.limit() - payload.position()) {
-            final int position = payload.position();
-            payload.put(rowData.getBytes(), rowData.getRowStart(),
-                    rowData.getRowSize());
+            int position = payload.position();
+            payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
             almostDeliveredRows++;
             if (isLeaf) {
                 payload.mark();
@@ -713,8 +713,7 @@ public class PersistitStoreRowCollector implements RowCollector {
             return true;
         } else {
             // ScanRowsMoreRequest: deliver a full hierarchy.
-            repeatedRows += pendingFromLevel
-                    - (almostDeliveredRows - deliveredRows);
+            repeatedRows += pendingFromLevel - (almostDeliveredRows - deliveredRows);
             pendingFromLevel = 0;
             // Trim off any non-leaf rows at end of buffer
             payload.reset();

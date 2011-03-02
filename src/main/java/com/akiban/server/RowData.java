@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
@@ -285,6 +286,17 @@ public class RowData {
         return AkServerUtil.decodeMySQLString(bytes, offset, width, fieldDef);
     }
 
+    public ByteBuffer byteBufferForStringValue(final int offset, final int width, final FieldDef fieldDef) {
+        if (offset == 0 && width == 0) {
+            return null;
+        }
+        if (offset < rowStart || offset + width >= rowEnd) {
+            throw new IllegalArgumentException("Bad location: " + offset + ":"
+                    + width);
+        }
+        return AkServerUtil.byteBufferForMySQLString(bytes, offset, width, fieldDef);
+    }
+
     public int setupNullMap(BitSet nullMap, int nullMapOffset,
             int currentOffset, int fieldCount) {
         int offset = currentOffset + O_NULL_MAP;
@@ -340,13 +352,6 @@ public class RowData {
         rowEnd = offset;
     }
 
-    /**
-     * For debugging only, poke some Java values supplied in the values array
-     * into a RowData instance. The conversions are very approximate!
-     * 
-     * @param rowDef
-     * @param values
-     */
     public void createRow(final RowDef rowDef, final Object[] values) {
         final int fieldCount = rowDef.getFieldCount();
         if (values.length > rowDef.getFieldCount()) {
@@ -474,7 +479,7 @@ public class RowData {
                 sb.append(rowDef.getTableName());
                 for (int i = 0; i < getFieldCount(); i++) {
                     final FieldDef fieldDef = rowDef.getFieldDef(i);
-                    sb.append(i == 0 ? "(" : ",");
+                    sb.append(i == 0 ? '(' : ',');
                     final long location = fieldDef.getRowDef().fieldLocation(
                             this, fieldDef.getFieldIndex());
                     if (location == 0) {
@@ -484,7 +489,7 @@ public class RowData {
                                 Quote.SINGLE_QUOTE);
                     }
                 }
-                sb.append(")");
+                sb.append(')');
             }
         } catch (Exception e) {
             int size = Math.min(getRowSize(), 64);
@@ -501,24 +506,24 @@ public class RowData {
             final FieldDef fieldDef = rowDef.getFieldDef(i);
             final long location = fieldDef.getRowDef().fieldLocation(this, fieldDef.getFieldIndex());
             if(i != 0) {
-                sb.write(',');
+                sb.append(',');
             }
-            sb.write('"');
+            sb.append('"');
             String fieldName = fieldDef.getName();
             if (fieldName != null
                     && fieldName.length() > 0
                     && (fieldName.charAt(0) == '@' || fieldName.charAt(0) == ':')
             ) {
-                sb.write(':');
+                sb.append(':');
             }
-            sb.write(fieldName);
-            sb.write("\":");
+            sb.append(fieldName);
+            sb.append("\":");
 
             if(location != 0) {
                 fieldDef.getEncoding().toString(fieldDef, this, sb, Quote.JSON_QUOTE);
             }
             else {
-                sb.write("null");
+                sb.append("null");
             }
         }
     }

@@ -366,7 +366,10 @@ public class Column implements Serializable, ModelNames
             return 1;
         }
     }
-    
+
+    /**
+     * @return This column's CharsetAndCollation if it has one, otherwise the owning Table's
+     */
     public CharsetAndCollation getCharsetAndCollation()
     {
         return

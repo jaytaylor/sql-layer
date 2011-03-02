@@ -345,10 +345,16 @@ public final class DecimalEncoder extends EncodingBase<BigDecimal> {
             }
         }
 
-        if (fracFull + fracPartial > 0)
-            sb.append(hadOutput ? "." : "0.");
+        if (fracFull + fracPartial > 0) {
+            if (hadOutput) {
+                sb.append('.');
+            }
+            else {
+                sb.append("0.");
+            }
+        }
         else if(hadOutput == false)
-            sb.append("0");
+            sb.append('0');
 
         for (int i = 0; i < fracFull; ++i) {
             int x = miUnpack(DECIMAL_TYPE_SIZE, from, curOff) ^ mask;

@@ -24,9 +24,9 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
-import com.akiban.server.service.memcache.outputter.JsonOutputter;
+import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.OnlyIf;
@@ -470,7 +470,7 @@ public final class JsonHapiIT extends ApiTestBase {
 
     private final TestSetupInfo setupInfo;
     private final TestRunInfo runInfo;
-    private final MemcacheService.WhichHapi hapiProcessor;
+    private final HapiProcessorFactory hapiProcessor;
 
     public JsonHapiIT(Exception testSetupErr, TestSetupInfo setupInfo, TestRunInfo runInfo, TestExtraParam extraParams)
             throws Exception
@@ -480,7 +480,7 @@ public final class JsonHapiIT extends ApiTestBase {
         }
         this.setupInfo = setupInfo;
         this.runInfo = runInfo;
-        this.hapiProcessor = MemcacheService.WhichHapi.valueOf(extraParams.hapiProcessor);
+        this.hapiProcessor = HapiProcessorFactory.valueOf(extraParams.hapiProcessor);
     }
 
     @Before

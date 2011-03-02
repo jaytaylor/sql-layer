@@ -324,7 +324,7 @@ public class SchemaDef {
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
             final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
-            if (equivalent == null) {
+            if (equivalent == null || isAkiban(equivalent)) {
                 real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
@@ -367,12 +367,13 @@ public class SchemaDef {
         Map<String,IndexDef> seenDefs = new HashMap<String,IndexDef>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
             IndexDef index = handle.real;
-            IndexDef oldIndex = seenDefs.put(index.name, index);
+            IndexDef oldIndex = seenDefs.get(index.name);
             if (oldIndex == null) {
+                seenDefs.put(index.name, index);
                 currentTable.indexes.add(index);
             }
             else {
-                index.addIndexAttributes(oldIndex);
+                oldIndex.addIndexAttributes(index);
             }
         }
     }
@@ -460,6 +461,7 @@ public class SchemaDef {
         if (currentColumn != null) {
             currentColumn.charset = charset;
         } else {
+            currentTable.charset = charset;
             for (final ColumnDef column : currentTable.columns) {
                 if (column.charset == null) {
                     column.charset = charset;
@@ -472,6 +474,7 @@ public class SchemaDef {
         if (currentColumn != null) {
             currentColumn.collate = collate;
         } else {
+            currentTable.collate = collate;
             for (final ColumnDef column : currentTable.columns) {
                 if (column.collate == null) {
                     column.collate = collate;
@@ -526,6 +529,14 @@ public class SchemaDef {
                 typeName = "TINY" + typeName;
             }
             param1 = null;
+        }
+        else if(typeName.equals("NCHAR")) {
+            typeName = "CHAR";
+            currentColumn.charset = "utf8";
+        }
+        else if(typeName.equals("NVARCHAR")) {
+            typeName = "VARCHAR";
+            currentColumn.charset = "utf8";
         }
         // SQL: FLOAT(P): 0<=P<=24 => FLOAT,  25<=P<=53 => DOUBLE
         else if(typeName.equals("FLOAT") && param1 != null && param2 == null) {
@@ -699,6 +710,8 @@ public class SchemaDef {
         List<IndexDef> indexes = new ArrayList<IndexDef>();
         UserTableDef parent;
         String engine = "akibandb";
+        String charset;
+        String collate;
         // int id;
         private final List<IndexDefHandle> indexHandles = new ArrayList<IndexDefHandle>();
         private ColumnDef autoIncrementColumn = null;
@@ -922,7 +935,7 @@ public class SchemaDef {
                 comment = otherIndex.comment;
             }
             qualifiers.addAll(otherIndex.qualifiers);
-
+            constraints.addAll(otherIndex.constraints);
         }
     }
 

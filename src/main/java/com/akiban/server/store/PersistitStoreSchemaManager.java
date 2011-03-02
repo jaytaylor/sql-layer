@@ -945,7 +945,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 int tableId = treeService
                         .aisToStore(link, rowDef.getRowDefId());
                 exchange.clear().append(tableId).fetch();
-                if (exchange.isValueDefined()) {
+                if (exchange.getValue().isDefined()) {
                     ts.get(exchange.getValue());
                 }
                 // Either there is no stored record, or we loaded it. In either
@@ -1115,8 +1115,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         for(SchemaDef.ColumnDef col : tableDef.getColumns()) {
             final String typeName = col.getType();
-            if(ais.getType(typeName) == null ||
-               typeName.equals("ENUM") || typeName.equals("SET") || typeName.equals("BIT")) {
+            if(ais.isTypeSupported(typeName) == false) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_DATA_TYPE,
                                                     "column %s is unsupported type %s", col.getName(), typeName);
             }

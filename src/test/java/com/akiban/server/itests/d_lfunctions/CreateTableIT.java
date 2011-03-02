@@ -20,6 +20,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
+import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.ParseException;
@@ -276,7 +277,69 @@ public final class CreateTableIT extends ApiTestBase {
         assertEquals(3, getUserTables().size());
     }
 
-    
+    @Test
+    public void boolTypeAliases() throws InvalidOperationException {
+        createCheckColumnDrop("c1 bool", Types.TINYINT, null, null);
+        createCheckColumnDrop("c1 boolean", Types.TINYINT, null, null);
+    }
+
+    @Test
+    public void nationalCharTypeAliases() throws InvalidOperationException {
+        int tid = createCheckColumn("c1 nchar(2)", Types.CHAR, 2L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national char(5)", Types.CHAR, 5L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 nvarchar(32)", Types.VARCHAR, 32L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national varchar(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national char varying(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+
+        tid = createCheckColumn("c1 national character varying(255)", Types.VARCHAR, 255L, null);
+        assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
+        ddl().dropTable(session, tableName(tid));
+    }
+
+    @Test
+    public void spatialDataTypes() throws InvalidOperationException {
+        createExpectException(UnsupportedDataTypeException.class, "test", "t1", "c1 geometry");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t2", "c1 geometrycollection");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t3", "c1 point");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t4", "c1 multipoint ");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t5", "c1 linestring");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t6", "c1 multilinestring");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t7", "c1 polygon");
+        createExpectException(UnsupportedDataTypeException.class, "test", "t8", "c1 multipolygon");
+    }
+
+    // DOUBLE PRECISION alias
+    @Test
+    public void bug724021() throws InvalidOperationException {
+        createCheckColumnDrop("c1 DOUBLE PRECISION", Types.DOUBLE, null, null);
+        createCheckColumnDrop("c1 DOUBLE PRECISION(10,5)", Types.DOUBLE, 10L, 5L);
+        createCheckColumnDrop("c1 DOUBLE PRECISION(1,0) NOT NULL", Types.DOUBLE, 1L, 0L);
+    }
+
+    // default charset on table results in invalid DDL regeneration
+    @Test
+    public void bug725100() throws InvalidOperationException {
+        ddl().createTable(session, "test", "create table t(id int key) default charset=utf8");
+        final int tid = tableId("test", "t");
+        assertEquals("create table `test`.`t`(`id` int, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8",
+                     new DDLGenerator().createTable(getUserTable(tid)));
+    }
+
+
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
             createTable(schema, table, definition);

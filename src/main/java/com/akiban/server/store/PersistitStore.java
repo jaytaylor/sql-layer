@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.akiban.ais.model.*;
-import com.akiban.server.AkServerConstants;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -54,7 +53,7 @@ import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 
-public class PersistitStore implements AkServerConstants, Store {
+public class PersistitStore implements Store {
 
     final static int INITIAL_BUFFER_SIZE = 1024;
 
@@ -718,7 +717,6 @@ public class PersistitStore implements AkServerConstants, Store {
                 try {
                     final TableStatus ts = rowDef.getTableStatus();
                     constructHKey(session, hEx, rowDef, oldRowData, false);
-                    Key hKey = hEx.getKey();
                     hEx.fetch();
                     //
                     // Verify that the row exists
@@ -731,7 +729,7 @@ public class PersistitStore implements AkServerConstants, Store {
                     // Combine current version of row with the version coming in on the update request.
                     // This is done by taking only the values of columns listed in the column selector.
                     RowData currentRow = new RowData(EMPTY_BYTE_ARRAY);
-                    expandRowData(hEx, rowDef, currentRow);
+                    expandRowData(hEx, currentRow);
                     final RowData mergedRowData =
                         columnSelector == null
                         ? newRowData
@@ -814,7 +812,7 @@ public class PersistitStore implements AkServerConstants, Store {
                                     RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
             RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
             RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
-            expandRowData(exchange, descendentRowDef, descendentRowData);
+            expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
             exchange.remove();
             // ... and from the indexes
@@ -1252,6 +1250,16 @@ public class PersistitStore implements AkServerConstants, Store {
     }
 
     // ---------------------------------
+    boolean hasNullIndexSegments(final RowData rowData, final IndexDef indexDef) {
+        assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
+        for(int i : indexDef.getFields()) {
+            if(rowData.isNull(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void insertIntoIndex(final Session session, final IndexDef indexDef,
             final RowData rowData, final Key hkey, final boolean deferIndexes)
             throws InvalidOperationException, PersistitException {
@@ -1260,7 +1268,7 @@ public class PersistitStore implements AkServerConstants, Store {
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
         final Key key = iEx.getKey();
 
-        if (indexDef.isUnique()) {
+        if (indexDef.isUnique() && !hasNullIndexSegments(rowData, indexDef)) {
             KeyState ks = new KeyState(key);
             key.setDepth(indexDef.getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
@@ -1373,7 +1381,7 @@ public class PersistitStore implements AkServerConstants, Store {
         hEx.getValue().setEncodedSize(size);
     }
 
-    public void expandRowData(final Exchange exchange, final RowDef rowDef, final RowData rowData)
+    public void expandRowData(final Exchange exchange, final RowData rowData)
         throws InvalidOperationException, PersistitException {
         // TODO this needs to be a more specific exception
         final int size = exchange.getValue().getEncodedSize();
@@ -1394,19 +1402,6 @@ public class PersistitStore implements AkServerConstants, Store {
         int rowDefId = AkServerUtil.getInt(valueBytes, RowData.O_ROW_DEF_ID
                 - RowData.LEFT_ENVELOPE_SIZE);
         rowDefId = treeService.storeToAis(exchange.getVolume(), rowDefId);
-        if (rowDef != null) {
-            final int expectedRowDefId = rowDef.getRowDefId();
-            if (rowDefId != expectedRowDefId) {
-                //
-                // TODO: Add code to here to evolve data to required
-                // expectedRowDefId
-                //
-                throw new InvalidOperationException(
-                        ErrorCode.MULTIGENERATIONAL_TABLE,
-                        "Unable to convert rowDefId " + rowDefId
-                                + " to expected rowDefId " + expectedRowDefId);
-            }
-        }
         if (rowDataSize > rowDataBytes.length) {
             rowDataBytes = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
             rowData.reset(rowDataBytes);
@@ -1486,7 +1481,7 @@ public class PersistitStore implements AkServerConstants, Store {
                 hEx.getKey().clear();
                 // while (hEx.traverse(Key.GT, hFilter, Integer.MAX_VALUE)) {
                 while (hEx.next(true)) {
-                    expandRowData(hEx, null, rowData);
+                    expandRowData(hEx, rowData);
                     final int tableId = rowData.getRowDefId();
                     final RowDef userRowDef = rowDefCache.getRowDef(tableId);
                     if (userRowDefs.contains(userRowDef)) {
