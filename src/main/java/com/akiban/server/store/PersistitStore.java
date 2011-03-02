@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.akiban.ais.model.*;
-import com.akiban.server.AkServerConstants;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -54,7 +53,7 @@ import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
 
-public class PersistitStore implements AkServerConstants, Store {
+public class PersistitStore implements Store {
 
     final static int INITIAL_BUFFER_SIZE = 1024;
 

@@ -16,7 +16,6 @@
 package com.akiban.server.store;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.PrintWriter;
@@ -31,7 +30,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.akiban.server.AkServerConstants;
 import com.akiban.server.AkServerTestCase;
 import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
@@ -46,8 +44,7 @@ import com.persistit.KeyState;
 import com.persistit.Tree;
 import com.persistit.Volume;
 
-public class PersistitStoreWithAISTest extends AkServerTestCase implements
-        AkServerConstants {
+public class PersistitStoreWithAISTest extends AkServerTestCase {
 
     private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
 

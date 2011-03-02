@@ -27,14 +27,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.AkServerConstants;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.util.ByteBufferFactory;
 
-public abstract class AbstractScanBase extends AkServerTestSuite implements AkServerConstants {
+public abstract class AbstractScanBase extends AkServerTestSuite {
 
     protected final static String DDL_FILE_NAME = "scan_rows_test.ddl";
 
