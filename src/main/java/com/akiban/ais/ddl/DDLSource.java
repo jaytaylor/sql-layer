@@ -97,9 +97,6 @@ public class DDLSource extends Source {
         }
     }
 
-    public final static String CREATE_TABLE = "create table ";
-    public final static String IF_NOT_EXISTS = "if not exists ";
-
     private static final Logger LOG = LoggerFactory.getLogger(DDLSource.class.getName());
 
     private final static String SCHEMA_FILE_NAME = "src/test/resources/xxxxxxxx_schema.ddl";
@@ -113,62 +110,6 @@ public class DDLSource extends Source {
     private final Map<CName, String> groupNames = new HashMap<CName, String>();
     private final Map<JoinName, String> joinNames = new HashMap<JoinName, String>();
     private final int baseId;
-
-    public static class StringStream extends ANTLRStringStream {
-
-        public StringStream(final String string) {
-            super(string);
-        }
-
-        @Override
-        public int LA(int i) {
-            if (i == 0) {
-                return 0; // undefined
-            }
-            if (i < 0) {
-                i++; // e.g., translate LA(-1) to use offset 0
-                if ((p + i - 1) < 0) {
-                    return CharStream.EOF; // invalid; no char
-                    // before first
-                    // char
-                }
-            }
-
-            if ((p + i - 1) >= n) {
-
-                return CharStream.EOF;
-            }
-            return Character.toLowerCase(data[p + i - 1]);
-        }
-    }
-
-    public static class FileStream extends ANTLRFileStream {
-
-        public FileStream(final String fileName) throws IOException {
-            super(fileName);
-        }
-
-        @Override
-        public int LA(int i) {
-            if (i == 0) {
-                return 0; // undefined
-            }
-            if (i < 0) {
-                i++; // e.g., translate LA(-1) to use offset 0
-                if ((p + i - 1) < 0) {
-                    return CharStream.EOF; // invalid; no char
-                    // before first
-                    // char
-                }
-            }
-
-            if ((p + i - 1) >= n) {
-
-                return CharStream.EOF;
-            }
-            return Character.toLowerCase(data[p + i - 1]);
-        }
-    }
 
     public static void main(final String[] args) throws Exception {
 
@@ -301,12 +242,12 @@ public class DDLSource extends Source {
     public AkibanInformationSchema buildAIS(final String fileName)
             throws Exception {
         ddlSourceName = fileName;
-        return buildAIS(new FileStream(fileName));
+        return buildAIS(new SchemaDef.FileStream(fileName));
     }
 
     public AkibanInformationSchema buildAISFromString(final String string)
             throws Exception {
-        return buildAIS(new StringStream(string));
+        return buildAIS(new SchemaDef.StringStream(string));
     }
 
     private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex)
@@ -318,7 +259,7 @@ public class DDLSource extends Source {
     public static SchemaDef parseSchemaDef(final String string)
             throws Exception {
         DDLSource instance = new DDLSource();
-        instance.parseSchemaDef(new StringStream(string));
+        instance.parseSchemaDef(new SchemaDef.StringStream(string));
         return instance.schemaDef;
     }
 
@@ -347,7 +288,7 @@ public class DDLSource extends Source {
 
     public UserTableDef parseCreateTable(final String createTableStatement)
             throws Exception {
-        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(
+        DDLSourceLexer lex = new DDLSourceLexer(new SchemaDef.StringStream(
                 createTableStatement));
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
@@ -879,161 +820,8 @@ public class DDLSource extends Source {
     
     public AkibanInformationSchema buildAISFromBuilder(final String string) throws RecognitionException, Exception
     {
-        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(string));
-        CommonTokenStream tokens = new CommonTokenStream(lex);
-        final DDLSourceParser tsparser = new DDLSourceParser(tokens);
-        this.schemaDef = new SchemaDef();
-        tsparser.schema(schemaDef);
-        
-        /*if (tsparser.getNumberOfSyntaxErrors() > 0) {
-            throw new RuntimeException("DDLSource reported a syntax error in: "
-                    + ddlSourceName);
-        }
-        */
-        addImpliedGroups(schemaDef.getMasterSchemaName());
-        //computeColumnMapAndPositions();
-        
-        AISBuilder builder = new AISBuilder();
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
-        int indexIdGenerator = 0;
-
-        // loop through user tables and add to AIS
-        for (UserTableDef utDef : schemaDef.getUserTableMap().values())
-        {
-            String schemaName = utDef.getCName().getSchema();
-            String tableName = utDef.getCName().getName();
-
-            // table
-            builder.userTable(schemaName, tableName);
-            
-            // engine
-            UserTable ut = ais.getUserTable(schemaName, tableName);
-            ut.setEngine(utDef.engine);
-            ut.setCharset(utDef.charset);
-            ut.setCollation(utDef.collate);
-            
-            // auto-increment
-            if (utDef.getAutoIncrementColumn() != null && utDef.getAutoIncrementColumn().defaultAutoIncrement() != null){
-                ut.setInitialAutoIncrementValue(utDef.getAutoIncrementColumn().defaultAutoIncrement());
-            }
-            
-            // columns
-            List<ColumnDef> columns = utDef.columns;
-            int columnIndex = 0;
-            for (ColumnDef def : columns)
-            {
-                Type type = ais.getType(def.typeName);
-                Column column = Column.create(ut,
-                                              def.name,
-                                              columnIndex++,
-                                              type);
-                column.setNullable(def.nullable);
-                column.setAutoIncrement(def.autoincrement == null ? false : true);
-                column.setTypeParameter1(longValue(def.typeParam1));
-                column.setTypeParameter2(longValue(def.typeParam2));
-                column.setCharset(def.charset);
-                column.setCollation(def.collate);
-            }
-            
-            // pk index
-            if (utDef.primaryKey.size() > 0)
-            {
-                String pkIndexName = Index.PRIMARY_KEY_CONSTRAINT;
-                Index pkIndex = Index.create(ais, ut, pkIndexName, indexIdGenerator++, true, pkIndexName);
-
-                columnIndex = 0;
-                for (String pkName : utDef.primaryKey)
-                {
-                    Column pkColumn = ut.getColumn(pkName);
-                    pkIndex.addColumn(new IndexColumn(pkIndex, pkColumn, columnIndex++, true, null));
-                }
-            }
-
-            // indexes / constraints
-            for (IndexDef indexDef : utDef.indexes)
-            {
-                String indexType = "KEY";
-                boolean unique = false;
-                for (SchemaDef.IndexQualifier qualifier : indexDef.qualifiers)
-                {
-                    if (qualifier.equals(SchemaDef.IndexQualifier.FOREIGN_KEY))
-                    {
-                        indexType = "FOREIGN KEY";
-                    }
-                    if (qualifier.equals(SchemaDef.IndexQualifier.UNIQUE))
-                    {
-                        indexType = "UNIQUE";
-                        unique = true;
-                    }
-                }
-
-                if (indexType.equalsIgnoreCase("FOREIGN KEY"))
-                {
-                    indexType = "KEY";
-                    // foreign keys (aka candidate joins)
-                    CName childTable = utDef.name;
-                    CName parentTable = indexDef.referenceTable;
-                    String joinName = constructFKJoinName(utDef, indexDef);
-
-                    builder.joinTables(joinName, parentTable.getSchema(), parentTable.getName(), childTable.getSchema(), childTable.getName());
-
-                    Iterator<String> childJoinColumnNameScan = indexDef.getChildColumns().iterator();
-                    Iterator<String> parentJoinColumnNameScan = indexDef.getParentColumns().iterator();
-
-                    while (childJoinColumnNameScan.hasNext() && parentJoinColumnNameScan.hasNext())
-                    {
-                        String childJoinColumnName = childJoinColumnNameScan.next();
-                        String parentJoinColumnName = parentJoinColumnNameScan.next();
-
-                        builder.joinColumns(joinName, parentTable.getSchema(), parentTable.getName(), parentJoinColumnName, childTable.getSchema(), childTable.getName(), childJoinColumnName);
-                    }
-                }
-//                else
-                {
-                    // indexes
-                    Index fkIndex = Index.create(ais, ut, indexDef.name, indexIdGenerator++, unique, indexType);
-
-                    columnIndex = 0;
-                    for (SchemaDef.IndexColumnDef indexColumnDef : indexDef.columns)
-                    {
-                        Column fkColumn = ut.getColumn(indexColumnDef.columnName);
-                        fkIndex.addColumn(new IndexColumn(fkIndex, fkColumn, columnIndex++, !indexColumnDef.descending, indexColumnDef.indexedLength));
-                    }
-                }
-            }
-        }
-
-        builder.basicSchemaIsComplete();
-
-        // loop through group tables and add to AIS
-        for (CName group : schemaDef.getGroupMap().keySet())
-        {
-            LOG.info("Group = " + group.getName());
-            builder.createGroup(group.getName(), groupSchemaName(), groupTableName(group));
-
-            List<CName> tablesInGroup = depthFirstSortedUserTables(group);
-            for (CName table : tablesInGroup)
-            {
-                UserTableDef tableDef = schemaDef.getUserTableMap().get(table);
-                IndexDef akibanFK = getAkibanJoin(tableDef);
-                if (akibanFK == null)
-                {
-                    // No FK: this is a root table so do nothing
-                    LOG.info("Group Root Table = " + table.getName());
-                }
-                else
-                {
-                    LOG.info("Group Child Table = " + table.getName());
-                    if (akibanFK.referenceTable != null) {
-                        String joinName = constructFKJoinName(tableDef, akibanFK);
-                        builder.addJoinToGroup(group.getName(), joinName, 0);
-                    }
-                }
-            }
-        }
-        if (!schemaDef.getGroupMap().isEmpty()) builder.groupingIsComplete();
-
-        return builder.akibanInformationSchema();
+        this.schemaDef = SchemaDef.parseSchema(string);
+        SchemaDefToAis toAis = new SchemaDefToAis(this.schemaDef, false);
+        return toAis.getAis();
     }
-    
 }

@@ -15,6 +15,7 @@
 
 package com.akiban.ais.ddl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 
+import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -1064,33 +1066,51 @@ public class SchemaDef {
         }
     }
 
-    public static class StringStream extends ANTLRStringStream {
+    public static int ignoreCaseLA(char[] data, int n, int i, int p) {
+        if (i == 0) {
+            return 0; // undefined
+        }
+        if (i < 0) {
+            i++; // e.g., translate LA(-1) to use offset 0
+            if ((p + i - 1) < 0) {
+                // Invalid. No char before first char.
+                return CharStream.EOF;
+            }
+        }
+        if ((p + i - 1) >= n) {
+            return CharStream.EOF;
+        }
+        return Character.toLowerCase(data[p + i - 1]);
+    }
 
+    /**
+     * Case Insensitive ANTLRStringStream
+     */
+    public static class StringStream extends ANTLRStringStream {
         public StringStream(final String string) {
             super(string);
         }
 
         @Override
         public int LA(int i) {
-            if (i == 0) {
-                return 0; // undefined
-            }
-            if (i < 0) {
-                i++; // e.g., translate LA(-1) to use offset 0
-                if ((p + i - 1) < 0) {
-                    return CharStream.EOF; // invalid; no char
-                    // before first
-                    // char
-                }
-            }
-
-            if ((p + i - 1) >= n) {
-
-                return CharStream.EOF;
-            }
-            return Character.toLowerCase(data[p + i - 1]);
+            return ignoreCaseLA(data, n, i, p);
         }
     }
+
+    /**
+     * Case Insensitive ANTLRFileStream
+     */
+    public static class FileStream extends ANTLRFileStream {
+        public FileStream(final String fileName) throws IOException {
+            super(fileName);
+        }
+
+        @Override
+        public int LA(int i) {
+            return ignoreCaseLA(data, n, i, p);
+        }
+    }
+
 
     /**
      * Incrementally adds a new table to the SchemaDef.
