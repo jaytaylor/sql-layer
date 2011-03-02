@@ -776,14 +776,6 @@ public class DDLSource extends Source {
         // constructor.
     }
 
-    public String getDdlSourceName() {
-        return ddlSourceName;
-    }
-
-    public void setDdlSourceName(String ddlSourceName) {
-        this.ddlSourceName = ddlSourceName;
-    }
-
     private Map<String, Object> map(String typename, Object... values)
             throws Exception {
         Map<String, Object> map = new HashMap<String, Object>();
@@ -883,40 +875,6 @@ public class DDLSource extends Source {
             tablesInGroups.add(userTableName);
         }
         return utDef;
-    }
-
-    public static String canonicalStatement(final String s) {
-        final StringBuilder sb = new StringBuilder();
-        boolean sc = false;
-        boolean ws = false;
-        for (int i = 0; i < s.length(); i++) {
-            final char c = s.charAt(i);
-            if (c > ' ') {
-                if (ws) {
-                    if (sb.length() > 0) {
-                        sb.append(' ');
-                    }
-                    ws = false;
-                }
-                sb.append(c);
-                sc = c == ';';
-            } else {
-                ws = true;
-            }
-        }
-        if (!sc) {
-            sb.append(';');
-        }
-        strip(sb, CREATE_TABLE);
-        strip(sb, IF_NOT_EXISTS);
-        sb.insert(0, CREATE_TABLE);
-        return sb.toString();
-    }
-
-    private static void strip(StringBuilder sb, final String s) {
-        if (sb.substring(0, s.length()).equalsIgnoreCase(s)) {
-            sb.delete(0, s.length());
-        }
     }
     
     public AkibanInformationSchema buildAISFromBuilder(final String string) throws RecognitionException, Exception
