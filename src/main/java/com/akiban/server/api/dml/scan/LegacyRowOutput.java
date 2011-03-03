@@ -24,7 +24,7 @@ public interface LegacyRowOutput {
 
     void wroteRow() throws RowOutputException;
 
-    void addRow(RowData rowData);
+    void addRow(RowData rowData) throws RowOutputException;
 
     int getRowsCount();
 

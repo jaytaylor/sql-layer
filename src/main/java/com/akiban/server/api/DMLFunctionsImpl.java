@@ -47,11 +47,12 @@ import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.CursorState;
 import com.akiban.server.api.dml.scan.LegacyOutputConverter;
-import com.akiban.server.api.dml.scan.LegacyOutputRouter;
+import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.RowDataLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
@@ -65,7 +66,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
+public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
@@ -254,10 +255,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static class PooledConverter {
         private final LegacyOutputConverter converter;
-        private final LegacyOutputRouter router;
+        private final BufferedLegacyOutputRouter router;
 
         public PooledConverter(DMLFunctions dmlFunctions) {
-            router = new LegacyOutputRouter(1024 * 1024, true);
+            router = new BufferedLegacyOutputRouter(1024 * 1024, true);
             converter = new LegacyOutputConverter(dmlFunctions);
             router.addHandler(converter);
         }
@@ -593,16 +594,14 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         }
 
         // Store.truncate() gets rid of the entire group, so roll our own by doing a table scan
-        LegacyOutputRouter output = new LegacyOutputRouter(65535, true);
-        output.addHandler(new LegacyOutputRouter.Handler() {
-            private RowData rowData = new RowData();
+        RowDataLegacyOutputRouter output = new RowDataLegacyOutputRouter();
+        output.addHandler(new RowDataLegacyOutputRouter.Handler() {
             private LegacyRowWrapper rowWrapper = new LegacyRowWrapper();
 
-            public void handleRow(byte[] bytes, int offset, int length) throws RowOutputException {
-                rowData.reset(bytes, offset, length);
-                rowData.prepareRow(offset);
-                rowWrapper.setRowData(rowData);
+            @Override
+            public void handleRow(RowData rowData) throws RowOutputException {
                 try {
+                    rowWrapper.setRowData(rowData);
                     deleteRow(session, rowWrapper);
                 } catch (InvalidOperationException e) {
                     throw new RowOutputException(e);
