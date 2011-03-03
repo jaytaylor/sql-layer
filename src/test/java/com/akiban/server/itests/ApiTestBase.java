@@ -140,8 +140,9 @@ public class ApiTestBase {
 
     protected ApiTestBase()
     {
-        assertTrue("Please name integration tests FooIT instead of FooTest",
-                this.getClass().getSimpleName().endsWith("IT")
+        final String name = this.getClass().getSimpleName();
+        assertTrue("Please name integration tests FooIT or FooMT instead of FooTest or somethign else",
+                name.endsWith("IT") || name.endsWith("MT")
         );
     }
 

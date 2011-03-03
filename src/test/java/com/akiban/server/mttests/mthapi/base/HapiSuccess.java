@@ -13,17 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.mttests.mthapi;
+package com.akiban.server.mttests.mthapi.base;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.service.session.Session;
+import com.akiban.server.api.HapiGetRequest;
+import org.json.JSONObject;
 
-public interface WriteThread {
-    void setupWrites(DDLFunctions ddlFunctions, DMLFunctions dmlFunctions, Session session)
-            throws InvalidOperationException;
+public abstract class HapiSuccess extends HapiReadThread {
+    @Override
+    protected abstract void validateSuccessResponse(HapiGetRequest request, JSONObject result) throws Exception;
 
-    void ongoingWrites(DDLFunctions ddlFunctions, DMLFunctions dmlFunctions, Session session)
-            throws InvalidOperationException;
+    @Override
+    final void validateErrorResponse(HapiGetRequest request, Throwable exception) throws UnexpectedException {
+        throw new UnexpectedException(request, exception);
+    }
 }
