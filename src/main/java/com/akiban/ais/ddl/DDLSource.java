@@ -102,7 +102,6 @@ public class DDLSource extends Source {
     private Map<String, ColumnDef> columnDefMap = new HashMap<String, ColumnDef>();
     private final Map<CName, String> groupNames = new HashMap<CName, String>();
     private final Map<JoinName, String> joinNames = new HashMap<JoinName, String>();
-    private final int baseId;
 
     public static void main(final String[] args) throws Exception {
 
@@ -225,11 +224,6 @@ public class DDLSource extends Source {
     }
 
     public DDLSource() {
-        this(0);
-    }
-
-    public DDLSource(int baseId) {
-        this.baseId = baseId;
     }
 
     public AkibanInformationSchema buildAISFromFile(final String fileName) throws Exception {
@@ -645,7 +639,7 @@ public class DDLSource extends Source {
 
     @Override
     public void readTables(Receiver tableReceiver) throws Exception {
-        int tableId = baseId;
+        int tableId = 0;
 
         for (final CName groupName : schemaDef.getGroupMap().keySet()) {
             int groupTableId = ++tableId;
