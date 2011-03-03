@@ -171,10 +171,15 @@ public class DDLSource {
         return schemaDefToAis();
     }
 
+    /**
+     * @param createTableStatement  A valid DDL statement. Should not contain CREATE TABLE.
+     * @return UserTableDef representing the passed statement.
+     * @throws Exception if there was a parse error.
+     */
     public UserTableDef parseCreateTable(final String createTableStatement) throws Exception {
         this.schemaDef = new SchemaDef();
         try {
-            return schemaDef.parseCreateTable(createTableStatement);
+            return schemaDef.parseCreateTable("create table " + createTableStatement);
         } catch(RuntimeException e) {
             throw new ParseException(e);
         }
