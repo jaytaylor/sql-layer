@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.service.config.ModuleConfiguration;
 import com.akiban.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ import java.io.IOException;
 /**
  * @author peter
  */
-public class AkServer implements AkServerConstants, Service<AkServer>, JmxManageable {
+public class AkServer implements Service<AkServer>, JmxManageable {
 
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
@@ -46,16 +47,14 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
      *
      * /** Port on which the AkSserver will listen for requests.
      */
-    private static final int AKSERVER_PORT = Integer.parseInt(System.getProperty(
-            "akserver.port", DEFAULT_AKSERVER_PORT_STRING));
+    private final int AKSERVER_PORT;
 
     /**
      * Interface on which this akserver instance will listen. TODO - allow
      * multiple NICs
      */
 
-    private static final String AKSERVER_HOST = System.getProperty(
-            "akserver.host", DEFAULT_AKSERVER_HOST_STRING);
+    private final String AKSERVER_HOST;
 
     private static final boolean TCP_NO_DELAY =
         Boolean.parseBoolean(System.getProperty("com.akiban.server.tcpNoDelay", "true"));
@@ -66,9 +65,6 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
      */
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
 
-    
-    private final int akserverPort = AKSERVER_PORT; // TODO - get from
-                                                  // ConfigurationService
 
     private volatile Thread _shutdownHook;
     
@@ -77,6 +73,10 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
     public AkServer() {
         this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(
                 this), ManageMXBean.class);
+        ModuleConfiguration config
+                = ServiceManagerImpl.get().getConfigurationService().getModuleConfiguration("akserver");
+        AKSERVER_PORT = Integer.parseInt( config.getProperty("port") );
+        AKSERVER_HOST = config.getProperty("host");
     }
 
     @Override
@@ -114,7 +114,7 @@ public class AkServer implements AkServerConstants, Service<AkServer>, JmxManage
     }
 
     public int port() {
-        return akserverPort;
+        return AKSERVER_PORT;
     }
 
     public ServiceManager getServiceManager()

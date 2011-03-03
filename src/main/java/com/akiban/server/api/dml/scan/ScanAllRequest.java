@@ -21,12 +21,15 @@ import java.util.Set;
 public class ScanAllRequest extends ScanAllRange implements ScanRequest {
     private final int indexId;
     private final int scanFlags;
-    
+
     public ScanAllRequest(int tableId, Set<Integer> columnIds) {
         this(tableId, columnIds, 0, null);
     }
 
-    public ScanAllRequest(int tableId, Set<Integer> columnIds, int indexId, EnumSet<ScanFlag> scanFlags)
+    public ScanAllRequest(int tableId,
+                          Set<Integer> columnIds,
+                          int indexId,
+                          EnumSet<ScanFlag> scanFlags)
     {
         super(tableId, columnIds);
         this.indexId = indexId;

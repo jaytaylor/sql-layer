@@ -17,6 +17,7 @@ package com.akiban.server.api.dml.scan;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.server.RowData;
 import com.akiban.util.ArgumentValidation;
 
 public class WrappingRowOutput implements LegacyRowOutput {
@@ -44,6 +45,12 @@ public class WrappingRowOutput implements LegacyRowOutput {
         postWroteRow();
     }
 
+    @Override
+    public void addRow(RowData rowData)
+    {
+        throw new UnsupportedOperationException("Shouldn't be using addRow for output to a ScanRowsResponse message");
+    }
+
     protected void postWroteRow() throws RowOutputException {
 
     }
@@ -51,5 +58,11 @@ public class WrappingRowOutput implements LegacyRowOutput {
     @Override
     final public int getRowsCount() {
         return rows;
+    }
+
+    @Override
+    public boolean getOutputToMessage()
+    {
+        return true;
     }
 }

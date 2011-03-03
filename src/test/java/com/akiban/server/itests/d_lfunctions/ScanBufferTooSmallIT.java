@@ -67,15 +67,15 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
     }
 
     @Test(timeout=5000,expected=BufferFullException.class)
+    @org.junit.Ignore("bug 724520")
     public void viaScanFull() throws InvalidOperationException, BufferFullException {
         int coiId = ddl().getAIS(session).getTable("ts", "c").getGroup().getGroupTable().getTableId();
         ScanRequest request = new ScanAllRequest(coiId, new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, 5, 6)));
-        ByteBuffer buffer = ByteBuffer.allocate(10);
-        buffer.mark();
-        RowDataOutput.scanFull(session, dml(), buffer, request);
+        RowDataOutput.scanFull(session, dml(), request);
     }
 
     @Test(timeout=5000)
+    @org.junit.Ignore("bug 724520")
     public void viaHapi() throws HapiRequestException {
         final HapiGetRequest request = new HapiGetRequest() {
             @Override
@@ -100,10 +100,11 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
                 );
             }
         };
+        // TODO: Scanrows no longer has a variable-sized buffer, so some of the code below is disabled.
         Scanrows scanrows = Scanrows.instance();
-        scanrows.getMXBean().setBufferCapacity(10);
+        // scanrows.getMXBean().setBufferCapacity(10);
         scanrows.processRequest(session, request, DummyOutputter.instance(), new ByteArrayOutputStream(1));
-        final int capacity = scanrows.getMXBean().getBufferCapacity();
-        assertTrue("buffer capacity is " + capacity, capacity > 10);
+        // final int capacity = scanrows.getMXBean().getBufferCapacity();
+        // assertTrue("buffer capacity is " + capacity, capacity > 10);
     }
 }

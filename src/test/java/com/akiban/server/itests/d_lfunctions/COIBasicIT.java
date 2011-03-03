@@ -21,7 +21,6 @@ import static junit.framework.Assert.assertSame;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
@@ -148,10 +147,9 @@ public final class COIBasicIT extends ApiTestBase {
         final NewRow iRow = NewRowBuilder.forTable(tids.i).put(100L).put(10L).put("Desc 1").check(dml()).row();
 
         writeRows(cRow, oRow, iRow);
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        List<RowData> cRows = scanFull(buffer, scanAllRequest(tids.c));
-        List<RowData> oRows = scanFull(buffer, scanAllRequest(tids.o));
-        List<RowData> iRows = scanFull(buffer, scanAllRequest(tids.i));
+        List<RowData> cRows = scanFull(scanAllRequest(tids.c));
+        List<RowData> oRows = scanFull(scanAllRequest(tids.o));
+        List<RowData> iRows = scanFull(scanAllRequest(tids.i));
 
         assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
@@ -181,10 +179,9 @@ public final class COIBasicIT extends ApiTestBase {
         final NewRow iRow = NewRowBuilder.forTable(tids.i).put(100L).put(10L).put("Desc 1").check(dml()).row();
 
         writeRows(cRow, oRow, iRow);
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        List<RowData> cRows = scanFull(buffer, scanAllRequest(tids.c));
-        List<RowData> oRows = scanFull(buffer, scanAllRequest(tids.o));
-        List<RowData> iRows = scanFull(buffer, scanAllRequest(tids.i));
+        List<RowData> cRows = scanFull(scanAllRequest(tids.c));
+        List<RowData> oRows = scanFull(scanAllRequest(tids.o));
+        List<RowData> iRows = scanFull(scanAllRequest(tids.i));
 
         assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));

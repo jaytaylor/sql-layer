@@ -32,7 +32,12 @@ public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
         return scanFlags;
     }
 
-    public LegacyScanRequest(int tableId, RowData start, RowData end, byte[] columnBitMap, int indexId, int scanFlags)
+    public LegacyScanRequest(int tableId,
+                             RowData start,
+                             RowData end,
+                             byte[] columnBitMap,
+                             int indexId,
+                             int scanFlags)
     throws TableDefinitionMismatchException
     {
         super(tableId, start, end, columnBitMap);

@@ -46,7 +46,7 @@ import com.persistit.exception.PersistitException;
  * 
  * @author peter
  */
-public class RowDefCache implements AkServerConstants {
+public class RowDefCache {
 
     // TODO: For debugging - remove this
     private static volatile RowDefCache LATEST;

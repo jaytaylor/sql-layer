@@ -81,4 +81,10 @@ public class LegacyOutputRouter extends WrappingRowOutput {
             lastPosition = incomingPosition;
         }
     }
+
+    @Override
+    public boolean getOutputToMessage()
+    {
+        return true;
+    }
 }
