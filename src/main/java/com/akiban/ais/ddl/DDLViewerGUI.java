@@ -147,7 +147,8 @@ public class DDLViewerGUI {
             createStatements.append(createStatement);
         }
 
-        AkibanInformationSchema ais = new DDLSource().buildAISFromString(createStatements.toString());
+
+        AkibanInformationSchema ais = new SchemaDefToAis(SchemaDef.parseSchema(createStatements.toString()), false).getAis();
         return GroupsBuilder.fromAis(ais, "NONE");
     }
 

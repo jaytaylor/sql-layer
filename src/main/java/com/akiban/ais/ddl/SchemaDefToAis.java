@@ -251,15 +251,17 @@ public class SchemaDefToAis {
                 return name;
             }
 
-            int i = 1;
+            int i = 0;
             StringBuilder builder = new StringBuilder(name).append('$');
             final int appendAt = builder.length();
             String ret;
 
-            while (!names.add(ret = builder.toString())) {
+            do {
                 builder.setLength(appendAt);
                 builder.append(i++);
             }
+            while(!names.add(ret = builder.toString()));
+            
             return ret;
         }
     }
@@ -270,6 +272,7 @@ public class SchemaDefToAis {
         computeColumnMapAndPositions();
 
         AISBuilder builder = new AISBuilder();
+        builder.setTableIdOffset(0);
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
 

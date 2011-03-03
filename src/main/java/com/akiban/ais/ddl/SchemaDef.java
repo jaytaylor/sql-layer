@@ -15,6 +15,8 @@
 
 package com.akiban.ais.ddl;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,11 +30,14 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 
+import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 
 import com.akiban.ais.model.Column;
+import org.antlr.runtime.RecognitionException;
 
 /**
  * Structures used to hold the results of parsing DDL statements. DDLSource.g
@@ -1064,31 +1069,62 @@ public class SchemaDef {
         }
     }
 
-    public static class StringStream extends ANTLRStringStream {
+    private static int lowerCaseLA(char[] data, int n, int i, int p) {
+        if (i == 0) {
+            return 0; // undefined
+        }
+        if (i < 0) {
+            i++; // e.g., translate LA(-1) to use offset 0
+            if ((p + i - 1) < 0) {
+                // Invalid. No char before first char.
+                return CharStream.EOF;
+            }
+        }
+        if ((p + i - 1) >= n) {
+            return CharStream.EOF;
+        }
+        return Character.toLowerCase(data[p + i - 1]);
+    }
 
-        public StringStream(final String string) {
+    /**
+     * Case Insensitive ANTLRStringStream
+     */
+    public static class SDStringStream extends ANTLRStringStream {
+        public SDStringStream(final String string) {
             super(string);
         }
 
         @Override
         public int LA(int i) {
-            if (i == 0) {
-                return 0; // undefined
-            }
-            if (i < 0) {
-                i++; // e.g., translate LA(-1) to use offset 0
-                if ((p + i - 1) < 0) {
-                    return CharStream.EOF; // invalid; no char
-                    // before first
-                    // char
-                }
-            }
+            return lowerCaseLA(data, n, i, p);
+        }
+    }
 
-            if ((p + i - 1) >= n) {
+    /**
+     * Case Insensitive ANTLRFileStream
+     */
+    public static class SDFileStream extends ANTLRFileStream {
+        public SDFileStream(final String fileName) throws IOException {
+            super(fileName);
+        }
 
-                return CharStream.EOF;
-            }
-            return Character.toLowerCase(data[p + i - 1]);
+        @Override
+        public int LA(int i) {
+            return lowerCaseLA(data, n, i, p);
+        }
+    }
+
+    /**
+     * Case Insensitive ANTLRInputStream
+     */
+    public static class SDInputStream extends ANTLRInputStream {
+        public SDInputStream(InputStream input) throws IOException {
+            super(input);
+        }
+
+        @Override
+        public int LA(int i) {
+            return lowerCaseLA(data, n, i, p);
         }
     }
 
@@ -1101,7 +1137,7 @@ public class SchemaDef {
      */
     public UserTableDef parseCreateTable(final String createTableStatement)
             throws Exception {
-        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(
+        DDLSourceLexer lex = new DDLSourceLexer(new SDStringStream(
                 createTableStatement));
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
@@ -1113,8 +1149,20 @@ public class SchemaDef {
         return getCurrentTable();
     }
 
-    public static SchemaDef parseSchema(final String schema) throws Exception {
-        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(schema));
+    public static SchemaDef parseSchema(final String schema) throws RecognitionException {
+        return parseSchemaFromANTLRStream(new SDStringStream(schema));
+    }
+
+    public static SchemaDef parseSchemaFromFile(final String fileName) throws IOException, RecognitionException {
+        return parseSchemaFromANTLRStream(new SDFileStream(fileName));
+    }
+
+    public static SchemaDef parseSchemaFromStream(InputStream stream) throws IOException, RecognitionException {
+        return parseSchemaFromANTLRStream(new SDInputStream(stream));
+    }
+
+    private static SchemaDef parseSchemaFromANTLRStream(ANTLRStringStream stream) throws RecognitionException {
+        DDLSourceLexer lex = new DDLSourceLexer(stream);
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
         final SchemaDef schemaDef = new SchemaDef();
