@@ -248,28 +248,6 @@ public class DDLSource extends Source {
         String ret = (fkIndex.getParentSchema() + "/" + fkIndex.getParentTable() + "/" + Strings.join(fkIndex.getParentColumns(), ",") + "/" + childTable.getCName().getSchema() + "/" + childTable.name + "/" + Strings.join(fkIndex.getChildColumns(), ",")).toLowerCase();
         return ret.replace(',','_');
     }
-    
-    public static SchemaDef parseSchemaDef(final String string)
-            throws Exception {
-        DDLSource instance = new DDLSource();
-        instance.parseSchemaDef(new SchemaDef.StringStream(string));
-        return instance.schemaDef;
-    }
-
-    private void parseSchemaDef(final ANTLRStringStream stringStream)
-            throws RecognitionException {
-        DDLSourceLexer lex = new DDLSourceLexer(stringStream);
-        CommonTokenStream tokens = new CommonTokenStream(lex);
-        final DDLSourceParser tsparser = new DDLSourceParser(tokens);
-        this.schemaDef = new SchemaDef();
-        tsparser.schema(schemaDef);
-        if (tsparser.getNumberOfSyntaxErrors() > 0) {
-            throw new RuntimeException("DDLSource reported a syntax error in: "
-                    + ddlSourceName);
-        }
-        addImpliedGroups(schemaDef.getMasterSchemaName());
-        computeColumnMapAndPositions();
-    }
 
     public UserTableDef parseCreateTable(final String createTableStatement) throws Exception {
         this.schemaDef = new SchemaDef();

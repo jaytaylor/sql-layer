@@ -102,18 +102,6 @@ public class DDLSourceTest {
         String ddl = "CREATE TABLE `s1`.one (idOne int, PRIMARY KEY (idOne)) engine=akibandb;\n"
                 + "CREATE TABLE `s2`.one (idTwo int, PRIMARY KEY (idTwo)) engine=akibandb;";
 
-        SchemaDef schemaDef = DDLSource.parseSchemaDef(ddl);
-        assertEquals("user tables", 2, schemaDef.getUserTableMap().size());
-        assertEquals("group tables", 2, schemaDef.getGroupMap().size());
-        assertTrue(
-                "s1.one missing",
-                schemaDef.getGroupMap().containsKey(
-                        new SchemaDef.CName("akiban_objects", "one")));
-        assertTrue(
-                "s2.one missing",
-                schemaDef.getGroupMap().containsKey(
-                        new SchemaDef.CName("akiban_objects", "one$0")));
-
         AkibanInformationSchema ais = new DDLSource().buildAISFromString(ddl);
         assertEquals("user tables", 2, ais.getUserTables().size());
         assertEquals("group tables", 2, ais.getGroupTables().size());
@@ -404,36 +392,6 @@ public class DDLSourceTest {
         assertEquals("same columns",
                 "FOREIGN KEY (`pid`) REFERENCES `parent` (`pid`)",
                 fk("parent", false, "ignored", null, "pid"));
-    }
-
-    /**
-     * Creates the customer-order tables and parses them into a SchemaDef.
-     * 
-     * @param includeConstraint
-     *            see
-     *            {@linkplain #fk(String, boolean, String, String, String...)}
-     * @param constraintName
-     *            see
-     *            {@linkplain #fk(String, boolean, String, String, String...)}
-     * @param indexName
-     *            see
-     *            {@linkplain #fk(String, boolean, String, String, String...)}
-     * @return a SchemaDef with two tables, customer and order. The order's FK
-     *         will use the given params.
-     */
-    private static SchemaDef parseCO(boolean includeConstraint,
-            String constraintName, String indexName) throws Exception {
-        StringBuilder ret = new StringBuilder();
-        ret.append("CREATE TABLE `schema`.`customer` (`id` INT, PRIMARY KEY (`id`)) engine=akibandb;\n");
-
-        ret.append("CREATE TABLE `schema`.`order` (`id` INT, `cid` INT, PRIMARY KEY (`id`), ");
-        ret.append("KEY `given_key` (`cid`), ");
-        ret.append("CONSTRAINT `givenConstraint` FOREIGN KEY `givenFk` (`cid`) REFERENCES `customer` (`id`), ");
-        ret.append(fk("customer", includeConstraint, constraintName, indexName,
-                "parent:id", "child:cid"));
-        ret.append(") engine=akibandb;");
-
-        return DDLSource.parseSchemaDef(ret.toString());
     }
 
     /**
