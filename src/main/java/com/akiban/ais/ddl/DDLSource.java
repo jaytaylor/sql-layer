@@ -15,24 +15,20 @@
 
 package com.akiban.ais.ddl;
 
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import org.antlr.runtime.RecognitionException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.ddl.SchemaDef.UserTableDef;
 import com.akiban.ais.io.MessageTarget;
@@ -40,27 +36,10 @@ import com.akiban.ais.io.Writer;
 
 
 /**
- * TODO - remove this class.  As of 1/5/2011 this class is no longer used by
- * server component. When studio and other components no longer need it, 
- * this class should be deleted.  Its logic has been divided into (a)
- * addition of parse capability in SchemaDef, and (b) new class
- * SchemaDefToAis.
- * 
- * This class reads the CREATE TABLE statements in a mysqldump file, plus
- * annotations to denote the group structure. There is neither an attempt to
- * fully parse the DDL, nor to handle syntactic variations. The purpose of this
- * class is to facilitate creating AIS instances from existing MySQL databases
- * prior to the arrival of the Control Center's implementation.
- * 
- * There is no error handling, and this is not a general-purpose parser. The
- * format of the text file must be exact, especially with respect to spaces,
- * back ticks, etc.
- * 
- * See the xxxxxxxx_schema.sql file in src/test/resources for an example of the
- * syntax.
- * 
- * @author peter
- * 
+ * Entry point for reading a schema and producing an AIS in SQL or
+ * binary format. All real work is done by SchemaDef and SchemaDefToAis.
+ *
+ * TODO: There remains one legacy method, parseCreateTable, in use by Studio
  */
 public class DDLSource {
 
@@ -70,33 +49,24 @@ public class DDLSource {
         }
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(DDLSource.class.getName());
-
-    private final static String SCHEMA_FILE_NAME = "src/test/resources/xxxxxxxx_schema.ddl";
-    private final static int MAX_AIS_SIZE = 1048576;
-    private final static String BINARY_FORMAT = "binary";
+    private final static int MAX_AIS_SIZE = 2 << 20; // 1MB, implied by net msg
     private final static String SQL_FORMAT = "sql";
+    private final static String BINARY_FORMAT = "binary";
 
-    private SchemaDef schemaDef;
-
+    
     public static void main(final String[] args) throws Exception {
-
-        String iFileName = SCHEMA_FILE_NAME;
-        String oFileName = "/tmp/"
-                + new File(iFileName).getName().split("\\.")[0] + ".out";
         String format = SQL_FORMAT;
+        InputStream inputStream = System.in;
+        OutputStream outputStream = System.out;
 
-        CommandLineParser parser = new PosixParser();
         Options options = new Options();
-        options.addOption("i", "input-file", true, "default input file = "
-                + iFileName);
-        options.addOption("o", "output-file", true, "default output file = "
-                + oFileName);
-        options.addOption("f", "format", true,
-                "valid values are sql and binary; the default is sql");
-        options.addOption("h", "help", false, "print this message");
-
+        options.addOption("i", "input-file", true, "Input file name [stdin]");
+        options.addOption("o", "output-file", true, "Output file name [stdout]");
+        options.addOption("f", "format", true, "Output format, sql or binary [sql]");
+        options.addOption("h", "help", false, "Print this message");
+        
         try {
+            CommandLineParser parser = new PosixParser();
             CommandLine line = parser.parse(options, args);
 
             if (line.hasOption("help")) {
@@ -106,58 +76,51 @@ public class DDLSource {
             }
 
             if (line.hasOption("input-file")) {
-                iFileName = line.getOptionValue("input-file");
+                String inputFile = line.getOptionValue("input-file");
+                inputStream = new FileInputStream(inputFile);
             }
 
             if (line.hasOption("output-file")) {
-                oFileName = line.getOptionValue("output-file");
+                String oFileName = line.getOptionValue("output-file");
+                outputStream = new FileOutputStream(oFileName, false);
             }
 
             if (line.hasOption("format")) {
-                format = line.getOptionValue("format");
-                format = format.toLowerCase();
-                if (format.compareTo(BINARY_FORMAT) != 0
-                        && format.compareTo(SQL_FORMAT) != 0) {
-                    System.out.println("invald format option " + format
-                            + "; using default = " + SQL_FORMAT);
-                    format = SQL_FORMAT;
+                format = line.getOptionValue("format").toLowerCase();
+                if (!format.equals(BINARY_FORMAT) && !format.equals(SQL_FORMAT)) {
+                    System.err.println("Invalid format option: " + format);
+                    System.exit(1);
                 }
             }
         } catch (org.apache.commons.cli.ParseException exp) {
-            System.out.println("Unexpected exception:" + exp.getMessage());
+            System.err.println(exp.getMessage());
+            System.exit(1);
         }
 
-        final SchemaDef schemaDef = SchemaDef.parseSchemaFromFile(iFileName);
+        final SchemaDef schemaDef = SchemaDef.parseSchemaFromStream(inputStream);
         final SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         final AkibanInformationSchema ais = toAis.getAis();
 
         if (format.compareTo(SQL_FORMAT) == 0) {
-            final PrintWriter pw = new PrintWriter(new FileWriter(oFileName));
-            SqlTextTarget target = new SqlTextTarget(pw);
-            new Writer(target).save(ais);
+            final PrintWriter pw = new PrintWriter(outputStream);
+            final SqlTextTarget target = new SqlTextTarget(pw);
+            final Writer writer = new Writer(target);
+            writer.save(ais);
             target.writeGroupTableDDL(ais);
             pw.close();
         } else {
-            assert format.compareTo(BINARY_FORMAT) == 0;
-
-            ByteBuffer rawAis = ByteBuffer.allocate(MAX_AIS_SIZE);
+            final ByteBuffer rawAis = ByteBuffer.allocate(MAX_AIS_SIZE);
             rawAis.order(ByteOrder.LITTLE_ENDIAN);
-            new Writer(new MessageTarget(rawAis)).save(ais);
+            final MessageTarget target = new MessageTarget(rawAis);
+            final Writer writer = new Writer(target);
+            writer.save(ais);
             rawAis.flip();
-
-            boolean append = false;
-            File file = new File(oFileName);
-            try {
-                FileChannel wChannel = new FileOutputStream(file, append)
-                        .getChannel();
-                wChannel.write(rawAis);
-                wChannel.close();
-            } catch (IOException e) {
-                throw new Exception("rarrrgh");
-            }
+            outputStream.write(rawAis.array());
+            outputStream.close();
         }
     }
 
+    
     /**
      * Parse a table definition and return intermediate representation.
      * @param createTableStatement  A valid DDL statement. Should not contain CREATE TABLE.
@@ -165,7 +128,7 @@ public class DDLSource {
      * @throws Exception if there was a parse error.
      */
     public UserTableDef parseCreateTable(final String createTableStatement) throws Exception {
-        this.schemaDef = new SchemaDef();
+        SchemaDef schemaDef = new SchemaDef();
         try {
             return schemaDef.parseCreateTable("create table " + createTableStatement);
         } catch(RuntimeException e) {
