@@ -42,13 +42,6 @@ import com.akiban.ais.io.Writer;
  * TODO: There remains one legacy method, parseCreateTable, in use by Studio
  */
 public class DDLSource {
-
-    public class ParseException extends Exception {
-        private ParseException(Exception cause) {
-            super(cause.getMessage(), cause);
-        }
-    }
-
     private final static int MAX_AIS_SIZE = 2 << 20; // 1MB, implied by net msg
     private final static String SQL_FORMAT = "sql";
     private final static String BINARY_FORMAT = "binary";
@@ -129,10 +122,6 @@ public class DDLSource {
      */
     public UserTableDef parseCreateTable(final String createTableStatement) throws Exception {
         SchemaDef schemaDef = new SchemaDef();
-        try {
-            return schemaDef.parseCreateTable("create table " + createTableStatement);
-        } catch(RuntimeException e) {
-            throw new ParseException(e);
-        }
+        return schemaDef.parseCreateTable("create table " + createTableStatement);
     }
 }
