@@ -66,7 +66,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
+public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();

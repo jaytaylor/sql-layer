@@ -49,7 +49,7 @@ import com.akiban.server.store.SchemaId;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 
-public class DDLFunctionsImpl extends ClientAPIBase implements
+public final class DDLFunctionsImpl extends ClientAPIBase implements
         DDLFunctions {
 
     public static DDLFunctions instance() {
@@ -92,16 +92,12 @@ public class DDLFunctionsImpl extends ClientAPIBase implements
         }
 
         try {
-            DMLFunctions dml = dmlFunctionsForDrop();
+            DMLFunctions dml = new DMLFunctionsImpl(this);
             dml.truncateTable(session, table.getTableId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
-    }
-
-    protected DMLFunctions dmlFunctionsForDrop() {
-        return new DMLFunctionsImpl(this);
     }
 
     @Override
