@@ -572,7 +572,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         }
 
         // Store.truncate() gets rid of the entire group, so roll our own by doing a table scan
-        LegacyOutputRouter output = new LegacyOutputRouter(65535, true);
+        LegacyOutputRouter output = new LegacyOutputRouter(truncateScanBufferSize(), true);
         output.addHandler(new LegacyOutputRouter.Handler() {
             private RowData rowData = new RowData();
             private LegacyRowWrapper rowWrapper = new LegacyRowWrapper();
@@ -616,5 +616,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (thrown != null) {
             throw new RuntimeException("Internal error", thrown);
         }
+    }
+
+    protected int truncateScanBufferSize() {
+        return 65535;
     }
 }
