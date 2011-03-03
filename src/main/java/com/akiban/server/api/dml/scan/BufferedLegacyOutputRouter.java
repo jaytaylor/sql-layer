@@ -31,7 +31,7 @@ import java.util.List;
  * the buffer will keep filling. You can use this to efficiently split a LegacyRowData, using one of the outputs
  * as the backing ByteBuffer.</p>
  */
-public class LegacyOutputRouter extends WrappingRowOutput {
+public class BufferedLegacyOutputRouter extends WrappingRowOutput {
     public interface Handler {
         void handleRow(byte[] bytes, int offset, int length) throws RowOutputException;
     }
@@ -40,7 +40,7 @@ public class LegacyOutputRouter extends WrappingRowOutput {
     private final boolean resetPosition;
     private final List<Handler> handlers = new ArrayList<Handler>();
 
-    public LegacyOutputRouter(int capacity, boolean resetPosition) {
+    public BufferedLegacyOutputRouter(int capacity, boolean resetPosition) {
         this( byteBuffer(capacity), resetPosition);
     }
 
@@ -50,7 +50,7 @@ public class LegacyOutputRouter extends WrappingRowOutput {
         return ret;
     }
 
-    public LegacyOutputRouter(ByteBuffer buffer, boolean resetPosition) {
+    public BufferedLegacyOutputRouter(ByteBuffer buffer, boolean resetPosition) {
         super(buffer);
         if (!buffer.hasArray()) {
             throw new RuntimeException("Buffer needs an array");

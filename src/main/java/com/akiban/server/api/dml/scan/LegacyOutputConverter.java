@@ -30,7 +30,7 @@ import com.akiban.server.api.common.NoSuchTableException;
  * a new LegacyOutputConverter, passing it your RowOutput, and then pass that converter to the method that takes
  * LegacyRowOutput.</p>
  */
-public final class LegacyOutputConverter implements LegacyOutputRouter.Handler {
+public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.Handler {
     private final DMLFunctions converter;
     private RowOutput output;
     private Set<Integer> columnsToScan;

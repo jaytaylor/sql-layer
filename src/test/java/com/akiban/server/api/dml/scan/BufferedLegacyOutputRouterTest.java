@@ -25,10 +25,10 @@ import java.util.List;
 
 import org.junit.Test;
 
-public final class LegacyOutputRouterTest {
+public final class BufferedLegacyOutputRouterTest {
     private final static int bytesPerInt = Integer.SIZE / 8;
 
-    private static class IntegersSeeingHandler implements LegacyOutputRouter.Handler {
+    private static class IntegersSeeingHandler implements BufferedLegacyOutputRouter.Handler {
         private final List<Integer> integers = new ArrayList<Integer>();
 
         @Override
@@ -47,7 +47,7 @@ public final class LegacyOutputRouterTest {
     public void withResettingPosition() throws Exception {
         List<Integer> expectedInts = Arrays.asList(27, 23, 8);
         // each int is one row. If we construct this router without reset, it'll overflow
-        LegacyOutputRouter router = new LegacyOutputRouter(bytesPerInt, true);
+        BufferedLegacyOutputRouter router = new BufferedLegacyOutputRouter(bytesPerInt, true);
         IntegersSeeingHandler h1 = router.addHandler( new IntegersSeeingHandler() );
         IntegersSeeingHandler h2 = router.addHandler( new IntegersSeeingHandler() );
 
@@ -66,7 +66,7 @@ public final class LegacyOutputRouterTest {
         List<Integer> expectedInts = Arrays.asList(27, 23, 8);
         ByteBuffer actualBuffer = ByteBuffer.allocate(bytesPerInt * expectedInts.size());
         // each int is one row. If we construct this router without reset, it'll overflow
-        LegacyOutputRouter router = new LegacyOutputRouter(actualBuffer, false);
+        BufferedLegacyOutputRouter router = new BufferedLegacyOutputRouter(actualBuffer, false);
         IntegersSeeingHandler h1 = router.addHandler( new IntegersSeeingHandler() );
         IntegersSeeingHandler h2 = router.addHandler( new IntegersSeeingHandler() );
 
