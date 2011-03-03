@@ -18,7 +18,6 @@ package com.akiban.ais.ddl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -30,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.AkServerUtil;
+import com.akiban.ais.model.UserTable;
 import org.junit.Test;
 
 import com.akiban.ais.model.CharsetAndCollation;
@@ -38,7 +37,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.AkServer;
-import com.akiban.util.MySqlStatementSplitter;
 
 public class SchemaDefToAisTest {
 
@@ -384,6 +382,21 @@ public class SchemaDefToAisTest {
         assertEquals(2, table.getIndexes().size());
     }
 
+    @Test
+    public void testOverloadedGroupName() throws Exception {
+        String ddl = "CREATE TABLE `s1`.one (idOne int, PRIMARY KEY (idOne)) engine=akibandb;\n"
+                   + "CREATE TABLE `s2`.one (idTwo int, PRIMARY KEY (idTwo)) engine=akibandb;";
+
+        AkibanInformationSchema ais = buildAISfromString(ddl);
+        assertEquals("user tables", 2, ais.getUserTables().size());
+        assertEquals("group tables", 2, ais.getGroupTables().size());
+        UserTable s1 = ais.getUserTable("s1", "one");
+        UserTable s2 = ais.getUserTable("s2", "one");
+        assertNotNull("s1", s1);
+        assertNotNull("s2", s2);
+        assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable().getRoot());
+        assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable().getRoot());
+    }
 
     /**
      * Creates the customer-order tables and parses them into a SchemaDef.
