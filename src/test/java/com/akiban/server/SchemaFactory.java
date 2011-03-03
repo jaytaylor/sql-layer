@@ -15,7 +15,8 @@
 
 package com.akiban.server;
 
-import com.akiban.ais.ddl.DDLSource;
+import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.store.SchemaManager;
 import com.persistit.exception.PersistitException;
@@ -42,7 +43,8 @@ public class SchemaFactory
         for (String line : ddl) {
             buffer.append(line);
         }
-        return new DDLSource().buildAISFromString(buffer.toString());
+        final SchemaDefToAis toAis = new SchemaDefToAis(SchemaDef.parseSchema(buffer.toString()), false);
+        return toAis.getAis();
     }
 
     private static class FakeRowDefCache extends RowDefCache

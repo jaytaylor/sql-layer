@@ -127,9 +127,9 @@ public class DDLSource {
             System.out.println("Unexpected exception:" + exp.getMessage());
         }
 
-        final DDLSource source = new DDLSource();
-        final AkibanInformationSchema ais = source.buildAISFromFile(iFileName);
-        // AISPrinter.print(ais);
+        final SchemaDef schemaDef = SchemaDef.parseSchemaFromFile(iFileName);
+        final SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
+        final AkibanInformationSchema ais = toAis.getAis();
 
         if (format.compareTo(SQL_FORMAT) == 0) {
             final PrintWriter pw = new PrintWriter(new FileWriter(oFileName));
@@ -158,19 +158,6 @@ public class DDLSource {
         }
     }
 
-    public DDLSource() {
-    }
-
-    public AkibanInformationSchema buildAISFromFile(final String fileName) throws Exception {
-        this.schemaDef = SchemaDef.parseSchemaFromFile(fileName);
-        return schemaDefToAis();
-    }
-
-    public AkibanInformationSchema buildAISFromString(final String schema) throws Exception {
-        this.schemaDef = SchemaDef.parseSchema(schema);
-        return schemaDefToAis();
-    }
-
     /**
      * Parse a table definition and return intermediate representation.
      * @param createTableStatement  A valid DDL statement. Should not contain CREATE TABLE.
@@ -184,10 +171,5 @@ public class DDLSource {
         } catch(RuntimeException e) {
             throw new ParseException(e);
         }
-    }
-
-    private AkibanInformationSchema schemaDefToAis() throws Exception {
-        SchemaDefToAis toAis = new SchemaDefToAis(this.schemaDef, false);
-        return toAis.getAis();
     }
 }
