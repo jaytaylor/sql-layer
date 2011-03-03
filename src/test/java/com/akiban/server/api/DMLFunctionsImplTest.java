@@ -26,7 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import com.akiban.server.RowData;
 import com.akiban.server.api.dml.scan.BufferFullException;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.akiban.server.AkServerTestCase;
@@ -63,6 +65,13 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
             ++deliveredRows;
 
             return true;
+        }
+
+        @Override
+        public RowData collectNextRow() throws Exception
+        {
+            Assert.fail();
+            return null;
         }
 
         @Override
@@ -112,6 +121,12 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         public long getId() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void outputToMessage(boolean outputToMessage)
+        {
+            assert outputToMessage;
+        }
     }
 
     private static class StringRowOutput implements LegacyRowOutput {
@@ -150,8 +165,20 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         }
 
         @Override
+        public void addRow(RowData rowData)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public int getRowsCount() {
             return buffer.getInt(0);
+        }
+
+        @Override
+        public boolean getOutputToMessage()
+        {
+            return true;
         }
     }
 

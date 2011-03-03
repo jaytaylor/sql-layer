@@ -15,6 +15,8 @@
 
 package com.akiban.server.store;
 
+import com.akiban.server.RowData;
+
 import java.nio.ByteBuffer;
 
 public interface RowCollector {
@@ -35,7 +37,9 @@ public interface RowCollector {
 
     public final int SCAN_FLAGS_DEEP = 1 << 7;
 
-    public boolean collectNextRow(final ByteBuffer payload) throws Exception;
+    public boolean collectNextRow(ByteBuffer payload) throws Exception;
+
+    public RowData collectNextRow() throws Exception;
 
     public boolean hasMore() throws Exception;
 
@@ -53,4 +57,5 @@ public interface RowCollector {
     
     public long getId();
 
+    public void outputToMessage(boolean outputToMessage);
 }

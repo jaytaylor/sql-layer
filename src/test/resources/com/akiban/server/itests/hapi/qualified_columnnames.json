@@ -1,6 +1,7 @@
 {
 
 "setup" : {
+    "processors_default" : [ "scanrows" ],
     "schema" : "@schema",
     "tables" : [
         [ ":customers",
