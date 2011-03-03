@@ -28,6 +28,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import org.junit.Test;
 
@@ -69,7 +71,7 @@ public final class CSVTest {
         }
     }
 
-    private static String loadWriteRead(String file, boolean useReader) throws Exception {
+    private static String loadWriteRead(String file) throws Exception {
         InputStream is = CSVTest.class.getResourceAsStream(file);
         assertNotNull("null IS: " + file, is);
         final String ddlString;
@@ -87,8 +89,7 @@ public final class CSVTest {
         final AkibanInformationSchema ais1;
         final String aisCSV;
         {
-            DDLSource ddlSource = new DDLSource();
-            ais1 = useReader ? ddlSource.buildAISFromBuilder(ddlString) : ddlSource.buildAISFromString(ddlString);
+            ais1 = new SchemaDefToAis(SchemaDef.parseSchema(ddlString), false).getAis();
             StringWriter sWriter = new StringWriter();
             PrintWriter pWriter = new PrintWriter(sWriter);
             new Writer( (new CSVTarget(pWriter)) ).save(ais1);
@@ -120,11 +121,6 @@ public final class CSVTest {
 
     @Test
     public void testTPCC1() throws Exception {
-        loadWriteRead("tpcc.sql", true);
-    }
-
-    @Test
-    public void testTPCC2() throws Exception {
-        loadWriteRead("tpcc.sql", false);
+        loadWriteRead("tpcc.sql");
     }
 }

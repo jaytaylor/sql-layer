@@ -172,6 +172,7 @@ public class DDLSource {
     }
 
     /**
+     * Parse a table definition and return intermediate representation.
      * @param createTableStatement  A valid DDL statement. Should not contain CREATE TABLE.
      * @return UserTableDef representing the passed statement.
      * @throws Exception if there was a parse error.
@@ -183,11 +184,6 @@ public class DDLSource {
         } catch(RuntimeException e) {
             throw new ParseException(e);
         }
-    }
-
-    public AkibanInformationSchema buildAISFromBuilder(final String string) throws Exception {
-        this.schemaDef = SchemaDef.parseSchema(string);
-        return schemaDefToAis();
     }
 
     private AkibanInformationSchema schemaDefToAis() throws Exception {
