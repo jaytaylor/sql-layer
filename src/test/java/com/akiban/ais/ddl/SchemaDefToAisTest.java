@@ -21,6 +21,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,13 +56,9 @@ public class SchemaDefToAisTest {
         "utf8_general_ci"};
     
     private AkibanInformationSchema buildAISfromResource(final String resourceName) throws Exception {
-        final StringBuilder sb = new StringBuilder();
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
-        for (String statement : (new MySqlStatementSplitter(reader))) {
-            sb.append(statement).append(AkServerUtil.NEW_LINE);
-        }
-        return buildAISfromString(sb.toString());
+        InputStream inputStream = AkServer.class.getClassLoader().getResourceAsStream(resourceName);
+        SchemaDef schemaDef = SchemaDef.parseSchemaFromStream(inputStream);
+        return new SchemaDefToAis(schemaDef, true).getAis();
     }
     
     private AkibanInformationSchema buildAISfromString(final String schema) throws Exception {

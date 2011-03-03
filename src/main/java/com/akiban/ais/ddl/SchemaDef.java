@@ -16,6 +16,7 @@
 package com.akiban.ais.ddl;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 
 import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -1067,7 +1069,7 @@ public class SchemaDef {
         }
     }
 
-    public static int ignoreCaseLA(char[] data, int n, int i, int p) {
+    private static int lowerCaseLA(char[] data, int n, int i, int p) {
         if (i == 0) {
             return 0; // undefined
         }
@@ -1087,31 +1089,44 @@ public class SchemaDef {
     /**
      * Case Insensitive ANTLRStringStream
      */
-    public static class StringStream extends ANTLRStringStream {
-        public StringStream(final String string) {
+    public static class SDStringStream extends ANTLRStringStream {
+        public SDStringStream(final String string) {
             super(string);
         }
 
         @Override
         public int LA(int i) {
-            return ignoreCaseLA(data, n, i, p);
+            return lowerCaseLA(data, n, i, p);
         }
     }
 
     /**
      * Case Insensitive ANTLRFileStream
      */
-    public static class FileStream extends ANTLRFileStream {
-        public FileStream(final String fileName) throws IOException {
+    public static class SDFileStream extends ANTLRFileStream {
+        public SDFileStream(final String fileName) throws IOException {
             super(fileName);
         }
 
         @Override
         public int LA(int i) {
-            return ignoreCaseLA(data, n, i, p);
+            return lowerCaseLA(data, n, i, p);
         }
     }
 
+    /**
+     * Case Insensitive ANTLRInputStream
+     */
+    public static class SDInputStream extends ANTLRInputStream {
+        public SDInputStream(InputStream input) throws IOException {
+            super(input);
+        }
+
+        @Override
+        public int LA(int i) {
+            return lowerCaseLA(data, n, i, p);
+        }
+    }
 
     /**
      * Incrementally adds a new table to the SchemaDef.
@@ -1122,7 +1137,7 @@ public class SchemaDef {
      */
     public UserTableDef parseCreateTable(final String createTableStatement)
             throws Exception {
-        DDLSourceLexer lex = new DDLSourceLexer(new StringStream(
+        DDLSourceLexer lex = new DDLSourceLexer(new SDStringStream(
                 createTableStatement));
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
@@ -1134,15 +1149,19 @@ public class SchemaDef {
         return getCurrentTable();
     }
 
-    public static SchemaDef parseSchema(final String schema) throws Exception {
-        return parseSchemaFromStream(new StringStream(schema));
+    public static SchemaDef parseSchema(final String schema) throws RecognitionException {
+        return parseSchemaFromANTLRStream(new SDStringStream(schema));
     }
 
-    public static SchemaDef parseSchemaFromFile(final String fileName) throws Exception {
-        return parseSchemaFromStream(new FileStream(fileName));
+    public static SchemaDef parseSchemaFromFile(final String fileName) throws IOException, RecognitionException {
+        return parseSchemaFromANTLRStream(new SDFileStream(fileName));
     }
 
-    private static SchemaDef parseSchemaFromStream(ANTLRStringStream stream) throws RecognitionException {
+    public static SchemaDef parseSchemaFromStream(InputStream stream) throws IOException, RecognitionException {
+        return parseSchemaFromANTLRStream(new SDInputStream(stream));
+    }
+
+    private static SchemaDef parseSchemaFromANTLRStream(ANTLRStringStream stream) throws RecognitionException {
         DDLSourceLexer lex = new DDLSourceLexer(stream);
         CommonTokenStream tokens = new CommonTokenStream(lex);
         final DDLSourceParser tsparser = new DDLSourceParser(tokens);
