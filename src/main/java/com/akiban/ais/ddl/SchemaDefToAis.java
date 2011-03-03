@@ -73,10 +73,6 @@ public class SchemaDefToAis {
         return ais;
     }
 
-    public SchemaDef getSchemaDef() {
-        return schemaDef;
-    }
-
     /**
      * Tests an FOREIGN KEY index definition to determine whether it represents
      * a group-defining relationship.

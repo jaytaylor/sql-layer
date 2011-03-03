@@ -33,7 +33,6 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import org.junit.Test;
 
-import com.akiban.ais.ddl.DDLSource;
 
 public final class CSVTest {
     private static class TestBufferedReader extends BufferedReader {
