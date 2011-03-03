@@ -26,6 +26,10 @@ fi
 TEAMCITY=${TEAMCITY:-0}
 PUBLISH=${PUBLISH:-0}
 
+if [ ${PUBLISH} -gt 0 ];then
+	BZR_REVISION=$( ssh skeswani@172.16.20.117  "/var/www/rpms/reserve_version.sh /var/www/rpms/akiban-server ${BZR_REVISION}" )
+fi
+
 rpm_env()
 {
 	sudo /usr/sbin/groupadd --force mockbuild
@@ -64,7 +68,6 @@ chunkserver_rpm()
 publish()
 {
 if [ ${PUBLISH} -gt 0 ];then
-	ssh skeswani@172.16.20.117  " mkdir -p /var/www/rpms/akiban-server/${BZR_REVISION}"
 	scp -r rpmbuild/RPMS/noarch/*.rpm   skeswani@172.16.20.117:/var/www/rpms/akiban-server/${BZR_REVISION}
 	ssh skeswani@172.16.20.117 "rm -f /var/www/latest/* && ln -sf /var/www/rpms/akiban-server/${BZR_REVISION}/* /var/www/latest/"
 	ssh skeswani@172.16.20.117 /var/www/rpms/createrepo.sh
