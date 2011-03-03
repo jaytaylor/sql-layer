@@ -97,7 +97,6 @@ public class DDLSource extends Source {
     private final static String BINARY_FORMAT = "binary";
     private final static String SQL_FORMAT = "sql";
 
-    private String ddlSourceName = "<not specified>";
     private SchemaDef schemaDef;
     private Map<String, ColumnDef> columnDefMap = new HashMap<String, ColumnDef>();
     private final Map<CName, String> groupNames = new HashMap<CName, String>();
@@ -227,7 +226,6 @@ public class DDLSource extends Source {
     }
 
     public AkibanInformationSchema buildAISFromFile(final String fileName) throws Exception {
-        ddlSourceName = fileName;
         this.schemaDef = SchemaDef.parseSchemaFromFile(fileName);
         return schemaDefToAis();
     }
@@ -235,12 +233,6 @@ public class DDLSource extends Source {
     public AkibanInformationSchema buildAISFromString(final String schema) throws Exception {
         this.schemaDef = SchemaDef.parseSchema(schema);
         return schemaDefToAis();
-    }
-
-    private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex)
-    {
-        String ret = (fkIndex.getParentSchema() + "/" + fkIndex.getParentTable() + "/" + Strings.join(fkIndex.getParentColumns(), ",") + "/" + childTable.getCName().getSchema() + "/" + childTable.name + "/" + Strings.join(fkIndex.getChildColumns(), ",")).toLowerCase();
-        return ret.replace(',','_');
     }
 
     public UserTableDef parseCreateTable(final String createTableStatement) throws Exception {
@@ -268,18 +260,6 @@ public class DDLSource extends Source {
      */
     private String groupTableName(final CName groupName) {
         return "_akiban_" + groupName.getName();
-    }
-
-    private CName groupName(final CName rootTable) {
-        String ret = groupNames.get(rootTable);
-        if (ret == null) {
-            ret = rootTable.getName();
-            for (int i = 0; groupNames.containsValue(ret); ++i) {
-                ret = rootTable.getName() + '$' + i;
-            }
-            groupNames.put(rootTable, ret);
-        }
-        return new CName("akiban_objects", ret);
     }
 
     /**
@@ -314,17 +294,6 @@ public class DDLSource extends Source {
     private String mangledIndexName(final UserTableDef utdef,
             final IndexDef indexDef) {
         return utdef.name.getName() + "$" + indexDef.name;
-    }
-
-    /**
-     * Tests an FOREIGN KEY index definition to determine whether it represents
-     * a group-defining relationship.
-     * 
-     * @param indexDef
-     * @return
-     */
-    private static boolean isAkiban(final IndexDef indexDef) {
-        return SchemaDef.isAkiban(indexDef);
     }
 
     /**
@@ -388,24 +357,6 @@ public class DDLSource extends Source {
                 tableList.add(tableName);
                 traverseDepthFirstSortedTableMap(tableName, hierarchy,
                         tableList);
-            }
-        }
-    }
-
-    void computeColumnMapAndPositions() {
-        for (final CName groupName : schemaDef.getGroupMap().keySet()) {
-            int gposition = 0;
-            final List<CName> tableList = depthFirstSortedUserTables(groupName);
-            for (final CName tableName : tableList) {
-                int uposition = 0;
-                final UserTableDef utdef = schemaDef.getUserTableMap().get(
-                        tableName);
-                List<ColumnDef> columns = utdef.columns;
-                for (final ColumnDef def : columns) {
-                    def.gposition = gposition++;
-                    def.uposition = uposition++;
-                    columnDefMap.put(utdef.name + "." + def.name, def);
-                }
             }
         }
     }
@@ -691,80 +642,6 @@ public class DDLSource extends Source {
         return String.format("%s$PK_%s", gtn, indexId);
     }
 
-    /**
-     * Hack to convert annotated FK constraints into group relationships. For
-     * now this "supplements" the group syntax in DDLSource.
-     */
-    private void addImpliedGroups(final String schemaName) {
-        final Set<CName> tablesInGroups = new HashSet<CName>();
-        for (final Map.Entry<CName, SortedSet<CName>> entry : schemaDef
-                .getGroupMap().entrySet()) {
-            tablesInGroups.addAll(entry.getValue());
-        }
-
-        for (final CName userTableName : schemaDef.getUserTableMap().keySet()) {
-            if (userTableName.getSchema().equals("akiban_objects")) {
-                continue;
-            }
-            final UserTableDef utDef = addImpliedGroupTable(tablesInGroups,
-                    userTableName);
-            if (utDef == null) {
-                System.out.println("No Group for table " + userTableName);
-            }
-        }
-    }
-
-    public static IndexDef getAkibanJoin(UserTableDef table) {
-        IndexDef annotatedFK = null;
-        for (final IndexDef indexDef : table.indexes) {
-            if (isAkiban(indexDef)) {
-                // TODO: Fragile - could be two or nore of these
-                assert annotatedFK == null : "previous annotated FK: "
-                        + annotatedFK;
-                annotatedFK = indexDef;
-            }
-        }
-        return annotatedFK;
-    }
-
-    //
-    // TODO - the handling of schemaName throughout this class is just
-    // atrocious. Big broom required.
-    //
-    private UserTableDef addImpliedGroupTable(final Set<CName> tablesInGroups,
-            final CName userTableName) {
-        final UserTableDef utDef = schemaDef.getUserTableMap().get(
-                userTableName);
-        if (utDef != null && "akibandb".equalsIgnoreCase(utDef.engine)
-                && !tablesInGroups.contains(userTableName)) {
-            IndexDef annotatedFK = getAkibanJoin(utDef);
-            if (annotatedFK == null) {
-                // No FK: this is a new root table so create a new Group
-                final CName groupName = groupName(userTableName);
-                final SortedSet<CName> members = new TreeSet<CName>();
-                schemaDef.getGroupMap().put(groupName, members);
-                utDef.groupName = groupName;
-                members.add(userTableName);
-            } else {
-                utDef.parent = addImpliedGroupTable(tablesInGroups,
-                        annotatedFK.referenceTable);
-                if (utDef.parent != null) {
-                    utDef.groupName = utDef.parent.groupName;
-                    for (SchemaDef.IndexColumnDef childColumn : annotatedFK.columns) {
-                        utDef.childJoinColumns.add(childColumn.columnName);
-                    }
-                    utDef.parentJoinColumns
-                            .addAll(annotatedFK.referenceColumns);
-                    final SortedSet<CName> members = schemaDef.getGroupMap()
-                            .get(utDef.groupName);
-                    members.add(userTableName);
-                }
-            }
-            tablesInGroups.add(userTableName);
-        }
-        return utDef;
-    }
-    
     public AkibanInformationSchema buildAISFromBuilder(final String string) throws RecognitionException, Exception
     {
         this.schemaDef = SchemaDef.parseSchema(string);
