@@ -306,6 +306,16 @@ public final class TruncateTableIT extends ApiTestBase {
             public int getRowsCount() {
                 return rows;
             }
+
+            @Override
+            public void addRow(RowData rowData) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public boolean getOutputToMessage() {
+                return true;
+            }
         };
         CursorId cursorId = dml().openCursor(session, new ScanAllRequest(tableId, Collections.singleton(0)));
         while (dml().scanSome(session, cursorId, output, -1)) {}
