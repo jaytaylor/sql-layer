@@ -16,31 +16,19 @@
 package com.akiban.server.itests.d_lfunctions;
 
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DDLFunctionsImpl;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.DMLFunctionsImpl;
 import com.akiban.server.api.dml.ForeignKeyConstraintDMLException;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.itests.ApiTestBase;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -223,115 +211,5 @@ public final class TruncateTableIT extends ApiTestBase {
 
         // This no longer attempts to convert the RowData to a string so the being malformed is "ok"
         dml().truncateTable(session, tableId);
-    }
-
-    @Test
-    public void bug728644() throws InvalidOperationException, BufferFullException {
-        final int t1Id = createTable("s1", "t1", "id int key, nane varchar(256)");
-
-        writeRows(
-                createNewRow(t1Id, 1, longString('a', 255)),
-                createNewRow(t1Id, 2, longString('b', 255))
-        );
-
-        final int oneRowBuffer = computeOneRowBuffer(t1Id, 1024, 2);
-
-        DDLFunctions testDDLF = new DDLFunctionsImpl() {
-            @Override
-            protected DMLFunctions dmlFunctionsForDrop() {
-                return new DMLFunctionsImpl(this) {
-                    @Override
-                    protected int truncateScanBufferSize() {
-                        return oneRowBuffer;
-                    }
-                };
-            }
-        };
-
-        testDDLF.dropTable(session, new TableName("s1", "t1"));
-    }
-
-    @Test
-    public void dropBufferAlwaysTooSmall() throws InvalidOperationException, BufferFullException {
-        final int t1Id = createTable("s1", "t1", "id int key, nane varchar(256)");
-
-        writeRows(
-                createNewRow(t1Id, 1, longString('a', 255)),
-                createNewRow(t1Id, 2, longString('b', 255))
-        );
-
-        final int oneRowBuffer = computeOneRowBuffer(t1Id, 1024, 2);
-        final int TOO_SMALL_BUFFER = 100;
-        assertTrue("oneRowBuffer == " + oneRowBuffer, oneRowBuffer > TOO_SMALL_BUFFER);
-
-
-        DDLFunctions testDDLF = new DDLFunctionsImpl() {
-            @Override
-            protected DMLFunctions dmlFunctionsForDrop() {
-                return new DMLFunctionsImpl(this) {
-                    @Override
-                    protected int truncateScanBufferSize() {
-                        return TOO_SMALL_BUFFER;
-                    }
-                };
-            }
-        };
-
-        testDDLF.dropTable(session, new TableName("s1", "t1"));
-    }
-
-    private int computeOneRowBuffer(int tableId, int bigBufferSize, int totalExpectedRows)
-            throws InvalidOperationException, BufferFullException
-    {
-        final ByteBuffer bigBuffer = ByteBuffer.allocate(bigBufferSize);
-        bigBuffer.mark();
-        final AtomicInteger firstRow = new AtomicInteger(-1);
-        LegacyRowOutput output = new LegacyRowOutput() {
-            private int rows = 0;
-            @Override
-            public ByteBuffer getOutputBuffer() throws RowOutputException {
-                return bigBuffer;
-            }
-
-            @Override
-            public void wroteRow() throws RowOutputException {
-                boolean wasFirstRow = firstRow.compareAndSet(-1, bigBuffer.position());
-                if ( (!wasFirstRow) && (bigBuffer.position() == firstRow.get()) ) {
-                    throw new RowOutputException("wrote a second row, but buffer stayed at " + bigBuffer.position());
-                }
-                ++rows;
-            }
-
-            @Override
-            public int getRowsCount() {
-                return rows;
-            }
-
-            @Override
-            public void addRow(RowData rowData) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean getOutputToMessage() {
-                return true;
-            }
-        };
-        CursorId cursorId = dml().openCursor(session, new ScanAllRequest(tableId, Collections.singleton(0)));
-        while (dml().scanSome(session, cursorId, output, -1)) {}
-
-        assertEquals("total rows", totalExpectedRows, output.getRowsCount());
-        int ret = firstRow.get();
-        assertFalse("ret==0", ret == 0);
-        return ret;
-    }
-
-    private static String longString(char ofChar, int length) {
-
-        StringBuilder builder = new StringBuilder();
-        for (int i=0; i < length; ++i) {
-            builder.append(ofChar);
-        }
-        return builder.toString();
     }
 }

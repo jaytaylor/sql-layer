@@ -637,8 +637,4 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throw new RuntimeException("Internal error", thrown);
         }
     }
-
-    protected int truncateScanBufferSize() {
-        return 65535;
-    }
 }
