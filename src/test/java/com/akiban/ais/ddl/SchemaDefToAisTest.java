@@ -22,12 +22,7 @@ import static org.junit.Assert.assertSame;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import org.junit.Test;
@@ -41,8 +36,6 @@ import com.akiban.server.AkServer;
 public class SchemaDefToAisTest {
 
     private final static String DDL_FILE_NAME = "DDLSourceTest_schema.ddl";
-    private final static String XXXXXXXX_DDL_FILE_NAME = "xxxxxxxx_schema.ddl";
-
     private final static String SCHEMA_NAME = "DDLSourceTest_schema";
 
     private final static String[] EXPECTED_CHARSET_VALUES = new String[] { "latin1", "utf8", "utf8", "latin1", "utf8",
@@ -253,30 +246,6 @@ public class SchemaDefToAisTest {
         }
     }
 
-    private void testCOCommon(SchemaDef schemaDef) throws Exception {
-        assertEquals("tables length", 2, schemaDef.getUserTableMap().size());
-
-        SchemaDef.UserTableDef customer = schemaDef.getUserTableMap().get(
-                new SchemaDef.CName("schema", "customer"));
-
-        assertEquals("indexes size", 0, customer.indexes.size());
-
-        assertEquals("columns size", 1, customer.columns.size());
-        testColumn(0, customer, "id", "INT", null, null, true, null);
-
-        assertEquals("engine", "akibandb", customer.engine);
-    }
-
-    private static void testColumn(int which, SchemaDef.UserTableDef table,
-            final String name, String typeName, String param1, String param2,
-            boolean nullable, String autoIncrement, String... constraints) {
-
-        SchemaDef.ColumnDef actual = table.columns.get(which);
-        SchemaDef.ColumnDef expected = new SchemaDef.ColumnDef(name, typeName,
-                param1, param2, nullable, autoIncrement, constraints);
-        assertEquals("column " + which, expected, actual);
-    }
-
     @Test
     public void charsetAndCollate() throws Exception {
         AkibanInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
@@ -289,85 +258,6 @@ public class SchemaDefToAisTest {
             assertEquals(EXPECTED_CHARSET_VALUES[columnIndex], cs.charset());
             assertEquals(EXPECTED_COLLATION_VALUES[columnIndex], cs.collation());
         }
-    }
-
-    private void testOrder(SchemaDef def, String constraintName,
-            String indexName) {
-        SchemaDef.UserTableDef order = def.getUserTableMap().get(
-                new SchemaDef.CName("schema", "order"));
-
-        assertEquals("columns len", 2, order.columns.size());
-        testColumn(0, order, "id", "INT", null, null, true, null);
-        testColumn(1, order, "cid", "INT", null, null, true, null);
-
-        List<SchemaDef.IndexColumnDef> columns = Arrays
-                .asList(new SchemaDef.IndexColumnDef("cid"));
-        SchemaDef.CName customerName = new SchemaDef.CName("schema", "customer");
-        assertEquals("indexes size", indexName == null ? 2 : 3,
-                order.indexes.size());
-
-        List<String> index0Constraints = new ArrayList<String>();
-        Set<SchemaDef.IndexQualifier> index0qualifiers = EnumSet
-                .noneOf(SchemaDef.IndexQualifier.class);
-        SchemaDef.CName index0ReferenceTable = null;
-        List<String> index0ReferenceColumns = new ArrayList<String>();
-        if (indexName == null) {
-            if (constraintName != null) {
-                index0Constraints.add(constraintName);
-            }
-            index0qualifiers.add(SchemaDef.IndexQualifier.FOREIGN_KEY);
-            index0ReferenceTable = customerName;
-            index0ReferenceColumns.add("id");
-        }
-        SchemaDef.IndexDef plainKey = new SchemaDef.IndexDef("given_key",
-                index0qualifiers, columns, index0ReferenceTable,
-                index0ReferenceColumns, index0Constraints);
-        assertEquals("index 0", plainKey, order.indexes.get(0));
-
-        SchemaDef.IndexDef givenFKIndex = new SchemaDef.IndexDef("givenFk",
-                EnumSet.of(SchemaDef.IndexQualifier.FOREIGN_KEY), columns,
-                customerName, Arrays.asList("id"),
-                Arrays.asList("givenConstraint"));
-        assertEquals("index 1", givenFKIndex, order.indexes.get(1));
-
-        if (indexName != null) {
-            List<String> index2Constraints = new ArrayList<String>();
-            if (constraintName != null) {
-                index2Constraints.add(constraintName);
-            }
-            SchemaDef.IndexDef definedFKIndex = new SchemaDef.IndexDef(
-                    indexName,
-                    EnumSet.of(SchemaDef.IndexQualifier.FOREIGN_KEY), columns,
-                    customerName, Arrays.asList("id"), index2Constraints);
-            assertEquals("index 2", definedFKIndex, order.indexes.get(2));
-        }
-    }
-
-    /**
-     * Tests this class's private
-     * {@linkplain #fk(String, boolean, String, String, String...)} method.
-     */
-    @Test
-    public void fkCreation() {
-        assertEquals(
-                "full",
-                "CONSTRAINT `fk0` FOREIGN KEY `index0` (`id`) REFERENCES `parent` (`pid`)",
-                fk("parent", true, "fk0", "index0", "parent:pid", "child:id"));
-        assertEquals(
-                "no constraint name",
-                "CONSTRAINT FOREIGN KEY `index0` (`id`) REFERENCES `parent` (`pid`)",
-                fk("parent", true, null, "index0", "parent:pid", "child:id"));
-        assertEquals(
-                "no constraint",
-                "FOREIGN KEY `index0` (`id`) REFERENCES `parent` (`pid`)",
-                fk("parent", false, "ignored", "index0", "parent:pid",
-                        "child:id"));
-        assertEquals("no index",
-                "FOREIGN KEY (`id`) REFERENCES `parent` (`pid`)",
-                fk("parent", false, "ignored", null, "parent:pid", "child:id"));
-        assertEquals("same columns",
-                "FOREIGN KEY (`pid`) REFERENCES `parent` (`pid`)",
-                fk("parent", false, "ignored", null, "pid"));
     }
 
     // Invalid data type caused parse failure and invalid AIS
@@ -396,108 +286,5 @@ public class SchemaDefToAisTest {
         assertNotNull("s2", s2);
         assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable().getRoot());
         assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable().getRoot());
-    }
-
-    /**
-     * Creates the customer-order tables and parses them into a SchemaDef.
-     * 
-     * @param includeConstraint
-     *            see
-     *            {@linkplain #fk(String, boolean, String, String, String...)}
-     * @param constraintName
-     *            see
-     *            {@linkplain #fk(String, boolean, String, String, String...)}
-     * @param indexName
-     *            see
-     *            {@linkplain #fk(String, boolean, String, String, String...)}
-     * @return a SchemaDef with two tables, customer and order. The order's FK
-     *         will use the given params.
-     */
-    private static SchemaDef parseCO(boolean includeConstraint,
-            String constraintName, String indexName) throws Exception {
-        StringBuilder ret = new StringBuilder();
-        ret.append("CREATE TABLE `schema`.`customer` (`id` INT, PRIMARY KEY (`id`)) engine=akibandb;\n");
-
-        ret.append("CREATE TABLE `schema`.`order` (`id` INT, `cid` INT, PRIMARY KEY (`id`), ");
-        ret.append("KEY `given_key` (`cid`), ");
-        ret.append("CONSTRAINT `givenConstraint` FOREIGN KEY `givenFk` (`cid`) REFERENCES `customer` (`id`), ");
-        ret.append(fk("customer", includeConstraint, constraintName, indexName,
-                "parent:id", "child:cid"));
-        ret.append(") engine=akibandb;");
-
-        return SchemaDef.parseSchema(ret.toString());
-    }
-
-    /**
-     * Generates a FK statement
-     * 
-     * @param parent
-     *            the parent table name
-     * @param includeConstraint
-     *            whether to include the "CONSTRAINT [symbol]" part of the
-     *            string
-     * @param constraintName
-     *            (optional) if non-null and includesConstraint is true, the
-     *            constraint symbol
-     * @param indexName
-     *            (optional) the index name
-     * @param columns
-     *            the columns. Any column that starts with "parent:" will apply
-     *            only to the parent; any that starts with "child:" will apply
-     *            only to the child. All others will apply to both
-     * @return the FK
-     */
-    private static String fk(String parent, boolean includeConstraint,
-            String constraintName, String indexName, String... columns) {
-        List<String> parentCols = new ArrayList<String>(columns.length);
-        List<String> childCols = new ArrayList<String>(columns.length);
-        for (String column : columns) {
-            if (column.startsWith("parent")) {
-                parentCols.add(column.substring("parent:".length()));
-            } else if (column.startsWith("child:")) {
-                childCols.add(column.substring("child:".length()));
-            } else {
-                parentCols.add(column);
-                childCols.add(column);
-            }
-        }
-        assertEquals("column mismatch between parent " + parentCols
-                + " and child " + childCols, parentCols.size(),
-                childCols.size());
-
-        StringBuilder builder = new StringBuilder();
-        if (includeConstraint) {
-            builder.append("CONSTRAINT ");
-            if (constraintName != null) {
-                TableName.escape(constraintName, builder);
-                builder.append(' ');
-            }
-        }
-        builder.append("FOREIGN KEY ");
-        if (indexName != null) {
-            TableName.escape(indexName, builder);
-            builder.append(' ');
-        }
-        builder.append('(');
-        for (String column : childCols) {
-            TableName.escape(column, builder);
-            builder.append(',');
-        }
-        builder.setLength(builder.length() - 1);
-        builder.append(')');
-
-        builder.append(" REFERENCES ");
-        TableName.escape(parent, builder);
-        builder.append(' ');
-
-        builder.append('(');
-        for (String column : parentCols) {
-            TableName.escape(column, builder);
-            builder.append(',');
-        }
-        builder.setLength(builder.length() - 1);
-        builder.append(')');
-
-        return builder.toString();
     }
 }
