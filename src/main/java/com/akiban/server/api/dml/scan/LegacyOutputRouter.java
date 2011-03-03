@@ -41,7 +41,13 @@ public class LegacyOutputRouter extends WrappingRowOutput {
     private final List<Handler> handlers = new ArrayList<Handler>();
 
     public LegacyOutputRouter(int capacity, boolean resetPosition) {
-        this( ByteBuffer.allocate(capacity), resetPosition);
+        this( byteBuffer(capacity), resetPosition);
+    }
+
+    private static ByteBuffer byteBuffer(int capacity) {
+        ByteBuffer ret = ByteBuffer.allocate(capacity);
+        ret.mark();
+        return ret;
     }
 
     public LegacyOutputRouter(ByteBuffer buffer, boolean resetPosition) {
