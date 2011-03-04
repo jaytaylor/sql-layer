@@ -22,7 +22,6 @@ import com.akiban.server.service.jmx.JmxManageable;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class DummyOutputter implements HapiOutputter, JmxManageable {
@@ -43,7 +42,7 @@ public final class DummyOutputter implements HapiOutputter, JmxManageable {
     private DummyOutputter() {}
 
     @Override
-    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException {
         outputStream.write(string.get().getBytes());
     }
 
