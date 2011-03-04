@@ -13,18 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.mttests.mthapi.base;
+package com.akiban.util;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.service.session.Session;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-
-public interface WriteThread {
-    void setupWrites(DDLFunctions ddl, DMLFunctions dml, Session session) throws InvalidOperationException;
-
-    void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
-            throws InvalidOperationException;
+public final class ThreadlessRandom {
+    /**
+     * Quick and dirty pseudo-random generator with no concurrency ramifications.
+     * Taken from JCIP; the source is public domain. See:
+     * http://jcip.net/listings.html listing 12.4.
+     * @param seed the random's seed
+     * @return the randomized result
+     */
+    public static int rand(int seed) {
+        seed ^= (seed << 6);
+        seed ^= (seed >>> 21);
+        seed ^= (seed << 7);
+        return seed;
+    }
 }

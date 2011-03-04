@@ -24,6 +24,7 @@ import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ThreadlessRandom;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
@@ -55,6 +58,7 @@ public class HapiMTBase extends ApiTestBase {
         private final WriteThread writeThread;
         private final CountDownLatch startOngoingWritesLatch;
         private boolean setupSucceeded = false;
+        private final AtomicBoolean keepGoing = new AtomicBoolean(true);
 
         private WriteThreadCallable(WriteThread writeThread, CountDownLatch startOngoingWritesLatch) {
             ArgumentValidation.notNull("write thread", writeThread);
@@ -76,13 +80,17 @@ public class HapiMTBase extends ApiTestBase {
             }
 
             startOngoingWritesLatch.await();
-            writeThread.ongoingWrites(ddl(), dml(), new SessionImpl());
+            writeThread.ongoingWrites(ddl(), dml(), new SessionImpl(), keepGoing);
             return null;
         }
 
         public boolean waitForSetup() throws InterruptedException {
             setupDoneLatch.await();
             return setupSucceeded;
+        }
+
+        public void stopOngoingWrites() {
+            keepGoing.set(false);
         }
     }
 
@@ -109,7 +117,7 @@ public class HapiMTBase extends ApiTestBase {
             LOG.trace("{} starting", id);
             final HapiGetRequest request;
             try {
-                request = hapiReadThread.pullRequest();
+                request = hapiReadThread.pullRequest(ThreadlessRandom.rand(this.hashCode()));
             } catch (RuntimeException e) {
                 LOG.warn("{} failed to pull request: {}", id, e);
                 throw e;
@@ -174,15 +182,25 @@ public class HapiMTBase extends ApiTestBase {
                 }
             }
 
+            writeThreadCallable.stopOngoingWrites();
+            writeThreadFuture.get(5, TimeUnit.SECONDS);
+
             if (!errors.isEmpty()) {
-                if (LOG.isErrorEnabled()) {
-                    int i = 1;
-                    int count = errors.size();
-                    for (Throwable error : errors) {
-                        LOG.error(String.format("Error %d of %d", i, count), error);
+                List<Throwable> errorCauses = new ArrayList<Throwable>();
+                int i = 1;
+                int count = errors.size();
+                for (Throwable error : errors) {
+                    LOG.trace(String.format("Error %d of %d", i, count), error);
+                    Throwable errorCause = error;
+                    if (errorCause instanceof HapiReadThread.UnexpectedException) {
+                        errorCause = errorCause.getCause();
                     }
+                    if (errorCause instanceof ExecutionException) {
+                        errorCause = errorCause.getCause();
+                    }
+                    errorCauses.add(errorCause);
                 }
-                fail("Errors: " + errors);
+                fail("Errors: " + errorCauses);
             }
         } catch (Exception e) {
             throw new RunThreadsException(e);
