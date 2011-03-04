@@ -26,6 +26,7 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
+import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import com.akiban.server.service.session.Session;
@@ -108,6 +109,11 @@ public final class CoiMT extends HapiMTBase {
             {
                 // no ongoing writes
             }
+
+            @Override
+            public WriteThreadStats getStats() {
+                return new WriteThreadStats(4, 0, 0);
+            }
         };
 
         final HapiGetRequest request = ParsedHapiGetRequest.parse("s1:c:id=1");
@@ -145,134 +151,32 @@ public final class CoiMT extends HapiMTBase {
     }
 
     @Test
-    public void concurrentWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
+    public void preWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
         final int MAX_INT = 100;
         final int MAX_INC = 10;
         final int MAX_READ_ID = 1000;
-        WriteThread writeThread = new Writer() {
-            @Override
-            protected void setupRows(Session session, DMLFunctions dml) throws InvalidOperationException {
-                final int[] tables = {customers(), orders(), items()};
-                long start = System.currentTimeMillis();
-                int seed = (int)start;
-                while (System.currentTimeMillis() - start > 5000) {
-                    seed = writeRandomly(session, seed, tables, new int[]{1, 1, 1}, dml);
-                }
-            }
 
+        WriteThread writeThread = new WithOrphanWriter(MAX_INC, MAX_INT, 10000) {
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException
             {
-                final int[] tables = {customers(), orders(), items()};
-                final int[] tableFirstCols = {1, 1, 1};
-                int seed = this.hashCode();
-
-                while (keepGoing.get()) {
-                    seed = writeRandomly(session, seed, tables, tableFirstCols, dml);
-                }
-            }
-
-            private int writeRandomly(Session session, int seed, int[] tables, int[] tableFirstCols, DMLFunctions dml)
-                    throws InvalidOperationException
-            {
-                seed = rand(seed);
-                final int tableIndex = Math.abs(seed % 3);
-                final int tableId = tables[ tableIndex ];
-                tableFirstCols[tableIndex] += Math.abs(seed % MAX_INC) + 1;
-                seed = rand(seed);
-                final int secondInt = seed % MAX_INT;
-                dml.writeRow(session, createNewRow(tableId, tableFirstCols[tableIndex], secondInt));
-                return seed;
+                // do nothing
             }
         };
+        HapiSuccess readThread = new OrphanHapiSuccess(MAX_READ_ID);
 
-        HapiSuccess readThread = new HapiSuccess() {
+        runThreads(writeThread, readThread);
+    }
 
-            @Override
-            protected void validateIndex(HapiGetRequest request, Index index) {
-                assertTrue("index table: " + index, index.getTableName().equals("s1", "c"));
-                assertEquals("index name", "PRIMARY", index.getIndexName().getName());
-            }
+    @Test
+    public void concurrentWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
+        final int MAX_INT = 100;
+        final int MAX_INC = 10;
+        final int MAX_READ_ID = 1000;
 
-            @Override
-            protected void validateSuccessResponse(HapiGetRequest request, JSONObject result)
-                    throws JSONException
-            {
-                JSONArray customers = result.getJSONArray("@c");
-
-                int customersCount = customers.length();
-                assertFalse(String.format("too many customsers (%d): %s -> %s", customersCount, request, result),
-                        customersCount > 1);
-
-                if (customers.length() > 0) {
-                    JSONObject customer = customers.getJSONObject(0);
-                    Set<String> cKeys = jsonObjectKeys(customer);
-                    assertEquals(cKeys + " length", 3, cKeys.size());
-                    final int cID = jsonObjectInt(customer, "id", request);
-                    assertEquals("customer id", request.getPredicates().get(0).getValue(), Integer.toString(cID));
-                    assertTrue("customer missing age: " + result, cKeys.contains("age"));
-                    JSONArray orders = customer.getJSONArray("@o");
-
-                    for (int ordersLen=orders.length(), oIndex=0; oIndex < ordersLen; ++oIndex ) {
-                        JSONObject order = orders.getJSONObject(oIndex);
-                        Set<String> oKeys = jsonObjectKeys(order);
-                        assertEquals(oKeys + " length", 3, oKeys.size());
-                        final int oID = jsonObjectInt(order, "id", request);
-                        assertEquals("cid", cID, jsonObjectInt(order, "cid", request));
-                        JSONArray items = order.getJSONArray("@i");
-
-
-                        for (int itemsLen=items.length(), iIndex=0; iIndex < itemsLen; ++iIndex) {
-                            JSONObject item = items.getJSONObject(iIndex);
-                            Set<String> iKeys = jsonObjectKeys(item);
-                            assertEquals(iKeys + " length", 2, iKeys.size());
-                            assertTrue("item lacking id: " + result, iKeys.contains("id"));
-                            assertEquals("item's order", oID, jsonObjectInt(item, "oid", request));
-                        }
-                    }
-                }
-            }
-
-            @Override
-            protected HapiGetRequest pullRequest(final int pseudoRandom) {
-                return new HapiGetRequest() {
-                    private final String idValue = Integer.toString(Math.abs(pseudoRandom) % MAX_READ_ID);
-                    private final TableName using = new TableName("s1", "c");
-                    @Override
-                    public String getSchema() {
-                        return using.getSchemaName();
-                    }
-
-                    @Override
-                    public String getTable() {
-                        return using.getTableName();
-                    }
-
-                    @Override
-                    public TableName getUsingTable() {
-                        return using;
-                    }
-
-                    @Override
-                    public List<HapiPredicate> getPredicates() {
-                        return Arrays.<HapiPredicate>asList(
-                                new SimpleHapiPredicate(using, "id", HapiPredicate.Operator.EQ, idValue)
-                        );
-                    }
-
-                    @Override
-                    public String toString() {
-                        return String.format("%s:%s:%s=%s", getSchema(), getTable(), "id", idValue);
-                    }
-                };
-            }
-
-            @Override
-            protected int spawnCount() {
-                return 10000;
-            }
-        };
+        WriteThread writeThread = new WithOrphanWriter(MAX_INC, MAX_INT, 2500);
+        HapiSuccess readThread = new OrphanHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
     }
@@ -295,6 +199,156 @@ public final class CoiMT extends HapiMTBase {
             return jsonObject.getInt(key);
         } catch (JSONException e) {
             throw new RuntimeException("<" + request + "> extracting " + key + " from " + jsonObject.toString(), e);
+        }
+    }
+
+    private class WithOrphanWriter extends Writer {
+        private final int MAX_INC;
+        private final int MAX_INT;
+        private final long msOfSetup;
+
+        private int writes = 0;
+
+        public WithOrphanWriter(int MAX_INC, int MAX_INT, long msOfSetup) {
+            this.MAX_INC = MAX_INC;
+            this.MAX_INT = MAX_INT;
+            this.msOfSetup = msOfSetup;
+        }
+
+        @Override
+        protected void setupRows(Session session, DMLFunctions dml) throws InvalidOperationException {
+            final int[] tables = {customers(), orders(), items()};
+            long start = System.currentTimeMillis();
+            int seed = (int)start;
+            int[] tableIDs = {1, 1, 1};
+            while (System.currentTimeMillis() - start <= msOfSetup) {
+                seed = writeRandomly(session, seed, tables, tableIDs, dml);
+            }
+        }
+
+        @Override
+        public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
+                throws InvalidOperationException
+        {
+            final int[] tables = {customers(), orders(), items()};
+            final int[] tableFirstCols = {1, 1, 1};
+            int seed = this.hashCode();
+
+            while (keepGoing.get()) {
+                seed = writeRandomly(session, seed, tables, tableFirstCols, dml);
+            }
+        }
+
+        private int writeRandomly(Session session, int seed, int[] tables, int[] tableFirstCols, DMLFunctions dml)
+                throws InvalidOperationException
+        {
+            seed = rand(seed);
+            final int tableIndex = Math.abs(seed % 3);
+            final int tableId = tables[ tableIndex ];
+            tableFirstCols[tableIndex] += Math.abs(seed % MAX_INC) + 1;
+            seed = rand(seed);
+            final int secondInt = seed % MAX_INT;
+            dml.writeRow(session, createNewRow(tableId, tableFirstCols[tableIndex], secondInt));
+            ++writes;
+            return seed;
+        }
+
+        @Override
+        public WriteThreadStats getStats() {
+            return new WriteThreadStats(writes, 0, 0);
+        }
+    }
+
+    private class OrphanHapiSuccess extends HapiSuccess {
+
+        private final int MAX_READ_ID;
+
+        public OrphanHapiSuccess(int MAX_READ_ID) {
+            this.MAX_READ_ID = MAX_READ_ID;
+        }
+
+        @Override
+        protected void validateIndex(HapiGetRequest request, Index index) {
+            assertTrue("index table: " + index, index.getTableName().equals("s1", "c"));
+            assertEquals("index name", "PRIMARY", index.getIndexName().getName());
+        }
+
+        @Override
+        protected void validateSuccessResponse(HapiGetRequest request, JSONObject result)
+                throws JSONException
+        {
+            JSONArray customers = result.getJSONArray("@c");
+
+            int customersCount = customers.length();
+            assertFalse(String.format("too many customsers (%d): %s -> %s", customersCount, request, result),
+                    customersCount > 1);
+
+            if (customers.length() > 0) {
+                JSONObject customer = customers.getJSONObject(0);
+                Set<String> cKeys = jsonObjectKeys(customer);
+                assertEquals(cKeys + " length", 3, cKeys.size());
+                final int cID = jsonObjectInt(customer, "id", request);
+                assertEquals("customer id", request.getPredicates().get(0).getValue(), Integer.toString(cID));
+                assertTrue("customer missing age: " + result, cKeys.contains("age"));
+                JSONArray orders = customer.getJSONArray("@o");
+
+                for (int ordersLen=orders.length(), oIndex=0; oIndex < ordersLen; ++oIndex ) {
+                    JSONObject order = orders.getJSONObject(oIndex);
+                    Set<String> oKeys = jsonObjectKeys(order);
+                    assertEquals(oKeys + " length", 3, oKeys.size());
+                    final int oID = jsonObjectInt(order, "id", request);
+                    assertEquals("cid", cID, jsonObjectInt(order, "cid", request));
+                    JSONArray items = order.getJSONArray("@i");
+
+
+                    for (int itemsLen=items.length(), iIndex=0; iIndex < itemsLen; ++iIndex) {
+                        JSONObject item = items.getJSONObject(iIndex);
+                        Set<String> iKeys = jsonObjectKeys(item);
+                        assertEquals(iKeys + " length", 2, iKeys.size());
+                        assertTrue("item lacking id: " + result, iKeys.contains("id"));
+                        assertEquals("item's order", oID, jsonObjectInt(item, "oid", request));
+                    }
+                }
+            }
+        }
+
+        @Override
+        protected HapiGetRequest pullRequest(final int pseudoRandom) {
+            return new HapiGetRequest() {
+                private final String idValue = Integer.toString(Math.abs(pseudoRandom) % MAX_READ_ID);
+                private final TableName using = new TableName("s1", "c");
+                @Override
+                public String getSchema() {
+                    return using.getSchemaName();
+                }
+
+                @Override
+                public String getTable() {
+                    return using.getTableName();
+                }
+
+                @Override
+                public TableName getUsingTable() {
+                    return using;
+                }
+
+                @Override
+                public List<HapiPredicate> getPredicates() {
+                    return Arrays.<HapiPredicate>asList(
+                            new SimpleHapiPredicate(using, "id", HapiPredicate.Operator.EQ, idValue)
+                    );
+                }
+
+                @Override
+                public String toString() {
+                    return String.format("%s:%s:%s=%s", getSchema(), getTable(), "id", idValue);
+                }
+            };
+        }
+
+        @Override
+        protected int spawnCount() {
+            return 10000;
         }
     }
 }

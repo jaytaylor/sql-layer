@@ -15,18 +15,26 @@
 
 package com.akiban.server.mttests.mthapi.base;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.service.session.Session;
+public final class WriteThreadStats {
+    private final int writes;
+    private final int updates;
+    private final int deletes;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+    public WriteThreadStats(int writes, int updates, int deletes) {
+        this.writes = writes;
+        this.updates = updates;
+        this.deletes = deletes;
+    }
 
-public interface WriteThread {
-    void setupWrites(DDLFunctions ddl, DMLFunctions dml, Session session) throws InvalidOperationException;
+    public int getWrites() {
+        return writes;
+    }
 
-    void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
-            throws InvalidOperationException;
+    public int getUpdates() {
+        return updates;
+    }
 
-    WriteThreadStats getStats();
+    public int getDeletes() {
+        return deletes;
+    }
 }

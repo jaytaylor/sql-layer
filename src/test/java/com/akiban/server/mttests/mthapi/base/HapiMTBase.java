@@ -54,7 +54,7 @@ public class HapiMTBase extends ApiTestBase {
         }
     }
 
-    private final class WriteThreadCallable implements Callable<Void> {
+    private final class WriteThreadCallable implements Callable<WriteThreadStats> {
         private final CountDownLatch setupDoneLatch = new CountDownLatch(1);
         private final WriteThread writeThread;
         private final CountDownLatch startOngoingWritesLatch;
@@ -69,7 +69,7 @@ public class HapiMTBase extends ApiTestBase {
         }
 
         @Override
-        public Void call() throws InvalidOperationException, InterruptedException {
+        public WriteThreadStats call() throws InvalidOperationException, InterruptedException {
             DDLFunctions ddl = ddl();
             DMLFunctions dml = dml();
             Session session = new SessionImpl();
@@ -82,7 +82,7 @@ public class HapiMTBase extends ApiTestBase {
 
             startOngoingWritesLatch.await();
             writeThread.ongoingWrites(ddl(), dml(), new SessionImpl(), keepGoing);
-            return null;
+            return writeThread.getStats();
         }
 
         public boolean waitForSetup() throws InterruptedException {
@@ -149,7 +149,7 @@ public class HapiMTBase extends ApiTestBase {
             final ExecutorService executor = getExecutorService();
 
             WriteThreadCallable writeThreadCallable = new WriteThreadCallable(writeThread, startAllLatch);
-            Future<Void> writeThreadFuture = executor.submit(writeThreadCallable);
+            Future<WriteThreadStats> writeThreadFuture = executor.submit(writeThreadCallable);
             boolean setupSuccess = writeThreadCallable.waitForSetup();
             if (!setupSuccess) {
                 writeThreadFuture.get();
@@ -186,7 +186,9 @@ public class HapiMTBase extends ApiTestBase {
             }
 
             writeThreadCallable.stopOngoingWrites();
-            writeThreadFuture.get(5, TimeUnit.SECONDS);
+            WriteThreadStats stats = writeThreadFuture.get(5, TimeUnit.SECONDS);
+
+            System.out.println(stats.getWrites() + " writes");
 
             if (!errors.isEmpty()) {
                 List<Throwable> errorCauses = new ArrayList<Throwable>();
