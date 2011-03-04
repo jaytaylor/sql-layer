@@ -24,7 +24,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
+import org.antlr.runtime.RecognitionException;
 import org.junit.Test;
 
 import com.akiban.ais.model.CharsetAndCollation;
@@ -51,12 +54,17 @@ public class SchemaDefToAisTest {
         SchemaDef schemaDef = SchemaDef.parseSchemaFromStream(inputStream);
         return new SchemaDefToAis(schemaDef, true).getAis();
     }
-    
-    private AkibanInformationSchema buildAISfromString(final String schema) throws Exception {
+
+    private AkibanInformationSchema buildAISfromString(final String schema, boolean akibandbOnly) throws Exception {
         final SchemaDef schemaDef = SchemaDef.parseSchema(schema);
-        return new SchemaDefToAis(schemaDef, true).getAis();
+        return new SchemaDefToAis(schemaDef, akibandbOnly).getAis();
     }
-    
+
+    private AkibanInformationSchema buildAISfromString(final String schema) throws Exception {
+        return buildAISfromString(schema, true);
+    }
+
+
     @Test
     public void testParseEnumAndSet() throws Exception {
         AkibanInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
@@ -286,5 +294,57 @@ public class SchemaDefToAisTest {
         assertNotNull("s2", s2);
         assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable().getRoot());
         assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable().getRoot());
+    }
+
+    @Test
+    public void foreignKeysOnNonAkibanTable() throws Exception {
+        // Expected behavior: all joins (foreign keys) are preserved
+        final String ddl = "create table test.p(id int key) engine=innodb;"+
+                           "create table test.x(id int key, pid int, constraint foreign key(pid) references p(id)) engine=innodb;"+
+                           "create table test.y(id int key, pid int, xid int, constraint foreign key(pid) references p(id), constraint foreign key(xid) references x(id)) engine=innodb;";
+        AkibanInformationSchema ais = buildAISfromString(ddl, false);
+        final UserTable p = ais.getUserTable("test", "p");
+        assertEquals(0, p.getCandidateParentJoins().size());
+        assertEquals(2, p.getCandidateChildJoins().size());
+        final UserTable x = ais.getUserTable("test", "x");
+        assertEquals(1, x.getCandidateParentJoins().size());
+        assertEquals(1, x.getCandidateChildJoins().size());
+        final UserTable y = ais.getUserTable("test", "y");
+        assertEquals(2, y.getCandidateParentJoins().size());
+        assertEquals(0, y.getCandidateChildJoins().size());
+    }
+
+    @Test
+    public void foreignKeysOnAkibanTable() throws Exception {
+        // Expected behavior: A) __akiban joins are preserved with at least one index named __akiban as an 'AKIBAN KEY'
+        //                    B) other joins discard but the generated index is kept
+        final String ddl = "create table test.p(id int key) engine=akibandb;"+
+                           "create table test.x(id int key, pid int, constraint __akiban1 foreign key(pid) references p(id)) engine=akibandb;"+
+                           "create table test.y(id int key, pid int, xid int, constraint foreign key(pid) references p(id), constraint __akiban2 foreign key(xid) references x(id)) engine=akibandb;";
+        AkibanInformationSchema ais = buildAISfromString(ddl, false);
+        final UserTable p = ais.getUserTable("test", "p");
+        assertEquals(0, p.getCandidateParentJoins().size());
+        assertEquals(1, p.getCandidateChildJoins().size());
+        assertEquals(1, p.getChildJoins().size());
+        final UserTable x = ais.getUserTable("test", "x");
+        assertEquals(1, x.getCandidateParentJoins().size());
+        assertNotNull(x.getParentJoin());
+        assertEquals(1, x.getCandidateChildJoins().size());
+        assertEquals(1, x.getChildJoins().size());
+        assertEquals(2, x.getIndexes().size()); // pk, fk
+        final Index xIndex = x.getIndex("__akiban1");
+        assertNotNull(xIndex);
+        assertEquals("AKIBAN KEY", xIndex.getConstraint());
+        final UserTable y = ais.getUserTable("test", "y");
+        assertEquals(1, y.getCandidateParentJoins().size());
+        assertNotNull(y.getParentJoin());
+        assertEquals(0, y.getCandidateChildJoins().size());
+        assertEquals(3, y.getIndexes().size()); // pk, fk, fk
+        final Index yIndex1 = y.getIndex("pid");
+        assertNotNull(yIndex1);
+        assertEquals("KEY", yIndex1.getConstraint());
+        final Index yIndex2 = y.getIndex("__akiban2");
+        assertNotNull(yIndex2);
+        assertEquals("AKIBAN KEY", yIndex2.getConstraint());
     }
 }
