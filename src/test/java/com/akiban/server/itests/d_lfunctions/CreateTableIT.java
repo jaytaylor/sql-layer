@@ -339,6 +339,30 @@ public final class CreateTableIT extends ApiTestBase {
                      new DDLGenerator().createTable(getUserTable(tid)));
     }
 
+    // Akiban fk to non-primary key column is allowed
+    @Test(expected=InvalidOperationException.class)
+    public void bug727749() throws InvalidOperationException {
+        createTable("test", "p", "id int key, wrongInt int");
+        createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(wrongInt)");
+    }
+
+    // Two akiban fkeys is reported poorly
+    @Test(expected=InvalidOperationException.class)
+    public void bug727754() throws InvalidOperationException {
+        createTable("test", "p1", "id int key");
+        createTable("test", "p2", "id int key");
+        createTable("test", "c", "id int key, p1id int, constraint __akiban1 foreign key(p1id) references p1(id),"+
+                                             "p2id int, constraint __akiban2 foreign key(p2id) references p2(id)");
+
+    }   
+
+    // Akiban fkey, parent/child columns are different types
+    @Test(expected=InvalidOperationException.class)
+    public void bug728003() throws InvalidOperationException {
+        createTable("test", "p", "id varchar(32) key");
+        createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id)");
+    }
+
 
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
