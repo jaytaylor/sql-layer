@@ -74,7 +74,7 @@ public final class CachedProcessorIT extends ApiTestBase {
     private static class RowDataStructCollector implements HapiOutputter {
         private final List<List<RowDataStruct>> rowDataStructs = new ArrayList<List<RowDataStruct>>();
         @Override
-        public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream)
+        public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream)
                 throws IOException {
             List<RowDataStruct> list = new ArrayList<RowDataStruct>();
             for (RowData row : rows) {
