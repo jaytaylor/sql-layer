@@ -206,6 +206,7 @@ public final class CoiMT extends HapiMTBase {
         private final int MAX_INC;
         private final int MAX_INT;
         private final long msOfSetup;
+        private final int[] tableIDs = {1, 1, 1};
 
         private int writes = 0;
 
@@ -220,7 +221,6 @@ public final class CoiMT extends HapiMTBase {
             final int[] tables = {customers(), orders(), items()};
             long start = System.currentTimeMillis();
             int seed = (int)start;
-            int[] tableIDs = {1, 1, 1};
             while (System.currentTimeMillis() - start <= msOfSetup) {
                 seed = writeRandomly(session, seed, tables, tableIDs, dml);
             }
@@ -231,11 +231,10 @@ public final class CoiMT extends HapiMTBase {
                 throws InvalidOperationException
         {
             final int[] tables = {customers(), orders(), items()};
-            final int[] tableFirstCols = {1, 1, 1};
             int seed = this.hashCode();
 
             while (keepGoing.get()) {
-                seed = writeRandomly(session, seed, tables, tableFirstCols, dml);
+                seed = writeRandomly(session, seed, tables, tableIDs, dml);
             }
         }
 
