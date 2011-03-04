@@ -15,9 +15,9 @@
 
 package com.akiban.server.mttests.mthapi.base.sais;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 public final class SaisTable {
@@ -31,6 +31,16 @@ public final class SaisTable {
         this.children = children;
     }
 
+    public SaisTable getChild(String name) {
+        for (SaisFK fk : getChildren()) {
+            SaisTable child = fk.getChild();
+            if (child.getName().equals(name)) {
+                return child;
+            }
+        }
+        throw new NoSuchElementException(name);
+    }
+
     public Set<SaisFK> getChildren() {
         return children;
     }
@@ -41,5 +51,29 @@ public final class SaisTable {
 
     public Set<String> getFields() {
         return fields;
+    }
+
+    @Override
+    public String toString() {
+        return buildString(new StringBuilder()).toString();
+    }
+
+    private StringBuilder buildString(StringBuilder builder) {
+        builder.append(name).append(fields);
+        if (getChildren().isEmpty()) {
+            return builder;
+        }
+        Iterator<SaisFK> fkIterator = getChildren().iterator();
+        builder.append(" -> ( ");
+        while (fkIterator.hasNext()) {
+            SaisFK fk = fkIterator.next();
+            builder.append("COLS").append(fk.getFkFields()).append(" REFERENCE ");
+            fk.getChild().buildString(builder);
+            if (fkIterator.hasNext()) {
+                builder.append(", ");
+            }
+        }
+        builder.append(" ) ");
+        return builder;
     }
 }

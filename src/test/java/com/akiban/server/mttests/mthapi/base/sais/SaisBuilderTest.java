@@ -24,9 +24,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
-public final class SaidBuilderTest {
+public final class SaisBuilderTest {
     @Test
     public void basicTest() {
         SaisBuilder builder = new SaisBuilder();
@@ -48,11 +48,13 @@ public final class SaidBuilderTest {
         assertEquals("orderFK child", "order", orderFK.getChild().getName());
         assertEquals("orderFK fields", stringToString("id", "cid"), orderFK.getFkFields());
         leafTable(orderFK.getChild(), "order", "id", "cid");
+        assertSame("order table", orderFK.getChild(), customer.getChild("order"));
 
         SaisFK addressFK = cFKs.get("address");
         assertEquals("addressFK child", "address", addressFK.getChild().getName());
         assertEquals("addressFK fields", stringToString("id", "cid"), addressFK.getFkFields());
         leafTable(addressFK.getChild(), "address", "aid", "cid");
+        assertSame("address table", addressFK.getChild(), customer.getChild("address"));
 
         leafTable(roots.get("zoo"), "zoo", "id", "zebra");
     }
