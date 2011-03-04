@@ -310,6 +310,7 @@
                 <header>src/etc/header.txt</header>
                 <failIfMissing>true</failIfMissing>
                 <excludes>
+                    <!-- General files that can't have or don't need header -->
                     <exclude>**/*.ddl</exclude>
                     <exclude>**/*.json</exclude>
                     <exclude>**/*.sql</exclude>
@@ -317,7 +318,7 @@
                     <exclude>.bzrignore</exclude>
                     <exclude>velocity.log</exclude>
                     <exclude>algebra_testbed/**</exclude>
-                    <!-- Scripts, no extension. Manually added header and ignore -->
+                    <!-- Scripts, no extension. Manually add header and ignore -->
                     <exclude>bin/akserver</exclude>
                     <exclude>bin/akloader</exclude>
                     <exclude>conf/config/jvm.options</exclude>
