@@ -310,12 +310,29 @@
                 <header>src/etc/header.txt</header>
                 <failIfMissing>true</failIfMissing>
                 <excludes>
-                    <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/**</exclude>
-                    <exclude>src/test/resources/com/akiban/ais/ddl/**</exclude>
+                    <exclude>**/*.ddl</exclude>
+                    <exclude>**/*.json</exclude>
                     <exclude>**/*.sql</exclude>
                     <exclude>.idea/**</exclude>
+                    <exclude>.bzrignore</exclude>
+                    <exclude>velocity.log</exclude>
                     <exclude>algebra_testbed/**</exclude>
+                    <!-- Scripts, no extension. Manually added header and ignore -->
+                    <exclude>bin/akserver</exclude>
+                    <exclude>bin/akloader</exclude>
+                    <exclude>conf/config/jvm.options</exclude>
+                    <exclude>src/bin/aisread</exclude>
+                    <exclude>src/bin/aiswrite</exclude>
+                    <!-- Files requiring a specific format (packaging control, test output, etc) -->
+                    <exclude>debian/*</exclude>
+                    <exclude>redhat/*</exclude>
+                    <exclude>src/main/resources/version/akserver_version</exclude> 
+                    <exclude>src/test/resources/com/akiban/ais/ddl/*</exclude>
+                    <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
                 </excludes>
+                <mapping>
+                    <g>JAVADOC_STYLE</g>
+                </mapping>
                 <properties>
                     <year>2011</year>
                 </properties>
