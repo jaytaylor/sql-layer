@@ -221,8 +221,7 @@
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <archive>
-                        <manifest>
-                            <!--mainClass>com.akiban.ais.MySQLToNetwork</mainClass-->
+                    <manifest>
                         <mainClass>com.akiban.server.AkServer</mainClass>
                     </manifest>
                 </archive>
