@@ -116,14 +116,16 @@ public class HapiMTBase extends ApiTestBase {
             LOG.trace("{} call()", id);
             startLatch.await();
             LOG.trace("{} starting", id);
+            final HapiRequestStruct requestStruct;
             final HapiGetRequest request;
             try {
-                request = hapiReadThread.pullRequest(ThreadlessRandom.rand(this.hashCode()));
+                requestStruct = hapiReadThread.pullRequest(ThreadlessRandom.rand(this.hashCode()));
             } catch (RuntimeException e) {
                 LOG.warn("{} failed to pull request: {}", id, e);
                 throw e;
             }
             final JSONObject resultJson;
+            request = requestStruct.getRequest();
             try {
                 JsonOutputter outputter = JsonOutputter.instance();
                 outputStream.reset();
@@ -132,7 +134,7 @@ public class HapiMTBase extends ApiTestBase {
                 hapi().processRequest(session, request, outputter, outputStream);
                 String result = outputStream.toString("UTF-8");
                 resultJson = new JSONObject(result);
-                hapiReadThread.validateSuccessResponse(request, resultJson);
+                hapiReadThread.validateSuccessResponse(requestStruct, resultJson);
             } catch (Throwable e) {
                 hapiReadThread.validateErrorResponse(request, e);
                 return null;

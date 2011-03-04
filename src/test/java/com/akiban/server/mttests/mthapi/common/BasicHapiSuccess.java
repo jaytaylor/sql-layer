@@ -19,7 +19,10 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
+import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
+import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
+import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -49,9 +52,10 @@ public class BasicHapiSuccess extends HapiSuccess {
     }
 
     @Override
-    protected void validateSuccessResponse(HapiGetRequest request, JSONObject result)
+    protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result)
             throws JSONException
     {
+        HapiGetRequest request = requestStruct.getRequest();
         JSONArray customers = result.getJSONArray("@c");
 
         int customersCount = customers.length();
@@ -88,8 +92,8 @@ public class BasicHapiSuccess extends HapiSuccess {
     }
 
     @Override
-    protected HapiGetRequest pullRequest(final int pseudoRandom) {
-        return new HapiGetRequest() {
+    protected HapiRequestStruct pullRequest(final int pseudoRandom) {
+        HapiGetRequest request = new HapiGetRequest() {
             private final String idValue = Integer.toString(Math.abs(pseudoRandom) % MAX_READ_ID);
             private final TableName using = new TableName("s1", "c");
             @Override
@@ -119,6 +123,13 @@ public class BasicHapiSuccess extends HapiSuccess {
                 return String.format("%s:%s:%s=%s", getSchema(), getTable(), "id", idValue);
             }
         };
+
+        SaisBuilder builder = new SaisBuilder();
+        builder.table("c", "id", "age");
+        builder.table("o", "id", "cid").joinTo("c").col("id", "cid");
+        builder.table("i", "id", "oid").joinTo("o").col("id", "oid");
+        SaisTable table = builder.getSoleRootTable();
+        return new HapiRequestStruct(request, table);
     }
 
     @Override

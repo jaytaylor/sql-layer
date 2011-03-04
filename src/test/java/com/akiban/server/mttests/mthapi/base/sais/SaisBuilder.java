@@ -88,11 +88,11 @@ public final class SaisBuilder {
     public class QuickJoiner {
         private final String child;
 
-        public QuickJoiner(String child) {
+        QuickJoiner(String child) {
             this.child = child;
         }
 
-        FKBuilder joinTo(String parent) {
+        public FKBuilder joinTo(String parent) {
             return join(parent, child);
         }
     }

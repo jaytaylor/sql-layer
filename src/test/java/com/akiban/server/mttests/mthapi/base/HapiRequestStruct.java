@@ -16,14 +16,22 @@
 package com.akiban.server.mttests.mthapi.base;
 
 import com.akiban.server.api.HapiGetRequest;
-import org.json.JSONObject;
+import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 
-public abstract class HapiSuccess extends HapiReadThread {
-    @Override
-    protected abstract void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws Exception;
+public final class HapiRequestStruct {
+    private final HapiGetRequest request;
+    private final SaisTable selectRoot;
 
-    @Override
-    final void validateErrorResponse(HapiGetRequest request, Throwable exception) throws UnexpectedException {
-        throw new UnexpectedException(request, exception);
+    public HapiRequestStruct(HapiGetRequest request, SaisTable selectRoot) {
+        this.request = request;
+        this.selectRoot = selectRoot;
+    }
+
+    public HapiGetRequest getRequest() {
+        return request;
+    }
+
+    public SaisTable getSelectRoot() {
+        return selectRoot;
     }
 }

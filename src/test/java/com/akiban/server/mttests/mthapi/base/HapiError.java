@@ -22,7 +22,7 @@ public abstract class HapiError extends HapiReadThread {
     protected abstract void validateErrorResponse(HapiGetRequest request, Throwable exception);
 
     @Override
-    final void validateSuccessResponse(HapiGetRequest request, JSONObject result) throws UnexpectedSuccess {
-        throw new UnexpectedSuccess(request);
+    final void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws UnexpectedSuccess {
+        throw new UnexpectedSuccess(request.getRequest());
     }
 }

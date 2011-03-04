@@ -38,7 +38,7 @@ public abstract class HapiReadThread {
         // package-private, since we want to maintan the invariant that only one validation method is overridden
     }
 
-    protected abstract HapiGetRequest pullRequest(int pseudoRandom);
+    protected abstract HapiRequestStruct pullRequest(int pseudoRandom);
 
     protected int spawnCount() {
         return DEFAULT_SPAWN_COUNT;
@@ -46,7 +46,7 @@ public abstract class HapiReadThread {
 
     protected abstract void validateIndex(HapiGetRequest request, Index queriedIndex);
 
-    abstract void validateSuccessResponse(HapiGetRequest request, JSONObject result) throws Exception;
+    abstract void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws Exception;
     abstract void validateErrorResponse(HapiGetRequest request, Throwable exception) throws Exception;
 
 }
