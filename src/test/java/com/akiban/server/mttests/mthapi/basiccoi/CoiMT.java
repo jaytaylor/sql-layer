@@ -15,6 +15,7 @@
 
 package com.akiban.server.mttests.mthapi.basiccoi;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
@@ -45,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.*;
 
 import static com.akiban.util.ThreadlessRandom.rand;
+import static org.junit.Assert.assertEquals;
 
 public final class CoiMT extends HapiMTBase {
 
@@ -116,8 +118,16 @@ public final class CoiMT extends HapiMTBase {
 
         HapiSuccess readThread = new HapiSuccess() {
             @Override
-            protected void validateSuccessResponse(HapiGetRequest request, JSONObject result) throws JSONException {
+            protected void validateSuccessResponse(HapiGetRequest request, JSONObject result)
+                    throws JSONException
+            {
                 assertEquals(request.toString(), expectedResponse, result.toString(4));
+            }
+
+            @Override
+            protected void validateIndex(HapiGetRequest request, Index index) {
+                assertTrue("index table: " + index, index.getTableName().equals("s1", "c"));
+                assertEquals("index name", "PRIMARY", index.getIndexName().getName());
             }
 
             @Override
@@ -178,8 +188,17 @@ public final class CoiMT extends HapiMTBase {
         };
 
         HapiSuccess readThread = new HapiSuccess() {
+
             @Override
-            protected void validateSuccessResponse(HapiGetRequest request, JSONObject result) throws JSONException {
+            protected void validateIndex(HapiGetRequest request, Index index) {
+                assertTrue("index table: " + index, index.getTableName().equals("s1", "c"));
+                assertEquals("index name", "PRIMARY", index.getIndexName().getName());
+            }
+
+            @Override
+            protected void validateSuccessResponse(HapiGetRequest request, JSONObject result)
+                    throws JSONException
+            {
                 JSONArray customers = result.getJSONArray("@c");
 
                 int customersCount = customers.length();
@@ -251,7 +270,7 @@ public final class CoiMT extends HapiMTBase {
 
             @Override
             protected int spawnCount() {
-                return 5000;
+                return 10000;
             }
         };
 

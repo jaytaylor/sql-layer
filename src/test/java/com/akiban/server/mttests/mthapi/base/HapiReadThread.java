@@ -15,6 +15,7 @@
 
 package com.akiban.server.mttests.mthapi.base;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.api.HapiGetRequest;
 import org.json.JSONObject;
 
@@ -42,6 +43,8 @@ public abstract class HapiReadThread {
     protected int spawnCount() {
         return DEFAULT_SPAWN_COUNT;
     }
+
+    protected abstract void validateIndex(HapiGetRequest request, Index queriedIndex);
 
     abstract void validateSuccessResponse(HapiGetRequest request, JSONObject result) throws Exception;
     abstract void validateErrorResponse(HapiGetRequest request, Throwable exception) throws Exception;

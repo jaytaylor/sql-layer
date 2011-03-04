@@ -15,6 +15,7 @@
 
 package com.akiban.server.mttests.mthapi.base;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -126,6 +127,8 @@ public class HapiMTBase extends ApiTestBase {
             try {
                 JsonOutputter outputter = JsonOutputter.instance();
                 outputStream.reset();
+                Index index = hapi().findHapiRequestIndex(session, request);
+                hapiReadThread.validateIndex(request, index);
                 hapi().processRequest(session, request, outputter, outputStream);
                 String result = outputStream.toString("UTF-8");
                 resultJson = new JSONObject(result);
@@ -200,7 +203,8 @@ public class HapiMTBase extends ApiTestBase {
                     }
                     errorCauses.add(errorCause);
                 }
-                fail("Errors: " + errorCauses);
+                String errString = count + " error" + (count==1?": " : "s: ") + errorCauses;
+                fail(errString);
             }
         } catch (Exception e) {
             throw new RunThreadsException(e);
