@@ -22,8 +22,13 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
+import com.akiban.server.mttests.mthapi.base.sais.ParentFK;
+import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
+import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
 
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.util.ThreadlessRandom.rand;
@@ -89,19 +94,77 @@ public class BasicWriter implements WriteThread {
     public final void setupWrites(DDLFunctions ddl, DMLFunctions dml, Session session)
             throws InvalidOperationException
     {
-        ddl.createTable(session, "s1", "create table c(id int key, age int)");
-        ddl.createTable(session, "s1", "create table o(id int key, cid int, "
-                +" CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES c (id)"
-                +" )");
-        ddl.createTable(session, "s1", "create table i(id int key, oid int, "
-                +" CONSTRAINT __akiban_i FOREIGN KEY __akiban_o (oid) REFERENCES o (id)"
-                +" )");
+        SaisBuilder builder = new SaisBuilder();
+        builder.table("c", "id", "age").pk("id");
+        builder.table("o", "id", "cid").pk("id").joinTo("c").col("id", "cid");
+        builder.table("i", "id", "oid").pk("id").joinTo("o").col("id", "oid");
+        setupDDLS(builder.getAllTables(), ddl, session);
 
         customer = ddl.getTableId(session, new TableName("s1", "c") );
         order = ddl.getTableId(session, new TableName("s1", "o") );
         item = ddl.getTableId(session, new TableName("s1", "i") );
 
         setupRows(session, dml);
+    }
+
+    protected void setupDDLS(Set<SaisTable> tables, DDLFunctions ddl, Session session)
+            throws InvalidOperationException
+    {
+        StringBuilder builder = new StringBuilder("CREATE TABLE ");
+        final int baseLen = builder.length();
+
+        for(SaisTable table : tables) {
+            builder.setLength(baseLen);
+            String ddlText = buildDDL(table, tables, builder);
+            ddl.createTable(session, "s1", ddlText);
+        }
+    }
+
+    static String buildDDL(SaisTable table, Set<SaisTable> tables, StringBuilder builder) {
+        // fields
+        builder.append(table.getName()).append('(');
+        Iterator<String> fields = table.getFields().iterator();
+        while (fields.hasNext()) {
+            String field = fields.next();
+            builder.append(field).append(" int");
+            if (fields.hasNext()) {
+                builder.append(',');
+            }
+        }
+
+        // PK
+        if (table.getPK() != null) {
+            builder.append(", PRIMARY KEY ");
+            cols(table.getPK().iterator(), builder);
+        }
+
+        // AkibanFK: CONSTRAINT __akiban_fk_FOO FOREIGN KEY __akiban_fk_FOO(pid1,pid2) REFERENCES parent(id1,id2)
+        ParentFK parentFK = table.getParentFK(tables);
+        if (parentFK != null) {
+            builder.append(", CONSTRAINT ");
+            akibanFK(table, builder).append(" FOREIGN KEY ");
+            akibanFK(table, builder);
+            cols(parentFK.getFk().getChildCols(), builder).append(" REFERENCES ").append(parentFK.getParent().getName());
+            cols(parentFK.getFk().getParentCols(), builder);
+        }
+
+        return builder.append(')').toString();
+    }
+
+    private static StringBuilder cols(Iterator<String> columns, StringBuilder builder) {
+        builder.append('(');
+        while (columns.hasNext()) {
+            builder.append(columns.next());
+            if (columns.hasNext()) {
+                builder.append(',');
+            }
+        }
+        builder.append(')');
+        return builder;
+    }
+
+    private static StringBuilder akibanFK(SaisTable child, StringBuilder builder) {
+        return builder.append("`__akiban_fk_").append(child.getName()).append('`');
     }
 
     protected final int customers() {

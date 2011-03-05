@@ -46,13 +46,13 @@ public final class SaisBuilderTest {
 
         SaisFK orderFK = cFKs.get("order");
         assertEquals("orderFK child", "order", orderFK.getChild().getName());
-        assertEquals("orderFK fields", stringToString("id", "cid"), orderFK.getFkFields());
+        assertEquals("orderFK fields", stringToString("id", "cid"), orderFK.getFkPairs());
         leafTable(orderFK.getChild(), "order", "id", "cid");
         assertSame("order table", orderFK.getChild(), customer.getChild("order"));
 
         SaisFK addressFK = cFKs.get("address");
         assertEquals("addressFK child", "address", addressFK.getChild().getName());
-        assertEquals("addressFK fields", stringToString("id", "cid"), addressFK.getFkFields());
+        assertEquals("addressFK fields", stringToString("id", "cid"), addressFK.getFkPairs());
         leafTable(addressFK.getChild(), "address", "aid", "cid");
         assertSame("address table", addressFK.getChild(), customer.getChild("address"));
 

@@ -17,10 +17,13 @@ package com.akiban.server.mttests.mthapi.base.sais;
 
 import com.akiban.util.ArgumentValidation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -30,7 +33,7 @@ public final class SaisBuilder {
     public class FKBuilder {
         private final String parent;
         private final String child;
-        private final Map<String,String> fks;
+        private final List<FKPair> fks;
 
         private FKBuilder(String parent, String child) {
             ArgumentValidation.notNull("parent table", parent);
@@ -39,13 +42,13 @@ public final class SaisBuilder {
             confirmTable(child);
             this.parent = parent;
             this.child = child;
-            fks = new HashMap<String, String>();
+            fks = new ArrayList<FKPair>();
         }
 
         public FKBuilder col(String parentColumn, String childColumn) {
             confirmColumn(parent, parentColumn);
             confirmColumn(child, childColumn);
-            fks.put(parentColumn, childColumn);
+            fks.add(new FKPair(parentColumn, childColumn));
             return this;
         }
 
@@ -85,23 +88,34 @@ public final class SaisBuilder {
         }
     }
 
-    public class QuickJoiner {
+    public class TableBuilder {
         private final String child;
 
-        QuickJoiner(String child) {
+        TableBuilder(String child) {
             this.child = child;
         }
 
         public FKBuilder joinTo(String parent) {
             return join(parent, child);
         }
+
+        public TableBuilder pk(String... pks) {
+            ArgumentValidation.isGTE("pks can't be empty", pks.length, 1);
+            List<String> old = tablesToPKs.put(child, Arrays.asList(pks));
+            if (old != null) {
+                tablesToPKs.put(child, old);
+                throw new IllegalStateException("table alrady had a PK");
+            }
+            return this;
+        }
     }
 
     Map<String,Set<String>> tablesToFields = new HashMap<String, Set<String>>();
+    Map<String,List<String>> tablesToPKs = new HashMap<String, List<String>>();
     Map<String,Set<FKBuilder>> fkBuilders = new HashMap<String,Set<FKBuilder>>();
     Set<String> roots = new HashSet<String>();
 
-    public QuickJoiner table(String name, String... fields) {
+    public TableBuilder table(String name, String... fields) {
         ArgumentValidation.notNull("table name", name);
         if(tablesToFields.containsKey(name)) {
             throw new IllegalArgumentException(name + " already defined");
@@ -117,7 +131,7 @@ public final class SaisBuilder {
         roots.add(name);
         tablesToFields.put(name, fieldsSet);
 
-        return new QuickJoiner(name);
+        return new TableBuilder(name);
     }
 
     private FKBuilder join(String parent, String child) {
@@ -157,11 +171,27 @@ public final class SaisBuilder {
         return ret;
     }
 
+    public Set<SaisTable> getAllTables() {
+        Set<SaisTable> tmp = new LinkedHashSet<SaisTable>();
+        for(SaisTable root : getRootTables()) {
+            recursivelyAddAll(root, tmp);
+        }
+        return tmp;
+    }
+
+    private static void recursivelyAddAll(SaisTable table, Set<SaisTable> out) {
+        out.add(table);
+        for (SaisFK fk : table.getChildren()) {
+            recursivelyAddAll(fk.getChild(), out);
+        }
+    }
+
     private SaisTable recursivelyBuild(String table, Set<String> remainingTables) {
         Set<FKBuilder> tableFKBuilders = fkBuilders.get(table);
         Set<String> fields = tablesToFields.get(table);
+        List<String> pk = tablesToPKs.get(table);
         if (tableFKBuilders == null) {
-            return new SaisTable(table, fields, Collections.<SaisFK>emptySet());
+            return new SaisTable(table, fields, pk, Collections.<SaisFK>emptySet());
         }
 
         Set<SaisFK> saisFKs = new HashSet<SaisFK>();
@@ -172,7 +202,7 @@ public final class SaisBuilder {
             SaisTable child = recursivelyBuild(childName, remainingTables);
             saisFKs.add( new SaisFK(child, fkBuilder.fks) );
         }
-        return new SaisTable(table, fields, saisFKs);
+        return new SaisTable(table, fields, pk, saisFKs);
     }
 
     public SaisTable getSoleRootTable() {

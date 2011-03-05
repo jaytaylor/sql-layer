@@ -15,19 +15,37 @@
 
 package com.akiban.server.mttests.mthapi.base.sais;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
 public final class SaisTable {
     private final String name;
     private final Set<String> fields;
+    private final List<String> pk;
     private final Set<SaisFK> children;
 
-    SaisTable(String name, Set<String> fields, Set<SaisFK> children) {
+    SaisTable(String name, Set<String> fields, List<String> pk, Set<SaisFK> children) {
+        if (!children.isEmpty()) {
+            if (pk == null) {
+                throw new IllegalArgumentException("can't join to " + name + "; it has no PK");
+            }
+            for (SaisFK child : children) {
+                List<String> childParentCols = child.getParentColsList();
+                if (!pk.equals(childParentCols)) {
+                    throw new IllegalArgumentException(String.format(
+                            "wrong AkibanFK cols: %s to PK %s", childParentCols, pk
+                    ));
+                }
+            }
+        }
         this.name = name;
-        this.fields = Collections.unmodifiableSet(fields);
+        this.fields = Collections.unmodifiableSet(new HashSet<String>(fields));
+        this.pk = (pk == null) ? null : Collections.unmodifiableList(new ArrayList<String>(pk));
         this.children = children;
     }
 
@@ -45,6 +63,20 @@ public final class SaisTable {
         return children;
     }
 
+    public ParentFK getParentFK(Iterable<SaisTable> possible) {
+        for(SaisTable table : possible) {
+            if (table.equals(this)) {
+                continue;
+            }
+            for (SaisFK fk : table.getChildren()) {
+                if (fk.getChild().equals(this)) {
+                    return new ParentFK(table, fk);
+                }
+            }
+        }
+        return null;
+    }
+
     public String getName() {
         return name;
     }
@@ -53,12 +85,16 @@ public final class SaisTable {
         return fields;
     }
 
-    @Override
-    public String toString() {
-        return buildString(new StringBuilder()).toString();
+    public List<String> getPK() {
+        return pk;
     }
 
-    private StringBuilder buildString(StringBuilder builder) {
+    @Override
+    public String toString() {
+        return getName();
+    }
+
+    public StringBuilder buildString(StringBuilder builder) {
         builder.append(name).append(fields);
         if (getChildren().isEmpty()) {
             return builder;
@@ -67,7 +103,7 @@ public final class SaisTable {
         builder.append(" -> ( ");
         while (fkIterator.hasNext()) {
             SaisFK fk = fkIterator.next();
-            builder.append("COLS").append(fk.getFkFields()).append(" REFERENCE ");
+            builder.append("COLS").append(fk.getFkPairs()).append(" REFERENCE ");
             fk.getChild().buildString(builder);
             if (fkIterator.hasNext()) {
                 builder.append(", ");

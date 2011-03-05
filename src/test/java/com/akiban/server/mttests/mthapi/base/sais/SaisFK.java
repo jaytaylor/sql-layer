@@ -17,33 +17,85 @@ package com.akiban.server.mttests.mthapi.base.sais;
 
 import com.akiban.util.ArgumentValidation;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Iterator;
+import java.util.List;
 
 public final class SaisFK {
     private final SaisTable child;
-    private final Map<String,String> fkFields;
+    private final List<FKPair> fkFields;
 
-    SaisFK(SaisTable child, Map<String, String> fkFields) {
+    SaisFK(SaisTable child, List<FKPair> fkFields) {
         ArgumentValidation.isGTE("fkFields", fkFields.size(), 1);
-        if (!child.getFields().containsAll(fkFields.values())) {
-            throw new IllegalArgumentException("child doesn't contain all FK columns");
-        }
         this.child = child;
-        this.fkFields = Collections.unmodifiableMap( new HashMap<String, String>(fkFields) );
+        this.fkFields = Collections.unmodifiableList(new ArrayList<FKPair>(fkFields));
     }
 
     public SaisTable getChild() {
         return child;
     }
 
-    public Map<String, String> getFkFields() {
+    public List<FKPair> getFkPairs() {
         return fkFields;
     }
 
     @Override
     public String toString() {
-        return String.format("FK[to %s]", getFkFields());
+        return String.format("FK[to %s]", getFkPairs());
+    }
+
+    public Iterator<String> getChildCols() {
+        return new FKSIterator(Mode.CHILD);
+    }
+
+    public Iterator<String> getParentCols() {
+        return new FKSIterator(Mode.PARENT);
+    }
+
+    public List<String> getParentColsList() {
+        List<String> cols = new ArrayList<String>();
+        Iterator<String> iter = getParentCols();
+        while(iter.hasNext()) {
+            cols.add(iter.next());
+        }
+        return cols;
+    }
+
+    static enum Mode {
+        CHILD, PARENT
+    }
+
+    private class FKSIterator implements Iterator<String> {
+
+        private final Mode mode;
+        private final Iterator<FKPair> pairsIterator;
+
+        protected FKSIterator(Mode mode) {
+            this.pairsIterator = getFkPairs().iterator();
+            this.mode = mode;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return pairsIterator.hasNext();
+        }
+
+        @Override
+        public String next() {
+            FKPair fkPair = pairsIterator.next();
+            switch (mode) {
+                case CHILD:
+                    return fkPair.getChild();
+                case PARENT:
+                    return fkPair.getParent();
+            }
+            throw new AssertionError(mode);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 }
