@@ -125,9 +125,9 @@ public class BasicHapiSuccess extends HapiSuccess {
         };
 
         SaisBuilder builder = new SaisBuilder();
-        builder.table("c", "id", "age");
-        builder.table("o", "id", "cid").joinTo("c").col("id", "cid");
-        builder.table("i", "id", "oid").joinTo("o").col("id", "oid");
+        builder.table("c", "id", "age").pk("id");
+        builder.table("o", "id", "cid").pk("id").joinTo("c").col("id", "cid");
+        builder.table("i", "id", "oid").pk("id").joinTo("o").col("id", "oid");
         SaisTable table = builder.getSoleRootTable();
         return new HapiRequestStruct(request, table);
     }
