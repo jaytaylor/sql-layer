@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +58,7 @@ public final class SaisBuilder {
         }
 
         private void confirmColumn(String table, String column) {
-            Set<String> columns = tablesToFields.get(table);
+            List<String> columns = tablesToFields.get(table);
             if (!columns.contains(column)) {
                 throw new NoSuchElementException("table " + table + " doesn't contain " + column);
             }
@@ -110,7 +109,7 @@ public final class SaisBuilder {
         }
     }
 
-    Map<String,Set<String>> tablesToFields = new HashMap<String, Set<String>>();
+    Map<String,List<String>> tablesToFields = new HashMap<String, List<String>>();
     Map<String,List<String>> tablesToPKs = new HashMap<String, List<String>>();
     Map<String,Set<FKBuilder>> fkBuilders = new HashMap<String,Set<FKBuilder>>();
     Set<String> roots = new HashSet<String>();
@@ -124,12 +123,8 @@ public final class SaisBuilder {
         if (fieldsList.contains(null)) {
             throw new IllegalArgumentException("column names can't be null: " + fieldsList);
         }
-        Set<String> fieldsSet = Collections.unmodifiableSet(new HashSet<String>(fieldsList));
-        if (fieldsSet.size() != fieldsList.size()) {
-            throw new IllegalArgumentException("some duplicated columns: " + fieldsList);
-        }
         roots.add(name);
-        tablesToFields.put(name, fieldsSet);
+        tablesToFields.put(name, fieldsList);
 
         return new TableBuilder(name);
     }
@@ -188,7 +183,7 @@ public final class SaisBuilder {
 
     private SaisTable recursivelyBuild(String table, Set<String> remainingTables) {
         Set<FKBuilder> tableFKBuilders = fkBuilders.get(table);
-        Set<String> fields = tablesToFields.get(table);
+        List<String> fields = tablesToFields.get(table);
         List<String> pk = tablesToPKs.get(table);
         if (tableFKBuilders == null) {
             return new SaisTable(table, fields, pk, Collections.<SaisFK>emptySet());

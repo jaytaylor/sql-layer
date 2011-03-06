@@ -25,11 +25,11 @@ import java.util.Set;
 
 public final class SaisTable {
     private final String name;
-    private final Set<String> fields;
+    private final List<String> fields;
     private final List<String> pk;
     private final Set<SaisFK> children;
 
-    SaisTable(String name, Set<String> fields, List<String> pk, Set<SaisFK> children) {
+    SaisTable(String name, List<String> fields, List<String> pk, Set<SaisFK> children) {
         if (!children.isEmpty()) {
             if (pk == null) {
                 throw new IllegalArgumentException("can't join to " + name + "; it has no PK");
@@ -43,8 +43,12 @@ public final class SaisTable {
                 }
             }
         }
+        Set<String> fieldsSet = new HashSet<String>(fields);
+        if (fieldsSet.size() != fields.size()) {
+            throw new IllegalArgumentException("some duplicated columns: " + fields);
+        }
         this.name = name;
-        this.fields = Collections.unmodifiableSet(new HashSet<String>(fields));
+        this.fields = Collections.unmodifiableList(new ArrayList<String>(fields));
         this.pk = (pk == null) ? null : Collections.unmodifiableList(new ArrayList<String>(pk));
         this.children = children;
     }
@@ -81,7 +85,7 @@ public final class SaisTable {
         return name;
     }
 
-    public Set<String> getFields() {
+    public List<String> getFields() {
         return fields;
     }
 
