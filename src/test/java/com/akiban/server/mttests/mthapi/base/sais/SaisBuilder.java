@@ -85,6 +85,10 @@ public final class SaisBuilder {
         public String toString() {
             return String.format("FKS[%s to %s: %s]", parent, child, fks);
         }
+
+        public SaisBuilder backToBuilder() {
+            return SaisBuilder.this;
+        }
     }
 
     public class TableBuilder {
@@ -106,6 +110,10 @@ public final class SaisBuilder {
                 throw new IllegalStateException("table alrady had a PK");
             }
             return this;
+        }
+
+        public SaisBuilder backToBuilder() {
+            return SaisBuilder.this;
         }
     }
 

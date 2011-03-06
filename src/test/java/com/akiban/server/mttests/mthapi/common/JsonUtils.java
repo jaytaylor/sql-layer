@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.akiban.server.mttests.mthapi.common.HapiValidationError.Reason.*;
+import static com.akiban.server.mttests.mthapi.common.HapiValidationError.*;
 import static org.junit.Assert.*;
 
 final class JsonUtils {
@@ -56,28 +58,28 @@ final class JsonUtils {
     }
 
     public static void validateResponse(JSONObject response, SaisTable selectRoot, SaisTable predicateTable) {
-        assertNotNull("response is null", response);
+        hapiassertNotNull(RESPONSE_IS_NULL, response);
         ArgumentValidation.notNull("select root", selectRoot);
         ArgumentValidation.notNull("predicate table", predicateTable);
 
         Set<String> roots = jsonObjectKeys(response);
-        assertEquals("number of root elements: " + roots, 1, roots.size());
+        assertEquals(ROOT_TABLES_COUNT, "number of root elements: " + roots, 1, roots.size());
         StringBuilder scratch = new StringBuilder();
         final String rootTableKey = escapeTable(selectRoot, scratch);
-        assertEquals("root table name", rootTableKey, roots.iterator().next());
+        assertEquals(ROOT_TABLE_NAME, "root table name", rootTableKey, roots.iterator().next());
 
         boolean rootIsPredicate = selectRoot.equals(predicateTable);
         try {
             JSONArray rootObjects = response.getJSONArray(rootTableKey);
             final int rootObjectsCount = rootObjects.length();
             if (!rootIsPredicate) {
-                assertEquals("number of root elements", 1, rootObjectsCount);
+                assertEquals(ROOT_ELEMENTS_COUNT, "number of root elements", 1, rootObjectsCount);
             }
             for (int rootObjectIndex=0; rootObjectIndex < rootObjectsCount; ++rootObjectIndex) {
                 JSONObject rootObject = rootObjects.getJSONObject(rootObjectIndex);
                 final boolean sawPredicates = validateResponseRecursively(rootObject, selectRoot, predicateTable,
                         rootIsPredicate, scratch);
-                assertTrue("never saw predicates for elem " + rootObjectsCount, sawPredicates);
+                assertTrue(UNSEEN_PREDICATES, "never saw predicates for elem " + rootObjectsCount, sawPredicates);
             }
         } catch (JSONException e) {
             throw new RuntimeException(e);
@@ -105,7 +107,10 @@ final class JsonUtils {
             }
         }
         if (!sawPredicateTable) {
-            assertEquals("child tables (when the predicate table hasn't been seen yet)", 1, childKeys.size());
+            assertEquals(UNSEEN_PREDICATES, "child tables (when the predicate table hasn't been seen yet)", 1, childKeys.size());
+        }
+        if (childKeys.isEmpty()) {
+            return sawPredicateTable;
         }
         List<Object> atTablePK = getPK(jsonObject, atTable, scratch);
         boolean ret = sawPredicateTable;
@@ -114,7 +119,7 @@ final class JsonUtils {
             final JSONArray childArray;
             childArray = jsonObject.getJSONArray(childKey);
             if (!sawPredicateTable){
-                assertEquals("child array " + atTable + childKey, 1, childArray.length());
+                assertEquals(UNSEEN_PREDICATES, "child array " + atTable + childKey, 1, childArray.length());
             }
             final SaisFK childFK = childKeyEntry.getValue();
             final SaisTable childSais = childFK.getChild();
@@ -138,7 +143,7 @@ final class JsonUtils {
                 Object value = jsonObject.get(pkField);
                 values.add(value);
             } catch (JSONException e) {
-                fail(String.format("%s didn't have a value for one of its PK fields: %s", atTable, pkField));
+                fail(FIELDS_MISSING, String.format("%s didn't have a value for one of its PK fields: %s", atTable, pkField));
             }
         }
         assert values.size() == atTablePK.size() : String.format("size mismatch: %s != %s", values, atTablePK);
@@ -157,7 +162,7 @@ final class JsonUtils {
             String childFKCol = escapeField(childFKCols.next(), scratch);
             fkFields.add(childJson.get(childFKCol));
         }
-        assertEquals("FK fields for " + childFK, atTablePK, fkFields);
+        assertEquals(FK_MISMATCH, "FK fields for " + childFK, atTablePK, fkFields);
     }
 
     private static boolean orphansSelectFromMissingParents(List<Object> atTablePK) {
@@ -180,10 +185,21 @@ final class JsonUtils {
                 missing = (missing == null) ? new ArrayList<String>(jsonObject.length()) : missing;
                 missing.add(field);
             }
+            else {
+                Object o;
+                try {
+                    o = jsonObject.get(field);
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+                assertFalse(INVALID_FIELD, "field's value is a JSON array or object",
+                    (o instanceof JSONObject) || (o instanceof JSONArray)
+                );
+            }
             // TODO field value validation? type? anything?
         }
         if (missing != null) {
-            fail("Missing fields for table " + tableName + ": " + missing);
+            fail(FIELDS_MISSING, "Missing fields for table " + tableName + ": " + missing);
         }
     }
 
