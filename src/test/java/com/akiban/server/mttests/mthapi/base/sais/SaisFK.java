@@ -53,9 +53,16 @@ public final class SaisFK {
         return new FKSIterator(Mode.PARENT);
     }
 
+    public List<String> getChildColsList() {
+        return iter2List(getChildCols());
+    }
+
     public List<String> getParentColsList() {
+        return iter2List(getParentCols());
+    }
+
+    private static List<String> iter2List(Iterator<String> iter) {
         List<String> cols = new ArrayList<String>();
-        Iterator<String> iter = getParentCols();
         while(iter.hasNext()) {
             cols.add(iter.next());
         }
