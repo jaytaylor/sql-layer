@@ -23,7 +23,6 @@ import static org.junit.Assert.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,7 +39,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
-import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
@@ -140,8 +138,9 @@ public class ApiTestBase {
 
     protected ApiTestBase()
     {
-        assertTrue("Please name integration tests FooIT instead of FooTest",
-                this.getClass().getSimpleName().endsWith("IT")
+        final String name = this.getClass().getSimpleName();
+        assertTrue("Please name integration tests FooIT or FooMT instead of FooTest or somethign else",
+                name.endsWith("IT") || name.endsWith("MT")
         );
     }
 
@@ -298,7 +297,7 @@ public class ApiTestBase {
         return set;
     }
 
-    protected static NewRow createNewRow(int tableId, Object... columns) {
+    public static NewRow createNewRow(int tableId, Object... columns) {
         NewRow row = new NiceRow(tableId);
         for (int i=0; i < columns.length; ++i) {
             row.put(i, columns[i] );

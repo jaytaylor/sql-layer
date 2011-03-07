@@ -13,36 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.util;
 
-import com.akiban.ais.model.TableName;
-
-public interface HapiPredicate {
-    TableName getTableName();
-
-    String getColumnName();
-
-    Operator getOp();
-
-    String getValue();
-
-    public enum Operator {
-        EQ("="),
-        @Deprecated NE("!="),
-        GT(">"),
-        GTE(">="),
-        LT("<"),
-        LTE("<=")
-        ;
-
-        final private String toString;
-        Operator(String toString) {
-            this.toString = toString;
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
+public final class ThreadlessRandom {
+    /**
+     * Quick and dirty pseudo-random generator with no concurrency ramifications.
+     * Taken from JCIP; the source is public domain. See:
+     * http://jcip.net/listings.html listing 12.4.
+     * @param seed the random's seed
+     * @return the randomized result
+     */
+    public static int rand(int seed) {
+        seed ^= (seed << 6);
+        seed ^= (seed >>> 21);
+        seed ^= (seed << 7);
+        return seed;
     }
 }

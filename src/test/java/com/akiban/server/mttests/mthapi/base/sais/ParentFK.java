@@ -13,36 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.server.mttests.mthapi.base.sais;
 
-import com.akiban.ais.model.TableName;
+public final class ParentFK extends SaisFK {
+    private final SaisTable parent;
 
-public interface HapiPredicate {
-    TableName getTableName();
+    public ParentFK(SaisTable parent, SaisFK fk) {
+        super(fk);
+        this.parent = parent;
+    }
 
-    String getColumnName();
-
-    Operator getOp();
-
-    String getValue();
-
-    public enum Operator {
-        EQ("="),
-        @Deprecated NE("!="),
-        GT(">"),
-        GTE(">="),
-        LT("<"),
-        LTE("<=")
-        ;
-
-        final private String toString;
-        Operator(String toString) {
-            this.toString = toString;
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
+    public SaisTable getParent() {
+        return parent;
     }
 }

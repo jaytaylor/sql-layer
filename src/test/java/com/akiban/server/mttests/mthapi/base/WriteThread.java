@@ -13,36 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.server.mttests.mthapi.base;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.service.session.Session;
 
-public interface HapiPredicate {
-    TableName getTableName();
+import java.util.concurrent.atomic.AtomicBoolean;
 
-    String getColumnName();
+public interface WriteThread {
+    void setupWrites(DDLFunctions ddl, DMLFunctions dml, Session session) throws InvalidOperationException;
 
-    Operator getOp();
+    void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
+            throws InvalidOperationException;
 
-    String getValue();
-
-    public enum Operator {
-        EQ("="),
-        @Deprecated NE("!="),
-        GT(">"),
-        GTE(">="),
-        LT("<"),
-        LTE("<=")
-        ;
-
-        final private String toString;
-        Operator(String toString) {
-            this.toString = toString;
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
-    }
+    WriteThreadStats getStats();
 }

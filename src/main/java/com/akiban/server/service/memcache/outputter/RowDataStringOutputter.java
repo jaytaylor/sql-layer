@@ -22,7 +22,6 @@ import com.akiban.server.api.HapiProcessedGetRequest;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.List;
 
 public final class RowDataStringOutputter implements HapiOutputter {
     private static final RowDataStringOutputter instance = new RowDataStringOutputter();
@@ -34,7 +33,7 @@ public final class RowDataStringOutputter implements HapiOutputter {
     private RowDataStringOutputter() {}
     
     @Override
-    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException {
         PrintWriter writer = new PrintWriter(outputStream);
         for (RowData data : rows) {
             String toString = data.toString(request.getRowDef(data.getRowDefId()));

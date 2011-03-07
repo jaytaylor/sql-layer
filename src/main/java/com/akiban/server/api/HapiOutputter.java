@@ -19,8 +19,7 @@ import com.akiban.server.RowData;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
 
 public interface HapiOutputter {
-    void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException;
+    void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException;
 }

@@ -388,6 +388,8 @@ public class RowData {
             } catch (EncodingException e) {
                 if (e.getCause() instanceof ArrayIndexOutOfBoundsException) {
                     exception = e;
+                } else {
+                    throw e;
                 }
             }
             if (exception != null && growBuffer) {

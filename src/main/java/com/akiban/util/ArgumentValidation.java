@@ -42,7 +42,7 @@ public final class ArgumentValidation {
      * @param i the number to test
      * @param min the minimum value that i may be (inclusive)
      */
-    public static void isGTE(String argName, int i, int min) {
+    public static void isGTE(String argName, long i, long min) {
         if (i < min) {
             throw new IllegalArgumentException(String.format("%s must be >= %d; was %d", argName, min, i));
         }
