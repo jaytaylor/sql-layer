@@ -15,20 +15,15 @@
 
 package com.akiban.server.mttests.mthapi.base.sais;
 
-public final class ParentFK {
+public final class ParentFK extends SaisFK {
     private final SaisTable parent;
-    private final SaisFK fk;
 
     public ParentFK(SaisTable parent, SaisFK fk) {
+        super(fk);
         this.parent = parent;
-        this.fk = fk;
     }
 
     public SaisTable getParent() {
         return parent;
-    }
-
-    public SaisFK getFk() {
-        return fk;
     }
 }

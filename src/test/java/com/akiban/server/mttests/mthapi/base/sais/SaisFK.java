@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-public final class SaisFK {
+public class SaisFK {
     private final SaisTable child;
     private final List<FKPair> fkFields;
 
@@ -30,6 +30,11 @@ public final class SaisFK {
         ArgumentValidation.isGTE("fkFields", fkFields.size(), 1);
         this.child = child;
         this.fkFields = Collections.unmodifiableList(new ArrayList<FKPair>(fkFields));
+    }
+
+    SaisFK(SaisFK copy) {
+        this.child = copy.child;
+        this.fkFields = copy.fkFields; // don't need defensive copy since it's an unmodifiable list
     }
 
     public SaisTable getChild() {

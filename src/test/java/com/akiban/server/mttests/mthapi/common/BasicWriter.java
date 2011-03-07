@@ -144,8 +144,8 @@ public class BasicWriter implements WriteThread {
             builder.append(", CONSTRAINT ");
             akibanFK(table, builder).append(" FOREIGN KEY ");
             akibanFK(table, builder);
-            cols(parentFK.getFk().getChildCols(), builder).append(" REFERENCES ").append(parentFK.getParent().getName());
-            cols(parentFK.getFk().getParentCols(), builder);
+            cols(parentFK.getChildCols(), builder).append(" REFERENCES ").append(parentFK.getParent().getName());
+            cols(parentFK.getParentCols(), builder);
         }
 
         return builder.append(')').toString();
