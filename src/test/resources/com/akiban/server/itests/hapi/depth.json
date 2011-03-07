@@ -13,7 +13,7 @@
         [ "customer",
             "cid int key",
             "name varchar(32)",
-            "address char(4)"
+            "address char(20)"
         ],
 
         [ "orders",

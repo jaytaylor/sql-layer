@@ -110,10 +110,10 @@ public final class CreateTableIT extends ApiTestBase {
     public void bug705993() throws InvalidOperationException {
         int tid = createCheckColumn("c1 CHAR(0) NULL", Types.CHAR, 0L, null);
         // We support a superset of the inserts for CHAR(0) compared to MySQL, which should be OK
-        writeRows(createNewRow(tid, "a", -1L),
+        writeRows(createNewRow(tid, "", -1L),
                   createNewRow(tid, null, -1L));
         expectFullRows(tid,
-                       createNewRow(tid, "a"),
+                       createNewRow(tid, ""),
                        createNewRow(tid, (Object)null));
     }
 

@@ -805,12 +805,12 @@ public class PersistitStore implements Store {
         // - Don't have to visit children whose hkey contains no changed column
         Key hKey = exchange.getKey();
         KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
+        RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
         while (exchange.next(filter)) {
             Value value = exchange.getValue();
             int descendentRowDefId =
                 AkServerUtil.getInt(value.getEncodedBytes(),
                                     RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
-            RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
             RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
             expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
