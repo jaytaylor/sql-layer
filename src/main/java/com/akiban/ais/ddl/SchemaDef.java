@@ -282,15 +282,6 @@ public class SchemaDef {
         return addIndex(actualName);
     }
 
-    static boolean isAkiban(final IndexDef indexDef) {
-        for (String constraint : indexDef.constraints) {
-            if (constraint.startsWith("__akiban")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     void resolveProvisionalIndexes() {
         // We'll go over each of our provisional indexes, each of which has a
         // null name.
@@ -329,7 +320,7 @@ public class SchemaDef {
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
             final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
-            if (equivalent == null || isAkiban(equivalent)) {
+            if (equivalent == null || equivalent.isAkiban()) {
                 real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
@@ -563,7 +554,7 @@ public class SchemaDef {
     private UserTableDef getUserTableDef(final CName tableName) {
         UserTableDef def = userTableMap.get(tableName);
         if (def == null) {
-            def = new UserTableDef(tableName, userTableMap.size());
+            def = new UserTableDef(tableName);
             userTableMap.put(tableName, def);
         }
         return def;
@@ -705,6 +696,8 @@ public class SchemaDef {
     }
 
     public static class UserTableDef {
+        public static String AKIBANDB_ENGINE_NAME = "akibandb";
+
         CName groupName;
         CName name;
         CName likeName;
@@ -714,16 +707,14 @@ public class SchemaDef {
         List<String> parentJoinColumns = new ArrayList<String>();
         List<IndexDef> indexes = new ArrayList<IndexDef>();
         UserTableDef parent;
-        String engine = "akibandb";
+        String engine = AKIBANDB_ENGINE_NAME;
         String charset;
         String collate;
-        // int id;
         private final List<IndexDefHandle> indexHandles = new ArrayList<IndexDefHandle>();
         private ColumnDef autoIncrementColumn = null;
 
-        UserTableDef(final CName name, int id) {
+        UserTableDef(final CName name) {
             this.name = name;
-            // this.id = id;
         }
 
         public CName getCName() {
@@ -760,9 +751,9 @@ public class SchemaDef {
             return Collections.unmodifiableList(primaryKey);
         }
 
-        // public int id() {
-        // return id;
-        // }
+        public boolean isAkibanTable() {
+            return engine.equalsIgnoreCase(AKIBANDB_ENGINE_NAME);
+        }
     }
 
     private static final class IndexNameGenerator {
@@ -941,6 +932,15 @@ public class SchemaDef {
             }
             qualifiers.addAll(otherIndex.qualifiers);
             constraints.addAll(otherIndex.constraints);
+        }
+
+        public boolean isAkiban() {
+            for (String constraint : constraints) {
+                if (constraint.startsWith("__akiban")) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -1201,7 +1201,7 @@ public class SchemaDef {
     public static IndexDef getAkibanJoin(UserTableDef table) {
         IndexDef annotatedFK = null;
         for (final IndexDef indexDef : table.indexes) {
-            if (isAkiban(indexDef)) {
+            if (indexDef.isAkiban()) {
                 // TODO: Fragile - could be two or nore of these
                 assert annotatedFK == null : "previous annotated FK: "
                         + annotatedFK;

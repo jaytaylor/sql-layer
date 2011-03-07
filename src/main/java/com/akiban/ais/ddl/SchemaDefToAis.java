@@ -57,8 +57,6 @@ public class SchemaDefToAis {
     private static final Logger LOG = LoggerFactory.getLogger(SchemaDefToAis.class
             .getName());
 
-    private final static String AKIBANDB_ENGINE_NAME = "akibandb";
-
     private final SchemaDef schemaDef;
     private final AkibanInformationSchema ais;
 
@@ -154,7 +152,7 @@ public class SchemaDefToAis {
     private static IndexDef getAkibanJoin(UserTableDef table) {
         IndexDef annotatedFK = null;
         for (final IndexDef indexDef : table.indexes) {
-            if (SchemaDef.isAkiban(indexDef)) {
+            if (indexDef.isAkiban()) {
                 // TODO: Fragile - could be two or nore of these
                 assert annotatedFK == null : "previous annotated FK: "
                         + annotatedFK;
@@ -168,7 +166,7 @@ public class SchemaDefToAis {
             final CName userTableName) {
         final UserTableDef utDef = schemaDef.getUserTableMap().get(
                 userTableName);
-        if (utDef != null && "akibandb".equalsIgnoreCase(utDef.engine)
+        if (utDef != null && utDef.isAkibanTable()
                 && !tablesInGroups.contains(userTableName)) {
             IndexDef annotatedFK = getAkibanJoin(utDef);
             if (annotatedFK == null) {
@@ -265,8 +263,7 @@ public class SchemaDefToAis {
 
         // loop through user tables and add to AIS
         for (UserTableDef utDef : schemaDef.getUserTableMap().values()) {
-            if (akibandbOnly
-                    && !AKIBANDB_ENGINE_NAME.equalsIgnoreCase(utDef.engine)) {
+            if (akibandbOnly && !utDef.isAkibanTable()) {
                 continue;
             }
             String schemaName = utDef.getCName().getSchema();
