@@ -1,17 +1,17 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
- */
+* Copyright (C) 2011 Akiban Technologies Inc.
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Affero General Public License, version 3,
+* as published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Affero General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program.  If not, see http://www.gnu.org/licenses.
+*/
 
 package com.akiban.server.mttests.mthapi.coi;
 
@@ -38,7 +38,7 @@ public final class CoiMT extends HapiMTBase {
         final int MAX_INC = 10;
         final int MAX_READ_ID = 1000;
 
-        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT, 10000) {
+        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT, 10000) {
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException
@@ -57,7 +57,7 @@ public final class CoiMT extends HapiMTBase {
         final int MAX_INC = 10;
         final int MAX_READ_ID = 1000;
 
-        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT);
+        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT);
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
@@ -69,7 +69,7 @@ public final class CoiMT extends HapiMTBase {
         final int MAX_INC = 1;
         final int MAX_READ_ID = 1000;
 
-        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT);
+        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT);
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
@@ -81,7 +81,7 @@ public final class CoiMT extends HapiMTBase {
         final int MAX_INC = 1;
         final int MAX_READ_ID = 1000;
 
-        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT, 10000) {
+        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT, 10000) {
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException

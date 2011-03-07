@@ -15,6 +15,8 @@
 
 package com.akiban.server.mttests.mthapi.base.sais;
 
+import com.akiban.util.ArgumentValidation;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,12 +24,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class SaisTable {
     private final String name;
     private final List<String> fields;
     private final List<String> pk;
     private final Set<SaisFK> children;
+    private final AtomicReference<SaisFK> parentFK;
 
     SaisTable(String name, List<String> fields, List<String> pk, Set<SaisFK> children) {
         if (!children.isEmpty()) {
@@ -50,6 +54,7 @@ public final class SaisTable {
         this.name = name;
         this.fields = Collections.unmodifiableList(new ArrayList<String>(fields));
         this.pk = (pk == null) ? null : Collections.unmodifiableList(new ArrayList<String>(pk));
+        this.parentFK = new AtomicReference<SaisFK>(null);
         this.children = children;
     }
 
@@ -67,18 +72,18 @@ public final class SaisTable {
         return children;
     }
 
-    public ParentFK getParentFK(Iterable<SaisTable> possible) {
-        for(SaisTable table : possible) {
-            if (table.equals(this)) {
-                continue;
-            }
-            for (SaisFK fk : table.getChildren()) {
-                if (fk.getChild().equals(this)) {
-                    return new ParentFK(table, fk);
-                }
-            }
+    void setParentFK(SaisFK parent) {
+        ArgumentValidation.notNull("parent", parent);
+        if (parent.getChild() != this) {
+            throw new IllegalArgumentException(parent + " doesn't point to me! I'm: " + this);
         }
-        return null;
+        if (!parentFK.compareAndSet(null, parent)) {
+            throw new IllegalStateException("can't set ParentFK twice");
+        }
+    }
+
+    public SaisFK getParentFK() {
+        return parentFK.get();
     }
 
     public String getName() {
@@ -93,11 +98,43 @@ public final class SaisTable {
         return pk;
     }
 
+    public int countIncludingChildren() {
+        int count = 1; // 1 for this
+        for (SaisFK childFK : getChildren()) {
+            count += childFK.getChild().countIncludingChildren();
+        }
+        return count;
+    }
+
     @Override
     public String toString() {
         return getName();
     }
 
+    public Set<SaisTable> setIncludingChildren() {
+        Set<SaisTable> out = new HashSet<SaisTable>();
+        buildSetIncludingChildren(this, out);
+        return out;
+    }
+
+    @SuppressWarnings("unused")
+    public static Set<SaisTable> setIncludingChildren(Set<SaisTable> roots) {
+        Set<SaisTable> out = new HashSet<SaisTable>();
+        for (SaisTable root : roots) {
+            buildSetIncludingChildren(root, out);
+        }
+        return out;
+    }
+
+    private static void buildSetIncludingChildren(SaisTable root, Set<SaisTable> out) {
+        boolean addedOut = out.add(root);
+        assert addedOut : String.format("%s already in %s", root, out);
+        for (SaisFK childFK : root.getChildren()) {
+            buildSetIncludingChildren(childFK.getChild(), out);
+        }
+    }
+
+    @SuppressWarnings("unused")
     public StringBuilder buildString(StringBuilder builder) {
         builder.append(name).append(fields);
         if (getChildren().isEmpty()) {

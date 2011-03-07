@@ -21,20 +21,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SaisFK {
     private final SaisTable child;
     private final List<FKPair> fkFields;
+    private AtomicReference<SaisTable> parent;
 
     SaisFK(SaisTable child, List<FKPair> fkFields) {
         ArgumentValidation.isGTE("fkFields", fkFields.size(), 1);
         this.child = child;
         this.fkFields = Collections.unmodifiableList(new ArrayList<FKPair>(fkFields));
-    }
-
-    SaisFK(SaisFK copy) {
-        this.child = copy.child;
-        this.fkFields = copy.fkFields; // don't need defensive copy since it's an unmodifiable list
+        this.parent = new AtomicReference<SaisTable>(null);
     }
 
     public SaisTable getChild() {
@@ -72,6 +70,20 @@ public class SaisFK {
             cols.add(iter.next());
         }
         return cols;
+    }
+
+    void setParent(SaisTable parent) {
+        ArgumentValidation.notNull("parent", parent);
+        if (!parent.getChildren().contains(this)) {
+            throw new IllegalArgumentException(parent + " children don't include me! I'm: " + this);
+        }
+        if (!this.parent.compareAndSet(null, parent)) {
+            throw new IllegalStateException("can't set ParentFK twice");
+        }
+    }
+
+    public SaisTable getParent() {
+        return parent.get();
     }
 
     static enum Mode {

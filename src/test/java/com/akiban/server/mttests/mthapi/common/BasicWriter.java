@@ -19,60 +19,71 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
-import com.akiban.server.mttests.mthapi.base.sais.ParentFK;
-import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
+import com.akiban.server.mttests.mthapi.base.sais.SaisFK;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ArgumentValidation;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.util.ThreadlessRandom.rand;
+import static org.junit.Assert.assertEquals;
 
 public class BasicWriter implements WriteThread {
-    private final int maxPKIncrement;
-    private final int maxFKValue;
+
+    public interface RowGenerator {
+        public Object[] initialRow(SaisTable table, int pseudoRandom);
+        public void updateRow(Object[] lastrow, int pseudoRandom);
+    }
+
+    private static class TablesInfo {
+        private Object[] fields;
+        // TODO make these final
+        public int tableId;
+        public SaisTable saisTable;
+    }
+
+    private static class TablesHolder {
+        public TablesInfo randomTable(int seed) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     private final long msOfSetup;
-    private final SaisTable rootTable;
-    private final int[] tableIDs = {1, 1, 1};
+    private final RowGenerator rowGenerator;
 
     private int writes = 0;
     private Integer customer;
     private Integer order;
     private Integer item;
+    private final TablesHolder tablesHolder = new TablesHolder();
 
-    public BasicWriter(SaisTable rootTable, int maxPKIncrement, int maxFKValue) {
-        this(rootTable, maxPKIncrement, maxFKValue, -1, false);
+    public BasicWriter(RowGenerator rowGenerator) {
+        this(rowGenerator, -1, false);
     }
 
-    public BasicWriter(SaisTable rootTable, int maxPKIncrement, int maxFKValue, long msOfSetup) {
-        this(rootTable, maxPKIncrement, maxFKValue, msOfSetup, true);
+    public BasicWriter(RowGenerator rowGenerator, long msOfSetup) {
+        this(rowGenerator, msOfSetup, true);
     }
 
-    private BasicWriter(SaisTable rootTable, int maxPKIncrement, int maxFKValue, long msOfSetup, boolean checkMsSetup) {
+    private BasicWriter(RowGenerator rowGenerator, long msOfSetup, boolean checkMsSetup) {
+        ArgumentValidation.notNull("rowGenerator", rowGenerator);
         if (checkMsSetup) {
             ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
         }
-        this.maxPKIncrement = maxPKIncrement;
-        this.maxFKValue = maxFKValue;
         this.msOfSetup = msOfSetup;
-        this.rootTable = rootTable;
-    }
-
-    protected void setupRows(Session session, DMLFunctions dml) throws InvalidOperationException {
-        final int[] tables = {customers(), orders(), items()};
-        long start = System.currentTimeMillis();
-        int seed = (int)start;
-        if (msOfSetup > 0) {
-            do {
-                seed = writeRandomly(session, seed, tables, tableIDs, dml);
-            } while (System.currentTimeMillis() - start <= msOfSetup);
-        }
+        this.rowGenerator = rowGenerator;
     }
 
     @Override
@@ -83,23 +94,24 @@ public class BasicWriter implements WriteThread {
         int seed = this.hashCode();
 
         while (keepGoing.get()) {
-            seed = writeRandomly(session, seed, tables, tableIDs, dml);
+            // TODO
+//            seed = writeRandomly(session, seed, tables, tableIDs, dml);
         }
     }
 
-    private int writeRandomly(Session session, int seed, int[] tables, int[] tableFirstCols, DMLFunctions dml)
-            throws InvalidOperationException
-    {
-        seed = rand(seed);
-        final int tableIndex = Math.abs(seed % 3);
-        final int tableId = tables[ tableIndex ];
-        tableFirstCols[tableIndex] += Math.abs(seed % maxPKIncrement) + 1;
-        seed = rand(seed);
-        final int secondInt = seed % maxFKValue;
-        dml.writeRow(session, ApiTestBase.createNewRow(tableId, tableFirstCols[tableIndex], secondInt));
-        ++writes;
-        return seed;
-    }
+//    private int writeRandomly(Session session, int seed, int[] tables, int[] tableFirstCols, DMLFunctions dml)
+//            throws InvalidOperationException
+//    {
+//        seed = rand(seed);
+//        final int tableIndex = Math.abs(seed % 3);
+//        final int tableId = tables[ tableIndex ];
+//        tableFirstCols[tableIndex] += Math.abs(seed % maxPKIncrement) + 1;
+//        seed = rand(seed);
+//        final int secondInt = seed % maxFKValue;
+//        dml.writeRow(session, ApiTestBase.createNewRow(tableId, tableFirstCols[tableIndex], secondInt));
+//        ++writes;
+//        return seed;
+//    }
 
     @Override
     public WriteThreadStats getStats() {
@@ -110,11 +122,7 @@ public class BasicWriter implements WriteThread {
     public final void setupWrites(DDLFunctions ddl, DMLFunctions dml, Session session)
             throws InvalidOperationException
     {
-        SaisBuilder builder = new SaisBuilder();
-        builder.table("c", "id", "age").pk("id");
-        builder.table("o", "id", "cid").pk("id").joinTo("c").col("id", "cid");
-        builder.table("i", "id", "oid").pk("id").joinTo("o").col("id", "oid");
-        setupDDLS(builder.getAllTables(), ddl, session);
+        setupDDLS(ddl, session);
 
         customer = ddl.getTableId(session, new TableName("s1", "c") );
         order = ddl.getTableId(session, new TableName("s1", "o") );
@@ -123,17 +131,40 @@ public class BasicWriter implements WriteThread {
         setupRows(session, dml);
     }
 
-    protected void setupDDLS(Set<SaisTable> tables, DDLFunctions ddl, Session session)
-            throws InvalidOperationException
-    {
-        StringBuilder builder = new StringBuilder("CREATE TABLE ");
-        final int baseLen = builder.length();
+    protected void setupDDLS(DDLFunctions ddl, Session session) {
+        // do nothing
+    }
 
-        for(SaisTable table : tables) {
-            builder.setLength(baseLen);
-            String ddlText = buildDDL(table, tables, builder);
-            ddl.createTable(session, "s1", ddlText);
+    protected void setupRows(Session session, DMLFunctions dml) throws InvalidOperationException {
+        long start = System.currentTimeMillis();
+        int seed = (int)start;
+        if (msOfSetup > 0) {
+            do {
+                seed = writeRandomly(session, rand(seed), dml);
+            } while (System.currentTimeMillis() - start <= msOfSetup);
         }
+    }
+
+    private int writeRandomly(Session session, int pseudoRandom, DMLFunctions dml) throws InvalidOperationException {
+        TablesInfo info = tablesHolder.randomTable(pseudoRandom);
+        pseudoRandom = rand(pseudoRandom);
+        if (info.fields == null) {
+            Object[] fields = rowGenerator.initialRow(info.saisTable, pseudoRandom);
+            assertEquals("number of fields for " + info.saisTable, info.saisTable.getFields().size(), fields.length);
+            info.fields = fields;
+        } else {
+            rowGenerator.updateRow(info.fields, pseudoRandom);
+        }
+        NewRow row = ApiTestBase.createNewRow(info.tableId, info.fields);
+        dml.writeRow(session, row);
+        return pseudoRandom;
+    }
+
+    protected final void createTable(SaisTable table, DDLFunctions ddl, Session session, StringBuilder scratch) {
+        scratch.setLength(0);
+        scratch.append("CREATE TABLE ");
+//        String ddlText = buildDDL(table, tables, scratch);
+
     }
 
     static String buildDDL(SaisTable table, Set<SaisTable> tables, StringBuilder builder) {
@@ -155,7 +186,7 @@ public class BasicWriter implements WriteThread {
         }
 
         // AkibanFK: CONSTRAINT __akiban_fk_FOO FOREIGN KEY __akiban_fk_FOO(pid1,pid2) REFERENCES parent(id1,id2)
-        ParentFK parentFK = table.getParentFK(tables);
+        SaisFK parentFK = table.getParentFK();
         if (parentFK != null) {
             builder.append(", CONSTRAINT ");
             akibanFK(table, builder).append(" FOREIGN KEY ");
