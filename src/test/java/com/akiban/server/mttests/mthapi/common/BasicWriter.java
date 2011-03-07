@@ -35,8 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.akiban.util.ThreadlessRandom.rand;
 
 public class BasicWriter implements WriteThread {
-    private final int MAX_INC;
-    private final int MAX_INT;
+    private final int maxPKIncrement;
+    private final int maxFKValue;
     private final long msOfSetup;
     private final int[] tableIDs = {1, 1, 1};
 
@@ -45,16 +45,16 @@ public class BasicWriter implements WriteThread {
     private Integer order;
     private Integer item;
 
-    public BasicWriter(int MAX_INC, int MAX_INT) {
-        this.MAX_INC = MAX_INC;
-        this.MAX_INT = MAX_INT;
+    public BasicWriter(int maxPKIncrement, int maxFKValue) {
+        this.maxPKIncrement = maxPKIncrement;
+        this.maxFKValue = maxFKValue;
         this.msOfSetup = -1;
     }
 
-    public BasicWriter(int MAX_INC, int MAX_INT, long msOfSetup) {
+    public BasicWriter(int maxPKIncrement, int maxFKValue, long msOfSetup) {
         ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
-        this.MAX_INC = MAX_INC;
-        this.MAX_INT = MAX_INT;
+        this.maxPKIncrement = maxPKIncrement;
+        this.maxFKValue = maxFKValue;
         this.msOfSetup = msOfSetup;
     }
 
@@ -87,9 +87,9 @@ public class BasicWriter implements WriteThread {
         seed = rand(seed);
         final int tableIndex = Math.abs(seed % 3);
         final int tableId = tables[ tableIndex ];
-        tableFirstCols[tableIndex] += Math.abs(seed % MAX_INC) + 1;
+        tableFirstCols[tableIndex] += Math.abs(seed % maxPKIncrement) + 1;
         seed = rand(seed);
-        final int secondInt = seed % MAX_INT;
+        final int secondInt = seed % maxFKValue;
         dml.writeRow(session, ApiTestBase.createNewRow(tableId, tableFirstCols[tableIndex], secondInt));
         ++writes;
         return seed;
