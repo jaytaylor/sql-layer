@@ -49,7 +49,7 @@ public class AISMessageTest extends BaseTestCase
     private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
         ByteBuffer payload = ByteBuffer.wrap(new byte[1000000]);
-        AISResponse aisResponse = new AISResponse(ais);
+        AISResponse aisResponse = new AISResponse(ais, 0);
         aisResponse.write(payload);
         payload.flip();
         return payload;
@@ -117,7 +117,7 @@ public class AISMessageTest extends BaseTestCase
                     ByteBuffer payload = null;
                     try {
                         AISRequest aisRequest = (AISRequest) connection.receive();
-                        connection.send(new AISResponse(ais));
+                        connection.send(new AISResponse(ais, 0));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

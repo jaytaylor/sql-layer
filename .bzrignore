@@ -17,3 +17,6 @@ redhat/rpmbuild
 ./.settings
 ./.idea
 ./target
+data
+log
+bin/com
