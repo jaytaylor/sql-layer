@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiPredicate;
+import com.akiban.server.api.hapi.HapiUtils;
 import com.akiban.util.ArgumentValidation;
 
 public class SimpleHapiPredicate implements HapiPredicate {
@@ -57,40 +58,16 @@ public class SimpleHapiPredicate implements HapiPredicate {
 
     @Override
     public String toString() {
-        return appendToSB(new StringBuilder("Predicate["), null).append(']').toString();
-    }
-
-    @Override
-    public StringBuilder appendToSB(StringBuilder builder, TableName usingTable) {
-        if (usingTable == null || !usingTable.equals(tableName)) {
-            tableName.escape(builder, usingTable == null ? null : usingTable.getSchemaName());
-            builder.append('.');
-        }
-        builder.append(columnName).append(op).append(value);
-        return builder;
+        return HapiUtils.toString(this);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        SimpleHapiPredicate predicate = (SimpleHapiPredicate) o;
-
-        if (!columnName.equals(predicate.columnName)) return false;
-        if (op != predicate.op) return false;
-        if (!tableName.equals(predicate.tableName)) return false;
-        if (value != null ? !value.equals(predicate.value) : predicate.value != null) return false;
-
-        return true;
+        return o == this || o instanceof HapiPredicate && HapiUtils.equals(this, (HapiPredicate) o);
     }
 
     @Override
     public int hashCode() {
-        int result = tableName.hashCode();
-        result = 31 * result + columnName.hashCode();
-        result = 31 * result + op.hashCode();
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        return result;
+        return HapiUtils.hashCode(this);
     }
 }
