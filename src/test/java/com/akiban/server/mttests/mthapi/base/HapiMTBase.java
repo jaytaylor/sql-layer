@@ -190,7 +190,7 @@ public class HapiMTBase extends ApiTestBase {
             writeThreadCallable.stopOngoingWrites();
             WriteThreadStats stats = writeThreadFuture.get(5, TimeUnit.SECONDS);
 
-            System.out.println(stats.getWrites() + " writes");
+            LOG.trace("{} writes", stats.getWrites());
 
             if (!errors.isEmpty()) {
                 List<Throwable> errorCauses = new ArrayList<Throwable>();
