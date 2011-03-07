@@ -25,9 +25,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import org.antlr.runtime.RecognitionException;
 import org.junit.Test;
 
 import com.akiban.ais.model.CharsetAndCollation;

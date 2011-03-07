@@ -26,7 +26,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import org.antlr.runtime.RecognitionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,24 +63,13 @@ public class SchemaDefToAis {
     private final AkibanInformationSchema ais;
 
     public SchemaDefToAis(final SchemaDef schemaDef, final boolean akibandbOnly)
-            throws RecognitionException, Exception {
+            throws Exception {
         this.schemaDef = schemaDef;
         this.ais = buildAISFromBuilder(akibandbOnly);
     }
 
     public AkibanInformationSchema getAis() {
         return ais;
-    }
-
-    /**
-     * Tests an FOREIGN KEY index definition to determine whether it represents
-     * a group-defining relationship.
-     * 
-     * @param indexDef
-     * @return
-     */
-    private static boolean isAkiban(final IndexDef indexDef) {
-        return SchemaDef.isAkiban(indexDef);
     }
 
     private void computeColumnMapAndPositions() {
@@ -112,8 +100,7 @@ public class SchemaDefToAis {
         final Map<CName, SortedSet<CName>> hierarchy = new HashMap<CName, SortedSet<CName>>();
         final List<CName> tableList = new ArrayList<CName>();
         for (final CName tableName : schemaDef.getGroupMap().get(groupName)) {
-            final UserTableDef utdef = schemaDef.getUserTableMap().get(
-                    tableName);
+            final UserTableDef utdef = schemaDef.getUserTableMap().get(tableName);
             CName parent = utdef.parent == null ? root : utdef.parent.name;
             SortedSet<CName> children = hierarchy.get(parent);
             if (children == null) {
@@ -167,7 +154,7 @@ public class SchemaDefToAis {
     private static IndexDef getAkibanJoin(UserTableDef table) {
         IndexDef annotatedFK = null;
         for (final IndexDef indexDef : table.indexes) {
-            if (isAkiban(indexDef)) {
+            if (SchemaDef.isAkiban(indexDef)) {
                 // TODO: Fragile - could be two or nore of these
                 assert annotatedFK == null : "previous annotated FK: "
                         + annotatedFK;
@@ -266,8 +253,8 @@ public class SchemaDefToAis {
         }
     }
 
-    private AkibanInformationSchema buildAISFromBuilder(
-            final boolean akibandbOnly) throws RecognitionException, Exception {
+    private AkibanInformationSchema buildAISFromBuilder(final boolean akibandbOnly)
+            throws Exception {
         addImpliedGroups();
         computeColumnMapAndPositions();
 
@@ -303,14 +290,12 @@ public class SchemaDefToAis {
 
             // columns
             List<ColumnDef> columns = utDef.columns;
-            int columnIndex = 0;
             for (ColumnDef def : columns) {
                 Type type = ais.getType(def.typeName);
                 Column column = Column
                         .create(ut, def.name, def.uposition, type);
                 column.setNullable(def.nullable);
-                column.setAutoIncrement(def.autoincrement == null ? false
-                        : true);
+                column.setAutoIncrement(def.autoincrement != null);
                 column.setTypeParameter1(longValue(def.typeParam1));
                 column.setTypeParameter2(longValue(def.typeParam2));
                 column.setCharset(def.charset);
@@ -324,7 +309,7 @@ public class SchemaDefToAis {
                 Index pkIndex = Index.create(ais, ut, pkIndexName,
                         indexIdGenerator.allocateId(utDef.name), true, pkIndexName);
 
-                columnIndex = 0;
+                int columnIndex = 0;
                 for (String pkName : utDef.primaryKey) {
                     Column pkColumn = ut.getColumn(pkName);
                     pkIndex.addColumn(new IndexColumn(pkIndex, pkColumn,
@@ -374,20 +359,17 @@ public class SchemaDefToAis {
                                 childJoinColumnName);
                     }
                 }
-                // else
-                {
-                    // indexes
-                    Index fkIndex = Index.create(ais, ut, indexDef.name,
-                            indexIdGenerator.allocateId(utDef.name), unique, indexType);
 
-                    columnIndex = 0;
-                    for (SchemaDef.IndexColumnDef indexColumnDef : indexDef.columns) {
-                        Column fkColumn = ut
-                                .getColumn(indexColumnDef.columnName);
-                        fkIndex.addColumn(new IndexColumn(fkIndex, fkColumn,
-                                columnIndex++, !indexColumnDef.descending,
-                                indexColumnDef.indexedLength));
-                    }
+                // indexes
+                Index fkIndex = Index.create(ais, ut, indexDef.name,
+                        indexIdGenerator.allocateId(utDef.name), unique, indexType);
+
+                int columnIndex = 0;
+                for (SchemaDef.IndexColumnDef indexColumnDef : indexDef.columns) {
+                    Column fkColumn = ut.getColumn(indexColumnDef.columnName);
+                    fkIndex.addColumn(new IndexColumn(fkIndex, fkColumn,
+                            columnIndex++, !indexColumnDef.descending,
+                            indexColumnDef.indexedLength));
                 }
             }
         }
@@ -418,8 +400,7 @@ public class SchemaDefToAis {
                         LOG.debug("Group Child Table = " + table.getName());
                     }
                     if (akibanFK.referenceTable != null) {
-                        String joinName = constructFKJoinName(tableDef,
-                                akibanFK);
+                        String joinName = constructFKJoinName(tableDef, akibanFK);
                         builder.addJoinToGroup(groupName, joinName, 0);
                     }
                 }
@@ -432,21 +413,21 @@ public class SchemaDefToAis {
     }
 
     private String constructFKJoinName(UserTableDef childTable, IndexDef fkIndex) {
-        String ret = (fkIndex.getParentSchema() + "/"
-                + fkIndex.getParentTable() + "/"
-                + Strings.join(fkIndex.getParentColumns(), ",") + "/"
-                + childTable.getCName().getSchema() + "/" + childTable.name
-                + "/" + Strings.join(fkIndex.getChildColumns(), ","))
-                .toLowerCase();
-        return ret.replace(',', '_');
+        String ret = String.format("%s/%s/%s/%s/%s/%s",
+                                   fkIndex.getParentSchema(),
+                                   fkIndex.getParentTable(),
+                                   Strings.join(fkIndex.getParentColumns(), ","),
+                                   childTable.getCName().getSchema(),
+                                   childTable.name,
+                                   Strings.join(fkIndex.getChildColumns(), ","));
+        return ret.toLowerCase().replace(',', '_');
     }
 
     private Long longValue(final String s) {
-        return s == null ? null : Long.valueOf(Long.parseLong(s));
+        return s == null ? null : Long.parseLong(s);
     }
 
     private String groupTableName(final CName group) {
         return "_akiban_" + group.getName();
     }
-
 }
