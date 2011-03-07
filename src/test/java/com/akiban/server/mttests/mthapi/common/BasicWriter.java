@@ -26,6 +26,7 @@ import com.akiban.server.mttests.mthapi.base.sais.ParentFK;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -44,7 +45,14 @@ public class BasicWriter implements WriteThread {
     private Integer order;
     private Integer item;
 
+    public BasicWriter(int MAX_INC, int MAX_INT) {
+        this.MAX_INC = MAX_INC;
+        this.MAX_INT = MAX_INT;
+        this.msOfSetup = -1;
+    }
+
     public BasicWriter(int MAX_INC, int MAX_INT, long msOfSetup) {
+        ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
         this.MAX_INC = MAX_INC;
         this.MAX_INT = MAX_INT;
         this.msOfSetup = msOfSetup;
@@ -54,8 +62,10 @@ public class BasicWriter implements WriteThread {
         final int[] tables = {customers(), orders(), items()};
         long start = System.currentTimeMillis();
         int seed = (int)start;
-        while (System.currentTimeMillis() - start <= msOfSetup) {
-            seed = writeRandomly(session, seed, tables, tableIDs, dml);
+        if (msOfSetup > 0) {
+            do {
+                seed = writeRandomly(session, seed, tables, tableIDs, dml);
+            } while (System.currentTimeMillis() - start <= msOfSetup);
         }
     }
 

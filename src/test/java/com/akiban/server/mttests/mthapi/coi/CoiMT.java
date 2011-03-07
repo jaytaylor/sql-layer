@@ -57,7 +57,7 @@ public final class CoiMT extends HapiMTBase {
         final int MAX_INC = 10;
         final int MAX_READ_ID = 1000;
 
-        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT, -1);
+        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT);
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
@@ -69,7 +69,7 @@ public final class CoiMT extends HapiMTBase {
         final int MAX_INC = 1;
         final int MAX_READ_ID = 1000;
 
-        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT, -1);
+        WriteThread writeThread = new BasicWriter(MAX_INC, MAX_INT);
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
