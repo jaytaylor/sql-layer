@@ -20,6 +20,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -30,29 +31,29 @@ public final class SaisBuilderTest {
     @Test
     public void basicTest() {
         SaisBuilder builder = new SaisBuilder();
-        builder.table("customer", "id", "name");
-        builder.table("order", "id", "cid").joinTo("customer").col("id", "cid");
+        builder.table("customer", "id", "name").pk("id");
+        builder.table("order", "id", "cid").pk("id").joinTo("customer").col("id", "cid");
         builder.table("address", "aid", "cid").joinTo("customer").col("id", "cid");
         builder.table("zoo", "id", "zebra");
 
         Map<String,SaisTable> roots = tablesByName(builder.getRootTables());
 
-        assertEquals("root names", stringSet("customer", "zoo"), roots.keySet());
+        assertEquals("root names", set("customer", "zoo"), roots.keySet());
 
         SaisTable customer = roots.get("customer");
-        assertEquals("customer fields", stringSet("id", "name"), customer.getFields());
-        Map<String,SaisFK> cFKs = fksByChild(customer);
-        assertEquals("customer children", stringSet("order", "address"), cFKs.keySet());
+        assertEquals("customer fields", list("id", "name"), customer.getFields());
+        Map<String,SaisFK> cFKs = fksByChild(customer.getChildren());
+        assertEquals("customer children", set("order", "address"), cFKs.keySet());
 
         SaisFK orderFK = cFKs.get("order");
         assertEquals("orderFK child", "order", orderFK.getChild().getName());
-        assertEquals("orderFK fields", stringToString("id", "cid"), orderFK.getFkPairs());
+        assertEquals("orderFK fields", fkPairList("id", "cid"), orderFK.getFkPairs());
         leafTable(orderFK.getChild(), "order", "id", "cid");
         assertSame("order table", orderFK.getChild(), customer.getChild("order"));
 
         SaisFK addressFK = cFKs.get("address");
         assertEquals("addressFK child", "address", addressFK.getChild().getName());
-        assertEquals("addressFK fields", stringToString("id", "cid"), addressFK.getFkPairs());
+        assertEquals("addressFK fields", fkPairList("id", "cid"), addressFK.getFkPairs());
         leafTable(addressFK.getChild(), "address", "aid", "cid");
         assertSame("address table", addressFK.getChild(), customer.getChild("address"));
 
@@ -102,19 +103,18 @@ public final class SaisBuilderTest {
         builder.getSoleRootTable();
     }
 
-    static void leafTable(SaisTable table, String name, String... fields) {
+    void leafTable(SaisTable table, String name, String... fields) {
         assertEquals(name, table.getName());
-        assertEquals(name + " fields", stringSet(fields), table.getFields());
+        assertEquals(name + " fields", list(fields), table.getFields());
         assertEquals(name + " fks " + table.getChildren(), 0, table.getChildren().size());
     }
 
-    static Map<String,String> stringToString(String key, String value) {
-        Map<String,String> map = new HashMap<String, String>();
-        map.put(key, value);
-        return map;
+    List<FKPair> fkPairList(String key, String value) {
+        FKPair fkPair = new FKPair(key, value);
+        return Arrays.asList(fkPair);
     }
 
-    static Map<String,SaisTable> tablesByName(Set<SaisTable> set) {
+    Map<String,SaisTable> tablesByName(Set<SaisTable> set) {
         Map<String,SaisTable> map = new HashMap<String, SaisTable>(set.size());
         for (SaisTable table : set) {
             map.put(table.getName(), table);
@@ -122,19 +122,19 @@ public final class SaisBuilderTest {
         return map;
     }
 
-    static Map<String,SaisFK> fksByChild(SaisTable parent) {
-        Set<SaisFK> set = parent.getChildren();
+    Map<String,SaisFK> fksByChild(Set<SaisFK> set) {
         Map<String,SaisFK> map = new HashMap<String, SaisFK>(set.size());
         for (SaisFK fk : set) {
-            SaisTable childTable = fk.getChild();
-            assertSame("child's parent FK", fk, childTable.getParentFK());
-            assertSame("child's parent", parent, fk.getParent());
-            map.put(childTable.getName(), fk);
+            map.put(fk.getChild().getName(), fk);
         }
         return map;
     }
 
-    static Set<String> stringSet(String... strings) {
+    List<String> list(String... strings) {
+        return Arrays.asList(strings);
+    }
+
+    Set<String> set(String... strings) {
         return new HashSet<String>(Arrays.asList(strings));
     }
 }

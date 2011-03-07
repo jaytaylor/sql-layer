@@ -21,7 +21,6 @@ import com.akiban.server.api.HapiProcessedGetRequest;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
 
 public final class RawByteOutputter implements HapiOutputter {
     private static final RawByteOutputter instance = new RawByteOutputter();
@@ -33,7 +32,7 @@ public final class RawByteOutputter implements HapiOutputter {
     private RawByteOutputter() {}
 
     @Override
-    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException {
         for(RowData data : rows) {
             outputStream.write(data.getBytes(), data.getRowStart(), data.getRowSize());
         }

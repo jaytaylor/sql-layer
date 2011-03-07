@@ -265,7 +265,7 @@ public class SqlTextTarget extends Target {
 
 	private String getStorageEngine() {
 		String engine = System.getProperty("test.db.engine", "akibandb");
-		System.out.println("Generating AIS with engine: " + engine);
+		//System.out.println("Generating AIS with engine: " + engine);
 		return engine;
 	}
 

@@ -385,9 +385,16 @@ public class AkServerUtil {
     public static String decodeMySQLString(byte[] bytes, final int offset,
             final int width, final FieldDef fieldDef) {
         ByteBuffer buff = byteBufferForMySQLString(bytes, offset, width, fieldDef);
-        return buff == null ? null
-            // TODO - handle char set, e.g., utf8
-            : new String(buff.array(), buff.position(), buff.limit() - buff.position());
+        return decodeString(buff, fieldDef.column().getCharsetAndCollation().charset());
+    }
+
+    static String decodeString(ByteBuffer buffer, String charset) {
+        if (buffer == null) {
+            return null;
+        }
+        Charset usingCharset = Charset.forName(charset);
+        return new String(buffer.array(), buffer.position(), buffer.limit() - buffer.position(), usingCharset);
+
     }
 
     public static ByteBuffer byteBufferForMySQLString(byte[] bytes, final int offset,

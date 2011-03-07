@@ -29,7 +29,7 @@ public final class OldGroupingReader {
     }
 
     public Grouping readString(final String input) throws Exception {
-        return buildFromString(new DDLSource.StringStream(input));
+        return buildFromString(new SchemaDef.SDStringStream(input));
     }
 
     private Grouping buildFromString(final ANTLRStringStream stringStream) throws Exception {

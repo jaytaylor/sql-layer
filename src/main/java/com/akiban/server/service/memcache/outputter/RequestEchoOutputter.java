@@ -37,7 +37,7 @@ public class RequestEchoOutputter implements HapiOutputter {
     {}
 
     @Override
-    public void output(HapiProcessedGetRequest request, List<RowData> rows,
+    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows,
                        OutputStream outputStream) throws IOException
     {
         PrintWriter writer = new PrintWriter(outputStream);
@@ -55,7 +55,6 @@ public class RequestEchoOutputter implements HapiOutputter {
             writer.printf("  op:     %s\n", predicate.getOp());
             writer.printf("  value:  %s\n", predicate.getValue());
         }
-        writer.printf("\nResult had %d row%s.", rows.size(), rows.size()==1 ? "" : "s");
         writer.flush();
     }
 }
