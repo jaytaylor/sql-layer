@@ -15,29 +15,23 @@
 
 package com.akiban.server.itests.d_lfunctions;
 
-import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.HapiGetRequest;
-import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.DummyOutputter;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-
-import static org.junit.Assert.assertTrue;
 
 public final class ScanBufferTooSmallIT extends ApiTestBase {
 
@@ -77,29 +71,7 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
     @Test(timeout=5000)
     @org.junit.Ignore("bug 724520")
     public void viaHapi() throws HapiRequestException {
-        final HapiGetRequest request = new HapiGetRequest() {
-            @Override
-            public String getSchema() {
-                return "ts";
-            }
-
-            @Override
-            public String getTable() {
-                return "c";
-            }
-
-            @Override
-            public TableName getUsingTable() {
-                return new TableName("ts", "c");
-            }
-
-            @Override
-            public List<HapiPredicate> getPredicates() {
-                return Arrays.<HapiPredicate>asList(
-                        new SimpleHapiPredicate(getUsingTable(), "cid", HapiPredicate.Operator.EQ, "1")
-                );
-            }
-        };
+        final HapiGetRequest request = DefaultHapiGetRequest.forTables("ts", "c", "c").where("cid").eq("1");
         // TODO: Scanrows no longer has a variable-sized buffer, so some of the code below is disabled.
         Scanrows scanrows = Scanrows.instance();
         // scanrows.getMXBean().setBufferCapacity(10);

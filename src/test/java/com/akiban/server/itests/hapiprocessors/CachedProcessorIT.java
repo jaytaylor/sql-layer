@@ -15,16 +15,14 @@
 
 package com.akiban.server.itests.hapiprocessors;
 
-import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
-import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
 import org.junit.Before;
 import org.junit.Test;
@@ -150,38 +148,6 @@ public final class CachedProcessorIT extends ApiTestBase {
     }
 
     private static HapiGetRequest request(final String table) throws HapiRequestException {
-        return new HapiGetRequest() {
-            @Override
-            public String getSchema() {
-                return "testSchema";
-            }
-
-            @Override
-            public String getTable() {
-                return table;
-            }
-
-            @Override
-            public TableName getUsingTable() {
-                return TableName.create(getSchema(), getTable());
-            }
-
-            @Override
-            public List<HapiPredicate> getPredicates() {
-                List<HapiPredicate> single = new ArrayList<HapiPredicate>();
-                single.add( new SimpleHapiPredicate(getUsingTable(), "id", HapiPredicate.Operator.EQ, "1"));
-                return single;
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                return obj.getClass().equals(this.getClass()) && getTable().equals(((HapiGetRequest) obj).getTable());
-            }
-
-            @Override
-            public int hashCode() {
-                return getTable().hashCode();
-            }
-        };
+        return DefaultHapiGetRequest.forTables("testSchema", table, table).where("id").eq("1");
     }
 }

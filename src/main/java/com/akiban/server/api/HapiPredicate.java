@@ -26,11 +26,9 @@ public interface HapiPredicate {
 
     String getValue();
 
-    StringBuilder appendToSB(StringBuilder builder, TableName usingTable);
-
     public enum Operator {
-        EQ("=="),
-        NE("!="),
+        EQ("="),
+        @Deprecated NE("!="),
         GT(">"),
         GTE(">="),
         LT("<"),

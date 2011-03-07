@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiPredicate;
+import com.akiban.server.api.hapi.HapiUtils;
 import com.akiban.util.ArgumentValidation;
 
 public class SimpleHapiPredicate implements HapiPredicate {
@@ -57,17 +58,11 @@ public class SimpleHapiPredicate implements HapiPredicate {
 
     @Override
     public String toString() {
-        return appendToSB(new StringBuilder("Predicate["), null).append(']').toString();
-    }
-
-    @Override
-    public StringBuilder appendToSB(StringBuilder builder, TableName usingTable) {
-        if (usingTable == null || !usingTable.equals(tableName)) {
-            tableName.escape(builder, usingTable == null ? null : usingTable.getSchemaName());
-            builder.append('.');
-        }
-        builder.append(columnName).append(op).append(value);
-        return builder;
+        StringBuilder builder = new StringBuilder();
+        builder.append(HapiUtils.escape(getColumnName()));
+        builder.append(op);
+        builder.append(HapiUtils.escape(getValue()));
+        return builder.toString();
     }
 
     @Override
@@ -77,12 +72,8 @@ public class SimpleHapiPredicate implements HapiPredicate {
 
         SimpleHapiPredicate predicate = (SimpleHapiPredicate) o;
 
-        if (!columnName.equals(predicate.columnName)) return false;
-        if (op != predicate.op) return false;
-        if (!tableName.equals(predicate.tableName)) return false;
-        if (value != null ? !value.equals(predicate.value) : predicate.value != null) return false;
+        return columnName.equals(predicate.columnName) && op == predicate.op && tableName.equals(predicate.tableName) && !(value != null ? !value.equals(predicate.value) : predicate.value != null);
 
-        return true;
     }
 
     @Override
