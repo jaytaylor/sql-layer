@@ -11,6 +11,9 @@ debian/postrm.debhelper
 debian/prerm.debhelper
 debian/substvars
 debian/tmp/
+debian/akiban/
+debian/akiban.debhelper.log
+debian/akiban.substvars
 redhat/rpmbuild
 ./.classpath
 ./.project
