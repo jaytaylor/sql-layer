@@ -381,13 +381,18 @@ public class RowData {
         RuntimeException exception = null;
         do {
             try {
+                exception = null;
                 createRow(rowDef, values);
             } catch (ArrayIndexOutOfBoundsException e) {
                 exception = e;
-                if (growBuffer) {
-                    int newSize = bytes.length == 0 ? CREATE_ROW_INITIAL_SIZE : bytes.length * 2;
-                    bytes = new byte[newSize];
+            } catch (EncodingException e) {
+                if (e.getCause() instanceof ArrayIndexOutOfBoundsException) {
+                    exception = e;
                 }
+            }
+            if (exception != null && growBuffer) {
+                int newSize = bytes.length == 0 ? CREATE_ROW_INITIAL_SIZE : bytes.length * 2;
+                bytes = new byte[newSize];
             }
         } while (growBuffer && exception != null);
         if (exception != null) {
