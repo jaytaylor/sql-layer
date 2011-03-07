@@ -62,4 +62,28 @@ public class HapiUtils {
         result = 31 * result + self.getPredicates().hashCode();
         return result;
     }
+
+    public static String toString(HapiPredicate predicate) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(HapiUtils.escape(predicate.getColumnName()));
+        builder.append(predicate.getOp());
+        builder.append(HapiUtils.escape(predicate.getValue()));
+        return builder.toString();
+    }
+
+    public static boolean equals(HapiPredicate one, HapiPredicate two) {
+        if (! one.getColumnName().equals(two.getColumnName()) && one.getOp().equals(two.getOp()) )
+            return false;
+        if (one.getValue() == null)
+            return two.getValue() == null;
+        return one.getValue().endsWith(two.getValue());
+    }
+
+    public static int hashCode(HapiPredicate predicate) {
+        int result = predicate.getTableName().hashCode();
+        result = 31 * result + predicate.getColumnName().hashCode();
+        result = 31 * result + predicate.getOp().hashCode();
+        result = 31 * result + (predicate.getValue() != null ? predicate.getValue().hashCode() : 0);
+        return result;
+    }
 }

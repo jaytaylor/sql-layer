@@ -58,30 +58,16 @@ public class SimpleHapiPredicate implements HapiPredicate {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(HapiUtils.escape(getColumnName()));
-        builder.append(op);
-        builder.append(HapiUtils.escape(getValue()));
-        return builder.toString();
+        return HapiUtils.toString(this);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        SimpleHapiPredicate predicate = (SimpleHapiPredicate) o;
-
-        return columnName.equals(predicate.columnName) && op == predicate.op && tableName.equals(predicate.tableName) && !(value != null ? !value.equals(predicate.value) : predicate.value != null);
-
+        return o == this || o instanceof HapiPredicate && HapiUtils.equals(this, (HapiPredicate) o);
     }
 
     @Override
     public int hashCode() {
-        int result = tableName.hashCode();
-        result = 31 * result + columnName.hashCode();
-        result = 31 * result + op.hashCode();
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        return result;
+        return HapiUtils.hashCode(this);
     }
 }
