@@ -167,9 +167,10 @@ public class BasicWriter implements WriteThread {
 
     }
 
-    static String buildDDL(SaisTable table, Set<SaisTable> tables, StringBuilder builder) {
+    static String buildDDL(SaisTable table, StringBuilder builder) {
         // fields
-        builder.append(table.getName()).append('(');
+        builder.setLength(0);
+        builder.append("CREATE TABLE ").append(table.getName()).append('(');
         Iterator<String> fields = table.getFields().iterator();
         while (fields.hasNext()) {
             String field = fields.next();
