@@ -30,6 +30,7 @@ import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.ForeignConstraintDDLException;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
 import com.akiban.server.api.ddl.IndexAlterException;
+import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.JoinToUnknownTableException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.NoPrimaryKeyException;
@@ -74,6 +75,7 @@ public interface DDLFunctions {
             NoPrimaryKeyException,
             DuplicateColumnNameException,
             UnsupportedDataTypeException,
+            JoinToMultipleParentsException,
             GenericInvalidOperationException;
 
     /**

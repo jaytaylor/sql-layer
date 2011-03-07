@@ -751,6 +751,20 @@ public class SchemaDef {
             return Collections.unmodifiableList(primaryKey);
         }
 
+        /**
+         * Get all indexes marked as Akiban joins.
+         * @return List<IndexDef>
+         */
+        public List<IndexDef> getAkibanJoinIndexes() {
+            List<IndexDef> joinIndexes = new ArrayList<IndexDef>();
+            for (final IndexDef indexDef : indexes) {
+                if (indexDef.isAkiban()) {
+                    joinIndexes.add(indexDef);
+                }
+            }
+            return joinIndexes;
+        }
+
         public boolean isAkibanTable() {
             return engine.equalsIgnoreCase(AKIBANDB_ENGINE_NAME);
         }
@@ -1198,24 +1212,10 @@ public class SchemaDef {
         return sb.toString();
     }
 
-    public static IndexDef getAkibanJoin(UserTableDef table) {
-        IndexDef annotatedFK = null;
-        for (final IndexDef indexDef : table.indexes) {
-            if (indexDef.isAkiban()) {
-                // TODO: Fragile - could be two or nore of these
-                assert annotatedFK == null : "previous annotated FK: "
-                        + annotatedFK;
-                annotatedFK = indexDef;
-            }
-        }
-        return annotatedFK;
-    }
-
     private static void strip(StringBuilder sb, final String s) {
         final int sLen = s.length();
         if (sb.length() >= sLen && sb.substring(0, sLen).equalsIgnoreCase(s)) {
             sb.delete(0, sLen);
         }
     }
-
 }

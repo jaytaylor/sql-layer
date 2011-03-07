@@ -18,6 +18,7 @@ package com.akiban.server.api;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
+import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.JoinToUnknownTableException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
@@ -91,6 +92,8 @@ abstract class ClientAPIBase {
                     return new JoinToUnknownTableException(ioe);
                 case JOIN_TO_WRONG_COLUMNS:
                     return new JoinToWrongColumnsException(ioe);
+                case JOIN_TO_MULTIPLE_PARENTS:
+                    return new JoinToMultipleParentsException(ioe);
                 case DUPLICATE_TABLE:
                     return new DuplicateTableNameException(ioe);
                 case UNSUPPORTED_DROP:

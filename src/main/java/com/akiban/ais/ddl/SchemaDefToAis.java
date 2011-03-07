@@ -149,27 +149,13 @@ public class SchemaDefToAis {
         }
     }
 
-    private static IndexDef getAkibanJoin(UserTableDef table) {
-        IndexDef annotatedFK = null;
-        for (final IndexDef indexDef : table.indexes) {
-            if (indexDef.isAkiban()) {
-                // TODO: Fragile - could be two or nore of these
-                assert annotatedFK == null : "previous annotated FK: "
-                        + annotatedFK;
-                annotatedFK = indexDef;
-            }
-        }
-        return annotatedFK;
-    }
-
     private UserTableDef addImpliedGroupTable(final Set<CName> tablesInGroups,
             final CName userTableName) {
-        final UserTableDef utDef = schemaDef.getUserTableMap().get(
-                userTableName);
+        final UserTableDef utDef = schemaDef.getUserTableMap().get(userTableName);
         if (utDef != null && utDef.isAkibanTable()
                 && !tablesInGroups.contains(userTableName)) {
-            IndexDef annotatedFK = getAkibanJoin(utDef);
-            if (annotatedFK == null) {
+            List<IndexDef> annotatedFKs = utDef.getAkibanJoinIndexes();
+            if (annotatedFKs.isEmpty()) {
                 // No FK: this is a new root table so create a new Group
                 // By default the group has the same name is its root
                 // user table.
@@ -179,18 +165,18 @@ public class SchemaDefToAis {
                 utDef.groupName = groupName;
                 members.add(userTableName);
             } else {
-                utDef.parent = addImpliedGroupTable(tablesInGroups,
-                        annotatedFK.referenceTable);
-                if (utDef.parent != null) {
-                    utDef.groupName = utDef.parent.groupName;
-                    for (SchemaDef.IndexColumnDef childColumn : annotatedFK.columns) {
-                        utDef.childJoinColumns.add(childColumn.columnName);
+                for (IndexDef fk : annotatedFKs) {
+                    utDef.parent = addImpliedGroupTable(tablesInGroups, fk.referenceTable);
+                    if (utDef.parent != null) {
+                        utDef.groupName = utDef.parent.groupName;
+                        for (SchemaDef.IndexColumnDef childColumn : fk.columns) {
+                            utDef.childJoinColumns.add(childColumn.columnName);
+                        }
+                        utDef.parentJoinColumns.addAll(fk.referenceColumns);
+                        final SortedSet<CName> members = schemaDef.getGroupMap()
+                                .get(utDef.groupName);
+                        members.add(userTableName);
                     }
-                    utDef.parentJoinColumns
-                            .addAll(annotatedFK.referenceColumns);
-                    final SortedSet<CName> members = schemaDef.getGroupMap()
-                            .get(utDef.groupName);
-                    members.add(userTableName);
                 }
             }
             tablesInGroups.add(userTableName);
@@ -384,8 +370,8 @@ public class SchemaDefToAis {
             List<CName> tablesInGroup = depthFirstSortedUserTables(group);
             for (CName table : tablesInGroup) {
                 UserTableDef tableDef = schemaDef.getUserTableMap().get(table);
-                IndexDef akibanFK = getAkibanJoin(tableDef);
-                if (akibanFK == null) {
+                List<IndexDef> akibanFKs = tableDef.getAkibanJoinIndexes();
+                if (akibanFKs.isEmpty()) {
                     // No FK: this is a root table so do nothing
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Group Root Table = " + table.getName());
@@ -393,12 +379,14 @@ public class SchemaDefToAis {
                     builder.addTableToGroup(groupName, table.getSchema(),
                             table.getName());
                 } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Group Child Table = " + table.getName());
-                    }
-                    if (akibanFK.referenceTable != null) {
-                        String joinName = constructFKJoinName(tableDef, akibanFK);
-                        builder.addJoinToGroup(groupName, joinName, 0);
+                    for (IndexDef fk : akibanFKs) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Group Child Table = " + table.getName());
+                        }
+                        if (fk.referenceTable != null) {
+                            String joinName = constructFKJoinName(tableDef, fk);
+                            builder.addJoinToGroup(groupName, joinName, 0);
+                        }
                     }
                 }
             }

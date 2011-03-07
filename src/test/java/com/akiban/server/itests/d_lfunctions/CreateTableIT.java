@@ -23,6 +23,7 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.itests.ApiTestBase;
@@ -347,14 +348,13 @@ public final class CreateTableIT extends ApiTestBase {
     }
 
     // Two akiban fkeys is reported poorly
-    @Test(expected=InvalidOperationException.class)
+    @Test(expected=JoinToMultipleParentsException.class)
     public void bug727754() throws InvalidOperationException {
         createTable("test", "p1", "id int key");
         createTable("test", "p2", "id int key");
         createTable("test", "c", "id int key, p1id int, constraint __akiban1 foreign key(p1id) references p1(id),"+
                                              "p2id int, constraint __akiban2 foreign key(p2id) references p2(id)");
-
-    }   
+    }
 
     // Akiban fkey, parent/child columns are different types
     @Test(expected=InvalidOperationException.class)

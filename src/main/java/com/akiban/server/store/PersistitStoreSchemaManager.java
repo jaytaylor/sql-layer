@@ -1121,11 +1121,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
 
-        final SchemaDef.IndexDef parentJoin = SchemaDef.getAkibanJoin(tableDef);
-        if (parentJoin == null) {
+        final List<SchemaDef.IndexDef> parentJoins = tableDef.getAkibanJoinIndexes();
+        if (parentJoins.isEmpty()) {
             return;
         }
         
+        if(parentJoins.size() > 1) {
+            throw new InvalidOperationException(ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
+                                                "Table `%s`.`%s` joins to more than one parent",
+                                                schemaName, tableDef.getCName().getName());
+        }
+
+        final SchemaDef.IndexDef parentJoin = parentJoins.get(0);
         String parentSchema = parentJoin.getParentSchema();
         if (parentSchema == null) {
             parentSchema = (tableDef.getCName().getSchema() == null) ? schemaName

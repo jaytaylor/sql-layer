@@ -23,6 +23,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
@@ -344,5 +346,17 @@ public class SchemaDefToAisTest {
         final Index yIndex2 = y.getIndex("__akiban2");
         assertNotNull(yIndex2);
         assertEquals("AKIBAN KEY", yIndex2.getConstraint());
+    }
+
+    @Test(expected=AISBuilder.GroupStructureException.class)
+    public void tableWithTwoParents() throws Exception {
+        // Can parse and construct SchemaDef, but not AIS
+        final String ddl = "create table test.p(id int key) engine=akibandb;"+
+                           "create table test.x(id int key) engine=akibandb;"+
+                           "create table test.y(id int key, pid int, xid int, constraint __akiban1 foreign key(pid) references p(id), constraint __akiban2 foreign key(xid) references x(id)) engine=akibandb;";
+        final SchemaDef schemaDef = SchemaDef.parseSchema(ddl);
+        final SchemaDef.UserTableDef yTable = schemaDef.getUserTableMap().get(new SchemaDef.CName("test","y"));
+        assertEquals(2, yTable.getAkibanJoinIndexes().size());
+        new SchemaDefToAis(schemaDef, true).getAis();
     }
 }

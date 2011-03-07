@@ -36,6 +36,7 @@ import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.ForeignConstraintDDLException;
 import com.akiban.server.api.ddl.GroupWithProtectedTableException;
 import com.akiban.server.api.ddl.IndexAlterException;
+import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.JoinToUnknownTableException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.NoPrimaryKeyException;
@@ -61,15 +62,16 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             throws ParseException, UnsupportedCharsetException,
             ProtectedTableDDLException, DuplicateTableNameException,
             GroupWithProtectedTableException, JoinToUnknownTableException,
-            JoinToWrongColumnsException, NoPrimaryKeyException,
-            DuplicateColumnNameException, UnsupportedDataTypeException,
-            GenericInvalidOperationException {
+            JoinToWrongColumnsException, JoinToMultipleParentsException,
+            NoPrimaryKeyException, DuplicateColumnNameException,
+            UnsupportedDataTypeException, GenericInvalidOperationException {
         try {
             schemaManager().createTableDefinition(session, schema, ddlText, false);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ParseException.class, ioe);
             throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
+            throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }
