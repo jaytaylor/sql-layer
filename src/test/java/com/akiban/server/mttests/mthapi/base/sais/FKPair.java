@@ -36,4 +36,23 @@ public final class FKPair {
     public String toString() {
         return String.format("%s->%s", parent, child);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FKPair fkPair = (FKPair) o;
+
+        return !(child != null ? !child.equals(fkPair.child) : fkPair.child != null)
+                && !(parent != null ? !parent.equals(fkPair.parent) : fkPair.parent != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = child != null ? child.hashCode() : 0;
+        result = 31 * result + (parent != null ? parent.hashCode() : 0);
+        return result;
+    }
 }
