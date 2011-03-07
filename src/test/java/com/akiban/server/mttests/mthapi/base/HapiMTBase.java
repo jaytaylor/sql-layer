@@ -216,6 +216,6 @@ public class HapiMTBase extends ApiTestBase {
     }
 
     protected ExecutorService getExecutorService() {
-        return Executors.newCachedThreadPool();
+        return Executors.newFixedThreadPool(16);
     }
 }

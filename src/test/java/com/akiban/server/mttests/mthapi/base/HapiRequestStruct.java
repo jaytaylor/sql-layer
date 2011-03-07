@@ -21,10 +21,16 @@ import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 public final class HapiRequestStruct {
     private final HapiGetRequest request;
     private final SaisTable selectRoot;
+    private final SaisTable predicatesTable;
 
     public HapiRequestStruct(HapiGetRequest request, SaisTable selectRoot) {
+        this(request, selectRoot, selectRoot);
+    }
+
+    public HapiRequestStruct(HapiGetRequest request, SaisTable selectRoot, SaisTable predicatesTable) {
         this.request = request;
         this.selectRoot = selectRoot;
+        this.predicatesTable = predicatesTable;
     }
 
     public HapiGetRequest getRequest() {
@@ -33,5 +39,9 @@ public final class HapiRequestStruct {
 
     public SaisTable getSelectRoot() {
         return selectRoot;
+    }
+
+    public SaisTable getPredicatesTable() {
+        return predicatesTable;
     }
 }
