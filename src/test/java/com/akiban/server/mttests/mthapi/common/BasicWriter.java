@@ -38,6 +38,7 @@ public class BasicWriter implements WriteThread {
     private final int maxPKIncrement;
     private final int maxFKValue;
     private final long msOfSetup;
+    private final SaisTable rootTable;
     private final int[] tableIDs = {1, 1, 1};
 
     private int writes = 0;
@@ -45,17 +46,22 @@ public class BasicWriter implements WriteThread {
     private Integer order;
     private Integer item;
 
-    public BasicWriter(int maxPKIncrement, int maxFKValue) {
-        this.maxPKIncrement = maxPKIncrement;
-        this.maxFKValue = maxFKValue;
-        this.msOfSetup = -1;
+    public BasicWriter(SaisTable rootTable, int maxPKIncrement, int maxFKValue) {
+        this(rootTable, maxPKIncrement, maxFKValue, -1, false);
     }
 
-    public BasicWriter(int maxPKIncrement, int maxFKValue, long msOfSetup) {
-        ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
+    public BasicWriter(SaisTable rootTable, int maxPKIncrement, int maxFKValue, long msOfSetup) {
+        this(rootTable, maxPKIncrement, maxFKValue, msOfSetup, true);
+    }
+
+    private BasicWriter(SaisTable rootTable, int maxPKIncrement, int maxFKValue, long msOfSetup, boolean checkMsSetup) {
+        if (checkMsSetup) {
+            ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
+        }
         this.maxPKIncrement = maxPKIncrement;
         this.maxFKValue = maxFKValue;
         this.msOfSetup = msOfSetup;
+        this.rootTable = rootTable;
     }
 
     protected void setupRows(Session session, DMLFunctions dml) throws InvalidOperationException {
