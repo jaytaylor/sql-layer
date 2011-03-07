@@ -1376,13 +1376,11 @@ public class PersistitStore implements Store {
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
         hEx.getValue().ensureFit(size);
-        System.arraycopy(rowData.getBytes(), start, hEx.getValue()
-                .getEncodedBytes(), 0, size);
-        int storedTableId = treeService.aisToStore(rowDef,
-                rowData.getRowDefId());
+        System.arraycopy(rowData.getBytes(), start, hEx.getValue().getEncodedBytes(), 0, size);
+        int storedTableId = treeService.aisToStore(rowDef, rowData.getRowDefId());
         AkServerUtil.putInt(hEx.getValue().getEncodedBytes(),
-                RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
-                storedTableId);
+                            RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
+                            storedTableId);
         hEx.getValue().setEncodedSize(size);
     }
 
