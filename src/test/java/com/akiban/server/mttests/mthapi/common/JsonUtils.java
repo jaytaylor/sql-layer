@@ -58,7 +58,7 @@ final class JsonUtils {
     }
 
     public static void validateResponse(JSONObject response, SaisTable selectRoot, SaisTable predicateTable) {
-        hapiassertNotNull(RESPONSE_IS_NULL, response);
+        assertNotNull(RESPONSE_IS_NULL, response);
         ArgumentValidation.notNull("select root", selectRoot);
         ArgumentValidation.notNull("predicate table", predicateTable);
 
