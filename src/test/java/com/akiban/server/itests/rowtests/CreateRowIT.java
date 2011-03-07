@@ -34,25 +34,18 @@ public class CreateRowIT extends ApiTestBase
                             "string varchar(100)");
         RowDef rowDef = rowDefCache().getRowDef(t);
         RowData rowData = new RowData(new byte[RowData.MINIMUM_RECORD_LENGTH + 1 /* null bitmap */ + 5]);
-        try {
-            rowData.createRow(rowDef, new Object[]{"abc"}, false);
-        } catch (EncodingException e) {
-            fail();
-        }
+        rowData.createRow(rowDef, new Object[]{"abc"}, false);
     }
 
-    @Test
+    @Test(expected=EncodingException.class)
     public void bigRowCantGrow() throws InvalidOperationException
     {
         int t = createTable("s", "t",
                             "string varchar(100)");
         RowDef rowDef = rowDefCache().getRowDef(t);
         RowData rowData = new RowData(new byte[RowData.MINIMUM_RECORD_LENGTH + 1 /* null bitmap */ + 5]);
-        try {
-            rowData.createRow(rowDef, new Object[]{"abcdefghijklmnopqrstuvwxyz"}, false);
-            fail();
-        } catch (EncodingException e) {
-        }
+        rowData.createRow(rowDef, new Object[]{"abcdefghijklmnopqrstuvwxyz"}, false);
+        fail();
     }
 
     @Test
@@ -71,7 +64,7 @@ public class CreateRowIT extends ApiTestBase
     @Test
     public void growALot() throws InvalidOperationException
     {
-        // Buffer should grow one time
+        // Buffer should grow two times
         int t = createTable("s", "t",
                             "string varchar(100)");
         RowDef rowDef = rowDefCache().getRowDef(t);

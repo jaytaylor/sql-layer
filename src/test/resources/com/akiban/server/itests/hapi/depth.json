@@ -282,7 +282,7 @@
     },
 
     "customer after empty customer" : {
-        "get"           : "coi:customer:cid>=31",
+        "get"           : "coi:customer:cid>30",
         "processors" : ["scanrows"],
         "expect result" :
         {
