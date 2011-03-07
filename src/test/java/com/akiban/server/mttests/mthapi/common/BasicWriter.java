@@ -29,34 +29,50 @@ import com.akiban.server.service.session.Session;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.akiban.util.ThreadlessRandom.rand;
 import static org.junit.Assert.assertEquals;
 
 public class BasicWriter implements WriteThread {
 
+    private static final int WRITES_INITIAL = -1;
+
     public interface RowGenerator {
         public Object[] initialRow(SaisTable table, int pseudoRandom);
         public void updateRow(Object[] lastrow, int pseudoRandom);
     }
 
-    private static class TablesInfo {
+    private static class TableInfo {
         private Object[] fields;
-        // TODO make these final
-        public int tableId;
-        public SaisTable saisTable;
+        public final int tableId;
+        public final SaisTable saisTable;
+
+        private TableInfo(SaisTable saisTable, int tableId) {
+            this.saisTable = saisTable;
+            this.tableId = tableId;
+        }
     }
 
     private static class TablesHolder {
-        public TablesInfo randomTable(int seed) {
-            throw new UnsupportedOperationException();
+        private final List<TableInfo> tables = new ArrayList<TableInfo>();
+
+        public TableInfo randomTable(int seed) {
+            if (tables.isEmpty()) {
+                throw new NoSuchElementException("you must create tables before you can write rows!");
+            }
+            int index = seed % tables.size();
+            return tables.get(index);
+        }
+
+        public void addTable(TableInfo tableInfo) {
+            tables.add(tableInfo);
         }
     }
 
@@ -64,54 +80,40 @@ public class BasicWriter implements WriteThread {
     private final RowGenerator rowGenerator;
 
     private int writes = 0;
-    private Integer customer;
-    private Integer order;
-    private Integer item;
     private final TablesHolder tablesHolder = new TablesHolder();
+    private AtomicInteger writesAtomic = new AtomicInteger(WRITES_INITIAL);
+    private final Set<SaisTable> initialRoots;
 
-    public BasicWriter(RowGenerator rowGenerator) {
-        this(rowGenerator, -1, false);
+    public BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator) {
+        this(initialRoots, rowGenerator, -1, false);
     }
 
-    public BasicWriter(RowGenerator rowGenerator, long msOfSetup) {
-        this(rowGenerator, msOfSetup, true);
+    public BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, long msOfSetup) {
+        this(initialRoots, rowGenerator, msOfSetup, true);
     }
 
-    private BasicWriter(RowGenerator rowGenerator, long msOfSetup, boolean checkMsSetup) {
+    private BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, long msOfSetup, boolean checkMsSetup) {
         ArgumentValidation.notNull("rowGenerator", rowGenerator);
         if (checkMsSetup) {
             ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
         }
         this.msOfSetup = msOfSetup;
         this.rowGenerator = rowGenerator;
+        this.initialRoots = new HashSet<SaisTable>(initialRoots);
     }
 
     @Override
     public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
             throws InvalidOperationException
     {
-        final int[] tables = {customers(), orders(), items()};
         int seed = this.hashCode();
 
         while (keepGoing.get()) {
-            // TODO
-//            seed = writeRandomly(session, seed, tables, tableIDs, dml);
+            seed = writeRandomly(session, seed, dml);
         }
+        boolean writesWasUnset = writesAtomic.compareAndSet(WRITES_INITIAL, writes);
+        assert writesWasUnset;
     }
-
-//    private int writeRandomly(Session session, int seed, int[] tables, int[] tableFirstCols, DMLFunctions dml)
-//            throws InvalidOperationException
-//    {
-//        seed = rand(seed);
-//        final int tableIndex = Math.abs(seed % 3);
-//        final int tableId = tables[ tableIndex ];
-//        tableFirstCols[tableIndex] += Math.abs(seed % maxPKIncrement) + 1;
-//        seed = rand(seed);
-//        final int secondInt = seed % maxFKValue;
-//        dml.writeRow(session, ApiTestBase.createNewRow(tableId, tableFirstCols[tableIndex], secondInt));
-//        ++writes;
-//        return seed;
-//    }
 
     @Override
     public WriteThreadStats getStats() {
@@ -123,16 +125,15 @@ public class BasicWriter implements WriteThread {
             throws InvalidOperationException
     {
         setupDDLS(ddl, session);
-
-        customer = ddl.getTableId(session, new TableName("s1", "c") );
-        order = ddl.getTableId(session, new TableName("s1", "o") );
-        item = ddl.getTableId(session, new TableName("s1", "i") );
-
         setupRows(session, dml);
     }
 
-    protected void setupDDLS(DDLFunctions ddl, Session session) {
-        // do nothing
+    protected void setupDDLS(DDLFunctions ddl, Session session) throws InvalidOperationException {
+        Set<SaisTable> allTables = SaisTable.setIncludingChildren(initialRoots);
+        StringBuilder sb = new StringBuilder();
+        for (SaisTable table : allTables) {
+            createTable(table, ddl, session, sb);
+        }
     }
 
     protected void setupRows(Session session, DMLFunctions dml) throws InvalidOperationException {
@@ -146,7 +147,7 @@ public class BasicWriter implements WriteThread {
     }
 
     private int writeRandomly(Session session, int pseudoRandom, DMLFunctions dml) throws InvalidOperationException {
-        TablesInfo info = tablesHolder.randomTable(pseudoRandom);
+        TableInfo info = tablesHolder.randomTable(pseudoRandom);
         pseudoRandom = rand(pseudoRandom);
         if (info.fields == null) {
             Object[] fields = rowGenerator.initialRow(info.saisTable, pseudoRandom);
@@ -157,14 +158,22 @@ public class BasicWriter implements WriteThread {
         }
         NewRow row = ApiTestBase.createNewRow(info.tableId, info.fields);
         dml.writeRow(session, row);
+        ++writes;
         return pseudoRandom;
     }
 
-    protected final void createTable(SaisTable table, DDLFunctions ddl, Session session, StringBuilder scratch) {
-        scratch.setLength(0);
-        scratch.append("CREATE TABLE ");
-//        String ddlText = buildDDL(table, tables, scratch);
+    protected String schema() {
+        return "ts1";
+    }
 
+    protected final void createTable(SaisTable table, DDLFunctions ddl, Session session, StringBuilder scratch)
+            throws InvalidOperationException
+    {
+        String ddlText = buildDDL(table, scratch);
+        ddl.createTable(session, schema(), ddlText);
+        int id = ddl.getTableId(session, new TableName(schema(), table.getName()));
+        TableInfo info = new TableInfo(table, id);
+        tablesHolder.addTable(info);
     }
 
     static String buildDDL(SaisTable table, StringBuilder builder) {
@@ -213,17 +222,5 @@ public class BasicWriter implements WriteThread {
 
     private static StringBuilder akibanFK(SaisTable child, StringBuilder builder) {
         return builder.append("`__akiban_fk_").append(child.getName()).append('`');
-    }
-
-    protected final int customers() {
-        return customer;
-    }
-
-    protected final int orders() {
-        return order;
-    }
-
-    protected final int items() {
-        return item;
     }
 }

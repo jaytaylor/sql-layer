@@ -22,6 +22,7 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
+import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
 import com.akiban.server.mttests.mthapi.common.BasicWriter;
 import com.akiban.server.service.session.Session;
@@ -29,16 +30,14 @@ import org.json.JSONException;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class CoiMT extends HapiMTBase {
+    final static int MAX_READ_ID = 10000;
     @Test
     public void preWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
-        final int MAX_INT = 100;
-        final int MAX_INC = 10;
-        final int MAX_READ_ID = 1000;
-
-        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT, 10000) {
+        WriteThread writeThread = new BasicWriter(coia(), allowOrphans(), 10000) {
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException
@@ -53,11 +52,7 @@ public final class CoiMT extends HapiMTBase {
 
     @Test
     public void concurrentWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
-        final int MAX_INT = 100;
-        final int MAX_INC = 10;
-        final int MAX_READ_ID = 1000;
-
-        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT);
+        WriteThread writeThread = new BasicWriter(coia(), allowOrphans());
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
@@ -65,11 +60,7 @@ public final class CoiMT extends HapiMTBase {
 
     @Test
     public void concurrentWritesNoOrphans() throws HapiRequestException, JSONException, IOException {
-        final int MAX_INT = 100;
-        final int MAX_INC = 1;
-        final int MAX_READ_ID = 1000;
-
-        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT);
+        WriteThread writeThread = new BasicWriter(coia(), allowOrphans());
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
@@ -77,11 +68,7 @@ public final class CoiMT extends HapiMTBase {
 
     @Test
     public void preWritesNoOrphans() throws HapiRequestException, JSONException, IOException {
-        final int MAX_INT = 100;
-        final int MAX_INC = 1;
-        final int MAX_READ_ID = 1000;
-
-        WriteThread writeThread = new BasicWriter(null, MAX_INC, MAX_INT, 10000) {
+        WriteThread writeThread = new BasicWriter(coia(), allowOrphans()) {
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException
@@ -90,7 +77,14 @@ public final class CoiMT extends HapiMTBase {
             }
         };
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
-
         runThreads(writeThread, readThread);
+    }
+
+    private static Set<SaisTable> coia() {
+        throw new UnsupportedOperationException();
+    }
+
+    private static BasicWriter.RowGenerator allowOrphans() {
+        throw new UnsupportedOperationException();
     }
 }
