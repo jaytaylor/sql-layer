@@ -20,7 +20,7 @@ set -e
 if [ -z "${BZR_REVISION}" ]; then
     # usually hudson sets this
     # figure out the build number outside of hudson (for user builds)
-    BZR_REVISION=$(bzr revision-info | sed "s/\([0-9]*\) .*/\1/")
+    BZR_REVISION=$(bzr revno)
 fi
 
 TEAMCITY=${TEAMCITY:-0}
@@ -36,32 +36,14 @@ rpm_env()
 	sudo /usr/sbin/useradd -g mockbuild mockbuild || echo "Could not create user mockbuild, user may already exist"
 }
 
-
-# prepare source tarballs for rpm build to consume
-tarball()
-{
-	local name=akserver
-	local randir=/tmp/${RANDOM}
-	local cdir=${randir}/${name}
-	rm -rf ${cdir} rpmbuild ../target ${name}.tar.gz
-	mkdir -p ${cdir}
-	cp -r ../*        ${cdir}
-	find ${cdir} -name .svn | xargs rm -rf
-	tar -C ${randir} -cf ${name}.tar . 
-	gzip ${name}.tar
-	mkdir -p rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
-	mv ${name}.tar.gz rpmbuild/SOURCES
-	rm -rf ${randir}
-    # replace only on line 9 of the file. rpm requires you to explictly set the release
-	cat akiban-server.spec        | sed "9,9 s/REVISION/${BZR_REVISION}/g" > akiban-server-${BZR_REVISION}.spec 
-}
-
-
-# create chunkserver rpm
-chunkserver_rpm()
+# create server rpm
+server_rpm()
 {
     export BZR_REVISION 
-	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild"   -ba akiban-server-${BZR_REVISION}.spec 
+	cat akiban-server.spec | sed "9,9 s/REVISION/${BZR_REVISION}/g" > akiban-server-${BZR_REVISION}.spec 
+    mkdir -p ${PWD}/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
+    bzr export --format=tgz ${PWD}/rpmbuild/SOURCES/akserver.tar.gz
+	rpmbuild --target=noarch --define "_topdir ${PWD}/rpmbuild" -ba akiban-server-${BZR_REVISION}.spec 
 }
 
 #update the yum repository
@@ -78,6 +60,5 @@ fi
 }
 
 rpm_env
-tarball
-chunkserver_rpm
+server_rpm
 publish
