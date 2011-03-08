@@ -62,11 +62,6 @@ public final class StatisticsServiceImpl implements StatisticsService, Service<S
         }
 
         @Override
-        public int getConnectionsActive() {
-            return getConnectionsOpened() - getConnectionsClosed();
-        }
-
-        @Override
         public int getMysqlInsertsCount() {
             return get(CountingStat.INSERTS);
         }

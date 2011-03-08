@@ -22,7 +22,6 @@ public interface StatisticsServiceMXBean {
     int getConnectionsOpened();
     int getConnectionsClosed();
     int getConnectionsErrored();
-    int getConnectionsActive();
 
     int getMysqlInsertsCount();
     int getMysqlDeletesCount();
