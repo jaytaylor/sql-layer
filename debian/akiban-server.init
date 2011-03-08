@@ -77,7 +77,7 @@ case "$1" in
             exit 1 # not sure what the best error code to return here is?
         fi
         log_daemon_msg "Starting $DESC"
-        start_daemon -b -p "$pidfile" "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
+        start_daemon "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
         log_progress_msg "$DESC"
         log_end_msg 0
         ;;
