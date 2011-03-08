@@ -45,4 +45,6 @@ public interface ServiceManager {
     SchemaManager getSchemaManager();
 
     JmxRegistryService getJmxRegistryService();
+
+    <T> T getServiceByClass(Class<T> serviceClass);
 }
