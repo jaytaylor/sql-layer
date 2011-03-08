@@ -169,26 +169,16 @@ public class PersistitStoreRowCollector implements RowCollector {
         if (rowDef.isGroupTable()) {
             this.groupRowDef = rowDef;
         } else {
-            this.groupRowDef = store.getRowDefCache().getRowDef(
-                    rowDef.getGroupRowDefId());
+            this.groupRowDef = store.getRowDefCache().getRowDef(rowDef.getGroupRowDefId());
         }
 
-        this.projectedRowDefs = computeProjectedRowDefs(rowDef,
-                this.groupRowDef, columnBitMap);
+        this.projectedRowDefs = computeProjectedRowDefs(rowDef, this.groupRowDef, columnBitMap);
 
         if (this.projectedRowDefs.length == 0) {
             this.more = false;
         } else {
-            Key.EdgeValue edge;
-            if (isAscending()) {
-                this.direction = isLeftInclusive() ? Key.GTEQ : Key.GT;
-                edge = Key.BEFORE;
-            } else {
-                this.direction = isRightInclusive() && !isPrefixMode() ? Key.LTEQ : Key.LT;
-                edge = Key.AFTER;
-            }
             this.pendingRowData = new RowData[this.projectedRowDefs.length];
-            this.hEx = store.getExchange(session, rowDef, null).append(Key.BEFORE);
+            this.hEx = store.getExchange(session, rowDef, null);
             this.hFilter = computeHFilter(rowDef, start, end);
             this.lastKey = new Key(hEx.getKey());
 
@@ -200,8 +190,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                 if (!def.isHKeyEquivalent()) {
                     this.indexDef = def;
                     if (isPrefixMode()) {
-                        prefixModeIndexField = rowDef.getColumnOffset()
-                                + def.getFields()[def.getFields().length - 1];
+                        prefixModeIndexField = rowDef.getColumnOffset() + def.getFields()[def.getFields().length - 1];
                     }
                     this.iEx = store.getExchange(session, rowDef, indexDef).append(Key.BEFORE);
                     this.iFilter = computeIFilter(indexDef, rowDef, start, end);
@@ -664,8 +653,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                 //
                 // Traverse
                 //
-                final boolean found = hEx.traverse(direction, hFilter,
-                        MAX_SHORT_RECORD);
+                final boolean found = hEx.traverse(direction, hFilter, MAX_SHORT_RECORD);
                 direction = isAscending() ? Key.GT : Key.LT;
                 
                 if (!found
