@@ -100,7 +100,7 @@ public final class CoiMT extends HapiMTBase {
 
     private static class COIWithOrphansWriter implements BasicWriter.RowGenerator {
         private static final int INC_MAX = 10;
-        private static final int STATES_COUNT = 10;
+        private static final int STATES_COUNT = 9;
 
         private final SaisTable customer;
         private final SaisTable order;
@@ -123,7 +123,8 @@ public final class CoiMT extends HapiMTBase {
 
         @Override
         public Object[] initialRow(SaisTable table, byte state, int pseudoRandom) {
-            int id = idForState((pseudoRandom % 50) + 1, state);
+            //int id = idForState(Math.abs(pseudoRandom % 50) + 1, state);
+            int id = state;
             if (table.equals(customer)) {
                 return new Object[]{id};
             }
@@ -134,17 +135,22 @@ public final class CoiMT extends HapiMTBase {
         }
 
         private int parentId(int pkId, int seed) {
-            int max = pkId * 2;
-            return rand(seed) % max;
+            assert pkId >= 0 : pkId;
+            int max = pkId * 2 + 5;
+            return (Math.abs(rand(seed)) + 1) % max;
         }
 
         @Override
         public void updateRow(SaisTable table, Object[] lastRow, byte state, int pseudoRandom) {
-            int increment = (pseudoRandom % INC_MAX) + 1;
+            int increment = Math.abs(pseudoRandom % INC_MAX) + 1;
 
-            int id = (Integer) lastRow[0];
-            assert id % 10 == state : String.format("%d != %d", id % 10, state);
+            final int lastId = (Integer) lastRow[0];
+            assert lastId % 10 == state : String.format("%d != %d", lastId % 10, state);
+            int id = lastId;
             id = idForState( (id / 10) + increment, state);
+            assert id % 10 == state : String.format("%d != %d", id % 10, state);
+            assert id > lastId : String.format("%d <= %d", id, lastId);
+
 
             lastRow[0] = id;
             if (table.equals(order) || table.equals(item)) {

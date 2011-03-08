@@ -38,7 +38,7 @@ public class BasicHapiSuccess extends HapiSuccess {
 
     @Override
     protected void validateIndex(HapiGetRequest request, Index index) {
-        assertTrue("index table: " + index, index.getTableName().equals("s1", "c"));
+        assertTrue("index table: " + index, index.getTableName().equals("ts1", "customer"));
         assertEquals("index name", "PRIMARY", index.getIndexName().getName());
     }
 
@@ -52,12 +52,12 @@ public class BasicHapiSuccess extends HapiSuccess {
     @Override
     protected HapiRequestStruct pullRequest(final int pseudoRandom) {
         String idValue = Integer.toString(Math.abs(pseudoRandom) % MAX_READ_ID);
-        HapiGetRequest request = DefaultHapiGetRequest.forTables("s1", "c", "c").where("id").eq(idValue);
+        HapiGetRequest request = DefaultHapiGetRequest.forTables("ts1", "customer", "customer").where("cid").eq(idValue);
 
         SaisBuilder builder = new SaisBuilder();
-        builder.table("c", "id", "age").pk("id");
-        builder.table("o", "id", "cid").pk("id").joinTo("c").col("id", "cid");
-        builder.table("i", "id", "oid").pk("id").joinTo("o").col("id", "oid");
+        builder.table("customer", "cid").pk("cid");
+        builder.table("orders", "oid", "c_id").pk("oid").joinTo("customer").col("cid", "c_id");
+        builder.table("item", "iid", "o_id").pk("iid").joinTo("orders").col("oid", "o_id");
         SaisTable table = builder.getSoleRootTable();
         return new HapiRequestStruct(request, table);
     }
