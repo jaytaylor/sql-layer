@@ -38,7 +38,7 @@ public final class StatisticsServiceMXBeanImpl implements StatisticsServiceMXBea
 
     @Override
     public int getConnectionsErrored() {
-        throw new UnsupportedOperationException(); // TODO
+        return get(MemcacheService.class).getConnectionsErrored();
     }
 
     @Override

@@ -29,6 +29,7 @@ public interface MemcacheService extends HapiProcessor {
     int getConnectionsOpened();
     int getConnectionsClosed();
     int getConnectionsActive();
+    int getConnectionsErrored();
 
     @SuppressWarnings("unused") // jmx
     enum OutputFormat {

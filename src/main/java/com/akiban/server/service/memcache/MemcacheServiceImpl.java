@@ -64,6 +64,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private final AtomicInteger requestsProcessedCounter = new AtomicInteger(0);
     private final AtomicInteger connectionsOpened = new AtomicInteger(0);
     private final AtomicInteger connectionsClosed = new AtomicInteger(0);
+    private final AtomicInteger connectionsErrored = new AtomicInteger(0);
     private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {
         @Override
         public void requestProcessed() {
@@ -82,7 +83,7 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         @Override
         public void requestFailed() {
-            // nothing yet!
+            connectionsErrored.incrementAndGet();
         }
     };
 
@@ -193,6 +194,11 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     @Override
     public int getConnectionsClosed() {
         return connectionsClosed.get();
+    }
+
+    @Override
+    public int getConnectionsErrored() {
+        return connectionsErrored.get();
     }
 
     @Override
