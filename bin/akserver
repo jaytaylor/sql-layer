@@ -20,6 +20,7 @@
 #   -g: start the persistit GUI
 #   -p <filename>: log the pid to a file (useful to kill it later)
 #   -j <filename>: jar file of server to use
+#   -k: kill an akiban server process
 #
 # CONTROLLING STARTUP:
 # 
@@ -83,7 +84,7 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fghj:c:p:D: "$@"`
+args=`getopt fkghj:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
@@ -114,11 +115,21 @@ while true; do
             echo "-g launch the persistit admin tool"
             echo "-p specify a pid file"
             echo "-j specify a jar file for the server to use"
+            echo "-k kill an akiban server process"
             exit 0
         ;;
         -D)
             properties="$properties -D$2"
             shift 2
+        ;;
+        -k)
+            # this is not ideal but is only intended to be
+            # called by a developer in their environment when
+            # they want to quickly kill an akiban-server
+            # process. This can kill other process with akiban-server
+            # in their name or arguments too...
+            pgrep -u `whoami` -f akiban-server | xargs kill -9
+            exit 0
         ;;
         --)
             shift
