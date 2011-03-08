@@ -87,11 +87,11 @@ case "$1" in
         case "$stat" in
             1) 
                 log_failure_msg "could not access pidfile or PID in pidfile is incorrect for $DESC"
-                exit "$stat"
+                exit 0 # zero exit code because apt-get remove fails otherwise
                 ;;
             3) 
                 log_failure_msg "$DESC is not running or no pidfile exists"
-                exit "$stat"
+                exit 0 # zero exit code because apt-get remove fails otherwise
                 ;;
         esac 
         log_daemon_msg "Stopping $DESC"
