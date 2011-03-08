@@ -201,7 +201,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         final String tableName = tableDef.getCName().getName();
 
-        validateTableDefinition(session, schemaName, statement, tableDef);
+        validateTableDefinition(session, schemaName, tableDef);
         Exchange ex = null;
         Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -1106,11 +1106,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private void validateTableDefinition(final Session session,
-            final String schemaName, final String statement,
-            final SchemaDef.UserTableDef tableDef) throws Exception {
-
+            final String schemaName, final SchemaDef.UserTableDef tableDef)
+            throws Exception {
         final String tableName = tableDef.getCName().getName();
-        
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             throw new InvalidOperationException(
                     ErrorCode.PROTECTED_TABLE,
@@ -1153,7 +1151,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, tableName, parentSchema, parentTableName);
         }
 
-        final Table parentTable = ais.getUserTable(parentSchema, parentTableName);
+        final UserTable parentTable = ais.getUserTable(parentSchema, parentTableName);
         if (schemaName.equals(parentSchema) && tableName.equals(parentTableName) ||
             parentTable == null) {
             throw new InvalidOperationException(
@@ -1162,24 +1160,50 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, tableName, parentSchema, parentTableName);
         }
 
-        Iterator<String> childColName = parentJoin.getChildColumns().iterator();
-        for (String columnName : parentJoin.getParentColumns()) {
-            final Column parentColumn = parentTable.getColumn(columnName);
-            if (parentColumn == null) {
+        List<String> childColumns = parentJoin.getChildColumns();
+        List<String> parentColumns = parentJoin.getParentColumns();
+        List<Column> parentPKColumns = parentTable.getPrimaryKey() == null ?
+                                       null :
+                                       parentTable.getPrimaryKey().getColumns();
+        if (parentColumns.size() != childColumns.size() ||
+            parentPKColumns == null ||
+            parentColumns.size() != parentPKColumns.size()) {
+            throw new InvalidOperationException(
+                    ErrorCode.JOIN_TO_WRONG_COLUMNS,
+                    "Table `%s`.`%s` join reference and `%s`.`%s` primary key parts must match",
+                    schemaName, tableName, parentSchema, parentTableName);
+        }
+
+        Iterator<String> childColumnIt = childColumns.iterator();
+        Iterator<Column> parentPKIt =  parentPKColumns.iterator();
+        for (String parentColumnName : parentColumns) {
+            // Check same columns
+            String childColumnName = childColumnIt.next();
+            Column parentPKColumn = parentPKIt.next();
+            if (!parentColumnName.equalsIgnoreCase(parentPKColumn.getName())) {
                 throw new InvalidOperationException(
                         ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                        "Table `%s`.`%s` joins to unknown column `%s` in table `%s`.`%s`",
-                        schemaName, tableName, columnName, parentSchema, parentTableName);
+                        "Table `%s`.`%s` join reference part `%s` does not match `%s`.`%s` primary key part `%s`",
+                        schemaName, tableName, parentColumnName,
+                        parentSchema, parentTableName, parentPKColumn.getName());
             }
-            SchemaDef.ColumnDef columnDef = tableDef.getColumn(childColName.next());
+            // Check child column exists
+            SchemaDef.ColumnDef columnDef = tableDef.getColumn(childColumnName);
+            if (columnDef == null) {
+                throw new InvalidOperationException(
+                        ErrorCode.JOIN_TO_WRONG_COLUMNS,
+                        "Table `%s`.`%s` join reference contains unknown column `%s`",
+                        schemaName, tableName, childColumnName);
+            }
+            // Check child and parent column types
             final String type = columnDef.getType();
-            final String parentType = parentColumn.getType().name();
+            final String parentType = parentPKColumn.getType().name();
             if (!ais.canTypesBeJoined(parentType, type)) {
                 throw new InvalidOperationException(
                         ErrorCode.JOIN_TO_WRONG_COLUMNS,
                         "Table `%s`.`%s` column `%s` [%s] cannot be joined to `%s`.`%s` column `%s` [%s]",
                         schemaName, tableName, columnDef.getName(), type,
-                        parentSchema, parentTableName, parentColumn.getName(), parentType);
+                        parentSchema, parentTableName, parentPKColumn.getName(), parentType);
             }
         }
     }

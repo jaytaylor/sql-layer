@@ -341,14 +341,34 @@ public final class CreateTableIT extends ApiTestBase {
                      new DDLGenerator().createTable(getUserTable(tid)));
     }
 
-    // Akiban fk to non-primary key column is allowed
-    @Test(expected=InvalidOperationException.class)
+    // Akiban foreign key to non-primary key column is allowed
+    @Test(expected=JoinToWrongColumnsException.class)
     public void bug727749() throws InvalidOperationException {
         createTable("test", "p", "id int key, wrongInt int");
         createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(wrongInt)");
     }
 
-    // Two akiban fkeys is reported poorly
+    @Test
+    public void joinMustMatchParentPK() throws InvalidOperationException {
+        createTable("test", "p1", "id1 int, id2 int, primary key(id1,id2)");
+        // subset of pk
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1) references p1(id1)");
+        // join key missing column
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1) references p1(id1,id2)");
+        // different order in table reference
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1,pid2) references p1(id2,id1)");
+        // wrong column name in join key
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid,pid2) references p1(id1,id2)");
+        // should be case insensitive
+        createTable("test", "c",
+                    "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1,pid2) references p1(ID1,iD2)");
+    }
+
+    // Table with two akiban foreign keys is reported poorly
     @Test(expected=JoinToMultipleParentsException.class)
     public void bug727754() throws InvalidOperationException {
         createTable("test", "p1", "id int key");
@@ -357,7 +377,7 @@ public final class CreateTableIT extends ApiTestBase {
                                              "p2id int, constraint __akiban2 foreign key(p2id) references p2(id)");
     }
 
-    // Akiban fkey, parent/child columns are different types
+    // Akiban foreign key with differing parent/child columns
     @Test(expected= JoinToWrongColumnsException.class)
     public void bug728003() throws InvalidOperationException {
         createTable("test", "p", "id varchar(32) key");
