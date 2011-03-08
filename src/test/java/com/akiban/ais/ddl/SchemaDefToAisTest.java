@@ -334,7 +334,7 @@ public class SchemaDefToAisTest {
         assertEquals(2, x.getIndexes().size()); // pk, fk
         final Index xIndex = x.getIndex("__akiban1");
         assertNotNull(xIndex);
-        assertEquals("AKIBAN KEY", xIndex.getConstraint());
+        assertEquals("FOREIGN KEY", xIndex.getConstraint());
         final UserTable y = ais.getUserTable("test", "y");
         assertEquals(1, y.getCandidateParentJoins().size());
         assertNotNull(y.getParentJoin());
@@ -345,7 +345,7 @@ public class SchemaDefToAisTest {
         assertEquals("KEY", yIndex1.getConstraint());
         final Index yIndex2 = y.getIndex("__akiban2");
         assertNotNull(yIndex2);
-        assertEquals("AKIBAN KEY", yIndex2.getConstraint());
+        assertEquals("FOREIGN KEY", yIndex2.getConstraint());
     }
 
     @Test(expected=AISBuilder.GroupStructureException.class)

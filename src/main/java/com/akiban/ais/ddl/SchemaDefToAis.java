@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.ddl.SchemaDef.CName;
 import com.akiban.ais.ddl.SchemaDef.ColumnDef;
 import com.akiban.ais.ddl.SchemaDef.IndexDef;
+import com.akiban.ais.ddl.SchemaDef.IndexQualifier;
 import com.akiban.ais.ddl.SchemaDef.UserTableDef;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Column;
@@ -184,6 +185,20 @@ public class SchemaDefToAis {
         return utDef;
     }
 
+    private void removeNonAkibanForeignKeys() {
+        final IndexQualifier fkFlag = IndexQualifier.FOREIGN_KEY;
+
+        for(UserTableDef userTableDef : schemaDef.getUserTableMap().values()) {
+            if(userTableDef.isAkibanTable()) {
+                for(IndexDef indexDef : userTableDef.indexes) {
+                    if(indexDef.qualifiers.contains(fkFlag) && !indexDef.isAkiban()) {
+                        indexDef.makeNotAkiban();
+                    }
+                }
+            }
+        }
+    }
+
     private static class IdGenerator {
         private final Map<CName,CName> groupPerTable = new HashMap<CName, CName>();
         private final Map<CName,Integer> idPerGroup = new HashMap<CName, Integer>();
@@ -239,6 +254,7 @@ public class SchemaDefToAis {
 
     private AkibanInformationSchema buildAISFromBuilder(final boolean akibandbOnly)
             throws Exception {
+        removeNonAkibanForeignKeys();
         addImpliedGroups();
         computeColumnMapAndPositions();
 

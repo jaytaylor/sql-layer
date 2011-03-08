@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -823,6 +824,7 @@ public class SchemaDef {
             this.name = name;
             this.qualifiers = qualifiers;
             this.columns = columns;
+
             this.referenceTable = referenceTable;
             this.referenceColumns = referenceColumns;
             this.constraints = constraints;
@@ -959,11 +961,25 @@ public class SchemaDef {
 
         public boolean isAkiban() {
             for (String constraint : constraints) {
-                if (constraint.startsWith("__akiban")) {
+                if (isAkibanConstraint(constraint)) {
                     return true;
                 }
             }
             return false;
+        }
+
+        public void makeNotAkiban() {
+            qualifiers.remove(IndexQualifier.FOREIGN_KEY);
+            Iterator<String> it = constraints.iterator();
+            while(it.hasNext()) {
+                if(isAkibanConstraint(it.next())) {
+                    it.remove();
+                }
+            }
+        }
+
+        private boolean isAkibanConstraint(String constraint) {
+            return constraint.startsWith("__akiban");
         }
     }
 
