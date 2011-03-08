@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -112,21 +113,21 @@ public final class SaisTable {
     }
 
     public Set<SaisTable> setIncludingChildren() {
-        Set<SaisTable> out = new HashSet<SaisTable>();
+        LinkedHashSet<SaisTable> out = new LinkedHashSet<SaisTable>();
         buildSetIncludingChildren(this, out);
         return out;
     }
 
     @SuppressWarnings("unused")
     public static Set<SaisTable> setIncludingChildren(Set<SaisTable> roots) {
-        Set<SaisTable> out = new HashSet<SaisTable>();
+        LinkedHashSet<SaisTable> out = new LinkedHashSet<SaisTable>();
         for (SaisTable root : roots) {
             buildSetIncludingChildren(root, out);
         }
         return out;
     }
 
-    private static void buildSetIncludingChildren(SaisTable root, Set<SaisTable> out) {
+    private static void buildSetIncludingChildren(SaisTable root, LinkedHashSet<SaisTable> out) {
         boolean addedOut = out.add(root);
         assert addedOut : String.format("%s already in %s", root, out);
         for (SaisFK childFK : root.getChildren()) {

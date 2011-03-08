@@ -29,6 +29,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -45,18 +46,31 @@ public class BasicWriter implements WriteThread {
     private static final int WRITES_INITIAL = -1;
 
     public interface RowGenerator {
-        public Object[] initialRow(SaisTable table, int pseudoRandom);
-        public void updateRow(Object[] lastrow, int pseudoRandom);
+        byte getStatesCount();
+        Object[] initialRow(SaisTable table, byte state, int pseudoRandom);
+        void updateRow(SaisTable table, Object[] lastRow, byte state, int pseudoRandom);
+        byte nextState(byte currentState);
     }
 
     private static class TableInfo {
-        private Object[] fields;
+        private final Object[][] _fields;
         public final int tableId;
         public final SaisTable saisTable;
+        private byte state = 0;
 
-        private TableInfo(SaisTable saisTable, int tableId) {
+        public TableInfo(SaisTable saisTable, byte statesCount, int tableId) {
             this.saisTable = saisTable;
             this.tableId = tableId;
+            _fields = new Object[statesCount][];
+        }
+
+        public Object[] fieldsForState() {
+            return _fields[state];
+        }
+
+        public void setFieldsForState(Object[] fields) {
+            assert _fields[state] == null : Arrays.toString(_fields[state]);
+            _fields[state] = fields;
         }
     }
 
@@ -67,7 +81,7 @@ public class BasicWriter implements WriteThread {
             if (tables.isEmpty()) {
                 throw new NoSuchElementException("you must create tables before you can write rows!");
             }
-            int index = seed % tables.size();
+            int index = Math.abs(seed % tables.size());
             return tables.get(index);
         }
 
@@ -76,6 +90,7 @@ public class BasicWriter implements WriteThread {
         }
     }
 
+    private final byte statesCount;
     private final long msOfSetup;
     private final RowGenerator rowGenerator;
 
@@ -100,6 +115,7 @@ public class BasicWriter implements WriteThread {
         this.msOfSetup = msOfSetup;
         this.rowGenerator = rowGenerator;
         this.initialRoots = new HashSet<SaisTable>(initialRoots);
+        this.statesCount = rowGenerator.getStatesCount();
     }
 
     @Override
@@ -146,18 +162,21 @@ public class BasicWriter implements WriteThread {
         }
     }
 
-    private int writeRandomly(Session session, int pseudoRandom, DMLFunctions dml) throws InvalidOperationException {
+    private int writeRandomly(Session session, int pseudoRandom, DMLFunctions dml)
+            throws InvalidOperationException
+    {
         TableInfo info = tablesHolder.randomTable(pseudoRandom);
         pseudoRandom = rand(pseudoRandom);
-        if (info.fields == null) {
-            Object[] fields = rowGenerator.initialRow(info.saisTable, pseudoRandom);
+        if (info.fieldsForState() == null) {
+            Object[] fields = rowGenerator.initialRow(info.saisTable, info.state, pseudoRandom);
             assertEquals("number of fields for " + info.saisTable, info.saisTable.getFields().size(), fields.length);
-            info.fields = fields;
+            info.setFieldsForState(fields);
         } else {
-            rowGenerator.updateRow(info.fields, pseudoRandom);
+            rowGenerator.updateRow(info.saisTable, info.fieldsForState(), info.state, pseudoRandom);
         }
-        NewRow row = ApiTestBase.createNewRow(info.tableId, info.fields);
+        NewRow row = ApiTestBase.createNewRow(info.tableId, info.fieldsForState());
         dml.writeRow(session, row);
+        info.state = rowGenerator.nextState(info.state);
         ++writes;
         return pseudoRandom;
     }
@@ -172,7 +191,7 @@ public class BasicWriter implements WriteThread {
         String ddlText = buildDDL(table, scratch);
         ddl.createTable(session, schema(), ddlText);
         int id = ddl.getTableId(session, new TableName(schema(), table.getName()));
-        TableInfo info = new TableInfo(table, id);
+        TableInfo info = new TableInfo(table, statesCount, id);
         tablesHolder.addTable(info);
     }
 

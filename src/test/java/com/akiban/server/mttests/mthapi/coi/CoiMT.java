@@ -22,6 +22,7 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
+import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
 import com.akiban.server.mttests.mthapi.common.BasicWriter;
@@ -33,11 +34,15 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.akiban.util.ThreadlessRandom.rand;
+
 public final class CoiMT extends HapiMTBase {
     final static int MAX_READ_ID = 10000;
+    final static Set<SaisTable> COI_ROOTS = coi();
+
     @Test
     public void preWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
-        WriteThread writeThread = new BasicWriter(coia(), allowOrphans(), 10000) {
+        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS), 10000) {
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException
@@ -52,7 +57,7 @@ public final class CoiMT extends HapiMTBase {
 
     @Test
     public void concurrentWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
-        WriteThread writeThread = new BasicWriter(coia(), allowOrphans());
+        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS));
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
@@ -60,7 +65,7 @@ public final class CoiMT extends HapiMTBase {
 
     @Test
     public void concurrentWritesNoOrphans() throws HapiRequestException, JSONException, IOException {
-        WriteThread writeThread = new BasicWriter(coia(), allowOrphans());
+        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS));
         HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
 
         runThreads(writeThread, readThread);
@@ -68,7 +73,8 @@ public final class CoiMT extends HapiMTBase {
 
     @Test
     public void preWritesNoOrphans() throws HapiRequestException, JSONException, IOException {
-        WriteThread writeThread = new BasicWriter(coia(), allowOrphans()) {
+
+        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS)) {
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException
@@ -80,11 +86,75 @@ public final class CoiMT extends HapiMTBase {
         runThreads(writeThread, readThread);
     }
 
-    private static Set<SaisTable> coia() {
-        throw new UnsupportedOperationException();
+    private static Set<SaisTable> coi() {
+        SaisBuilder builder = new SaisBuilder();
+        builder.table("customer", "cid").pk("cid");
+        builder.table("orders", "oid", "c_id").pk("oid").joinTo("customer").col("cid", "c_id");
+        builder.table("item", "iid", "o_id").pk("iid").joinTo("orders").col("oid", "o_id");
+        return builder.getRootTables();
     }
 
-    private static BasicWriter.RowGenerator allowOrphans() {
-        throw new UnsupportedOperationException();
+    private static BasicWriter.RowGenerator allowOrphans(Set<SaisTable> coia) {
+        return new COIWithOrphansWriter(coia.iterator().next());
+    }
+
+    private static class COIWithOrphansWriter implements BasicWriter.RowGenerator {
+        private static final int INC_MAX = 10;
+        private static final int STATES_COUNT = 10;
+
+        private final SaisTable customer;
+        private final SaisTable order;
+        private final SaisTable item;
+
+        private COIWithOrphansWriter(SaisTable customer) {
+            this.customer = customer;
+            order = customer.getChild("orders");
+            item = order.getChild("item");
+        }
+
+        @Override
+        public byte getStatesCount() {
+            return STATES_COUNT;
+        }
+
+        private static int idForState(int id, byte state) {
+            return (id * 10) + state;
+        }
+
+        @Override
+        public Object[] initialRow(SaisTable table, byte state, int pseudoRandom) {
+            int id = idForState((pseudoRandom % 50) + 1, state);
+            if (table.equals(customer)) {
+                return new Object[]{id};
+            }
+            if (table.equals(order) || table.equals(item) ) {
+                return new Object[]{id, parentId(id, pseudoRandom)};
+            }
+            throw new AssertionError(table);
+        }
+
+        private int parentId(int pkId, int seed) {
+            int max = pkId * 2;
+            return rand(seed) % max;
+        }
+
+        @Override
+        public void updateRow(SaisTable table, Object[] lastRow, byte state, int pseudoRandom) {
+            int increment = (pseudoRandom % INC_MAX) + 1;
+
+            int id = (Integer) lastRow[0];
+            assert id % 10 == state : String.format("%d != %d", id % 10, state);
+            id = idForState( (id / 10) + increment, state);
+
+            lastRow[0] = id;
+            if (table.equals(order) || table.equals(item)) {
+                lastRow[1] = parentId(id, rand(pseudoRandom));
+            }
+        }
+
+        @Override
+        public byte nextState(byte currentState) {
+            return (byte)( (currentState+1) % STATES_COUNT );
+        }
     }
 }
