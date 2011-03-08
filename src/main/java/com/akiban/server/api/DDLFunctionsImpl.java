@@ -48,9 +48,13 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaId;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class DDLFunctionsImpl extends ClientAPIBase implements
         DDLFunctions {
+
+    private final static Logger logger = LoggerFactory.getLogger(DDLFunctionsImpl.class);
 
     public static DDLFunctions instance() {
         return new DDLFunctionsImpl();
@@ -63,7 +67,9 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             GroupWithProtectedTableException, JoinToUnknownTableException,
             JoinToWrongColumnsException, NoPrimaryKeyException,
             DuplicateColumnNameException, UnsupportedDataTypeException,
-            GenericInvalidOperationException {
+            GenericInvalidOperationException
+    {
+        logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
             schemaManager().createTableDefinition(session, schema, ddlText, false);
         } catch (Exception e) {
@@ -77,7 +83,9 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @Override
     public void dropTable(Session session, TableName tableName)
             throws ProtectedTableDDLException, ForeignConstraintDDLException,
-            UnsupportedDropException, GenericInvalidOperationException {
+            UnsupportedDropException, GenericInvalidOperationException
+    {
+        logger.trace("dropping table {}", tableName);
         final Table table = getAIS(session).getTable(tableName);
         
         if(table == null) {
@@ -103,7 +111,9 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @Override
     public void dropSchema(Session session, String schemaName)
             throws ProtectedTableDDLException, ForeignConstraintDDLException,
-            GenericInvalidOperationException {
+            GenericInvalidOperationException
+    {
+        logger.trace("dropping schema {}", schemaName);
         try {
             schemaManager().deleteSchemaDefinition(session, schemaName);
         } catch (Exception e) {
@@ -114,7 +124,9 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @Override
     public void dropGroup(Session session, String groupName)
             throws ProtectedTableDDLException, GenericInvalidOperationException, NoSuchTableException,
-            UnsupportedDropException, ForeignConstraintDDLException {
+            UnsupportedDropException, ForeignConstraintDDLException
+    {
+        logger.trace("dropping group {}", groupName);
         List<Integer> toDrop = new ArrayList<Integer>();
         for(UserTable userTable : getAIS(session).getUserTables().values()) {
             if(userTable.getGroup().getName().equals(groupName)) {
@@ -131,11 +143,13 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public AkibanInformationSchema getAIS(final Session session) {
+        logger.trace("getting AIS");
         return schemaManager().getAis(session);
     }
 
     @Override
-    public int getTableId(Session session, TableName tableName) throws NoSuchTableException {
+    public int getTableId(Session session, TableName tableName) throws NoSuchTableException{
+        logger.trace("getting table ID for {}", tableName);
         Table table = getAIS(session).getTable(tableName);
         if (table == null) {
             throw new NoSuchTableException(tableName);
@@ -145,6 +159,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public Table getTable(Session session, int tableId) throws NoSuchTableException {
+        logger.trace("getting AIS Table for {}", tableId);
         for (Table userTable : getAIS(session).getUserTables().values()) {
             if (tableId == userTable.getTableId()) {
                 return userTable;
@@ -160,6 +175,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
+        logger.trace("getting AIS Table for {}", tableName);
         AkibanInformationSchema ais = getAIS(session);
         Table table = ais.getTable(tableName);
         if (table == null) {
@@ -170,6 +186,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
+        logger.trace("getting AIS UserTable for {}", tableName);
         AkibanInformationSchema ais = getAIS(session);
         UserTable table = ais.getUserTable(tableName);
         if (table == null) {
@@ -180,11 +197,13 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
+        logger.trace("getting table name for {}", tableId);
         return getTable(session, tableId).getName();
     }
 
     @Override
     public RowDef getRowDef(int tableId) throws NoSuchTableException {
+        logger.trace("getting RowDef for {}", tableId);
         try {
             return store().getRowDefCache().getRowDef(tableId);
         } catch (RowDefNotFoundException e) {
@@ -194,6 +213,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public String getDDLs(final Session session) throws InvalidOperationException {
+        logger.trace("getting DDLs");
         try {
             // TODO - note: the boolean value determines whether the text
             // of CREATE TABLE statements for group tables will be generated.
@@ -209,6 +229,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public SchemaId getSchemaID() throws InvalidOperationException {
+        logger.trace("getting schema ID");
         return new SchemaId(schemaManager().getSchemaGeneration());
     }
 
@@ -216,12 +237,15 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
     @SuppressWarnings("unused")
     // meant to be used from JMX
     public void forceGenerationUpdate() throws InvalidOperationException {
+        logger.trace("forcing schema generation update");
         schemaManager().forceNewTimestamp();
     }
 
     @Override
     public void createIndexes(final Session session, Collection<Index> indexesToAdd)
-            throws InvalidOperationException {
+            throws InvalidOperationException
+    {
+        logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
         }
@@ -311,7 +335,9 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop)
-            throws InvalidOperationException {
+            throws InvalidOperationException
+    {
+        logger.trace("dropping indexes {}", indexNamesToDrop);
         if(indexNamesToDrop.isEmpty() == true) {
             return;
         }
