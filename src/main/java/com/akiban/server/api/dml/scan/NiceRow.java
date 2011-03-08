@@ -27,6 +27,8 @@ import com.akiban.server.encoding.Encoding;
 import com.akiban.util.ArgumentValidation;
 
 public class NiceRow extends NewRow {
+    private final static int INITIAL_ROW_DATA_SIZE = RowData.CREATE_ROW_INITIAL_SIZE;
+
     private final Map<Integer,Object> fields;
     private final int tableId;
 
@@ -101,29 +103,12 @@ public class NiceRow extends NewRow {
 
     @Override
     public RowData toRowData() {
-        final int fieldsOffset =
-                + 4 // record length
-                + 2 // signature byte 'AB'
-                + 2 // fields count
-                + 4 // rowDefId
-                + 4 // NullMap
-                ;
-        int bytesLength =
-                fieldsOffset
-                // FIELDS GO HERE
-                + 2 // signature byte 'BA'
-                + 4 // record length again
-                ;
-        for (int i=0, fieldCount=rowDef.getFieldCount(); i < fieldCount; ++i) {
-            bytesLength += rowDef.getFieldDef(i).getMaxStorageSize();
-        }
-
         final Object[] objects = new Object[ rowDef.getFieldCount() ];
         for (Map.Entry<Integer,Object> entry : fields.entrySet()) {
             objects[ entry.getKey() ] = entry.getValue();
         }
-        final RowData retval = new RowData(new byte[bytesLength]);
-        retval.createRow(rowDef, objects);
+        final RowData retval = new RowData(new byte[INITIAL_ROW_DATA_SIZE]);
+        retval.createRow(rowDef, objects, true);
 
         return retval;
     }

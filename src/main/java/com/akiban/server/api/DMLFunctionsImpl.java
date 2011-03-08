@@ -59,6 +59,7 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
@@ -506,6 +507,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         final RowData rowData = niceRowToRowData(row);
         try {
             store().writeRow(session, rowData);
+            increment(StatisticsService.CountingStat.INSERTS);
             return null;
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
@@ -522,6 +524,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         final RowData rowData = niceRowToRowData(row);
         try {
             store().deleteRow(session, rowData);
+            increment(StatisticsService.CountingStat.DELETES);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -550,6 +553,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         LegacyUtils.matchRowDatas(oldData, newData);
         try {
             store().updateRow(session, oldData, newData, columnSelector);
+            increment(StatisticsService.CountingStat.UPDATES);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -636,5 +640,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         if (thrown != null) {
             throw new RuntimeException("Internal error", thrown);
         }
+    }
+
+    private void increment(StatisticsService.CountingStat which) {
+        serviceManager().getServiceByClass(StatisticsService.class).incrementCount(which);
     }
 }

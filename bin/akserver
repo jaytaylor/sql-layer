@@ -1,10 +1,27 @@
 #!/bin/bash
 #
+# Copyright (C) 2011 Akiban Technologies Inc.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License, version 3,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see http://www.gnu.org/licenses.
+#
+
+#
 # OPTIONS:
 #   -f: start in foreground
 #   -g: start the persistit GUI
 #   -p <filename>: log the pid to a file (useful to kill it later)
 #   -j <filename>: jar file of server to use
+#   -k: kill an akiban server process
+#   -v: print the version of akiban server
 #
 # CONTROLLING STARTUP:
 # 
@@ -16,7 +33,6 @@
 #
 
 akiban_home=$(cd $(dirname $0)/..; pwd -P)
-echo "akiban_home: $akiban_home"
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -24,6 +40,17 @@ if [ -x $JAVA_HOME/bin/java ]; then
 else
     JAVA=`which java`
 fi
+
+get_version()
+{
+    jar_file=$1
+    # the JAR file we use to grab the version
+    if [ "x$jar_file" == "x" ]; then
+        jar_file="${akiban_home}/target/akiban-server-0.0.2-SNAPSHOT-jar-with-dependencies.jar"
+    fi
+
+    exec $JAVA -cp $jar_file com.akiban.server.GetVersion
+}
 
 launch_service()
 {
@@ -68,7 +95,7 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fghj:c:p:D: "$@"`
+args=`getopt fkvghj:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
@@ -99,11 +126,26 @@ while true; do
             echo "-g launch the persistit admin tool"
             echo "-p specify a pid file"
             echo "-j specify a jar file for the server to use"
+            echo "-k kill an akiban server process"
+            echo "-v print akiban server version"
             exit 0
         ;;
         -D)
             properties="$properties -D$2"
             shift 2
+        ;;
+        -k)
+            # this is not ideal but is only intended to be
+            # called by a developer in their environment when
+            # they want to quickly kill an akiban-server
+            # process. This can kill other process with akiban-server
+            # in their name or arguments too...
+            pgrep -u `whoami` -f akiban-server | xargs kill -9
+            exit 0
+        ;;
+        -v)
+            get_version $jarfile
+            exit 0
         ;;
         --)
             shift

@@ -19,6 +19,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.api.hapi.HapiUtils;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
@@ -123,44 +124,17 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("HapiGetRequest[ ");
-        builder.append(schema).append(':').append(table).append(':');
-        final TableName using = getUsingTable();
-        if (!using.getTableName().equals(getTable())) {
-            builder.append('(').append(using.getTableName()).append(')');
-        }
-        for (HapiPredicate predicate : predicates) {
-            predicate.appendToSB(builder, using).append(',');
-        }
-        builder.setLength(builder.length()-1);
-        builder.append(" ]");
-        return builder.toString();
+        return HapiUtils.toString(this);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ParsedHapiGetRequest that = (ParsedHapiGetRequest) o;
-
-        if (!predicates.equals(that.predicates)) return false;
-        if (!schema.equals(that.schema)) return false;
-        if (!table.equals(that.table)) return false;
-        if (!usingTable.equals(that.usingTable)) return false;
-        if (!usingTableName.equals(that.usingTableName)) return false;
-
-        return true;
+        return this == o || o instanceof HapiGetRequest && HapiUtils.equals(this, (HapiGetRequest) o);
     }
 
     @Override
     public int hashCode() {
-        int result = schema.hashCode();
-        result = 31 * result + table.hashCode();
-        result = 31 * result + usingTable.hashCode();
-        result = 31 * result + usingTableName.hashCode();
-        result = 31 * result + predicates.hashCode();
-        return result;
+        return HapiUtils.hashCode(this);
     }
 
     void validate() {

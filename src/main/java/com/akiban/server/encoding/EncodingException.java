@@ -19,7 +19,7 @@ public final class EncodingException extends RuntimeException {
     EncodingException(String message, Throwable e) {
         super(message, e);
     }
-    EncodingException(String message) {
+    public EncodingException(String message) {
         super(message);
     }
 

@@ -85,6 +85,8 @@ public class RowData {
 
     public final static int RIGHT_ENVELOPE_SIZE = 6;
 
+    public final static int CREATE_ROW_INITIAL_SIZE = 500;
+
     private final static SimpleDateFormat SDF_DATETIME = new SimpleDateFormat(
             "yyyy-MM-dd HH:mm:SS");
 
@@ -370,7 +372,38 @@ public class RowData {
         return copy;
     }
 
-    public void createRow(final RowDef rowDef, final Object[] values) {
+    public void createRow(final RowDef rowDef, final Object[] values, boolean growBuffer)
+    {
+        if (growBuffer && !(bufferStart == 0 && bufferEnd == bytes.length)) {
+            // This RowData is embedded in a larger buffer. Can't grow it safely.
+            throw new CannotGrowBufferException();
+        }
+        RuntimeException exception = null;
+        do {
+            try {
+                exception = null;
+                createRow(rowDef, values);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                exception = e;
+            } catch (EncodingException e) {
+                if (e.getCause() instanceof ArrayIndexOutOfBoundsException) {
+                    exception = e;
+                } else {
+                    throw e;
+                }
+            }
+            if (exception != null && growBuffer) {
+                int newSize = bytes.length == 0 ? CREATE_ROW_INITIAL_SIZE : bytes.length * 2;
+                bytes = new byte[newSize];
+            }
+        } while (growBuffer && exception != null);
+        if (exception != null) {
+            throw exception;
+        }
+    }
+
+    public void createRow(final RowDef rowDef, final Object[] values)
+    {
         final int fieldCount = rowDef.getFieldCount();
         if (values.length > rowDef.getFieldCount()) {
             throw new IllegalArgumentException("Too many values.");
@@ -397,21 +430,27 @@ public class RowData {
             if (fieldDef.isFixedSize()) {
                 if (object != null) {
                     try {
-                        offset += fieldDef.getEncoding().fromObject(fieldDef,
-                                object, bytes, offset);
+                        offset += fieldDef.getEncoding().fromObject(fieldDef, object, bytes, offset);
                     } catch (Exception e) {
                         throw EncodingException.dueTo(e);
                     }
 
                 }
             } else {
-                vmax += fieldDef.getMaxStorageSize();
+                int fieldMax = fieldDef.getMaxStorageSize();
+                vmax += fieldMax;
                 if (object != null) {
+                    int fieldWidth;
                     try {
-                        vlength += fieldDef.getEncoding().widthFromObject(fieldDef,
-                                object);
+                        fieldWidth = fieldDef.getEncoding().widthFromObject(fieldDef, object);
+                        vlength += fieldWidth;
                     } catch (Exception e) {
                         throw EncodingException.dueTo(e);
+                    }
+                    if (fieldWidth > fieldMax) {
+                        throw new EncodingException(
+                            String.format("Value for field %s has size %s, exceeding maximum allowed: %s",
+                                          fieldDef.column(), fieldWidth, fieldMax));
                     }
                     final int width = AkServerUtil.varWidth(vmax);
                     switch (width) {
@@ -436,8 +475,7 @@ public class RowData {
             final FieldDef fieldDef = rowDef.getFieldDef(index);
             if (object != null && !fieldDef.isFixedSize()) {
                 try {
-                    offset += fieldDef.getEncoding().fromObject(fieldDef,
-                            values[index], bytes, offset);
+                    offset += fieldDef.getEncoding().fromObject(fieldDef, values[index], bytes, offset);
                 } catch (Exception e) {
                     throw EncodingException.dueTo(e);
                 }
@@ -577,5 +615,11 @@ public class RowData {
     public void differsFromPredecessorAtKeySegment(int differsFromPredecessorAtKeySegment)
     {
         this.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
+    }
+
+    public static int nullRowBufferSize(RowDef rowDef)
+    {
+        return MINIMUM_RECORD_LENGTH + // header and trailer
+               (rowDef.getFieldCount() + 7) / 8; // null bitmap
     }
 }

@@ -30,7 +30,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 
-import com.akiban.ais.ddl.SchemaDef.UserTableDef;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
 
@@ -38,8 +37,6 @@ import com.akiban.ais.io.Writer;
 /**
  * Entry point for reading a schema and producing an AIS in SQL or
  * binary format. All real work is done by SchemaDef and SchemaDefToAis.
- *
- * TODO: There remains one legacy method, parseCreateTable, in use by Studio
  */
 public class DDLSource {
     private final static int MAX_AIS_SIZE = 2 << 20; // 1MB, implied by net msg
@@ -111,17 +108,5 @@ public class DDLSource {
             outputStream.write(rawAis.array());
             outputStream.close();
         }
-    }
-
-    
-    /**
-     * Parse a table definition and return intermediate representation.
-     * @param createTableStatement  A valid DDL statement. Should not contain CREATE TABLE.
-     * @return UserTableDef representing the passed statement.
-     * @throws Exception if there was a parse error.
-     */
-    public UserTableDef parseCreateTable(final String createTableStatement) throws Exception {
-        SchemaDef schemaDef = new SchemaDef();
-        return schemaDef.parseCreateTable("create table " + createTableStatement);
     }
 }

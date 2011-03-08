@@ -805,12 +805,12 @@ public class PersistitStore implements Store {
         // - Don't have to visit children whose hkey contains no changed column
         Key hKey = exchange.getKey();
         KeyFilter filter = new KeyFilter(hKey, hKey.getDepth() + 1, Integer.MAX_VALUE);
+        RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
         while (exchange.next(filter)) {
             Value value = exchange.getValue();
             int descendentRowDefId =
                 AkServerUtil.getInt(value.getEncodedBytes(),
                                     RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE);
-            RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
             RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
             expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
@@ -1376,13 +1376,11 @@ public class PersistitStore implements Store {
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
         hEx.getValue().ensureFit(size);
-        System.arraycopy(rowData.getBytes(), start, hEx.getValue()
-                .getEncodedBytes(), 0, size);
-        int storedTableId = treeService.aisToStore(rowDef,
-                rowData.getRowDefId());
+        System.arraycopy(rowData.getBytes(), start, hEx.getValue().getEncodedBytes(), 0, size);
+        int storedTableId = treeService.aisToStore(rowDef, rowData.getRowDefId());
         AkServerUtil.putInt(hEx.getValue().getEncodedBytes(),
-                RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
-                storedTableId);
+                            RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
+                            storedTableId);
         hEx.getValue().setEncodedSize(size);
     }
 

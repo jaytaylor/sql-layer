@@ -30,6 +30,8 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.service.stats.StatisticsService;
+import com.akiban.server.service.stats.StatisticsService.CountingStat;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -59,6 +61,34 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheServiceImpl.class);
 
     private final MemcacheMXBean manageBean;
+
+    private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {
+
+        private void increment(CountingStat which) {
+            serviceManager.getServiceByClass(StatisticsService.class).incrementCount(which);
+        }
+
+        @Override
+        public void requestProcessed() {
+            increment(CountingStat.HAPI_REQUESTS);
+        }
+
+        @Override
+        public void connectionOpened() {
+            increment(CountingStat.CONNECTIONS_OPENED);
+        }
+
+        @Override
+        public void connectionClosed() {
+            increment(CountingStat.CONNECTIONS_CLOSED);
+        }
+
+        @Override
+        public void requestFailed() {
+            increment(CountingStat.CONNECTIONS_ERRORED);
+        }
+    };
+
     private final AkibanCommandHandler.FormatGetter formatGetter = new AkibanCommandHandler.FormatGetter() {
         @Override
         public HapiOutputter getFormat() {
@@ -169,10 +199,10 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         if (binary) {
             pipelineFactory = new BinaryPipelineFactory(this, verbose,
-                    idle_time, allChannels, formatGetter);
+                    idle_time, allChannels, formatGetter, callback);
         } else {
             pipelineFactory = new TextPipelineFactory(this, verbose,
-                    idle_time, text_frame_size, allChannels, formatGetter);
+                    idle_time, text_frame_size, allChannels, formatGetter, callback);
         }
 
         bootstrap.setPipelineFactory(pipelineFactory);
@@ -213,10 +243,10 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         public TextPipelineFactory(HapiProcessor hapiProcessor, boolean verbose, int idleTime,
                 int frameSize, DefaultChannelGroup channelGroup,
-                AkibanCommandHandler.FormatGetter formatGetter) {
+                AkibanCommandHandler.FormatGetter formatGetter, AkibanCommandHandler.CommandCallback callback) {
             this.frameSize = frameSize;
             responseEncoder = new MemcachedResponseEncoder();
-            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter);
+            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter, callback);
         }
 
         public final ChannelPipeline getPipeline() throws Exception {
@@ -237,10 +267,10 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
         public BinaryPipelineFactory(HapiProcessor hapiProcessor, boolean verbose,
                 int idleTime, DefaultChannelGroup channelGroup,
-                AkibanCommandHandler.FormatGetter formatGetter) {
+                AkibanCommandHandler.FormatGetter formatGetter, AkibanCommandHandler.CommandCallback callback) {
             commandDecoder = new MemcachedBinaryCommandDecoder();
             responseEncoder = new MemcachedBinaryResponseEncoder();
-            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter);
+            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter, callback);
         }
 
         public ChannelPipeline getPipeline() throws Exception {

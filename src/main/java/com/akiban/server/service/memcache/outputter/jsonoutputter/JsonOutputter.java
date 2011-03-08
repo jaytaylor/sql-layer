@@ -36,7 +36,7 @@ public final class JsonOutputter implements HapiOutputter
     }
 
     @Override
-    public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream)
+    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream)
         throws IOException
     {
         new Request(request, rows, outputStream).run();
@@ -47,10 +47,9 @@ public final class JsonOutputter implements HapiOutputter
 
     private static class Request
     {
-        public Request(HapiProcessedGetRequest request, List<RowData> rows, OutputStream outputStream)
+        public Request(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream)
             throws IOException
         {
-            this.request = request;
             this.ais = request.akibanInformationSchema();
             queryRoot = queryRoot(request);
             genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
@@ -167,7 +166,6 @@ public final class JsonOutputter implements HapiOutputter
             }
         }
 
-        private HapiProcessedGetRequest request;
         private AkibanInformationSchema ais;
         private UserTable queryRoot;
         private RowDataGenealogist genealogist;

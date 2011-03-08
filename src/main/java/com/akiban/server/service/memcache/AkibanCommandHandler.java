@@ -121,6 +121,13 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         HapiOutputter getFormat();
     }
 
+    static interface CommandCallback {
+        void connectionOpened();
+        void connectionClosed();
+        void requestProcessed();
+        void requestFailed();
+    }
+
     private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
         @Override
         protected Session initialValue() {
@@ -135,12 +142,15 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     private final DefaultChannelGroup channelGroup;
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheService.class);
     private final FormatGetter formatGetter;
+    private final CommandCallback callback;
 
-    public AkibanCommandHandler(HapiProcessor hapiProcessor, DefaultChannelGroup channelGroup, FormatGetter formatGetter)
+    public AkibanCommandHandler(HapiProcessor hapiProcessor, DefaultChannelGroup channelGroup,
+                                FormatGetter formatGetter, CommandCallback callback)
     {
         this.hapiProcessor = hapiProcessor;
         this.channelGroup = channelGroup;
         this.formatGetter = formatGetter;
+        this.callback = callback;
     }
 
     /**
@@ -148,6 +158,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      */
     @Override
     public void channelOpen(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
+        callback.connectionOpened();
         channelGroup.add(context.getChannel());
     }
 
@@ -156,6 +167,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
      */
     @Override
     public void channelClosed(ChannelHandlerContext context, ChannelStateEvent event) throws Exception {
+        callback.connectionClosed();
         channelGroup.remove(context.getChannel());
     }
     
@@ -174,6 +186,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
             LOG.trace("netty exception on client shutdown", exception);
         }
         else {
+            callback.requestFailed();
             Channels.write(ctx.getChannel(), forException(exception));
         }
     }
@@ -258,6 +271,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
                 session.get(), hapiProcessor, formatGetter.getFormat());
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
+        callback.requestProcessed();
     }
 
     static CacheElement[] handleGetKeys(List<String> keys,

@@ -44,15 +44,20 @@ abstract class ClientAPIBase {
 
     private final Store store;
     private final SchemaManager schemaManager;
+    private final ServiceManager serviceManager;
 
     ClientAPIBase() {
-        final ServiceManager serviceManager = ServiceManagerImpl.get();
+        serviceManager = ServiceManagerImpl.get();
         this.store = serviceManager.getStore();
         this.schemaManager = serviceManager.getSchemaManager();
     }
 
     final public Store store() {
         return store;
+    }
+
+    final protected ServiceManager serviceManager() {
+        return serviceManager;
     }
 
     final public SchemaManager schemaManager() {

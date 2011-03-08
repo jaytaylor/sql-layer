@@ -31,6 +31,8 @@ import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.stats.StatisticsService;
+import com.akiban.server.service.stats.StatisticsServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -107,6 +109,23 @@ public class ServiceManagerImpl implements ServiceManager
         return getService(JmxRegistryService.class);
     }
 
+    /**
+     * <p>Returns a service by its registered class. For instance, if you have a service whose implementation
+     * specifies {@code public class FooServiceImpl implements Service<FooService>}, then passing
+     * {@code FooService.class} to this method will get you that impl instance.</p>
+     *
+     * <p>If a there isn't a {@code Service<FooService>} defined and started, this will throw
+     * a {@linkplain ServiceNotStartedException}</p>
+     * @param serviceClass the service's class
+     * @param <T> the service's interface
+     * @return an implementation of the given service
+     * @throws ServiceNotStartedException if the given service hasn't been defined and started
+     */
+    @Override
+    public <T> T getServiceByClass(Class<T> serviceClass) {
+        return getService(serviceClass);
+    }
+
     public void startServices() throws Exception {
 
         Service<JmxRegistryService> jmxRegistryService = factory.jmxRegistryService();
@@ -131,6 +150,7 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(new DStarLServiceImpl(), jmxRegistry);
         startAndPut(new Log4JConfigurationServiceImpl(), jmxRegistry);
+        startAndPut(new StatisticsServiceImpl(), jmxRegistry);
         afterStart();
     }
 

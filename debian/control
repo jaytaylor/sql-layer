@@ -14,3 +14,10 @@ Depends: openjdk-6-jre-headless (>= 6b11) | java6-runtime, adduser
 Recommends: libjna-java
 Description: Akiban Server 
  Akiban Server is the primary interface for the Orthogonal architecture.
+
+Package: akiban
+Architecture: all
+Depends: akiban-server, akiban-adapter-mysql, akiban-studio, ${misc:Depends}
+Description: Akiban Technologies stack.
+ This is an empty package that installs all akiban packages.
+

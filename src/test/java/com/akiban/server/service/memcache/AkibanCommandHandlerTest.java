@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -91,7 +90,7 @@ public final class AkibanCommandHandlerTest {
         }
 
         @Override
-        public void output(HapiProcessedGetRequest request, List<RowData> rows,
+        public void output(HapiProcessedGetRequest request, Iterable<RowData> rows,
                            OutputStream outputStream) throws IOException
         {
             outputStream.write( string.getBytes(charset) );

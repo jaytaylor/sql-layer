@@ -121,7 +121,7 @@ public class CachedProcessor implements HapiProcessor, JmxManageable {
         private HapiProcessedGetRequest cachedRequest;
 
         @Override
-        public void output(HapiProcessedGetRequest request, List<RowData> rows, OutputStream ignored) {
+        public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream ignored) {
             synchronized (MONITOR) {
                 assert this.cachedRequest == null : "already have a cached request";
                 assert this.cachedRows == null : "already have cached rows: " + this.cachedRows.size();
@@ -130,9 +130,9 @@ public class CachedProcessor implements HapiProcessor, JmxManageable {
             }
         }
 
-        private static List<RowData> copyRows(List<RowData> rows) {
+        private static List<RowData> copyRows(Iterable<RowData> rows) {
             Map<byte[],byte[]> origToCopies = new HashMap<byte[], byte[]>(1);
-            List<RowData> copies = new ArrayList<RowData>(rows.size());
+            List<RowData> copies = new ArrayList<RowData>();
             for (RowData orig : rows) {
                 byte[] origBacking = orig.getBytes();
                 byte[] copyBacking = origToCopies.get(origBacking);
