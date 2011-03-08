@@ -18,7 +18,6 @@ package com.akiban.server.service.memcache;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.Index;

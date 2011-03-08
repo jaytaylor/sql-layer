@@ -18,7 +18,6 @@ package com.akiban.server.service.memcache;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.api.HapiGetRequest;
