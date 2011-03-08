@@ -539,13 +539,15 @@ public class AISTest
         for(Type t : ais.getTypes()) {
             ais.canTypesBeJoined(t.name(), t.name());
         }
-        // All int types can be joined together when signed-ness matches
+        // All int types can be joined together
         final String intTypeNames[] = {"tinyint", "smallint", "int", "mediumint", "bigint"};
         for(String t1 : intTypeNames) {
             String t1U = t1 + " unsigned";
             for(String t2 : intTypeNames) {
                 String t2U = t2 + " unsigned";
                 assertTrue(t1+"->"+t2, ais.canTypesBeJoined(t1, t2));
+                assertTrue(t1U+"->"+t2, ais.canTypesBeJoined(t1U, t2));
+                assertTrue(t1+"->"+t2U, ais.canTypesBeJoined(t1, t2U));
                 assertTrue(t1U+"->"+t2U, ais.canTypesBeJoined(t1U, t2U));
             }
         }

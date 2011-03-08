@@ -187,7 +187,6 @@ public class SchemaDefToAis {
 
     private void removeNonAkibanForeignKeys() {
         final IndexQualifier fkFlag = IndexQualifier.FOREIGN_KEY;
-
         for(UserTableDef userTableDef : schemaDef.getUserTableMap().values()) {
             if(userTableDef.isAkibanTable()) {
                 for(IndexDef indexDef : userTableDef.indexes) {
