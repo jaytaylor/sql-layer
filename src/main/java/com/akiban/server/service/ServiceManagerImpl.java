@@ -109,6 +109,23 @@ public class ServiceManagerImpl implements ServiceManager
         return getService(JmxRegistryService.class);
     }
 
+    /**
+     * <p>Returns a service by its registered class. For instance, if you have a service whose implementation
+     * specifies {@code public class FooServiceImpl implements Service<FooService>}, then passing
+     * {@code FooService.class} to this method will get you that impl instance.</p>
+     *
+     * <p>If a there isn't a {@code Service<FooService>} defined and started, this will throw
+     * a {@linkplain ServiceNotStartedException}</p>
+     * @param serviceClass the service's class
+     * @param <T> the service's interface
+     * @return an implementation of the given service
+     * @throws ServiceNotStartedException if the given service hasn't been defined and started
+     */
+    @Override
+    public <T> T getServiceByClass(Class<T> serviceClass) {
+        return getService(serviceClass);
+    }
+
     public void startServices() throws Exception {
 
         Service<JmxRegistryService> jmxRegistryService = factory.jmxRegistryService();

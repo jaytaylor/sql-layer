@@ -17,23 +17,23 @@ package com.akiban.server.service.stats;
 
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.memcache.MemcacheService;
 
 public final class StatisticsServiceMXBeanImpl implements StatisticsServiceMXBean {
 
     @Override
     public int getHapiRequestsCount() {
-        throw new UnsupportedOperationException(); // TODO
+        return get(MemcacheService.class).getRequestsCount();
     }
-
     
     @Override
     public int getConnectionsOpened() {
-        throw new UnsupportedOperationException(); // TODO
+        return get(MemcacheService.class).getConnectionsOpened();
     }
 
     @Override
     public int getConnectionsClosed() {
-        throw new UnsupportedOperationException(); // TODO
+        return get(MemcacheService.class).getConnectionsClosed();
     }
 
     @Override
@@ -43,7 +43,7 @@ public final class StatisticsServiceMXBeanImpl implements StatisticsServiceMXBea
 
     @Override
     public int getConnectionsActive() {
-        throw new UnsupportedOperationException(); // TODO
+        return get(MemcacheService.class).getConnectionsActive();
     }
 
     @Override
@@ -61,5 +61,7 @@ public final class StatisticsServiceMXBeanImpl implements StatisticsServiceMXBea
         throw new UnsupportedOperationException(); // TODO
     }
 
-
+    private <T> T get(Class<T> serviceClass) {
+        return ServiceManagerImpl.get().getServiceByClass(serviceClass);
+    }
 }

@@ -25,6 +25,10 @@ import com.akiban.server.service.memcache.outputter.RowDataStringOutputter;
 
 public interface MemcacheService extends HapiProcessor {
     void setHapiProcessor(HapiProcessorFactory processor);
+    int getRequestsCount();
+    int getConnectionsOpened();
+    int getConnectionsClosed();
+    int getConnectionsActive();
 
     @SuppressWarnings("unused") // jmx
     enum OutputFormat {
