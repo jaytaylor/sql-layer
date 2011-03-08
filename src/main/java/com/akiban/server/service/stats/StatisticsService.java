@@ -16,4 +16,18 @@
 package com.akiban.server.service.stats;
 
 public interface StatisticsService {
+
+    public enum CountingStat {
+        CONNECTIONS_OPENED,
+        CONNECTIONS_CLOSED,
+        CONNECTIONS_ERRORED,
+
+        HAPI_REQUESTS,
+
+        INSERTS,
+        UPDATES,
+        DELETES
+    }
+
+    void incrementCount(CountingStat stat);
 }

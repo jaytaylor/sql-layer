@@ -18,10 +18,78 @@ package com.akiban.server.service.stats;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public final class StatisticsServiceImpl implements StatisticsService, Service<StatisticsService>, JmxManageable {
+
+    private Map<CountingStat,AtomicInteger> countingStats;
+
+    public StatisticsServiceImpl() {
+        final EnumMap<CountingStat,AtomicInteger> tmp = new EnumMap<CountingStat, AtomicInteger>(CountingStat.class);
+        for (CountingStat stat : CountingStat.values()) {
+            tmp.put(stat, new AtomicInteger(0));
+        }
+        countingStats = Collections.unmodifiableMap(tmp);
+    }
+
+    private final StatisticsServiceMXBean bean = new StatisticsServiceMXBean() {
+
+        private int get(CountingStat which) {
+            return countingStats.get(which).get();
+        }
+
+        @Override
+        public int getHapiRequestsCount() {
+            return get(CountingStat.HAPI_REQUESTS);
+        }
+
+        @Override
+        public int getConnectionsOpened() {
+            return get(CountingStat.CONNECTIONS_OPENED);
+        }
+
+        @Override
+        public int getConnectionsClosed() {
+            return get(CountingStat.CONNECTIONS_CLOSED);
+        }
+
+        @Override
+        public int getConnectionsErrored() {
+            return get(CountingStat.CONNECTIONS_ERRORED);
+        }
+
+        @Override
+        public int getConnectionsActive() {
+            return getConnectionsOpened() - getConnectionsClosed();
+        }
+
+        @Override
+        public int getMysqlInsertsCount() {
+            return get(CountingStat.INSERTS);
+        }
+
+        @Override
+        public int getMysqlDeletesCount() {
+            return get(CountingStat.DELETES);
+        }
+
+        @Override
+        public int getMysqlUpdatesCount() {
+            return get(CountingStat.UPDATES);
+        }
+    };
+
+    @Override
+    public void incrementCount(CountingStat stat) {
+        countingStats.get(stat).incrementAndGet();
+    }
+
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Statistics", new StatisticsServiceMXBeanImpl(), StatisticsServiceMXBean.class);
+        return new JmxObjectInfo("Statistics", bean, StatisticsServiceMXBean.class);
     }
 
     @Override

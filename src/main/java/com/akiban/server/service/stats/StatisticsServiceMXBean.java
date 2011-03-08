@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.stats;
 
+@SuppressWarnings("unused") // jmx
 public interface StatisticsServiceMXBean {
     int getHapiRequestsCount();
 

@@ -31,6 +31,8 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.service.stats.StatisticsService;
+import com.akiban.server.service.stats.StatisticsService.CountingStat;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -61,29 +63,30 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
 
     private final MemcacheMXBean manageBean;
 
-    private final AtomicInteger requestsProcessedCounter = new AtomicInteger(0);
-    private final AtomicInteger connectionsOpened = new AtomicInteger(0);
-    private final AtomicInteger connectionsClosed = new AtomicInteger(0);
-    private final AtomicInteger connectionsErrored = new AtomicInteger(0);
     private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {
+
+        private void increment(CountingStat which) {
+            serviceManager.getServiceByClass(StatisticsService.class).incrementCount(which);
+        }
+
         @Override
         public void requestProcessed() {
-            requestsProcessedCounter.incrementAndGet();
+            increment(CountingStat.HAPI_REQUESTS);
         }
 
         @Override
         public void connectionOpened() {
-            connectionsOpened.incrementAndGet();
+            increment(CountingStat.CONNECTIONS_OPENED);
         }
 
         @Override
         public void connectionClosed() {
-            connectionsClosed.incrementAndGet();
+            increment(CountingStat.CONNECTIONS_CLOSED);
         }
 
         @Override
         public void requestFailed() {
-            connectionsErrored.incrementAndGet();
+            increment(CountingStat.CONNECTIONS_ERRORED);
         }
     };
 
@@ -179,31 +182,6 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         LOG.info("Stopping memcache service");
         stopDaemon();
         store.set(null);
-    }
-
-    @Override
-    public int getRequestsCount() {
-        return requestsProcessedCounter.get();
-    }
-
-    @Override
-    public int getConnectionsOpened() {
-        return connectionsOpened.get();
-    }
-
-    @Override
-    public int getConnectionsClosed() {
-        return connectionsClosed.get();
-    }
-
-    @Override
-    public int getConnectionsErrored() {
-        return connectionsErrored.get();
-    }
-
-    @Override
-    public int getConnectionsActive() {
-        return getConnectionsOpened() - getConnectionsClosed();
     }
 
     //
