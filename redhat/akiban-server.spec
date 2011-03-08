@@ -9,7 +9,7 @@ Version:        0.0.2
 Release:        REVISION%{?dist}
 Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
 
-Group:          Development/Libraries
+Group:          Applications/Databases
 License:        AGPL
 URL:            http://akiban.com/
 
