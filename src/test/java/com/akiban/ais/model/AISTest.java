@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.Assert;
 import org.junit.Test;
 
 import com.akiban.server.SchemaFactory;
@@ -531,6 +530,31 @@ public class AISTest
         // Unknown type returns null and false
         assertNull(ais.getType("not_a_real_type"));
         assertFalse(ais.isTypeSupported("not_a_real_type"));
+    }
+
+    @Test
+    public void testTypesCanBeJoined() throws Exception {
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        // Every time can be joined to itself
+        for(Type t : ais.getTypes()) {
+            ais.canTypesBeJoined(t.name(), t.name());
+        }
+        // All int types can be joined together when signed-ness matches
+        final String intTypeNames[] = {"tinyint", "smallint", "int", "mediumint", "bigint"};
+        for(String t1 : intTypeNames) {
+            String t1U = t1 + " unsigned";
+            for(String t2 : intTypeNames) {
+                String t2U = t2 + " unsigned";
+                assertTrue(t1+"->"+t2, ais.canTypesBeJoined(t1, t2));
+                assertTrue(t1U+"->"+t2U, ais.canTypesBeJoined(t1U, t2U));
+            }
+        }
+        // Check a few that cannot be
+        assertFalse(ais.canTypesBeJoined("int", "varchar"));
+        assertFalse(ais.canTypesBeJoined("int", "timestamp"));
+        assertFalse(ais.canTypesBeJoined("int", "decimal"));
+        assertFalse(ais.canTypesBeJoined("int", "double"));
+        assertFalse(ais.canTypesBeJoined("char", "binary"));
     }
 
 

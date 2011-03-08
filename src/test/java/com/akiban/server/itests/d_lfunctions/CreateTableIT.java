@@ -24,6 +24,7 @@ import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;
+import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.itests.ApiTestBase;
@@ -357,7 +358,7 @@ public final class CreateTableIT extends ApiTestBase {
     }
 
     // Akiban fkey, parent/child columns are different types
-    @Test(expected=InvalidOperationException.class)
+    @Test(expected= JoinToWrongColumnsException.class)
     public void bug728003() throws InvalidOperationException {
         createTable("test", "p", "id varchar(32) key");
         createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id)");

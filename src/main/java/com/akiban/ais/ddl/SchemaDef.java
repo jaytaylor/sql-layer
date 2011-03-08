@@ -733,6 +733,15 @@ public class SchemaDef {
             return columns;
         }
 
+        public ColumnDef getColumn(String name) {
+            for(ColumnDef def : columns) {
+                if(def.name.equals(name)) {
+                    return def;
+                }
+            }
+            return null;
+        }
+
         public List<String> getColumnNames() {
             List<String> ret = new ArrayList<String>(columns.size());
             for (ColumnDef col : columns) {

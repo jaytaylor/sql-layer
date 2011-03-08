@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -37,6 +38,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.model.Column;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1107,17 +1109,22 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final String schemaName, final String statement,
             final SchemaDef.UserTableDef tableDef) throws Exception {
 
-        if (AKIBAN_INFORMATION_SCHEMA.equals(tableDef.getCName().getSchema())) {
-            throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
-                    "[%s] %s is protected: %s", schemaName,
-                    AKIBAN_INFORMATION_SCHEMA, statement);
+        final String tableName = tableDef.getCName().getName();
+        
+        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+            throw new InvalidOperationException(
+                    ErrorCode.PROTECTED_TABLE,
+                    "Cannot create table `%s` in protected schema `%s`",
+                    tableName, schemaName);
         }
 
         for(SchemaDef.ColumnDef col : tableDef.getColumns()) {
             final String typeName = col.getType();
             if(ais.isTypeSupported(typeName) == false) {
-                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_DATA_TYPE,
-                                                    "column %s is unsupported type %s", col.getName(), typeName);
+                throw new InvalidOperationException(
+                        ErrorCode.UNSUPPORTED_DATA_TYPE,
+                        "Table `%s`.`%s` column `%s` is unsupported type %s",
+                        schemaName, tableName, col.getName(), typeName);
             }
         }
 
@@ -1125,54 +1132,54 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (parentJoins.isEmpty()) {
             return;
         }
-        
+
         if(parentJoins.size() > 1) {
-            throw new InvalidOperationException(ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
-                                                "Table `%s`.`%s` joins to more than one parent",
-                                                schemaName, tableDef.getCName().getName());
+            throw new InvalidOperationException(
+                    ErrorCode.JOIN_TO_MULTIPLE_PARENTS,
+                    "Table `%s`.`%s` joins to more than one table",
+                    schemaName, tableName);
         }
 
         final SchemaDef.IndexDef parentJoin = parentJoins.get(0);
-        String parentSchema = parentJoin.getParentSchema();
-        if (parentSchema == null) {
-            parentSchema = (tableDef.getCName().getSchema() == null) ? schemaName
-                    : tableDef.getCName().getSchema();
-        }
+        final String parentTableName = parentJoin.getParentTable();
+        final String parentSchema = parentJoin.getParentSchema() != null ?
+                                    parentJoin.getParentSchema() :
+                                    schemaName;
 
         if (AKIBAN_INFORMATION_SCHEMA.equals(parentSchema)) {
             throw new InvalidOperationException(
-                    ErrorCode.JOIN_TO_PROTECTED_TABLE, "[%s] to %s.*: %s",
-                    schemaName, parentJoin.getParentSchema(), statement);
+                    ErrorCode.JOIN_TO_PROTECTED_TABLE,
+                    "Table `%s`.`%s` joins to protected table `%s`.`%s`",
+                    schemaName, tableName, parentSchema, parentTableName);
         }
 
-        final String tableName = tableDef.getCName().getName();
-        final String parentTableName = parentJoin.getParentTable();
-        if (schemaName.equals(parentSchema)
-                && tableName.equals(parentTableName)) {
+        final Table parentTable = ais.getUserTable(parentSchema, parentTableName);
+        if (schemaName.equals(parentSchema) && tableName.equals(parentTableName) ||
+            parentTable == null) {
             throw new InvalidOperationException(
                     ErrorCode.JOIN_TO_UNKNOWN_TABLE,
-                    "Table %s.%s refers to undefined table %s.%s: %s",
-                    schemaName, tableName, parentSchema, parentTableName,
-                    statement);
+                    "Table `%s`.`%s` joins to undefined table `%s`.`%s`",
+                    schemaName, tableName, parentSchema, parentTableName);
         }
-        final TableDefinition parentDef = getTableDefinition(session,
-                parentSchema, parentTableName);
-        if (parentDef == null) {
-            throw new InvalidOperationException(
-                    ErrorCode.JOIN_TO_UNKNOWN_TABLE,
-                    "Table %s.%s refers to undefined table %s.%s: %s",
-                    schemaName, tableName, parentSchema, parentTableName,
-                    statement);
-        }
-        final SchemaDef.UserTableDef parentTableDef = new SchemaDef()
-                .parseCreateTable(parentDef.getDDL());
-        for (final String columnName : parentJoin.getParentColumns()) {
-            if (!parentTableDef.getColumnNames().contains(columnName)) {
+
+        Iterator<String> childColName = parentJoin.getChildColumns().iterator();
+        for (String columnName : parentJoin.getParentColumns()) {
+            final Column parentColumn = parentTable.getColumn(columnName);
+            if (parentColumn == null) {
                 throw new InvalidOperationException(
                         ErrorCode.JOIN_TO_WRONG_COLUMNS,
-                        "Table %s.%s refers to undefined column %s in table %s.%s: %s",
-                        schemaName, tableName, columnName, parentSchema,
-                        parentTableName, statement);
+                        "Table `%s`.`%s` joins to unknown column `%s` in table `%s`.`%s`",
+                        schemaName, tableName, columnName, parentSchema, parentTableName);
+            }
+            SchemaDef.ColumnDef columnDef = tableDef.getColumn(childColName.next());
+            final String type = columnDef.getType();
+            final String parentType = parentColumn.getType().name();
+            if (!ais.canTypesBeJoined(parentType, type)) {
+                throw new InvalidOperationException(
+                        ErrorCode.JOIN_TO_WRONG_COLUMNS,
+                        "Table `%s`.`%s` column `%s` [%s] cannot be joined to `%s`.`%s` column `%s` [%s]",
+                        schemaName, tableName, columnDef.getName(), type,
+                        parentSchema, parentTableName, parentColumn.getName(), parentType);
             }
         }
     }
