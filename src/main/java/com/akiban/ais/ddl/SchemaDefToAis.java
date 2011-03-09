@@ -230,8 +230,7 @@ public class SchemaDefToAis {
             CName groupTableName = groupPerTable.get(uTableName);
             Integer prevId = idPerGroup.get(groupTableName);
             if (prevId == null) {
-                idPerGroup.put(groupTableName, 0);
-                return 0;
+                prevId = 0; // index ids start at 1
             }
             int id = prevId + 1;
             idPerGroup.put(groupTableName, id);

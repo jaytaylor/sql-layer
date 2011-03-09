@@ -41,8 +41,8 @@ public final class SpuriousDuplicateKeyIT extends ApiTestBase {
         createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
         int t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
 
-        confirmIds("t1", 0, 2, 2);
-        confirmIds("t2", 0, 2, 2);
+        confirmIds("t1", 1, 2, 2);
+        confirmIds("t2", 1, 2, 2);
 
         writeRows(
                 createNewRow(t2, 1, "0"),
@@ -60,9 +60,9 @@ public final class SpuriousDuplicateKeyIT extends ApiTestBase {
         createTable("test", "t3", "id int key, bid_id int, "
                 +"CONSTRAINT __akiban_fk FOREIGN KEY (bid_id) REFERENCES t2 (bid)");
 
-        confirmIds("t1", 0, 2, 2);
-        confirmIds("t2", 0, 2, 4);
-        confirmIds("t3", 2, 2, 4);
+        confirmIds("t1", 1, 2, 2);
+        confirmIds("t2", 1, 2, 4);
+        confirmIds("t3", 3, 2, 4);
     }
 
     /**

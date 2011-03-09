@@ -515,18 +515,12 @@ public final class JsonHapiIT extends ApiTestBase {
     @Test @OnlyIf("shouldCheckIndex")
     public void correctIndex() throws HapiRequestException {
         HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
-        Index expectedIndex = ddl().getAIS(session).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
+        Index expectedIndex;
         if (runInfo.expectIndexOnGroup) {
             Table gTable = ddl().getAIS(session).getUserTable(request.getUsingTable()).getGroup().getGroupTable();
-            List<Index> matchingIndexes = new ArrayList<Index>();
-            int indexId = expectedIndex.getIndexId();
-            for (Index gTableIndex : gTable.getIndexes()) {
-                if (gTableIndex.getIndexId() == indexId) {
-                    matchingIndexes.add(gTableIndex);
-                }
-            }
-            assertEquals("too many matching indexes: " + matchingIndexes.toString(), 1, matchingIndexes.size());
-            expectedIndex = matchingIndexes.get(0);
+            expectedIndex = gTable.getIndex(runInfo.expectIndexName);
+        } else {
+            expectedIndex = ddl().getAIS(session).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
         }
         assertNotNull(
                 String.format("no index %s on %s", runInfo.expectIndexName, request.getUsingTable()),

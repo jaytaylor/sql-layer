@@ -33,6 +33,9 @@ public class RowDataGenealogist implements Genealogist<RowData>
             differsAt == 0
             ? queryRoot
             : hKeyBoundaries.get(row.getRowDefId())[differsAt];
+        if (rootmostMissingAncestor.getDepth() < queryRoot.getDepth()) {
+            rootmostMissingAncestor = queryRoot;
+        }
         UserTable ancestor = expectedChildren.get(row.getRowDefId()).table;
         nullRowStack.clear();
         while (ancestor != rootmostMissingAncestor) {
