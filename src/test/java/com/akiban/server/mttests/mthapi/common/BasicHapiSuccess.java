@@ -25,21 +25,49 @@ import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import static com.akiban.util.ThreadlessRandom.rand;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class BasicHapiSuccess extends HapiSuccess {
 
-    private final int MAX_READ_ID;
+    private final List<SaisTable> allTables;
+    private final String schema;
+    private final static int MAX_READ_ID = 1500;
 
-    public BasicHapiSuccess(int MAX_READ_ID) {
-        this.MAX_READ_ID = MAX_READ_ID;
+    public BasicHapiSuccess(String schema, SaisTable root) {
+        this(schema, Collections.singleton(root));
+    }
+
+    public BasicHapiSuccess(String schema, Set<SaisTable> roots) {
+        assertTrue("at least one root table required", roots.size() >= 1);
+        Set<SaisTable> all = SaisTable.setIncludingChildren(roots);
+        for (SaisTable table : all) {
+            assertTrue(table + ": only one-table-pk tables supported", table != null && table.getPK().size() == 1);
+        }
+        allTables = Collections.unmodifiableList(new ArrayList<SaisTable>(all));
+        this.schema = schema;
     }
 
     @Override
     protected void validateIndex(HapiGetRequest request, Index index) {
-        assertTrue("index table: " + index, index.getTableName().equals("ts1", "customer"));
-        assertEquals("index name", "PRIMARY", index.getIndexName().getName());
+        final String expectedIndexName;
+        if (request.getUsingTable().equals(request.getSchema(), request.getTable())) {
+            assertTrue("index table: " + index, index.getTableName().equals(request.getUsingTable()));
+            expectedIndexName = "PRIMARY";
+        }
+        else {
+            assertTrue("index should have been on group table", index.getTable().isGroupTable());
+            expectedIndexName = request.getUsingTable().getTableName() + "$PRIMARY";
+        }
+        assertEquals("index name", expectedIndexName, index.getIndexName().getName());
     }
 
     @Override
@@ -52,18 +80,29 @@ public class BasicHapiSuccess extends HapiSuccess {
     @Override
     protected HapiRequestStruct pullRequest(final int pseudoRandom) {
         String idValue = Integer.toString(Math.abs(pseudoRandom) % MAX_READ_ID);
-        HapiGetRequest request = DefaultHapiGetRequest.forTables("ts1", "customer", "customer").where("cid").eq(idValue);
+        int randTableIndex = Math.abs(pseudoRandom % allTables.size());
+        SaisTable selectRoot = allTables.get(randTableIndex);
+        SaisTable predicateTable = choosePredicate(selectRoot, rand(pseudoRandom));
+        assert predicateTable.getPK().size() == 1 : predicateTable.getPK(); // should be verified in ctor
+        String predicateColumn = predicateTable.getPK().get(0);
+        HapiGetRequest request = DefaultHapiGetRequest.forTables(schema(), selectRoot.getName(), predicateTable.getName()).where(predicateColumn).eq(idValue);
 
-        SaisBuilder builder = new SaisBuilder();
-        builder.table("customer", "cid").pk("cid");
-        builder.table("orders", "oid", "c_id").pk("oid").joinTo("customer").col("cid", "c_id");
-        builder.table("item", "iid", "o_id").pk("iid").joinTo("orders").col("oid", "o_id");
-        SaisTable table = builder.getSoleRootTable();
-        return new HapiRequestStruct(request, table);
+        return new HapiRequestStruct(request, selectRoot, predicateTable);
+    }
+
+    private static SaisTable choosePredicate(SaisTable root, int pseudoRandom) {
+        // for now, construct the all-children list each time. We can cache this later.
+        List<SaisTable> includingChildren = new ArrayList<SaisTable>( root.setIncludingChildren() );
+        int index = Math.abs(pseudoRandom % includingChildren.size() );
+        return includingChildren.get(index);
+    }
+
+    public String schema() {
+        return schema;
     }
 
     @Override
     protected int spawnCount() {
-        return 10000;
+        return 500000;
     }
 }

@@ -15,74 +15,29 @@
 
 package com.akiban.server.mttests.mthapi.coi;
 
-import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
-import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
 import com.akiban.server.mttests.mthapi.common.BasicWriter;
-import com.akiban.server.service.session.Session;
 import org.json.JSONException;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.util.ThreadlessRandom.rand;
 
 public final class CoiMT extends HapiMTBase {
-    final static int MAX_READ_ID = 10000;
     final static Set<SaisTable> COI_ROOTS = coi();
 
     @Test
-    public void preWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
-        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS), 10000) {
-            @Override
-            public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
-                    throws InvalidOperationException
-            {
-                // do nothing
-            }
-        };
-        HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
-
-        runThreads(writeThread, readThread);
-    }
-
-    @Test
     public void concurrentWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
-        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS));
-        HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
+        BasicWriter writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS));
+        HapiSuccess readThread = new BasicHapiSuccess(writeThread.schema(), COI_ROOTS);
 
-        runThreads(writeThread, readThread);
-    }
-
-    @Test
-    public void concurrentWritesNoOrphans() throws HapiRequestException, JSONException, IOException {
-        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS));
-        HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
-
-        runThreads(writeThread, readThread);
-    }
-
-    @Test
-    public void preWritesNoOrphans() throws HapiRequestException, JSONException, IOException {
-
-        WriteThread writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS)) {
-            @Override
-            public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
-                    throws InvalidOperationException
-            {
-                // do nothing
-            }
-        };
-        HapiSuccess readThread = new BasicHapiSuccess(MAX_READ_ID);
         runThreads(writeThread, readThread);
     }
 
@@ -123,8 +78,7 @@ public final class CoiMT extends HapiMTBase {
 
         @Override
         public Object[] initialRow(SaisTable table, byte state, int pseudoRandom) {
-            //int id = idForState(Math.abs(pseudoRandom % 50) + 1, state);
-            int id = state;
+            int id = initialPK(state);
             if (table.equals(customer)) {
                 return new Object[]{id};
             }
@@ -132,6 +86,11 @@ public final class CoiMT extends HapiMTBase {
                 return new Object[]{id, parentId(id, pseudoRandom)};
             }
             throw new AssertionError(table);
+        }
+
+        protected int initialPK(byte state) {
+            //return idForState(Math.abs(pseudoRandom % 50) + 1, state);
+            return state;
         }
 
         private int parentId(int pkId, int seed) {

@@ -181,7 +181,7 @@ public class BasicWriter implements WriteThread {
         return pseudoRandom;
     }
 
-    protected String schema() {
+    public String schema() {
         return "ts1";
     }
 
