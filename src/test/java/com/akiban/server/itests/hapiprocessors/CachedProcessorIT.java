@@ -105,8 +105,8 @@ public final class CachedProcessorIT extends ApiTestBase {
         CountingCachedProcessor processor = new CountingCachedProcessor();
         final RowDataStructCollector collector = new RowDataStructCollector();
 
-        processor.processRequest(session, request(), collector, null);
-        processor.processRequest(session, request(), collector, null);
+        processor.processRequest(session(), request(), collector, null);
+        processor.processRequest(session(), request(), collector, null);
 
         assertEquals("rows scanned", 3, collector.getRowDataStructs(0).size());
         assertEquals("row structs", collector.getRowDataStructs(0), collector.getRowDataStructs(1));
@@ -118,9 +118,9 @@ public final class CachedProcessorIT extends ApiTestBase {
         CountingCachedProcessor processor = new CountingCachedProcessor();
         final RowDataStructCollector collector = new RowDataStructCollector();
 
-        processor.processRequest(session, request(), collector, null);
-        processor.processRequest(session, request("zebra"), collector, null);
-        processor.processRequest(session, request(), collector, null);
+        processor.processRequest(session(), request(), collector, null);
+        processor.processRequest(session(), request("zebra"), collector, null);
+        processor.processRequest(session(), request(), collector, null);
 
         assertEquals("rows scanned", 3, collector.getRowDataStructs(0).size());
         assertFalse("row structs were equal", collector.getRowDataStructs(0).equals(collector.getRowDataStructs(1)));

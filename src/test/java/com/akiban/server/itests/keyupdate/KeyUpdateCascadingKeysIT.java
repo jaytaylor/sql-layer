@@ -306,7 +306,7 @@ public class KeyUpdateCascadingKeysIT extends ApiTestBase
         // Records
         RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
+        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
         assertEquals(testVisitor.records(), realVisitor.records());
         // For a schema with cascading keys, all PK indexes are hkey equivalent, so there's nothing else
         // to check.
@@ -317,7 +317,7 @@ public class KeyUpdateCascadingKeysIT extends ApiTestBase
     {
         RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
+        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
         Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
         Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
         Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
@@ -422,17 +422,17 @@ public class KeyUpdateCascadingKeysIT extends ApiTestBase
 
     private void dbInsert(TestRow row) throws Exception
     {
-        testStore.writeRow(session, row);
+        testStore.writeRow(session(), row);
     }
 
     private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
     {
-        testStore.updateRow(session, oldRow, newRow, null);
+        testStore.updateRow(session(), oldRow, newRow, null);
     }
 
     private void dbDelete(TestRow row) throws Exception
     {
-        testStore.deleteRow(session, row);
+        testStore.deleteRow(session(), row);
     }
 
     private HKey hKey(TestRow row)

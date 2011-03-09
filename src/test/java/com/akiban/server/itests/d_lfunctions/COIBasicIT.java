@@ -59,10 +59,10 @@ public final class COIBasicIT extends ApiTestBase {
         int cId = createTable("coi", "c", "cid int key, name varchar(32)");
         int oId = createTable("coi", "o", "oid int key, c_id int, CONSTRAINT __akiban_fk_o FOREIGN KEY index1 (c_id) REFERENCES c(cid)");
         int iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY index2 (o_id) REFERENCES o(oid)");
-        AkibanInformationSchema ais = ddl().getAIS(session);
+        AkibanInformationSchema ais = ddl().getAIS(session());
 
         // Lots of checking, the more the merrier
-        final UserTable cTable = ais.getUserTable( ddl().getTableName(session, cId) );
+        final UserTable cTable = ais.getUserTable( ddl().getTableName(session(), cId) );
         {
             assertEquals("c.columns.size()", 2, cTable.getColumns().size());
             assertEquals("c.indexes.size()", 1, cTable.getIndexes().size());
@@ -75,7 +75,7 @@ public final class COIBasicIT extends ApiTestBase {
             assertEquals("parent join", null, cTable.getParentJoin());
             assertEquals("child joins.size", 1, cTable.getChildJoins().size());
         }
-        final UserTable oTable = ais.getUserTable( ddl().getTableName(session, oId) );
+        final UserTable oTable = ais.getUserTable( ddl().getTableName(session(), oId) );
         {
             assertEquals("c.columns.size()", 2, oTable.getColumns().size());
             assertEquals("c.indexes.size()", 2, oTable.getIndexes().size());
@@ -89,7 +89,7 @@ public final class COIBasicIT extends ApiTestBase {
             assertSame("parent join", cTable.getChildJoins().get(0), oTable.getParentJoin());
             assertEquals("child joins.size", 1, oTable.getChildJoins().size());
         }
-        final UserTable iTable = ais.getUserTable( ddl().getTableName(session, iId) );
+        final UserTable iTable = ais.getUserTable( ddl().getTableName(session(), iId) );
         {
             assertEquals("c.columns.size()", 3, iTable.getColumns().size());
             assertEquals("c.indexes.size()", 2, iTable.getIndexes().size());
@@ -161,13 +161,13 @@ public final class COIBasicIT extends ApiTestBase {
     @Test(expected=UnsupportedDropException.class)
     public void dropTableRoot() throws InvalidOperationException {
         final TableIds tids = createTables();
-        ddl().dropTable(session, tableName(tids.c));
+        ddl().dropTable(session(), tableName(tids.c));
     }
 
     @Test(expected=UnsupportedDropException.class)
     public void dropTableMiddle() throws InvalidOperationException {
         final TableIds tids = createTables();
-        ddl().dropTable(session, tableName(tids.o));
+        ddl().dropTable(session(), tableName(tids.o));
     }
 
     @Test
@@ -189,13 +189,13 @@ public final class COIBasicIT extends ApiTestBase {
 
         expectFullRows(tids.coi, cRow, oRow, iRow);
 
-        ddl().dropTable(session, tableName(tids.i));
+        ddl().dropTable(session(), tableName(tids.i));
         expectFullRows(tids.coi, cRow, oRow);
 
-        ddl().dropTable(session, tableName(tids.o));
+        ddl().dropTable(session(), tableName(tids.o));
         expectFullRows(tids.coi, cRow);
 
-        ddl().dropTable(session, tableName(tids.c));
+        ddl().dropTable(session(), tableName(tids.c));
 
         try {
             expectFullRows(tids.coi);
@@ -217,11 +217,11 @@ public final class COIBasicIT extends ApiTestBase {
     @Test
     public void dropGroup() throws InvalidOperationException {
         final TableIds tids = createTables();
-        final String groupName = ddl().getAIS(session).getUserTable(tableName(tids.i)).getGroup().getName();
+        final String groupName = ddl().getAIS(session()).getUserTable(tableName(tids.i)).getGroup().getName();
 
-        ddl().dropGroup(session, groupName);
+        ddl().dropGroup(session(), groupName);
 
-        AkibanInformationSchema ais = ddl().getAIS(session);
+        AkibanInformationSchema ais = ddl().getAIS(session());
         assertNull("expected no table", ais.getUserTable("coi", "c"));
         assertNull("expected no table", ais.getUserTable("coi", "o"));
         assertNull("expected no table", ais.getUserTable("coi", "i"));

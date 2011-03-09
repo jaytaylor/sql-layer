@@ -122,7 +122,7 @@ public final class DuplicateKeyValueMessageIT extends ApiTestBase {
         try {
             NewRow oldRow = createNewRow(tableId, 20, 21, 22, 23, "from setup");
             NewRow newRow = createNewRow(tableId, c0, c1, c2, c3, "from update");
-            dml().updateRow(session, oldRow, newRow, null);
+            dml().updateRow(session(), oldRow, newRow, null);
         } catch (DuplicateKeyException e) {
             dupMessageValid(e, indexName);
             return;
