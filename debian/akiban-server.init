@@ -77,7 +77,7 @@ case "$1" in
             exit 1 # not sure what the best error code to return here is?
         fi
         log_daemon_msg "Starting $DESC"
-        start_daemon -b -p "$pidfile" "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
+        start_daemon "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
         log_progress_msg "$DESC"
         log_end_msg 0
         ;;
@@ -87,11 +87,11 @@ case "$1" in
         case "$stat" in
             1) 
                 log_failure_msg "could not access pidfile or PID in pidfile is incorrect for $DESC"
-                exit "$stat"
+                exit 0 # zero exit code because apt-get remove fails otherwise
                 ;;
             3) 
                 log_failure_msg "$DESC is not running or no pidfile exists"
-                exit "$stat"
+                exit 0 # zero exit code because apt-get remove fails otherwise
                 ;;
         esac 
         log_daemon_msg "Stopping $DESC"

@@ -59,6 +59,7 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
@@ -82,7 +83,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     @Override
     public TableStatistics getTableStatistics(Session session, int tableId,
             boolean updateFirst) throws NoSuchTableException,
-            GenericInvalidOperationException {
+            GenericInvalidOperationException
+    {
+        logger.trace("stats for {} updating: {}", tableId, updateFirst);
         try {
             if (updateFirst) {
                 store().analyzeTable(session, tableId);
@@ -132,7 +135,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     @Override
     public CursorId openCursor(Session session, ScanRequest request)
             throws NoSuchTableException, NoSuchColumnException,
-            NoSuchIndexException, GenericInvalidOperationException {
+            NoSuchIndexException, GenericInvalidOperationException
+    {
+        logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
         }
@@ -149,6 +154,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         }
         Cursor oldCursor = cursors.put(cursorId, cursor);
         assert oldCursor == null : String.format("%s -> %s conflicted with %s", cursor, cursors, oldCursor);
+        logger.trace("cursor for scan: {} -> {}", System.identityHashCode(request), cursorId);
         return cursorId;
     }
 
@@ -243,6 +249,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                    GenericInvalidOperationException
 
     {
+        logger.trace("scanning up to {} row(s) from {}", limit, cursorId);
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
 
@@ -311,7 +318,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                CursorIsUnknownException,
                RowOutputException,
                NoSuchTableException,
-               GenericInvalidOperationException {
+               GenericInvalidOperationException
+    {
+        logger.trace("scanning up to {} row(s) from {}", limit, cursorId);
         final ScanData scanData = session.get(MODULE_NAME, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
@@ -443,7 +452,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
 
     @Override
     public void closeCursor(Session session, CursorId cursorId)
-            throws CursorIsUnknownException {
+            throws CursorIsUnknownException
+    {
+        logger.trace("closing cursor {}", cursorId);
         ArgumentValidation.notNull("cursor ID", cursorId);
         final ScanData scanData = session.remove(MODULE_NAME, cursorId);
         if (scanData == null) {
@@ -467,19 +478,22 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
 
     @Override
     public RowData convertNewRow(NewRow row) throws NoSuchTableException {
+        logger.trace("converting to RowData: {}", row);
         return row.toRowData();
     }
 
     @Override
     public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
-
+        logger.trace("converting to NewRow: {}", rowData);
         RowDef rowDef = ddlFunctions.getRowDef(rowData.getRowDefId());
         return NiceRow.fromRowData(rowData, rowDef);
     }
 
     @Override
     public List<NewRow> convertRowDatas(List<RowData> rowDatas)
-            throws NoSuchTableException {
+            throws NoSuchTableException
+    {
+        logger.trace("converting {} RowData(s) to NewRow", rowDatas.size());
         if (rowDatas.isEmpty()) {
             return Collections.emptyList();
         }
@@ -502,10 +516,13 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     public Long writeRow(Session session, NewRow row)
             throws NoSuchTableException, UnsupportedModificationException,
             TableDefinitionMismatchException, DuplicateKeyException,
-            GenericInvalidOperationException {
+            GenericInvalidOperationException
+    {
+        logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
         try {
             store().writeRow(session, rowData);
+            increment(StatisticsService.CountingStat.INSERTS);
             return null;
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
@@ -518,10 +535,13 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     public void deleteRow(Session session, NewRow row)
             throws NoSuchTableException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, NoSuchRowException,
-            TableDefinitionMismatchException, GenericInvalidOperationException {
+            TableDefinitionMismatchException, GenericInvalidOperationException
+    {
+        logger.trace("deleting a row");
         final RowData rowData = niceRowToRowData(row);
         try {
             store().deleteRow(session, rowData);
+            increment(StatisticsService.CountingStat.DELETES);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -530,7 +550,8 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     }
 
     private RowData niceRowToRowData(NewRow row) throws NoSuchTableException,
-            TableDefinitionMismatchException {
+            TableDefinitionMismatchException
+    {;
         try {
             return row.toRowData();
         } catch (EncodingException e) {
@@ -543,13 +564,16 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             throws NoSuchTableException, DuplicateKeyException,
             TableDefinitionMismatchException, UnsupportedModificationException,
             ForeignKeyConstraintDMLException, NoSuchRowException,
-            GenericInvalidOperationException {
+            GenericInvalidOperationException
+    {
+        logger.trace("updating a row");
         final RowData oldData = niceRowToRowData(oldRow);
         final RowData newData = niceRowToRowData(newRow);
 
         LegacyUtils.matchRowDatas(oldData, newData);
         try {
             store().updateRow(session, oldData, newData, columnSelector);
+            increment(StatisticsService.CountingStat.UPDATES);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -561,7 +585,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     @Override
     public void truncateTable(final Session session, final int tableId)
             throws NoSuchTableException, UnsupportedModificationException,
-            ForeignKeyConstraintDMLException, GenericInvalidOperationException {
+            ForeignKeyConstraintDMLException, GenericInvalidOperationException
+    {
+        logger.trace("truncating tableId={}", tableId);
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
@@ -636,5 +662,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         if (thrown != null) {
             throw new RuntimeException("Internal error", thrown);
         }
+    }
+
+    private void increment(StatisticsService.CountingStat which) {
+        serviceManager().getServiceByClass(StatisticsService.class).incrementCount(which);
     }
 }
