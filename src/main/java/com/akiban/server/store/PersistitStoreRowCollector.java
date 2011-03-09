@@ -18,19 +18,17 @@
  */
 package com.akiban.server.store;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.akiban.ais.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -43,8 +41,7 @@ import com.persistit.exception.PersistitException;
 
 public class PersistitStoreRowCollector implements RowCollector {
 
-    static final Logger LOG = LoggerFactory.getLogger(PersistitStoreRowCollector.class
-            .getName());
+    static final Logger LOG = LoggerFactory.getLogger(PersistitStoreRowCollector.class.getName());
 
     private static final Tap SCAN_NEXT_ROW_TAP = Tap.add("read: next_row");
     
@@ -94,6 +91,8 @@ public class PersistitStoreRowCollector implements RowCollector {
     // false: scan index
     private boolean traverseMode;
 
+    private int deepRun;
+
     private int prefixModeIndexField = -1;
 
     private Exchange iEx;
@@ -117,6 +116,8 @@ public class PersistitStoreRowCollector implements RowCollector {
     private int repeatedRows;
 
     private RowTransport transport;
+
+    private final Map<Integer, Object[]> nulls = new HashMap<Integer, Object[]>();
 
     /**
      * Structure that maps the index key field depth to a RowData's field index.
@@ -351,7 +352,7 @@ public class PersistitStoreRowCollector implements RowCollector {
             }
         }
         key.clear();
-        return new KeyFilter(terms, 0, isDeepMode() ? Integer.MAX_VALUE : terms.length);
+        return new KeyFilter(terms, 0, terms.length);
     }
 
     /**
@@ -626,20 +627,25 @@ public class PersistitStoreRowCollector implements RowCollector {
                         final int keySize = hKey.getEncodedSize();
                         hKey.setEncodedSize(hKey.getIndex());
                         hEx.fetch();
-                        // TODO: ORPHANS - Don't assume the row with the current key actually exists.
-                        prepareRow(hEx, level);
+                        if (hEx.getValue().isDefined()) {
+                            prepareRow(hEx, level);
+                        } else {
+                            pendingRowData[level].createRow(rowDef, nulls(rowDef.getFieldCount()), true);
+                        }
                         if (level + 1 < pendingRowData.length) {
                             pendingRowData[level + 1].differsFromPredecessorAtKeySegment(rowDef.getHKeyDepth());
                         }
                         hKey.copyTo(lastKey);
                         hKey.setEncodedSize(keySize);
-
                         if (level < pendingFromLevel) {
                             pendingFromLevel = level;
                         }
                         if (level >= pendingToLevel) {
                             pendingToLevel = level + 1;
                         }
+                    }
+                    if (level == projectedRowDefs.length - 1 && isDeepMode()) {
+                        deepRun = hKey.getEncodedSize();
                     }
                 }
                 traverseMode = true;
@@ -653,7 +659,34 @@ public class PersistitStoreRowCollector implements RowCollector {
                 //
                 // Traverse
                 //
-                final boolean found = hEx.traverse(direction, hFilter, MAX_SHORT_RECORD);
+                boolean found;
+                //
+                // When deepRun > 0, do a "deep-mode" scan of rows, meaning
+                // return any descendants of the leaf-most table in the
+                // projectedRowDef array.  Whenever deepRun is non zero,
+                // a row of the leaf-most table has already been prepared.
+                // Call that row rleaf.
+                //
+                // The test on firstUniqueByteIndex determines whether the
+                // new key found in the traverse method is a descendant of
+                // rleaf.  If so, then prepare the row.  If not, then do the
+                // additional test to determine whether that key _would_ have
+                // been accepted by the KeyFilter traverse in the else-clause.
+                // If so, then we may or may not have a sibling of rleaf to
+                // also process.
+                //
+                if (deepRun > 0) {
+                    found = hEx.traverse(direction, true, MAX_SHORT_RECORD);
+                    if (found && hKey.firstUniqueByteIndex(lastKey) < deepRun) {
+                        deepRun = 0;
+                        found = hFilter.selected(hKey);
+                        if (!found) {
+                            found = hEx.traverse(direction, hFilter, MAX_SHORT_RECORD);
+                        }
+                    }
+                } else {
+                    found = hEx.traverse(direction, hFilter, MAX_SHORT_RECORD);
+                }
                 direction = isAscending() ? Key.GT : Key.LT;
                 
                 if (!found
@@ -664,6 +697,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                         break;
                     }
                     traverseMode = false;
+                    deepRun = 0;
                     //
                     // To outer while-loop
                     //
@@ -674,7 +708,8 @@ public class PersistitStoreRowCollector implements RowCollector {
                     // Get the rest of the value
                     hEx.fetch();
                 }
-                if (isDeepMode() && depth > projectedRowDefs[projectedRowDefs.length - 1].getHKeyDepth()) {
+                if (deepRun > 0 &&
+                    depth > projectedRowDefs[projectedRowDefs.length - 1].getHKeyDepth()) {
                     // Current row's type is deeper that the last projectedRowDef. E.g., projectedRowDefs
                     // contains [Customer, Order] and the current row is an Item. The last slot in pendingRowData
                     // gets reused to store the row and should then be immediately delivered on the next pass through
@@ -697,6 +732,9 @@ public class PersistitStoreRowCollector implements RowCollector {
                                 pendingFromLevel = level;
                             }
                             pendingToLevel = level + 1;
+                            if (level == projectedRowDefs.length - 1 && isDeepMode()) {
+                                deepRun = hKey.getEncodedSize();
+                            }
                             break;
                         }
                     }
@@ -819,6 +857,16 @@ public class PersistitStoreRowCollector implements RowCollector {
     // Used by indexer
     KeyFilter getHFilter() {
         return hFilter;
+    }
+
+    private Object[] nulls(int n)
+    {
+        Object[] nullArray = nulls.get(n);
+        if (nullArray == null) {
+            nullArray = new Object[n];
+            nulls.put(n, nullArray);
+        }
+        return nullArray;
     }
 
     private interface RowTransport

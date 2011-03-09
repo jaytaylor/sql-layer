@@ -245,7 +245,28 @@
         "get" : "coia:customer:(orders)cid_copy=6",
         "expect result" :
         {
-            "@customer" : []
+            "@customer" :
+            [
+                {
+                    "cid" : null,
+                    "@orders" :
+                    [
+                        {
+                            "cid" : 6,
+                            "oid" : 6,
+                            "cid_copy" : 6,
+                            "@item" :
+                            [
+                                {
+                                    "cid" : 6,
+                                    "oid" : 6,
+                                    "iid" : 6
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
     },
     "orphan:c_i_" : {
