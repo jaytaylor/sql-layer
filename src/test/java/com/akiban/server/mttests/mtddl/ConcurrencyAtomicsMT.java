@@ -205,7 +205,6 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 NewRow oldMr = new NiceRow(tableId);
                 oldMr.put(0, 1L);
                 NewRow updatedMr = new NiceRow(tableId);
-                updatedMr.put(0, 1L);
                 updatedMr.put(1, "a snowman");
 
                 Timing.sleep(2000);
@@ -228,6 +227,55 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 Arrays.asList(
                         createNewRow(tableId, 1L, "a snowman"),
                         createNewRow(tableId, 2L, "xtreme weather")
+                )
+        );
+    }
+
+    @Test
+    public void updateIndexedColumnAndPKWhileScanning() throws Exception {
+        final int tableId = tableWithTwoRows();
+        final int SCAN_WAIT = 5000;
+
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
+        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+//        scanCallable = TransactionalTimedCallable.withRunnable( scanCallable, 10, 1000 );
+//        scanCallable = TransactionalTimedCallable.withoutRunnable(scanCallable);
+
+        TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                NewRow oldSnowman = new NiceRow(tableId);
+                oldSnowman.put(0, 2L);
+                NewRow updatedSnowman = new NiceRow(tableId);
+                updatedSnowman.put(0, 2L);
+                updatedSnowman.put(1, "xtreme weather");
+
+                NewRow oldMr = new NiceRow(tableId);
+                oldMr.put(0, 1L);
+                NewRow updatedMr = new NiceRow(tableId);
+                updatedMr.put(0, 10L);
+                updatedMr.put(1, "a snowman");
+
+                Timing.sleep(2000);
+                timePoints.mark("UPDATE: IN");
+                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(1));
+                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(0, 1));
+                timePoints.mark("UPDATE: OUT");
+                return null;
+            }
+        };
+
+        scanUpdateConfirm(
+                tableId,
+                scanCallable,
+                updateCallable,
+                Arrays.asList(
+                        createNewRow(tableId, 2L, "mr melty"),
+                        createNewRow(tableId, 2L, "xtreme weather")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 2L, "xtreme weather"),
+                        createNewRow(tableId, 10L, "a snowman")
                 )
         );
     }
