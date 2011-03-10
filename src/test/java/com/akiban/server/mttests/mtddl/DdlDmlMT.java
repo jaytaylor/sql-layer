@@ -52,32 +52,6 @@ public final class DdlDmlMT extends ApiTestBase {
     private static final String SCHEMA = "cold";
     private static final String TABLE = "frosty";
 
-    /**
-     * Tests dropping an index while a scan is going on. This is done with some guesswork, but with enough leeway
-     * that it should provide consistent results.
-     *
-     * The control flow is:
-     * <pre>
-     * Thread A    |  Thread B
-     * ============|============
-     * start scan  |  wait 5 sec
-     * ------------|    4...
-     * wait 10 sec |    3...
-     *   9...      |    2...
-     *   8...      |    1...
-     *   7...      |------------
-     *   6...      | drop index
-     *   5...      |------------
-     *   4...      |
-     *   3...      |
-     *   2...      |
-     *   1...      |
-     * ------------|
-     * finish scan |
-     * ============|============
-     * </pre>
-     * @throws Exception not expected
-     */
     @Test
     public void dropIndexWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
