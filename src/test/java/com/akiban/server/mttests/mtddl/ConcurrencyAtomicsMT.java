@@ -61,7 +61,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 10000;
 
-        int indexId = ddl().getUserTable(session, new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -111,9 +111,9 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         }
 
         while(true) {
-            final Index index = ddl().getUserTable(session, tableName).getIndex("age");
+            final Index index = ddl().getUserTable(session(), tableName).getIndex("age");
             final Collection<String> indexNameCollection = Collections.singleton(index.getIndexName().getName());
-            final int tableId = ddl().getTableId(session, tableName);
+            final int tableId = ddl().getTableId(session(), tableName);
             assertEquals("table id changed", initialTableId, tableId);
             
             TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
@@ -145,7 +145,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             else {
                 assertEquals("number of rows scanned", NUMBER_OF_ROWS, scanResult.getItem().size());
             }
-            ddl().createIndexes(session, Collections.singleton(index));
+            ddl().createIndexes(session(), Collections.singleton(index));
         }
     }
 
@@ -154,7 +154,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 10000;
 
-        int indexId = ddl().getUserTable(session, new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override

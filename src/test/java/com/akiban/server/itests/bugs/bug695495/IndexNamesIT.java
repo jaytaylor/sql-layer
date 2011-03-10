@@ -163,7 +163,7 @@ public final class IndexNamesIT extends ApiTestBase {
     @Test
     public void uniqueWithExplicitKeyAndFullName() {
         try {
-            ddl().createTable(session, "s1", "CREATE TABLE p1(parentc1 int key)");
+            ddl().createTable(session(), "s1", "CREATE TABLE p1(parentc1 int key)");
         } catch (InvalidOperationException e) {
             throw new TestException("CREATE TABLE p1(parentc1 int key)", e);
         }
@@ -286,11 +286,11 @@ public final class IndexNamesIT extends ApiTestBase {
         String ddl = ddlBuilder.toString();
         debug(ddl);
         try {
-            ddl().createTable(session, "s1", ddl);
+            ddl().createTable(session(), "s1", ddl);
         } catch (InvalidOperationException e) {
             throw new TestException("creating DDL: " + ddl, e);
         }
-        return ddl().getAIS(session).getUserTable("s1", tableName);
+        return ddl().getAIS(session()).getUserTable("s1", tableName);
     }
 
     protected UserTable createTableWithIndexes(String indexDDL) {
@@ -299,23 +299,23 @@ public final class IndexNamesIT extends ApiTestBase {
         ddl += "\n);";
         debug(ddl);
         try {
-            ddl().createTable(session, "s1", ddl);
+            ddl().createTable(session(), "s1", ddl);
         } catch (InvalidOperationException e) {
             throw new TestException("creating DDL: " + ddl, e);
         }
-        return ddl().getAIS(session).getUserTable("s1", "t1");
+        return ddl().getAIS(session()).getUserTable("s1", "t1");
     }
 
     protected void createParentTables() {
         final String p1 = "CREATE TABLE p1(parentc1 int key)";
         final String p2 = "CREATE TABLE p2(parentc1 int, parentc2 int, PRIMARY KEY (parentc1, parentc2))";
         try {
-            ddl().createTable(session, "s1", p1);
+            ddl().createTable(session(), "s1", p1);
         } catch (InvalidOperationException e) {
             throw new TestException(p1, e);
         }
         try {
-            ddl().createTable(session, "s1", p2);
+            ddl().createTable(session(), "s1", p2);
         } catch (InvalidOperationException e) {
             throw new TestException(p2, e);
         }

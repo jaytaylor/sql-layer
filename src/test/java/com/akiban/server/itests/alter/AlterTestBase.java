@@ -44,7 +44,7 @@ public class AlterTestBase extends ApiTestBase {
     public Index addIndexToAIS(AkibanInformationSchema ais, String sname, String tname, String iname,
             String[] refColumns, boolean isUnique) {
         Table table = ais.getTable(sname, tname);
-        Table curTable = ddl().getAIS(session).getTable(sname, tname);
+        Table curTable = ddl().getAIS(session()).getTable(sname, tname);
         Index index = Index.create(ais, table, iname, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
 
         if(refColumns != null) {

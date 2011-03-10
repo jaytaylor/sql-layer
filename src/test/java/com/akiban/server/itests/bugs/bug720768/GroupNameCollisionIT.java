@@ -18,7 +18,6 @@ package com.akiban.server.itests.bugs.bug720768;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.itests.ApiTestBase;
@@ -42,7 +41,7 @@ public class GroupNameCollisionIT extends ApiTestBase {
             throw new TestException(e);
         }
 
-        AkibanInformationSchema ais = ddl().getAIS(session);
+        AkibanInformationSchema ais = ddl().getAIS(session());
         final Group group1 = ais.getUserTable("s1", "t").getGroup();
         final Group group2 = ais.getUserTable("s2", "t").getGroup();
         if (group1.getName().equals(group2.getName())) {

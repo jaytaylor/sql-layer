@@ -147,7 +147,7 @@ public class ApiTestBase {
     private DMLFunctions dml;
     private DDLFunctions ddl;
     private ServiceManager sm;
-    protected Session session;
+    private Session session;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -188,6 +188,10 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
+    protected final Session session() {
+        return session;
+    }
+
     protected final PersistitStore persistitStore() {
         return (PersistitStore) sm.getStore();
     }
@@ -202,8 +206,8 @@ public class ApiTestBase {
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
-        ddl().createTable(session, schema, String.format("CREATE TABLE %s (%s)", table, definition));
-        return ddl().getTableId(session, new TableName(schema, table));
+        ddl().createTable(session(), schema, String.format("CREATE TABLE %s (%s)", table, definition));
+        return ddl().getTableId(session(), new TableName(schema, table));
     }
 
     protected final int createTable(String schema, String table, String... definitions) throws InvalidOperationException {
@@ -224,7 +228,7 @@ public class ApiTestBase {
      * @throws InvalidOperationException for various reasons :)
      */
     protected final void expectRowCount(int tableId, long rowsExpected) throws InvalidOperationException {
-        TableStatistics tableStats = dml().getTableStatistics(session, tableId, true);
+        TableStatistics tableStats = dml().getTableStatistics(session(), tableId, true);
         assertEquals("table ID", tableId, tableStats.getRowDefId());
         assertEquals("rows by TableStatistics", rowsExpected, tableStats.getRowCount());
     }
@@ -235,7 +239,7 @@ public class ApiTestBase {
 
     protected final List<RowData> scanFull(ScanRequest request) {
         try {
-            return RowDataOutput.scanFull(session, dml(), request);
+            return RowDataOutput.scanFull(session(), dml(), request);
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
@@ -255,7 +259,7 @@ public class ApiTestBase {
 
     protected final void writeRows(NewRow... rows) throws InvalidOperationException {
         for (NewRow row : rows) {
-            dml().writeRow(session, row);
+            dml().writeRow(session(), row);
         }
     }
 
@@ -264,7 +268,7 @@ public class ApiTestBase {
     }
 
     protected final ScanAllRequest scanAllRequest(int tableId) throws NoSuchTableException {
-        Table uTable = ddl().getTable(session, tableId);
+        Table uTable = ddl().getTable(session(), tableId);
         Set<Integer> allCols = new HashSet<Integer>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
@@ -308,16 +312,16 @@ public class ApiTestBase {
     protected final void dropAllTables() throws InvalidOperationException {
         // Can't drop a parent before child. Get all to drop and sort children first (they always have higher id).
         List<Integer> allIds = new ArrayList<Integer>();
-        for (Map.Entry<TableName, UserTable> entry : ddl().getAIS(session).getUserTables().entrySet()) {
+        for (Map.Entry<TableName, UserTable> entry : ddl().getAIS(session()).getUserTables().entrySet()) {
             if (!"akiban_information_schema".equals(entry.getKey().getSchemaName())) {
                 allIds.add(entry.getValue().getTableId());
             }
         }
         Collections.sort(allIds, Collections.reverseOrder());
         for (Integer id : allIds) {
-            ddl().dropTable(session, tableName(id));
+            ddl().dropTable(session(), tableName(id));
         }
-        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
+        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
             if ("akiban_information_schema".equals(iter.next().getSchemaName())) {
                 iter.remove();
@@ -352,7 +356,7 @@ public class ApiTestBase {
 
     protected final int tableId(TableName tableName) {
         try {
-            return ddl().getTableId(session, tableName);
+            return ddl().getTableId(session(), tableName);
         } catch (NoSuchTableException e) {
             throw new TestException(e);
         }
@@ -360,7 +364,7 @@ public class ApiTestBase {
 
     protected final TableName tableName(int tableId) {
         try {
-            return ddl().getTableName(session, tableId);
+            return ddl().getTableName(session(), tableId);
         } catch (NoSuchTableException e) {
             throw new TestException(e);
         }
@@ -373,7 +377,7 @@ public class ApiTestBase {
     protected final UserTable getUserTable(int tableId) {
         final Table table;
         try {
-            table = ddl().getTable(session, tableId);
+            table = ddl().getTable(session(), tableId);
         } catch (NoSuchTableException e) {
             throw new TestException(e);
         }
@@ -384,11 +388,11 @@ public class ApiTestBase {
     }
 
     protected final Map<TableName,UserTable> getUserTables() {
-        return stripAISTables(ddl().getAIS(session).getUserTables());
+        return stripAISTables(ddl().getAIS(session()).getUserTables());
     }
 
     protected final Map<TableName,GroupTable> getGroupTables() {
-        return stripAISTables(ddl().getAIS(session).getGroupTables());
+        return stripAISTables(ddl().getAIS(session()).getGroupTables());
     }
 
     private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
