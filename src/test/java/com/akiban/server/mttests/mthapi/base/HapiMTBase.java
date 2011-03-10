@@ -25,15 +25,20 @@ import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Strings;
 import com.akiban.util.ThreadlessRandom;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -193,26 +198,48 @@ public class HapiMTBase extends ApiTestBase {
             LOG.trace("{} writes", stats.getWrites());
 
             if (!errors.isEmpty()) {
-                List<Throwable> errorCauses = new ArrayList<Throwable>();
-                int i = 1;
-                int count = errors.size();
-                for (Throwable error : errors) {
-                    LOG.trace(String.format("Error %d of %d", i, count), error);
-                    Throwable errorCause = error;
-                    if (errorCause instanceof HapiReadThread.UnexpectedException) {
-                        errorCause = errorCause.getCause();
-                    }
-                    if (errorCause instanceof ExecutionException) {
-                        errorCause = errorCause.getCause();
-                    }
-                    errorCauses.add(errorCause);
-                }
-                String errString = count + " error" + (count==1?": " : "s: ") + errorCauses;
-                fail(errString);
+                failWithErrors(errors);
             }
         } catch (Exception e) {
             throw new RunThreadsException(e);
         }
+    }
+
+    private static void failWithErrors(Collection<Throwable> errors) {
+        Map<EqualishExceptionWrapper,Integer> tracesByCount = new HashMap<EqualishExceptionWrapper, Integer>();
+        for (Throwable error : errors) {
+            EqualishExceptionWrapper wrapper = new EqualishExceptionWrapper(error);
+            Integer count = tracesByCount.get(wrapper);
+            count = (count == null) ? 1 : count + 1;
+            tracesByCount.put(wrapper, count);
+        }
+
+        StringBuilder errBuilder = new StringBuilder();
+        int pairsCount = tracesByCount.size();
+        errBuilder.append(pairsCount).append(" failure pattern");
+        if (pairsCount != 1) {
+            errBuilder.append('s');
+        }
+        errBuilder.append(':').append(Strings.nl());
+        for (Map.Entry<EqualishExceptionWrapper,Integer> pair : tracesByCount.entrySet()) {
+            Throwable error = pair.getKey().get();
+            int count = pair.getValue();
+
+            StringWriter stringWriter = new StringWriter();
+            PrintWriter printer = new PrintWriter(stringWriter);
+            error.printStackTrace(printer);
+            printer.flush();
+            stringWriter.flush();
+
+
+            errBuilder.append(count).append(" instance");
+            if (count != 1) {
+                errBuilder.append('s');
+            }
+            errBuilder.append(" of this general pattern:").append(Strings.nl());
+            errBuilder.append(stringWriter.toString());
+        }
+        fail(errBuilder.toString());
     }
 
     protected ExecutorService getExecutorService() {
