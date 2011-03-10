@@ -26,10 +26,11 @@ import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.mttests.Util;
-import com.akiban.server.mttests.Util.TimedCallable;
-import com.akiban.server.mttests.Util.TimedResult;
-import com.akiban.server.mttests.Util.TimePoints;
+import com.akiban.server.mttests.mtutil.TimePoints;
+import com.akiban.server.mttests.mtutil.TimePointsComparison;
+import com.akiban.server.mttests.mtutil.TimedCallable;
+import com.akiban.server.mttests.mtutil.Timing;
+import com.akiban.server.mttests.mtutil.TimedResult;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import org.junit.Test;
@@ -63,7 +64,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             @Override
             protected Void doCall(TimePoints timePoints) throws Exception {
                 TableName table = new TableName(SCHEMA, TABLE);
-                Util.sleep(2000);
+                Timing.sleep(2000);
                 timePoints.mark("INDEX: DROP>");
                 ddl().dropIndexes(new SessionImpl(), table, Collections.singleton("name"));
                 timePoints.mark("INDEX: <DROP");
@@ -78,7 +79,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
         TimedResult<Void> dropIndexResult = dropIndexFuture.get();
 
-        new Util.TimePointsComparison(scanResult, dropIndexResult).verify(
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
                 "SCAN: START",
                 "SCAN: PAUSE",
                 "INDEX: DROP>",
@@ -112,7 +113,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 NewRow updated = new NiceRow(tableId);
                 updated.put(0, 2L);
                 updated.put(1, "icebox");
-                Util.sleep(2000);
+                Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
                 dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
@@ -127,7 +128,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
         TimedResult<Void> updateResult = updateFuture.get();
 
-        new Util.TimePointsComparison(scanResult, updateResult).verify(
+        new TimePointsComparison(scanResult, updateResult).verify(
                 "SCAN: START",
                 "SCAN: PAUSE",
                 "UPDATE: IN",
@@ -168,7 +169,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 timePoints.mark("SCAN: START");
                 dml().scanSome(session, cursorId, output, 1);
                 timePoints.mark("SCAN: PAUSE");
-                Util.sleep(sleepBetween);
+                Timing.sleep(sleepBetween);
                 dml().scanSome(session, cursorId, output, -1);
                 timePoints.mark("SCAN: FINISH");
 
