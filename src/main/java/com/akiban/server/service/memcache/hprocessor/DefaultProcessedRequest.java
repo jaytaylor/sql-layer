@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
+public /* needed by integration tests */ final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
     private final DDLFunctions ddlFunctions;
     private final Set<String> projectedTables;
     private final Session session;
@@ -41,7 +41,7 @@ final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
         this(request, session, new DDLFunctionsImpl());
     }
 
-    DefaultProcessedRequest(HapiGetRequest request, Session session, DDLFunctions ddlFunctions)
+    public /* needed by integration tests */ DefaultProcessedRequest(HapiGetRequest request, Session session, DDLFunctions ddlFunctions)
             throws HapiRequestException
     {
         super(request);

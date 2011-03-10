@@ -119,7 +119,6 @@ class Flatten(UnaryOperator):
         self._pending.add(Row(self._rowtype, flattened))
 
     def left_join_row(self):
-        row = None
         assert self._parent
         if self._left_join and self._child is None:
             flattened = {}
@@ -127,12 +126,9 @@ class Flatten(UnaryOperator):
                 flattened[field] = self._parent[field]
             for field in self._fields_in_child_only:
                 flattened[field] = None
-            row = Row(self._rowtype, flattened)
-        if row:
-            self._pending.add(row)
+            self._pending.add(Row(self._rowtype, flattened))
 
     def right_join_row(self):
-        row = None
         assert self._parent is None
         assert self._child
         if self._right_join:
@@ -141,6 +137,4 @@ class Flatten(UnaryOperator):
                 flattened[field] = None
             for field in self._child_type.value:
                 flattened[field] = self._child[field]
-            row = Row(self._rowtype, flattened)
-        if row:
-            self._pending.add(row)
+            self._pending.add(Row(self._rowtype, flattened))
