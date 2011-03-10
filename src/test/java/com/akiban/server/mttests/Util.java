@@ -85,13 +85,6 @@ public final class Util {
     public static class TimePointsComparison {
         private final SortedMap<Long,String> marks;
 
-        public TimePointsComparison(TimePoints... timePointsArray) {
-            marks = new TreeMap<Long, String>();
-            for (TimePoints timePoints : timePointsArray) {
-                marks.putAll(timePoints.getMarks());
-            }
-        }
-
         public TimePointsComparison(TimedResult<?>... timedResults) {
             marks = new TreeMap<Long, String>();
             for (TimedResult<?> timePoints : timedResults) {
