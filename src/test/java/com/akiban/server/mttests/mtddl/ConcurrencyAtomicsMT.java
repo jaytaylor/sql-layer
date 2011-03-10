@@ -167,32 +167,19 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             }
         };
 
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-        Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
-
-        TimedResult<List<NewRow>> scanResult = scanFuture.get();
-        TimedResult<Void> updateResult = updateFuture.get();
-
-        new TimePointsComparison(scanResult, updateResult).verify(
-                "SCAN: START",
-                "SCAN: PAUSE",
-                "UPDATE: IN",
-                "UPDATE: OUT",
-                "SCAN: FINISH"
-        );
-
-        List<NewRow> rowsScanned = scanResult.getItem();
-        List<NewRow> rowsExpected = Arrays.asList(
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "mr melty"),
-                createNewRow(tableId, 5L, "the snowman")
-        );
-        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
-
-        expectFullRows(tableId,
-                createNewRow(tableId, 2L, "mr melty"),
-                createNewRow(tableId, 5L, "the snowman")
+        scanUpdateConfirm(
+                tableId,
+                scanCallable,
+                updateCallable,
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "the snowman"),
+                        createNewRow(tableId, 2L, "mr melty"),
+                        createNewRow(tableId, 5L, "the snowman")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 2L, "mr melty"),
+                        createNewRow(tableId, 5L, "the snowman")
+                )
         );
     }
 
@@ -219,32 +206,19 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             }
         };
 
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-        Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
-
-        TimedResult<List<NewRow>> scanResult = scanFuture.get();
-        TimedResult<Void> updateResult = updateFuture.get();
-
-        new TimePointsComparison(scanResult, updateResult).verify(
-                "SCAN: START",
-                "SCAN: PAUSE",
-                "UPDATE: IN",
-                "UPDATE: OUT",
-                "SCAN: FINISH"
-        );
-
-        List<NewRow> rowsScanned = scanResult.getItem();
-        List<NewRow> rowsExpected = Arrays.asList(
-                createNewRow(tableId, 2L, "mr melty"),
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "xtreme weather")
-        );
-        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
-
-        expectFullRows(tableId,
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "xtreme weather")
+        scanUpdateConfirm(
+                tableId,
+                scanCallable,
+                updateCallable,
+                Arrays.asList(
+                        createNewRow(tableId, 2L, "mr melty"),
+                        createNewRow(tableId, 1L, "the snowman"),
+                        createNewRow(tableId, 2L, "xtreme weather")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "the snowman"),
+                        createNewRow(tableId, 2L, "xtreme weather")
+                )
         );
     }
 
@@ -271,6 +245,28 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             }
         };
 
+        scanUpdateConfirm(
+                tableId,
+                scanCallable,
+                updateCallable,
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "the snowman"),
+                        createNewRow(tableId, 2L, "icebox")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "the snowman"),
+                        createNewRow(tableId, 2L, "icebox")
+                )
+        );
+    }
+
+    private void scanUpdateConfirm(int tableId,
+                                   TimedCallable<List<NewRow>> scanCallable,
+                                   TimedCallable<Void> updateCallable,
+                                   List<NewRow> scanCallableExpected,
+                                   List<NewRow> endStateExpected)
+            throws Exception
+    {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
         Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
@@ -287,17 +283,9 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         );
 
         List<NewRow> rowsScanned = scanResult.getItem();
-        List<NewRow> rowsExpected = Arrays.asList(
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "icebox")
-        );
-        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
+        assertEquals("rows scanned (in order)", scanCallableExpected, rowsScanned);
 
-        expectFullRows(tableId,
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "icebox")
-        );
-
+        expectFullRows(tableId, endStateExpected.toArray( new NewRow[endStateExpected.size()] ));
     }
 
     private TimedCallable<List<NewRow>> getScanCallable(final int tableId, final int indexId, final int sleepBetween) {
