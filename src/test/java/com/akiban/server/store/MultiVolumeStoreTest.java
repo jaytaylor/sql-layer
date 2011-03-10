@@ -53,10 +53,10 @@ public class MultiVolumeStoreTest extends AkServerTestCase {
         // properly distributed.
         final Collection<Property> properties = new ArrayList<Property>();
         properties.add(property("akserver.treespace.1",
-                "test2/_akiban_customer:${datapath}/${schema}_customer.v0,create,pageSize:8K,"
+                "test2/_akiban_customer:${datapath}/${schema}_customer.v0,create,pageSize:${buffersize},"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("akserver.treespace.2",
-                "test*:${datapath}/${schema}.v0,create,pageSize:8K,"
+                "test*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);
         //
