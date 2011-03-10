@@ -17,8 +17,10 @@ package com.akiban.server.mttests.mtddl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.dml.EasyUseColumnSelector;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
@@ -37,7 +39,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -46,6 +47,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public final class DdlDmlMT extends ApiTestBase {
+
+    private static final String SCHEMA = "cold";
+    private static final String TABLE = "frosty";
 
     /**
      * Tests dropping an index while a scan is going on. This is done with some guesswork, but with enough leeway
@@ -74,16 +78,16 @@ public final class DdlDmlMT extends ApiTestBase {
      * @throws Exception not expected
      */
     @Test
-    public void dropIndexWaitsForScan() throws Exception {
+    public void dropIndexWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 10000;
 
-        int indexId = ddl().getUserTable(session, new TableName("cold", "frosty")).getIndex("name").getIndexId();
+        int indexId = ddl().getUserTable(session, new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall() throws Exception {
-                TableName table = new TableName("cold", "frosty");
+                TableName table = new TableName(SCHEMA, TABLE);
                 Util.sleep(2000);
                 ddl().dropIndexes(new SessionImpl(), table, Collections.singleton("name"));
                 return null;
@@ -106,6 +110,51 @@ public final class DdlDmlMT extends ApiTestBase {
 
         assertTrue("time took " + scanResult.getTime(), scanResult.getTime() >= SCAN_WAIT);
         assertTrue("time took " + dropIndexResult.getTime(), dropIndexResult.getTime() >= SCAN_WAIT);
+    }
+
+    @Test
+    public void updateRowWhileScanning() throws Exception {
+        final int tableId = tableWithTwoRows();
+        final int SCAN_WAIT = 10000;
+
+        int indexId = ddl().getUserTable(session, new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
+        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall() throws Exception {
+                NewRow old = new NiceRow(tableId);
+                old.put(0, 2L);
+                NewRow updated = new NiceRow(tableId);
+                updated.put(0, 2L);
+                updated.put(1, "icebox");
+                Util.sleep(2000);
+                dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(1));
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> updateResult = updateFuture.get();
+
+        List<NewRow> rowsScanned = scanResult.getItem();
+        List<NewRow> rowsExpected = Arrays.asList(
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "mr melty")
+        );
+        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
+
+        expectFullRows(tableId,
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "icebox")
+        );
+        
+        assertTrue("time took " + scanResult.getTime(), scanResult.getTime() >= SCAN_WAIT);
+        assertTrue("time took " + updateResult.getTime(), updateResult.getTime() >= SCAN_WAIT);
+
     }
 
     private TimedCallable<List<NewRow>> getScanCallable(final int tableId, final int indexId, final int sleepBetween) {
@@ -131,7 +180,7 @@ public final class DdlDmlMT extends ApiTestBase {
     }
 
     int tableWithTwoRows() throws InvalidOperationException {
-        int id = createTable("cold", "frosty", "id int key", "name varchar(32)", "key(name)");
+        int id = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
         writeRows(
             createNewRow(id, 1L, "the snowman"),
             createNewRow(id, 2L, "mr melty")
