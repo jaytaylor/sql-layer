@@ -126,7 +126,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
 
     private AkibanInformationSchema ais()
     {
-        return ddl().getAIS(session);
+        return ddl().getAIS(session());
     }
 
     private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
@@ -140,7 +140,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
     private Map<String, TableDefinition> createTableStatements(String schema) throws Exception
     {
         SchemaManager schemaManager = ((DDLFunctionsImpl) ddl()).schemaManager();
-        return schemaManager.getTableDefinitions(session, schema);
+        return schemaManager.getTableDefinitions(session(), schema);
     }
 
     private static final int BUFFER_SIZE = 100000; // 100K

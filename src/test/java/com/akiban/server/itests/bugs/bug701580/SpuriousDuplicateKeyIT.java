@@ -76,7 +76,7 @@ public final class SpuriousDuplicateKeyIT extends ApiTestBase {
      */
     private void confirmIds(String tableName, int startingAt, int expectedUIndexes, int expectedGIndexes)
             throws Exception {
-        UserTable uTable = ddl().getAIS(session).getUserTable("test", tableName);
+        UserTable uTable = ddl().getAIS(session()).getUserTable("test", tableName);
 
         Set<Integer> expectedUTableIds = new HashSet<Integer>();
         Set<Integer> actualUTableIds = new HashSet<Integer>();

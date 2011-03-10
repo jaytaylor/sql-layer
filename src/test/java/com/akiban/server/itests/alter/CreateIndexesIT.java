@@ -47,7 +47,7 @@ public final class CreateIndexesIT extends AlterTestBase {
     public void createIndexNoIndexes() throws InvalidOperationException {
         // Passing an empty list should work
         ArrayList<Index> indexes = new ArrayList<Index>();
-        ddl().createIndexes(session, indexes);
+        ddl().createIndexes(session(), indexes);
     }
     
     @Test(expected=IndexAlterException.class) 
@@ -56,8 +56,8 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Attempt to add index to unknown table
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "index", null, false);
-        ddl().getAIS(session).getUserTables().remove(new TableName("test", "t"));
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().getAIS(session()).getUserTables().remove(new TableName("test", "t"));
+        ddl().createIndexes(session(), getAllIndexes(ais));
     }
     
     @Test(expected=IndexAlterException.class) 
@@ -68,7 +68,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Attempt to add indexes to multiple tables
         addIndexToAIS(ais, "test", "t1", "index", null, false);
         addIndexToAIS(ais, "test", "t2", "index", null, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
     }
 
     @Test(expected=IndexAlterException.class) 
@@ -78,7 +78,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(tId);
         ais.getUserTables().values().iterator().next().setTableId(-1);
         addIndexToAIS(ais, "test", "t", "id", null, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
     }
     
     @Test(expected=IndexAlterException.class) 
@@ -88,7 +88,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "atable");
         Index.create(ais, table, "PRIMARY", 1, false, "PRIMARY");
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
     }
     
     @Test(expected=IndexAlterException.class) 
@@ -97,7 +97,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Attempt to add duplicate index name
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "PRIMARY", new String[]{"id"}, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
     }
     
     @Test(expected=IndexAlterException.class) 
@@ -106,11 +106,11 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Attempt to add duplicate index name
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
-        Table curTable = ddl().getAIS(session).getTable("test", "t");
+        Table curTable = ddl().getAIS(session()).getTable("test", "t");
         Index index = Index.create(ais, table, "id", -1, false, "KEY");
         Column refCol = Column.create(table, "foo", 0, Types.INT);
         index.addColumn(new IndexColumn(index, refCol, 0, true, 0));
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
     }
   
     @Test(expected=IndexAlterException.class) 
@@ -119,11 +119,11 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Attempt to add duplicate index name
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
-        Table curTable = ddl().getAIS(session).getTable("test", "t");
+        Table curTable = ddl().getAIS(session()).getTable("test", "t");
         Index index = Index.create(ais, table, "id", -1, false, "KEY");
         Column refCol = Column.create(table, "id", 0, Types.BLOB);
         index.addColumn(new IndexColumn(index, refCol, 0, true, 0));
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
     }
     
     
@@ -138,10 +138,10 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Create non-unique index on varchar
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"name"}, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
         
         // Index should exist on the UserTable
-        UserTable uTable = ddl().getAIS(session).getUserTable("test", "t");
+        UserTable uTable = ddl().getAIS(session()).getUserTable("test", "t");
         assertNotNull(uTable);
         assertNotNull(uTable.getIndex("name"));
         
@@ -156,20 +156,20 @@ public final class CreateIndexesIT extends AlterTestBase {
         int tId = createTable("test", "t", "id int primary key, name varchar(255)");
         
         expectRowCount(tId, 0);
-        dml().writeRow(session, createNewRow(tId, 1, "bob"));
-        dml().writeRow(session, createNewRow(tId, 2, "jim"));
+        dml().writeRow(session(), createNewRow(tId, 1, "bob"));
+        dml().writeRow(session(), createNewRow(tId, 2, "jim"));
         expectRowCount(tId, 2);
         
         // Create non-unique index on varchar
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"name"}, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
         assertEquals("New DDL",
                      "create table `test`.`t`(`id` int, `name` varchar(255), PRIMARY KEY(`id`), KEY `name`(`name`)) engine=akibandb",
-                     gen.createTable(ddl().getAIS(session).getUserTable("test", "t")));
+                     gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
@@ -184,34 +184,34 @@ public final class CreateIndexesIT extends AlterTestBase {
         
         // One customer 
         expectRowCount(cId, 0);
-        dml().writeRow(session, createNewRow(cId, 1, "bob"));
+        dml().writeRow(session(), createNewRow(cId, 1, "bob"));
         expectRowCount(cId, 1);
         
         // Two orders
         expectRowCount(oId, 0);
-        dml().writeRow(session, createNewRow(oId, 1, 1, "supplies"));
-        dml().writeRow(session, createNewRow(oId, 2, 1, "random"));
+        dml().writeRow(session(), createNewRow(oId, 1, 1, "supplies"));
+        dml().writeRow(session(), createNewRow(oId, 2, 1, "random"));
         expectRowCount(oId, 2);
         
         // Two/three items per order
         expectRowCount(iId, 0);
-        dml().writeRow(session, createNewRow(iId, 1, 1, "foo"));
-        dml().writeRow(session, createNewRow(iId, 2, 1, "bar"));
-        dml().writeRow(session, createNewRow(iId, 3, 2, "zap"));
-        dml().writeRow(session, createNewRow(iId, 4, 2, "fob"));
-        dml().writeRow(session, createNewRow(iId, 5, 2, "baz"));
+        dml().writeRow(session(), createNewRow(iId, 1, 1, "foo"));
+        dml().writeRow(session(), createNewRow(iId, 2, 1, "bar"));
+        dml().writeRow(session(), createNewRow(iId, 3, 2, "zap"));
+        dml().writeRow(session(), createNewRow(iId, 4, 2, "fob"));
+        dml().writeRow(session(), createNewRow(iId, 5, 2, "baz"));
         expectRowCount(iId, 5);
         
         // Create index on an varchar (note: in the "middle" of a group, shifts IDs after, etc)
         AkibanInformationSchema ais = createAISWithTable(oId);
         addIndexToAIS(ais, "coi", "o", "tag", new String[]{"tag"}, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
         assertEquals("New DDL",
                      "create table `coi`.`o`(`oid` int, `c_id` int, `tag` varchar(32), PRIMARY KEY(`oid`), KEY `tag`(`tag`), CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb",
-                     gen.createTable(ddl().getAIS(session).getUserTable("coi", "o")));
+                     gen.createTable(ddl().getAIS(session()).getUserTable("coi", "o")));
         
         // Get all customers
         List<NewRow> rows = scanAll(new ScanAllRequest(cId, null));
@@ -231,21 +231,21 @@ public final class CreateIndexesIT extends AlterTestBase {
         int tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255)");
         
         expectRowCount(tId, 0);
-        dml().writeRow(session, createNewRow(tId, 1, "foo", "bar"));
-        dml().writeRow(session, createNewRow(tId, 2, "zap", "snap"));
-        dml().writeRow(session, createNewRow(tId, 3, "baz", "fob"));
+        dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
+        dml().writeRow(session(), createNewRow(tId, 2, "zap", "snap"));
+        dml().writeRow(session(), createNewRow(tId, 3, "baz", "fob"));
         expectRowCount(tId, 3);
         
         // Create non-unique compound index on two varchars
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"first","last"}, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
         assertEquals("New DDL",
                      "create table `test`.`t`(`id` int, `first` varchar(255), `last` varchar(255), PRIMARY KEY(`id`), KEY `name`(`first`, `last`)) engine=akibandb",
-                     gen.createTable(ddl().getAIS(session).getUserTable("test", "t")));
+                     gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
@@ -257,21 +257,21 @@ public final class CreateIndexesIT extends AlterTestBase {
         int tId = createTable("test", "t", "id int primary key, state char(2)");
         
         expectRowCount(tId, 0);
-        dml().writeRow(session, createNewRow(tId, 1, "IA"));
-        dml().writeRow(session, createNewRow(tId, 2, "WA"));
-        dml().writeRow(session, createNewRow(tId, 3, "MA"));
+        dml().writeRow(session(), createNewRow(tId, 1, "IA"));
+        dml().writeRow(session(), createNewRow(tId, 2, "WA"));
+        dml().writeRow(session(), createNewRow(tId, 3, "MA"));
         expectRowCount(tId, 3);
         
         // Create unique index on a char(2)
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "state", new String[]{"state"}, true);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
         assertEquals("New DDL",
                      "create table `test`.`t`(`id` int, `state` char(2), PRIMARY KEY(`id`), UNIQUE `state`(`state`)) engine=akibandb",
-                     gen.createTable(ddl().getAIS(session).getUserTable("test", "t")));
+                     gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
@@ -283,22 +283,22 @@ public final class CreateIndexesIT extends AlterTestBase {
         int tId = createTable("test", "t", "id int primary key, otherId int, price decimal(10,2)");
         
         expectRowCount(tId, 0);
-        dml().writeRow(session, createNewRow(tId, 1, 1337, "10.50"));
-        dml().writeRow(session, createNewRow(tId, 2, 5000, "10.50"));
-        dml().writeRow(session, createNewRow(tId, 3, 47000, "9.99"));
+        dml().writeRow(session(), createNewRow(tId, 1, 1337, "10.50"));
+        dml().writeRow(session(), createNewRow(tId, 2, 5000, "10.50"));
+        dml().writeRow(session(), createNewRow(tId, 3, 47000, "9.99"));
         expectRowCount(tId, 3);
         
         // Create unique index on an int, non-unique index on decimal
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "otherId", new String[]{"otherId"}, true);
         addIndexToAIS(ais, "test", "t", "price", new String[]{"price"}, false);
-        ddl().createIndexes(session, getAllIndexes(ais));
+        ddl().createIndexes(session(), getAllIndexes(ais));
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
         assertEquals("New DDL",
                      "create table `test`.`t`(`id` int, `otherId` int, `price` decimal(10, 2), PRIMARY KEY(`id`), UNIQUE `otherId`(`otherId`), KEY `price`(`price`)) engine=akibandb",
-                     gen.createTable(ddl().getAIS(session).getUserTable("test", "t")));
+                     gen.createTable(ddl().getAIS(session()).getUserTable("test", "t")));
         
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
