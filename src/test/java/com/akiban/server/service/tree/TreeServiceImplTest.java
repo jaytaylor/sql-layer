@@ -73,13 +73,13 @@ public class TreeServiceImplTest extends AkServerTestCase {
     public void buildValidSchemaMap() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
         properties.add(property("akserver.treespace.a",
-                "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
+                "drupal*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("akserver.treespace.b",
-                "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
+                "liveops*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("akserver.treespace.c",
-                "test*/_schema_:${datapath}/${schema}${tree}.v0,create,pageSize:8K,"
+                "test*/_schema_:${datapath}/${schema}${tree}.v0,create,pageSize:${buffersize},"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);
         try {
@@ -124,10 +124,10 @@ public class TreeServiceImplTest extends AkServerTestCase {
     public void testCreateVolume() throws Exception {
         final Collection<Property> properties = new ArrayList<Property>();
         properties.add(property("akserver.treespace.a",
-                "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
+                "drupal*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(property("akserver.treespace.b",
-                "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
+                "liveops*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp(properties);
         try {
