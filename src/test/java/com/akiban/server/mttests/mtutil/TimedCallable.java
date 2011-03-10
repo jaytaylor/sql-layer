@@ -15,15 +15,18 @@
 
 package com.akiban.server.mttests.mtutil;
 
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionImpl;
+
 import java.util.concurrent.Callable;
 
 public abstract class TimedCallable<T> implements Callable<TimedResult<T>> {
-    protected abstract T doCall(TimePoints timePoints) throws Exception;
+    protected abstract T doCall(TimePoints timePoints, Session session) throws Exception;
 
     @Override
     public final TimedResult<T> call() throws Exception {
         TimePoints timePoints = new TimePoints();
-        T result = doCall(timePoints);
+        T result = doCall(timePoints, new SessionImpl());
         return new TimedResult<T>(result, timePoints);
     }
 }

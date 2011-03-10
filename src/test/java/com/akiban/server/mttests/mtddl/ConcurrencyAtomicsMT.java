@@ -64,7 +64,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall(TimePoints timePoints) throws Exception {
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 TableName table = new TableName(SCHEMA, TABLE);
                 Timing.sleep(2000);
                 timePoints.mark("INDEX: DROP>");
@@ -114,7 +114,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             
             TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
                 @Override
-                protected Void doCall(TimePoints timePoints) throws Exception {
+                protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                     timePoints.mark("DROP: IN");
                     ddl().dropIndexes(new SessionImpl(), tableName, indexNameCollection);
                     timePoints.mark("DROP: OUT");
@@ -154,7 +154,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall(TimePoints timePoints) throws Exception {
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 NewRow old = new NiceRow(tableId);
                 old.put(0, 1L);
                 NewRow updated = new NiceRow(tableId);
@@ -190,17 +190,28 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+//        scanCallable = TransactionalTimedCallable.withRunnable( scanCallable, 10, 1000 );
+//        scanCallable = TransactionalTimedCallable.withoutRunnable(scanCallable);
+
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall(TimePoints timePoints) throws Exception {
-                NewRow old = new NiceRow(tableId);
-                old.put(0, 2L);
-                NewRow updated = new NiceRow(tableId);
-                updated.put(0, 2L);
-                updated.put(1, "xtreme weather");
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                NewRow oldSnowman = new NiceRow(tableId);
+                oldSnowman.put(0, 2L);
+                NewRow updatedSnowman = new NiceRow(tableId);
+                updatedSnowman.put(0, 2L);
+                updatedSnowman.put(1, "xtreme weather");
+
+                NewRow oldMr = new NiceRow(tableId);
+                oldMr.put(0, 1L);
+                NewRow updatedMr = new NiceRow(tableId);
+                updatedMr.put(0, 1L);
+                updatedMr.put(1, "a snowman");
+
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(1));
+                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(1));
+                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }
@@ -212,11 +223,10 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 updateCallable,
                 Arrays.asList(
                         createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 1L, "the snowman"),
                         createNewRow(tableId, 2L, "xtreme weather")
                 ),
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
+                        createNewRow(tableId, 1L, "a snowman"),
                         createNewRow(tableId, 2L, "xtreme weather")
                 )
         );
@@ -231,7 +241,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall(TimePoints timePoints) throws Exception {
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 NewRow old = new NiceRow(tableId);
                 old.put(0, 2L);
                 NewRow updated = new NiceRow(tableId);
@@ -282,17 +292,14 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 "SCAN: FINISH"
         );
 
-        List<NewRow> rowsScanned = scanResult.getItem();
-        assertEquals("rows scanned (in order)", scanCallableExpected, rowsScanned);
-
-        expectFullRows(tableId, endStateExpected.toArray( new NewRow[endStateExpected.size()] ));
+        assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
+        expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
     private TimedCallable<List<NewRow>> getScanCallable(final int tableId, final int indexId, final int sleepBetween) {
         return new TimedCallable<List<NewRow>>() {
             @Override
-            protected List<NewRow> doCall(TimePoints timePoints) throws Exception {
-                Session session = new SessionImpl();
+            protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
                 ScanAllRequest request = new ScanAllRequest(
                         tableId,
                         new HashSet<Integer>(Arrays.asList(0, 1)),
