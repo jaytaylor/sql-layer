@@ -15,6 +15,8 @@
 
 package com.akiban.server.mttests.mtutil;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -22,11 +24,11 @@ import static org.junit.Assert.assertFalse;
 
 public final class TimedResult<T> {
     private final T item;
-    private final SortedMap<Long,String> timePoints;
+    private final SortedMap<Long,List<String>> timePoints;
 
     TimedResult(T item, TimePoints timePoints) {
         this.item = item;
-        this.timePoints = new TreeMap<Long, String>(timePoints.getMarks());
+        this.timePoints = new TreeMap<Long, List<String>>(timePoints.getMarks());
     }
 
     public long getTime() {
@@ -40,7 +42,7 @@ public final class TimedResult<T> {
         return item;
     }
 
-    SortedMap<Long,String> timePoints() {
+    SortedMap<Long,List<String>> timePoints() {
         return timePoints;
     }
 }

@@ -15,22 +15,25 @@
 
 package com.akiban.server.mttests.mtutil;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class TimePoints {
-    private final Map<Long,String> marks;
-
-    public TimePoints() {
-        this.marks = new HashMap<Long, String>();
-    }
+    private final Map<Long,List<String>> marks = new HashMap<Long, List<String>>();
 
     public void mark(String message) {
         long time = System.currentTimeMillis();
-        marks.put(time, message);
+        List<String> nowMarks = marks.get(time);
+        if (nowMarks == null) {
+            nowMarks = new ArrayList<String>();
+            marks.put(time, nowMarks);
+        }
+        nowMarks.add(message);
     }
 
-    Map<Long,String> getMarks() {
+    Map<Long,List<String>> getMarks() {
         return marks;
     }
 }

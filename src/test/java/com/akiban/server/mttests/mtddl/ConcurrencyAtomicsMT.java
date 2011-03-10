@@ -15,9 +15,11 @@
 
 package com.akiban.server.mttests.mtddl;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.EasyUseColumnSelector;
+import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -37,6 +39,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -96,6 +99,54 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
         assertTrue("time took " + scanResult.getTime(), scanResult.getTime() >= SCAN_WAIT);
         assertTrue("time took " + dropIndexResult.getTime(), dropIndexResult.getTime() >= SCAN_WAIT);
+    }
+
+    @Test(timeout=60000)
+    public void scanWhileDroppingIndex() throws Exception {
+        final int NUMBER_OF_ROWS = 10000;
+        final int initialTableId = createTable(SCHEMA, TABLE, "id int key", "age int", "key(age)");
+        final TableName tableName = new TableName(SCHEMA, TABLE);
+        for(int i=0; i < NUMBER_OF_ROWS; ++i) {
+            writeRows(createNewRow(initialTableId, i, i + 1));
+        }
+
+        while(true) {
+            final Index index = ddl().getUserTable(session, tableName).getIndex("age");
+            final Collection<String> indexNameCollection = Collections.singleton(index.getIndexName().getName());
+            final int tableId = ddl().getTableId(session, tableName);
+            assertEquals("table id changed", initialTableId, tableId);
+            
+            TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
+                @Override
+                protected Void doCall(TimePoints timePoints) throws Exception {
+                    timePoints.mark("DROP: IN");
+                    ddl().dropIndexes(new SessionImpl(), tableName, indexNameCollection);
+                    timePoints.mark("DROP: OUT");
+                    return null;
+                }
+            };
+            TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, index.getIndexId(), 0);
+
+            ExecutorService executor = Executors.newFixedThreadPool(2);
+            Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+            Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
+
+            TimedResult<List<NewRow>> scanResult = scanFuture.get();
+            TimedResult<Void> dropIndexResult = dropIndexFuture.get();
+
+            TimePointsComparison comparison = new TimePointsComparison(scanResult, dropIndexResult);
+            if (comparison.matches(
+                    "DROP: IN",
+                    "SCAN: NO SUCH INDEX",
+                    "DROP: OUT"
+            )) {
+                return; // this is what we wanted to find
+            }
+            else {
+                assertEquals("number of rows scanned", NUMBER_OF_ROWS, scanResult.getItem().size());
+            }
+            ddl().createIndexes(session, Collections.singleton(index));
+        }
     }
 
     @Test
@@ -164,12 +215,23 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                         indexId,
                         EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
                 );
-                CursorId cursorId = dml().openCursor(session, request);
+                final CursorId cursorId;
+                try {
+                     cursorId = dml().openCursor(session, request);
+                } catch (NoSuchIndexException e) {
+                    timePoints.mark("SCAN: NO SUCH INDEX");
+                    return Collections.emptyList();
+                }
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                dml().scanSome(session, cursorId, output, 1);
-                timePoints.mark("SCAN: PAUSE");
-                Timing.sleep(sleepBetween);
+                if (!dml().scanSome(session, cursorId, output, 1)) {
+                    timePoints.mark("SCAN: EARLY FINISH");
+                    return output.rows;
+                }
+                if (sleepBetween > 0) {
+                    timePoints.mark("SCAN: PAUSE");
+                    Timing.sleep(sleepBetween);
+                }
                 dml().scanSome(session, cursorId, output, -1);
                 timePoints.mark("SCAN: FINISH");
 
