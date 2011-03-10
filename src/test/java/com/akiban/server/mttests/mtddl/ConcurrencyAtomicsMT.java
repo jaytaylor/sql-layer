@@ -49,7 +49,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
@@ -96,9 +95,6 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 createNewRow(tableId, 1L, "the snowman")
         );
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
-
-        assertTrue("time took " + scanResult.getTime(), scanResult.getTime() >= SCAN_WAIT);
-        assertTrue("time took " + dropIndexResult.getTime(), dropIndexResult.getTime() >= SCAN_WAIT);
     }
 
     @Test(timeout=60000)
@@ -150,9 +146,112 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
     }
 
     @Test
-    public void updateRowWhileScanning() throws Exception {
+    public void updatePKColumnWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
-        final int SCAN_WAIT = 10000;
+        final int SCAN_WAIT = 5000;
+
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
+        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints) throws Exception {
+                NewRow old = new NiceRow(tableId);
+                old.put(0, 1L);
+                NewRow updated = new NiceRow(tableId);
+                updated.put(0, 5L);
+                Timing.sleep(2000);
+                timePoints.mark("UPDATE: IN");
+                dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(0));
+                timePoints.mark("UPDATE: OUT");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> updateResult = updateFuture.get();
+
+        new TimePointsComparison(scanResult, updateResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "UPDATE: IN",
+                "UPDATE: OUT",
+                "SCAN: FINISH"
+        );
+
+        List<NewRow> rowsScanned = scanResult.getItem();
+        List<NewRow> rowsExpected = Arrays.asList(
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "mr melty"),
+                createNewRow(tableId, 5L, "the snowman")
+        );
+        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
+
+        expectFullRows(tableId,
+                createNewRow(tableId, 2L, "mr melty"),
+                createNewRow(tableId, 5L, "the snowman")
+        );
+    }
+
+    @Test
+    public void updateIndexedColumnWhileScanning() throws Exception {
+        final int tableId = tableWithTwoRows();
+        final int SCAN_WAIT = 5000;
+
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
+        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints) throws Exception {
+                NewRow old = new NiceRow(tableId);
+                old.put(0, 2L);
+                NewRow updated = new NiceRow(tableId);
+                updated.put(0, 2L);
+                updated.put(1, "xtreme weather");
+                Timing.sleep(2000);
+                timePoints.mark("UPDATE: IN");
+                dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(1));
+                timePoints.mark("UPDATE: OUT");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> updateResult = updateFuture.get();
+
+        new TimePointsComparison(scanResult, updateResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "UPDATE: IN",
+                "UPDATE: OUT",
+                "SCAN: FINISH"
+        );
+
+        List<NewRow> rowsScanned = scanResult.getItem();
+        List<NewRow> rowsExpected = Arrays.asList(
+                createNewRow(tableId, 2L, "mr melty"),
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "xtreme weather")
+        );
+        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
+
+        expectFullRows(tableId,
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "xtreme weather")
+        );
+    }
+
+    @Test
+    public void updateUnIndexedColumnWhileScanning() throws Exception {
+        final int tableId = tableWithTwoRows();
+        final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
@@ -190,7 +289,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         List<NewRow> rowsScanned = scanResult.getItem();
         List<NewRow> rowsExpected = Arrays.asList(
                 createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "mr melty")
+                createNewRow(tableId, 2L, "icebox")
         );
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
 
@@ -198,9 +297,6 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 createNewRow(tableId, 1L, "the snowman"),
                 createNewRow(tableId, 2L, "icebox")
         );
-        
-        assertTrue("time took " + scanResult.getTime(), scanResult.getTime() >= SCAN_WAIT);
-        assertTrue("time took " + updateResult.getTime(), updateResult.getTime() >= SCAN_WAIT);
 
     }
 

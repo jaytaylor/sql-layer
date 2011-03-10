@@ -31,13 +31,6 @@ public final class TimedResult<T> {
         this.timePoints = new TreeMap<Long, List<String>>(timePoints.getMarks());
     }
 
-    public long getTime() {
-        assertFalse("can't time; no marks set", timePoints.isEmpty());
-        final long start = this.timePoints.firstKey();
-        final long end = this.timePoints.lastKey();
-        return end - start;
-    }
-
     public T getItem() {
         return item;
     }
