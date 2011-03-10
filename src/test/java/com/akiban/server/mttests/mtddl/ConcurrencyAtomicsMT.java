@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -58,7 +57,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
     private static final String SCHEMA = "cold";
     private static final String TABLE = "frosty";
 
-    @Test
+    @Test @Ignore // TODO bug 732950
     public void dropIndexWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 10000;
@@ -99,7 +98,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=60000) @Ignore("bug 732950") // TODO
     public void scanWhileDroppingIndex() throws Exception {
         final int NUMBER_OF_ROWS = 10000;
         final int initialTableId = createTable(SCHEMA, TABLE, "id int key", "age int", "key(age)");
@@ -195,7 +194,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         );
     }
 
-    @Test @Ignore // TODO bug 732871
+    @Test @Ignore("bug 732871") // TODO
     public void updateIndexedColumnWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
@@ -243,7 +242,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         );
     }
 
-    @Test @Ignore // TODO bug 732871
+    @Test @Ignore("bug 732871") // TODO
     public void updateIndexedColumnAndPKWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
