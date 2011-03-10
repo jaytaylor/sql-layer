@@ -47,7 +47,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public final class DdlDmlMT extends ApiTestBase {
+public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
     private static final String SCHEMA = "cold";
     private static final String TABLE = "frosty";
