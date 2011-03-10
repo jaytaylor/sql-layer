@@ -36,8 +36,8 @@ public final class MissingColumnsIT extends ApiTestBase {
 
     private int loadBlocksTable() throws InvalidOperationException, IOException {
         final String blocksDDL = Strings.join(Strings.dumpResource(getClass(), "blocks-table.ddl"));
-        ddl().createTable(session, "drupal", blocksDDL);
-        AkibanInformationSchema ais = ddl().getAIS(session);
+        ddl().createTable(session(), "drupal", blocksDDL);
+        AkibanInformationSchema ais = ddl().getAIS(session());
         assertNotNull("drupal.blocks missing from " + ais.getUserTables(), ais.getUserTable("drupal", "blocks"));
         return tableId("drupal", "blocks");
     }

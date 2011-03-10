@@ -108,7 +108,7 @@
 
     "with_depth" : {
         "get"           : "test:p1:(c1)firstname=John",
-        "expect index"  : {"group" : "name_by_first"},
+        "expect index"  : {"group" : "c1$name_by_first"},
         "comment"       : "should use index c1.name_by_first",
         "expect result" :
         {
@@ -155,7 +155,7 @@
     "with depth empty" :
     {
         "get"           : "test:p1:(c1)firstname=Nemo",
-        "expect index"  : {"group" : "name_by_first"},
+        "expect index"  : {"group" : "c1$name_by_first"},
         "expect result" :
         {
             "@p1" : []
@@ -164,9 +164,7 @@
 
     "all children by id" :
     {
-        "passing"       : false,
         "comment"       : "bug 714771",
-        
         "get"           : "test:c1:cid>0",
         "expect index"  : "PRIMARY",
         "expect result" :
@@ -193,6 +191,60 @@
                     "firstname" : "John",
                     "midinitial": "A",
                     "lastname"  : "Public"
+                }
+            ]
+        }
+    },
+
+    "all parent and children by child id" :
+    {
+        "comment"       : "bug 714771 (from parent)",
+        "get"           : "test:p1:(c1)cid>0",
+        "expect index"  : { "group" : "c1$PRIMARY"},
+        "expect result" :
+        {
+            "@p1" : [
+                {
+                    "pid"     : 1,
+                    "status1" : 1,
+                    "status2" : 2,
+                    "@c1" : [
+                        {
+                            "cid" : 1,
+                            "pid" : 1,
+                            "firstname" : "John",
+                            "midinitial": "Q",
+                            "lastname"  : "Public"
+                        }
+                    ]
+                },
+                {
+                    "pid"     : 3,
+                    "status1" : 2,
+                    "status2" : 3,
+                    "@c1" : [
+                        {
+                            "cid" : 2,
+                            "pid" : 3,
+                            "firstname" : "John",
+                            "midinitial": "B",
+                            "lastname"  : "Good"
+                        }
+                    ]
+                },
+                {
+                    "pid"     : 1,
+                    "status1" : 1,
+                    "status2" : 2,
+                    "@c1" : [
+                        {
+                            "cid" : 3,
+                            "pid" : 1,
+                            "firstname" : "John",
+                            "midinitial": "A",
+                            "lastname"  : "Public"
+                        }
+                    ]
                 }
             ]
         }

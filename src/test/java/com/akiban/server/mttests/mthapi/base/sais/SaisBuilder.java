@@ -205,7 +205,12 @@ public final class SaisBuilder {
             SaisTable child = recursivelyBuild(childName, remainingTables);
             saisFKs.add( new SaisFK(child, fkBuilder.fks) );
         }
-        return new SaisTable(table, fields, pk, saisFKs);
+        SaisTable saisTable = new SaisTable(table, fields, pk, saisFKs);
+        for (SaisFK childFK : saisFKs) {
+            childFK.setParent(saisTable);
+            childFK.getChild().setParentFK(childFK);
+        }
+        return saisTable;
     }
 
     public SaisTable getSoleRootTable() {

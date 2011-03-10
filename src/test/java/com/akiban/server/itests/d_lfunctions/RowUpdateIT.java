@@ -36,7 +36,7 @@ public class RowUpdateIT extends ApiTestBase
         targetUpdated.put(cB, 800L);
         targetUpdated.put(cC, 800L);
         targetUpdated.put(cD, 800L);
-        dml().updateRow(session, target, targetUpdated, null);
+        dml().updateRow(session(), target, targetUpdated, null);
         expectFullRows(t, before, targetUpdated, after);
     }
 
@@ -69,9 +69,9 @@ public class RowUpdateIT extends ApiTestBase
             partiallyUpdatedTarget.put(cC, (mask & 0x08) == 0 ? original : update);
             partiallyUpdatedTarget.put(cD, (mask & 0x10) == 0 ? original : update);
             ColumnSelector columnSelector = new ByteArrayColumnSelector(new byte[]{mask});
-            dml().updateRow(session, target, fullyUpdatedTarget, columnSelector);
+            dml().updateRow(session(), target, fullyUpdatedTarget, columnSelector);
             expectFullRows(t, before, partiallyUpdatedTarget, after);
-            dml().updateRow(session, partiallyUpdatedTarget, target, null);
+            dml().updateRow(session(), partiallyUpdatedTarget, target, null);
             expectFullRows(t, before, target, after);
             mask += 2;
         }
@@ -98,21 +98,21 @@ public class RowUpdateIT extends ApiTestBase
         target.put(cB, 888L);
         target.put(cC, 888L);
         target.put(cD, 888L);
-        dml().writeRow(session, target);
+        dml().writeRow(session(), target);
         before = new NiceRow(t, rowDef);
         before.put(cId, 777L);
         before.put(cA, 777L);
         before.put(cB, 777L);
         before.put(cC, 777L);
         before.put(cD, 777L);
-        dml().writeRow(session, before);
+        dml().writeRow(session(), before);
         after = new NiceRow(t, rowDef);
         after.put(cId, 999L);
         after.put(cA, 999L);
         after.put(cB, 999L);
         after.put(cC, 999L);
         after.put(cD, 999L);
-        dml().writeRow(session, after);
+        dml().writeRow(session(), after);
         expectFullRows(t, before, target, after);
     }
 

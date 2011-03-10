@@ -303,18 +303,18 @@ public class KeyUpdateIT extends ApiTestBase
         // Records
         RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
+        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
         assertEquals(testVisitor.records(), realVisitor.records());
         // Check indexes
         RecordCollectingIndexRecordVisistor indexVisitor;
         // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
         // Order PK index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session, orderRowDef.getPKIndexDef(), indexVisitor);
+        testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
         // Item PK index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session, itemRowDef.getPKIndexDef(), indexVisitor);
+        testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
     }
 
@@ -322,7 +322,7 @@ public class KeyUpdateIT extends ApiTestBase
     {
         RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session, groupRowDef, testVisitor, realVisitor);
+        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
         Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
         Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
         Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
@@ -494,17 +494,17 @@ public class KeyUpdateIT extends ApiTestBase
 
     private void dbInsert(TestRow row) throws Exception
     {
-        testStore.writeRow(session, row);
+        testStore.writeRow(session(), row);
     }
 
     private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
     {
-        testStore.updateRow(session, oldRow, newRow, null);
+        testStore.updateRow(session(), oldRow, newRow, null);
     }
 
     private void dbDelete(TestRow row) throws Exception
     {
-        testStore.deleteRow(session, row);
+        testStore.deleteRow(session(), row);
     }
 
     private HKey hKey(TestRow row)

@@ -115,8 +115,8 @@ public final class DecimalsWithoutParamsIT extends ApiTestBase {
      * @param tableId the table whose columns we should compare
      */
     private void columnSerializationTest(int tableId) throws InvalidOperationException {
-        TableName tableName = ddl().getTableName(session, tableId);
-        UserTable uTable = ddl().getAIS(session).getUserTable(tableName);
+        TableName tableName = ddl().getTableName(session(), tableId);
+        UserTable uTable = ddl().getAIS(session()).getUserTable(tableName);
         assertNotNull("no table " + tableName, uTable);
 
         for (Column column : uTable.getColumns()) {

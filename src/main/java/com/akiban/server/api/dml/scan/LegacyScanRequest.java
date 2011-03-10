@@ -18,6 +18,8 @@ package com.akiban.server.api.dml.scan;
 import com.akiban.server.RowData;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
 
+import java.util.Arrays;
+
 public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
     private final int indexId;
     private final int scanFlags;
@@ -43,5 +45,12 @@ public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
         super(tableId, start, end, columnBitMap);
         this.indexId = indexId;
         this.scanFlags = scanFlags;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Scan[ tableId=%d, indexId=%d, scanFlags=0x%02X, projection=%s start=<%s> end=<%s>",
+                tableId, indexId, scanFlags, Arrays.toString(columnBitMap), start, end
+        );
     }
 }

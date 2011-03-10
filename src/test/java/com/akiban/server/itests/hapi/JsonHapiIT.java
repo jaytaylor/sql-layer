@@ -486,7 +486,7 @@ public final class JsonHapiIT extends ApiTestBase {
     @Before
     public void setUp() throws InvalidOperationException, JSONException {
         for(String ddl : setupInfo.ddls) {
-            ddl().createTable(session, setupInfo.schema, ddl);
+            ddl().createTable(session(), setupInfo.schema, ddl);
         }
         if (runInfo.writeRows) {
             for(Map.Entry<String,JSONArray> entry : setupInfo.writeRows.entrySet()) {
@@ -503,7 +503,7 @@ public final class JsonHapiIT extends ApiTestBase {
                         row.put(col, value);
                     }
                     try {
-                        dml().writeRow(session, row);
+                        dml().writeRow(session(), row);
                     } catch (InvalidOperationException e) {
                         throw new InvalidOperationException(ErrorCode.UNKNOWN, "while writing " + row, e);
                     }
@@ -515,23 +515,17 @@ public final class JsonHapiIT extends ApiTestBase {
     @Test @OnlyIf("shouldCheckIndex")
     public void correctIndex() throws HapiRequestException {
         HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
-        Index expectedIndex = ddl().getAIS(session).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
+        Index expectedIndex;
         if (runInfo.expectIndexOnGroup) {
-            Table gTable = ddl().getAIS(session).getUserTable(request.getUsingTable()).getGroup().getGroupTable();
-            List<Index> matchingIndexes = new ArrayList<Index>();
-            int indexId = expectedIndex.getIndexId();
-            for (Index gTableIndex : gTable.getIndexes()) {
-                if (gTableIndex.getIndexId() == indexId) {
-                    matchingIndexes.add(gTableIndex);
-                }
-            }
-            assertEquals("too many matching indexes: " + matchingIndexes.toString(), 1, matchingIndexes.size());
-            expectedIndex = matchingIndexes.get(0);
+            Table gTable = ddl().getAIS(session()).getUserTable(request.getUsingTable()).getGroup().getGroupTable();
+            expectedIndex = gTable.getIndex(runInfo.expectIndexName);
+        } else {
+            expectedIndex = ddl().getAIS(session()).getTable(request.getUsingTable()).getIndex(runInfo.expectIndexName);
         }
         assertNotNull(
                 String.format("no index %s on %s", runInfo.expectIndexName, request.getUsingTable()),
                 expectedIndex);
-        Index actualIndex = hapi(hapiProcessor).findHapiRequestIndex(session, request);
+        Index actualIndex = hapi(hapiProcessor).findHapiRequestIndex(session(), request);
         assertNotNull("HapiProcessor couldn't resolve index", actualIndex);
         assertSame("index", expectedIndex, actualIndex);
         assertEquals("index (expected " + runInfo.expectIndexName + ')',
@@ -548,7 +542,7 @@ public final class JsonHapiIT extends ApiTestBase {
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-            hapi(hapiProcessor).processRequest(session, request, JsonOutputter.instance(), outputStream);
+            hapi(hapiProcessor).processRequest(session(), request, JsonOutputter.instance(), outputStream);
             outputStream.flush();
             String result = new String(outputStream.toByteArray());
             assertNull("got result but expected error " + runInfo.errorExpect + ": " + result, runInfo.errorExpect);
