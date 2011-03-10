@@ -29,6 +29,7 @@ import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.Util;
 import com.akiban.server.mttests.Util.TimedCallable;
 import com.akiban.server.mttests.Util.TimedResult;
+import com.akiban.server.mttests.Util.TimePoints;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import org.junit.Test;
@@ -86,10 +87,12 @@ public final class DdlDmlMT extends ApiTestBase {
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall() throws Exception {
+            protected Void doCall(TimePoints timePoints) throws Exception {
                 TableName table = new TableName(SCHEMA, TABLE);
                 Util.sleep(2000);
+                timePoints.mark("INDEX: DROP>");
                 ddl().dropIndexes(new SessionImpl(), table, Collections.singleton("name"));
+                timePoints.mark("INDEX: <DROP");
                 return null;
             }
         };
@@ -100,6 +103,14 @@ public final class DdlDmlMT extends ApiTestBase {
 
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
         TimedResult<Void> dropIndexResult = dropIndexFuture.get();
+
+        new Util.TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "INDEX: DROP>",
+                "INDEX: <DROP",
+                "SCAN: FINISH"
+        );
 
         List<NewRow> rowsScanned = scanResult.getItem();
         List<NewRow> rowsExpected = Arrays.asList(
@@ -121,14 +132,16 @@ public final class DdlDmlMT extends ApiTestBase {
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall() throws Exception {
+            protected Void doCall(TimePoints timePoints) throws Exception {
                 NewRow old = new NiceRow(tableId);
                 old.put(0, 2L);
                 NewRow updated = new NiceRow(tableId);
                 updated.put(0, 2L);
                 updated.put(1, "icebox");
                 Util.sleep(2000);
+                timePoints.mark("UPDATE: IN");
                 dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(1));
+                timePoints.mark("UPDATE: OUT");
                 return null;
             }
         };
@@ -139,6 +152,14 @@ public final class DdlDmlMT extends ApiTestBase {
 
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
         TimedResult<Void> updateResult = updateFuture.get();
+
+        new Util.TimePointsComparison(scanResult, updateResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "UPDATE: IN",
+                "UPDATE: OUT",
+                "SCAN: FINISH"
+        );
 
         List<NewRow> rowsScanned = scanResult.getItem();
         List<NewRow> rowsExpected = Arrays.asList(
@@ -160,7 +181,7 @@ public final class DdlDmlMT extends ApiTestBase {
     private TimedCallable<List<NewRow>> getScanCallable(final int tableId, final int indexId, final int sleepBetween) {
         return new TimedCallable<List<NewRow>>() {
             @Override
-            protected List<NewRow> doCall() throws Exception {
+            protected List<NewRow> doCall(TimePoints timePoints) throws Exception {
                 Session session = new SessionImpl();
                 ScanAllRequest request = new ScanAllRequest(
                         tableId,
@@ -170,9 +191,12 @@ public final class DdlDmlMT extends ApiTestBase {
                 );
                 CursorId cursorId = dml().openCursor(session, request);
                 CountingRowOutput output = new CountingRowOutput();
+                timePoints.mark("SCAN: START");
                 dml().scanSome(session, cursorId, output, 1);
+                timePoints.mark("SCAN: PAUSE");
                 Util.sleep(sleepBetween);
                 dml().scanSome(session, cursorId, output, -1);
+                timePoints.mark("SCAN: FINISH");
 
                 return output.rows;
             }
