@@ -27,9 +27,11 @@ import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiReadThread;
+import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
@@ -38,12 +40,16 @@ import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
 import com.akiban.server.service.session.Session;
 import com.sun.java.help.search.Schema;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,16 +58,45 @@ public final class AddDropIndexMT extends HapiMTBase {
     @Test
     public void addDropIndex() {
         WriteThread writeThread = getAddDropIndexThread("theindex");
-        HapiReadThread readThread = readThread();
-        runThreads(writeThread, readThread);
+
+        runThreads(writeThread,
+                readThread("aString", 200, false, .4f),
+                readThread("anInt", 200, true, .4f),
+                readThread("id", 100, false, .2f)
+        );
     }
 
-    private HapiReadThread readThread() {
+    private HapiReadThread readThread(final String column, final int max, final boolean reverse, final float chance) {
         SaisBuilder builder = new SaisBuilder();
         builder.table("p", "id", "aString", "anInt").pk("id");
         builder.table("c1", "id", "pid").pk("id").joinTo("p").col("id", "pid");
-        SaisTable pTable = builder.getSoleRootTable();
+        final SaisTable pTable = builder.getSoleRootTable();
         return new BasicHapiSuccess(SCHEMA, pTable) {
+
+            @Override
+            protected HapiRequestStruct pullRequest(int pseudoRandom) {
+                int id = (Math.abs(pseudoRandom) % (max-1)) + 1;
+                if (reverse)  {
+                    id = -id;
+                }
+                HapiGetRequest request = DefaultHapiGetRequest.forTables(SCHEMA, "p", "p")
+                        .withEqualities(column, Integer.toString(id)).done();
+                return new HapiRequestStruct(request, pTable);
+            }
+
+            @Override
+            protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
+                super.validateSuccessResponse(requestStruct, result);
+                // Also, we must have results!
+                assertEquals("number of roots", 1, result.getJSONArray("@p").length());
+            }
+
+            @Override
+            protected int spawnCount() {
+                float spawnRoughly = chance * super.spawnCount();
+                return (int)(spawnRoughly + .5);
+            }
+
             @Override
             protected void validateErrorResponse(HapiGetRequest request, Throwable exception)
                     throws UnexpectedException
