@@ -341,7 +341,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         return tableId;
     }
 
-    @Test @Ignore // TODO bug 732950
+    @Test //@Ignore // TODO bug 732950
     public void dropIndexWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
@@ -372,7 +372,8 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 "SCAN: PAUSE",
                 "INDEX: DROP>",
                 "INDEX: <DROP",
-                "SCAN: INDEX DROPPED" // TODO can't happen yet, but will need to
+                "SCAN: FINISH"
+//                "SCAN: INDEX DROPPED" // TODO can't happen yet, but will need to
         );
 
         List<NewRow> rowsScanned = scanResult.getItem();
