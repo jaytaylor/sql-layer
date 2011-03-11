@@ -128,7 +128,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
     }
 
     @Test
-    public void scanIndexWhileDropShiftsIndexId() throws Exception {
+    public void dropShiftsIndexIdWhileScanning() throws Exception {
         final int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "age varchar(2)", "key(name)", "key(age)");
         writeRows(
                 createNewRow(tableId, 2, "alpha", 3),
