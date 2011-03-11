@@ -754,7 +754,22 @@ public class PersistitStoreRowCollector implements RowCollector {
         }
         store.expandRowData(exchange, pendingRowData[level]);
         int differsAtKeySegment = exchange.getKey().firstUniqueSegmentDepth(lastKey);
-        pendingRowData[level].differsFromPredecessorAtKeySegment(differsAtKeySegment);
+        int firstMissingAncestorLevel = -1;
+        for (int ancestorLevel = level; --ancestorLevel >= 0;) {
+            RowDef ancestorRowDef = projectedRowDefs[ancestorLevel];
+            if (ancestorRowDef.getHKeyDepth() > differsAtKeySegment) {
+                pendingRowData[ancestorLevel].createRow(ancestorRowDef, nulls(ancestorRowDef.getFieldCount()), true);
+                if (firstMissingAncestorLevel == -1) {
+                    firstMissingAncestorLevel = ancestorLevel;
+                }
+            } else {
+                break;
+            }
+        }
+        pendingRowData[level].differsFromPredecessorAtKeySegment(
+            firstMissingAncestorLevel == -1
+            ? differsAtKeySegment
+            : projectedRowDefs[firstMissingAncestorLevel].getHKeyDepth());
     }
 
     void prepareCoveredRow(final Exchange exchange, final int rowDefId,
