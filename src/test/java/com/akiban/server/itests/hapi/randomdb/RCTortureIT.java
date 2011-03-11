@@ -44,9 +44,9 @@ public class RCTortureIT extends ApiTestBase
         }
     }
 
-    Session session()
+    Session testSession()
     {
-        return session;
+        return session();
     }
 
     String table(int type)
@@ -76,7 +76,7 @@ public class RCTortureIT extends ApiTestBase
 
     void addRow(NewRow row) throws Exception
     {
-        dml().writeRow(session, row);
+        dml().writeRow(session(), row);
         db.add(row);
     }
 

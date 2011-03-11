@@ -38,7 +38,7 @@ class Actual
         test.print(test.query);
         test.request = ParsedHapiGetRequest.parse(test.query);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(10000);
-        Scanrows.instance().processRequest(test.session(), test.request, test.outputter, outputStream);
+        Scanrows.instance().processRequest(test.testSession(), test.request, test.outputter, outputStream);
         return new String(outputStream.toByteArray());
     }
 
