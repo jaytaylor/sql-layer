@@ -15,21 +15,34 @@
 
 package com.akiban.server.mttests.mtutil;
 
-public final class Timing {
+public class Timing {
+    private final static Timing instance = new Timing();
+
+    Timing() {
+        // nothing
+    }
+
     /**
      * Sleeps in a way that gets around code instrumentation which may end up shortening Thread.sleep.
      * If Thread.sleep throws an exception, this will invoke {@code Thread.currentThread().interrupt()} to propagate it.
      * @param millis how long to sleep
      */
     public static void sleep(long millis) {
+        instance.doSleepLoop(millis);
+    }
+
+    final void doSleepLoop(long millis) {
         final long start = System.currentTimeMillis();
         do {
-            try {
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            doSleep(millis);
         } while (System.currentTimeMillis() - start < millis);
     }
 
+    protected void doSleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }
