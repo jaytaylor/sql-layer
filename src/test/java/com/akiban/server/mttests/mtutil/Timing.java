@@ -33,9 +33,12 @@ public class Timing {
 
     final void doSleepLoop(long millis) {
         final long start = System.currentTimeMillis();
+        final long end = start + millis;
+        long remaining = millis;
         do {
-            doSleep(millis);
-        } while (System.currentTimeMillis() - start < millis);
+            doSleep(remaining);
+            remaining = end - System.currentTimeMillis();
+        } while (remaining > 0);
     }
 
     protected void doSleep(long millis) {

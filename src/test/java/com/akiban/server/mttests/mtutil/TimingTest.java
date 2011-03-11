@@ -44,6 +44,5 @@ public final class TimingTest {
 
         assertTrue(String.format("%d", timeTook), timeTook >= 1500);
         assertTrue(String.format("%d", timeTook), timeTook - 250 < 1500);
-        System.out.println(timeTook);
     }
 }
