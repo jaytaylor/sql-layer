@@ -107,6 +107,7 @@ public final class AddDropIndexMT extends HapiMTBase {
                             HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST,
                             hre.getReasonCode()
                     );
+                    return;
                 }
                 super.validateErrorResponse(request, exception);
             }
