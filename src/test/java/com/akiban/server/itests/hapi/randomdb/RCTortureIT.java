@@ -117,7 +117,7 @@ public class RCTortureIT extends ApiTestBase
 
     private void runQueries() throws Exception
     {
-        if (false) {
+        if (true) {
 /* Bug in KeyFilter. Peter is working on it.
             runQuery(orderTable, orderTable, Column.O_CID,  Comparison.LT, 2);
    Looks like the same bug:
