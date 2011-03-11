@@ -72,6 +72,10 @@ final class JsonUtils {
         try {
             JSONArray rootObjects = response.getJSONArray(rootTableKey);
             final int rootObjectsCount = rootObjects.length();
+            if (rootObjectsCount == 0) {
+                // no rows found, which is fine
+                return;
+            }
             if (!rootIsPredicate) {
                 assertEquals(ROOT_ELEMENTS_COUNT, "number of root elements", 1, rootObjectsCount);
             }

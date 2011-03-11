@@ -109,7 +109,7 @@ public class ScanFlagsIT extends ApiTestBase
     {
         rowDefId = createTable("schema", "t", "id int key");
         for (int x : values) {
-            dml().writeRow(session, createNewRow(rowDefId, x));
+            dml().writeRow(session(), createNewRow(rowDefId, x));
         }
         Session session = new SessionImpl();
         LegacyScanRequest request = new LegacyScanRequest(rowDefId,

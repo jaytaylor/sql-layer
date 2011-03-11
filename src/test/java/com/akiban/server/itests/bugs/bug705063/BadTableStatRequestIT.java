@@ -23,14 +23,14 @@ import org.junit.Test;
 public final class BadTableStatRequestIT extends ApiTestBase {
     @Test(expected= NoSuchTableException.class)
     public void noTablesDefined() throws InvalidOperationException {
-        dml().getTableStatistics(session, 1, false);
+        dml().getTableStatistics(session(), 1, false);
     }
 
     @Test(expected= NoSuchTableException.class)
     public void wrongTableIdDefined() throws InvalidOperationException {
         int created = createATable();
 
-        dml().getTableStatistics(session, created + 31, false);
+        dml().getTableStatistics(session(), created + 31, false);
     }
 
     private int createATable() {

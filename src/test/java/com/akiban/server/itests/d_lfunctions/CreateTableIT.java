@@ -65,17 +65,17 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void bug687220() throws InvalidOperationException {
         createTable("test", "t1", "id int key COMMENT 'Column comment activate'");
-        ddl().createTable(session, "test", "create table t2(id int key) COMMENT='A table comment'");
+        ddl().createTable(session(), "test", "create table t2(id int key) COMMENT='A table comment'");
         tableId("test", "t2");
     }
 
     // Initial auto increment value is incorrect
     @Test
     public void bug696169() throws Exception {
-        ddl().createTable(session, "test", "CREATE TABLE t(c1 INT AUTO_INCREMENT KEY) AUTO_INCREMENT=10");
+        ddl().createTable(session(), "test", "CREATE TABLE t(c1 INT AUTO_INCREMENT KEY) AUTO_INCREMENT=10");
         final int tid = tableId("test", "t");
         // This value gets sent as last_row_id so everything lines up on the adapter, where all auto_inc stuff is done
-        assertEquals(9, store().getTableStatistics(session, tid).getAutoIncrementValue());
+        assertEquals(9, store().getTableStatistics(session(), tid).getAutoIncrementValue());
     }
 
     // FIXED data type causes parse error
@@ -126,7 +126,7 @@ public final class CreateTableIT extends ApiTestBase {
         assertFalse(table1.getColumn("c1").getNullable());
         assertNotNull(table1.getColumn("c1").getInitialAutoIncrementValue());
         assertTrue(table1.getIndex("c1").isUnique());
-        ddl().dropTable(session, tableName(tid1));
+        ddl().dropTable(session(), tableName(tid1));
 
         // [int type] SERIAL DEFAULT VALUE => [int type] NOT NULL AUTO_INCREMENT UNIQUE.
         final int tid2 = createCheckColumn("c1 tinyint SERIAL DEFAULT VALUE", Types.TINYINT, null, null);
@@ -146,7 +146,7 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void bug706344() throws InvalidOperationException {
         createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 CHAR(10) NULL, PRIMARY KEY(c1)");
-        ddl().createTable(session, "test", "CREATE TABLE dst LIKE src");
+        ddl().createTable(session(), "test", "CREATE TABLE dst LIKE src");
         final int tid = tableId("test", "dst");
         final Table table = getUserTable(tid);
         assertEquals(table.getColumns().size(), 2);
@@ -173,12 +173,12 @@ public final class CreateTableIT extends ApiTestBase {
 
         // Different schemas
         final int origTid = createTable("schema1", "orig", "c1 int key");
-        ddl().createTable(session, "schema2", "create table copy like schema1.orig");
+        ddl().createTable(session(), "schema2", "create table copy like schema1.orig");
         assertEquals(origTid, tableId("schema1", "orig"));
         tableId("schema2", "copy");
 
         try {
-            ddl().createTable(session, "foo", "create table atable like orig");
+            ddl().createTable(session(), "foo", "create table atable like orig");
             Assert.fail("Expected InvalidOperationException exception");
         } catch(InvalidOperationException e) {
             assertEquals(ErrorCode.NO_SUCH_TABLE, e.getCode());
@@ -190,7 +190,7 @@ public final class CreateTableIT extends ApiTestBase {
     @Test(expected=ParseException.class)
     public void bug706347() throws InvalidOperationException {
         int tid1 = createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 INT NULL, PRIMARY KEY(c1))");
-        ddl().createTable(session, "test", "create table dst(c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(c1)) SELECT c1,c2 FROM src");
+        ddl().createTable(session(), "test", "create table dst(c1 INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(c1)) SELECT c1,c2 FROM src");
         int tid2 = tableId("test", "dst");
     }
 
@@ -254,13 +254,13 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void createStatementsWithComments() throws InvalidOperationException {
         // Failed on second one with NPE in refreshSchema, found in mtr/engine/funcs/rpl_trigger
-        ddl().createTable(session, "test", "create table t210 (f1 int, f2 int) /* slave local */");
+        ddl().createTable(session(), "test", "create table t210 (f1 int, f2 int) /* slave local */");
         tableName("test", "t210");
-        ddl().createTable(session, "test", "create table t310 (f3 int) /* slave local */");
+        ddl().createTable(session(), "test", "create table t310 (f3 int) /* slave local */");
         tableName("test", "t310");
 
         // Long comment (with and without embedded newlines)
-        ddl().createTable(session, "test", "create table t1(id int key /*pkey*/, name varchar(32) /* fname \n with two line comment*/) engine=akibandb");
+        ddl().createTable(session(), "test", "create table t1(id int key /*pkey*/, name varchar(32) /* fname \n with two line comment*/) engine=akibandb");
         assertEquals(2, getUserTable(tableId("test","t1")).getColumns().size());
 
         //TODO: FIX! Disabled since newlines MUST be stripped from DDL due to refresh/schemectomy interface
@@ -287,27 +287,27 @@ public final class CreateTableIT extends ApiTestBase {
     public void nationalCharTypeAliases() throws InvalidOperationException {
         int tid = createCheckColumn("c1 nchar(2)", Types.CHAR, 2L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
-        ddl().dropTable(session, tableName(tid));
+        ddl().dropTable(session(), tableName(tid));
 
         tid = createCheckColumn("c1 national char(5)", Types.CHAR, 5L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
-        ddl().dropTable(session, tableName(tid));
+        ddl().dropTable(session(), tableName(tid));
 
         tid = createCheckColumn("c1 nvarchar(32)", Types.VARCHAR, 32L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
-        ddl().dropTable(session, tableName(tid));
+        ddl().dropTable(session(), tableName(tid));
 
         tid = createCheckColumn("c1 national varchar(255)", Types.VARCHAR, 255L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
-        ddl().dropTable(session, tableName(tid));
+        ddl().dropTable(session(), tableName(tid));
 
         tid = createCheckColumn("c1 national char varying(255)", Types.VARCHAR, 255L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
-        ddl().dropTable(session, tableName(tid));
+        ddl().dropTable(session(), tableName(tid));
 
         tid = createCheckColumn("c1 national character varying(255)", Types.VARCHAR, 255L, null);
         assertEquals("utf8", getUserTable(tid).getColumn("c1").getCharsetAndCollation().charset());
-        ddl().dropTable(session, tableName(tid));
+        ddl().dropTable(session(), tableName(tid));
     }
 
     @Test
@@ -333,7 +333,7 @@ public final class CreateTableIT extends ApiTestBase {
     // default charset on table results in invalid DDL regeneration
     @Test
     public void bug725100() throws InvalidOperationException {
-        ddl().createTable(session, "test", "create table t(id int key) default charset=utf8");
+        ddl().createTable(session(), "test", "create table t(id int key) default charset=utf8");
         final int tid = tableId("test", "t");
         assertEquals("create table `test`.`t`(`id` int, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8",
                      new DDLGenerator().createTable(getUserTable(tid)));
@@ -366,7 +366,7 @@ public final class CreateTableIT extends ApiTestBase {
     private void createCheckColumnDrop(String columnDecl, Type type, Long typeParam1, Long typeParam2)
             throws InvalidOperationException {
         int tid = createCheckColumn(columnDecl, type, typeParam1, typeParam2);
-        ddl().dropTable(session, tableName(tid));
+        ddl().dropTable(session(), tableName(tid));
     }
 }
 

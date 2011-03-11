@@ -42,7 +42,7 @@ public final class SaisBuilderTest {
 
         SaisTable customer = roots.get("customer");
         assertEquals("customer fields", list("id", "name"), customer.getFields());
-        Map<String,SaisFK> cFKs = fksByChild(customer.getChildren());
+        Map<String,SaisFK> cFKs = fksByChild(customer);
         assertEquals("customer children", set("order", "address"), cFKs.keySet());
 
         SaisFK orderFK = cFKs.get("order");
@@ -109,12 +109,12 @@ public final class SaisBuilderTest {
         assertEquals(name + " fks " + table.getChildren(), 0, table.getChildren().size());
     }
 
-    List<FKPair> fkPairList(String key, String value) {
+    static List<FKPair> fkPairList(String key, String value) {
         FKPair fkPair = new FKPair(key, value);
         return Arrays.asList(fkPair);
     }
 
-    Map<String,SaisTable> tablesByName(Set<SaisTable> set) {
+    static Map<String,SaisTable> tablesByName(Set<SaisTable> set) {
         Map<String,SaisTable> map = new HashMap<String, SaisTable>(set.size());
         for (SaisTable table : set) {
             map.put(table.getName(), table);
@@ -122,19 +122,23 @@ public final class SaisBuilderTest {
         return map;
     }
 
-    Map<String,SaisFK> fksByChild(Set<SaisFK> set) {
-        Map<String,SaisFK> map = new HashMap<String, SaisFK>(set.size());
-        for (SaisFK fk : set) {
-            map.put(fk.getChild().getName(), fk);
+    static Map<String,SaisFK> fksByChild(SaisTable parent) {
+        Set<SaisFK> childrenFKs = parent.getChildren();
+        Map<String,SaisFK> map = new HashMap<String, SaisFK>(childrenFKs.size());
+        for (SaisFK fk : childrenFKs) {
+            assertSame("fk's parent", parent, fk.getParent());
+            SaisTable childTable = fk.getChild();
+            assertSame("child's parent FK", fk, childTable.getParentFK());
+            map.put(childTable.getName(), fk);
         }
         return map;
     }
 
-    List<String> list(String... strings) {
+    static List<String> list(String... strings) {
         return Arrays.asList(strings);
     }
 
-    Set<String> set(String... strings) {
+    static Set<String> set(String... strings) {
         return new HashSet<String>(Arrays.asList(strings));
     }
 }

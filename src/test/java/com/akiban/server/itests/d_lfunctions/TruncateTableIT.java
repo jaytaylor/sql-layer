@@ -39,11 +39,11 @@ public final class TruncateTableIT extends ApiTestBase {
 
         final int rowCount = 5;
         for(int i = 1; i <= rowCount; ++i) {
-            dml().writeRow(session, createNewRow(tableId, i));
+            dml().writeRow(session(), createNewRow(tableId, i));
         }
         expectRowCount(tableId, rowCount);
 
-        dml().truncateTable(session, tableId);
+        dml().truncateTable(session(), tableId);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -68,9 +68,9 @@ public final class TruncateTableIT extends ApiTestBase {
                   createNewRow(tableId, 2, 2));
         expectRowCount(tableId, 2);
 
-        dml().truncateTable(session, tableId);
+        dml().truncateTable(session(), tableId);
 
-        int indexId = ddl().getAIS(session).getTable("test", "t").getIndex("pid").getIndexId();
+        int indexId = ddl().getAIS(session()).getTable("test", "t").getIndex("pid").getIndexId();
         EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END);
 
         // Exception originally thrown during dml.doScan: Corrupt RowData at {1,(long)1}
@@ -91,12 +91,12 @@ public final class TruncateTableIT extends ApiTestBase {
                   createNewRow(tableId, 5, 3409, "99.00", 'e', "eek"));
         expectRowCount(tableId, 5);
 
-        dml().truncateTable(session, tableId);
+        dml().truncateTable(session(), tableId);
 
         // Check table stats
         expectRowCount(tableId, 0);
 
-        final Table table = ddl().getTable(session, tableId);
+        final Table table = ddl().getTable(session(), tableId);
         final int pkeyIndexId = table.getIndex("PRIMARY").getIndexId();
         final int valueIndexId = table.getIndex("value").getIndexId();
         final int nameIndexId = table.getIndex("name").getIndexId();
@@ -128,10 +128,10 @@ public final class TruncateTableIT extends ApiTestBase {
                                    "child",
                                    "id int key, pid int, constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references parent(id)");
 
-        dml().writeRow(session, createNewRow(parentId, 1));
+        dml().writeRow(session(), createNewRow(parentId, 1));
         expectRowCount(parentId, 1);
 
-        dml().truncateTable(session, parentId);
+        dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
         List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
@@ -150,13 +150,13 @@ public final class TruncateTableIT extends ApiTestBase {
                                    "child",
                                    "id int key, pid int, constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references parent(id)");
 
-        dml().writeRow(session, createNewRow(parentId, 1));
+        dml().writeRow(session(), createNewRow(parentId, 1));
         expectRowCount(parentId, 1);
 
-        dml().writeRow(session, createNewRow(childId, 1, 1));
+        dml().writeRow(session(), createNewRow(childId, 1, 1));
         expectRowCount(childId, 1);
 
-        dml().truncateTable(session, parentId);
+        dml().truncateTable(session(), parentId);
 
         expectRowCount(parentId, 0);
         List<NewRow> rows = scanAll(new ScanAllRequest(parentId, null));
@@ -180,7 +180,7 @@ public final class TruncateTableIT extends ApiTestBase {
                   createNewRow(tableId, "c", -1L));
         expectRowCount(tableId, 7);
 
-        dml().truncateTable(session, tableId);
+        dml().truncateTable(session(), tableId);
 
         // Check table stats
         expectRowCount(tableId, 0);
@@ -210,6 +210,6 @@ public final class TruncateTableIT extends ApiTestBase {
         expectRowCount(tableId, 1);
 
         // This no longer attempts to convert the RowData to a string so the being malformed is "ok"
-        dml().truncateTable(session, tableId);
+        dml().truncateTable(session(), tableId);
     }
 }
