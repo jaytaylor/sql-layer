@@ -174,27 +174,29 @@ public class HapiMTBase extends ApiTestBase {
                                                                   ExecutorService executorService)
             throws InterruptedException
     {
-        final ExecutorService processService = Executors.newFixedThreadPool( processersCount() );
+        final ExecutorService processingService = Executors.newFixedThreadPool( processersCount() );
 
         ArrayBlockingQueue<Future<Void>> submitFutures = new ArrayBlockingQueue<Future<Void>>(
                 maxPendingReadsCount()
         );
 
         final HashMap<EqualishExceptionWrapper, Integer> errors = new HashMap<EqualishExceptionWrapper, Integer>();
+
+        // Set up the processing threads
         List<Future<Void>> processingFutures = new ArrayList<Future<Void>>();
         List<ReadThreadProcessor> processors = new ArrayList<ReadThreadProcessor>();
         for (int i = 0, MAX = processersCount(); i < MAX; ++i) {
             ReadThreadProcessor processor = new ReadThreadProcessor(submitFutures, errors);
             processors.add(processor);
-            Future<Void> processingFuture = processService.submit(processor);
+            Future<Void> processingFuture = processingService.submit(processor);
             processingFutures.add(processingFuture);
         }
 
+        // Feed HapiReadThreads into the executorService as fast as the processing threads can process the results
         WeightedRandom<HapiReadThread> randomThreads = new WeightedRandom<HapiReadThread>(readThreads);
         for (HapiReadThread readThread : readThreads) {
             randomThreads.setWeight(readThread, readThread.spawnCount());
         }
-
         while (randomThreads.hasWeights()) {
             HapiReadThread hapiReadThread = randomThreads.get(-1);
             HapiThreadCallable callable = new HapiThreadCallable(hapiReadThread, "yo");
@@ -202,10 +204,10 @@ public class HapiMTBase extends ApiTestBase {
             submitFutures.put(submitFuture);
         }
 
+        // Tell the processors that we're done, and wait for them to finish
         for (ReadThreadProcessor processor : processors) {
-            processor.finish();
+            processor.stopProcessing();
         }
-
         for (Future<Void> processingFuture : processingFutures) {
             try {
                 processingFuture.get();
@@ -285,7 +287,7 @@ public class HapiMTBase extends ApiTestBase {
             return null;
         }
 
-        public void finish() {
+        public void stopProcessing() {
             active = false;
         }
 
