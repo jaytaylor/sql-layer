@@ -103,6 +103,6 @@ public class BasicHapiSuccess extends HapiSuccess {
 
     @Override
     protected int spawnCount() {
-        return 500000;
+        return 50000;
     }
 }
