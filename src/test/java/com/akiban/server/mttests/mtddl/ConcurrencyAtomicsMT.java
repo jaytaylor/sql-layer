@@ -42,17 +42,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -63,53 +64,25 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
     @Test
     public void dropTableWhileScanningPK() throws Exception {
-        final int tableId = tableWithTwoRows();
-        final int SCAN_WAIT = 5000;
-
-        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
-        TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
-            @Override
-            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                TableName table = new TableName(SCHEMA, TABLE);
-                Timing.sleep(2000);
-                timePoints.mark("TABLE: DROP>");
-                ddl().dropTable(session, table);
-                timePoints.mark("TABLE: <DROP");
-                return null;
-            }
-        };
-
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-        Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
-
-        TimedResult<List<NewRow>> scanResult = scanFuture.get();
-        TimedResult<Void> dropIndexResult = dropIndexFuture.get();
-
-        new TimePointsComparison(scanResult, dropIndexResult).verify(
-                "SCAN: START",
-                "SCAN: PAUSE",
-                "TABLE: DROP>",
-                "TABLE: <DROP",
-//                "SCAN: TABLE DROPPED", // TODO can't happen yet, but will need to
-                "SCAN: FINISH"
-        );
-
-        List<NewRow> rowsScanned = scanResult.getItem();
-        assertEquals("rows scanned size", 1, rowsScanned.size());
         Map<Integer,Object> expectedFields = new HashMap<Integer, Object>();
         expectedFields.put(0, 1L);
         expectedFields.put(1, "the snowman");
-        assertEquals("rows[0] fields", expectedFields, rowsScanned.get(0).getFields());
+        dropTableWhileScanning("PRIMARY", expectedFields);
     }
 
     @Test
     public void dropTableWhileScanningOnIndex() throws Exception {
+        Map<Integer,Object> expectedFields = new HashMap<Integer, Object>();
+        expectedFields.put(0, 2L);
+        expectedFields.put(1, "mr melty");
+        dropTableWhileScanning("name", expectedFields);
+    }
+
+    private void dropTableWhileScanning(String indexName, Map<Integer,Object> expectedFields) throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
 
-        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(indexName).getIndexId();
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -141,25 +114,71 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
         List<NewRow> rowsScanned = scanResult.getItem();
         assertEquals("rows scanned size", 1, rowsScanned.size());
-        Map<Integer,Object> expectedFields = new HashMap<Integer, Object>();
-        expectedFields.put(0, 2L);
-        expectedFields.put(1, "mr melty");
         assertEquals("rows[0] fields", expectedFields, rowsScanned.get(0).getFields());
     }
 
     @Test
     public void scanPKWhileDropping() throws Exception {
-        final int tableId = largeEnoughTable(5000);
-        final TableName tableName = new TableName(SCHEMA, TABLE);
-        final int indexId = ddl().getUserTable(session(), tableName)
-                .getIndex("PRIMARY").getIndexId();
+        scanWhileDropping("PRIMARY");
+    }
 
-        TimedCallable<List<NewRow>> scanCallable = delayThenScanAll(tableId, indexId);
-        TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
+    @Test @Ignore("bug 733003") // TODO
+    public void scanIndexWhileDropping() throws Exception {
+        scanWhileDropping("name");
+    }
+
+    @Test
+    public void scanIndexWhileDropShiftsIndexId() throws Exception {
+        final int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "age varchar(2)", "key(name)", "key(age)");
+        writeRows(
+                createNewRow(tableId, 2, "alpha", 3),
+                createNewRow(tableId, 1, "bravo", 2),
+                createNewRow(tableId, 3, "charlie", 1)
+                // the above are listed in order of index #1 (the name index)
+                // after that index is dropped, index #1 is age, and that will come in this order:
+                // (3, charlie 1)
+                // (1, bravo, 2)
+                // (2, alpha, 3)
+                // We'll get to the 2nd index (bravo) when we drop the index, and we want to make sure we don't
+                // continue scanning with alpha (which would thus badly order name)
+        );
+        final TableName tableName = new TableName(SCHEMA, TABLE);
+        Index nameIndex = ddl().getUserTable(session(), tableName).getIndex("name");
+        Index ageIndex = ddl().getUserTable(session(), tableName).getIndex("age");
+        assertTrue("age index's ID relative to name's", ageIndex.getIndexId() == nameIndex.getIndexId() + 1);
+        final int nameIndexId = nameIndex.getIndexId();
+        TimedCallable<List<NewRow>> scanCallable = new TimedCallable<List<NewRow>>() {
+            @Override
+            protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
+                ScanAllRequest request = new ScanAllRequest(
+                        tableId,
+                        new HashSet<Integer>(Arrays.asList(0, 1)),
+                        nameIndexId,
+                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+                );
+                final CursorId cursorId = dml().openCursor(session, request);
+                CountingRowOutput output = new CountingRowOutput();
+                timePoints.mark("SCAN: START");
+                if (!dml().scanSome(session, cursorId, output, 2)) {
+                    timePoints.mark("SCAN: EARLY FINISH");
+                    return output.rows;
+                }
+                timePoints.mark("SCAN: PAUSE");
+                Timing.sleep(5000);
+                dml().scanSome(session, cursorId, output, -1);
+                dml().closeCursor(session, cursorId);
+                timePoints.mark("SCAN: FINISH");
+
+                return output.rows;
+            }
+        };
+
+        TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(2500);
                 timePoints.mark("DROP: IN");
-                ddl().dropTable(session, tableName);
+                ddl().dropIndexes(session, tableName, Collections.singleton("name"));
                 timePoints.mark("DROP: OUT");
                 return null;
             }
@@ -167,36 +186,52 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
         Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-        Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
+        Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
 
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
-        TimedResult<Void> updateResult = updateFuture.get();
+        TimedResult<Void> dropIndexResult = dropIndexFuture.get();
 
-        new TimePointsComparison(scanResult, updateResult).verify(
-                "DROP: IN",
-                "SCAN: START",
-                "SCAN: FIRST",
-                "DROP: OUT"
+        assertEquals("age's index ID",
+                nameIndexId,
+                ddl().getUserTable(session(), tableName).getIndex("age").getIndexId().intValue()
         );
 
-        List<NewRow> rows = scanResult.getItem();
-        assertFalse("rows were empty!", rows.isEmpty());
-        int nulls = 0;
-        for (NewRow row : rows) {
-            Map<Integer,Object> fields = row.getFields();
-            Long id = (Long)fields.get(0);
-            Object name = fields.get(1);
-            assertEquals("fields size", 2, row.getFields().size());
-            assertEquals("string component", id == null ? null : id.toString(), name == null ? null : name.toString());
-        }
-        assertTrue(String.format("saw %d nulls (out of %d rows)", nulls, rows.size()), nulls == 0);
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "DROP: IN",
+                "DROP: OUT",
+                "SCAN: FINISH"
+        );
+
+        newRowsOrdered(scanResult.getItem(), 1);
     }
 
-    @Test @Ignore("bug 733003") // TODO
-    public void scanIndexWhileDropping() throws Exception {
+    private void newRowsOrdered(List<NewRow> rows, final int fieldIndex) {
+        assertTrue("not enough rows: " + rows, rows.size() > 1);
+        List<NewRow> ordered = new ArrayList<NewRow>(rows);
+        Collections.sort(ordered, new Comparator<NewRow>() {
+            @Override @SuppressWarnings("unchecked")
+            public int compare(NewRow o1, NewRow o2) {
+                Object o1Field = o1.getFields().get(fieldIndex);
+                Object o2Field = o2.getFields().get(fieldIndex);
+                if (o1Field == null) {
+                    return o2Field == null ? 0 : -1;
+                }
+                if (o2Field == null) {
+                    return 1;
+                }
+                Comparable o1Comp = (Comparable)o1Field;
+                Comparable o2Comp = (Comparable)o2Field;
+                return o1Comp.compareTo(o2Comp);
+            }
+        });
+    }
+
+    private void scanWhileDropping(String indexName) throws InvalidOperationException, InterruptedException, ExecutionException {
         final int tableId = largeEnoughTable(5000);
         final TableName tableName = new TableName(SCHEMA, TABLE);
-        final int indexId = ddl().getUserTable(session(), tableName).getIndex("name").getIndexId();
+        final int indexId = ddl().getUserTable(session(), tableName).getIndex(indexName).getIndexId();
 
         TimedCallable<List<NewRow>> scanCallable = delayThenScanAll(tableId, indexId);
         TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
