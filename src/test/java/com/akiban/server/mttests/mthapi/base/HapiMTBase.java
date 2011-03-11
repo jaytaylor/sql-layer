@@ -183,12 +183,12 @@ public class HapiMTBase extends ApiTestBase {
 
             startAllLatch.countDown();
 
-            List<Throwable> errors = new ArrayList<Throwable>(futures.size());
+            Map<EqualishExceptionWrapper,Integer> errorsMap = new HashMap<EqualishExceptionWrapper, Integer>();
             for (Future<Void> future : futures) {
                 try {
                     future.get();
                 } catch (ExecutionException e) {
-                    errors.add(e.getCause());
+                    addError(e, errorsMap);
                 }
             }
 
@@ -197,31 +197,30 @@ public class HapiMTBase extends ApiTestBase {
 
             LOG.trace("{} writes", stats.getWrites());
 
-            if (!errors.isEmpty()) {
-                failWithErrors(errors);
+            if (!errorsMap.isEmpty()) {
+                failWithErrors(errorsMap);
             }
         } catch (Exception e) {
             throw new RunThreadsException(e);
         }
     }
 
-    private static void failWithErrors(Collection<Throwable> errors) {
-        Map<EqualishExceptionWrapper,Integer> tracesByCount = new HashMap<EqualishExceptionWrapper, Integer>();
-        for (Throwable error : errors) {
-            EqualishExceptionWrapper wrapper = new EqualishExceptionWrapper(error);
-            Integer count = tracesByCount.get(wrapper);
-            count = (count == null) ? 1 : count + 1;
-            tracesByCount.put(wrapper, count);
-        }
+    private static void addError(Throwable error, Map<EqualishExceptionWrapper,Integer> out) {
+        EqualishExceptionWrapper wrapper = new EqualishExceptionWrapper(error);
+        Integer count = out.get(wrapper);
+        count = (count == null) ? 1 : count + 1;
+        out.put(wrapper, count);
+    }
 
+    private static void failWithErrors(Map<EqualishExceptionWrapper,Integer> errors) {
         StringBuilder errBuilder = new StringBuilder();
-        int pairsCount = tracesByCount.size();
+        int pairsCount = errors.size();
         errBuilder.append(pairsCount).append(" failure pattern");
         if (pairsCount != 1) {
             errBuilder.append('s');
         }
         errBuilder.append(':').append(Strings.nl());
-        for (Map.Entry<EqualishExceptionWrapper,Integer> pair : tracesByCount.entrySet()) {
+        for (Map.Entry<EqualishExceptionWrapper,Integer> pair : errors.entrySet()) {
             Throwable error = pair.getKey().get();
             int count = pair.getValue();
 
