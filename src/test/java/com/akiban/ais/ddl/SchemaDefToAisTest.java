@@ -359,4 +359,29 @@ public class SchemaDefToAisTest {
         assertEquals(2, yTable.getAkibanJoinIndexes().size());
         new SchemaDefToAis(schemaDef, true).getAis();
     }
+
+    @Test
+    public void multipleForeignKeySameColumn() throws Exception {
+        final String ddl = "use test;"+
+            "create table t1(a int) engine=akibandb;"+
+            "create table t2(a int) engine=akibandb;"+
+            "create table t3(a int, b int) engine=akibandb;"+
+            "create table t4(a int, constraint f1 foreign key f1(a) references t1(a),"+
+                                   "constraint f2 foreign key f2(a) references t2(b)) engine=akibandb"+
+            "create table t5(a int, b int, constraint f1 foreign key f1(a,b) references t3(a,b),"+
+                                          "constraint f2 foreign key f2(a) references t1(a)) engine=akibandb";
+
+        final AkibanInformationSchema ais= buildAISfromString(ddl);
+        final UserTable t4 = ais.getUserTable("test", "t4");
+        assertEquals(1, t4.getIndexes().size()); // single generated
+        final Index t4index = t4.getIndexes().iterator().next();
+        assertEquals("f2", t4index.getIndexName().getName()); // yes, it takes the second
+        assertEquals(1, t4index.getColumns().size());
+
+        final UserTable t5 = ais.getUserTable("test", "t5");
+        assertEquals(1, t5.getIndexes().size()); // single generated
+        final Index t5index = t5.getIndexes().iterator().next();
+        assertEquals("f1", t5index.getIndexName().getName());
+        assertEquals(2, t5index.getColumns().size());
+    }
 }
