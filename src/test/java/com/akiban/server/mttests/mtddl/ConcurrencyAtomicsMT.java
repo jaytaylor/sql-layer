@@ -43,12 +43,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -57,10 +61,255 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
     private static final String SCHEMA = "cold";
     private static final String TABLE = "frosty";
 
+    @Test
+    public void dropTableWhileScanningPK() throws Exception {
+        final int tableId = tableWithTwoRows();
+        final int SCAN_WAIT = 5000;
+
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
+        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                TableName table = new TableName(SCHEMA, TABLE);
+                Timing.sleep(2000);
+                timePoints.mark("TABLE: DROP>");
+                ddl().dropTable(session, table);
+                timePoints.mark("TABLE: <DROP");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> dropIndexResult = dropIndexFuture.get();
+
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "TABLE: DROP>",
+                "TABLE: <DROP",
+//                "SCAN: TABLE DROPPED", // TODO can't happen yet, but will need to
+                "SCAN: FINISH"
+        );
+
+        List<NewRow> rowsScanned = scanResult.getItem();
+        assertEquals("rows scanned size", 1, rowsScanned.size());
+        Map<Integer,Object> expectedFields = new HashMap<Integer, Object>();
+        expectedFields.put(0, 1L);
+        expectedFields.put(1, "the snowman");
+        assertEquals("rows[0] fields", expectedFields, rowsScanned.get(0).getFields());
+    }
+
+    @Test
+    public void dropTableWhileScanningOnIndex() throws Exception {
+        final int tableId = tableWithTwoRows();
+        final int SCAN_WAIT = 5000;
+
+        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
+        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                TableName table = new TableName(SCHEMA, TABLE);
+                Timing.sleep(2000);
+                timePoints.mark("TABLE: DROP>");
+                ddl().dropTable(session, table);
+                timePoints.mark("TABLE: <DROP");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> dropIndexResult = dropIndexFuture.get();
+
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "TABLE: DROP>",
+                "TABLE: <DROP",
+//                "SCAN: TABLE DROPPED", // TODO can't happen yet, but will need to
+                "SCAN: FINISH"
+        );
+
+        List<NewRow> rowsScanned = scanResult.getItem();
+        assertEquals("rows scanned size", 1, rowsScanned.size());
+        Map<Integer,Object> expectedFields = new HashMap<Integer, Object>();
+        expectedFields.put(0, 2L);
+        expectedFields.put(1, "mr melty");
+        assertEquals("rows[0] fields", expectedFields, rowsScanned.get(0).getFields());
+    }
+
+    @Test
+    public void scanPKWhileDropping() throws Exception {
+        final int tableId = largeEnoughTable(5000);
+        final TableName tableName = new TableName(SCHEMA, TABLE);
+        final int indexId = ddl().getUserTable(session(), tableName)
+                .getIndex("PRIMARY").getIndexId();
+
+        TimedCallable<List<NewRow>> scanCallable = delayThenScanAll(tableId, indexId);
+        TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                timePoints.mark("DROP: IN");
+                ddl().dropTable(session, tableName);
+                timePoints.mark("DROP: OUT");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> updateResult = updateFuture.get();
+
+        new TimePointsComparison(scanResult, updateResult).verify(
+                "DROP: IN",
+                "SCAN: START",
+                "SCAN: FIRST",
+                "DROP: OUT"
+        );
+
+        List<NewRow> rows = scanResult.getItem();
+        assertFalse("rows were empty!", rows.isEmpty());
+        int nulls = 0;
+        for (NewRow row : rows) {
+            Map<Integer,Object> fields = row.getFields();
+            Long id = (Long)fields.get(0);
+            Object name = fields.get(1);
+            assertEquals("fields size", 2, row.getFields().size());
+            assertEquals("string component", id == null ? null : id.toString(), name == null ? null : name.toString());
+        }
+        assertTrue(String.format("saw %d nulls (out of %d rows)", nulls, rows.size()), nulls == 0);
+    }
+
+    @Test @Ignore("bug 733003") // TODO
+    public void scanIndexWhileDropping() throws Exception {
+        final int tableId = largeEnoughTable(5000);
+        final TableName tableName = new TableName(SCHEMA, TABLE);
+        final int indexId = ddl().getUserTable(session(), tableName).getIndex("name").getIndexId();
+
+        TimedCallable<List<NewRow>> scanCallable = delayThenScanAll(tableId, indexId);
+        TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                timePoints.mark("DROP: IN");
+                ddl().dropTable(session, tableName);
+                timePoints.mark("DROP: OUT");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> updateResult = updateFuture.get();
+
+        new TimePointsComparison(scanResult, updateResult).verify(
+                "DROP: IN",
+                "SCAN: START",
+                "SCAN: FIRST",
+                "DROP: OUT"
+        );
+
+        List<NewRow> rows = scanResult.getItem();
+        assertFalse("rows were empty!", rows.isEmpty());
+        int nulls = 0;
+        for (NewRow row : rows) {
+            Map<Integer,Object> fields = row.getFields();
+            Long id = (Long)fields.get(0);
+            Object name = fields.get(1);
+            assertEquals("fields size", 2, row.getFields().size());
+            assertEquals("string component", id == null ? null : id.toString(), name == null ? null : name.toString());
+            if (id == null) {
+                ++nulls;
+            }
+        }
+        assertTrue(String.format("saw %d nulls (out of %d rows)", nulls, rows.size()), nulls == 0);
+    }
+
+    private TimedCallable<List<NewRow>> delayThenScanAll(final int tableId, final int indexId) {
+        return new TimedCallable<List<NewRow>>() {
+            @Override
+            protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(2500);
+                ScanAllRequest request = new ScanAllRequest(
+                        tableId,
+                        new HashSet<Integer>(Arrays.asList(0, 1)),
+                        indexId,
+                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+                );
+                final CursorId cursorId = dml().openCursor(session, request);
+                CountingRowOutput output = new CountingRowOutput();
+                timePoints.mark("SCAN: START");
+                assertTrue(dml().scanSome(session, cursorId, output, 1));
+                timePoints.mark("SCAN: FIRST");
+                while (dml().scanSome(session, cursorId, output, -1)) {
+                    // do nothing
+                }
+                dml().closeCursor(session, cursorId);
+
+                return output.rows;
+            }
+        };
+    }
+
+    /**
+     * Creates a table with enough rows that it takes a while to drop it
+     * @param msForDropping how long (at least) it should take to drop this table
+     * @return the table's id
+     * @throws InvalidOperationException if ever encountered
+     */
+    private int largeEnoughTable(long msForDropping) throws InvalidOperationException {
+        int rowCount;
+        long dropTime;
+        float factor = 1.5f; // after we write N rows, we'll write an additional (factor-1)*N rows as buffer
+        do {
+            int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
+            rowCount = 1;
+            final long writeStart = System.currentTimeMillis();
+            while (System.currentTimeMillis() - writeStart < msForDropping) {
+                writeRows(
+                        createNewRow(tableId, rowCount, Integer.toString(rowCount))
+                );
+                ++rowCount;
+            }
+            for(int i = rowCount; i < (int) factor * rowCount ; ++i) {
+                writeRows(
+                        createNewRow(tableId, i, Integer.toString(i))
+                );
+            }
+            final long dropStart = System.currentTimeMillis();
+            ddl().dropTable(session(), new TableName(SCHEMA, TABLE));
+            dropTime = System.currentTimeMillis() - dropStart;
+            factor += 0.2;
+        } while(dropTime < msForDropping);
+
+        int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
+        for(int i = 1; i < rowCount ; ++i) {
+            writeRows(
+                    createNewRow(tableId, i, Integer.toString(i))
+            );
+        }
+
+        return tableId;
+    }
+
     @Test @Ignore // TODO bug 732950
     public void dropIndexWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
-        final int SCAN_WAIT = 10000;
+        final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
         TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
@@ -383,6 +632,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                     Timing.sleep(sleepBetween);
                 }
                 dml().scanSome(session, cursorId, output, -1);
+                dml().closeCursor(session, cursorId);
                 timePoints.mark("SCAN: FINISH");
 
                 return output.rows;
