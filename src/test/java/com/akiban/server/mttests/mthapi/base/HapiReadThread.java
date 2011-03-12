@@ -44,7 +44,7 @@ public abstract class HapiReadThread {
         return DEFAULT_SPAWN_COUNT;
     }
 
-    protected abstract void validateIndex(HapiGetRequest request, Index queriedIndex);
+    protected abstract void validateIndex(HapiRequestStruct request, Index queriedIndex);
 
     protected abstract void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws Exception;
     protected abstract void validateErrorResponse(HapiGetRequest request, Throwable exception) throws Exception;

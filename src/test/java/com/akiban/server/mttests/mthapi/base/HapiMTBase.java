@@ -128,7 +128,7 @@ public class HapiMTBase extends ApiTestBase {
                 JsonOutputter outputter = JsonOutputter.instance();
                 outputStream.reset();
                 Index index = hapi().findHapiRequestIndex(session, request);
-                hapiReadThread.validateIndex(request, index);
+                hapiReadThread.validateIndex(requestStruct, index);
                 hapi().processRequest(session, request, outputter, outputStream);
                 String result = outputStream.toString("UTF-8");
                 resultJson = new JSONObject(result);

@@ -20,20 +20,17 @@ import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
-import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import static com.akiban.util.ThreadlessRandom.rand;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class BasicHapiSuccess extends HapiSuccess {
@@ -57,17 +54,17 @@ public class BasicHapiSuccess extends HapiSuccess {
     }
 
     @Override
-    protected void validateIndex(HapiGetRequest request, Index index) {
-        final String expectedIndexName;
+    protected void validateIndex(HapiRequestStruct requestStruct, Index index) {
+        HapiGetRequest request = requestStruct.getRequest();
         if (request.getUsingTable().equals(request.getSchema(), request.getTable())) {
             assertTrue("index table: " + index, index.getTableName().equals(request.getUsingTable()));
-            expectedIndexName = "PRIMARY";
         }
         else {
             assertTrue("index should have been on group table", index.getTable().isGroupTable());
-            expectedIndexName = request.getUsingTable().getTableName() + "$PRIMARY";
         }
-        assertEquals("index name", expectedIndexName, index.getIndexName().getName());
+        if (requestStruct.expectedIndexKnown()) {
+            assertEquals("index name", requestStruct.getExpectedIndex(), index.getIndexName().getName());
+        }
     }
 
     @Override
@@ -92,7 +89,7 @@ public class BasicHapiSuccess extends HapiSuccess {
         String predicateColumn = predicateTable.getPK().get(0);
         HapiGetRequest request = DefaultHapiGetRequest.forTables(schema(), selectRoot.getName(), predicateTable.getName()).where(predicateColumn).eq(idValue);
 
-        return new HapiRequestStruct(request, selectRoot, predicateTable);
+        return new HapiRequestStruct(request, selectRoot, predicateTable, null);
     }
 
     private static SaisTable choosePredicate(SaisTable root, int pseudoRandom) {
