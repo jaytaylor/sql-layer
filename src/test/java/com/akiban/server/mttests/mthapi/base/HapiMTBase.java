@@ -124,6 +124,7 @@ public class HapiMTBase extends ApiTestBase {
             }
             final JSONObject resultJson;
             request = requestStruct.getRequest();
+            boolean success = false;
             try {
                 JsonOutputter outputter = JsonOutputter.instance();
                 outputStream.reset();
@@ -132,13 +133,13 @@ public class HapiMTBase extends ApiTestBase {
                 hapi().processRequest(session, request, outputter, outputStream);
                 String result = outputStream.toString("UTF-8");
                 resultJson = new JSONObject(result);
-                hapiReadThread.validateSuccessResponse(requestStruct, resultJson);
             } catch (Throwable e) {
+                LOG.trace("{} errored", id);
                 hapiReadThread.validateErrorResponse(request, e);
                 return null;
-            } finally {
-                LOG.trace("{} finishing", id);
             }
+            hapiReadThread.validateSuccessResponse(requestStruct, resultJson);
+            LOG.trace("{} verified", id);
             return null;
         }
     }
