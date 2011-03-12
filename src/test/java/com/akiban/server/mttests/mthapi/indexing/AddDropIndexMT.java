@@ -20,36 +20,28 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.ApiTest;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
-import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
-import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiReadThread;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
-import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
 import com.akiban.server.service.session.Session;
-import com.sun.java.help.search.Schema;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
