@@ -26,7 +26,6 @@ import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Strings;
 import com.akiban.util.ThreadlessRandom;
 import com.akiban.util.WeightedRandom;
 import org.json.JSONObject;
@@ -37,11 +36,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -125,7 +124,6 @@ public class HapiMTBase extends ApiTestBase {
             }
             final JSONObject resultJson;
             request = requestStruct.getRequest();
-            boolean success = false;
             try {
                 JsonOutputter outputter = JsonOutputter.instance();
                 outputStream.reset();
@@ -188,7 +186,7 @@ public class HapiMTBase extends ApiTestBase {
                 maxPendingReadsCount()
         );
 
-        final HashMap<EqualishExceptionWrapper, Integer> errors = new HashMap<EqualishExceptionWrapper, Integer>();
+        final Map<EqualishExceptionWrapper, Integer> errors = new ConcurrentHashMap<EqualishExceptionWrapper, Integer>();
 
         // Set up the processing threads
         List<Future<Void>> processingFutures = new ArrayList<Future<Void>>();
@@ -224,9 +222,7 @@ public class HapiMTBase extends ApiTestBase {
             }
         }
 
-        synchronized (errors) {
-            return errors;
-        }
+        return errors;
     }
 
     protected int processersCount() {
@@ -242,32 +238,30 @@ public class HapiMTBase extends ApiTestBase {
     }
 
     private static void failWithErrors(Map<EqualishExceptionWrapper,Integer> errors) {
-        StringBuilder errBuilder = new StringBuilder();
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printer = new PrintWriter(stringWriter);
+
         int pairsCount = errors.size();
-        errBuilder.append(pairsCount).append(" failure pattern");
+        printer.format("%d failure pattern", pairsCount);
         if (pairsCount != 1) {
-            errBuilder.append('s');
+            printer.print('s');
         }
-        errBuilder.append(':').append(Strings.nl());
+        printer.println(':');
         for (Map.Entry<EqualishExceptionWrapper,Integer> pair : errors.entrySet()) {
             Throwable error = pair.getKey().get();
             int count = pair.getValue();
 
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter printer = new PrintWriter(stringWriter);
-            error.printStackTrace(printer);
-            printer.flush();
-            stringWriter.flush();
-
-
-            errBuilder.append(count).append(" instance");
+            printer.format("%d instance", count);
             if (count != 1) {
-                errBuilder.append('s');
+                printer.print('s');
             }
-            errBuilder.append(" of this general pattern:").append(Strings.nl());
-            errBuilder.append(stringWriter.toString());
+            printer.format(" of this general pattern:\n");
+
+            error.printStackTrace(printer);
         }
-        fail(errBuilder.toString());
+        printer.flush();
+        stringWriter.flush();
+        fail(stringWriter.toString());
     }
 
     private static class ReadThreadProcessor implements Callable<Void> {
