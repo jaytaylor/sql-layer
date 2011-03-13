@@ -81,10 +81,11 @@ public final class AddDropIndexMT extends HapiMTBase {
             protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
                 super.validateSuccessResponse(requestStruct, result);
                 // Also, we must have results!
-                HapiValidationError.assertEquals(HapiValidationError.Reason.ROOT_TABLES_COUNT,
-                        "number of roots",
-                        1, result.getJSONArray("@p").length()
-                );
+//                TODO: this isn't a valid test while we allow concurrent scans and adding/dropping of indexes
+//                HapiValidationError.assertEquals(HapiValidationError.Reason.ROOT_TABLES_COUNT,
+//                        "number of roots",
+//                        1, result.getJSONArray("@p").length()
+//                );
             }
 
             @Override
