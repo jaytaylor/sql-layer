@@ -15,14 +15,16 @@
 
 package com.akiban.server.mttests.mthapi.common;
 
+import com.akiban.server.api.HapiGetRequest;
 import org.json.JSONObject;
 import org.junit.Assert;
 
 public class HapiValidationError extends AssertionError {
 
     private volatile JSONObject jsonObject;
+    private volatile HapiGetRequest getRequest;
 
-    enum Reason {
+    public enum Reason {
         RESPONSE_IS_NULL,
         ROOT_TABLES_COUNT,
         ROOT_ELEMENTS_COUNT,
@@ -50,9 +52,13 @@ public class HapiValidationError extends AssertionError {
         this.jsonObject = jsonObject;
     }
 
+    public void setGetRequest(HapiGetRequest request) {
+        this.getRequest = request;
+    }
+
     @Override
     public String toString() {
-        return String.format("%s: %s", super.toString(), jsonObject);
+        return String.format("%s: %s => %s", super.toString(), getRequest, jsonObject);
     }
 
     static Void launder(String message, Reason reason) {

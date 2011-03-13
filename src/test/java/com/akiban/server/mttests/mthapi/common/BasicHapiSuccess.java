@@ -71,12 +71,7 @@ public class BasicHapiSuccess extends HapiSuccess {
     protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result)
             throws JSONException
     {
-        try {
-            JsonUtils.validateResponse(result, requestStruct.getSelectRoot(), requestStruct.getPredicatesTable());
-        } catch (HapiValidationError e) {
-            e.setJsonObject(result);
-            throw e;
-        }
+        JsonUtils.validateResponse(result, requestStruct.getSelectRoot(), requestStruct.getPredicatesTable());
     }
 
     @Override

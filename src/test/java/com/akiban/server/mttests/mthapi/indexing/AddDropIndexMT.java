@@ -34,6 +34,7 @@ import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
+import com.akiban.server.mttests.mthapi.common.HapiValidationError;
 import com.akiban.server.service.session.Session;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -80,7 +81,10 @@ public final class AddDropIndexMT extends HapiMTBase {
             protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
                 super.validateSuccessResponse(requestStruct, result);
                 // Also, we must have results!
-                assertEquals("number of roots", 1, result.getJSONArray("@p").length());
+                HapiValidationError.assertEquals(HapiValidationError.Reason.ROOT_TABLES_COUNT,
+                        "number of roots",
+                        1, result.getJSONArray("@p").length()
+                );
             }
 
             @Override

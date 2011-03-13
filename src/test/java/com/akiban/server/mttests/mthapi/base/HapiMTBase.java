@@ -21,6 +21,7 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.itests.ApiTestBase;
+import com.akiban.server.mttests.mthapi.common.HapiValidationError;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
@@ -138,7 +139,13 @@ public class HapiMTBase extends ApiTestBase {
                 hapiReadThread.validateErrorResponse(request, e);
                 return null;
             }
-            hapiReadThread.validateSuccessResponse(requestStruct, resultJson);
+            try {
+                hapiReadThread.validateSuccessResponse(requestStruct, resultJson);
+            } catch (HapiValidationError e) {
+                e.setJsonObject(resultJson);
+                e.setGetRequest(request);
+                throw e;
+            }
             LOG.trace("{} verified", id);
             return null;
         }
@@ -282,7 +289,7 @@ public class HapiMTBase extends ApiTestBase {
                 try {
                     future.get();
                 } catch (ExecutionException e) {
-                    addError(e);
+                    addError(e.getCause());
                 }
             }
             return null;
