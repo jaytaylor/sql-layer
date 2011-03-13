@@ -29,4 +29,6 @@ public interface WriteThread {
             throws InvalidOperationException;
 
     WriteThreadStats getStats();
+
+    boolean continueThroughException(Throwable throwable);
 }

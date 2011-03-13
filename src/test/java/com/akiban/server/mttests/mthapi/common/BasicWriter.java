@@ -144,6 +144,11 @@ public class BasicWriter implements WriteThread {
         setupRows(session, dml);
     }
 
+    @Override
+    public boolean continueThroughException(Throwable throwable) {
+        return true;
+    }
+
     protected void setupDDLS(DDLFunctions ddl, Session session) throws InvalidOperationException {
         Set<SaisTable> allTables = SaisTable.setIncludingChildren(initialRoots);
         StringBuilder sb = new StringBuilder();

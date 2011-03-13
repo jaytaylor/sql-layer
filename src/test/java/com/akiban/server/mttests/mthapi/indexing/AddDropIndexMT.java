@@ -178,6 +178,11 @@ public final class AddDropIndexMT extends HapiMTBase {
             }
 
             @Override
+            public boolean continueThroughException(Throwable throwable) {
+                return true;
+            }
+
+            @Override
             public WriteThreadStats getStats() {
                 return new WriteThreadStats(0, 0, 0);
             }
