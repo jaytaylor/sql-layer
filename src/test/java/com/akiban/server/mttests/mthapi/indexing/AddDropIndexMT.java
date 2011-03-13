@@ -44,8 +44,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-
 public final class AddDropIndexMT extends HapiMTBase {
     private static final String SCHEMA = "indexestest";
     @Test
@@ -141,12 +139,12 @@ public final class AddDropIndexMT extends HapiMTBase {
                 }
             }
 
+            private boolean shouldCreate;
+
             @Override
             public void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
                     throws InvalidOperationException
             {
-                boolean shouldCreate = true;
-                boolean createForString = true;
                 final TableName tableName = new TableName(SCHEMA, "p");
 
                 UserTable parentTable = ddl.getUserTable(session, tableName);
@@ -163,6 +161,9 @@ public final class AddDropIndexMT extends HapiMTBase {
                 Collection<Index> stringIndexCollection = Collections.singleton(stringIndex);
                 Collection<Index> numIndexCollection = Collections.singleton(numIndex);
                 Collection<String> indexNameCollection = Collections.singleton(indexName);
+
+                shouldCreate = parentTable.getIndex(indexName) != null;
+                boolean createForString = true;
 
                 while(keepGoing.get()) {
                     if (shouldCreate) {
