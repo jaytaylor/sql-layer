@@ -162,7 +162,7 @@ public final class AddDropIndexMT extends HapiMTBase {
                 Collection<Index> numIndexCollection = Collections.singleton(numIndex);
                 Collection<String> indexNameCollection = Collections.singleton(indexName);
 
-                shouldCreate = parentTable.getIndex(indexName) != null;
+                shouldCreate = parentTable.getIndex(indexName) == null;
                 boolean createForString = true;
 
                 while(keepGoing.get()) {
