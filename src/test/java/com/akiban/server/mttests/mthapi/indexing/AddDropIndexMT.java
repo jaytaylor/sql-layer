@@ -80,8 +80,12 @@ public final class AddDropIndexMT extends HapiMTBase {
             @Override
             protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
                 super.validateSuccessResponse(requestStruct, result);
+                HapiValidationError.assertFalse(HapiValidationError.Reason.ROOT_TABLES_COUNT,
+                        "more than one root found",
+                        result.getJSONArray("@p").length() > 1);
                 // Also, we must have results!
 //                TODO: this isn't a valid test while we allow concurrent scans and adding/dropping of indexes
+//                see: https://answers.launchpad.net/akiban-server/+question/148857
 //                HapiValidationError.assertEquals(HapiValidationError.Reason.ROOT_TABLES_COUNT,
 //                        "number of roots",
 //                        1, result.getJSONArray("@p").length()
