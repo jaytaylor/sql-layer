@@ -21,6 +21,7 @@ import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
+import com.akiban.server.service.ServiceManagerImpl;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -100,6 +101,10 @@ public class BasicHapiSuccess extends HapiSuccess {
 
     @Override
     protected int spawnCount() {
-        return 500000;
+        String string = ServiceManagerImpl.get().getConfigurationService().getProperty(
+                "akserver.test.mt.spawncount",
+                "50000"
+        );
+        return Integer.parseInt(string);
     }
 }
