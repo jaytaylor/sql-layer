@@ -39,8 +39,8 @@ public class RCTortureIT extends ApiTestBase
     @Test
     public void testRepeatedly() throws Exception
     {
-        for (int t = 0; t < TRIALS; t++) {
-            test(t);
+        for (trial= 0; trial < TRIALS; trial++) {
+            test();
             dropAllTables();
         }
     }
@@ -83,7 +83,7 @@ public class RCTortureIT extends ApiTestBase
 
     void printDB()
     {
-        if (DEBUG) {
+        if (trial == DEBUG_TRIAL) {
             print("----------------------------------------------------");
             for (NewRow row : db) {
                 int tableId = row.getTableId();
@@ -103,13 +103,14 @@ public class RCTortureIT extends ApiTestBase
 
     void print(String template, Object... args)
     {
-        if (DEBUG) {
+        if (trial == DEBUG_TRIAL) {
             System.out.println(String.format(template, args));
         }
     }
 
-    private void test(int trial) throws Exception
+    private void test() throws Exception
     {
+        System.out.println(String.format("TRIAL %s", trial));
         random = new Random(seed(trial));
         database.createSchema();
         database.populate();
@@ -118,16 +119,8 @@ public class RCTortureIT extends ApiTestBase
 
     private void runQueries() throws Exception
     {
-        if (false) {
-/* Bug in KeyFilter. Peter is working on it.
-            runQuery(orderTable, orderTable, Column.O_CID,  HapiPredicate.Operator.LT, 2);
-   Looks like the same bug:
-            runQuery(itemTable, itemTable, Column.I_CID,  HapiPredicate.Operator.LT, 2);
-            runQuery(customerTable, orderTable, Column.O_CID,  HapiPredicate.Operator.LT, 2);
-   Problem setting key segment differsAt:
-*/
-            runQuery(customerTable, itemTable, Column.I_CID,  HapiPredicate.Operator.EQ, 1);
-            // runQuery(customerTable, addressTable, Column.A_CID,  HapiPredicate.Operator.EQ, 2);
+        if (false) { // trial == DEBUG_TRIAL) {
+            runQuery(customerTable, itemTable, Column.I_CID,  HapiPredicate.Operator.GTE, 0);
         } else {
             for (HapiPredicate.Operator comparison : HapiPredicate.Operator.values()) {
                 if (comparison != HapiPredicate.Operator.NE) {
@@ -167,7 +160,7 @@ public class RCTortureIT extends ApiTestBase
             actual.queryResult(rootTable, predicateTable, predicateColumn, comparison, literal);
         String expectedQueryResult =
             expected.queryResult(rootTable, predicateTable, predicateColumn, comparison, literal);
-        if (DEBUG) {
+        if (trial == DEBUG_TRIAL) {
             if (!actualQueryResult.equals(expectedQueryResult)) {
                 print("expected:\n%s", formatJSON(expectedQueryResult));
                 print("actual:\n%s", formatJSON(actualQueryResult));
@@ -197,13 +190,13 @@ public class RCTortureIT extends ApiTestBase
     };
 
     // Test parameters
-    static final int TRIALS = 1;
+    static final int TRIALS = 2;
     static final int SEED = 123456789;
     static final int MAX_CUSTOMERS = 3;
     static final int MAX_ORDERS_PER_CUSTOMER = 3;
     static final int MAX_ITEMS_PER_ORDER = 2;
     static final int MAX_ADDRESSES_PER_CUSTOMER = 2;
-    static final boolean DEBUG = Boolean.getBoolean("debugMode");
+    static final Integer DEBUG_TRIAL = Integer.getInteger("debugTrial", -1);
 
     // Constants
     static final String SCHEMA = "schema";
@@ -213,6 +206,7 @@ public class RCTortureIT extends ApiTestBase
 
     // Test state
     Random random;
+    int trial;
     int customerTable;
     int orderTable;
     int itemTable;

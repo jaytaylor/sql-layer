@@ -715,9 +715,11 @@ public class PersistitStoreRowCollector implements RowCollector {
                     // gets reused to store the row and should then be immediately delivered on the next pass through
                     // the loop.
                     int level = pendingRowData.length - 1;
-                    prepareRow(hEx, level);
-                    if (level < pendingFromLevel) {
-                        pendingFromLevel = level;
+                    // If null rows were generated, the level of the rootmost one is returned by prepareRow.
+                    // Otherwise, level is returned.
+                    int rootmostNullRowLevel = prepareRow(hEx, level);
+                    if (rootmostNullRowLevel < pendingFromLevel) {
+                        pendingFromLevel = rootmostNullRowLevel;
                     }
                     hKey.copyTo(lastKey);
                     pendingToLevel = level + 1;
@@ -726,10 +728,12 @@ public class PersistitStoreRowCollector implements RowCollector {
                     // TODO: ORPHANS - below depth, set deeper rows to all null.
                     for (int level = projectedRowDefs.length; --level >= 0;) {
                         if (depth == projectedRowDefs[level].getHKeyDepth()) {
-                            prepareRow(hEx, level);
+                            // If null rows were generated, the level of the rootmost one is returned by prepareRow.
+                            // Otherwise, level is returned.
+                            int rootmostNullRowLevel = prepareRow(hEx, level);
                             hKey.copyTo(lastKey);
-                            if (level < pendingFromLevel) {
-                                pendingFromLevel = level;
+                            if (rootmostNullRowLevel < pendingFromLevel) {
+                                pendingFromLevel = rootmostNullRowLevel;
                             }
                             pendingToLevel = level + 1;
                             if (level == projectedRowDefs.length - 1 && isDeepMode()) {
@@ -746,7 +750,7 @@ public class PersistitStoreRowCollector implements RowCollector {
         return result;
     }
 
-    void prepareRow(final Exchange exchange, final int level)
+    int prepareRow(final Exchange exchange, final int level)
             throws Exception
     {
         if (LOG.isDebugEnabled()) {
@@ -754,22 +758,34 @@ public class PersistitStoreRowCollector implements RowCollector {
         }
         store.expandRowData(exchange, pendingRowData[level]);
         int differsAtKeySegment = exchange.getKey().firstUniqueSegmentDepth(lastKey);
-        int firstMissingAncestorLevel = -1;
+        int rootmostMissingAncestorLevel = -1;
+        int leafmostMissingAncestorLevel = -1;
         for (int ancestorLevel = level; --ancestorLevel >= 0;) {
             RowDef ancestorRowDef = projectedRowDefs[ancestorLevel];
             if (ancestorRowDef.getHKeyDepth() > differsAtKeySegment) {
                 pendingRowData[ancestorLevel].createRow(ancestorRowDef, nulls(ancestorRowDef.getFieldCount()), true);
-                if (firstMissingAncestorLevel == -1) {
-                    firstMissingAncestorLevel = ancestorLevel;
+                if (leafmostMissingAncestorLevel == -1) {
+                    leafmostMissingAncestorLevel = ancestorLevel;
                 }
+                rootmostMissingAncestorLevel = ancestorLevel;
             } else {
                 break;
             }
         }
-        pendingRowData[level].differsFromPredecessorAtKeySegment(
-            firstMissingAncestorLevel == -1
-            ? differsAtKeySegment
-            : projectedRowDefs[firstMissingAncestorLevel].getHKeyDepth() - 1);
+        int returnLevel;
+        if (rootmostMissingAncestorLevel == -1) {
+            pendingRowData[level].differsFromPredecessorAtKeySegment(differsAtKeySegment);
+            returnLevel = level;
+        } else {
+            for (int ancestorLevel = rootmostMissingAncestorLevel;
+                 ancestorLevel <= level;
+                 ancestorLevel++) {
+                pendingRowData[ancestorLevel].differsFromPredecessorAtKeySegment
+                    (ancestorLevel == 0 ? 0 : projectedRowDefs[ancestorLevel - 1].getHKeyDepth());
+            }
+            returnLevel = rootmostMissingAncestorLevel;
+        }
+        return returnLevel;
     }
 
     void prepareCoveredRow(final Exchange exchange, final int rowDefId,
