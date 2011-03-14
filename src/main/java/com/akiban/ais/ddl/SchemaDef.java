@@ -257,7 +257,7 @@ public class SchemaDef {
         if (type.equals(IndexQualifier.FOREIGN_KEY)) {
             assert !currentIndex.columns.isEmpty() : currentIndex;
             assert !currentIndex.referenceColumns.isEmpty() : currentIndex;
-            assert null != currentIndex.referenceTable : currentIndex;
+            assert !currentIndex.referenceTables.isEmpty() : currentIndex;
         }
         currentIndex = null;
         currentConstraintName = null;
@@ -333,29 +333,23 @@ public class SchemaDef {
             } else {
                 if (real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
                     // two FK indexes, make sure they're compatible
-                    if (equivalent.qualifiers
-                            .contains(IndexQualifier.FOREIGN_KEY)) {
-                        if (equivalent.referenceTable != null
-                                && !real.referenceTable
-                                        .equals(equivalent.referenceTable)) {
-                            throw new IllegalStateException(
-                                    "incompatible reference tables between provisional "
-                                            + real + " and " + equivalent);
+                    if (equivalent.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                        if (!real.referenceTables.equals(equivalent.referenceTables)) {
+                            throw new IllegalStateException(String.format(
+                                    "incompatible reference tables between provisional %s and %s",
+                                    real, equivalent));
                         } else if (!equivalent.referenceColumns.isEmpty()
-                                && !real.referenceColumns
-                                        .equals(equivalent.referenceColumns)) {
-                            throw new IllegalStateException(
-                                    "incompatible columns between provisional "
-                                            + real + " and " + equivalent);
+                                   && !real.referenceColumns.equals(equivalent.referenceColumns)) {
+                            throw new IllegalStateException(String.format(
+                                    "incompatible columns between provisional %s and %s ",
+                                    real, equivalent));
                         }
                     } else {
-                        // Assert there's no FK-like stuff here already, then
-                        // add it
-                        assert equivalent.referenceTable == null : equivalent.referenceTable;
+                        // Assert there's no FK-like stuff here already, then add it
+                        assert equivalent.referenceTables.isEmpty() : equivalent.referenceTables;
                         assert equivalent.referenceColumns.isEmpty() : equivalent.referenceColumns;
-                        equivalent.referenceTable = real.referenceTable;
-                        equivalent.referenceColumns
-                                .addAll(real.referenceColumns);
+                        equivalent.referenceTables = real.referenceTables;
+                        equivalent.referenceColumns.addAll(real.referenceColumns);
                     }
                 }
                 equivalent.qualifiers.addAll(real.qualifiers);
@@ -419,8 +413,8 @@ public class SchemaDef {
         currentIndex.columns.add(currentIndexColumn);
     }
 
-    void setIndexReference(final CName referenceTableName) {
-        currentIndex.referenceTable = referenceTableName;
+    void addIndexReference(final CName referenceTableName) {
+        currentIndex.referenceTables.add(referenceTableName);
     }
 
     void addIndexReferenceColumn(final String columnName) {
@@ -814,7 +808,7 @@ public class SchemaDef {
         String name;
         Set<IndexQualifier> qualifiers = EnumSet.noneOf(IndexQualifier.class);
         List<IndexColumnDef> columns = new ArrayList<IndexColumnDef>();
-        CName referenceTable;
+        List<CName> referenceTables = new ArrayList<CName>();
         List<String> referenceColumns = new ArrayList<String>();
         List<String> constraints = new ArrayList<String>();
         String comment;
@@ -823,43 +817,16 @@ public class SchemaDef {
             this.name = name;
         }
 
-        public IndexDef(String name, Set<IndexQualifier> qualifiers,
-                List<IndexColumnDef> columns, CName referenceTable,
-                List<String> referenceColumns, List<String> constraints) {
-            this.name = name;
-            this.qualifiers = qualifiers;
-            this.columns = columns;
-
-            this.referenceTable = referenceTable;
-            this.referenceColumns = referenceColumns;
-            this.constraints = constraints;
-        }
-
         /**
          * Gets the parent schema
-         * 
-         * @return the parsed schema name, or null if there was no parsed schema
+         * @return the parsed schema name or null if there wasn't one
          */
         public String getParentSchema() {
-            return getParentSchema(null);
-        }
-
-        /**
-         * Gets the parent schema, or the specified default if the parent schema
-         * is null
-         * 
-         * @param defaultSchema
-         *            the specified default
-         * @return the parsed schema name, or defaultSchema if there was no
-         *         parsed schema
-         */
-        public String getParentSchema(String defaultSchema) {
-            String ret = referenceTable.getSchema();
-            return ret == null ? defaultSchema : ret;
+            return referenceTables.get(0).getSchema();
         }
 
         public String getParentTable() {
-            return referenceTable.getName();
+            return referenceTables.get(0).getName();
         }
 
         public List<String> getParentColumns() {
@@ -878,8 +845,8 @@ public class SchemaDef {
         public String toString() {
             return "IndexDef[name=" + name + "; columns=" + columns
                     + "; qualifiers=" + qualifiers + "; references="
-                    + referenceTable + " parent columns " + referenceColumns
-                    + "; contraints=" + constraints + ']';
+                    + referenceTables + " parent columns " + referenceColumns
+                    + "; constraints=" + constraints + ']';
         }
 
         @Override
@@ -916,12 +883,7 @@ public class SchemaDef {
                     : indexDef.referenceColumns != null) {
                 return false;
             }
-            if (referenceTable != null ? !referenceTable
-                    .equals(indexDef.referenceTable)
-                    : indexDef.referenceTable != null) {
-                return false;
-            }
-            return true;
+            return referenceTables.equals(indexDef.referenceTables);
         }
 
         @Override
@@ -930,8 +892,7 @@ public class SchemaDef {
             result = 31 * result
                     + (qualifiers != null ? qualifiers.hashCode() : 0);
             result = 31 * result + (columns != null ? columns.hashCode() : 0);
-            result = 31 * result
-                    + (referenceTable != null ? referenceTable.hashCode() : 0);
+            result = 31 * result + referenceTables.hashCode();
             result = 31
                     * result
                     + (referenceColumns != null ? referenceColumns.hashCode()
@@ -947,15 +908,15 @@ public class SchemaDef {
                 throw new SchemaDefException(String.format("duplicate index: %s listed with columns %s and %s",
                         name, columns, otherIndex.columns));
             }
-            if (referenceTable == null) {
-                referenceTable = otherIndex.referenceTable;
+            if (referenceTables.isEmpty()) {
+                referenceTables = otherIndex.referenceTables;
                 referenceColumns = otherIndex.referenceColumns;
-            } else if (otherIndex.referenceTable != null
-                    && !(
-                    referenceTable.equals(otherIndex.referenceTable)
+            } else if (!otherIndex.referenceTables.isEmpty()
+                       && !(referenceTables.equals(otherIndex.referenceTables)
                             && referenceColumns.equals(otherIndex.referenceColumns))) {
-                throw new SchemaDefException(String.format("duplicate index: %s references both %s and %s",
-                        name, referenceTable, otherIndex.referenceTable));
+                throw new SchemaDefException(String.format(
+                        "duplicate index: %s references both %s and %s",
+                        name, referenceTables, otherIndex.referenceTables));
             }
             if (comment == null) {
                 comment = otherIndex.comment;

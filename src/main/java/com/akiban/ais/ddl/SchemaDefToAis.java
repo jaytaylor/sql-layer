@@ -167,7 +167,7 @@ public class SchemaDefToAis {
                 members.add(userTableName);
             } else {
                 for (IndexDef fk : annotatedFKs) {
-                    utDef.parent = addImpliedGroupTable(tablesInGroups, fk.referenceTable);
+                    utDef.parent = addImpliedGroupTable(tablesInGroups, fk.referenceTables.get(0));
                     if (utDef.parent != null) {
                         utDef.groupName = utDef.parent.groupName;
                         for (SchemaDef.IndexColumnDef childColumn : fk.columns) {
@@ -331,7 +331,7 @@ public class SchemaDefToAis {
                 if (indexType.equalsIgnoreCase("FOREIGN KEY")) {
                     // foreign keys (aka candidate joins)
                     CName childTable = utDef.name;
-                    CName parentTable = indexDef.referenceTable;
+                    CName parentTable = indexDef.referenceTables.get(0);
                     String joinName = constructFKJoinName(utDef, indexDef);
 
                     builder.joinTables(joinName, parentTable.getSchema(),
@@ -397,7 +397,7 @@ public class SchemaDefToAis {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Group Child Table = " + table.getName());
                         }
-                        if (fk.referenceTable != null) {
+                        if (!fk.referenceTables.isEmpty()) {
                             String joinName = constructFKJoinName(tableDef, fk);
                             builder.addJoinToGroup(groupName, joinName, 0);
                         }

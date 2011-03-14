@@ -316,8 +316,8 @@ public class SchemaDefToAisTest {
 
     @Test
     public void foreignKeysOnAkibanTable() throws Exception {
-        // Expected behavior: A) __akiban joins are preserved with at least one index named __akiban as an 'AKIBAN KEY'
-        //                    B) other joins discard but the generated index is kept
+        // Expected behavior: A) __akiban joins are preserved with at least one index named __akiban as an 'FOREIGN KEY'
+        //                    B) other joins discarded but the generated index is kept
         final String ddl = "create table test.p(id int key) engine=akibandb;"+
                            "create table test.x(id int key, pid int, constraint __akiban1 foreign key(pid) references p(id)) engine=akibandb;"+
                            "create table test.y(id int key, pid int, xid int, constraint foreign key(pid) references p(id), constraint __akiban2 foreign key(xid) references x(id)) engine=akibandb;";
