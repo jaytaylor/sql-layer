@@ -256,7 +256,7 @@ public class SchemaDef {
         if (type.equals(IndexQualifier.FOREIGN_KEY)) {
             assert !currentIndex.columns.isEmpty() : currentIndex;
             assert !currentIndex.references.isEmpty() : currentIndex;
-            assert !currentIndex.references.get(0).columns.isEmpty() : currentIndex;
+            assert !currentIndex.references.get(currentIndex.references.size()-1).columns.isEmpty() : currentIndex;
         }
         currentIndex = null;
         currentConstraintName = null;
@@ -314,6 +314,12 @@ public class SchemaDef {
             List<IndexColumnDef> columns = handle.real.columns;
             IndexDef equivalent = findEquivalentIndex(columnsToIndexes, handle.real);
             if (equivalent != null) {
+                // For two compatible foreign keys:
+                // If 2nd columns are a proper subset of 1st, then combined name is 1st. Otherwise it is 2nd.
+                if (equivalent.qualifiers.contains(IndexQualifier.FOREIGN_KEY)
+                    && (handle.real.columns.size() >= equivalent.columns.size())) {
+                    equivalent.name = handle.real.name;
+                }
                 equivalent.addIndexAttributes(handle.real);
                 currentTable.indexHandles.remove(handle);
             }
@@ -331,9 +337,7 @@ public class SchemaDef {
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
             } else {
-                equivalent.references.addAll(real.references);
-                equivalent.qualifiers.addAll(real.qualifiers);
-                equivalent.constraints.addAll(real.constraints);
+                equivalent.addIndexAttributes(real);
             }
         }
         provisionalIndexes.clear();
@@ -739,8 +743,8 @@ public class SchemaDef {
             return Collections.unmodifiableList(primaryKey);
         }
 
-        public List<IndexDef.ReferenceDef> getAkibanJoinRefs() {
-            List<IndexDef.ReferenceDef> joinRefs = new ArrayList<IndexDef.ReferenceDef>();
+        public List<ReferenceDef> getAkibanJoinRefs() {
+            List<ReferenceDef> joinRefs = new ArrayList<ReferenceDef>();
             for (final IndexDef indexDef : indexes) {
                 joinRefs.addAll(indexDef.getAkibanJoinRefs());
             }
@@ -777,39 +781,44 @@ public class SchemaDef {
         }
     }
 
-    public static class IndexDef {
-        public class ReferenceDef {
-            String name;
-            CName table;
-            IndexDef index;
-            List<String> columns = new ArrayList<String>();
+    public static class ReferenceDef {
+        String name;
+        CName table;
+        IndexDef index;
+        List<String> columns = new ArrayList<String>();
 
-            ReferenceDef(String name, CName table, IndexDef index) {
-                this.name = name;
-                this.table = table;
-                this.index = index;
-            }
-
-            public boolean isAkibanJoin() {
-                return (name != null) && (name.startsWith("__akiban")); 
-            }
-
-            public String getSchemaName() {
-                return table.getSchema();
-            }
-
-            public String getTableName() {
-                return table.getName();
-            }
-
-            public IndexDef getIndex() {
-                return index;
-            }
-
-            public List<String> getColumns() {
-                return columns;
-            }
+        ReferenceDef(String name, CName table, IndexDef index) {
+            this.name = name;
+            this.table = table;
+            this.index = index;
         }
+
+        public boolean isAkibanJoin() {
+            return (name != null) && (name.startsWith("__akiban"));
+        }
+
+        public String getSchemaName() {
+            return table.getSchema();
+        }
+
+        public String getTableName() {
+            return table.getName();
+        }
+
+        public IndexDef getIndex() {
+            return index;
+        }
+
+        public List<String> getColumns() {
+            return columns;
+        }
+
+        public void addColumn(String columnName) {
+            columns.add(columnName);
+        }
+    }
+    
+    public static class IndexDef {
 
         String name;
         Set<IndexQualifier> qualifiers = EnumSet.noneOf(IndexQualifier.class);
@@ -883,10 +892,8 @@ public class SchemaDef {
         }
 
         void addIndexAttributes(IndexDef otherIndex) {
-            if(!columnListsAreSubset(columns, otherIndex.columns)) {
-                throw new SchemaDefException(String.format("duplicate index: %s listed with columns %s and %s",
-                        name, columns, otherIndex.columns));
-            }
+            assert columnListsAreSubset(columns, otherIndex.columns) :
+                   String.format("combining keys with columns %s and %s", columns, otherIndex.columns);
             if (comment == null) {
                 comment = otherIndex.comment;
             }
@@ -917,7 +924,7 @@ public class SchemaDef {
         public void addReferenceColumn(String columnName) {
             assert !references.isEmpty() : "Index has no existing table reference";
             int lastIndex = references.size() - 1;
-            references.get(lastIndex).columns.add(columnName);
+            references.get(lastIndex).addColumn(columnName);
         }
     }
 

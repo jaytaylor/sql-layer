@@ -1126,7 +1126,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
 
-        final List<SchemaDef.IndexDef.ReferenceDef> parentJoins = tableDef.getAkibanJoinRefs();
+        final List<SchemaDef.ReferenceDef> parentJoins = tableDef.getAkibanJoinRefs();
         if (parentJoins.isEmpty()) {
             return;
         }
@@ -1138,7 +1138,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, tableName);
         }
 
-        final SchemaDef.IndexDef.ReferenceDef parentJoin = parentJoins.get(0);
+        final SchemaDef.ReferenceDef parentJoin = parentJoins.get(0);
         final String parentTableName = parentJoin.getTableName();
         final String parentSchema = parentJoin.getSchemaName() != null ?
                                     parentJoin.getSchemaName() :

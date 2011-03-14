@@ -367,9 +367,9 @@ public class SchemaDefToAisTest {
             "create table t2(a int) engine=akibandb;"+
             "create table t3(a int, b int) engine=akibandb;"+
             "create table t4(a int, constraint f1 foreign key f1(a) references t1(a),"+
-                                   "constraint f2 foreign key f2(a) references t2(b)) engine=akibandb"+
+                                   "constraint f2 foreign key f2(a) references t2(b)) engine=akibandb;"+
             "create table t5(a int, b int, constraint f1 foreign key f1(a,b) references t3(a,b),"+
-                                          "constraint f2 foreign key f2(a) references t1(a)) engine=akibandb";
+                                          "constraint f2 foreign key f2(a) references t1(a)) engine=akibandb;";
 
         final AkibanInformationSchema ais= buildAISfromString(ddl);
         final UserTable t4 = ais.getUserTable("test", "t4");
