@@ -33,11 +33,11 @@ import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
-import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
 import com.akiban.server.mttests.mthapi.common.HapiValidationError;
 import com.akiban.server.service.session.Session;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -46,7 +46,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class AddDropIndexMT extends HapiMTBase {
     private static final String SCHEMA = "indexestest";
-    @Test
+
+    @Ignore @Test
     public void addDropIndex() {
         WriteThread writeThread = getAddDropIndexThread("theindex");
 
@@ -62,7 +63,7 @@ public final class AddDropIndexMT extends HapiMTBase {
         builder.table("p", "id", "aString", "anInt").pk("id");
         builder.table("c1", "id", "pid").pk("id").joinTo("p").col("id", "pid");
         final SaisTable pTable = builder.getSoleRootTable();
-        return new BasicHapiSuccess(SCHEMA, pTable) {
+        return new OptionallyWorkingReadThread(SCHEMA, pTable, HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST) {
 
             @Override
             protected HapiRequestStruct pullRequest(int pseudoRandom) {
@@ -94,20 +95,6 @@ public final class AddDropIndexMT extends HapiMTBase {
             protected int spawnCount() {
                 float spawnRoughly = chance * super.spawnCount();
                 return (int)(spawnRoughly + .5);
-            }
-
-            @Override
-            protected void validateErrorResponse(HapiGetRequest request, Throwable exception)
-                    throws UnexpectedException
-            {
-                if (exception instanceof HapiRequestException) {
-                    HapiRequestException hre = (HapiRequestException) exception;
-                    if (HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST.equals(hre.getReasonCode())) {
-                        return;
-                    }
-                    return;
-                }
-                super.validateErrorResponse(request, exception);
             }
         };
     }
