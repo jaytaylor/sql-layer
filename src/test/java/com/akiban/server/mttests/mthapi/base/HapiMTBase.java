@@ -47,6 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
@@ -226,6 +227,10 @@ public class HapiMTBase extends ApiTestBase {
         }
         for (Future<Void> processingFuture : processingFutures) {
             try {
+                // If any processor had been starved, it will wait forever. We can flush these by putting in dummy
+                // futures, one per processor. If any processors hadn't been starved, they'll just process the dummy,
+                // which is fine.
+                submitFutures.offer(new DummyFuture());
                 processingFuture.get();
             } catch (ExecutionException e) {
                 throw new RuntimeException(e);
@@ -233,6 +238,33 @@ public class HapiMTBase extends ApiTestBase {
         }
 
         return errors;
+    }
+
+    private static class DummyFuture implements Future<Void> {
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+
+        @Override
+        public Void get() {
+            return null;
+        }
+
+        @Override
+        public Void get(long timeout, TimeUnit unit) {
+            return null;
+        }
     }
 
     protected int processersCount() {
