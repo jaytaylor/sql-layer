@@ -156,17 +156,17 @@ public class SchemaDefToAisTest {
         assertEquals("index[0] constraint[0]", "__akiban_fk",
                 tableDef.indexes.get(0).constraints.get(0));
         assertEquals("index[0] child columns", 1, tableDef.indexes.get(0)
-                .getChildColumns().size());
+                .getColumnNames().size());
         assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0)
-                .getChildColumns().get(0));
+                .getColumnNames().get(0));
         assertEquals("index[0] parent schema", null, tableDef.indexes.get(0)
-                .getParentSchema());
+                .references.get(0).table.getSchema());
         assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0)
-                .getParentTable());
+                .references.get(0).table.getName());
         assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0)
-                .getParentColumns().size());
+                .references.get(0).columns.size());
         assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0)
-                .getParentColumns().get(0));
+                .references.get(0).columns.get(0));
     }
 
     private static void createTableWithError(
@@ -219,17 +219,17 @@ public class SchemaDefToAisTest {
         assertEquals("index[0] constraint[0]", "__akiban_fk",
                 tableDef.indexes.get(0).constraints.get(0));
         assertEquals("index[0] child columns", 1, tableDef.indexes.get(0)
-                .getChildColumns().size());
+                .getColumnNames().size());
         assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0)
-                .getChildColumns().get(0));
+                .getColumnNames().get(0));
         assertEquals("index[0] parent schema", null, tableDef.indexes.get(0)
-                .getParentSchema());
+                .references.get(0).table.getSchema());
         assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0)
-                .getParentTable());
+                .references.get(0).table.getName());
         assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0)
-                .getParentColumns().size());
+                .references.get(0).columns.size());
         assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0)
-                .getParentColumns().get(0));
+                .references.get(0).columns.get(0));
     }
 
     public static void main(final String[] args) throws Exception {
@@ -356,7 +356,7 @@ public class SchemaDefToAisTest {
                            "create table test.y(id int key, pid int, xid int, constraint __akiban1 foreign key(pid) references p(id), constraint __akiban2 foreign key(xid) references x(id)) engine=akibandb;";
         final SchemaDef schemaDef = SchemaDef.parseSchema(ddl);
         final SchemaDef.UserTableDef yTable = schemaDef.getUserTableMap().get(new SchemaDef.CName("test","y"));
-        assertEquals(2, yTable.getAkibanJoinIndexes().size());
+        assertEquals(2, yTable.getAkibanJoinRefs().size());
         new SchemaDefToAis(schemaDef, true).getAis();
     }
 

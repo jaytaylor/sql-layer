@@ -1126,7 +1126,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
 
-        final List<SchemaDef.IndexDef> parentJoins = tableDef.getAkibanJoinIndexes();
+        final List<SchemaDef.IndexDef.ReferenceDef> parentJoins = tableDef.getAkibanJoinRefs();
         if (parentJoins.isEmpty()) {
             return;
         }
@@ -1138,10 +1138,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, tableName);
         }
 
-        final SchemaDef.IndexDef parentJoin = parentJoins.get(0);
-        final String parentTableName = parentJoin.getParentTable();
-        final String parentSchema = parentJoin.getParentSchema() != null ?
-                                    parentJoin.getParentSchema() :
+        final SchemaDef.IndexDef.ReferenceDef parentJoin = parentJoins.get(0);
+        final String parentTableName = parentJoin.getTableName();
+        final String parentSchema = parentJoin.getSchemaName() != null ?
+                                    parentJoin.getSchemaName() :
                                     schemaName;
 
         if (AKIBAN_INFORMATION_SCHEMA.equals(parentSchema)) {
@@ -1160,8 +1160,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName, tableName, parentSchema, parentTableName);
         }
 
-        List<String> childColumns = parentJoin.getChildColumns();
-        List<String> parentColumns = parentJoin.getParentColumns();
+        List<String> childColumns = parentJoin.getIndex().getColumnNames();
+        List<String> parentColumns = parentJoin.getColumns();
         List<Column> parentPKColumns = parentTable.getPrimaryKey() == null ?
                                        null :
                                        parentTable.getPrimaryKey().getColumns();

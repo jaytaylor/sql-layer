@@ -283,6 +283,7 @@ public class SchemaDef {
             }
         }
         addIndex(actualName);
+        currentIndex.qualifiers.add(qualifier);
         addIndexQualifier(qualifier);
         return currentIndex;
     }
@@ -325,14 +326,13 @@ public class SchemaDef {
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;
             final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
-            if (equivalent == null || equivalent.isAkiban()) {
+            if (equivalent == null || equivalent.hasAkibanJoin()) {
                 real.name = indexNameGenerator.generateName(real);
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
             } else {
                 equivalent.references.addAll(real.references);
                 equivalent.qualifiers.addAll(real.qualifiers);
-                assert real.constraints.size() <= 1 : real.constraints;
                 equivalent.constraints.addAll(real.constraints);
             }
         }
@@ -355,7 +355,7 @@ public class SchemaDef {
 
     private static IndexDef findEquivalentIndex(Map<List<IndexColumnDef>, IndexDef> columnsToIndexes,
                                                 IndexDef index) {
-        if(index.isAkiban()) {
+        if(index.hasAkibanJoin()) {
             return null;
         }
         List<IndexColumnDef> columns = index.columns;
@@ -393,12 +393,11 @@ public class SchemaDef {
     }
 
     void addIndexReference(final CName referenceTableName) {
-        currentIndex.addReferenceTable(referenceTableName);
+        currentIndex.addReferenceDef(currentConstraintName, referenceTableName);
     }
 
     void addIndexReferenceColumn(final String columnName) {
-        int lastRefIndex = currentIndex.references.size() - 1;
-        currentIndex.references.get(lastRefIndex).columns.add(columnName);
+        currentIndex.addReferenceColumn(columnName);
     }
 
     void setIndexedLength(String indexedLength) {
@@ -740,18 +739,12 @@ public class SchemaDef {
             return Collections.unmodifiableList(primaryKey);
         }
 
-        /**
-         * Get all indexes marked as Akiban joins.
-         * @return List<IndexDef>
-         */
-        public List<IndexDef> getAkibanJoinIndexes() {
-            List<IndexDef> joinIndexes = new ArrayList<IndexDef>();
+        public List<IndexDef.ReferenceDef> getAkibanJoinRefs() {
+            List<IndexDef.ReferenceDef> joinRefs = new ArrayList<IndexDef.ReferenceDef>();
             for (final IndexDef indexDef : indexes) {
-                if (indexDef.isAkiban()) {
-                    joinIndexes.add(indexDef);
-                }
+                joinRefs.addAll(indexDef.getAkibanJoinRefs());
             }
-            return joinIndexes;
+            return joinRefs;
         }
 
         public boolean isAkibanTable() {
@@ -785,31 +778,43 @@ public class SchemaDef {
     }
 
     public static class IndexDef {
-        public class FKeyInfo {
+        public class ReferenceDef {
+            String name;
             CName table;
+            IndexDef index;
             List<String> columns = new ArrayList<String>();
 
-            FKeyInfo(CName table) {
+            ReferenceDef(String name, CName table, IndexDef index) {
+                this.name = name;
                 this.table = table;
+                this.index = index;
             }
-            
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) {
-                    return true;
-                }
-                if (o == null || getClass() != o.getClass()) {
-                    return false;
-                }
-                FKeyInfo rhs = (FKeyInfo)o;
-                return table.equals(rhs.table) && columns.equals(rhs.columns);
+
+            public boolean isAkibanJoin() {
+                return (name != null) && (name.startsWith("__akiban")); 
+            }
+
+            public String getSchemaName() {
+                return table.getSchema();
+            }
+
+            public String getTableName() {
+                return table.getName();
+            }
+
+            public IndexDef getIndex() {
+                return index;
+            }
+
+            public List<String> getColumns() {
+                return columns;
             }
         }
 
         String name;
         Set<IndexQualifier> qualifiers = EnumSet.noneOf(IndexQualifier.class);
         List<IndexColumnDef> columns = new ArrayList<IndexColumnDef>();
-        List<FKeyInfo> references = new ArrayList<FKeyInfo>();
+        List<ReferenceDef> references = new ArrayList<ReferenceDef>();
         List<String> constraints = new ArrayList<String>();
         String comment;
 
@@ -817,23 +822,7 @@ public class SchemaDef {
             this.name = name;
         }
 
-        /**
-         * Gets the parent schema
-         * @return the parsed schema name or null if there wasn't one
-         */
-        public String getParentSchema() {
-            return references.get(0).table.getSchema();
-        }
-
-        public String getParentTable() {
-            return references.get(0).table.getName();
-        }
-
-        public List<String> getParentColumns() {
-            return new ArrayList<String>(references.get(0).columns);
-        }
-
-        public List<String> getChildColumns() {
+        public List<String> getColumnNames() {
             List<String> ret = new ArrayList<String>(columns.size());
             for (IndexColumnDef col : columns) {
                 ret.add(col.columnName);
@@ -906,19 +895,29 @@ public class SchemaDef {
             references.addAll(otherIndex.references);
         }
 
-        public boolean isAkiban() {
-            if (qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
-                for (String constraint : constraints) {
-                    if (constraint.startsWith("__akiban")) {
-                        return true;
-                    }
+        public List<ReferenceDef> getAkibanJoinRefs() {
+            List<ReferenceDef> refs = new ArrayList<ReferenceDef>();
+            for (ReferenceDef ref : references) {
+                if (ref.isAkibanJoin()) {
+                    refs.add(ref);
                 }
             }
-            return false;
+            return refs;
         }
 
-        public void addReferenceTable(CName table) {
-            references.add(new FKeyInfo(table));
+        public boolean hasAkibanJoin() {
+            return qualifiers.contains(IndexQualifier.FOREIGN_KEY) &&
+                   !getAkibanJoinRefs().isEmpty();
+        }
+
+        public void addReferenceDef(String name, CName table) {
+            references.add(new ReferenceDef(name, table, this));
+        }
+
+        public void addReferenceColumn(String columnName) {
+            assert !references.isEmpty() : "Index has no existing table reference";
+            int lastIndex = references.size() - 1;
+            references.get(lastIndex).columns.add(columnName);
         }
     }
 
