@@ -39,7 +39,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.util.ThreadlessRandom;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,7 +138,7 @@ public final class AddDropTableMT extends HapiMTBase {
                 .key("priority")
                 .joinTo("customers").col("cid", "c_id");
 
-        builder.table("items", "iid", "o_id", "c_id")
+        builder.table("items", "iid", "o_id", "c_id").pk("iid")
                 .joinTo("orders").col("oid", "o_id").col("c_id", "c_id");
 
         builder.table("addresses","aid", "c_id")
@@ -181,7 +180,7 @@ public final class AddDropTableMT extends HapiMTBase {
             private void orders(DMLFunctions dml, Session session, int tableId) throws InvalidOperationException {
                 for (int cid = 0; cid < CUSTOMERS_COUNT; ++cid) {
                     for (int oid = 0; oid < ORDERS_PER_CUSTOMER; ++oid) {
-                        NewRow row = createNewRow(tableId, cid, oid, priority(cid, oid));
+                        NewRow row = createNewRow(tableId, oid, cid, priority(cid, oid));
                         dml.writeRow(session, row);
                     }
                 }
@@ -227,40 +226,19 @@ public final class AddDropTableMT extends HapiMTBase {
     private abstract static class AddDropTablesWriter implements WriteThread {
 
         /**
-         * All of the tables on which we can perform an action (adding or dropping). The table's value corresponds
-         * to its table ID, or null if the table isn't in the system.
+         * How many children each table has. If negative, the table doesn't exist.
          */
         private final Map<SaisTable,Integer> tablesMap;
-        /**
-         * A list form of the actionableTablesMap's keys. Used for randomly selecting one.
-         */
         private final List<SaisTable> tablesList;
         private final ThreadlessRandom rand = new ThreadlessRandom();
 
         AddDropTablesWriter(SaisTable root) {
             tablesMap = new HashMap<SaisTable, Integer>();
+            for (SaisTable table : root.setIncludingChildren()) {
+                tablesMap.put(table, -1);
+            }
             tablesList = new ArrayList<SaisTable>();
-            putTable(root, null, true);
-        }
-
-        private void putTable(SaisTable table, Integer tableId, boolean override) {
-            boolean alreadyContains = tablesMap.containsKey(table);
-            if (!override && alreadyContains) {
-                return;
-            }
-            Integer old = tablesMap.put(table, tableId);
-            if (!override) {
-                assert old == null || old.equals(tableId): String.format("%s -> %s conflicts with %s", table, old, tableId);
-            }
-            if (!alreadyContains) {
-                tablesList.add(table);
-            }
-        }
-
-        private void removeTable(SaisTable table) {
-            tablesMap.remove(table);
-            boolean removeWorked = tablesList.remove(table);
-            assert removeWorked : table;
+            tablesList.add(root);
         }
 
         @Override
@@ -274,17 +252,20 @@ public final class AddDropTableMT extends HapiMTBase {
         {
             // pick a table to do something to
             SaisTable table = tablesList.get( rand.nextInt(0, tablesList.size()) );
-            Integer tableId = tablesMap.get(table);
-            if (tableId == null) {
-                LOG.trace("about to add table {} with id {}", table, tableId);
-                tableId = addTable(session, ddl, table);
-                writeTableRows(session, dml, tableId, table);
-                LOG.trace("added table {} (with rows)", table);
-            }
-            else {
-                LOG.trace("about to drop table {} with id {}", table, tableId);
-                dropTable(session, ddl, table);
-                LOG.trace("dropped table {}", table);
+
+            switch (tablesMap.get(table)) {
+                case -1: // doesn't exist, so create it!
+                    int tableId = addTable(session, ddl, table);
+                    writeTableRows(session, dml, tableId, table);
+                    LOG.trace("added table {} (with rows) id = {}", table, tableId);
+                    break;
+                case 0: // is a leaf, so drop it
+                    LOG.trace("about to drop table {}", table);
+                    dropTable(session, ddl, table);
+                    LOG.trace("dropped table {}", table);
+                    break;
+                default:
+                    throw new UnsupportedOperationException(String.format("%s: %d", table, tablesMap.get(table)));
             }
         }
 
@@ -292,39 +273,48 @@ public final class AddDropTableMT extends HapiMTBase {
             String ddlText = DDLUtils.buildDDL(table);
             ddl.createTable(session, SCHEMA, ddlText);
             int tableId = ddl.getTableId(session, new TableName(SCHEMA, table.getName()));
-            if (table.getChildren().isEmpty()) {
-                putTable(table, tableId, true);
+
+            tablesMap.put(table, 0);
+            if (!tablesList.contains(table)) { // list is pre-seeded with root
+                tablesList.add(table);
             }
-            else {
-                removeTable(table);
-                for (SaisFK childFK : table.getChildren()) {
-                    putTable(childFK.getChild(), null, true);
-                }
+            SaisFK parentFK = table.getParentFK();
+            if (parentFK != null) {
+                SaisTable parent = parentFK.getParent();
+                tablesMap.put(parent, tablesMap.get(parent) + 1);
+                tablesList.remove(parent);
             }
+            for (SaisFK childFK : table.getChildren()) {
+                SaisTable child = childFK.getChild();
+                tablesMap.put(child, -1);
+                tablesList.add(child);
+            }
+
             return tableId;
         }
-
 
         protected abstract void writeTableRows(Session session, DMLFunctions dml, int tableId, SaisTable table)
                 throws InvalidOperationException;
 
         private void dropTable(Session session, DDLFunctions ddl, SaisTable table) throws InvalidOperationException {
             ddl.dropTable(session, new TableName(SCHEMA, table.getName()));
-            // Drop the children
-            for (SaisFK childFK : table.getChildren()) {
-                removeTable(childFK.getChild());
-            }
 
-            // Add the siblings (including this table) if they're not there
+            tablesMap.put(table, -1);
+            assert tablesList.contains(table) : String.format("%s should have contained %s", tablesList, table);
+
             SaisFK parentFK = table.getParentFK();
-            if (parentFK == null) {
-                putTable(table, null, true);
-            }
-            else {
-                for (SaisFK siblingFK : parentFK.getParent().getChildren()) {
-                    SaisTable sibling = siblingFK.getChild();
-                    putTable(sibling, null, sibling.equals(table)); // for the original table only, override the null
+            if (parentFK != null) {
+                SaisTable parent = parentFK.getParent();
+                int newChildCount = tablesMap.get(parent) - 1;
+                tablesMap.put(parent, newChildCount);
+                if (newChildCount == 0) {
+                    tablesList.add(parent);
                 }
+            }
+            for (SaisFK childFK : table.getChildren()) {
+                SaisTable child = childFK.getChild();
+                assert tablesMap.get(child) < 0 : String.format("%s: %s", child, tablesMap);
+                tablesList.remove(child);
             }
         }
 
@@ -335,8 +325,7 @@ public final class AddDropTableMT extends HapiMTBase {
 
         @Override
         public boolean continueThroughException(Throwable throwable) {
-            throwable.printStackTrace();
-            return true;
+            return false;
         }
     }
 }
