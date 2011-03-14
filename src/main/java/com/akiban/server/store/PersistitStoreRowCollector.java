@@ -769,7 +769,7 @@ public class PersistitStoreRowCollector implements RowCollector {
         pendingRowData[level].differsFromPredecessorAtKeySegment(
             firstMissingAncestorLevel == -1
             ? differsAtKeySegment
-            : projectedRowDefs[firstMissingAncestorLevel].getHKeyDepth());
+            : projectedRowDefs[firstMissingAncestorLevel].getHKeyDepth() - 1);
     }
 
     void prepareCoveredRow(final Exchange exchange, final int rowDefId,
