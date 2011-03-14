@@ -22,7 +22,10 @@ import static org.junit.Assert.assertSame;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -387,17 +390,61 @@ public class SchemaDefToAisTest {
 
     @Test
     public void constraintNamedAkiban() throws Exception {
-        final String ddl = "create table test.t(id int, other int, constraint __akiban unique(id), constraint __akiban2 unique foo(other));";
+        final String ddl = "create table test.t(id int, other int,"+
+                                               "constraint __akiban unique(id),"+
+                                               "constraint __akiban2 unique foo(other));";
         final AkibanInformationSchema ais = buildAISfromString(ddl);
         final UserTable table = ais.getUserTable("test", "t");
         assertNotNull(table);
         // Unique keys get named as constraint if index name is unspecified
         final Index uniqueAkiban = table.getIndex("__akiban");
-        assertNotNull(uniqueAkiban);
+        assertNotNull("has index named `__akiban`", uniqueAkiban);
         assertEquals("id", uniqueAkiban.getColumns().get(0).getColumn().getName());
-        // Index name takes precedence over constraint name for unique kyes
+        // Index name takes precedence over constraint name for unique keys
         final Index uniqueFoo = table.getIndex("foo");
-        assertNotNull(uniqueFoo);
+        assertNotNull("has index named `foo`", uniqueFoo);
         assertEquals("other", uniqueFoo.getColumns().get(0).getColumn().getName());
+    }
+
+    @Test
+    public void manyCollapsingForeignKeys() throws Exception {
+        final String ddl = "use test;"+
+                "create table p(a int, b int, c int) engine=akibandb;"+
+                "create table c(a int, b int, c int,"+
+                               "constraint foreign key(a) references p(a),"+
+                               "constraint foreign key(b) references p(b),"+
+                               "constraint foreign key(c) references p(c),"+
+                               "constraint foreign key(a,b) references p(a,b),"+
+                               "constraint foreign key(b,c) references p(b,c),"+
+                               "constraint foreign key(a,b,c) references p(a,b,c)) engine=akibandb;";
+        final AkibanInformationSchema ais = buildAISfromString(ddl);
+        final UserTable table = ais.getUserTable("test", "c");
+        assertNotNull(table);
+        assertEquals(3, table.getIndexes().size());
+        // key a(a,b,c)
+        final Index aIndex = table.getIndex("a");
+        assertNotNull("has index named `a`", aIndex);
+        assertEquals(3, aIndex.getColumns().size());
+        // key b(b,c)8
+        final Index bIndex = table.getIndex("b");
+        assertNotNull("has index named `b`", bIndex);
+        assertEquals(2, bIndex.getColumns().size());
+        // key c(c)
+        final Index cIndex = table.getIndex("c");
+        assertNotNull("has index named `c`", cIndex);
+        assertEquals(1, cIndex.getColumns().size());
+    }
+
+    @Test
+    public void nonForeignKeysTakePrecedence() throws Exception {
+        final String ddl = "create table test.p(a int) engine=akibandb;"+
+                "create table test.c(a int, constraint bob foreign key(a) references p(a), key(a)) engine=akibandb";
+        final AkibanInformationSchema ais = buildAISfromString(ddl);
+        final UserTable table = ais.getUserTable("test", "c");
+        assertNotNull(table);
+        // Non-fk index name takes precedence, even when it is defaulted
+        assertEquals(1, table.getIndexes().size());
+        final Index index = table.getIndex("a");
+        assertNotNull("has index named `a``", index);
     }
 }
