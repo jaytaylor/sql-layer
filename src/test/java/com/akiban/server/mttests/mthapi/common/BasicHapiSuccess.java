@@ -40,15 +40,17 @@ public class BasicHapiSuccess extends HapiSuccess {
     private final String schema;
     private final static int MAX_READ_ID = 1500;
 
-    public BasicHapiSuccess(String schema, SaisTable root) {
-        this(schema, Collections.singleton(root));
+    public BasicHapiSuccess(String schema, SaisTable root, boolean requireSingleColPKs) {
+        this(schema, Collections.singleton(root), requireSingleColPKs);
     }
 
-    public BasicHapiSuccess(String schema, Set<SaisTable> roots) {
+    public BasicHapiSuccess(String schema, Set<SaisTable> roots, boolean requireSingleColPKs) {
         assertTrue("at least one root table required", roots.size() >= 1);
         Set<SaisTable> all = SaisTable.setIncludingChildren(roots);
-        for (SaisTable table : all) {
-            assertTrue(table + ": only one-table-pk tables supported", table != null && table.getPK().size() == 1);
+        if (requireSingleColPKs) {
+            for (SaisTable table : all) {
+                assertTrue(table + ": only one-table-pk tables supported", table != null && table.getPK().size() == 1);
+            }
         }
         allTables = Collections.unmodifiableList(new ArrayList<SaisTable>(all));
         this.schema = schema;

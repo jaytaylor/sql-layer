@@ -36,7 +36,7 @@ public final class CoiMT extends HapiMTBase {
     @Test
     public void concurrentWritesWithOrphans() throws HapiRequestException, JSONException, IOException {
         BasicWriter writeThread = new BasicWriter(COI_ROOTS, allowOrphans(COI_ROOTS));
-        HapiSuccess readThread = new BasicHapiSuccess(writeThread.schema(), COI_ROOTS);
+        HapiSuccess readThread = new BasicHapiSuccess(writeThread.schema(), COI_ROOTS, true);
 
         runThreads(writeThread, readThread);
     }

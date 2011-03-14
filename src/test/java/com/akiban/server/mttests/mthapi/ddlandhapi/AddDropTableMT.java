@@ -76,7 +76,7 @@ public final class AddDropTableMT extends HapiMTBase {
 
         runThreads(writeThread,
                 readPkCustomers(customer, .25f),
-                readPkOrders(customer.getChild("orders"), 25f),
+                readPkOrders(customer.getChild("orders"), .25f),
                 readPkItems(customer.getChild("orders").getChild("items"), .25f),
                 readPkAddresses(customer.getChild("addresses"), .25f)
         );
@@ -84,7 +84,7 @@ public final class AddDropTableMT extends HapiMTBase {
 
     private abstract static class MyReadThread extends OptionallyWorkingReadThread {
         MyReadThread(SaisTable root, float chance) {
-            super(SCHEMA, root, chance,
+            super(SCHEMA, root, chance, false,
                     HapiRequestException.ReasonCode.UNKNOWN_IDENTIFIER,
                     HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST);
         }

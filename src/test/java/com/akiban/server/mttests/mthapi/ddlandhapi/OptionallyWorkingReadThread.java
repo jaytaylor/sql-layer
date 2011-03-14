@@ -30,16 +30,24 @@ import java.util.EnumSet;
 abstract class OptionallyWorkingReadThread extends BasicHapiSuccess {
     private final EnumSet<HapiRequestException.ReasonCode> validErrors;
     private final float chance;
+    private final String rootKey;
+
     protected OptionallyWorkingReadThread(String schema, SaisTable root, float chance,
                                           HapiRequestException.ReasonCode... validErrors)
     {
-        super(schema, root);
+        this(schema, root, chance, true, validErrors);
+    }
+    protected OptionallyWorkingReadThread(String schema, SaisTable root, float chance, boolean requireSingleColPKs,
+                                          HapiRequestException.ReasonCode... validErrors)
+    {
+        super(schema, root, requireSingleColPKs);
         if (chance < 0 || chance > 1) {
             throw new IllegalArgumentException(Float.toString(chance));
         }
         this.validErrors = EnumSet.noneOf(HapiRequestException.ReasonCode.class);
         Collections.addAll(this.validErrors, validErrors);
         this.chance = chance;
+        this.rootKey = '@' + root.getName();
     }
 
     @Override
@@ -60,7 +68,7 @@ abstract class OptionallyWorkingReadThread extends BasicHapiSuccess {
         super.validateSuccessResponse(requestStruct, result);
         HapiValidationError.assertFalse(HapiValidationError.Reason.ROOT_TABLES_COUNT,
                 "more than one root found",
-                result.getJSONArray("@p").length() > 1);
+                result.getJSONArray(rootKey).length() > 1);
         // Also, we must have results!
 //                TODO: this isn't a valid test while we allow concurrent scans and adding/dropping of indexes
 //                see: https://answers.launchpad.net/akiban-server/+question/148857
