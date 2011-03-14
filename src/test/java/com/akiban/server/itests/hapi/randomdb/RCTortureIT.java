@@ -124,8 +124,10 @@ public class RCTortureIT extends ApiTestBase
    Looks like the same bug:
             runQuery(itemTable, itemTable, Column.I_CID,  HapiPredicate.Operator.LT, 2);
             runQuery(customerTable, orderTable, Column.O_CID,  HapiPredicate.Operator.LT, 2);
+   Problem setting key segment differsAt:
 */
             runQuery(customerTable, itemTable, Column.I_CID,  HapiPredicate.Operator.EQ, 1);
+            // runQuery(customerTable, addressTable, Column.A_CID,  HapiPredicate.Operator.EQ, 2);
         } else {
             for (HapiPredicate.Operator comparison : HapiPredicate.Operator.values()) {
                 if (comparison != HapiPredicate.Operator.NE) {
