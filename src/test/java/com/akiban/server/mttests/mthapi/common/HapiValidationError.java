@@ -19,6 +19,9 @@ import org.json.JSONObject;
 import org.junit.Assert;
 
 public class HapiValidationError extends AssertionError {
+
+    private volatile JSONObject jsonObject;
+
     enum Reason {
         RESPONSE_IS_NULL,
         ROOT_TABLES_COUNT,
@@ -41,6 +44,15 @@ public class HapiValidationError extends AssertionError {
 
     HapiValidationError(String message) {
         super(message);
+    }
+
+    public void setJsonObject(JSONObject jsonObject) {
+        this.jsonObject = jsonObject;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s: %s", super.toString(), jsonObject);
     }
 
     static Void launder(String message, Reason reason) {
