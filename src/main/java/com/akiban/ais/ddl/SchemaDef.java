@@ -297,10 +297,10 @@ public class SchemaDef {
      *   2) Combine any foreign key that is subset of another foreign key
      *   3) Combine any unnamed key into a named key
      *   4) Generate names for any unnamed key that is left
-     *
      */
     void resolveAllIndexes() {
         Map<List<IndexColumnDef>, IndexDef> columnsToIndexes = new HashMap<List<IndexColumnDef>, IndexDef>();
+        
         // We have to add in two passes: first, adding only non-FK, and then adding only FKs
         List<IndexDefHandle> fkIndexHandles = new ArrayList<IndexDefHandle>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
@@ -323,7 +323,6 @@ public class SchemaDef {
         };
 
         Collections.sort(fkIndexHandles, fkComparator);
-        
         for (IndexDefHandle handle : fkIndexHandles) {
             List<IndexColumnDef> columns = handle.real.columns;
             IndexDef equivalent = findEquivalentIndex(columnsToIndexes, handle.real);
@@ -342,19 +341,32 @@ public class SchemaDef {
             }
         }
 
-        // Need 1) non-fks to come first (remaining stable) 2) fks to sort like above
-        Collections.sort(provisionalIndexes, new Comparator<IndexDefHandle>() {
-            @Override
-            public int compare(IndexDefHandle o1, IndexDefHandle o2) {
-                boolean o1fk = o1.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY);
-                boolean o2fk = o1.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY);
-                if (o1fk && o2fk) fkComparator.compare(o1,o2);
-                return o1fk ? 1 : (o2fk ? -1 : 0);
-            }
-        });
-        
+        // Again, two passes: non-fk and then fk
+        fkIndexHandles.clear();
         IndexNameGenerator indexNameGenerator = new IndexNameGenerator(currentTable.indexes);
         for (IndexDefHandle handle : provisionalIndexes) {
+            if (handle.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                fkIndexHandles.add(handle);
+                continue;
+            }
+            final IndexDef real = handle.real;
+            final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
+            if (equivalent == null || equivalent.hasAkibanJoin()) {
+                real.name = indexNameGenerator.generateName(real);
+                currentTable.indexHandles.add(handle);
+                columnsToIndexes.put(real.columns, real);
+            } else {
+                if (equivalent.qualifiers.contains(IndexQualifier.FOREIGN_KEY) &&
+                    !real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                    equivalent.name = indexNameGenerator.generateName(real);
+                }
+                equivalent.addIndexAttributes(real);
+            }
+        }
+        provisionalIndexes.clear();
+
+        Collections.sort(fkIndexHandles, fkComparator);
+        for (IndexDefHandle handle : fkIndexHandles) {
             final IndexDef real = handle.real;
             final IndexDef equivalent = findEquivalentIndex(columnsToIndexes, real);
             if (equivalent == null || equivalent.hasAkibanJoin()) {
@@ -365,7 +377,6 @@ public class SchemaDef {
                 equivalent.addIndexAttributes(real);
             }
         }
-        provisionalIndexes.clear();
 
         // Finally, resolve all handles to their real selves
         Map<String,IndexDef> seenDefs = new HashMap<String,IndexDef>();
@@ -917,8 +928,11 @@ public class SchemaDef {
         }
 
         void addIndexAttributes(IndexDef otherIndex) {
-            assert columnListsAreSubset(columns, otherIndex.columns) :
-                   String.format("combining keys with columns %s and %s", columns, otherIndex.columns);
+            if(!columnListsAreSubset(columns, otherIndex.columns)) {
+                throw new SchemaDefException(String.format(
+                        "duplicate index: %s and %s, columns %s and %s",
+                        name, otherIndex.name,columns, otherIndex.columns));
+            }
             if (comment == null) {
                 comment = otherIndex.comment;
             }
