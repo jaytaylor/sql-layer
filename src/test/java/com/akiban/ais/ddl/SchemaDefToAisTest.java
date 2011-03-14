@@ -384,4 +384,14 @@ public class SchemaDefToAisTest {
         assertEquals("f1", t5index.getIndexName().getName());
         assertEquals(2, t5index.getColumns().size());
     }
+
+    @Test
+    public void constraintNamedAkiban() throws Exception {
+        final String ddl = "create table test.t(id int, constraint __akiban_u unique(id)) engine=akibandb";
+        final AkibanInformationSchema ais = buildAISfromString(ddl);
+        final UserTable table = ais.getUserTable("test", "t");
+        assertNotNull(table);
+        final Index uniqueIndex = table.getIndex("__akiban_u");
+        assertNotNull(uniqueIndex);
+    }
 }
