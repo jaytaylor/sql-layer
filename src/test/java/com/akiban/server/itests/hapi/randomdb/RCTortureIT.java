@@ -120,10 +120,11 @@ public class RCTortureIT extends ApiTestBase
     {
         if (true) {
 /* Bug in KeyFilter. Peter is working on it.
-            runQuery(orderTable, orderTable, Column.O_CID,  Comparison.LT, 2);
+            runQuery(orderTable, orderTable, Column.O_CID,  HapiPredicate.Operator.LT, 2);
    Looks like the same bug:
-            runQuery(itemTable, itemTable, Column.I_CID,  Comparison.LT, 2);
-            runQuery(customerTable, orderTable, Column.O_CID,  Comparison.LT, 2);
+            runQuery(itemTable, itemTable, Column.I_CID,  HapiPredicate.Operator.LT, 2);
+            runQuery(customerTable, orderTable, Column.O_CID,  HapiPredicate.Operator.LT, 2);
+            runQuery(customerTable, itemTable, Column.I_CID,  HapiPredicate.Operator.EQ, 1);
 */
         } else {
             for (HapiPredicate.Operator comparison : HapiPredicate.Operator.values()) {
