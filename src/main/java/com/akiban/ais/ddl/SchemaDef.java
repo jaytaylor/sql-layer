@@ -382,7 +382,7 @@ public class SchemaDef {
 
     private static IndexDef findEquivalentIndex(Map<List<IndexColumnDef>, IndexDef> columnsToIndexes,
                                                 IndexDef index) {
-        if(index.name != null && index.name.startsWith("__akiban")) {
+        if(index.isAkiban()) {
             return null;
         }
         List<IndexColumnDef> columns = index.columns;
@@ -967,26 +967,12 @@ public class SchemaDef {
         public boolean isAkiban() {
             if (qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
                 for (String constraint : constraints) {
-                    if (isAkibanConstraint(constraint)) {
+                    if (constraint.startsWith("__akiban")) {
                         return true;
                     }
                 }
             }
             return false;
-        }
-
-        public void makeNotAkiban() {
-            qualifiers.remove(IndexQualifier.FOREIGN_KEY);
-            Iterator<String> it = constraints.iterator();
-            while(it.hasNext()) {
-                if(isAkibanConstraint(it.next())) {
-                    it.remove();
-                }
-            }
-        }
-
-        private boolean isAkibanConstraint(String constraint) {
-            return constraint.startsWith("__akiban");
         }
     }
 
