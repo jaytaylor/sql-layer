@@ -33,10 +33,7 @@ import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
-import com.akiban.server.mttests.mthapi.common.HapiValidationError;
 import com.akiban.server.service.session.Session;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -58,12 +55,12 @@ public final class AddDropIndexMT extends HapiMTBase {
         );
     }
 
-    private HapiReadThread readThread(final String column, final int max, final boolean reverse, final float chance) {
+    private HapiReadThread readThread(final String column, final int max, final boolean reverse, float chance) {
         SaisBuilder builder = new SaisBuilder();
         builder.table("p", "id", "aString", "anInt").pk("id");
         builder.table("c1", "id", "pid").pk("id").joinTo("p").col("id", "pid");
         final SaisTable pTable = builder.getSoleRootTable();
-        return new OptionallyWorkingReadThread(SCHEMA, pTable, HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST) {
+        return new OptionallyWorkingReadThread(SCHEMA, pTable, chance, HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST) {
 
             @Override
             protected HapiRequestStruct pullRequest(int pseudoRandom) {
@@ -76,26 +73,6 @@ public final class AddDropIndexMT extends HapiMTBase {
                 return new HapiRequestStruct(request, pTable, null);
             }
 
-            @Override
-            protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
-                super.validateSuccessResponse(requestStruct, result);
-                HapiValidationError.assertFalse(HapiValidationError.Reason.ROOT_TABLES_COUNT,
-                        "more than one root found",
-                        result.getJSONArray("@p").length() > 1);
-                // Also, we must have results!
-//                TODO: this isn't a valid test while we allow concurrent scans and adding/dropping of indexes
-//                see: https://answers.launchpad.net/akiban-server/+question/148857
-//                HapiValidationError.assertEquals(HapiValidationError.Reason.ROOT_TABLES_COUNT,
-//                        "number of roots",
-//                        1, result.getJSONArray("@p").length()
-//                );
-            }
-
-            @Override
-            protected int spawnCount() {
-                float spawnRoughly = chance * super.spawnCount();
-                return (int)(spawnRoughly + .5);
-            }
         };
     }
 

@@ -17,18 +17,29 @@ package com.akiban.server.mttests.mthapi.ddlandhapi;
 
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
+import com.akiban.server.mttests.mthapi.common.HapiValidationError;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Collections;
 import java.util.EnumSet;
 
 abstract class OptionallyWorkingReadThread extends BasicHapiSuccess {
     private final EnumSet<HapiRequestException.ReasonCode> validErrors;
-    protected OptionallyWorkingReadThread(String schema, SaisTable root, HapiRequestException.ReasonCode... validErrors) {
+    private final float chance;
+    protected OptionallyWorkingReadThread(String schema, SaisTable root, float chance,
+                                          HapiRequestException.ReasonCode... validErrors)
+    {
         super(schema, root);
+        if (chance < 0 || chance > 1) {
+            throw new IllegalArgumentException(Float.toString(chance));
+        }
         this.validErrors = EnumSet.noneOf(HapiRequestException.ReasonCode.class);
         Collections.addAll(this.validErrors, validErrors);
+        this.chance = chance;
     }
 
     @Override
@@ -42,5 +53,26 @@ abstract class OptionallyWorkingReadThread extends BasicHapiSuccess {
             }
         }
         super.validateErrorResponse(request, exception);
+    }
+
+    @Override
+    protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
+        super.validateSuccessResponse(requestStruct, result);
+        HapiValidationError.assertFalse(HapiValidationError.Reason.ROOT_TABLES_COUNT,
+                "more than one root found",
+                result.getJSONArray("@p").length() > 1);
+        // Also, we must have results!
+//                TODO: this isn't a valid test while we allow concurrent scans and adding/dropping of indexes
+//                see: https://answers.launchpad.net/akiban-server/+question/148857
+//                HapiValidationError.assertEquals(HapiValidationError.Reason.ROOT_TABLES_COUNT,
+//                        "number of roots",
+//                        1, result.getJSONArray("@p").length()
+//                );
+    }
+
+    @Override
+    protected int spawnCount() {
+        float spawnRoughly = chance * super.spawnCount();
+        return (int)(spawnRoughly + .5);
     }
 }
