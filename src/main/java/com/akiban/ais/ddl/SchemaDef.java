@@ -277,10 +277,15 @@ public class SchemaDef {
 
     IndexDef addIndex(final String name, IndexQualifier qualifier) {
         String actualName = name;
-        if (IndexQualifier.FOREIGN_KEY.equals(qualifier) && (currentConstraintName != null) ) {
-            actualName = currentConstraintName;
+        if (currentConstraintName != null) {
+            if (IndexQualifier.FOREIGN_KEY.equals(qualifier) ||
+               (IndexQualifier.UNIQUE.equals(qualifier) && name == null)) {
+                actualName = currentConstraintName;
+            }
         }
-        return addIndex(actualName);
+        addIndex(actualName);
+        addIndexQualifier(qualifier);
+        return currentIndex;
     }
 
     void resolveProvisionalIndexes() {
@@ -960,9 +965,11 @@ public class SchemaDef {
         }
 
         public boolean isAkiban() {
-            for (String constraint : constraints) {
-                if (isAkibanConstraint(constraint)) {
-                    return true;
+            if (qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                for (String constraint : constraints) {
+                    if (isAkibanConstraint(constraint)) {
+                        return true;
+                    }
                 }
             }
             return false;

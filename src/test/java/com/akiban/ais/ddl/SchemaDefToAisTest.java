@@ -387,11 +387,17 @@ public class SchemaDefToAisTest {
 
     @Test
     public void constraintNamedAkiban() throws Exception {
-        final String ddl = "create table test.t(id int, constraint __akiban_u unique(id)) engine=akibandb";
+        final String ddl = "create table test.t(id int, other int, constraint __akiban unique(id), constraint __akiban2 unique foo(other));";
         final AkibanInformationSchema ais = buildAISfromString(ddl);
         final UserTable table = ais.getUserTable("test", "t");
         assertNotNull(table);
-        final Index uniqueIndex = table.getIndex("__akiban_u");
-        assertNotNull(uniqueIndex);
+        // Unique keys get named as constraint if index name is unspecified
+        final Index uniqueAkiban = table.getIndex("__akiban");
+        assertNotNull(uniqueAkiban);
+        assertEquals("id", uniqueAkiban.getColumns().get(0).getColumn().getName());
+        // Index name takes precedence over constraint name for unique kyes
+        final Index uniqueFoo = table.getIndex("foo");
+        assertNotNull(uniqueFoo);
+        assertEquals("other", uniqueFoo.getColumns().get(0).getColumn().getName());
     }
 }
