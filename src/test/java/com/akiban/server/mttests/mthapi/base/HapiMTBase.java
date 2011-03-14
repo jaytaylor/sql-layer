@@ -300,6 +300,9 @@ public class HapiMTBase extends ApiTestBase {
             printer.format(" of this general pattern:\n");
 
             error.printStackTrace(printer);
+            for (int i=0; i<72; ++i) {
+                printer.append('~');
+            }
         }
         printer.flush();
         stringWriter.flush();
