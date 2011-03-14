@@ -71,6 +71,9 @@ abstract class OptionallyWorkingReadThread extends BasicHapiSuccess {
     }
 
     @Override
+    protected abstract HapiRequestStruct pullRequest(int pseudoRandom);
+
+    @Override
     protected int spawnCount() {
         float spawnRoughly = chance * super.spawnCount();
         return (int)(spawnRoughly + .5);

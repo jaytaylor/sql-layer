@@ -15,7 +15,6 @@
 
 package com.akiban.server.mttests.mthapi.ddlandhapi;
 
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
@@ -25,20 +24,15 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
-import com.akiban.server.mttests.mthapi.base.HapiReadThread;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
-import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisFK;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.DDLUtils;
-import com.akiban.server.mttests.mthapi.common.HapiValidationError;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ThreadlessRandom;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,82 +46,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class AddDropTableMT extends HapiMTBase {
     private static final Logger LOG = LoggerFactory.getLogger(AddDropTableMT.class);
     private static final String SCHEMA = "indexestest";
+    private static final int CUSTOMERS_COUNT = 100;
+    private static final int ORDERS_PER_CUSTOMER = 3;
+    private static final int ITEMS_PER_ORDER = 3;
+    private static final int ADDRESSES_PER_CUSTOMER = 2;
 
     @Test
     public void addDropIndex() {
-        WriteThread writeThread = getAddDropTableThread();
-
-        runThreads(writeThread,
-//                readThread("aString", 200, false, .4f),
-//                readThread("anInt", 200, true, .4f),
-//                readThread("id", 100, false, .2f)
-                new HapiSuccess() {
-                    @Override
-                    protected void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws Exception {
-                        throw new UnsupportedOperationException(); // TODO
-                    }
-
-                    @Override
-                    protected HapiRequestStruct pullRequest(int pseudoRandom) {
-                        while (true) {
-                            try {
-                                Thread.sleep(10 * 60 * 1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();  // TODO
-                            }
-                        }
-                    }
-
-                    @Override
-                    protected void validateIndex(HapiRequestStruct request, Index queriedIndex) {
-                        throw new UnsupportedOperationException(); // TODO
-                    }
-                }
-        );
-    }
-
-    private HapiReadThread readThread(final String column, final int max, final boolean reverse, final float chance) {
-        SaisBuilder builder = new SaisBuilder();
-        builder.table("p", "id", "aString", "anInt").pk("id");
-        builder.table("c1", "id", "pid").pk("id").joinTo("p").col("id", "pid");
-        final SaisTable pTable = builder.getSoleRootTable();
-        return new OptionallyWorkingReadThread(SCHEMA, pTable, HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST) {
-
-            @Override
-            protected HapiRequestStruct pullRequest(int pseudoRandom) {
-                int id = (Math.abs(pseudoRandom) % (max-1)) + 1;
-                if (reverse)  {
-                    id = -id;
-                }
-                HapiGetRequest request = DefaultHapiGetRequest.forTables(SCHEMA, "p", "p")
-                        .withEqualities(column, Integer.toString(id)).done();
-                return new HapiRequestStruct(request, pTable, null);
-            }
-
-            @Override
-            protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
-                super.validateSuccessResponse(requestStruct, result);
-                HapiValidationError.assertFalse(HapiValidationError.Reason.ROOT_TABLES_COUNT,
-                        "more than one root found",
-                        result.getJSONArray("@p").length() > 1);
-                // Also, we must have results!
-//                TODO: this isn't a valid test while we allow concurrent scans and adding/dropping of indexes
-//                see: https://answers.launchpad.net/akiban-server/+question/148857
-//                HapiValidationError.assertEquals(HapiValidationError.Reason.ROOT_TABLES_COUNT,
-//                        "number of roots",
-//                        1, result.getJSONArray("@p").length()
-//                );
-            }
-
-            @Override
-            protected int spawnCount() {
-                float spawnRoughly = chance * super.spawnCount();
-                return 1000 * (int)(spawnRoughly + .5);
-            }
-        };
-    }
-
-    private WriteThread getAddDropTableThread() {
         SaisBuilder builder = new SaisBuilder();
 
         builder.table("customers", "cid", "age")
@@ -138,19 +63,98 @@ public final class AddDropTableMT extends HapiMTBase {
                 .key("priority")
                 .joinTo("customers").col("cid", "c_id");
 
-        builder.table("items", "iid", "o_id", "c_id").pk("iid")
+        builder.table("items", "iid", "o_id", "c_id")
                 .joinTo("orders").col("oid", "o_id").col("c_id", "c_id");
 
         builder.table("addresses","aid", "c_id")
                 .pk("aid")
                 .joinTo("customers").col("cid", "c_id");
 
-        final SaisTable customer = builder.getSoleRootTable();
+        SaisTable customer = builder.getSoleRootTable();
+
+        WriteThread writeThread = getAddDropTableThread(customer);
+
+        runThreads(writeThread,
+                readPkCustomers(customer, .25f),
+                readPkOrders(customer.getChild("orders"), 25f),
+                readPkItems(customer.getChild("orders").getChild("items"), .25f),
+                readPkAddresses(customer.getChild("addresses"), .25f)
+        );
+    }
+
+    private abstract static class MyReadThread extends OptionallyWorkingReadThread {
+        MyReadThread(SaisTable root, float chance) {
+            super(SCHEMA, root, chance,
+                    HapiRequestException.ReasonCode.UNKNOWN_IDENTIFIER,
+                    HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST);
+        }
+    }
+
+    private static OptionallyWorkingReadThread readPkCustomers(final SaisTable customer, float chance) {
+        return new MyReadThread(customer, chance) {
+            @Override
+            protected HapiRequestStruct pullRequest(int pseudoRandom) {
+                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
+                int pk = tmp.nextInt(0, CUSTOMERS_COUNT);
+                HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, customer.getName())
+                        .withEqualities("cid", Integer.toString(pk))
+                        .done();
+                return new HapiRequestStruct(request, customer, "PRIMARY");
+            }
+        };
+    }
+
+    private static OptionallyWorkingReadThread readPkOrders(final SaisTable orders, float chance) {
+        return new MyReadThread(orders, chance) {
+            @Override
+            protected HapiRequestStruct pullRequest(int pseudoRandom) {
+                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
+                int cid = tmp.nextInt(0, CUSTOMERS_COUNT);
+                int oid = tmp.nextInt(0, ORDERS_PER_CUSTOMER);
+                HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, orders.getName())
+                        .withEqualities("oid", Integer.toString(oid))
+                        .and("c_id", Integer.toString(cid))
+                        .done();
+                return new HapiRequestStruct(request, orders, "PRIMARY");
+            }
+        };
+    }
+
+    private static OptionallyWorkingReadThread readPkItems(final SaisTable items, float chance) {
+        return new MyReadThread(items, chance) {
+            @Override
+            protected HapiRequestStruct pullRequest(int pseudoRandom) {
+                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
+                int cid = tmp.nextInt(0, CUSTOMERS_COUNT);
+                int oid = tmp.nextInt(0, ORDERS_PER_CUSTOMER);
+                HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, items.getName())
+                        .withEqualities("o_id", Integer.toString(oid))
+                        .and("c_id", Integer.toString(cid))
+                        .done();
+                return new HapiRequestStruct(request, items, null); // TODO this index is knowable
+            }
+        };
+    }
+
+    private static OptionallyWorkingReadThread readPkAddresses(final SaisTable addresses, float chance) {
+        return new MyReadThread(addresses, chance) {
+            @Override
+            protected HapiRequestStruct pullRequest(int pseudoRandom) {
+                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
+                int cid = tmp.nextInt(0, CUSTOMERS_COUNT);
+                int addressCount = tmp.nextInt(0, ADDRESSES_PER_CUSTOMER);
+                int aid = aid(cid, addressCount);
+                HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, addresses.getName())
+                        .withEqualities("c_id", Integer.toString(cid))
+                        .and("aid", Integer.toString(aid))
+                        .done();
+                return new HapiRequestStruct(request, addresses, null); // TODO this index is knowable
+            }
+        };
+    }
+
+    private static WriteThread getAddDropTableThread(final SaisTable customer) {
         return new AddDropTablesWriter(customer) {
-            private final int CUSTOMERS_COUNT = 100;
-            private final int ORDERS_PER_CUSTOMER = 3;
-            private final int ITEMS_PER_ORDER = 3;
-            private final int ADDRESSES_PER_CUSTOMER = 2;
 
             @Override
             protected void writeTableRows(Session session, DMLFunctions dml, int tableId, SaisTable table)
@@ -191,7 +195,7 @@ public final class AddDropTableMT extends HapiMTBase {
                 for (int cid = 0; cid < CUSTOMERS_COUNT; ++cid) {
                     for (int oid = 0; oid < ORDERS_PER_CUSTOMER; ++oid) {
                         for (int count=0; count < ITEMS_PER_ORDER; ++count) {
-                            NewRow row = createNewRow(tableId, iid, oid, cid);
+                            NewRow row = createNewRow(tableId, iid, oid, cid, -1L);
                             dml.writeRow(session, row);
                             --iid;
                         }
@@ -207,20 +211,20 @@ public final class AddDropTableMT extends HapiMTBase {
                     }
                 }
             }
-
-            private int age(int cid) {
-                return cid * 2;
-            }
-
-            private int priority(int oid, int cid) {
-                return cid % 2 == 0 ? oid : -oid;
-            }
-
-            private int aid(int cid, int count) {
-                assert count >= 0 && count < 10 : count;
-                return (cid * 10) + count;
-            }
         };
+    }
+
+    private static int age(int cid) {
+        return cid * 2;
+    }
+
+    private static int priority(int oid, int cid) {
+        return cid % 2 == 0 ? oid : -oid;
+    }
+
+    private static int aid(int cid, int count) {
+        assert count >= 0 && count < 10 : count;
+        return (cid * 10) + count;
     }
 
     private abstract static class AddDropTablesWriter implements WriteThread {

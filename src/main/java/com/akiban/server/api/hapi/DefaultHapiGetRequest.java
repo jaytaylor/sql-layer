@@ -33,6 +33,10 @@ public class DefaultHapiGetRequest implements HapiGetRequest {
         return new HapiGetRequestBuilder(schema, rootTable, predicateTable);
     }
 
+    public static HapiGetRequestBuilder forTable(String schema, String rootTable) {
+        return new HapiGetRequestBuilder(schema, rootTable, rootTable);
+    }
+
     DefaultHapiGetRequest(String rootTable, TableName predicatesTable, List<HapiPredicate> predicates) {
         this.predicatesTable = predicatesTable;
         this.rootTable = rootTable;
