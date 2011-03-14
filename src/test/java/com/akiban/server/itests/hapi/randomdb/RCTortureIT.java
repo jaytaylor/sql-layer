@@ -190,7 +190,7 @@ public class RCTortureIT extends ApiTestBase
     };
 
     // Test parameters
-    static final int TRIALS = 2;
+    static final int TRIALS = 10;
     static final int SEED = 123456789;
     static final int MAX_CUSTOMERS = 3;
     static final int MAX_ORDERS_PER_CUSTOMER = 3;
