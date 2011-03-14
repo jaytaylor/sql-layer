@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.mttests.mthapi.indexing;
+package com.akiban.server.mttests.mthapi.ddlandhapi;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
