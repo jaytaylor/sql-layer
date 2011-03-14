@@ -23,7 +23,6 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
 import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
-import com.akiban.server.mttests.mthapi.base.sais.SaisFK;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ArgumentValidation;
@@ -31,7 +30,6 @@ import com.akiban.util.ArgumentValidation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -193,58 +191,11 @@ public class BasicWriter implements WriteThread {
     protected final void createTable(SaisTable table, DDLFunctions ddl, Session session, StringBuilder scratch)
             throws InvalidOperationException
     {
-        String ddlText = buildDDL(table, scratch);
+        String ddlText = DDLUtils.buildDDL(table, scratch);
         ddl.createTable(session, schema(), ddlText);
         int id = ddl.getTableId(session, new TableName(schema(), table.getName()));
         TableInfo info = new TableInfo(table, statesCount, id);
         tablesHolder.addTable(info);
     }
 
-    static String buildDDL(SaisTable table, StringBuilder builder) {
-        // fields
-        builder.setLength(0);
-        builder.append("CREATE TABLE ").append(table.getName()).append('(');
-        Iterator<String> fields = table.getFields().iterator();
-        while (fields.hasNext()) {
-            String field = fields.next();
-            builder.append(field).append(" int");
-            if (fields.hasNext()) {
-                builder.append(',');
-            }
-        }
-
-        // PK
-        if (table.getPK() != null) {
-            builder.append(", PRIMARY KEY ");
-            cols(table.getPK().iterator(), builder);
-        }
-
-        // AkibanFK: CONSTRAINT __akiban_fk_FOO FOREIGN KEY __akiban_fk_FOO(pid1,pid2) REFERENCES parent(id1,id2)
-        SaisFK parentFK = table.getParentFK();
-        if (parentFK != null) {
-            builder.append(", CONSTRAINT ");
-            akibanFK(table, builder).append(" FOREIGN KEY ");
-            akibanFK(table, builder);
-            cols(parentFK.getChildCols(), builder).append(" REFERENCES ").append(parentFK.getParent().getName());
-            cols(parentFK.getParentCols(), builder);
-        }
-
-        return builder.append(')').toString();
-    }
-
-    private static StringBuilder cols(Iterator<String> columns, StringBuilder builder) {
-        builder.append('(');
-        while (columns.hasNext()) {
-            builder.append(columns.next());
-            if (columns.hasNext()) {
-                builder.append(',');
-            }
-        }
-        builder.append(')');
-        return builder;
-    }
-
-    private static StringBuilder akibanFK(SaisTable child, StringBuilder builder) {
-        return builder.append("`__akiban_fk_").append(child.getName()).append('`');
-    }
 }
