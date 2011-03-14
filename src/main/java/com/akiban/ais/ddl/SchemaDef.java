@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,7 +44,7 @@ import org.antlr.runtime.RecognitionException;
  * Structures used to hold the results of parsing DDL statements. DDLSource.g
  * includes productions that modify a SchemaDef in a peculiar and particular
  * order. Other clients should only read values from this class.
- * 
+ *
  * @author peter
  */
 public class SchemaDef {
@@ -288,15 +289,17 @@ public class SchemaDef {
         return currentIndex;
     }
 
-    void resolveProvisionalIndexes() {
-        // We'll go over each of our provisional indexes, each of which has a
-        // null name.
-        // If the current table doesn't already have an equivalent index, we'll
-        // just give this index a name
-        // and add it to the table.
-        // Otherwise, we'll add the provisional index's attributes to the
-        // existing index.
-
+    /**
+     * Collapse all indexes into the minimal set possible (with the additional
+     * requirement that if a grouping key existed in the DDL, it will also exist
+     * in the AIS -- even if that means multiple compatible keys):
+     *   1) Combine foreign key into non-foreign key
+     *   2) Combine any foreign key that is subset of another foreign key
+     *   3) Combine any unnamed key into a named key
+     *   4) Generate names for any unnamed key that is left
+     *
+     */
+    void resolveAllIndexes() {
         Map<List<IndexColumnDef>, IndexDef> columnsToIndexes = new HashMap<List<IndexColumnDef>, IndexDef>();
         // We have to add in two passes: first, adding only non-FK, and then adding only FKs
         List<IndexDefHandle> fkIndexHandles = new ArrayList<IndexDefHandle>();
@@ -310,6 +313,17 @@ public class SchemaDef {
                 columnsToIndexes.put(columns, handle.real);
             }
         }
+
+        // Want the foreign keys indexes with the most number of columns to sort first
+        final Comparator<IndexDefHandle> fkComparator = new Comparator<IndexDefHandle>() {
+            @Override
+            public int compare(IndexDefHandle o1, IndexDefHandle o2) {
+                return o2.real.columns.size() - o1.real.columns.size();
+            }
+        };
+
+        Collections.sort(fkIndexHandles, fkComparator);
+        
         for (IndexDefHandle handle : fkIndexHandles) {
             List<IndexColumnDef> columns = handle.real.columns;
             IndexDef equivalent = findEquivalentIndex(columnsToIndexes, handle.real);
@@ -328,6 +342,17 @@ public class SchemaDef {
             }
         }
 
+        // Need 1) non-fks to come first (remaining stable) 2) fks to sort like above
+        Collections.sort(provisionalIndexes, new Comparator<IndexDefHandle>() {
+            @Override
+            public int compare(IndexDefHandle o1, IndexDefHandle o2) {
+                boolean o1fk = o1.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY);
+                boolean o2fk = o1.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY);
+                if (o1fk && o2fk) fkComparator.compare(o1,o2);
+                return o1fk ? 1 : (o2fk ? -1 : 0);
+            }
+        });
+        
         IndexNameGenerator indexNameGenerator = new IndexNameGenerator(currentTable.indexes);
         for (IndexDefHandle handle : provisionalIndexes) {
             final IndexDef real = handle.real;

@@ -153,10 +153,13 @@ table[SchemaDef schema]
  	;
 
 table_spec[SchemaDef schema]
-	: table_name[$schema] LEFT_PAREN
-		table_element[$schema] (COMMA table_element[$schema])* RIGHT_PAREN
-		{$schema.finishTable();} (table_suffix[$schema])* 
-	{ $schema.resolveProvisionalIndexes(); }
+	: table_name[$schema] 
+	  LEFT_PAREN
+	    table_element[$schema] (COMMA table_element[$schema])* 
+	  RIGHT_PAREN
+	  {$schema.finishTable();}
+	  (table_suffix[$schema])* 
+	  {$schema.resolveAllIndexes();}
 	;
 
 table_name[SchemaDef schema]
