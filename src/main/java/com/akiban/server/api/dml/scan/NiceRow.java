@@ -115,9 +115,10 @@ public class NiceRow extends NewRow {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("NiceRow(");
-        sb.append(rowDef.table().getName().getTableName());
-        sb.append("){ ");
+        if (fields.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder sb = new StringBuilder().append('[');
         int nextExpectedPos = 0;
         for (Map.Entry<Integer,Object> entry : fields.entrySet()) {
             final int pos = entry.getKey();
@@ -134,7 +135,7 @@ public class NiceRow extends NewRow {
 
             nextExpectedPos = pos + 1;
         }
-        sb.append('}');
+        sb.setCharAt(sb.length() - 1, ']');
         return sb.toString();
     }
 
