@@ -15,7 +15,9 @@
 
 package com.akiban.server.itests.hapi.randomdb;
 
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 
@@ -31,7 +33,7 @@ class Actual
     public String queryResult(int rootTable,
                               int predicateTable,
                               Column predicateColumn,
-                              Comparison comparison,
+                              HapiPredicate.Operator comparison,
                               int literal) throws HapiRequestException
     {
         test.query = hapiQuery(rootTable, predicateTable, predicateColumn, comparison, literal);
@@ -45,7 +47,7 @@ class Actual
     private String hapiQuery(int rootTable,
                              int predicateTable,
                              Column predicateColumn,
-                             Comparison comparison,
+                             HapiPredicate.Operator comparison,
                              int literal)
     {
         StringBuilder buffer = new StringBuilder();

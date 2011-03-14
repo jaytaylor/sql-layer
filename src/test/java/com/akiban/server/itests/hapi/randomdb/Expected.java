@@ -16,6 +16,7 @@
 package com.akiban.server.itests.hapi.randomdb;
 
 import com.akiban.server.RowData;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.memcache.hprocessor.DefaultProcessedRequest;
@@ -39,7 +40,7 @@ class Expected
     public String queryResult(int rootTable,
                               int predicateTable,
                               Column predicateColumn,
-                              Comparison comparison,
+                              HapiPredicate.Operator comparison,
                               long literal) throws HapiRequestException, IOException
     {
         List<NewRow> queryResult = new ArrayList<NewRow>();
@@ -92,7 +93,7 @@ class Expected
     private boolean evaluate(NewRow row,
                              int predicateTable,
                              Column predicateColumn,
-                             Comparison comparison,
+                             HapiPredicate.Operator comparison,
                              long literal)
     {
         return evaluate(columnValue(row, predicateColumn), comparison, literal);
@@ -121,16 +122,16 @@ class Expected
         return (Long) row.get(columnPosition);
     }
 
-    private boolean evaluate(long columnValue, Comparison comparison, long literal)
+    private boolean evaluate(long columnValue, HapiPredicate.Operator comparison, long literal)
     {
         switch (comparison) {
             case LT:
                 return columnValue < literal;
-            case LE:
+            case LTE:
                 return columnValue <= literal;
             case GT:
                 return columnValue > literal;
-            case GE:
+            case GTE:
                 return columnValue >= literal;
             case EQ:
                 return columnValue == literal;
