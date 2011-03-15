@@ -304,7 +304,7 @@ public class SchemaDef {
         // We have to add in two passes: first, adding only non-FK, and then adding only FKs
         List<IndexDefHandle> fkIndexHandles = new ArrayList<IndexDefHandle>();
         for (IndexDefHandle handle : currentTable.indexHandles) {
-            if (handle.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+            if (handle.real.isForeignKey()) {
                 fkIndexHandles.add(handle);
                 continue;
             }
@@ -329,7 +329,7 @@ public class SchemaDef {
             if (equivalent != null) {
                 // For two compatible foreign keys:
                 // If 2nd columns are a proper subset of 1st, then combined name is 1st. Otherwise it is 2nd.
-                if (equivalent.qualifiers.contains(IndexQualifier.FOREIGN_KEY)
+                if (equivalent.isForeignKey()
                     && (handle.real.columns.size() >= equivalent.columns.size())) {
                     equivalent.name = handle.real.name;
                 }
@@ -345,7 +345,7 @@ public class SchemaDef {
         fkIndexHandles.clear();
         IndexNameGenerator indexNameGenerator = new IndexNameGenerator(currentTable.indexes);
         for (IndexDefHandle handle : provisionalIndexes) {
-            if (handle.real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+            if (handle.real.isForeignKey()) {
                 fkIndexHandles.add(handle);
                 continue;
             }
@@ -356,8 +356,7 @@ public class SchemaDef {
                 currentTable.indexHandles.add(handle);
                 columnsToIndexes.put(real.columns, real);
             } else {
-                if (equivalent.qualifiers.contains(IndexQualifier.FOREIGN_KEY) &&
-                    !real.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+                if (equivalent.isForeignKey() && !real.isForeignKey()) {
                     equivalent.name = indexNameGenerator.generateName(real);
                 }
                 equivalent.addIndexAttributes(real);
@@ -403,7 +402,7 @@ public class SchemaDef {
         if (exact != null) {
             return exact;
         }
-        if (index.qualifiers.contains(IndexQualifier.FOREIGN_KEY)) {
+        if (index.isForeignKey()) {
             for (Map.Entry<List<IndexColumnDef>, IndexDef> entry : columnsToIndexes.entrySet()) {
                 List<IndexColumnDef> testList = entry.getKey();
                 if (columnListsAreSubset(testList, columns)) {
@@ -852,10 +851,14 @@ public class SchemaDef {
         public void addColumn(String columnName) {
             columns.add(columnName);
         }
+
+        @Override
+        public String toString() {
+            return name + "_" + table + "(" + columns + ")";
+        }
     }
     
     public static class IndexDef {
-
         String name;
         Set<IndexQualifier> qualifiers = EnumSet.noneOf(IndexQualifier.class);
         List<IndexColumnDef> columns = new ArrayList<IndexColumnDef>();
@@ -952,8 +955,7 @@ public class SchemaDef {
         }
 
         public boolean hasAkibanJoin() {
-            return qualifiers.contains(IndexQualifier.FOREIGN_KEY) &&
-                   !getAkibanJoinRefs().isEmpty();
+            return isForeignKey() && !getAkibanJoinRefs().isEmpty();
         }
 
         public void addReferenceDef(String name, CName table) {
@@ -964,6 +966,10 @@ public class SchemaDef {
             assert !references.isEmpty() : "Index has no existing table reference";
             int lastIndex = references.size() - 1;
             references.get(lastIndex).addColumn(columnName);
+        }
+
+        public boolean isForeignKey() {
+            return qualifiers.contains(IndexQualifier.FOREIGN_KEY);
         }
     }
 

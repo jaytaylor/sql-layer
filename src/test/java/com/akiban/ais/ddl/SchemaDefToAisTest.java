@@ -22,10 +22,7 @@ import static org.junit.Assert.assertSame;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
