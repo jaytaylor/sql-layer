@@ -315,6 +315,7 @@ public class SchemaDef {
         }
 
         // Want the foreign keys indexes with the most number of columns to sort first
+        // so that minimal number of new indexes are generated
         final Comparator<IndexDefHandle> fkComparator = new Comparator<IndexDefHandle>() {
             @Override
             public int compare(IndexDefHandle o1, IndexDefHandle o2) {
@@ -327,10 +328,10 @@ public class SchemaDef {
             List<IndexColumnDef> columns = handle.real.columns;
             IndexDef equivalent = findEquivalentIndex(columnsToIndexes, handle.real);
             if (equivalent != null) {
-                // For two compatible foreign keys:
-                // If 2nd columns are a proper subset of 1st, then combined name is 1st. Otherwise it is 2nd.
+                // For two compatible foreign keys, the name second in the declaration takes
+                // takes precedence if they are equally sized (and equivalent, of course)
                 if (equivalent.isForeignKey()
-                    && (handle.real.columns.size() >= equivalent.columns.size())) {
+                    && (handle.real.columns.size() == equivalent.columns.size())) {
                     equivalent.name = handle.real.name;
                 }
                 equivalent.addIndexAttributes(handle.real);
