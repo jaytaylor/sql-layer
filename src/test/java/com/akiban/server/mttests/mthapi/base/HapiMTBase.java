@@ -68,11 +68,15 @@ public class HapiMTBase extends ApiTestBase {
         private boolean setupSucceeded = false;
         private final AtomicBoolean keepGoing = new AtomicBoolean(true);
         private final Map<EqualishExceptionWrapper,Integer> errors;
+        private final Runnable fatalExceptionCallback;
 
-        private WriteThreadCallable(WriteThread writeThread, Map<EqualishExceptionWrapper,Integer> errors) {
+        private WriteThreadCallable(WriteThread writeThread, Map<EqualishExceptionWrapper,Integer> errors,
+                                    Runnable fatalExceptionCallback)
+        {
             ArgumentValidation.notNull("write thread", writeThread);
             this.writeThread = writeThread;
             this.errors = errors;
+            this.fatalExceptionCallback = fatalExceptionCallback;
         }
 
         @Override
@@ -94,6 +98,9 @@ public class HapiMTBase extends ApiTestBase {
                 } catch (Throwable t) {
                     addError(t, errors);
                     exceptionsNotFatal = writeThread.continueThroughException(t);
+                    if (!exceptionsNotFatal && fatalExceptionCallback != null) {
+                        fatalExceptionCallback.run();
+                    }
                 }
             }
             return null;
@@ -165,8 +172,14 @@ public class HapiMTBase extends ApiTestBase {
         try {
             final ExecutorService executor = Executors.newFixedThreadPool( executorsCount() );
             Map<EqualishExceptionWrapper,Integer> errors = new ConcurrentHashMap<EqualishExceptionWrapper, Integer>();
+            final AtomicBoolean writeThreadAlive = new AtomicBoolean(true);
 
-            WriteThreadCallable writeThreadCallable = new WriteThreadCallable(writeThread, errors);
+            WriteThreadCallable writeThreadCallable = new WriteThreadCallable(writeThread, errors, new Runnable() {
+                @Override
+                public void run() {
+                    writeThreadAlive.set(false);
+                }
+            });
             Future<Void> writeThreadFuture = executor.submit(writeThreadCallable);
             boolean setupSuccess = writeThreadCallable.waitForSetup();
             if (!setupSuccess) {
@@ -174,7 +187,8 @@ public class HapiMTBase extends ApiTestBase {
                 fail("setupSuccess was false, so we should have gotten an ExecutionException");
             }
 
-            Map<EqualishExceptionWrapper,Integer> errorsMap = feedReadThreads(readThreads, executor, errors);
+            Map<EqualishExceptionWrapper,Integer> errorsMap
+                    = feedReadThreads(readThreads, executor, errors, writeThreadAlive);
 
             writeThreadCallable.stopOngoingWrites();
             writeThreadFuture.get(5, TimeUnit.SECONDS);
@@ -189,7 +203,8 @@ public class HapiMTBase extends ApiTestBase {
 
     private Map<EqualishExceptionWrapper,Integer> feedReadThreads(HapiReadThread[] readThreads,
                                                                   ExecutorService executorService,
-                                                                  Map<EqualishExceptionWrapper, Integer> errors)
+                                                                  Map<EqualishExceptionWrapper, Integer> errors,
+                                                                  AtomicBoolean writeThreadAlive)
             throws InterruptedException
     {
         final ExecutorService processingService = Executors.newFixedThreadPool( processersCount() );
@@ -213,7 +228,7 @@ public class HapiMTBase extends ApiTestBase {
         for (HapiReadThread readThread : readThreads) {
             randomThreads.setWeight(readThread, readThread.spawnCount());
         }
-        while (randomThreads.hasWeights()) {
+        while (randomThreads.hasWeights() && writeThreadAlive.get()) {
             HapiReadThread hapiReadThread = randomThreads.get(-1);
             HapiThreadCallable callable = new HapiThreadCallable(hapiReadThread, "yo");
             Future<Void> submitFuture = executorService.submit(callable);
