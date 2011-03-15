@@ -48,12 +48,13 @@ import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
 
-public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxManageable {
+public class TreeServiceImpl implements TreeService, Service<TreeService>,
+        JmxManageable {
 
     private final static int MEGA = 1024 * 1024;
 
-    private static final Logger LOG = LoggerFactory.getLogger(TreeServiceImpl.class
-            .getName());
+    private static final Logger LOG = LoggerFactory
+            .getLogger(TreeServiceImpl.class.getName());
 
     private static final String PERSISTIT_MODULE_NAME = "persistit";
 
@@ -63,7 +64,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
 
     private static final String BUFFER_COUNT_PROP_NAME = "buffer.count.";
 
-    private static final String DEFAULT_DATAPATH = "/tmp/chunkserver_data";
+    private static final String DEFAULT_DATAPATH = "/tmp/akiban_server";
 
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     private static final int DEFAULT_BUFFER_SIZE = 8192;
@@ -143,31 +144,50 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
         // (b) sets the buffersize property if null
         // (c) sets the buffercount property if null.
         //
-        // Copies the akserver.datapath property to the Persistit properties set.
+        // Copies the akserver.datapath property to the Persistit properties
+        // set.
         // This allows Persistit to perform substitution of ${datapath} with
         // the server-specified home directory.
         //
-        final String datapath = configService.getProperty(
-                "akserver." + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
+        final String datapath = configService.getProperty("akserver."
+                + DATAPATH_PROP_NAME, DEFAULT_DATAPATH);
         properties.setProperty(DATAPATH_PROP_NAME, datapath);
         ensureDirectoryExists(datapath, false);
 
+        // Note - this is an akserver property, not a persistit property.
+        // Is used by unit tests to limit the size of buffer pool -
+        // for startup/shutdown speed.
+        //
         final boolean isFixedAllocation = "true".equals(configService
                 .getProperty(FIXED_ALLOCATION_PROPERTY_NAME, "false"));
-        if (!properties.contains(BUFFER_SIZE_PROP_NAME)) {
+
+        // Get the configured buffer size:
+        // Default is 16K. Can be overridden with
+        //
+        // persistit.buffersize=8K
+        //
+        // for example.
+        if (!properties.containsKey(BUFFER_SIZE_PROP_NAME)) {
             properties.setProperty(BUFFER_SIZE_PROP_NAME,
                     String.valueOf(DEFAULT_BUFFER_SIZE));
         }
+        //
+        // Now compute the actual allocation of buffers
+        // of that size. The bufferCount method computes
+        // an allocation based on heap size.
+        //
         final int bufferSize = Integer.parseInt(properties
                 .getProperty(BUFFER_SIZE_PROP_NAME));
         final String bufferCountPropString = BUFFER_COUNT_PROP_NAME
                 + bufferSize;
-        if (!properties.contains(bufferCountPropString)) {
+        if (!properties.containsKey(bufferCountPropString)) {
             properties.setProperty(bufferCountPropString,
                     String.valueOf(bufferCount(bufferSize, isFixedAllocation)));
         }
         //
         // Now we're ready to create the Persistit instance.
+        // Note that the Volume specifications will substitute
+        // ${buffersize}, so that property must be valid.
         //
         Persistit db = new Persistit();
         dbRef.set(db);
@@ -307,8 +327,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
     public boolean isContainer(final Exchange exchange, final TreeLink link)
             throws PersistitException {
         final TreeCache treeCache = populateTreeCache(link);
-        return exchange.getVolume().equals(
-                 treeCache.getTree().getVolume());
+        return exchange.getVolume().equals(treeCache.getTree().getVolume());
     }
 
     @Override
@@ -361,11 +380,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
     }
 
     private int tableIdOffset(final Volume volume) {
-        return ((Integer)volume.getAppCache()).intValue();
+        return ((Integer) volume.getAppCache()).intValue();
     }
 
-    public synchronized Volume mappedVolume(final String schemaName, final String treeName)
-            throws PersistitException {
+    public synchronized Volume mappedVolume(final String schemaName,
+            final String treeName) throws PersistitException {
         try {
             final String vstring = volumeForTree(schemaName, treeName);
             final Volume volume = getDb().loadVolume(vstring);
@@ -380,7 +399,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
     }
 
     private List<Exchange> exchangeList(final Session session, final Tree tree) {
-        Map<Tree, List<Exchange>> map = session.get(TreeServiceImpl.class, "exchangemap");
+        Map<Tree, List<Exchange>> map = session.get(TreeServiceImpl.class,
+                "exchangemap");
         List<Exchange> list;
         if (map == null) {
             map = new HashMap<Tree, List<Exchange>>();
@@ -409,25 +429,20 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
                 final SchemaNode node = entry.getValue();
                 if (node.getPattern().matcher(concatenatedName).matches()) {
                     String vs = entry.getValue().getVolumeString();
-                    db.setProperty(SCHEMA, schemaName);
-                    db.setProperty(TREE, treeName);
-                    String vsFinal = db.substituteProperties(vs,
-                            db.getProperties());
-                    return vsFinal;
+                    return substitute(vs, schemaName, treeName);
                 }
             }
         }
         if (defaultSchemaNode != null) {
             String vs = defaultSchemaNode.getVolumeString();
-            db.setProperty(SCHEMA, schemaName);
-            String vsFinal = db.substituteProperties(vs, db.getProperties());
-            return vsFinal;
+            return substitute(vs, schemaName, null);
         }
         return null;
     }
 
     void buildSchemaMap() {
-        final Properties properties = configService.getModuleConfiguration("akserver").getProperties();
+        final Properties properties = configService.getModuleConfiguration(
+                "akserver").getProperties();
         for (final Entry<Object, Object> entry : properties.entrySet()) {
             final String name = (String) entry.getKey();
             final String value = (String) entry.getValue();
@@ -459,7 +474,14 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
                 final String vstring = value.substring(parts[0].length() + 1);
                 try {
                     // Test for value Volume specification
-                    new VolumeSpecification(vstring);
+                    // Done here during startup so that any configuration error
+                    // is revealed early. Note that this intentionally replaces
+                    // ${schema} and ${tree} substrings with "SCHEMA" and
+                    // "TREE". With this values the string will pass validation.
+                    // These are not the real values that will be substituted
+                    // when the volume specification is actually used - they are
+                    // merely syntactically valid.
+                    new VolumeSpecification(substitute(vstring, SCHEMA, TREE));
                 } catch (InvalidVolumeSpecificationException e) {
                     if (LOG.isErrorEnabled()) {
                         LOG.error("Invalid volumespecification in property "
@@ -494,6 +516,19 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>, JmxMa
             }
         }
         return true;
+    }
+
+    private String substitute(final String vs, final String schemaName,
+            final String treeName) {
+        final Persistit db = dbRef.get();
+        final Properties props = new Properties(db.getProperties());
+        if (schemaName != null) {
+            props.put(SCHEMA, schemaName);
+        }
+        if (treeName != null) {
+            props.put(TREE, treeName);
+        }
+        return db.substituteProperties(vs, props);
     }
 
     @Override
