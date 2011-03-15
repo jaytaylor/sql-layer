@@ -33,6 +33,7 @@ import com.akiban.ais.ddl.SchemaDef.CName;
 import com.akiban.ais.ddl.SchemaDef.ColumnDef;
 import com.akiban.ais.ddl.SchemaDef.IndexDef;
 import com.akiban.ais.ddl.SchemaDef.IndexQualifier;
+import com.akiban.ais.ddl.SchemaDef.ReferenceDef;
 import com.akiban.ais.ddl.SchemaDef.UserTableDef;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.Column;
@@ -155,7 +156,7 @@ public class SchemaDefToAis {
         final UserTableDef utDef = schemaDef.getUserTableMap().get(userTableName);
         if (utDef != null && utDef.isAkibanTable()
                 && !tablesInGroups.contains(userTableName)) {
-            List<SchemaDef.ReferenceDef> joinRefs = utDef.getAkibanJoinRefs();
+            List<ReferenceDef> joinRefs = utDef.getAkibanJoinRefs();
             if (joinRefs.isEmpty()) {
                 // No FK: this is a new root table so create a new Group
                 // By default the group has the same name is its root
@@ -166,7 +167,7 @@ public class SchemaDefToAis {
                 utDef.groupName = groupName;
                 members.add(userTableName);
             } else {
-                for (SchemaDef.ReferenceDef refDef : joinRefs) {
+                for (ReferenceDef refDef : joinRefs) {
                     utDef.parent = addImpliedGroupTable(tablesInGroups, refDef.table);
                     if (utDef.parent != null) {
                         utDef.groupName = utDef.parent.groupName;
@@ -333,7 +334,7 @@ public class SchemaDefToAis {
                     final List<String> childColumns = indexDef.getColumnNames();
 
                     // foreign keys (aka candidate joins)
-                    for (SchemaDef.ReferenceDef refDef : indexDef.references) {
+                    for (ReferenceDef refDef : indexDef.references) {
                         CName parentTable = refDef.table;
                         String joinName = constructFKJoinName(utDef, refDef);
 
@@ -384,7 +385,7 @@ public class SchemaDefToAis {
             List<CName> tablesInGroup = depthFirstSortedUserTables(group);
             for (CName table : tablesInGroup) {
                 UserTableDef tableDef = schemaDef.getUserTableMap().get(table);
-                List<SchemaDef.ReferenceDef> joinDefs = tableDef.getAkibanJoinRefs();
+                List<ReferenceDef> joinDefs = tableDef.getAkibanJoinRefs();
                 if (joinDefs.isEmpty()) {
                     // No FK: this is a root table so do nothing
                     if (LOG.isDebugEnabled()) {
@@ -392,7 +393,7 @@ public class SchemaDefToAis {
                     }
                     builder.addTableToGroup(groupName, table.getSchema(), table.getName());
                 } else {
-                    for (SchemaDef.ReferenceDef refDef : joinDefs) {
+                    for (ReferenceDef refDef : joinDefs) {
                         LOG.debug("Group Child Table = {}", table.getName());
                         String joinName = constructFKJoinName(tableDef, refDef);
                         builder.addJoinToGroup(groupName, joinName, 0);
@@ -406,7 +407,7 @@ public class SchemaDefToAis {
         return builder.akibanInformationSchema();
     }
 
-    private String constructFKJoinName(UserTableDef childTable, SchemaDef.ReferenceDef refDef) {
+    private String constructFKJoinName(UserTableDef childTable, ReferenceDef refDef) {
         String ret = String.format("%s/%s/%s/%s/%s/%s",
                                    refDef.table.getSchema(),
                                    refDef.table.getName(),
