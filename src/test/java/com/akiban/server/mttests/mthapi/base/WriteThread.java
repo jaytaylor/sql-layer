@@ -28,7 +28,5 @@ public interface WriteThread {
     void ongoingWrites(DDLFunctions ddl, DMLFunctions dml, Session session, AtomicBoolean keepGoing)
             throws InvalidOperationException;
 
-    WriteThreadStats getStats();
-
     boolean continueThroughException(Throwable throwable);
 }

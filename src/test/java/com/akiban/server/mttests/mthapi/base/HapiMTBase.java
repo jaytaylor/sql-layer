@@ -62,7 +62,7 @@ public class HapiMTBase extends ApiTestBase {
         }
     }
 
-    private final class WriteThreadCallable implements Callable<WriteThreadStats> {
+    private final class WriteThreadCallable implements Callable<Void> {
         private final CountDownLatch setupDoneLatch = new CountDownLatch(1);
         private final WriteThread writeThread;
         private boolean setupSucceeded = false;
@@ -76,7 +76,7 @@ public class HapiMTBase extends ApiTestBase {
         }
 
         @Override
-        public WriteThreadStats call() throws InvalidOperationException, InterruptedException {
+        public Void call() throws InvalidOperationException, InterruptedException {
             DDLFunctions ddl = ddl();
             DMLFunctions dml = dml();
             Session session = new SessionImpl();
@@ -96,7 +96,7 @@ public class HapiMTBase extends ApiTestBase {
                     exceptionsNotFatal = writeThread.continueThroughException(t);
                 }
             }
-            return writeThread.getStats();
+            return null;
         }
 
         public boolean waitForSetup() throws InterruptedException {
@@ -167,7 +167,7 @@ public class HapiMTBase extends ApiTestBase {
             Map<EqualishExceptionWrapper,Integer> errors = new ConcurrentHashMap<EqualishExceptionWrapper, Integer>();
 
             WriteThreadCallable writeThreadCallable = new WriteThreadCallable(writeThread, errors);
-            Future<WriteThreadStats> writeThreadFuture = executor.submit(writeThreadCallable);
+            Future<Void> writeThreadFuture = executor.submit(writeThreadCallable);
             boolean setupSuccess = writeThreadCallable.waitForSetup();
             if (!setupSuccess) {
                 writeThreadFuture.get();
@@ -177,9 +177,7 @@ public class HapiMTBase extends ApiTestBase {
             Map<EqualishExceptionWrapper,Integer> errorsMap = feedReadThreads(readThreads, executor, errors);
 
             writeThreadCallable.stopOngoingWrites();
-            WriteThreadStats stats = writeThreadFuture.get(5, TimeUnit.SECONDS);
-
-            LOG.trace("{} writes", stats.getWrites());
+            writeThreadFuture.get(5, TimeUnit.SECONDS);
 
             if (!errorsMap.isEmpty()) {
                 failWithErrors(errorsMap);

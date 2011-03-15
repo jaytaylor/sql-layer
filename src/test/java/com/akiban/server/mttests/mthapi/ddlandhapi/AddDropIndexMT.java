@@ -30,7 +30,6 @@ import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiReadThread;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
-import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
@@ -145,11 +144,6 @@ public final class AddDropIndexMT extends HapiMTBase {
             @Override
             public boolean continueThroughException(Throwable throwable) {
                 return true;
-            }
-
-            @Override
-            public WriteThreadStats getStats() {
-                return new WriteThreadStats(0, 0, 0);
             }
         };
     }

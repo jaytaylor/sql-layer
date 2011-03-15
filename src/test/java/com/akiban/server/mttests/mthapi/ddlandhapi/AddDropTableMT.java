@@ -26,7 +26,6 @@ import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
-import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisFK;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
@@ -328,11 +327,6 @@ public final class AddDropTableMT extends HapiMTBase {
                 assert tablesMap.get(child) < 0 : String.format("%s: %s", child, tablesMap);
                 tablesList.remove(child);
             }
-        }
-
-        @Override
-        public WriteThreadStats getStats() {
-            return new WriteThreadStats(0, 0, 0);
         }
 
         @Override
