@@ -35,10 +35,6 @@ public abstract class HapiReadThread {
         }
     }
 
-    HapiReadThread() {
-        // package-private, since we want to maintain the invariant that only one validation method is overridden
-    }
-
     protected abstract HapiRequestStruct pullRequest(ThreadlessRandom random);
 
     protected int spawnCount() {

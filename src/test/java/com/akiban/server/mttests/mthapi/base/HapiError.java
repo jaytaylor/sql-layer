@@ -15,12 +15,9 @@
 
 package com.akiban.server.mttests.mthapi.base;
 
-import com.akiban.server.api.HapiGetRequest;
 import org.json.JSONObject;
 
 public abstract class HapiError extends HapiReadThread {
-    protected abstract void validateErrorResponse(HapiGetRequest request, Throwable exception);
-
     @Override
     protected void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws UnexpectedSuccess {
         throw new UnexpectedSuccess(request.getRequest());
