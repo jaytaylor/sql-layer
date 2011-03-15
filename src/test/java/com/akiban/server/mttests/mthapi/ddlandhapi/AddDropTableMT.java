@@ -31,8 +31,11 @@ import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisFK;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.DDLUtils;
+import com.akiban.server.mttests.mthapi.common.JsonUtils;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ThreadlessRandom;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +80,7 @@ public final class AddDropTableMT extends HapiMTBase {
         runThreads(writeThread,
                 readPkCustomers(customer, .25f),
                 readPkOrders(customer.getChild("orders"), .25f),
-                readPkItems(customer.getChild("orders").getChild("items"), .25f),
+                readParentItems(customer.getChild("orders").getChild("items"), .25f),
                 readPkAddresses(customer.getChild("addresses"), .25f)
         );
     }
@@ -120,7 +123,7 @@ public final class AddDropTableMT extends HapiMTBase {
         };
     }
 
-    private static OptionallyWorkingReadThread readPkItems(final SaisTable items, float chance) {
+    private static OptionallyWorkingReadThread readParentItems(final SaisTable items, float chance) {
         return new MyReadThread(items, chance) {
             @Override
             protected HapiRequestStruct pullRequest(int pseudoRandom) {
@@ -132,6 +135,11 @@ public final class AddDropTableMT extends HapiMTBase {
                         .and("c_id", Integer.toString(cid))
                         .done();
                 return new HapiRequestStruct(request, items, null); // TODO this index is knowable
+            }
+
+            @Override
+            protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result) throws JSONException {
+                JsonUtils.validateResponse(result, requestStruct.getSelectRoot(), requestStruct.getPredicatesTable());
             }
         };
     }
