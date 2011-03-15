@@ -857,6 +857,35 @@ public class SchemaDef {
         public String toString() {
             return name + "_" + table + "(" + columns + ")";
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if(this == o) {
+                return true;
+            }
+            if(o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ReferenceDef that = (ReferenceDef) o;
+            if(columns != null ? !columns.equals(that.columns) : that.columns != null) {
+                return false;
+            }
+            if(name != null ? !name.equals(that.name) : that.name != null) {
+                return false;
+            }
+            if(table != null ? !table.equals(that.table) : that.table != null) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + (table != null ? table.hashCode() : 0);
+            result = 31 * result + (columns != null ? columns.hashCode() : 0);
+            return result;
+        }
     }
     
     public static class IndexDef {
@@ -915,7 +944,11 @@ public class SchemaDef {
                     : indexDef.qualifiers != null) {
                 return false;
             }
-            return references.equals(indexDef.references);
+            if (references != null ? !references.equals(indexDef.references)
+                    : indexDef.references != null) {
+                return false;
+            }
+            return true;
         }
 
         @Override
@@ -924,7 +957,7 @@ public class SchemaDef {
             result = 31 * result
                     + (qualifiers != null ? qualifiers.hashCode() : 0);
             result = 31 * result + (columns != null ? columns.hashCode() : 0);
-            result = 31 * result + references.hashCode();
+            result = 31 * result + (references != null ? references.hashCode() : 0);
             result = 31 * result
                     + (constraints != null ? constraints.hashCode() : 0);
             result = 31 * result + (comment != null ? comment.hashCode() : 0);
