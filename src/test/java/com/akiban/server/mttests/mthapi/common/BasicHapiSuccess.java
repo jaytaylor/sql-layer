@@ -22,6 +22,7 @@ import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.util.ThreadlessRandom;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -30,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.util.ThreadlessRandom.rand;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -78,11 +78,11 @@ public class BasicHapiSuccess extends HapiSuccess {
     }
 
     @Override
-    protected HapiRequestStruct pullRequest(final int pseudoRandom) {
-        String idValue = Integer.toString(Math.abs(pseudoRandom) % MAX_READ_ID);
-        int randTableIndex = Math.abs(pseudoRandom % allTables.size());
+    protected HapiRequestStruct pullRequest(ThreadlessRandom random) {
+        String idValue = Integer.toString(random.nextInt(0, MAX_READ_ID));
+        int randTableIndex = random.nextInt(0, allTables.size());
         SaisTable selectRoot = allTables.get(randTableIndex);
-        SaisTable predicateTable = choosePredicate(selectRoot, rand(pseudoRandom));
+        SaisTable predicateTable = choosePredicate(selectRoot, random.nextInt());
         assert predicateTable.getPK().size() == 1 : predicateTable.getPK(); // should be verified in ctor
         String predicateColumn = predicateTable.getPK().get(0);
         HapiGetRequest request = DefaultHapiGetRequest.forTables(schema(), selectRoot.getName(), predicateTable.getName()).where(predicateColumn).eq(idValue);

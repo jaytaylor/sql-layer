@@ -17,6 +17,7 @@ package com.akiban.server.mttests.mthapi.base;
 
 import com.akiban.ais.model.Index;
 import com.akiban.server.api.HapiGetRequest;
+import com.akiban.util.ThreadlessRandom;
 import org.json.JSONObject;
 
 public abstract class HapiReadThread {
@@ -38,7 +39,7 @@ public abstract class HapiReadThread {
         // package-private, since we want to maintan the invariant that only one validation method is overridden
     }
 
-    protected abstract HapiRequestStruct pullRequest(int pseudoRandom);
+    protected abstract HapiRequestStruct pullRequest(ThreadlessRandom random);
 
     protected int spawnCount() {
         return DEFAULT_SPAWN_COUNT;

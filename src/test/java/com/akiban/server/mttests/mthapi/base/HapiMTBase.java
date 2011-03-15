@@ -129,7 +129,7 @@ public class HapiMTBase extends ApiTestBase {
             final HapiRequestStruct requestStruct;
             final HapiGetRequest request;
             try {
-                requestStruct = hapiReadThread.pullRequest(ThreadlessRandom.rand(this.hashCode()));
+                requestStruct = hapiReadThread.pullRequest(new ThreadlessRandom(this.hashCode()));
             } catch (RuntimeException e) {
                 LOG.warn("{} failed to pull request: {}", id, e);
                 throw e;
