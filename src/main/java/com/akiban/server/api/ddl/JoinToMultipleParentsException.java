@@ -16,18 +16,9 @@
 package com.akiban.server.api.ddl;
 
 import com.akiban.server.InvalidOperationException;
-import com.akiban.message.ErrorCode;
 
-public abstract class DDLException extends InvalidOperationException {
-    protected DDLException(InvalidOperationException cause) {
-        super(cause.getCode(), cause.getShortMessage(), cause);
-    }
-
-    protected DDLException(ErrorCode code, String message) {
-        super(code, message);
-    }
-
-    protected DDLException(ErrorCode code, String formatter, Object... args) {
-        super(code, formatter, args);
+public final class JoinToMultipleParentsException extends DDLException {
+    public JoinToMultipleParentsException(InvalidOperationException e) {
+        super(e);
     }
 }

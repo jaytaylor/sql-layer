@@ -23,6 +23,8 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.ddl.JoinToMultipleParentsException;
+import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.itests.ApiTestBase;
@@ -337,6 +339,49 @@ public final class CreateTableIT extends ApiTestBase {
         final int tid = tableId("test", "t");
         assertEquals("create table `test`.`t`(`id` int, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8",
                      new DDLGenerator().createTable(getUserTable(tid)));
+    }
+
+    // Akiban foreign key to non-primary key column is allowed
+    @Test(expected=JoinToWrongColumnsException.class)
+    public void bug727749() throws InvalidOperationException {
+        createTable("test", "p", "id int key, wrongInt int");
+        createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(wrongInt)");
+    }
+
+    @Test
+    public void joinMustMatchParentPK() throws InvalidOperationException {
+        createTable("test", "p1", "id1 int, id2 int, primary key(id1,id2)");
+        // subset of pk
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1) references p1(id1)");
+        // join key missing column
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1) references p1(id1,id2)");
+        // different order in table reference
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1,pid2) references p1(id2,id1)");
+        // wrong column name in join key
+        createExpectException(JoinToWrongColumnsException.class, "test", "c",
+                              "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid,pid2) references p1(id1,id2)");
+        // should be case insensitive
+        createTable("test", "c",
+                    "id int key, pid1 int, pid2 int, constraint __akiban foreign key(pid1,pid2) references p1(ID1,iD2)");
+    }
+
+    // Table with two akiban foreign keys is reported poorly
+    @Test(expected=JoinToMultipleParentsException.class)
+    public void bug727754() throws InvalidOperationException {
+        createTable("test", "p1", "id int key");
+        createTable("test", "p2", "id int key");
+        createTable("test", "c", "id int key, p1id int, constraint __akiban1 foreign key(p1id) references p1(id),"+
+                                             "p2id int, constraint __akiban2 foreign key(p2id) references p2(id)");
+    }
+
+    // Akiban foreign key with differing parent/child columns
+    @Test(expected= JoinToWrongColumnsException.class)
+    public void bug728003() throws InvalidOperationException {
+        createTable("test", "p", "id varchar(32) key");
+        createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id)");
     }
 
 

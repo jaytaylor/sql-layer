@@ -28,7 +28,7 @@ public final class GenericInvalidOperationException extends InvalidOperationExce
     private final InvalidOperationException cause;
 
     GenericInvalidOperationException(InvalidOperationException e) {
-        super(e.getCode(), e.getMessage(), e);
+        super(e.getCode(), e.getShortMessage(), e);
         this.cause = e;
     }
 

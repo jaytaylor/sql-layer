@@ -142,6 +142,15 @@ public class AkibanInformationSchema implements Serializable, Traversable
         return (Types.unsupportedTypes().contains(type) == false);
     }
 
+    public boolean canTypesBeJoined(String typeName1, String typeName2) {
+        Type t1 = getType(typeName1);
+        Type t2 = getType(typeName2);
+        // Encoding equal or both int types
+        return (t1 != null) && (t2 != null) &&
+               (t1.encoding().equals(t2.encoding()) ||
+                (Types.isIntType(t1) && Types.isIntType(t2)));
+    }
+
     public Map<String, Join> getJoins()
     {
         return joins;
