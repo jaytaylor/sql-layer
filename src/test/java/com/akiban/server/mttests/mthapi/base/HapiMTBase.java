@@ -341,15 +341,22 @@ public class HapiMTBase extends ApiTestBase {
         }
         printer.println(':');
 
+        int highest = 0;
         int total = 0;
         for (Map.Entry<EqualishExceptionWrapper, Integer> entry : errors) {
-            total += entry.getValue();
+            int v = entry.getValue();
+            total += v;
+            if (v > highest) {
+                highest = v;
+            }
         }
+        // eg, if the highest number is 3 digits, this will produce the format string: "\t%3d (%7.03f%%): "
+        final String totalsFormat = String.format("\t%%%dd (%%7.03f%%%%): ", Integer.toString(highest).length());
 
         for (Map.Entry<EqualishExceptionWrapper,Integer> pair : errors) {
             int count = pair.getValue();
             float percent = (((float)count) / total) * 100;
-            printer.printf("\t%7.03f: ", percent);
+            printer.printf(totalsFormat, count, percent);
             Throwable throwable = pair.getKey().get();
 
             if (HapiReadThread.UnexpectedException.class.equals(throwable.getClass())) {
