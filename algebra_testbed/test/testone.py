@@ -15,5 +15,35 @@
 
 from testbase import *
 
-run_plan("Scan the customer name index for 'ori' and then find the row",
-         IndexedTableScan(IndexScan(customer_name_index, ['ori']), ['hkey'], coi))
+"""
+select c.name, o.date, i.*
+from customer c, order o, item i
+where o.date between '2010/1/2' and 2010/2/2'
+and c.name like '%i%'
+"""
+
+Tco = RowType('co', ['hkey', 'cid', 'name', 'oid', 'order_date'], ['hkey'], To)
+Tcoi = RowType('coi',
+               ['hkey', 'cid', 'name', 'oid', 'order_date', 'iid', 'oid', 'unit_price', 'quantity'],
+               ['hkey'],
+               Ti)
+
+run_plan("Restrict order date and customer name",
+         Select
+         (Select
+          (Flatten
+           (Flatten
+            (FullTableScan(coi),
+             Tc,
+             To,
+             Tco),
+            Tco,
+            Ti,
+            Tcoi),
+           Tcoi,
+           lambda c: 'i' in c.name
+           ),
+          Tcoi,
+          lambda o: '2010/1/2' <= o.order_date <= '2010/2/2'
+          )
+         )

@@ -73,7 +73,12 @@ coi.add(Row(Ti, {'hkey': [Tc, [3], To, [33], Ti, [331]], 'iid': 331, 'oid': 33, 
 coi.add(Row(Ti, {'hkey': [Tc, [3], To, [33], Ti, [332]], 'iid': 332, 'oid': 33, 'unit_price': 18.00, 'quantity': 18}))
 coi.close()
 
-# Add an index on customer.name
+# Index on customer.name
 
 TIcname = RowType('customer.name', ['name', 'hkey'], ['name'])
 customer_name_index = coi.add_index(Tc, TIcname)
+
+# Index on order.order_date
+
+TIodate = RowType('order.order_date', ['order_date', 'hkey'], ['order_date'])
+order_date_index = coi.add_index(To, TIodate)

@@ -17,7 +17,7 @@ import scan
 
 Scan = scan.Scan
 
-class FullTableScan(Scan):
+class GroupScan(Scan):
 
-    def __init__(self, table):
-        Scan.__init__(self, table.cursor())
+    def __init__(self, group):
+        Scan.__init__(self, group.cursor())
