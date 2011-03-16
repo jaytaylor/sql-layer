@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -370,6 +371,11 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
         
         manager.deleteTableDefinition(session, "drupal_b", "two");
         assertNull(ais.getUserTable("drupal_a", "two"));
+    }
+
+    @Test(expected=UnsupportedCharsetException.class)
+    public void badCharsetIsRejected() throws Exception {
+        createTable(SCHEMA, "create table t(id int key) engine=akibandb default charset=banana");
     }
 
 
