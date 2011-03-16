@@ -399,6 +399,9 @@ public class AkServerUtil {
         if (buffer == null) {
             return null;
         }
+        if (charset == null) {
+            throw new IllegalArgumentException("charset");
+        }
         // Note: String(.., Charset) has *very* different behavior than String(.., "charset")
         // Think carefully, and read the String docs, before changing.
         try {
