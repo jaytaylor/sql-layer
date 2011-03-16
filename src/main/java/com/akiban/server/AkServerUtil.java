@@ -18,11 +18,11 @@ package com.akiban.server;
 import com.akiban.util.AkibanAppender;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 
 public class AkServerUtil {
 
@@ -388,13 +388,24 @@ public class AkServerUtil {
         return decodeString(buff, fieldDef.column().getCharsetAndCollation().charset());
     }
 
+    /**
+     * Convert the bytes in a given buffer to a string, using a given charset.
+     * @param buffer array of bytes encoded using the given charset
+     * @param charset name of valid and supported character set
+     * @return string representation of the buffer
+     * @throws RuntimeException if the charset is not supported
+     */
     static String decodeString(ByteBuffer buffer, String charset) {
         if (buffer == null) {
             return null;
         }
-        Charset usingCharset = Charset.forName(charset);
-        return new String(buffer.array(), buffer.position(), buffer.limit() - buffer.position(), usingCharset);
-
+        // Note: String(.., Charset) has *very* different behavior than String(.., "charset")
+        // Think carefully, and read the String docs, before changing.
+        try {
+            return new String(buffer.array(), buffer.position(), buffer.limit() - buffer.position(), charset);
+        } catch(UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static ByteBuffer byteBufferForMySQLString(byte[] bytes, final int offset,
