@@ -35,7 +35,6 @@ import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.mttests.mtutil.TimedResult;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -122,7 +121,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         scanWhileDropping("PRIMARY");
     }
 
-    @Test @Ignore("bug 733003") // TODO
+    @Test
     public void scanIndexWhileDropping() throws Exception {
         scanWhileDropping("name");
     }
@@ -341,7 +340,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         return tableId;
     }
 
-    @Test //@Ignore // TODO bug 732950
+    @Test
     public void dropIndexWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
@@ -383,7 +382,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
     }
 
-    @Test(timeout=60000) @Ignore("bug 732950") // TODO
+    @Test(timeout=60000)
     public void scanWhileDroppingIndex() throws Exception {
         final int NUMBER_OF_ROWS = 10000;
         final int initialTableId = createTable(SCHEMA, TABLE, "id int key", "age int", "key(age)");
@@ -479,7 +478,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         );
     }
 
-    @Test @Ignore("bug 732871") // TODO
+    @Test
     public void updateIndexedColumnWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
@@ -527,7 +526,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         );
     }
 
-    @Test @Ignore("bug 732871") // TODO
+    @Test
     public void updateIndexedColumnAndPKWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
