@@ -34,7 +34,6 @@ import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ThreadlessRandom;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -44,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class AddDropIndexMT extends HapiMTBase {
     private static final String SCHEMA = "indexestest";
 
-    @Ignore @Test
+    @Test
     public void addDropIndex() {
         WriteThread writeThread = getAddDropIndexThread("theindex");
 
