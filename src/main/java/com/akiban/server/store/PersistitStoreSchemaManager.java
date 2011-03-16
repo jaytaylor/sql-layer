@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1116,6 +1117,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     tableName, schemaName);
         }
 
+        final String tableCharset = tableDef.getCharset();
+        if(tableCharset != null && !Charset.isSupported(tableCharset)) {
+            throw new InvalidOperationException(
+                ErrorCode.UNSUPPORTED_CHARSET,
+                "Table `%s`.`%s` has unsupported default charset %s",
+                schemaName, tableName, tableCharset);
+        }
+
         for(SchemaDef.ColumnDef col : tableDef.getColumns()) {
             final String typeName = col.getType();
             if(ais.isTypeSupported(typeName) == false) {
@@ -1123,6 +1132,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         ErrorCode.UNSUPPORTED_DATA_TYPE,
                         "Table `%s`.`%s` column `%s` is unsupported type %s",
                         schemaName, tableName, col.getName(), typeName);
+            }
+            final String charset = col.getCharset();
+            if(charset != null && !Charset.isSupported(charset)) {
+                throw new InvalidOperationException(
+                        ErrorCode.UNSUPPORTED_CHARSET,
+                        "Table `%s`.`%s` column `%s` has unsupported charset %s",
+                        schemaName, tableName, col.getName(), charset);
             }
         }
 
