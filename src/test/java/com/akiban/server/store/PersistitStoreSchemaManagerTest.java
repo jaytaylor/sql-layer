@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import com.akiban.ais.ddl.SchemaDef;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -377,12 +378,14 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
         // Table level
         try {
             createTable(SCHEMA, "create table t(id int key) engine=akibandb default charset=banana;");
+            Assert.fail("Expected InvalidOperationException (unsupported charset)");
         } catch(InvalidOperationException e) {
             assertEquals(ErrorCode.UNSUPPORTED_CHARSET, e.getCode());
         }
         // Column level
         try {
             createTable(SCHEMA, "create table t(name varchar(32) charset utf42) engine=akibandb;");
+            Assert.fail("Expected InvalidOperationException (unsupported charset)");
         } catch(InvalidOperationException e) {
             assertEquals(ErrorCode.UNSUPPORTED_CHARSET, e.getCode());
         }
