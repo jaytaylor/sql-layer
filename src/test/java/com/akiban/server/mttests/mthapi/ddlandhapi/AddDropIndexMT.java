@@ -30,10 +30,10 @@ import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiReadThread;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
-import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.ThreadlessRandom;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -63,8 +63,8 @@ public final class AddDropIndexMT extends HapiMTBase {
         return new OptionallyWorkingReadThread(SCHEMA, pTable, chance, HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST) {
 
             @Override
-            protected HapiRequestStruct pullRequest(int pseudoRandom) {
-                int id = (Math.abs(pseudoRandom) % (max-1)) + 1;
+            protected HapiRequestStruct pullRequest(ThreadlessRandom random) {
+                int id = random.nextInt(0, max-1) + 1;
                 if (reverse)  {
                     id = -id;
                 }
@@ -145,11 +145,6 @@ public final class AddDropIndexMT extends HapiMTBase {
             @Override
             public boolean continueThroughException(Throwable throwable) {
                 return true;
-            }
-
-            @Override
-            public WriteThreadStats getStats() {
-                return new WriteThreadStats(0, 0, 0);
             }
         };
     }

@@ -21,6 +21,7 @@ import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.mttests.mthapi.common.BasicHapiSuccess;
 import com.akiban.server.mttests.mthapi.common.HapiValidationError;
+import com.akiban.util.ThreadlessRandom;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -79,7 +80,7 @@ abstract class OptionallyWorkingReadThread extends BasicHapiSuccess {
     }
 
     @Override
-    protected abstract HapiRequestStruct pullRequest(int pseudoRandom);
+    protected abstract HapiRequestStruct pullRequest(ThreadlessRandom random);
 
     @Override
     protected int spawnCount() {

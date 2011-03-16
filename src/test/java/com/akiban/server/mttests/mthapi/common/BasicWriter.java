@@ -22,7 +22,6 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
-import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ArgumentValidation;
@@ -127,11 +126,6 @@ public class BasicWriter implements WriteThread {
         }
         boolean writesWasUnset = writesAtomic.compareAndSet(WRITES_INITIAL, writes);
         assert writesWasUnset;
-    }
-
-    @Override
-    public WriteThreadStats getStats() {
-        return new WriteThreadStats(writes, 0, 0);
     }
 
     @Override

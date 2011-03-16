@@ -26,7 +26,6 @@ import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.mttests.mthapi.base.HapiMTBase;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.WriteThread;
-import com.akiban.server.mttests.mthapi.base.WriteThreadStats;
 import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisFK;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
@@ -96,9 +95,8 @@ public final class AddDropTableMT extends HapiMTBase {
     private static OptionallyWorkingReadThread readPkCustomers(final SaisTable customer, float chance) {
         return new MyReadThread(customer, chance) {
             @Override
-            protected HapiRequestStruct pullRequest(int pseudoRandom) {
-                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
-                int pk = tmp.nextInt(0, CUSTOMERS_COUNT);
+            protected HapiRequestStruct pullRequest(ThreadlessRandom random) {
+                int pk = random.nextInt(0, CUSTOMERS_COUNT);
                 HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, customer.getName())
                         .withEqualities("cid", Integer.toString(pk))
                         .done();
@@ -110,10 +108,9 @@ public final class AddDropTableMT extends HapiMTBase {
     private static OptionallyWorkingReadThread readPkOrders(final SaisTable orders, float chance) {
         return new MyReadThread(orders, chance) {
             @Override
-            protected HapiRequestStruct pullRequest(int pseudoRandom) {
-                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
-                int cid = tmp.nextInt(0, CUSTOMERS_COUNT);
-                int oid = tmp.nextInt(0, ORDERS_PER_CUSTOMER);
+            protected HapiRequestStruct pullRequest(ThreadlessRandom random) {
+                int cid = random.nextInt(0, CUSTOMERS_COUNT);
+                int oid = random.nextInt(0, ORDERS_PER_CUSTOMER);
                 HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, orders.getName())
                         .withEqualities("oid", Integer.toString(oid))
                         .and("c_id", Integer.toString(cid))
@@ -126,10 +123,9 @@ public final class AddDropTableMT extends HapiMTBase {
     private static OptionallyWorkingReadThread readParentItems(final SaisTable items, float chance) {
         return new MyReadThread(items, chance) {
             @Override
-            protected HapiRequestStruct pullRequest(int pseudoRandom) {
-                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
-                int cid = tmp.nextInt(0, CUSTOMERS_COUNT);
-                int oid = tmp.nextInt(0, ORDERS_PER_CUSTOMER);
+            protected HapiRequestStruct pullRequest(ThreadlessRandom random) {
+                int cid = random.nextInt(0, CUSTOMERS_COUNT);
+                int oid = random.nextInt(0, ORDERS_PER_CUSTOMER);
                 HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, items.getName())
                         .withEqualities("o_id", Integer.toString(oid))
                         .and("c_id", Integer.toString(cid))
@@ -147,10 +143,9 @@ public final class AddDropTableMT extends HapiMTBase {
     private static OptionallyWorkingReadThread readPkAddresses(final SaisTable addresses, float chance) {
         return new MyReadThread(addresses, chance) {
             @Override
-            protected HapiRequestStruct pullRequest(int pseudoRandom) {
-                ThreadlessRandom tmp = new ThreadlessRandom(pseudoRandom); // TODO future cleanup, pass this in direct
-                int cid = tmp.nextInt(0, CUSTOMERS_COUNT);
-                int addressCount = tmp.nextInt(0, ADDRESSES_PER_CUSTOMER);
+            protected HapiRequestStruct pullRequest(ThreadlessRandom random) {
+                int cid = random.nextInt(0, CUSTOMERS_COUNT);
+                int addressCount = random.nextInt(0, ADDRESSES_PER_CUSTOMER);
                 int aid = aid(cid, addressCount);
                 HapiGetRequest request =  DefaultHapiGetRequest.forTable(SCHEMA, addresses.getName())
                         .withEqualities("c_id", Integer.toString(cid))
@@ -328,11 +323,6 @@ public final class AddDropTableMT extends HapiMTBase {
                 assert tablesMap.get(child) < 0 : String.format("%s: %s", child, tablesMap);
                 tablesList.remove(child);
             }
-        }
-
-        @Override
-        public WriteThreadStats getStats() {
-            return new WriteThreadStats(0, 0, 0);
         }
 
         @Override
