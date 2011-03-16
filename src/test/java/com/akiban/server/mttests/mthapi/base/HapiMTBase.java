@@ -21,11 +21,11 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.itests.ApiTestBase;
+import com.akiban.server.mttests.mthapi.common.HapiValidationError;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Strings;
 import com.akiban.util.ThreadlessRandom;
 import com.akiban.util.WeightedRandom;
 import org.json.JSONObject;
@@ -36,17 +36,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
@@ -65,10 +66,12 @@ public class HapiMTBase extends ApiTestBase {
         private final WriteThread writeThread;
         private boolean setupSucceeded = false;
         private final AtomicBoolean keepGoing = new AtomicBoolean(true);
+        private final Map<EqualishExceptionWrapper,Integer> errors;
 
-        private WriteThreadCallable(WriteThread writeThread) {
+        private WriteThreadCallable(WriteThread writeThread, Map<EqualishExceptionWrapper,Integer> errors) {
             ArgumentValidation.notNull("write thread", writeThread);
             this.writeThread = writeThread;
+            this.errors = errors;
         }
 
         @Override
@@ -83,7 +86,15 @@ public class HapiMTBase extends ApiTestBase {
                 setupDoneLatch.countDown();
             }
 
-            writeThread.ongoingWrites(ddl(), dml(), new SessionImpl(), keepGoing);
+            boolean exceptionsNotFatal = true;
+            while (exceptionsNotFatal && keepGoing.get()) {
+                try {
+                    writeThread.ongoingWrites(ddl(), dml(), new SessionImpl(), keepGoing);
+                } catch (Throwable t) {
+                    addError(t, errors);
+                    exceptionsNotFatal = writeThread.continueThroughException(t);
+                }
+            }
             return writeThread.getStats();
         }
 
@@ -128,17 +139,23 @@ public class HapiMTBase extends ApiTestBase {
                 JsonOutputter outputter = JsonOutputter.instance();
                 outputStream.reset();
                 Index index = hapi().findHapiRequestIndex(session, request);
-                hapiReadThread.validateIndex(request, index);
+                hapiReadThread.validateIndex(requestStruct, index);
                 hapi().processRequest(session, request, outputter, outputStream);
                 String result = outputStream.toString("UTF-8");
                 resultJson = new JSONObject(result);
-                hapiReadThread.validateSuccessResponse(requestStruct, resultJson);
             } catch (Throwable e) {
+                LOG.trace("{} errored", id);
                 hapiReadThread.validateErrorResponse(request, e);
                 return null;
-            } finally {
-                LOG.trace("{} finishing", id);
             }
+            try {
+                hapiReadThread.validateSuccessResponse(requestStruct, resultJson);
+            } catch (HapiValidationError e) {
+                e.setJsonObject(resultJson);
+                e.setGetRequest(request);
+                throw e;
+            }
+            LOG.trace("{} verified", id);
             return null;
         }
     }
@@ -146,8 +163,9 @@ public class HapiMTBase extends ApiTestBase {
     protected final void runThreads(WriteThread writeThread, HapiReadThread... readThreads) {
         try {
             final ExecutorService executor = Executors.newFixedThreadPool( executorsCount() );
+            Map<EqualishExceptionWrapper,Integer> errors = new ConcurrentHashMap<EqualishExceptionWrapper, Integer>();
 
-            WriteThreadCallable writeThreadCallable = new WriteThreadCallable(writeThread);
+            WriteThreadCallable writeThreadCallable = new WriteThreadCallable(writeThread, errors);
             Future<WriteThreadStats> writeThreadFuture = executor.submit(writeThreadCallable);
             boolean setupSuccess = writeThreadCallable.waitForSetup();
             if (!setupSuccess) {
@@ -155,7 +173,7 @@ public class HapiMTBase extends ApiTestBase {
                 fail("setupSuccess was false, so we should have gotten an ExecutionException");
             }
 
-            Map<EqualishExceptionWrapper,Integer> errorsMap = feedReadThreads(readThreads, executor);
+            Map<EqualishExceptionWrapper,Integer> errorsMap = feedReadThreads(readThreads, executor, errors);
 
             writeThreadCallable.stopOngoingWrites();
             WriteThreadStats stats = writeThreadFuture.get(5, TimeUnit.SECONDS);
@@ -171,7 +189,8 @@ public class HapiMTBase extends ApiTestBase {
     }
 
     private Map<EqualishExceptionWrapper,Integer> feedReadThreads(HapiReadThread[] readThreads,
-                                                                  ExecutorService executorService)
+                                                                  ExecutorService executorService,
+                                                                  Map<EqualishExceptionWrapper, Integer> errors)
             throws InterruptedException
     {
         final ExecutorService processingService = Executors.newFixedThreadPool( processersCount() );
@@ -179,8 +198,6 @@ public class HapiMTBase extends ApiTestBase {
         ArrayBlockingQueue<Future<Void>> submitFutures = new ArrayBlockingQueue<Future<Void>>(
                 maxPendingReadsCount()
         );
-
-        final HashMap<EqualishExceptionWrapper, Integer> errors = new HashMap<EqualishExceptionWrapper, Integer>();
 
         // Set up the processing threads
         List<Future<Void>> processingFutures = new ArrayList<Future<Void>>();
@@ -208,6 +225,12 @@ public class HapiMTBase extends ApiTestBase {
         for (ReadThreadProcessor processor : processors) {
             processor.stopProcessing();
         }
+        for (ReadThreadProcessor processor : processors) {
+            // If any processor had been starved, it will wait forever. We can flush these by putting in dummy
+            // futures, one per processor. If any processors hadn't been starved, they'll just process the dummy,
+            // which is fine.
+            submitFutures.offer(new DummyFuture());
+        }
         for (Future<Void> processingFuture : processingFutures) {
             try {
                 processingFuture.get();
@@ -216,8 +239,33 @@ public class HapiMTBase extends ApiTestBase {
             }
         }
 
-        synchronized (errors) {
-            return errors;
+        return errors;
+    }
+
+    private static class DummyFuture implements Future<Void> {
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+
+        @Override
+        public Void get() {
+            return null;
+        }
+
+        @Override
+        public Void get(long timeout, TimeUnit unit) {
+            return null;
         }
     }
 
@@ -234,32 +282,30 @@ public class HapiMTBase extends ApiTestBase {
     }
 
     private static void failWithErrors(Map<EqualishExceptionWrapper,Integer> errors) {
-        StringBuilder errBuilder = new StringBuilder();
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printer = new PrintWriter(stringWriter);
+
         int pairsCount = errors.size();
-        errBuilder.append(pairsCount).append(" failure pattern");
+        printer.format("%d failure pattern", pairsCount);
         if (pairsCount != 1) {
-            errBuilder.append('s');
+            printer.print('s');
         }
-        errBuilder.append(':').append(Strings.nl());
+        printer.println(':');
         for (Map.Entry<EqualishExceptionWrapper,Integer> pair : errors.entrySet()) {
             Throwable error = pair.getKey().get();
             int count = pair.getValue();
 
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter printer = new PrintWriter(stringWriter);
-            error.printStackTrace(printer);
-            printer.flush();
-            stringWriter.flush();
-
-
-            errBuilder.append(count).append(" instance");
+            printer.format("%d instance", count);
             if (count != 1) {
-                errBuilder.append('s');
+                printer.print('s');
             }
-            errBuilder.append(" of this general pattern:").append(Strings.nl());
-            errBuilder.append(stringWriter.toString());
+            printer.format(" of this general pattern:\n");
+
+            error.printStackTrace(printer);
         }
-        fail(errBuilder.toString());
+        printer.flush();
+        stringWriter.flush();
+        fail(stringWriter.toString());
     }
 
     private static class ReadThreadProcessor implements Callable<Void> {
@@ -281,7 +327,7 @@ public class HapiMTBase extends ApiTestBase {
                 try {
                     future.get();
                 } catch (ExecutionException e) {
-                    addError(e);
+                    addError(e.getCause(), errorsMap);
                 }
             }
             return null;
@@ -290,14 +336,14 @@ public class HapiMTBase extends ApiTestBase {
         public void stopProcessing() {
             active = false;
         }
+    }
 
-        private void addError(Throwable error) {
-            EqualishExceptionWrapper wrapper = new EqualishExceptionWrapper(error);
-            synchronized (errorsMap) {
-                Integer count = errorsMap.get(wrapper);
-                count = (count == null) ? 1 : count + 1;
-                errorsMap.put(wrapper, count);
-            }
+    private static void addError(Throwable error, Map<EqualishExceptionWrapper,Integer> errorsMap)  {
+        EqualishExceptionWrapper wrapper = new EqualishExceptionWrapper(error);
+        synchronized (errorsMap) {
+            Integer count = errorsMap.get(wrapper);
+            count = (count == null) ? 1 : count + 1;
+            errorsMap.put(wrapper, count);
         }
     }
 }

@@ -25,7 +25,7 @@ public final class BasicWriterTest {
     @Test
     public void simpleTableDDL() {
         SaisTable one = new SaisBuilder().table("zebra", "id", "stripes").pk("id").backToBuilder().getSoleRootTable();
-        String ddl = BasicWriter.buildDDL(one, new StringBuilder());
+        String ddl = DDLUtils.buildDDL(one, new StringBuilder());
         assertEquals("ddl",
                 "CREATE TABLE zebra(id int,stripes int, PRIMARY KEY (id))",
                 ddl);
@@ -36,7 +36,7 @@ public final class BasicWriterTest {
         SaisTable one = new SaisBuilder()
                 .table("zebra", "id", "stripes", "height").pk("id", "stripes") // unique per zebra!
                 .backToBuilder().getSoleRootTable();
-        String ddl = BasicWriter.buildDDL(one, new StringBuilder());
+        String ddl = DDLUtils.buildDDL(one, new StringBuilder());
         assertEquals("ddl",
                 "CREATE TABLE zebra(id int,stripes int,height int, PRIMARY KEY (id,stripes))",
                 ddl);
@@ -49,7 +49,7 @@ public final class BasicWriterTest {
         builder.table("second", "tid1", "tid2").joinTo("top").col("id1", "tid1").col("id2", "tid2");
         SaisTable second = builder.getSoleRootTable().getChild("second");
 
-        String ddl = BasicWriter.buildDDL(second, new StringBuilder());
+        String ddl = DDLUtils.buildDDL(second, new StringBuilder());
         assertEquals("ddl",
                 "CREATE TABLE second(tid1 int,tid2 int, "+
                 "CONSTRAINT `__akiban_fk_second` FOREIGN KEY `__akiban_fk_second`(tid1,tid2) REFERENCES top(id1,id2))",

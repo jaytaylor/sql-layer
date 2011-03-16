@@ -22,7 +22,7 @@ import org.json.JSONObject;
 public abstract class HapiReadThread {
     private static final int DEFAULT_SPAWN_COUNT = 1000;
 
-    static class UnexpectedException extends Exception {
+    public static class UnexpectedException extends Exception {
         public UnexpectedException(HapiGetRequest request, Throwable cause) {
             super(String.format("%s caused unexpected exception", request), cause);
         }
@@ -44,9 +44,9 @@ public abstract class HapiReadThread {
         return DEFAULT_SPAWN_COUNT;
     }
 
-    protected abstract void validateIndex(HapiGetRequest request, Index queriedIndex);
+    protected abstract void validateIndex(HapiRequestStruct request, Index queriedIndex);
 
-    abstract void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws Exception;
-    abstract void validateErrorResponse(HapiGetRequest request, Throwable exception) throws Exception;
+    protected abstract void validateSuccessResponse(HapiRequestStruct request, JSONObject result) throws Exception;
+    protected abstract void validateErrorResponse(HapiGetRequest request, Throwable exception) throws Exception;
 
 }

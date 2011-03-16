@@ -22,15 +22,19 @@ public final class HapiRequestStruct {
     private final HapiGetRequest request;
     private final SaisTable selectRoot;
     private final SaisTable predicatesTable;
+    private final String expectedIndex;
 
-    public HapiRequestStruct(HapiGetRequest request, SaisTable selectRoot) {
-        this(request, selectRoot, selectRoot);
+    public HapiRequestStruct(HapiGetRequest request, SaisTable selectRoot, String expectedIndex) {
+        this(request, selectRoot, selectRoot, expectedIndex);
     }
 
-    public HapiRequestStruct(HapiGetRequest request, SaisTable selectRoot, SaisTable predicatesTable) {
+    public HapiRequestStruct(HapiGetRequest request, SaisTable selectRoot, SaisTable predicatesTable,
+                             String expectedIndex)
+    {
         this.request = request;
         this.selectRoot = selectRoot;
         this.predicatesTable = predicatesTable;
+        this.expectedIndex = expectedIndex;
     }
 
     public HapiGetRequest getRequest() {
@@ -43,5 +47,13 @@ public final class HapiRequestStruct {
 
     public SaisTable getPredicatesTable() {
         return predicatesTable;
+    }
+
+    public boolean expectedIndexKnown() {
+        return expectedIndex != null;
+    }
+
+    public String getExpectedIndex() {
+        return expectedIndex;
     }
 }
