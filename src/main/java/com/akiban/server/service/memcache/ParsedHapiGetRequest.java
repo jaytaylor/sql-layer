@@ -80,6 +80,7 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
     private String table;
     private String usingTable;
     private TableName usingTableName;
+    private int limit = -1;
     private final List<HapiPredicate> predicates = new ArrayList<HapiPredicate>();
 
     @Override
@@ -103,6 +104,15 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
     @Override
     public List<HapiPredicate> getPredicates() {
         return Collections.unmodifiableList(predicates);
+    }
+
+    @Override
+    public int getLimit() {
+        return limit;
+    }
+
+    void setLimit(int limit) {
+        this.limit = limit;
     }
 
     void setTable(String table) {
