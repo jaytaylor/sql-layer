@@ -241,15 +241,16 @@ public class Scanrows implements HapiProcessor {
                 limit = ScanLimit.NONE;
             }
             else {
-                limit = ScanLimit.NONE; // TODO fix this once the tests are in to prove it's broken
-//                limit = new PredicateLimit(
-//                        ddlFunctions.getTableId(session, request.getUsingTable()),
-//                        request.getLimit()
-//                );
+                limit = new PredicateLimit(
+                        ddlFunctions.getTableId(session, request.getUsingTable()),
+                        request.getLimit()
+                );
             }
             while(rows == null) {
                 rows = RowDataOutput.scanFull(session, dmlFunctions, scanRequest, limit);
             }
+            assert request.getLimit() < 0 || rows.size() <= request.getLimit()
+                    : String.format("limit was %d but scanned %d", request.getLimit(), rows.size());
 
             outputter.output(
                     new DefaultProcessedRequest(request, session, ddlFunctions),

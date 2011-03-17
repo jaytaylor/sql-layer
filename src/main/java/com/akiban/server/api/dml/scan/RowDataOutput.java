@@ -81,8 +81,7 @@ public class RowDataOutput implements LegacyRowOutput {
         final RowDataOutput output = new RowDataOutput();
         CursorId scanCursor = dml.openCursor(session, request);
         try {
-            while(dml.scanSome(session, scanCursor, output, limit))
-            {}
+            dml.scanSome(session, scanCursor, output, limit);
             return output.getRowDatas();
         } catch (BufferFullException e) {
             LOG.error(String.format("This is unexpected, request: %s", request), e);
