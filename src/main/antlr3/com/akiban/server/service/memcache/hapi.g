@@ -39,7 +39,7 @@ tokens {
 	NE = '!=';
 	EQ = '=';
 
-	LIMIT = 'LIMIT';
+	LIMIT = ':LIMIT';
 }
 
 @header {
@@ -97,7 +97,7 @@ get_request returns[ParsedHapiGetRequest request]
 predicate_options[ParsedHapiGetRequest request]
 	: PAREN_OPEN
 	predicate_using[request] ?
-	( COLON predicate_limit[request] ) ?
+	predicate_limit[request] ?
 	PAREN_CLOSE
 	;
 
@@ -125,7 +125,7 @@ op returns [SimpleHapiPredicate.Operator op]
 string returns [String string]
 	: S_CHARS { $string = ("NULL".equalsIgnoreCase($S_CHARS.text)) ? null : $S_CHARS.text; }
  	| QUOTE { final StringBuilder sb = new StringBuilder(); }
-		(S_CHARS { sb.append($S_CHARS.text); } | Q_CHARS { sb.append($Q_CHARS.text); } | LIMIT {sb.append($LIMIT.text); } )*
+		(S_CHARS { sb.append($S_CHARS.text); } | Q_CHARS { sb.append($Q_CHARS.text); } )*
 		QUOTE {
  		try { $string = java.net.URLDecoder.decode(sb.toString(), "UTF-8"); }
 		catch(java.io.UnsupportedEncodingException e) { throw new RuntimeException(e); }

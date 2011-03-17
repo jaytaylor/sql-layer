@@ -133,7 +133,8 @@ public final class HapiGetRequestTest {
                 .predicate("restriction", EQ, "limit");
         params.add("coi:customer:restriction='LIMIT'", "coi", "customer", "customer")
                 .predicate("restriction", EQ, "LIMIT");
-        params.addFailing("coi:customer:name=LIMIT");
+        params.add("coi:customer:(LIMIT)restriction=LIMIT", "coi", "customer", "LIMIT")
+                .predicate("restriction", EQ, "LIMIT");
         params.addFailing("coi:customer:(LIMIT=2)c=v");
         params.addFailing("coi:customer:(:LIMIT=two)c=v");
 
