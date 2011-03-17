@@ -21,6 +21,7 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.itests.ApiTestBase;
@@ -65,7 +66,7 @@ public final class ScanBufferTooSmallIT extends ApiTestBase {
     public void viaScanFull() throws InvalidOperationException, BufferFullException {
         int coiId = ddl().getAIS(session()).getTable("ts", "c").getGroup().getGroupTable().getTableId();
         ScanRequest request = new ScanAllRequest(coiId, new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, 5, 6)));
-        RowDataOutput.scanFull(session(), dml(), request);
+        RowDataOutput.scanFull(session(), dml(), request, ScanLimit.NONE);
     }
 
     @Test(timeout=5000)

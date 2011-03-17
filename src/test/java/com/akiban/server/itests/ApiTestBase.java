@@ -240,7 +240,7 @@ public class ApiTestBase {
 
     protected final List<RowData> scanFull(ScanRequest request) {
         try {
-            return RowDataOutput.scanFull(session(), dml(), request);
+            return RowDataOutput.scanFull(session(), dml(), request, ScanLimit.NONE);
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
