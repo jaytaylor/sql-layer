@@ -15,18 +15,22 @@
 
 from schema import *
 from db import *
-from algebra import *
+from algebra.logical import *
+from algebra.physical import *
 
-def run_plan(label, plan):
+def run_logical_plan(label, logical_plan):
+    run_physical_plan(label, logical_plan.generate_plan())
+
+def run_physical_plan(label, physical_plan):
     print '--------------------------------------------------------------------------------'
     print '%s:' % label
-    plan.open()
-    row = plan.next()
+    physical_plan.open()
+    row = physical_plan.next()
     while row:
         print row
-        row = plan.next()
-    plan.close()
-    stats = plan.stats()
+        row = physical_plan.next()
+    physical_plan.close()
+    stats = physical_plan.stats()
     print ('random: %s\t\tsequential: %s\t\tsort: %s' %
            (stats[RANDOM_ACCESS], stats[SEQUENTIAL_ACCESS], stats[SORT]))
 

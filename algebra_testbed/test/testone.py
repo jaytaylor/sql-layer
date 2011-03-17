@@ -33,7 +33,7 @@ run_plan("Restrict order date and customer name",
          (Select
           (Flatten
            (Flatten
-            (FullTableScan(coi),
+            (GroupScan(coi),
              Tc,
              To,
              Tco),
@@ -41,9 +41,40 @@ run_plan("Restrict order date and customer name",
             Ti,
             Tcoi),
            Tcoi,
-           lambda c: 'i' in c.name
-           ),
+           lambda c: 'i' in c.name),
           Tcoi,
-          lambda o: '2010/1/2' <= o.order_date <= '2010/2/2'
-          )
-         )
+          lambda o: '2010/1/2' <= o.order_date <= '2010/2/2'))
+
+run_plan("Push down select on order",
+         Select
+         (Flatten
+          (Flatten
+           (Select
+            (GroupScan(coi),
+             To,
+             lambda o: '2010/1/2' <= o.order_date <= '2010/2/2'),
+            Tc,
+            To,
+            Tco),
+           Tco,
+           Ti,
+           Tcoi),
+          Tcoi,
+          lambda c: 'i' in c.name))
+
+# run_plan("Replace group scan by index scan",
+#          Select
+#          (Flatten
+#           (Flatten
+#            (IndexLookup
+#             (IndexScan(order_date_index, '2010/1/2'),
+#              ['hkey'],
+#              coi),
+#             Tc,
+#             To,
+#             Tco),
+#            Tco,
+#            Ti,
+#            Tcoi),
+#           Tcoi,
+#           lambda c: 'i' in c.name))

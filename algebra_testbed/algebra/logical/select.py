@@ -12,3 +12,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
+
+import operator
+from algebra.physical import *
+
+class Select(operator.Operator):
+
+    def __init__(self, input, predicate_rowtype, predicate):
+        operator.Operator.__init__(self, input)
+        self._predicate_rowtype = predicate_rowtype
+        self._predicate = predicate
+
+    def implementation(self, input):
+        return select_hkey_ordered.Select(input, self._predicate_rowtype, self._predicate)

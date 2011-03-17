@@ -12,3 +12,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
+
+import operator
+from algebra.physical import *
+
+class Extract(operator.Operator):
+
+    def __init__(self, input, rowtype):
+        operator.Operator.__init__(self, input)
+        self._rowtype = rowtype
+
+    def implementation(self, input):
+        return extract_default.Extract(input, self._rowtype)

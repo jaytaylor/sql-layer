@@ -13,19 +13,15 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-import operator
+import cut_default
+import extract_default
+import flatten_hkey_ordered
+import groupscan_default
+import indexlookup
+import indexscan
+import project_default
+import scan
+import select_hkey_ordered
+import sort
 
-UnaryOperator = operator.UnaryOperator
-
-class Extract(UnaryOperator):
-
-    def __init__(self, input, rowtype):
-        UnaryOperator.__init__(self, input)
-        self._rowtype = rowtype
-
-    def handle_row(self, row):
-        if self._rowtype.ancestor_of(row.rowtype):
-            output_row = row
-        else:
-            output_row = None
-        return output_row
+from physicaloperator import (RANDOM_ACCESS, SEQUENTIAL_ACCESS, SORT)

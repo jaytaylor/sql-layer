@@ -15,45 +15,36 @@
 
 from testbase import *
 
-run_plan("Dump the entire group",
+run_logical_plan("Dump the entire group",
          GroupScan(coi))
 
-run_plan("Scan the group, selecting customers named tom",
+run_logical_plan("Scan the group, selecting customers named tom",
          Select(GroupScan(coi), Tc, lambda customer: customer.name == 'tom'))
 
-run_plan("Scan the group, selecting orders made in January",
+run_logical_plan("Scan the group, selecting orders made in January",
          Select(GroupScan(coi), To, lambda order: order.order_date.startswith('2010/1')))
 
-run_plan("Scan the customer name index",
-         IndexScan(customer_name_index))
-
-run_plan("Scan the customer name index for 'ori'",
-         IndexScan(customer_name_index, ['ori']))
-
-run_plan("Scan the customer name index for 'ori' and then find the row",
-         IndexLookup(IndexScan(customer_name_index, ['ori']), ['hkey'], coi))
-
-run_plan("Keep only orders (drop customers, items)",
+run_logical_plan("Keep only orders (drop customers, items)",
          Extract(Cut(GroupScan(coi), Ti), To))
 
 Tco = RowType('co', ['hkey', 'cid', 'name', 'oid', 'order_date'], ['hkey'], To)
 
-run_plan("Flatten customer and order",
+run_logical_plan("Flatten customer and order",
          Flatten(GroupScan(coi), Tc, To, Tco))
 
-run_plan("Flatten customer and order, dropping customers with no orders",
+run_logical_plan("Flatten customer and order, dropping customers with no orders",
          Flatten(GroupScan(coi), Tc, To, Tco, INNER_JOIN))
 
-run_plan("Flatten customer and order, keeping orders with no customers",
+run_logical_plan("Flatten customer and order, keeping orders with no customers",
          Flatten(GroupScan(coi), Tc, To, Tco, RIGHT_JOIN))
 
-run_plan("Flatten customer and order and drop items",
+run_logical_plan("Flatten customer and order and drop items",
          Cut(Flatten(GroupScan(coi), Tc, To, Tco), Ti))
 
-run_plan("Find the customer named 'jack' and flatten",
+run_logical_plan("Find the customer named 'jack' and flatten",
          Flatten(Select(GroupScan(coi), Tc, lambda customer: customer.name == 'jack'), Tc, To, Tco))
 
-run_plan("Find the customer named 'jack' and flatten, dropping jack if he has no orders (he doesn't)",
+run_logical_plan("Find the customer named 'jack' and flatten, dropping jack if he has no orders (he doesn't)",
          Flatten(Select(GroupScan(coi), Tc, lambda customer: customer.name == 'jack'),
                  Tc, To, Tco, INNER_JOIN))
 
@@ -62,29 +53,29 @@ Tcoi = RowType('coi',
                ['hkey'],
                Ti)
 
-run_plan("Flatten everything using left join",
+run_logical_plan("Flatten everything using left join",
          Flatten(Flatten(GroupScan(coi), Tc, To, Tco), Tco, Ti, Tcoi))
 
-run_plan("Flatten everything using inner join",
+run_logical_plan("Flatten everything using inner join",
          Flatten(Flatten(GroupScan(coi), Tc, To, Tco, INNER_JOIN), Tco, Ti, Tcoi, INNER_JOIN))
 
-run_plan("Flatten everything, keeping customers with no orders, and orders with no customers",
+run_logical_plan("Flatten everything, keeping customers with no orders, and orders with no customers",
          Flatten(Flatten(GroupScan(coi), Tc, To, Tco, LEFT_JOIN | RIGHT_JOIN), Tco, Ti, Tcoi))
 
-run_plan("Sort customers by name",
-         Sort(Cut(GroupScan(coi), To), Tc, lambda customer: customer.name))
+run_logical_plan("Sort customers by name",
+         OrderBy(Cut(GroupScan(coi), To), Tc, lambda customer: customer.name))
 
 Tuq = RowType('uq', ['unit_price', 'quantity'])
 Tq = RowType('q', ['quantity'])
 
-run_plan("Project items twice",
+run_logical_plan("Project items twice",
          Project(
              Project(
                  Extract(GroupScan(coi), Ti),
                  Ti, Tuq),
              Tuq, Tq))
 
-run_plan("Select after Flatten",
+run_logical_plan("Select after Flatten",
          Select(
              Flatten(GroupScan(coi), Tc, To, Tco),
              Tco,
@@ -95,7 +86,7 @@ Tohd = RowType('ohd', ['hkey', 'order_date'])
 Thnd = RowType('hnd', ['hkey', 'name', 'order_date'])
 Tnd = RowType('nd', ['name', 'order_date'])
 
-run_plan("select c.name, o.order_date from customer c, order o where o.cid = c.cid and o.order_date like '2010/1/%'",
+run_logical_plan("select c.name, o.order_date from customer c, order o where o.cid = c.cid and o.order_date like '2010/1/%'",
          Project
          (Flatten
           (Project

@@ -12,3 +12,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
+
+class Operator(object):
+
+    def __init__(self, input):
+        self._input = input
+
+    input = property(lambda self: self._input)
+
+    def implementation(self, input):
+        assert False, 'Must be provided by logical operator class'
+
+    def generate_plan(self):
+        if self._input is None:
+            input = None
+        else:
+            input = self._input.generate_plan()
+        return self.implementation(input)

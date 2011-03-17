@@ -13,11 +13,11 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-import operator
+import collections
+import physicaloperator
 import db.row
 
-Pending = operator.Pending
-UnaryOperator = operator.UnaryOperator
+SimpleOperator = physicaloperator.SimpleOperator
 Row = db.row.Row
 
 KEEP_PARENT = 0x01
@@ -27,10 +27,10 @@ LEFT_JOIN =   0x08
 RIGHT_JOIN =  0x10
 DEFAULT = LEFT_JOIN
 
-class Flatten(UnaryOperator):
+class Flatten(SimpleOperator):
 
     def __init__(self, input, parent_type, child_type, flatten_type, flags = DEFAULT):
-        UnaryOperator.__init__(self, input)
+        SimpleOperator.__init__(self, input)
         self._parent_type = parent_type
         self._child_type = child_type
         self._parent = None
@@ -49,12 +49,12 @@ class Flatten(UnaryOperator):
         self._keep_child = (flags & KEEP_CHILD) != 0
         self._left_join = (flags & LEFT_JOIN) != 0
         self._right_join = (flags & RIGHT_JOIN) != 0
-        self._pending = Pending()
+        self._pending = collections.deque()
 
     def next(self):
         output_row = self.pending()
         if output_row is None:
-            output_row = UnaryOperator.next(self)
+            output_row = SimpleOperator.next(self)
         # child rows are processed immediately. parent rows are not, 
         # because when seen, we don't know if the next row will be another
         # parent, a child, a row of child type that is not actually a child,
@@ -74,7 +74,7 @@ class Flatten(UnaryOperator):
     def handle_row(self, row):
         if row.rowtype is self._parent_type:
             if self._keep_parent:
-                self._pending.add(row)
+                self._pending.append(row)
             if self._parent:
                 self.left_join_row()
             self._parent = row
@@ -82,7 +82,7 @@ class Flatten(UnaryOperator):
             self._childless_parent = True
         elif row.rowtype is self._child_type:
             if self._keep_child:
-                self._pending.add(row)
+                self._pending.append(row)
             self._child = row
             if self._parent and self._parent.ancestor_of(self._child):
                 # child is not an orphan
@@ -94,7 +94,7 @@ class Flatten(UnaryOperator):
                 self._childless_parent = None
                 self.right_join_row()
         else:
-            self._pending.add(row)
+            self._pending.append(row)
             if self._parent_type.ancestor_of(row.rowtype):
                 if self._parent and not self._parent.ancestor_of(row):
                     self._parent = None
@@ -106,7 +106,10 @@ class Flatten(UnaryOperator):
         return self.pending()
 
     def pending(self):
-        return self._pending.take()
+        try:
+            return self._pending.popleft()
+        except IndexError:
+            return None
 
     def inner_join_row(self):
         flattened = {}
@@ -116,7 +119,7 @@ class Flatten(UnaryOperator):
             flattened[field] = self._child[field]
         for field in self._fields_from_parent:
             flattened[field] = self._parent[field]
-        self._pending.add(Row(self._rowtype, flattened))
+        self._pending.append(Row(self._rowtype, flattened))
 
     def left_join_row(self):
         assert self._parent
@@ -126,7 +129,7 @@ class Flatten(UnaryOperator):
                 flattened[field] = self._parent[field]
             for field in self._fields_in_child_only:
                 flattened[field] = None
-            self._pending.add(Row(self._rowtype, flattened))
+            self._pending.append(Row(self._rowtype, flattened))
 
     def right_join_row(self):
         assert self._parent is None
@@ -137,4 +140,4 @@ class Flatten(UnaryOperator):
                 flattened[field] = None
             for field in self._child_type.value:
                 flattened[field] = self._child[field]
-            self._pending.add(Row(self._rowtype, flattened))
+            self._pending.append(Row(self._rowtype, flattened))
