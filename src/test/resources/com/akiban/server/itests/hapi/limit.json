@@ -77,7 +77,7 @@
     },
 
     "three orders" : {
-        "get"           : "coi:customer:(orders:LIMIT=1)oid>0",
+        "get"           : "coi:customer:(orders:LIMIT=3)oid>0",
         "expect result" :
         {
             "@customer" : [

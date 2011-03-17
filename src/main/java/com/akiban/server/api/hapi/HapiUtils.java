@@ -52,8 +52,15 @@ public class HapiUtils {
         StringBuilder builder = new StringBuilder();
         builder.append(HapiUtils.escape(request.getSchema())).append(':');
         builder.append(HapiUtils.escape(request.getTable())).append(':');
-        if (!request.getUsingTable().getTableName().equals(request.getTable())) {
-            builder.append('(').append(HapiUtils.escape(request.getUsingTable().getTableName())).append(')');
+        boolean showPredicateTable = !request.getUsingTable().getTableName().equals(request.getTable());
+        if (showPredicateTable || request.getLimit() >= 0) {
+            builder.append('(');
+            if (showPredicateTable) {
+                builder.append(HapiUtils.escape(request.getUsingTable().getTableName()));
+            } if (request.getLimit() >= 0) {
+                builder.append(":LIMIT=").append(request.getLimit());
+            }
+            builder.append(')');
         }
         Iterator<HapiPredicate> predicatesIter = request.getPredicates().iterator();
         while (predicatesIter.hasNext()) {
