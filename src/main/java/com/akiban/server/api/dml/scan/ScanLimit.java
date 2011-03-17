@@ -25,12 +25,6 @@ public interface ScanLimit {
     public static final ScanLimit NONE = new NoScanLimit();
 
     /**
-     * Whether the limit has been reached ; a {@code false} value indicates that the scan should continue. This method
-     * is invoked before the row is collected.
-     */
-    boolean limitReached();
-
-    /**
      * Whether the limit has been reached; a {@code false} value indicates that the scan should continue. This method
      * is invoked directly after the row is collected, and before it's outputted; if this method returns {@code false},
      * the method will not be outputted

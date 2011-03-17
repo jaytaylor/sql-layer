@@ -229,38 +229,33 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
 
     @Test(expected= CursorIsFinishedException.class)
     public void scansWithLimit() throws InvalidOperationException, BufferFullException {
-        final TestingStruct s = new TestingStruct("hi", "world", "and", "universe", "too");
+        final TestingStruct s = new TestingStruct("hi", "world", "and", "universe", "too", "cool", "dude");
 
         try {
             assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(1)));
-            assertEquals("rc rows delivered", 1, s.collector.getDeliveredRows());
+            assertEquals("rc rows delivered", 2, s.collector.getDeliveredRows());
             assertEquals("output rows written", 1, s.output.getRowsCount());
             assertEquals("rows seen", Arrays.asList("hi"), s.output.getStrings());
 
             assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(2)));
-            assertEquals("rc rows delivered", 3, s.collector.getDeliveredRows());
-            assertEquals("output rows written", 3, s.output.getRowsCount());
-            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
-
-            assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0)));
-            assertEquals("rc rows delivered", 3, s.collector.getDeliveredRows());
-            assertEquals("output rows written", 3, s.output.getRowsCount());
-            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
-
-            assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0)));
-            assertEquals("rc rows delivered", 3, s.collector.getDeliveredRows());
-            assertEquals("output rows written", 3, s.output.getRowsCount());
-            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
-
-            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output, ScanLimit.NONE));
             assertEquals("rc rows delivered", 5, s.collector.getDeliveredRows());
-            assertEquals("output rows written", 5, s.output.getRowsCount());
-            assertEquals("rows seen", Arrays.asList(s.stringsArray), s.output.getStrings());
+            assertEquals("output rows written", 3, s.output.getRowsCount());
+            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
+
+            assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0)));
+            assertEquals("rc rows delivered", 6, s.collector.getDeliveredRows());
+            assertEquals("output rows written", 3, s.output.getRowsCount());
+            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
+
+            assertFalse("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0)));
+            assertEquals("rc rows delivered", 7, s.collector.getDeliveredRows());
+            assertEquals("output rows written", 3, s.output.getRowsCount());
+            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(1));
+        scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0));
     }
 
     @Test(expected= CursorIsFinishedException.class)

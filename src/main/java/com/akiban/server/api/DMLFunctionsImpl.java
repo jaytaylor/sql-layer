@@ -397,7 +397,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             } else {
                 collectRows(cursor, output, limit);
             }
-            assert !cursor.isFinished() == rc.hasMore();
+            assert !cursor.isFinished() == rc.hasMore() : (!cursor.isFinished());
             return !cursor.isFinished();
         } catch (BufferFullException e) {
             throw e; // Don't want this to be handled as an Exception
@@ -417,7 +417,8 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         if (!buffer.hasArray()) {
             throw new IllegalArgumentException("buffer must have array");
         }
-        while (!limit.limitReached() && !cursor.isFinished()) {
+        boolean limitReached = false;
+        while (!limitReached && !cursor.isFinished()) {
             int bufferLastPos = buffer.position();
             if (!rc.collectNextRow(buffer)) {
                 if (rc.hasMore()) {
@@ -428,7 +429,11 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                 int bufferPos = buffer.position();
                 assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
                 RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
-                output.wroteRow(limit.limitReached(rowData));
+                limitReached = limit.limitReached(rowData);
+                output.wroteRow(limitReached);
+                if (!rc.hasMore()) {
+                    cursor.setFinished();
+                }
             }
         }
     }
@@ -445,7 +450,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     {
         RowCollector rc = cursor.getRowCollector();
         rc.outputToMessage(false);
-        while (!limit.limitReached() && !cursor.isFinished()) {
+        while (!cursor.isFinished()) {
             RowData rowData = rc.collectNextRow();
             if (rowData == null) {
                 cursor.setFinished();

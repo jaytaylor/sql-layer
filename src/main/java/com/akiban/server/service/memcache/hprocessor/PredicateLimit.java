@@ -31,15 +31,10 @@ public final class PredicateLimit implements ScanLimit {
     }
 
     @Override
-    public boolean limitReached() {
-        return limit == 0 || count > limit;
-    }
-
-    @Override
     public boolean limitReached(RowData previousRow) {
         if (previousRow != null && previousRow.getRowDefId() == rowDefId) {
             ++count;
         }
-        return limitReached();
+        return limit == 0 || count > limit;
     }
 }
