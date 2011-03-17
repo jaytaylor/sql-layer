@@ -40,6 +40,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.RowDataOutput;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -250,7 +251,7 @@ public class ApiTestBase {
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, request);
 
-        while(dml().scanSome(session, cursorId, output, -1))
+        while(dml().scanSome(session, cursorId, output, ScanLimit.NONE))
         {}
         dml().closeCursor(session, cursorId);
 

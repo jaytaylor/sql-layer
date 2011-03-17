@@ -18,6 +18,7 @@ package com.akiban.server.mttests.mtddl;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.EasyUseColumnSelector;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -27,6 +28,7 @@ import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimePointsComparison;
@@ -158,13 +160,13 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 final CursorId cursorId = dml().openCursor(session, request);
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                if (!dml().scanSome(session, cursorId, output, 2)) {
+                if (!dml().scanSome(session, cursorId, output, new FixedCountLimit(2))) {
                     timePoints.mark("SCAN: EARLY FINISH");
                     return output.rows;
                 }
                 timePoints.mark("SCAN: PAUSE");
                 Timing.sleep(5000);
-                dml().scanSome(session, cursorId, output, -1);
+                dml().scanSome(session, cursorId, output, ScanLimit.NONE);
                 dml().closeCursor(session, cursorId);
                 timePoints.mark("SCAN: FINISH");
 
@@ -287,9 +289,9 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 final CursorId cursorId = dml().openCursor(session, request);
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                assertTrue(dml().scanSome(session, cursorId, output, 1));
+                assertTrue(dml().scanSome(session, cursorId, output, new FixedCountLimit(1)));
                 timePoints.mark("SCAN: FIRST");
-                while (dml().scanSome(session, cursorId, output, -1)) {
+                while (dml().scanSome(session, cursorId, output, ScanLimit.NONE)) {
                     // do nothing
                 }
                 dml().closeCursor(session, cursorId);
@@ -658,7 +660,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 }
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                if (!dml().scanSome(session, cursorId, output, 1)) {
+                if (!dml().scanSome(session, cursorId, output, new FixedCountLimit(1))) {
                     timePoints.mark("SCAN: EARLY FINISH");
                     return output.rows;
                 }
@@ -666,7 +668,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                     timePoints.mark("SCAN: PAUSE");
                     Timing.sleep(sleepBetween);
                 }
-                dml().scanSome(session, cursorId, output, -1);
+                dml().scanSome(session, cursorId, output, ScanLimit.NONE);
                 dml().closeCursor(session, cursorId);
                 timePoints.mark("SCAN: FINISH");
 

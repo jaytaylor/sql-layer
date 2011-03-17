@@ -56,6 +56,7 @@ import com.akiban.server.api.dml.scan.RowDataLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.session.Session;
@@ -68,6 +69,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
+
+    private final Scanner scanner = new Scanner();
 
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
@@ -241,7 +244,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, int limit)
+    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanLimit limit)
             throws CursorIsFinishedException,
                    CursorIsUnknownException,
                    RowOutputException,
@@ -257,7 +260,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        return doScan(cursor, cursorId, output, limit);
+        return scanner.doScan(cursor, cursorId, output, limit);
     }
 
     private static class PooledConverter {
@@ -313,7 +316,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, RowOutput output, int limit)
+    public boolean scanSome(Session session, CursorId cursorId, RowOutput output, ScanLimit limit)
         throws CursorIsFinishedException,
                CursorIsUnknownException,
                RowOutputException,
@@ -335,9 +338,10 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         }
     }
 
+    protected static class Scanner {
     /**
      * Do the actual scan. Refactored out of scanSome for ease of unit testing.
-     * 
+     *
      * @param cursor
      *            the cursor itself; used to check status and get a row
      *            collector
@@ -345,30 +349,30 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
      *            the cursor id; used only to report errors
      * @param output
      *            the output; see
-     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
      * @param limit
      *            the limit, or negative value if none; ee
-     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
      * @return whether more rows remain to be scanned; see
-     *         {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     *         {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
      * @throws CursorIsFinishedException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
      * @throws RowOutputException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
      * @throws GenericInvalidOperationException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
      * @throws BufferFullException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , int)}
-     * @see #scanSome(Session, CursorId, LegacyRowOutput , int)
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
+     * @see #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)
      */
-    protected static boolean doScan(Cursor cursor,
+    protected boolean doScan(Cursor cursor,
                                     CursorId cursorId,
                                     LegacyRowOutput output,
-                                    int limit)
+                                    ScanLimit limit)
             throws CursorIsFinishedException,
                    RowOutputException,
                    GenericInvalidOperationException,
@@ -404,14 +408,17 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     }
 
     // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-    private static void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, int limit)
+    private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
         throws Exception
     {
         RowCollector rc = cursor.getRowCollector();
         rc.outputToMessage(true);
         ByteBuffer buffer = output.getOutputBuffer();
-        boolean limitReached = (limit == 0);
-        while (!limitReached && !cursor.isFinished()) {
+        if (!buffer.hasArray()) {
+            throw new IllegalArgumentException("buffer must have array");
+        }
+        RowData rowData = null;
+        while (!limit.limitReached(rowData) && !cursor.isFinished()) {
             int bufferLastPos = buffer.position();
             if (!rc.collectNextRow(buffer)) {
                 if (rc.hasMore()) {
@@ -422,32 +429,33 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                 int bufferPos = buffer.position();
                 assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
                 output.wroteRow();
-                if (limit > 0) {
-                    limitReached = (--limit) == 0;
-                }
+                rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
             }
         }
     }
 
+    protected RowData getRowData(byte[] bytes, int offset, int length) {
+        RowData rowData = new RowData(bytes, offset, length);
+        rowData.prepareRow(offset);
+        return rowData;
+    }
+
     // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-    private static void collectRows(Cursor cursor, LegacyRowOutput output, int limit)
+    private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
         throws Exception
     {
         RowCollector rc = cursor.getRowCollector();
         rc.outputToMessage(false);
-        boolean limitReached = (limit == 0);
-        RowData rowData;
-        while (!limitReached && !cursor.isFinished()) {
+        RowData rowData = null;
+        while (!limit.limitReached(rowData) && !cursor.isFinished()) {
             rowData = rc.collectNextRow();
             if (rowData == null) {
                 cursor.setFinished();
             } else {
                 output.addRow(rowData);
-                if (limit > 0) {
-                    limitReached = (--limit) == 0;
-                }
             }
         }
+    }
     }
 
     @Override
@@ -646,7 +654,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
 
         InvalidOperationException thrown = null;
         try {
-            while (scanSome(session, cursorId, output, -1)) {
+            while (scanSome(session, cursorId, output, ScanLimit.NONE)) {
             }
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
@@ -667,4 +675,5 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     private void increment(StatisticsService.CountingStat which) {
         serviceManager().getServiceByClass(StatisticsService.class).incrementCount(which);
     }
+
 }

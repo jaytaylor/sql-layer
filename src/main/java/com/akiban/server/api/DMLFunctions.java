@@ -38,6 +38,7 @@ import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.session.Session;
 
@@ -119,12 +120,13 @@ public interface DMLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      * @throws BufferFullException if the output buffer couldn't fit the rows
      */
-    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, int limit)
+    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanLimit limit)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
             BufferFullException,
             GenericInvalidOperationException;
+
     /**
      * <p>Performs a scan using the given cursor. This scan optionally limits the number of rows scanned, and passes
      * each row to the given RowOutput.</p>
@@ -173,7 +175,7 @@ public interface DMLFunctions {
      * @throws NoSuchTableException if the table ID specified by cursorId isn't recognized
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    boolean scanSome(Session session, CursorId cursorId, RowOutput output, int limit)
+    boolean scanSome(Session session, CursorId cursorId, RowOutput output, ScanLimit limit)
             throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -200,7 +202,7 @@ public interface DMLFunctions {
 
     /**
      * <p>Returns all open cursors. It is not necessarily safe to call
-     * {@linkplain #scanSome(Session, CursorId, LegacyRowOutput, int)}
+     * {@linkplain #scanSome(Session, CursorId, LegacyRowOutput, ScanLimit)}
      * on all of these cursors, since some may have reached their end. But it is safe to close each of these cursors
      * (unless, of course, another thread closes them first).</p>
      *

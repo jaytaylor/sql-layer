@@ -79,7 +79,7 @@ public class RowDataOutput implements LegacyRowOutput {
         final RowDataOutput output = new RowDataOutput();
         CursorId scanCursor = dml.openCursor(session, request);
         try {
-            while(dml.scanSome(session, scanCursor, output, -1))
+            while(dml.scanSome(session, scanCursor, output, ScanLimit.NONE))
             {}
             return output.getRowDatas();
         } catch (BufferFullException e) {

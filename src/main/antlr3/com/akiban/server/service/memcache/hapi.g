@@ -125,7 +125,7 @@ op returns [SimpleHapiPredicate.Operator op]
 string returns [String string]
 	: S_CHARS { $string = ("NULL".equalsIgnoreCase($S_CHARS.text)) ? null : $S_CHARS.text; }
  	| QUOTE { final StringBuilder sb = new StringBuilder(); }
-		(S_CHARS | Q_CHARS | LIMIT {sb.append( tokenNames[input.LA(-1)] ); } )*
+		(S_CHARS { sb.append($S_CHARS.text); } | Q_CHARS { sb.append($Q_CHARS.text); } | LIMIT {sb.append($LIMIT.text); } )*
 		QUOTE {
  		try { $string = java.net.URLDecoder.decode(sb.toString(), "UTF-8"); }
 		catch(java.io.UnsupportedEncodingException e) { throw new RuntimeException(e); }

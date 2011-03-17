@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
+import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
@@ -54,11 +55,11 @@ public final class CBasicIT extends ApiTestBase {
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
         assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
 
-        boolean hasMore1 = dml().scanSome(session, cursorId, output, 1);
+        boolean hasMore1 = dml().scanSome(session, cursorId, output, new FixedCountLimit(1));
         assertTrue("more rows expected", hasMore1);
         assertEquals("state", CursorState.SCANNING, dml().getCursorState(session, cursorId));
 
-        boolean hasMore2 = dml().scanSome(session, cursorId, output, -1);
+        boolean hasMore2 = dml().scanSome(session, cursorId, output, ScanLimit.NONE);
         assertFalse("more rows found", hasMore2);
         assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
 
@@ -156,7 +157,7 @@ public final class CBasicIT extends ApiTestBase {
         LegacyRowOutput output = new WrappingRowOutput(ByteBuffer.allocate(1024 * 1024));
         CursorId cursorId = dml().openCursor(session, request);
 
-        dml().scanSome(session, cursorId, output, 1);
+        dml().scanSome(session, cursorId, output, new FixedCountLimit(1));
         assertEquals("rows read", 1, output.getRowsCount());
         dml().closeCursor(session, cursorId);
 
@@ -239,13 +240,13 @@ public final class CBasicIT extends ApiTestBase {
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
         assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
 
-        boolean hasMore = dml().scanSome(session, cursorId, output, 1);
+        boolean hasMore = dml().scanSome(session, cursorId, output, new FixedCountLimit(1));
         assertFalse("no more rows expected", hasMore);
         assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
 
         CursorIsFinishedException caught = null;
         try {
-            dml().scanSome(session, cursorId, output, 0);
+            dml().scanSome(session, cursorId, output, new FixedCountLimit(0));
         } catch (CursorIsFinishedException e) {
             caught = e;
         }
