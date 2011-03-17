@@ -111,8 +111,8 @@ public final class ParsedHapiGetRequest implements HapiGetRequest {
         return limit;
     }
 
-    void setLimit(int limit) {
-        this.limit = limit;
+    void setLimit(String limit) {
+        this.limit = Integer.parseInt(limit);
     }
 
     void setTable(String table) {
