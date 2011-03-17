@@ -16,6 +16,7 @@
 package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.junit.OnlyIf;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
@@ -137,17 +138,16 @@ public final class HapiGetRequestTest {
         this.expectedRequest = request;
     }
 
-    @Test
-    public void test() throws HapiRequestException {
-        if (expectedRequest == null) {
-            testFailing();
-        }
-        else {
-            testWorking();
-        }
+    public boolean expectedToWork() {
+        return expectedRequest != null;
     }
 
-    private void testFailing() {
+    public boolean expectedToFail() {
+        return ! expectedToWork();
+    }
+
+    @Test @OnlyIf("expectedToFail")
+    public void fails() {
         Exception exception = null;
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(query);
@@ -158,14 +158,39 @@ public final class HapiGetRequestTest {
         assertNotNull(query + "expected exception", exception);
     }
 
-    private void testWorking() throws HapiRequestException {
+    @Test @OnlyIf("expectedToWork")
+    public void equality() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " request", expectedRequest, actual);
-        assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
+    }
 
+    @Test @OnlyIf("expectedToWork")
+    public void hash() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
+        assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void schema() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " schema", expectedRequest.getSchema(), actual.getSchema());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void table() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " table", expectedRequest.getTable(), actual.getTable());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void predicateTable() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " usingtable", expectedRequest.getUsingTable(), actual.getUsingTable());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void predicates() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " predicates", expectedRequest.getPredicates(), actual.getPredicates());
     }
 }
