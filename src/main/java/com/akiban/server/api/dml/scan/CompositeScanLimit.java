@@ -24,6 +24,16 @@ public final class CompositeScanLimit implements ScanLimit {
         this.limits = new ScanLimit[limits.length];
         System.arraycopy(limits, 0, this.limits, 0, limits.length);
     }
+    
+    @Override
+    public boolean limitReached() {
+        for (ScanLimit limit : limits) {
+            if (limit.limitReached()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public boolean limitReached(RowData previousRow) {

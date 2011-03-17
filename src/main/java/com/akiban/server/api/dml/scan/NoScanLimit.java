@@ -23,6 +23,11 @@ import com.akiban.server.RowData;
  */
 final class NoScanLimit implements ScanLimit {
     @Override
+    public boolean limitReached() {
+        return false;
+    }
+
+    @Override
     public boolean limitReached(RowData previousRow) {
         return false;
     }

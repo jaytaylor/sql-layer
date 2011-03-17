@@ -417,8 +417,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         if (!buffer.hasArray()) {
             throw new IllegalArgumentException("buffer must have array");
         }
-        RowData rowData = null;
-        while (!limit.limitReached(rowData) && !cursor.isFinished()) {
+        while (!limit.limitReached() && !cursor.isFinished()) {
             int bufferLastPos = buffer.position();
             if (!rc.collectNextRow(buffer)) {
                 if (rc.hasMore()) {
@@ -428,8 +427,8 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             } else {
                 int bufferPos = buffer.position();
                 assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
-                output.wroteRow();
-                rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
+                RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
+                output.wroteRow(limit.limitReached(rowData));
             }
         }
     }
@@ -446,12 +445,14 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     {
         RowCollector rc = cursor.getRowCollector();
         rc.outputToMessage(false);
-        RowData rowData = null;
-        while (!limit.limitReached(rowData) && !cursor.isFinished()) {
-            rowData = rc.collectNextRow();
+        while (!limit.limitReached() && !cursor.isFinished()) {
+            RowData rowData = rc.collectNextRow();
             if (rowData == null) {
                 cursor.setFinished();
-            } else {
+            } else if (limit.limitReached(rowData)) {
+                return;
+            }
+            else {
                 output.addRow(rowData);
             }
         }
@@ -559,7 +560,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
 
     private RowData niceRowToRowData(NewRow row) throws NoSuchTableException,
             TableDefinitionMismatchException
-    {;
+    {
         try {
             return row.toRowData();
         } catch (EncodingException e) {

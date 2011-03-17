@@ -168,8 +168,10 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         }
 
         @Override
-        public void wroteRow() {
-            buffer.putInt(0, 1 + getRowsCount() );
+        public void wroteRow(boolean limitExceeded) {
+            if (!limitExceeded) {
+                buffer.putInt(0, 1 + getRowsCount() );
+            }
         }
 
         @Override

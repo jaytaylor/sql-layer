@@ -29,7 +29,12 @@ public class FixedCountLimit implements ScanLimit {
     }
 
     @Override
-    public boolean limitReached(RowData previousRow) {
+    public boolean limitReached() {
         return limit >= 0 && count++ >= limit;
+    }
+
+    @Override
+    public boolean limitReached(RowData previousRow) {
+        return false;
     }
 }
