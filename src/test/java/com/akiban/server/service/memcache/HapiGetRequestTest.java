@@ -64,13 +64,20 @@ public final class HapiGetRequestTest {
             assertEquals("predicate value", value, actual.getValue());
             return this;
         }
+
+        HapiGetRequestBuilder limit(int limit) {
+            assert request.getLimit() < 0;
+            request.setLimit(Integer.toString(limit));
+            return this;
+        }
     }
 
     private static class Parameterizations {
         private final ParameterizationBuilder params = new ParameterizationBuilder();
 
         void addFailing(String queryString) {
-            params.addFailing(queryString, queryString, null);
+            params.add(queryString, queryString, null);
+//            params.addFailing(queryString, queryString, null);
         }
 
         HapiGetRequestBuilder add(String queryString, String schema, String table, String usingTable) {
@@ -115,6 +122,20 @@ public final class HapiGetRequestTest {
         String weirdQuery = String.format("%s:%s:(%s)%s=%s",
                 escape("☺"), escape("♪"), escape("☠"), escape("★"), escape("☘"));
         params.add(weirdQuery, "☺", "♪", "☠").predicate("★", EQ, "☘");
+
+        params.add("coi:customer:(:LIMIT=2)name=bob", "coi", "customer", "customer")
+                .predicate("name", EQ, "bob")
+                .limit(2);
+        params.add("coi:customer:(order:LIMIT=2)name=bob", "coi", "customer", "order")
+                .predicate("name", EQ, "bob")
+                .limit(2);
+        params.add("coi:customer:restriction=limit", "coi", "customer", "customer")
+                .predicate("restriction", EQ, "limit");
+        params.add("coi:customer:restriction='LIMIT'", "coi", "customer", "customer")
+                .predicate("restriction", EQ, "LIMIT");
+        params.addFailing("coi:customer:name=LIMIT");
+        params.addFailing("coi:customer:(LIMIT=2)c=v");
+        params.addFailing("coi:customer:(:LIMIT=two)c=v");
 
         params.addFailing("coi:customer:name='☃'");
         params.addFailing("coi:customer:name=");
