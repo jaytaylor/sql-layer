@@ -135,9 +135,6 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         private final TimePoints timePoints;
         private int count;
 
-        DelayBasedLimiter(long... delays) {
-            this(null, delays);
-        }
         DelayBasedLimiter(TimePoints timePoints, long... delays) {
             this.delays = new long[delays.length];
             this.messages = timePoints == null ? null : new String[delays.length];
@@ -196,12 +193,12 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                         new HashSet<Integer>(Arrays.asList(0, 1)),
                         nameIndexId,
                         EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                        new DelayBasedLimiter(0, 0, 5000).timepoint(2, "SCAN: PAUSE")
+                        new DelayBasedLimiter(timePoints, 0, 0, 5000).timepoint(2, "SCAN: PAUSE")
                 );
                 final CursorId cursorId = dml().openCursor(session, request);
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                if (!dml().scanSome(session, cursorId, output)) {
+                if (dml().scanSome(session, cursorId, output)) {
                     timePoints.mark("SCAN: EARLY FINISH");
                     return output.rows;
                 }
@@ -323,7 +320,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                         new HashSet<Integer>(Arrays.asList(0, 1)),
                         indexId,
                         EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                        new DelayBasedLimiter(0).timepoint(0, "SCAN: FIRST")
+                        new DelayBasedLimiter(timePoints, 0).timepoint(0, "SCAN: FIRST")
                 );
                 final CursorId cursorId = dml().openCursor(session, request);
                 CountingRowOutput output = new CountingRowOutput();
@@ -682,9 +679,9 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         return new TimedCallable<List<NewRow>>() {
             @Override
             protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
-                DelayBasedLimiter limiter = new DelayBasedLimiter(0, sleepBetween);
+                DelayBasedLimiter limiter = new DelayBasedLimiter(timePoints, 0, sleepBetween);
                 if (sleepBetween > 0) {
-                    limiter.timepoint(1, "SCAN: PAUSE");
+                    limiter.timepoint(0, "SCAN: PAUSE");
                 }
                 ScanAllRequest request = new ScanAllRequest(
                         tableId,
@@ -702,7 +699,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 }
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                if (!dml().scanSome(session, cursorId, output)) {
+                if (dml().scanSome(session, cursorId, output)) {
                     timePoints.mark("SCAN: EARLY FINISH");
                     return output.rows;
                 }
