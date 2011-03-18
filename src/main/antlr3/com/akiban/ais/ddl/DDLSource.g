@@ -153,10 +153,13 @@ table[SchemaDef schema]
  	;
 
 table_spec[SchemaDef schema]
-	: table_name[$schema] LEFT_PAREN
-		table_element[$schema] (COMMA table_element[$schema])* RIGHT_PAREN
-		{$schema.finishTable();} (table_suffix[$schema])* 
-	{ $schema.resolveProvisionalIndexes(); }
+	: table_name[$schema] 
+	  LEFT_PAREN
+	    table_element[$schema] (COMMA table_element[$schema])* 
+	  RIGHT_PAREN
+	  {$schema.finishTable();}
+	  (table_suffix[$schema])* 
+	  {$schema.resolveAllIndexes();}
 	;
 
 table_name[SchemaDef schema]
@@ -226,10 +229,10 @@ other_key_specification[SchemaDef schema]
 	;
 
 foreign_key_specification[SchemaDef schema]
-	: FOREIGN KEY qn1=qname? {$schema.addIndex($qn1.name, SchemaDef.IndexQualifier.FOREIGN_KEY);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.FOREIGN_KEY);} 
+	: FOREIGN KEY qn1=qname? {$schema.addIndex($qn1.name, SchemaDef.IndexQualifier.FOREIGN_KEY);} 
 		index_type[$schema]?
 	    LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
-		REFERENCES refTable=cname[$schema] {$schema.setIndexReference(refTable);}
+		REFERENCES refTable=cname[$schema] {$schema.addIndexReference(refTable);}
 		LEFT_PAREN reference_column[$schema] (COMMA reference_column[$schema])* RIGHT_PAREN
 		fk_cascade_clause*
 	;
@@ -239,7 +242,7 @@ fk_cascade_clause
 	;
 
 unique__key_specification[SchemaDef schema]
-	: UNIQUE (KEY | INDEX)? qname? {$schema.addIndex($qname.name);  $schema.addIndexQualifier(SchemaDef.IndexQualifier.UNIQUE);}
+	: UNIQUE (KEY | INDEX)? qname? {$schema.addIndex($qname.name, SchemaDef.IndexQualifier.UNIQUE);}
 		index_type[$schema]?
 	  LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
 	;

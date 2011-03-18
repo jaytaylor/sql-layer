@@ -35,10 +35,26 @@ fi
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
+check_no_process()
+{
+    if [ ! -e "$pid_file" ]; then
+        check_pid=`pgrep -f "jar $JAR_FILE"`
+        if [ "$check_pid" != "" ]; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
 case "$1" in
     start)
         if [ -f $pid_file ]; then
             status -p $pid_file akiban
+            exit 1
+        fi
+        check_no_process
+        if [ $? -ne 0 ]; then
+            log_failure_msg "$NAME is already running but no pidfile exists"
             exit 1
         fi
         su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file -j $JAR_FILE -c $AKIBAN_CONF" > $log_file 2>&1
@@ -64,6 +80,11 @@ case "$1" in
         $0 start
         ;;
     status)
+        check_no_process
+        if [ $? -ne 0 ]; then
+            echo "$NAME is running (pid $check_pid) but no pidfile exists"
+            exit 1
+        fi
         status -p $pid_file akiban
         ;;
     *)

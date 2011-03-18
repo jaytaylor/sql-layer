@@ -13,28 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.mttests.mthapi.base;
+package com.akiban.server.api.ddl;
 
-public final class WriteThreadStats {
-    private final int writes;
-    private final int updates;
-    private final int deletes;
+import com.akiban.server.InvalidOperationException;
 
-    public WriteThreadStats(int writes, int updates, int deletes) {
-        this.writes = writes;
-        this.updates = updates;
-        this.deletes = deletes;
-    }
-
-    public int getWrites() {
-        return writes;
-    }
-
-    public int getUpdates() {
-        return updates;
-    }
-
-    public int getDeletes() {
-        return deletes;
+public final class JoinToMultipleParentsException extends DDLException {
+    public JoinToMultipleParentsException(InvalidOperationException e) {
+        super(e);
     }
 }

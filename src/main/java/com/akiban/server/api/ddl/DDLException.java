@@ -20,7 +20,7 @@ import com.akiban.message.ErrorCode;
 
 public abstract class DDLException extends InvalidOperationException {
     protected DDLException(InvalidOperationException cause) {
-        super(cause.getCode(), cause.getMessage(), cause);
+        super(cause.getCode(), cause.getShortMessage(), cause);
     }
 
     protected DDLException(ErrorCode code, String message) {

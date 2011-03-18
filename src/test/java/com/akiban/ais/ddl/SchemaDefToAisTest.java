@@ -23,7 +23,10 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import org.junit.Test;
 
@@ -51,12 +54,17 @@ public class SchemaDefToAisTest {
         SchemaDef schemaDef = SchemaDef.parseSchemaFromStream(inputStream);
         return new SchemaDefToAis(schemaDef, true).getAis();
     }
-    
-    private AkibanInformationSchema buildAISfromString(final String schema) throws Exception {
+
+    private AkibanInformationSchema buildAISfromString(final String schema, boolean akibandbOnly) throws Exception {
         final SchemaDef schemaDef = SchemaDef.parseSchema(schema);
-        return new SchemaDefToAis(schemaDef, true).getAis();
+        return new SchemaDefToAis(schemaDef, akibandbOnly).getAis();
     }
-    
+
+    private AkibanInformationSchema buildAISfromString(final String schema) throws Exception {
+        return buildAISfromString(schema, true);
+    }
+
+
     @Test
     public void testParseEnumAndSet() throws Exception {
         AkibanInformationSchema ais = buildAISfromResource(DDL_FILE_NAME);
@@ -148,17 +156,17 @@ public class SchemaDefToAisTest {
         assertEquals("index[0] constraint[0]", "__akiban_fk",
                 tableDef.indexes.get(0).constraints.get(0));
         assertEquals("index[0] child columns", 1, tableDef.indexes.get(0)
-                .getChildColumns().size());
+                .getColumnNames().size());
         assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0)
-                .getChildColumns().get(0));
+                .getColumnNames().get(0));
         assertEquals("index[0] parent schema", null, tableDef.indexes.get(0)
-                .getParentSchema());
+                .references.get(0).table.getSchema());
         assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0)
-                .getParentTable());
+                .references.get(0).table.getName());
         assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0)
-                .getParentColumns().size());
+                .references.get(0).columns.size());
         assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0)
-                .getParentColumns().get(0));
+                .references.get(0).columns.get(0));
     }
 
     private static void createTableWithError(
@@ -211,17 +219,17 @@ public class SchemaDefToAisTest {
         assertEquals("index[0] constraint[0]", "__akiban_fk",
                 tableDef.indexes.get(0).constraints.get(0));
         assertEquals("index[0] child columns", 1, tableDef.indexes.get(0)
-                .getChildColumns().size());
+                .getColumnNames().size());
         assertEquals("index[0] child column[0]", "oid", tableDef.indexes.get(0)
-                .getChildColumns().get(0));
+                .getColumnNames().get(0));
         assertEquals("index[0] parent schema", null, tableDef.indexes.get(0)
-                .getParentSchema());
+                .references.get(0).table.getSchema());
         assertEquals("index[0] parent table", "zebra", tableDef.indexes.get(0)
-                .getParentTable());
+                .references.get(0).table.getName());
         assertEquals("index[0] parent columns", 1, tableDef.indexes.get(0)
-                .getParentColumns().size());
+                .references.get(0).columns.size());
         assertEquals("index[0] parent column[0]", "id", tableDef.indexes.get(0)
-                .getParentColumns().get(0));
+                .references.get(0).columns.get(0));
     }
 
     public static void main(final String[] args) throws Exception {
@@ -286,5 +294,154 @@ public class SchemaDefToAisTest {
         assertNotNull("s2", s2);
         assertSame("s1 group's root", s1, ais.getGroup("one").getGroupTable().getRoot());
         assertSame("s2 group's root", s2, ais.getGroup("one$0").getGroupTable().getRoot());
+    }
+
+    @Test
+    public void foreignKeysOnNonAkibanTable() throws Exception {
+        // Expected behavior: all joins (foreign keys) are preserved
+        final String ddl = "create table test.p(id int key) engine=innodb;"+
+                           "create table test.x(id int key, pid int, constraint foreign key(pid) references p(id)) engine=innodb;"+
+                           "create table test.y(id int key, pid int, xid int, constraint foreign key(pid) references p(id), constraint foreign key(xid) references x(id)) engine=innodb;";
+        AkibanInformationSchema ais = buildAISfromString(ddl, false);
+        final UserTable p = ais.getUserTable("test", "p");
+        assertEquals(0, p.getCandidateParentJoins().size());
+        assertEquals(2, p.getCandidateChildJoins().size());
+        final UserTable x = ais.getUserTable("test", "x");
+        assertEquals(1, x.getCandidateParentJoins().size());
+        assertEquals(1, x.getCandidateChildJoins().size());
+        final UserTable y = ais.getUserTable("test", "y");
+        assertEquals(2, y.getCandidateParentJoins().size());
+        assertEquals(0, y.getCandidateChildJoins().size());
+    }
+
+    @Test
+    public void foreignKeysOnAkibanTable() throws Exception {
+        // Expected behavior: A) __akiban joins are preserved with at least one index named __akiban as an 'FOREIGN KEY'
+        //                    B) other joins discarded but the generated index is kept
+        final String ddl = "create table test.p(id int key) engine=akibandb;"+
+                           "create table test.x(id int key, pid int, constraint __akiban1 foreign key(pid) references p(id)) engine=akibandb;"+
+                           "create table test.y(id int key, pid int, xid int, constraint foreign key(pid) references p(id), constraint __akiban2 foreign key(xid) references x(id)) engine=akibandb;";
+        AkibanInformationSchema ais = buildAISfromString(ddl, false);
+        final UserTable p = ais.getUserTable("test", "p");
+        assertEquals(0, p.getCandidateParentJoins().size());
+        assertEquals(1, p.getCandidateChildJoins().size());
+        assertEquals(1, p.getChildJoins().size());
+        final UserTable x = ais.getUserTable("test", "x");
+        assertEquals(1, x.getCandidateParentJoins().size());
+        assertNotNull(x.getParentJoin());
+        assertEquals(1, x.getCandidateChildJoins().size());
+        assertEquals(1, x.getChildJoins().size());
+        assertEquals(2, x.getIndexes().size()); // pk, fk
+        final Index xIndex = x.getIndex("__akiban1");
+        assertNotNull(xIndex);
+        assertEquals("FOREIGN KEY", xIndex.getConstraint());
+        final UserTable y = ais.getUserTable("test", "y");
+        assertEquals(1, y.getCandidateParentJoins().size());
+        assertNotNull(y.getParentJoin());
+        assertEquals(0, y.getCandidateChildJoins().size());
+        assertEquals(3, y.getIndexes().size()); // pk, fk, fk
+        final Index yIndex1 = y.getIndex("pid");
+        assertNotNull(yIndex1);
+        assertEquals("KEY", yIndex1.getConstraint());
+        final Index yIndex2 = y.getIndex("__akiban2");
+        assertNotNull(yIndex2);
+        assertEquals("FOREIGN KEY", yIndex2.getConstraint());
+    }
+
+    @Test(expected=AISBuilder.GroupStructureException.class)
+    public void tableWithTwoParents() throws Exception {
+        // Can parse and construct SchemaDef, but not AIS
+        final String ddl = "create table test.p(id int key) engine=akibandb;"+
+                           "create table test.x(id int key) engine=akibandb;"+
+                           "create table test.y(id int key, pid int, xid int, constraint __akiban1 foreign key(pid) references p(id), constraint __akiban2 foreign key(xid) references x(id)) engine=akibandb;";
+        final SchemaDef schemaDef = SchemaDef.parseSchema(ddl);
+        final SchemaDef.UserTableDef yTable = schemaDef.getUserTableMap().get(new SchemaDef.CName("test","y"));
+        assertEquals(2, yTable.getAkibanJoinRefs().size());
+        new SchemaDefToAis(schemaDef, true).getAis();
+    }
+
+    @Test
+    public void multipleForeignKeySameColumn() throws Exception {
+        final String ddl = "use test;"+
+            "create table t1(a int) engine=akibandb;"+
+            "create table t2(a int) engine=akibandb;"+
+            "create table t3(a int, b int) engine=akibandb;"+
+            "create table t4(a int, constraint f1 foreign key f1(a) references t1(a),"+
+                                   "constraint f2 foreign key f2(a) references t2(b)) engine=akibandb;"+
+            "create table t5(a int, b int, constraint f1 foreign key f1(a,b) references t3(a,b),"+
+                                          "constraint f2 foreign key f2(a) references t1(a)) engine=akibandb;";
+
+        final AkibanInformationSchema ais= buildAISfromString(ddl);
+        final UserTable t4 = ais.getUserTable("test", "t4");
+        assertEquals(1, t4.getIndexes().size()); // single generated
+        final Index t4index = t4.getIndexes().iterator().next();
+        assertEquals("f2", t4index.getIndexName().getName()); // yes, it takes the second
+        assertEquals(1, t4index.getColumns().size());
+
+        final UserTable t5 = ais.getUserTable("test", "t5");
+        assertEquals(1, t5.getIndexes().size()); // single generated
+        final Index t5index = t5.getIndexes().iterator().next();
+        assertEquals("f1", t5index.getIndexName().getName());
+        assertEquals(2, t5index.getColumns().size());
+    }
+
+    @Test
+    public void constraintNamedAkiban() throws Exception {
+        final String ddl = "create table test.t(id int, other int,"+
+                                               "constraint __akiban unique(id),"+
+                                               "constraint __akiban2 unique foo(other));";
+        final AkibanInformationSchema ais = buildAISfromString(ddl);
+        final UserTable table = ais.getUserTable("test", "t");
+        assertNotNull(table);
+        // Unique keys get named as constraint if index name is unspecified
+        final Index uniqueAkiban = table.getIndex("__akiban");
+        assertNotNull("has index named `__akiban`", uniqueAkiban);
+        assertEquals("id", uniqueAkiban.getColumns().get(0).getColumn().getName());
+        // Index name takes precedence over constraint name for unique keys
+        final Index uniqueFoo = table.getIndex("foo");
+        assertNotNull("has index named `foo`", uniqueFoo);
+        assertEquals("other", uniqueFoo.getColumns().get(0).getColumn().getName());
+    }
+
+    @Test
+    public void manyCollapsingForeignKeys() throws Exception {
+        final String ddl = "use test;"+
+                "create table p(a int, b int, c int) engine=akibandb;"+
+                "create table c(a int, b int, c int,"+
+                               "constraint foreign key(a) references p(a),"+
+                               "constraint foreign key(b) references p(b),"+
+                               "constraint foreign key(c) references p(c),"+
+                               "constraint foreign key(a,b) references p(a,b),"+
+                               "constraint foreign key(b,c) references p(b,c),"+
+                               "constraint foreign key(a,b,c) references p(a,b,c)) engine=akibandb;";
+        final AkibanInformationSchema ais = buildAISfromString(ddl);
+        final UserTable table = ais.getUserTable("test", "c");
+        assertNotNull(table);
+        assertEquals(3, table.getIndexes().size());
+        // key a(a,b,c)
+        final Index aIndex = table.getIndex("a");
+        assertNotNull("has index named `a`", aIndex);
+        assertEquals(3, aIndex.getColumns().size());
+        // key b(b,c)8
+        final Index bIndex = table.getIndex("b");
+        assertNotNull("has index named `b`", bIndex);
+        assertEquals(2, bIndex.getColumns().size());
+        // key c(c)
+        final Index cIndex = table.getIndex("c");
+        assertNotNull("has index named `c`", cIndex);
+        assertEquals(1, cIndex.getColumns().size());
+    }
+
+    @Test
+    public void nonForeignKeysTakePrecedence() throws Exception {
+        final String ddl = "create table test.p(a int) engine=akibandb;"+
+                "create table test.c(a int, constraint bob foreign key(a) references p(a), key(a)) engine=akibandb";
+        final AkibanInformationSchema ais = buildAISfromString(ddl);
+        final UserTable table = ais.getUserTable("test", "c");
+        assertNotNull(table);
+        // Non-fk index name takes precedence, even when it is defaulted
+        assertEquals(1, table.getIndexes().size());
+        final Index index = table.getIndex("a");
+        assertNotNull("has index named `a``", index);
     }
 }

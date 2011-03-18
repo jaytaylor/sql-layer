@@ -20,20 +20,18 @@ import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.mttests.mthapi.base.HapiRequestStruct;
 import com.akiban.server.mttests.mthapi.base.HapiSuccess;
-import com.akiban.server.mttests.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.mttests.mthapi.base.sais.SaisTable;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.util.ThreadlessRandom;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.util.ThreadlessRandom.rand;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class BasicHapiSuccess extends HapiSuccess {
@@ -42,57 +40,54 @@ public class BasicHapiSuccess extends HapiSuccess {
     private final String schema;
     private final static int MAX_READ_ID = 1500;
 
-    public BasicHapiSuccess(String schema, SaisTable root) {
-        this(schema, Collections.singleton(root));
+    public BasicHapiSuccess(String schema, SaisTable root, boolean requireSingleColPKs) {
+        this(schema, Collections.singleton(root), requireSingleColPKs);
     }
 
-    public BasicHapiSuccess(String schema, Set<SaisTable> roots) {
+    public BasicHapiSuccess(String schema, Set<SaisTable> roots, boolean requireSingleColPKs) {
         assertTrue("at least one root table required", roots.size() >= 1);
         Set<SaisTable> all = SaisTable.setIncludingChildren(roots);
-        for (SaisTable table : all) {
-            assertTrue(table + ": only one-table-pk tables supported", table != null && table.getPK().size() == 1);
+        if (requireSingleColPKs) {
+            for (SaisTable table : all) {
+                assertTrue(table + ": only one-table-pk tables supported", table != null && table.getPK().size() == 1);
+            }
         }
         allTables = Collections.unmodifiableList(new ArrayList<SaisTable>(all));
         this.schema = schema;
     }
 
     @Override
-    protected void validateIndex(HapiGetRequest request, Index index) {
-        final String expectedIndexName;
+    protected void validateIndex(HapiRequestStruct requestStruct, Index index) {
+        HapiGetRequest request = requestStruct.getRequest();
         if (request.getUsingTable().equals(request.getSchema(), request.getTable())) {
             assertTrue("index table: " + index, index.getTableName().equals(request.getUsingTable()));
-            expectedIndexName = "PRIMARY";
         }
         else {
             assertTrue("index should have been on group table", index.getTable().isGroupTable());
-            expectedIndexName = request.getUsingTable().getTableName() + "$PRIMARY";
         }
-        assertEquals("index name", expectedIndexName, index.getIndexName().getName());
+        if (requestStruct.expectedIndexKnown()) {
+            assertEquals("index name", requestStruct.getExpectedIndex(), index.getIndexName().getName());
+        }
     }
 
     @Override
     protected void validateSuccessResponse(HapiRequestStruct requestStruct, JSONObject result)
             throws JSONException
     {
-        try {
-            JsonUtils.validateResponse(result, requestStruct.getSelectRoot(), requestStruct.getPredicatesTable());
-        } catch (HapiValidationError e) {
-            e.setJsonObject(result);
-            throw e;
-        }
+        JsonUtils.validateResponse(result, requestStruct.getSelectRoot(), requestStruct.getPredicatesTable());
     }
 
     @Override
-    protected HapiRequestStruct pullRequest(final int pseudoRandom) {
-        String idValue = Integer.toString(Math.abs(pseudoRandom) % MAX_READ_ID);
-        int randTableIndex = Math.abs(pseudoRandom % allTables.size());
+    protected HapiRequestStruct pullRequest(ThreadlessRandom random) {
+        String idValue = Integer.toString(random.nextInt(0, MAX_READ_ID));
+        int randTableIndex = random.nextInt(0, allTables.size());
         SaisTable selectRoot = allTables.get(randTableIndex);
-        SaisTable predicateTable = choosePredicate(selectRoot, rand(pseudoRandom));
+        SaisTable predicateTable = choosePredicate(selectRoot, random.nextInt());
         assert predicateTable.getPK().size() == 1 : predicateTable.getPK(); // should be verified in ctor
         String predicateColumn = predicateTable.getPK().get(0);
         HapiGetRequest request = DefaultHapiGetRequest.forTables(schema(), selectRoot.getName(), predicateTable.getName()).where(predicateColumn).eq(idValue);
 
-        return new HapiRequestStruct(request, selectRoot, predicateTable);
+        return new HapiRequestStruct(request, selectRoot, predicateTable, null);
     }
 
     private static SaisTable choosePredicate(SaisTable root, int pseudoRandom) {
@@ -108,6 +103,10 @@ public class BasicHapiSuccess extends HapiSuccess {
 
     @Override
     protected int spawnCount() {
-        return 50000;
+        String string = ServiceManagerImpl.get().getConfigurationService().getProperty(
+                "akserver.test.mt.spawncount",
+                "50000"
+        );
+        return Integer.parseInt(string);
     }
 }

@@ -34,6 +34,7 @@ import static org.junit.Assert.*;
 // To run this test manually, set -DdebugMode=true. This will continue past test failures, print database contents,
 // print each query, and for expected != actual, print both, nicely formatted. To investigate a single
 
+@org.junit.Ignore // TODO uncomment this once the appropriate Persistit changes are in
 public class RCTortureIT extends ApiTestBase
 {
     @Test

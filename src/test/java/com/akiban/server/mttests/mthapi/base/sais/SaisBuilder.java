@@ -112,6 +112,15 @@ public final class SaisBuilder {
             return this;
         }
 
+        public TableBuilder key(String column) {
+            return key(column, column);
+        }
+
+        public TableBuilder key(String name, String... cols) {
+            // TODO: no-op for now!
+            return this;
+        }
+
         public SaisBuilder backToBuilder() {
             return SaisBuilder.this;
         }

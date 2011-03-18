@@ -35,7 +35,7 @@ import static com.akiban.server.mttests.mthapi.common.HapiValidationError.Reason
 import static com.akiban.server.mttests.mthapi.common.HapiValidationError.*;
 import static org.junit.Assert.*;
 
-final class JsonUtils {
+public final class JsonUtils {
     static Set<String> jsonObjectKeys(JSONObject jsonObject) {
         Iterator iter = jsonObject.keys();
         Set<String> keys = new HashSet<String>();

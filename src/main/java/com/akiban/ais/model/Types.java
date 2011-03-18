@@ -227,4 +227,12 @@ public class Types {
     public static boolean isTextType(Type type) {
         return type.equals(CHAR) || type.equals(VARCHAR) || type.equals(TEXT);
     }
+
+    public static boolean isIntType(Type type) {
+        return type.equals(TINYINT) || type.equals(U_TINYINT) ||
+               type.equals(SMALLINT) || type.equals(U_SMALLINT) ||
+               type.equals(INT) || type.equals(U_INT) ||
+               type.equals(MEDIUMINT) || type.equals(U_MEDIUMINT) ||
+               type.equals(BIGINT) || type.equals(U_BIGINT);
+    }
 }
