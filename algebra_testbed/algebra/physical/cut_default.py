@@ -12,3 +12,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
+
+import physicaloperator
+
+SimpleOperator = physicaloperator.SimpleOperator
+
+class Cut(SimpleOperator):
+
+    def __init__(self, input, rowtype):
+        SimpleOperator.__init__(self, input)
+        self._rowtype = rowtype
+
+    def handle_row(self, row):
+        if self._rowtype.ancestor_of(row.rowtype):
+            output_row = None
+        else:
+            output_row = row
+        return output_row

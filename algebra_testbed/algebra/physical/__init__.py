@@ -13,11 +13,15 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
+import cut_default
+import extract_default
+import flatten_hkey_ordered
+import groupscan_default
+import indexlookup
+import indexscan
+import project_default
 import scan
+import select_hkey_ordered
+import sort
 
-Scan = scan.Scan
-
-class IndexScan(Scan):
-
-    def __init__(self, index, key = None):
-        Scan.__init__(self, index.cursor(key, key))
+from physicaloperator import (RANDOM_ACCESS, SEQUENTIAL_ACCESS, SORT)

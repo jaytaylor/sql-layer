@@ -18,36 +18,6 @@ RANDOM_ACCESS = 0
 SEQUENTIAL_ACCESS = 1
 SORT = 2
 
-class _Node(object):
-
-    def __init__(self, object):
-        self.object = object
-        self.next = None
-
-class Pending(object):
-
-    def __init__(self):
-        self.head = None
-        self.tail = None
-
-    def add(self, object):
-        node = _Node(object)
-        if self.head is None:
-            self.head = node
-            self.tail = node
-        else:
-            self.tail.next = node
-            self.tail = node
-
-    def take(self):
-        object = None
-        if self.head:
-            object = self.head.object
-            self.head = self.head.next
-            if self.head is None:
-                self.tail = None
-        return object
-
 class Stats(object):
 
     def __init__(self):
@@ -65,16 +35,19 @@ class Stats(object):
             merged[i] = self[i] + other[i]
         return merged
 
-class Operator(object):
+class PhysicalOperator(object):
 
-    def __init__(self):
+    def __init__(self, input):
         self._stats = Stats()
+        self._input = input
 
     def open(self):
         assert False
 
     def next(self):
         assert False
+
+    input = property(lambda self: self._input)
 
     def close(self):
         assert False
@@ -91,10 +64,13 @@ class Operator(object):
     def count_sort(self, n):
         self._stats[SORT] += n
 
-class UnaryOperator(Operator):
+# Boilerplate for a common pattern: Read from input until a row is
+# found, then handle that row.
+
+class SimpleOperator(PhysicalOperator):
 
     def __init__(self, input):
-        Operator.__init__(self)
+        PhysicalOperator.__init__(self, input)
         self._input = input
 
     def open(self):

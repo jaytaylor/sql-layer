@@ -12,3 +12,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
+
+import operator
+from algebra.physical import *
+
+class GroupScan(operator.Operator):
+
+    def __init__(self, group):
+        operator.Operator.__init__(self, None)
+        self._group = group
+
+    def implementation(self, input):
+        return groupscan_default.GroupScan(self._group)

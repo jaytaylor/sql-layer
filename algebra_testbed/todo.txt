@@ -1,0 +1,16 @@
++ table -> group, e.g. IndexedTableScan, FullTableScan, table arg of IndexedTableScan
+
+- IndexedTableScan arg: types to retrieve to complete a group. E.g. if
+  input hkeys are from order, then we'll already be getting orders and
+  items. arg of [customer, address] says to get the customer of the
+  order, and all that customers addresses, and to interleave these
+  correctly with the orders and items. (Assuming later operator,
+  e.g. flatten or select, needs hkey ordered data within each
+  customer.)
+
+  Actually, order of siblings probably don't matter. select, flatten
+  should work OK as long as customer is before both addresses and
+  orders.
+
+- Separate logical and physical operators.
+

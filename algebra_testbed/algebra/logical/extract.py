@@ -14,18 +14,13 @@
 #
 
 import operator
+from algebra.physical import *
 
-UnaryOperator = operator.UnaryOperator
-
-class Extract(UnaryOperator):
+class Extract(operator.Operator):
 
     def __init__(self, input, rowtype):
-        UnaryOperator.__init__(self, input)
+        operator.Operator.__init__(self, input)
         self._rowtype = rowtype
 
-    def handle_row(self, row):
-        if self._rowtype.ancestor_of(row.rowtype):
-            output_row = row
-        else:
-            output_row = None
-        return output_row
+    def implementation(self, input):
+        return extract_default.Extract(input, self._rowtype)
