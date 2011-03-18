@@ -67,7 +67,7 @@ class IndexLookup(PhysicalOperator):
                         ancestor_hkey = hkey[:hkey_prefix_length]
                         ancestor_cursor = self._group.cursor([ancestor_hkey], [ancestor_hkey])
                         ancestor_row = ancestor_cursor.next()
-                        self.count_sequential_access()
+                        self.count_random_access()
                         if ancestor_row is not None and ancestor_row.rowtype in self._missing_types:
                             self._pending.append(ancestor_row)
                         hkey_prefix_length += 2
