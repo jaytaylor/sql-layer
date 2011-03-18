@@ -20,3 +20,5 @@ redhat/rpmbuild
 ./.settings
 ./.idea
 ./target
+data
+log
