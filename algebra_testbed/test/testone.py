@@ -15,6 +15,16 @@
 
 from testbase import *
 
+GroupScan = groupscan_default.GroupScan
+Select = select_hkey_ordered.Select
+IndexScan = indexscan.IndexScan
+IndexLookup = indexlookup.IndexLookup
+Extract = extract_default.Extract
+Cut = cut_default.Cut
+Flatten = flatten_hkey_ordered.Flatten
+OrderBy = sort.Sort
+Project = project_default.Project
+
 """
 select c.name, o.date, i.*
 from customer c, order o, item i
@@ -28,7 +38,7 @@ Tcoi = RowType('coi',
                ['hkey'],
                Ti)
 
-run_plan("Restrict order date and customer name",
+run_physical_plan("Restrict order date and customer name",
          Select
          (Select
           (Flatten
@@ -45,7 +55,7 @@ run_plan("Restrict order date and customer name",
           Tcoi,
           lambda o: '2010/1/2' <= o.order_date <= '2010/2/2'))
 
-run_plan("Push down select on order",
+run_physical_plan("Push down select on order",
          Select
          (Flatten
           (Flatten
@@ -62,19 +72,20 @@ run_plan("Push down select on order",
           Tcoi,
           lambda c: 'i' in c.name))
 
-# run_plan("Replace group scan by index scan",
-#          Select
-#          (Flatten
-#           (Flatten
-#            (IndexLookup
-#             (IndexScan(order_date_index, '2010/1/2'),
-#              ['hkey'],
-#              coi),
-#             Tc,
-#             To,
-#             Tco),
-#            Tco,
-#            Ti,
-#            Tcoi),
-#           Tcoi,
-#           lambda c: 'i' in c.name))
+run_physical_plan("Replace group scan by index scan",
+         Select
+         (Flatten
+          (Flatten
+           (IndexLookup
+            (IndexScan(order_date_index, ['2010/1/2'], ['2010/2/2']),
+             ['hkey'],
+             coi,
+             [Tc]),
+            Tc,
+            To,
+            Tco),
+           Tco,
+           Ti,
+           Tcoi),
+          Tcoi,
+          lambda c: 'i' in c.name))
