@@ -15,8 +15,23 @@
 
 package com.akiban.server.api.dml.scan;
 
-public interface ScanRequest extends ScanRange {
-    int getIndexId();
-    int getScanFlags();
-    ScanLimit getScanLimit();
+import com.akiban.server.RowData;
+
+public final class CompositeScanLimit implements ScanLimit {
+    private final ScanLimit[] limits;
+
+    public CompositeScanLimit(ScanLimit... limits) {
+        this.limits = new ScanLimit[limits.length];
+        System.arraycopy(limits, 0, this.limits, 0, limits.length);
+    }
+
+    @Override
+    public boolean limitReached(RowData previousRow) {
+        for (ScanLimit limit : limits) {
+            if (limit.limitReached(previousRow)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -15,8 +15,16 @@
 
 package com.akiban.server.api.dml.scan;
 
-public interface ScanRequest extends ScanRange {
-    int getIndexId();
-    int getScanFlags();
-    ScanLimit getScanLimit();
+import com.akiban.server.RowData;
+
+/**
+ * A ScanLimit that represents no limit. This is package private because nobody should ever instantiate it directly;
+ * instead, they should grab the singleton reference {@link ScanLimit#NONE}
+ */
+final class NoScanLimit implements ScanLimit {
+
+    @Override
+    public boolean limitReached(RowData previousRow) {
+        return false;
+    }
 }

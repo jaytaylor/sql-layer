@@ -17,23 +17,20 @@ package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.RowData;
 
-import java.nio.ByteBuffer;
-
-public interface LegacyRowOutput {
-    ByteBuffer getOutputBuffer() throws RowOutputException;
+public interface ScanLimit {
 
     /**
-     * Signals that a row has been written into the buffer. It could be that the row actually caused the scan's
-     * limit to be exceeded, and that it should actually be disregarded; if so, that is communicated via
-     * limitExceeded
-     * @param limitExceeded whether the row that was written was actually in excess of the limit
-     * @throws RowOutputException if thrown during any processing that happens as a result of this method
+     * A singleton that represents no scan limit.
      */
-    void wroteRow(boolean limitExceeded) throws RowOutputException;
+    public static final ScanLimit NONE = new NoScanLimit();
 
-    void addRow(RowData rowData) throws RowOutputException;
-
-    int getRowsCount();
-
-    boolean getOutputToMessage();
+    /**
+     * Whether the limit has been reached; a {@code false} value indicates that the scan should continue. This method
+     * is invoked directly after the row is collected, and before it's outputted; if this method returns {@code false},
+     * the method will not be outputted
+     *
+     * @param row the row that has just been collected
+     * @return whether scanning should stop
+     */
+    boolean limitReached(RowData row);
 }

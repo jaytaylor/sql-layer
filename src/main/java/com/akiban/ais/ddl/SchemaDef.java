@@ -703,6 +703,10 @@ public class SchemaDef {
                     + ',' + typeParam2 + ") nullable=" + nullable + " autoinc="
                     + autoincrement + " constraints" + constraints;
         }
+
+        public String getCharset() {
+            return charset;
+        }
     }
 
     private static class IndexDefHandle {
@@ -789,6 +793,10 @@ public class SchemaDef {
 
         public boolean isAkibanTable() {
             return engine.equalsIgnoreCase(AKIBANDB_ENGINE_NAME);
+        }
+
+        public String getCharset() {
+            return charset;
         }
     }
 

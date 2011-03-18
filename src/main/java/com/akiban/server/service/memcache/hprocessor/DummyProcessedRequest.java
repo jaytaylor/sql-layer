@@ -42,4 +42,9 @@ final class DummyProcessedRequest extends BaseHapiProcessedGetRequest {
     {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public int getLimit() {
+        return 0;
+    }
 }

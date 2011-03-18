@@ -20,6 +20,7 @@ import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class DefaultHapiGetRequest implements HapiGetRequest {
     private final TableName predicatesTable;
     private final String rootTable;
     private final List<HapiPredicate> predicates;
+    private final int limit;
 
     public static HapiGetRequestBuilder forTables(String schema, String rootTable, String predicateTable) {
         return new HapiGetRequestBuilder(schema, rootTable, predicateTable);
@@ -37,18 +39,20 @@ public class DefaultHapiGetRequest implements HapiGetRequest {
         return new HapiGetRequestBuilder(schema, rootTable, rootTable);
     }
 
-    DefaultHapiGetRequest(String rootTable, TableName predicatesTable, List<HapiPredicate> predicates) {
+    DefaultHapiGetRequest(String rootTable, TableName predicatesTable, List<HapiPredicate> predicates, int limit) {
         this.predicatesTable = predicatesTable;
         this.rootTable = rootTable;
         this.predicates = Collections.unmodifiableList(new ArrayList<HapiPredicate>(predicates));
+        this.limit = limit;
+    }
+
+
+    DefaultHapiGetRequest(String rootTable, TableName predicatesTable, List<HapiPredicate> predicates) {
+        this(rootTable, predicatesTable, predicates, -1);
     }
 
     DefaultHapiGetRequest(String rootTable, TableName predicatesTable, HapiPredicate predicate) {
-        this.predicatesTable = predicatesTable;
-        this.rootTable = rootTable;
-        List<HapiPredicate> tmp = new ArrayList<HapiPredicate>(1);
-        tmp.add(predicate);
-        this.predicates = Collections.unmodifiableList(tmp);
+        this(rootTable, predicatesTable, Arrays.asList(predicate));
     }
 
     @Override
@@ -69,6 +73,11 @@ public class DefaultHapiGetRequest implements HapiGetRequest {
     @Override
     public List<HapiPredicate> getPredicates() {
         return predicates;
+    }
+
+    @Override
+    public int getLimit() {
+        return limit;
     }
 
     @Override
