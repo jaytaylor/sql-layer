@@ -18,7 +18,7 @@ package com.akiban.server.mttests.mtddl;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.FixedCountLimit;
+import com.akiban.server.RowData;
 import com.akiban.server.api.dml.EasyUseColumnSelector;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -37,6 +37,7 @@ import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.mttests.mtutil.TimedResult;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.akiban.util.ArgumentValidation;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -128,6 +129,45 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         scanWhileDropping("name");
     }
 
+    private static class DelayBasedLimiter implements ScanLimit {
+        private final long[] delays;
+        private final String[] messages;
+        private final TimePoints timePoints;
+        private int count;
+
+        DelayBasedLimiter(long... delays) {
+            this(null, delays);
+        }
+        DelayBasedLimiter(TimePoints timePoints, long... delays) {
+            this.delays = new long[delays.length];
+            this.messages = timePoints == null ? null : new String[delays.length];
+            System.arraycopy(delays, 0, this.delays, 0, delays.length);
+            this.timePoints = timePoints;
+        }
+
+        @Override
+        public boolean limitReached(RowData row) {
+            long delay = count >= delays.length ? -1 : delays[count];
+            Timing.sleep(delay);
+            if (timePoints != null) {
+                String message = messages[count];
+                if (message != null) {
+                    timePoints.mark(message);
+                }
+            }
+            ++count;
+            return false;
+        }
+
+        public DelayBasedLimiter timepoint(int after, String text) {
+            ArgumentValidation.isGTE("after-index", after, 0);
+            ArgumentValidation.isLT("after-index", after, delays.length);
+            ArgumentValidation.notNull("timepoints", messages);
+            messages[after] = text;
+            return this;
+        }
+    }
+
     @Test
     public void dropShiftsIndexIdWhileScanning() throws Exception {
         final int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "age varchar(2)", "key(name)", "key(age)");
@@ -155,18 +195,16 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                         tableId,
                         new HashSet<Integer>(Arrays.asList(0, 1)),
                         nameIndexId,
-                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
+                        new DelayBasedLimiter(0, 0, 5000).timepoint(2, "SCAN: PAUSE")
                 );
                 final CursorId cursorId = dml().openCursor(session, request);
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                if (!dml().scanSome(session, cursorId, output, new FixedCountLimit(2))) {
+                if (!dml().scanSome(session, cursorId, output)) {
                     timePoints.mark("SCAN: EARLY FINISH");
                     return output.rows;
                 }
-                timePoints.mark("SCAN: PAUSE");
-                Timing.sleep(5000);
-                dml().scanSome(session, cursorId, output, ScanLimit.NONE);
                 dml().closeCursor(session, cursorId);
                 timePoints.mark("SCAN: FINISH");
 
@@ -284,14 +322,13 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                         tableId,
                         new HashSet<Integer>(Arrays.asList(0, 1)),
                         indexId,
-                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
+                        new DelayBasedLimiter(0).timepoint(0, "SCAN: FIRST")
                 );
                 final CursorId cursorId = dml().openCursor(session, request);
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                assertTrue(dml().scanSome(session, cursorId, output, new FixedCountLimit(1)));
-                timePoints.mark("SCAN: FIRST");
-                while (dml().scanSome(session, cursorId, output, ScanLimit.NONE)) {
+                while (dml().scanSome(session, cursorId, output)) {
                     // do nothing
                 }
                 dml().closeCursor(session, cursorId);
@@ -645,11 +682,16 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         return new TimedCallable<List<NewRow>>() {
             @Override
             protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
+                DelayBasedLimiter limiter = new DelayBasedLimiter(0, sleepBetween);
+                if (sleepBetween > 0) {
+                    limiter.timepoint(1, "SCAN: PAUSE");
+                }
                 ScanAllRequest request = new ScanAllRequest(
                         tableId,
                         new HashSet<Integer>(Arrays.asList(0, 1)),
                         indexId,
-                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
+                        limiter
                 );
                 final CursorId cursorId;
                 try {
@@ -660,15 +702,10 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 }
                 CountingRowOutput output = new CountingRowOutput();
                 timePoints.mark("SCAN: START");
-                if (!dml().scanSome(session, cursorId, output, new FixedCountLimit(1))) {
+                if (!dml().scanSome(session, cursorId, output)) {
                     timePoints.mark("SCAN: EARLY FINISH");
                     return output.rows;
                 }
-                if (sleepBetween > 0) {
-                    timePoints.mark("SCAN: PAUSE");
-                    Timing.sleep(sleepBetween);
-                }
-                dml().scanSome(session, cursorId, output, ScanLimit.NONE);
                 dml().closeCursor(session, cursorId);
                 timePoints.mark("SCAN: FINISH");
 

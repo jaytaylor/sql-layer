@@ -199,22 +199,22 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         final Cursor cursor;
         final CursorId cursorId;
 
-        TestingStruct(String... strings) {
+        TestingStruct(ScanLimit limit, String... strings) {
             final int TABLE_ID = 3;
             stringsArray = strings;
             collector = new StringRowCollector(TABLE_ID, strings);
             output = new StringRowOutput();
-            cursor = new Cursor(collector);
+            cursor = new Cursor(collector, limit);
             cursorId = new CursorId(5, TABLE_ID);
         }
     }
 
     @Test(expected= CursorIsFinishedException.class)
     public void scansNoLimit() throws InvalidOperationException, BufferFullException {
-        final TestingStruct s = new TestingStruct("Hi", "there", "pooh bear", "how are you there");
+        final TestingStruct s = new TestingStruct(ScanLimit.NONE, "Hi", "there", "pooh bear", "how are you there");
 
         try {
-            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output, ScanLimit.NONE));
+            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output));
 
             assertEquals("rc rows delivered", s.stringsArray.length, s.collector.getDeliveredRows());
             assertEquals("output rows written", s.stringsArray.length, s.output.getRowsCount());
@@ -224,49 +224,34 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0));
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 
     @Test(expected= CursorIsFinishedException.class)
     public void scansWithLimit() throws InvalidOperationException, BufferFullException {
-        final TestingStruct s = new TestingStruct("hi", "world", "and", "universe", "too", "cool", "dude");
+        final TestingStruct s = new TestingStruct(new FixedCountLimit(1), "hi", "world", "and", "universe");
 
         try {
-            assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(1)));
+            assertFalse("expected no more", scanner.doScan(s.cursor, s.cursorId, s.output));
             assertEquals("rc rows delivered", 2, s.collector.getDeliveredRows());
             assertEquals("output rows written", 1, s.output.getRowsCount());
             assertEquals("rows seen", Arrays.asList("hi"), s.output.getStrings());
-
-            assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(2)));
-            assertEquals("rc rows delivered", 5, s.collector.getDeliveredRows());
-            assertEquals("output rows written", 3, s.output.getRowsCount());
-            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
-
-            assertTrue("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0)));
-            assertEquals("rc rows delivered", 6, s.collector.getDeliveredRows());
-            assertEquals("output rows written", 3, s.output.getRowsCount());
-            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
-
-            assertFalse("expected more", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0)));
-            assertEquals("rc rows delivered", 7, s.collector.getDeliveredRows());
-            assertEquals("output rows written", 3, s.output.getRowsCount());
-            assertEquals("rows seen", Arrays.asList("hi", "world", "and"), s.output.getStrings());
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0));
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 
     @Test(expected= CursorIsFinishedException.class)
     public void scanEmptyRC() throws InvalidOperationException, BufferFullException {
-        final TestingStruct s = new TestingStruct();
+        final TestingStruct s = new TestingStruct(new FixedCountLimit(0));
         try {
-            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0)));
+            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output));
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output, new FixedCountLimit(0));
+        scanner.doScan(s.cursor, s.cursorId, s.output);
     }
 }

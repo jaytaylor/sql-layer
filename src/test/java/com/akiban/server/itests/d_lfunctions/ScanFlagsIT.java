@@ -118,10 +118,11 @@ public class ScanFlagsIT extends ApiTestBase
                                                           bound(end),
                                                           new byte[]{1},
                                                           0, // index id
-                                                          flags); // scan flags
+                                                          flags,  // scan flags
+                                                          ScanLimit.NONE);
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, request);
-        boolean more = dml().scanSome(session, cursorId, output, ScanLimit.NONE);
+        boolean more = dml().scanSome(session, cursorId, output);
         assertTrue(!more);
         return output.getRows();
     }

@@ -71,17 +71,16 @@ public class RowDataOutput implements LegacyRowOutput {
      * @param session the session in which to scan
      * @param dml the DMLFunctions to handle the scan
      * @param request the scan request
-     * @param limit
      * @return the resulting rows
      * @throws InvalidOperationException if thrown at any point during the scan
      */
-    public static List<RowData> scanFull(Session session, DMLFunctions dml, ScanRequest request, ScanLimit limit)
+    public static List<RowData> scanFull(Session session, DMLFunctions dml, ScanRequest request)
             throws InvalidOperationException
     {
         final RowDataOutput output = new RowDataOutput();
         CursorId scanCursor = dml.openCursor(session, request);
         try {
-            dml.scanSome(session, scanCursor, output, limit);
+            dml.scanSome(session, scanCursor, output);
             return output.getRowDatas();
         } catch (BufferFullException e) {
             LOG.error(String.format("This is unexpected, request: %s", request), e);

@@ -146,7 +146,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         }
         final RowCollector rc = getRowCollector(session, request);
         final CursorId cursorId = newUniqueCursor(rc.getTableId());
-        final Cursor cursor = new Cursor(rc);
+        final Cursor cursor = new Cursor(rc, request.getScanLimit());
         Object old = session.put(MODULE_NAME, cursorId, new ScanData(request, cursor));
         assert old == null : old;
 
@@ -206,6 +206,11 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             }
 
             @Override
+            public ScanLimit getScanLimit() {
+                return ScanLimit.NONE;
+            }
+
+            @Override
             public boolean scanAllColumns() {
                 return true;
             }
@@ -244,7 +249,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanLimit limit)
+    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
             throws CursorIsFinishedException,
                    CursorIsUnknownException,
                    RowOutputException,
@@ -252,7 +257,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                    GenericInvalidOperationException
 
     {
-        logger.trace("scanning up to {} row(s) from {}", limit, cursorId);
+        logger.trace("scanning from {}", cursorId);
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
 
@@ -260,7 +265,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        return scanner.doScan(cursor, cursorId, output, limit);
+        return scanner.doScan(cursor, cursorId, output);
     }
 
     private static class PooledConverter {
@@ -316,20 +321,20 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, RowOutput output, ScanLimit limit)
+    public boolean scanSome(Session session, CursorId cursorId, RowOutput output)
         throws CursorIsFinishedException,
                CursorIsUnknownException,
                RowOutputException,
                NoSuchTableException,
                GenericInvalidOperationException
     {
-        logger.trace("scanning up to {} row(s) from {}", limit, cursorId);
+        logger.trace("scanning from {}", cursorId);
         final ScanData scanData = session.get(MODULE_NAME, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
         final PooledConverter converter = getPooledConverter(output, scanColumns);
         try {
-            return scanSome(session, cursorId, converter.getLegacyOutput(), limit);
+            return scanSome(session, cursorId, converter.getLegacyOutput());
         }
         catch (BufferFullException e) {
             throw new RowOutputException(e);
@@ -349,30 +354,26 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
      *            the cursor id; used only to report errors
      * @param output
      *            the output; see
-     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
-     * @param limit
-     *            the limit, or negative value if none; ee
-     *            {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
+     *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
      * @return whether more rows remain to be scanned; see
-     *         {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
+     *         {@link #scanSome(Session, CursorId, LegacyRowOutput)}
      * @throws CursorIsFinishedException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
      * @throws RowOutputException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
      * @throws GenericInvalidOperationException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
      * @throws BufferFullException
      *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)}
-     * @see #scanSome(Session, CursorId, LegacyRowOutput , ScanLimit)
+     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+     * @see #scanSome(Session, CursorId, LegacyRowOutput)
      */
     protected boolean doScan(Cursor cursor,
                                     CursorId cursorId,
-                                    LegacyRowOutput output,
-                                    ScanLimit limit)
+                                    LegacyRowOutput output)
             throws CursorIsFinishedException,
                    RowOutputException,
                    GenericInvalidOperationException,
@@ -386,6 +387,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         }
 
         final RowCollector rc = cursor.getRowCollector();
+        final ScanLimit limit = cursor.getLimit();
         try {
             if (!rc.hasMore()) {
                 cursor.setFinished();
@@ -397,7 +399,6 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             } else {
                 collectRows(cursor, output, limit);
             }
-            assert !cursor.isFinished() == rc.hasMore() : (!cursor.isFinished());
             return !cursor.isFinished();
         } catch (BufferFullException e) {
             throw e; // Don't want this to be handled as an Exception
@@ -431,7 +432,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                 RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
                 limitReached = limit.limitReached(rowData);
                 output.wroteRow(limitReached);
-                if (!rc.hasMore()) {
+                if (limitReached || !rc.hasMore()) {
                     cursor.setFinished();
                 }
             }
@@ -452,10 +453,8 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         rc.outputToMessage(false);
         while (!cursor.isFinished()) {
             RowData rowData = rc.collectNextRow();
-            if (rowData == null) {
+            if (rowData == null || limit.limitReached(rowData)) {
                 cursor.setFinished();
-            } else if (limit.limitReached(rowData)) {
-                return;
             }
             else {
                 output.addRow(rowData);
@@ -660,7 +659,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
 
         InvalidOperationException thrown = null;
         try {
-            while (scanSome(session, cursorId, output, ScanLimit.NONE)) {
+            while (scanSome(session, cursorId, output)) {
             }
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);

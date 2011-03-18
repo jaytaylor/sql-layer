@@ -110,7 +110,6 @@ public interface DMLFunctions {
      * @param cursorId the cursor to scan
      * @param session the context in which the cursor was opened
      * @param output the RowOutput to collect the given rows
-     * @param limit if non-negative, the maximum number of rows to scan
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
      * @throws CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
@@ -120,7 +119,7 @@ public interface DMLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      * @throws BufferFullException if the output buffer couldn't fit the rows
      */
-    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanLimit limit)
+    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -165,7 +164,6 @@ public interface DMLFunctions {
      * @param cursorId the cursor to scan
      * @param session the context in which the cursor was opened
      * @param output the RowOutput to collect the given rows
-     * @param limit if non-negative, the maximum number of rows to scan
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
      * @throws CursorIsFinishedException if a previous invocation of this method on the specified cursor returned
@@ -175,7 +173,7 @@ public interface DMLFunctions {
      * @throws NoSuchTableException if the table ID specified by cursorId isn't recognized
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    boolean scanSome(Session session, CursorId cursorId, RowOutput output, ScanLimit limit)
+    boolean scanSome(Session session, CursorId cursorId, RowOutput output)
             throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -202,7 +200,7 @@ public interface DMLFunctions {
 
     /**
      * <p>Returns all open cursors. It is not necessarily safe to call
-     * {@linkplain #scanSome(Session, CursorId, LegacyRowOutput, ScanLimit)}
+     * {@linkplain #scanSome(Session, CursorId, LegacyRowOutput)}
      * on all of these cursors, since some may have reached their end. But it is safe to close each of these cursors
      * (unless, of course, another thread closes them first).</p>
      *

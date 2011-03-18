@@ -228,14 +228,6 @@ public class Scanrows implements HapiProcessor {
             validateRequest(session, request);
             RowDataStruct range = getScanRange(session, request);
 
-            LegacyScanRequest scanRequest = new LegacyScanRequest(
-                    range.selectTable().getTableId(),
-                    range.start(),
-                    range.end(),
-                    range.columnBitmap(),
-                    range.indexId(),
-                    range.scanFlagsInt());
-            List<RowData> rows = null;
             final ScanLimit limit;
             if (request.getLimit() < 0) {
                 limit = ScanLimit.NONE;
@@ -246,8 +238,18 @@ public class Scanrows implements HapiProcessor {
                         request.getLimit()
                 );
             }
+
+            LegacyScanRequest scanRequest = new LegacyScanRequest(
+                    range.selectTable().getTableId(),
+                    range.start(),
+                    range.end(),
+                    range.columnBitmap(),
+                    range.indexId(),
+                    range.scanFlagsInt(),
+                    limit);
+            List<RowData> rows = null;
             while(rows == null) {
-                rows = RowDataOutput.scanFull(session, dmlFunctions, scanRequest, limit);
+                rows = RowDataOutput.scanFull(session, dmlFunctions, scanRequest);
             }
 
             outputter.output(
