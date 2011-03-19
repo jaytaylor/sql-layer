@@ -38,6 +38,7 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 
 import com.akiban.server.api.HapiProcessor;
+import com.akiban.util.Tap;
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.LocalCacheElement;
 import com.thimbleware.jmemcached.MemCacheDaemon;
@@ -61,6 +62,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     private static final String VERSION_STRING = getVersionString();
     private static final Class<?> MODULE = AkibanCommandHandler.class;
     private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
+	private final static Tap HAPI_GETS_TAP         = Tap.add("hapi: get_string");
 
     private static class UnsupportedMemcachedException extends UnsupportedOperationException {
         private final Command command;
@@ -251,7 +253,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
     protected void handleGets(ChannelHandlerContext context, CommandMessage<CacheElement> command, Channel channel)
     throws HapiRequestException
     {
-
+    	HAPI_GETS_TAP.in();
         if(LOG.isTraceEnabled()) {
             StringBuilder msg = new StringBuilder();
             msg.append(command.cmd);
@@ -270,6 +272,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler
         final CacheElement[] results = handleGetKeys(command.keys,
                 session.get(), hapiProcessor, formatGetter.getFormat());
         ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(command).withElements(results);
+        HAPI_GETS_TAP.out();
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
         callback.requestProcessed();
     }

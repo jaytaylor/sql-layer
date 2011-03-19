@@ -31,7 +31,6 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.service.stats.StatisticsService;
-import com.akiban.server.service.stats.StatisticsService.CountingStat;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -46,6 +45,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.store.Store;
+import com.akiban.util.Tap;
 import com.thimbleware.jmemcached.protocol.SessionStatus;
 import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryCommandDecoder;
 import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryResponseEncoder;
@@ -60,32 +60,31 @@ import javax.management.ObjectName;
 public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
     private static final Logger LOG = LoggerFactory.getLogger(MemcacheServiceImpl.class);
 
+    private final static Tap HAPI_CONNECTION_TAP = Tap.add(new Tap.Count("hapi: connection"));
+    private final static Tap HAPI_EXCEPTION_TAP  = Tap.add(new Tap.Count("hapi: exception"));
     private final MemcacheMXBean manageBean;
 
     private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {
-
-        private void increment(CountingStat which) {
-            serviceManager.getServiceByClass(StatisticsService.class).incrementCount(which);
-        }
-
+    	
         @Override
         public void requestProcessed() {
-            increment(CountingStat.HAPI_REQUESTS);
+        	;
         }
 
         @Override
         public void connectionOpened() {
-            increment(CountingStat.CONNECTIONS_OPENED);
+        	HAPI_CONNECTION_TAP.in();
         }
 
         @Override
         public void connectionClosed() {
-            increment(CountingStat.CONNECTIONS_CLOSED);
+        	HAPI_CONNECTION_TAP.out();
         }
 
         @Override
         public void requestFailed() {
-            increment(CountingStat.CONNECTIONS_ERRORED);
+        	HAPI_EXCEPTION_TAP.in();
+        	HAPI_CONNECTION_TAP.out();
         }
     };
 
