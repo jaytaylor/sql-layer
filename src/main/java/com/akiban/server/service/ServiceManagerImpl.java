@@ -109,6 +109,10 @@ public class ServiceManagerImpl implements ServiceManager
         return getService(JmxRegistryService.class);
     }
 
+    @Override
+    public StatisticsService getStatisticsService() {
+    	return getService (StatisticsService.class);
+    }
     /**
      * <p>Returns a service by its registered class. For instance, if you have a service whose implementation
      * specifies {@code public class FooServiceImpl implements Service<FooService>}, then passing
