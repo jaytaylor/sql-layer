@@ -1,5 +1,5 @@
 Name:           akiban
-Version:        0.0.2
+Version:        0.0.3
 Release:        rc1
 Summary:        Akiban Technologies stack.
 Group:          Applications/Databases
