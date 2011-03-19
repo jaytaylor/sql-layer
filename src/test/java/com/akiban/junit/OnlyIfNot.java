@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface OnlyIf
+public @interface OnlyIfNot
 {
     /**
      * The method that should be invoked to see if this annotated method should be run
