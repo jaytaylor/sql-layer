@@ -17,6 +17,7 @@ package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.junit.OnlyIf;
+import com.akiban.junit.OnlyIfNot;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
@@ -166,11 +167,7 @@ public final class HapiGetRequestTest {
         return expectedRequest != null;
     }
 
-    public boolean expectedToFail() {
-        return ! expectedToWork();
-    }
-
-    @Test @OnlyIf("expectedToFail")
+    @Test @OnlyIfNot("expectedToWork")
     public void fails() {
         Exception exception = null;
         try {
