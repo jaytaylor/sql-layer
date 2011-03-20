@@ -188,7 +188,7 @@ public final class NamedParameterizedRunner extends Suite
             for(ListIterator<FrameworkMethod> iter = ret.listIterator(); iter.hasNext(); ) {
                 FrameworkMethod frameworkMethod = iter.next();
                 try {
-                    if (onlyIfSaysNo(frameworkMethod)) {
+                    if (!onlyIfFilter(frameworkMethod)) {
                         iter.remove();
                     }
                 } catch (OnlyIfException e) {
@@ -245,34 +245,39 @@ public final class NamedParameterizedRunner extends Suite
             }
         }
 
-        boolean onlyIfSaysNo(FrameworkMethod method) throws OnlyIfException {
+        boolean onlyIfFilter(FrameworkMethod method) throws OnlyIfException {
             OnlyIf onlyIf = method.getAnnotation(OnlyIf.class);
-            if (onlyIf == null) {
-                return false;
+            if (onlyIf != null) {
+                if (!runOnlyIf(onlyIf.value(), true)) {
+                    return false;
+                }
             }
+            OnlyIfNot onlyIfNot = method.getAnnotation(OnlyIfNot.class);
+            return onlyIfNot == null || runOnlyIf(onlyIfNot.value(), false);
+        }
 
+        private boolean runOnlyIf(String methodName, boolean mustEqual) throws OnlyIfException {
             Class<?> testClass = getTestClass().getJavaClass();
-            final Method onlyIfMethod;
             final Object result;
-
+            final Method onlyIfMethod;
             try {
-                onlyIfMethod = testClass.getMethod(onlyIf.value());
+                onlyIfMethod = testClass.getMethod(methodName);
             } catch (NoSuchMethodException e) {
-                throw new OnlyIfException("no such method: public boolean " + onlyIf.value() + "()", e);
+                throw new OnlyIfException("no such method: public boolean " + methodName + "()", e);
             }
             if (!onlyIfMethod.getReturnType().equals(boolean.class)) {
-                throw new OnlyIfException("no such method: public boolean " + onlyIf.value() + "()");
+                throw new OnlyIfException("no such method: public boolean " + methodName + "()");
             }
             try {
                 Object test = createTest();
                 result = onlyIfMethod.invoke(test);
             } catch (Exception e) {
-                throw new OnlyIfException("couldn't invoke " + onlyIf.value() + "()", e);
+                throw new OnlyIfException("couldn't invoke " + methodName + "()", e);
             }
             try {
-                return ! ((Boolean)result);
+                return ((Boolean)result == mustEqual);
             } catch (ClassCastException e) {
-                throw new OnlyIfException("method " + onlyIf.value() + "() didn't return boolean", e);
+                throw new OnlyIfException("method " + methodName + "() didn't return boolean", e);
             }
         }
 
