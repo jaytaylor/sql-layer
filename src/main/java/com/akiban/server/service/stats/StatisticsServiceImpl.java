@@ -16,11 +16,15 @@
 package com.akiban.server.service.stats;
 
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 import com.akiban.util.TapReport;
 
 public final class StatisticsServiceImpl implements StatisticsService, Service<StatisticsService>, JmxManageable {
+
+    private static final String STATISTICS_PROPERTY = "akserver.statistics";
 
     public StatisticsServiceImpl() {
     }
@@ -81,7 +85,6 @@ public final class StatisticsServiceImpl implements StatisticsService, Service<S
 		}
     };
 
-
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("Statistics", bean, StatisticsServiceMXBean.class);
@@ -99,6 +102,12 @@ public final class StatisticsServiceImpl implements StatisticsService, Service<S
 
     @Override
     public void start() throws Exception {
+    	ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
+    	String stats_enable = config.getProperty(STATISTICS_PROPERTY);
+    	
+    	if (stats_enable.length() > 0) {
+    		Tap.setEnabled(stats_enable, true);
+    	}
     }
 
     @Override
