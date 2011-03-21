@@ -17,12 +17,28 @@ package com.akiban.server.service.memcache;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.channels.Channels;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
+
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.group.ChannelGroupFuture;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 
 import javax.management.ObjectName;
+import com.thimbleware.jmemcached.protocol.SessionStatus;
+import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryCommandDecoder;
+import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryResponseEncoder;
+import com.thimbleware.jmemcached.protocol.text.MemcachedCommandDecoder;
+import com.thimbleware.jmemcached.protocol.text.MemcachedFrameDecoder;
+import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.Index;
 import com.akiban.server.api.HapiGetRequest;
@@ -37,6 +53,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.store.Store;
 import com.akiban.util.Tap;
 

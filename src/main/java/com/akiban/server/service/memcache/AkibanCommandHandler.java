@@ -17,11 +17,19 @@ package com.akiban.server.service.memcache;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
 import java.util.List;
-import java.util.logging.Logger;
 
-import src.main.java.com.akiban.util.Command;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.api.HapiGetRequest;
@@ -32,6 +40,17 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.util.Tap;
 
+import com.thimbleware.jmemcached.CacheElement;
+import com.thimbleware.jmemcached.LocalCacheElement;
+import com.thimbleware.jmemcached.MemCacheDaemon;
+import com.thimbleware.jmemcached.protocol.Command;
+import com.thimbleware.jmemcached.protocol.CommandMessage;
+import com.thimbleware.jmemcached.protocol.ResponseMessage;
+import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory.USASCII;
 /**
  * Processes CommandMessage and generate ResponseMessage, shared among all
  * channels.
