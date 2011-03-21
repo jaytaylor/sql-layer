@@ -103,7 +103,7 @@ public final class StatisticsServiceImpl implements StatisticsService, Service<S
     @Override
     public void start() throws Exception {
     	ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
-    	String stats_enable = config.getProperty(STATISTICS_PROPERTY);
+    	String stats_enable = config.getProperty(STATISTICS_PROPERTY, "");
     	
     	if (stats_enable.length() > 0) {
     		Tap.setEnabled(stats_enable, true);
