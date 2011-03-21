@@ -17,74 +17,61 @@ package com.akiban.server.service.memcache;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.channels.Channels;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
+
+import javax.management.ObjectName;
 
 import com.akiban.ais.model.Index;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
-import com.akiban.server.service.stats.StatisticsService;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.group.ChannelGroupFuture;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-
-import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.store.Store;
 import com.akiban.util.Tap;
-import com.thimbleware.jmemcached.protocol.SessionStatus;
-import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryCommandDecoder;
-import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryResponseEncoder;
-import com.thimbleware.jmemcached.protocol.text.MemcachedCommandDecoder;
-import com.thimbleware.jmemcached.protocol.text.MemcachedFrameDecoder;
-import com.thimbleware.jmemcached.protocol.text.MemcachedResponseEncoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.management.ObjectName;
+public class MemcacheServiceImpl implements MemcacheService,
+        Service<MemcacheService>, JmxManageable {
+    private static final Logger LOG = LoggerFactory
+            .getLogger(MemcacheServiceImpl.class);
 
-public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheService>, JmxManageable {
-    private static final Logger LOG = LoggerFactory.getLogger(MemcacheServiceImpl.class);
-
-    private final static Tap HAPI_CONNECTION_TAP = Tap.add(new Tap.Count("hapi: connection"));
-    private final static Tap HAPI_EXCEPTION_TAP  = Tap.add(new Tap.Count("hapi: exception"));
+    private final static Tap HAPI_CONNECTION_TAP = Tap.add(new Tap.Count(
+            "hapi: connection"));
+    private final static Tap HAPI_EXCEPTION_TAP = Tap.add(new Tap.Count(
+            "hapi: exception"));
     private final MemcacheMXBean manageBean;
 
     private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {
-    	
+
         @Override
         public void requestProcessed() {
-        	;
+            ;
         }
 
         @Override
         public void connectionOpened() {
-        	HAPI_CONNECTION_TAP.in();
+            HAPI_CONNECTION_TAP.in();
         }
 
         @Override
         public void connectionClosed() {
-        	HAPI_CONNECTION_TAP.out();
+            HAPI_CONNECTION_TAP.out();
         }
 
         @Override
         public void requestFailed() {
-        	HAPI_EXCEPTION_TAP.in();
-        	HAPI_CONNECTION_TAP.out();
+            HAPI_EXCEPTION_TAP.in();
+            HAPI_CONNECTION_TAP.out();
         }
     };
 
@@ -108,26 +95,35 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     public MemcacheServiceImpl() {
         this.serviceManager = ServiceManagerImpl.get();
 
-        ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
+        ConfigurationService config = ServiceManagerImpl.get()
+                .getConfigurationService();
 
         OutputFormat defaultOutput;
         {
-            String defaultOutputName = config.getProperty("akserver.memcached.output.format", OutputFormat.JSON.name());
+            String defaultOutputName = config.getProperty(
+                    "akserver.memcached.output.format", OutputFormat.JSON
+                            .name());
             try {
-                defaultOutput = OutputFormat.valueOf(defaultOutputName.toUpperCase());
+                defaultOutput = OutputFormat.valueOf(defaultOutputName
+                        .toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOG.warn("Default memcache outputter not found, using JSON: " + defaultOutputName);
+                LOG.warn("Default memcache outputter not found, using JSON: "
+                        + defaultOutputName);
                 defaultOutput = OutputFormat.JSON;
             }
         }
 
         HapiProcessorFactory defaultHapi;
         {
-            String defaultHapiName = config.getProperty("akserver.memcached.processor", HapiProcessorFactory.SCANROWS.name());
+            String defaultHapiName = config.getProperty(
+                    "akserver.memcached.processor",
+                    HapiProcessorFactory.SCANROWS.name());
             try {
-                defaultHapi = HapiProcessorFactory.valueOf(defaultHapiName.toUpperCase());
+                defaultHapi = HapiProcessorFactory.valueOf(defaultHapiName
+                        .toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOG.warn("Default memcache outputter not found, using JSON: " + defaultHapiName);
+                LOG.warn("Default memcache outputter not found, using JSON: "
+                        + defaultHapiName);
                 defaultHapi = HapiProcessorFactory.FETCHROWS;
             }
         }
@@ -136,17 +132,20 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     }
 
     @Override
-    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream)
-            throws HapiRequestException
-    {
-        final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
+    public void processRequest(Session session, HapiGetRequest request,
+            HapiOutputter outputter, OutputStream outputStream)
+            throws HapiRequestException {
+        final HapiProcessor processor = manageBean.getHapiProcessor()
+                .getHapiProcessor();
 
         processor.processRequest(session, request, outputter, outputStream);
     }
 
     @Override
-    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
-        final HapiProcessor processor = manageBean.getHapiProcessor().getHapiProcessor();
+    public Index findHapiRequestIndex(Session session, HapiGetRequest request)
+            throws HapiRequestException {
+        final HapiProcessor processor = manageBean.getHapiProcessor()
+                .getHapiProcessor();
 
         return processor.findHapiRequestIndex(session, request);
     }
@@ -187,9 +186,8 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
     //
     private void startDaemon(final InetSocketAddress addr, final int idle_time,
             final boolean binary, final boolean verbose) {
-        channelFactory = new NioServerSocketChannelFactory(
-                Executors.newCachedThreadPool(),
-                Executors.newCachedThreadPool());
+        channelFactory = new NioServerSocketChannelFactory(Executors
+                .newCachedThreadPool(), Executors.newCachedThreadPool());
 
         allChannels = new DefaultChannelGroup("memcacheServiceChannelGroup");
         ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
@@ -200,8 +198,8 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             pipelineFactory = new BinaryPipelineFactory(this, verbose,
                     idle_time, allChannels, formatGetter, callback);
         } else {
-            pipelineFactory = new TextPipelineFactory(this, verbose,
-                    idle_time, text_frame_size, allChannels, formatGetter, callback);
+            pipelineFactory = new TextPipelineFactory(this, verbose, idle_time,
+                    text_frame_size, allChannels, formatGetter, callback);
         }
 
         bootstrap.setPipelineFactory(pipelineFactory);
@@ -235,17 +233,21 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         return MemcacheService.class;
     }
 
-    private final static class TextPipelineFactory implements ChannelPipelineFactory {
+    private final static class TextPipelineFactory implements
+            ChannelPipelineFactory {
         private int frameSize;
         private final AkibanCommandHandler commandHandler;
         private final MemcachedResponseEncoder responseEncoder;
 
-        public TextPipelineFactory(HapiProcessor hapiProcessor, boolean verbose, int idleTime,
-                int frameSize, DefaultChannelGroup channelGroup,
-                AkibanCommandHandler.FormatGetter formatGetter, AkibanCommandHandler.CommandCallback callback) {
+        public TextPipelineFactory(HapiProcessor hapiProcessor,
+                boolean verbose, int idleTime, int frameSize,
+                DefaultChannelGroup channelGroup,
+                AkibanCommandHandler.FormatGetter formatGetter,
+                AkibanCommandHandler.CommandCallback callback) {
             this.frameSize = frameSize;
             responseEncoder = new MemcachedResponseEncoder();
-            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter, callback);
+            commandHandler = new AkibanCommandHandler(hapiProcessor,
+                    channelGroup, formatGetter, callback);
         }
 
         public final ChannelPipeline getPipeline() throws Exception {
@@ -259,17 +261,21 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
     }
 
-    private final static class BinaryPipelineFactory implements ChannelPipelineFactory {
+    private final static class BinaryPipelineFactory implements
+            ChannelPipelineFactory {
         private final AkibanCommandHandler commandHandler;
         private final MemcachedBinaryCommandDecoder commandDecoder;
         private final MemcachedBinaryResponseEncoder responseEncoder;
 
-        public BinaryPipelineFactory(HapiProcessor hapiProcessor, boolean verbose,
-                int idleTime, DefaultChannelGroup channelGroup,
-                AkibanCommandHandler.FormatGetter formatGetter, AkibanCommandHandler.CommandCallback callback) {
+        public BinaryPipelineFactory(HapiProcessor hapiProcessor,
+                boolean verbose, int idleTime,
+                DefaultChannelGroup channelGroup,
+                AkibanCommandHandler.FormatGetter formatGetter,
+                AkibanCommandHandler.CommandCallback callback) {
             commandDecoder = new MemcachedBinaryCommandDecoder();
             responseEncoder = new MemcachedBinaryResponseEncoder();
-            commandHandler = new AkibanCommandHandler(hapiProcessor, channelGroup, formatGetter, callback);
+            commandHandler = new AkibanCommandHandler(hapiProcessor,
+                    channelGroup, formatGetter, callback);
         }
 
         public ChannelPipeline getPipeline() throws Exception {
@@ -303,7 +309,8 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
 
         ManageBean(HapiProcessorFactory whichHapi, OutputFormat outputFormat) {
-            processAs = new AtomicReference<WhichStruct<HapiProcessorFactory>>(null);
+            processAs = new AtomicReference<WhichStruct<HapiProcessorFactory>>(
+                    null);
             outputAs = new AtomicReference<WhichStruct<OutputFormat>>(null);
             setHapiProcessor(whichHapi);
             setOutputFormat(outputFormat);
@@ -315,22 +322,27 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         }
 
         @Override
-        public void setOutputFormat(OutputFormat whichFormat) throws IllegalArgumentException {
+        public void setOutputFormat(OutputFormat whichFormat)
+                throws IllegalArgumentException {
             WhichStruct<OutputFormat> old = outputAs.get();
             if (old != null && old.whichItem.equals(whichFormat)) {
                 return;
             }
             ObjectName objectName = null;
             if (whichFormat.getOutputter() instanceof JmxManageable) {
-                JmxManageable asJmx = (JmxManageable)whichFormat.getOutputter();
-                objectName = ServiceManagerImpl.get().getJmxRegistryService().register(asJmx);
+                JmxManageable asJmx = (JmxManageable) whichFormat
+                        .getOutputter();
+                objectName = ServiceManagerImpl.get().getJmxRegistryService()
+                        .register(asJmx);
             }
-            WhichStruct<OutputFormat> newStruct = new WhichStruct<OutputFormat>(whichFormat, objectName);
+            WhichStruct<OutputFormat> newStruct = new WhichStruct<OutputFormat>(
+                    whichFormat, objectName);
 
             old = outputAs.getAndSet(newStruct);
 
             if (old != null && old.jmxName != null) {
-                ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);
+                ServiceManagerImpl.get().getJmxRegistryService().unregister(
+                        old.jmxName);
             }
         }
 
@@ -352,15 +364,19 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
             }
             ObjectName objectName = null;
             if (whichProcessor.getHapiProcessor() instanceof JmxManageable) {
-                JmxManageable asJmx = (JmxManageable)whichProcessor.getHapiProcessor();
-                objectName = ServiceManagerImpl.get().getJmxRegistryService().register(asJmx);
+                JmxManageable asJmx = (JmxManageable) whichProcessor
+                        .getHapiProcessor();
+                objectName = ServiceManagerImpl.get().getJmxRegistryService()
+                        .register(asJmx);
             }
-            WhichStruct<HapiProcessorFactory> newStruct = new WhichStruct<HapiProcessorFactory>(whichProcessor, objectName);
+            WhichStruct<HapiProcessorFactory> newStruct = new WhichStruct<HapiProcessorFactory>(
+                    whichProcessor, objectName);
 
             old = processAs.getAndSet(newStruct);
 
             if (old != null && old.jmxName != null) {
-                ServiceManagerImpl.get().getJmxRegistryService().unregister(old.jmxName);
+                ServiceManagerImpl.get().getJmxRegistryService().unregister(
+                        old.jmxName);
             }
         }
 
@@ -373,9 +389,8 @@ public class MemcacheServiceImpl implements MemcacheService, Service<MemcacheSer
         public String chooseIndex(String request) {
             try {
                 HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
-                Index index = processAs.get().whichItem.getHapiProcessor().findHapiRequestIndex(
-                        new SessionImpl(), getRequest
-                );
+                Index index = processAs.get().whichItem.getHapiProcessor()
+                        .findHapiRequestIndex(new SessionImpl(), getRequest);
                 return index == null ? "null" : index.toString();
             } catch (HapiRequestException e) {
                 throw new RuntimeException(e.getMessage());

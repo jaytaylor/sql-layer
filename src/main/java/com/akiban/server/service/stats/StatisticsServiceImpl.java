@@ -22,7 +22,8 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 import com.akiban.util.TapReport;
 
-public final class StatisticsServiceImpl implements StatisticsService, Service<StatisticsService>, JmxManageable {
+public final class StatisticsServiceImpl implements StatisticsService,
+        Service<StatisticsService>, JmxManageable {
 
     private static final String STATISTICS_PROPERTY = "akserver.statistics";
 
@@ -30,64 +31,62 @@ public final class StatisticsServiceImpl implements StatisticsService, Service<S
     }
 
     @Override
-    public void setEnabled(final String regExPattern, final boolean on)
-    {
-    	Tap.setEnabled(regExPattern, on);
+    public void setEnabled(final String regExPattern, final boolean on) {
+        Tap.setEnabled(regExPattern, on);
     }
-    
+
     @Override
-    public void reset(final String regExPattern)
-    {
-    	Tap.reset(regExPattern);
+    public void reset(final String regExPattern) {
+        Tap.reset(regExPattern);
     }
-    
+
     @Override
-    public TapReport[] getReport(final String regExPattern)
-    {
-    	return Tap.getReport(regExPattern);
+    public TapReport[] getReport(final String regExPattern) {
+        return Tap.getReport(regExPattern);
     }
 
     private final StatisticsServiceMXBean bean = new StatisticsServiceMXBean() {
 
-		@Override
-		public void disableAll() {
-			Tap.setEnabled(".*", false);
-		}
+        @Override
+        public void disableAll() {
+            Tap.setEnabled(".*", false);
+        }
 
-		@Override
-		public void enableAll() {
-			Tap.setEnabled(".*", true);
-		}
+        @Override
+        public void enableAll() {
+            Tap.setEnabled(".*", true);
+        }
 
-		@Override
-		public String getReport() {
-			return Tap.report();
-		}
+        @Override
+        public String getReport() {
+            return Tap.report();
+        }
 
-		@Override
-		public TapReport[] getReports(String regExPattern) {
-			return Tap.getReport(regExPattern);
-		}
+        @Override
+        public TapReport[] getReports(String regExPattern) {
+            return Tap.getReport(regExPattern);
+        }
 
-		@Override
-		public void reset(String regExPattern) {
-			Tap.reset(regExPattern);
-		}
+        @Override
+        public void reset(String regExPattern) {
+            Tap.reset(regExPattern);
+        }
 
-		@Override
-		public void resetAll() {
-			Tap.reset(".*");
-		}
+        @Override
+        public void resetAll() {
+            Tap.reset(".*");
+        }
 
-		@Override
-		public void setEnabled(String regExPattern, boolean on) {
-			Tap.setEnabled(regExPattern, on);
-		}
+        @Override
+        public void setEnabled(String regExPattern, boolean on) {
+            Tap.setEnabled(regExPattern, on);
+        }
     };
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Statistics", bean, StatisticsServiceMXBean.class);
+        return new JmxObjectInfo("Statistics", bean,
+                StatisticsServiceMXBean.class);
     }
 
     @Override
@@ -102,12 +101,13 @@ public final class StatisticsServiceImpl implements StatisticsService, Service<S
 
     @Override
     public void start() throws Exception {
-    	ConfigurationService config = ServiceManagerImpl.get().getConfigurationService();
-    	String stats_enable = config.getProperty(STATISTICS_PROPERTY, "");
-    	
-    	if (stats_enable.length() > 0) {
-    		Tap.setEnabled(stats_enable, true);
-    	}
+        ConfigurationService config = ServiceManagerImpl.get()
+                .getConfigurationService();
+        String stats_enable = config.getProperty(STATISTICS_PROPERTY, "");
+
+        if (stats_enable.length() > 0) {
+            Tap.setEnabled(stats_enable, true);
+        }
     }
 
     @Override
