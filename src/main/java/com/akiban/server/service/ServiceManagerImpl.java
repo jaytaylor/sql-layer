@@ -40,6 +40,7 @@ import com.akiban.server.store.Store;
 public class ServiceManagerImpl implements ServiceManager
 {
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
+    static final String CUSTOM_LOAD_SERVICE = "akserver.services.customload";
     // TODO: Supply the factory externally.
     private final ServiceFactory factory;
     private Map<Class<?>, Service<?>> services; // for each key-val, the ? should be the same; (T.class -> Service<T>)
@@ -151,7 +152,18 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(new DStarLServiceImpl(), jmxRegistry);
         startAndPut(new Log4JConfigurationServiceImpl(), jmxRegistry);
         startAndPut(new StatisticsServiceImpl(), jmxRegistry);
+        loadCustomServices(jmxRegistry);
         afterStart();
+    }
+
+    private void loadCustomServices(JmxRegistryService jmxRegistry) throws Exception {
+        String serviceName = getConfigurationService().getProperty(CUSTOM_LOAD_SERVICE, "");
+        if (serviceName.length() > 0) {
+            Class<?> serviceClass = Class.forName(serviceName);
+            Object serviceAsObject = serviceClass.newInstance();
+            Service<?> serviceAsService = (Service<?>)serviceAsObject;
+            startAndPut(serviceAsService, jmxRegistry);
+        }
     }
 
     private void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
