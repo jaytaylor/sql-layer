@@ -161,11 +161,11 @@ public class PersistitStore implements Store {
      // Given a RowData for a table, construct an hkey for a row in the table.
      // For a table that does not contain its own hkey, this method uses the parent join
      // columns as needed to find the hkey of the parent table.
-    void constructHKey(Session session,
-                       Exchange hEx,
-                       RowDef rowDef,
-                       RowData rowData,
-                       boolean insertingRow)
+    public void constructHKey(Session session,
+                              Exchange hEx,
+                              RowDef rowDef,
+                              RowData rowData,
+                              boolean insertingRow)
         throws PersistitException, InvalidOperationException
     {
         // Initialize the hkey being constructed
