@@ -535,7 +535,6 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         final RowData rowData = niceRowToRowData(row);
         try {
             store().writeRow(session, rowData);
-            increment(StatisticsService.CountingStat.INSERTS);
             return null;
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
@@ -554,7 +553,6 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         final RowData rowData = niceRowToRowData(row);
         try {
             store().deleteRow(session, rowData);
-            increment(StatisticsService.CountingStat.DELETES);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -586,7 +584,6 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         LegacyUtils.matchRowDatas(oldData, newData);
         try {
             store().updateRow(session, oldData, newData, columnSelector);
-            increment(StatisticsService.CountingStat.UPDATES);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(NoSuchRowException.class, ioe);
@@ -676,9 +673,4 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             throw new RuntimeException("Internal error", thrown);
         }
     }
-
-    private void increment(StatisticsService.CountingStat which) {
-        serviceManager().getServiceByClass(StatisticsService.class).incrementCount(which);
-    }
-
 }

@@ -15,19 +15,12 @@
 
 package com.akiban.server.service.stats;
 
+import com.akiban.util.TapReport;
+
 public interface StatisticsService {
 
-    public enum CountingStat {
-        CONNECTIONS_OPENED,
-        CONNECTIONS_CLOSED,
-        CONNECTIONS_ERRORED,
-
-        HAPI_REQUESTS,
-
-        INSERTS,
-        UPDATES,
-        DELETES
-    }
-
-    void incrementCount(CountingStat stat);
+    public void setEnabled(final String regExPattern, final boolean on); 
+    public void reset(final String regExPattern);
+    public TapReport[] getReport(final String regExPattern);    
+    
 }
