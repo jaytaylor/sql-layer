@@ -328,7 +328,6 @@
                     <exclude>debian/*</exclude>
                     <exclude>redhat/*</exclude>
                     <exclude>src/main/resources/version/akserver_version</exclude> 
-                    <exclude>src/test/resources/com/akiban/ais/ddl/*</exclude>
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
                 </excludes>
                 <mapping>
