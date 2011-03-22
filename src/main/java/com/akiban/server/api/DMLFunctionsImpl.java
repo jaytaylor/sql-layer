@@ -344,123 +344,123 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
     }
 
     protected static class Scanner {
-    /**
-     * Do the actual scan. Refactored out of scanSome for ease of unit testing.
-     *
-     * @param cursor
-     *            the cursor itself; used to check status and get a row
-     *            collector
-     * @param cursorId
-     *            the cursor id; used only to report errors
-     * @param output
-     *            the output; see
-     *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-     * @return whether more rows remain to be scanned; see
-     *         {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-     * @throws CursorIsFinishedException
-     *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-     * @throws RowOutputException
-     *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-     * @throws GenericInvalidOperationException
-     *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-     * @throws BufferFullException
-     *             see
-     *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
-     * @see #scanSome(Session, CursorId, LegacyRowOutput)
-     */
-    protected boolean doScan(Cursor cursor,
-                                    CursorId cursorId,
-                                    LegacyRowOutput output)
-            throws CursorIsFinishedException,
-                   RowOutputException,
-                   GenericInvalidOperationException,
-                   BufferFullException {
-        assert cursor != null;
-        assert cursorId != null;
-        assert output != null;
+        /**
+         * Do the actual scan. Refactored out of scanSome for ease of unit testing.
+         *
+         * @param cursor
+         *            the cursor itself; used to check status and get a row
+         *            collector
+         * @param cursorId
+         *            the cursor id; used only to report errors
+         * @param output
+         *            the output; see
+         *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @return whether more rows remain to be scanned; see
+         *         {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @throws CursorIsFinishedException
+         *             see
+         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @throws RowOutputException
+         *             see
+         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @throws GenericInvalidOperationException
+         *             see
+         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @throws BufferFullException
+         *             see
+         *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @see #scanSome(Session, CursorId, LegacyRowOutput)
+         */
+        protected boolean doScan(Cursor cursor,
+                                        CursorId cursorId,
+                                        LegacyRowOutput output)
+                throws CursorIsFinishedException,
+                       RowOutputException,
+                       GenericInvalidOperationException,
+                       BufferFullException {
+            assert cursor != null;
+            assert cursorId != null;
+            assert output != null;
 
-        if (cursor.isFinished()) {
-            throw new CursorIsFinishedException(cursorId);
-        }
-
-        final RowCollector rc = cursor.getRowCollector();
-        final ScanLimit limit = cursor.getLimit();
-        try {
-            if (!rc.hasMore()) {
-                cursor.setFinished();
-                return false;
+            if (cursor.isFinished()) {
+                throw new CursorIsFinishedException(cursorId);
             }
-            cursor.setScanning();
-            if (output.getOutputToMessage()) {
-                collectRowsIntoBuffer(cursor, output, limit);
-            } else {
-                collectRows(cursor, output, limit);
-            }
-            return !cursor.isFinished();
-        } catch (BufferFullException e) {
-            throw e; // Don't want this to be handled as an Exception
-        } catch (Exception e) {
-            cursor.setFinished();
-            throw new GenericInvalidOperationException(e);
-        }
-    }
 
-    // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-    private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
-        throws Exception
-    {
-        RowCollector rc = cursor.getRowCollector();
-        rc.outputToMessage(true);
-        ByteBuffer buffer = output.getOutputBuffer();
-        if (!buffer.hasArray()) {
-            throw new IllegalArgumentException("buffer must have array");
-        }
-        boolean limitReached = false;
-        while (!limitReached && !cursor.isFinished()) {
-            int bufferLastPos = buffer.position();
-            if (!rc.collectNextRow(buffer)) {
-                if (rc.hasMore()) {
-                    throw new BufferFullException();
+            final RowCollector rc = cursor.getRowCollector();
+            final ScanLimit limit = cursor.getLimit();
+            try {
+                if (!rc.hasMore()) {
+                    cursor.setFinished();
+                    return false;
                 }
+                cursor.setScanning();
+                if (output.getOutputToMessage()) {
+                    collectRowsIntoBuffer(cursor, output, limit);
+                } else {
+                    collectRows(cursor, output, limit);
+                }
+                return !cursor.isFinished();
+            } catch (BufferFullException e) {
+                throw e; // Don't want this to be handled as an Exception
+            } catch (Exception e) {
                 cursor.setFinished();
-            } else {
-                int bufferPos = buffer.position();
-                assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
-                RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
-                limitReached = limit.limitReached(rowData);
-                output.wroteRow(limitReached);
-                if (limitReached || !rc.hasMore()) {
+                throw new GenericInvalidOperationException(e);
+            }
+        }
+
+        // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
+        private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
+            throws Exception
+        {
+            RowCollector rc = cursor.getRowCollector();
+            rc.outputToMessage(true);
+            ByteBuffer buffer = output.getOutputBuffer();
+            if (!buffer.hasArray()) {
+                throw new IllegalArgumentException("buffer must have array");
+            }
+            boolean limitReached = false;
+            while (!limitReached && !cursor.isFinished()) {
+                int bufferLastPos = buffer.position();
+                if (!rc.collectNextRow(buffer)) {
+                    if (rc.hasMore()) {
+                        throw new BufferFullException();
+                    }
+                    cursor.setFinished();
+                } else {
+                    int bufferPos = buffer.position();
+                    assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
+                    RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
+                    limitReached = limit.limitReached(rowData);
+                    output.wroteRow(limitReached);
+                    if (limitReached || !rc.hasMore()) {
+                        cursor.setFinished();
+                    }
+                }
+            }
+        }
+
+        protected RowData getRowData(byte[] bytes, int offset, int length) {
+            RowData rowData = new RowData(bytes, offset, length);
+            rowData.prepareRow(offset);
+            return rowData;
+        }
+
+        // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
+        private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
+            throws Exception
+        {
+            RowCollector rc = cursor.getRowCollector();
+            rc.outputToMessage(false);
+            while (!cursor.isFinished()) {
+                RowData rowData = rc.collectNextRow();
+                if (rowData == null || limit.limitReached(rowData)) {
                     cursor.setFinished();
                 }
+                else {
+                    output.addRow(rowData);
+                }
             }
         }
-    }
-
-    protected RowData getRowData(byte[] bytes, int offset, int length) {
-        RowData rowData = new RowData(bytes, offset, length);
-        rowData.prepareRow(offset);
-        return rowData;
-    }
-
-    // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-    private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
-        throws Exception
-    {
-        RowCollector rc = cursor.getRowCollector();
-        rc.outputToMessage(false);
-        while (!cursor.isFinished()) {
-            RowData rowData = rc.collectNextRow();
-            if (rowData == null || limit.limitReached(rowData)) {
-                cursor.setFinished();
-            }
-            else {
-                output.addRow(rowData);
-            }
-        }
-    }
     }
 
     @Override
