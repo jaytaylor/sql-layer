@@ -172,7 +172,7 @@ public class RowDefCache {
      * @param schemaManager
      * @throws PersistitException
      */
-    public synchronized void fixUpOrdinals(SchemaManager schemaManager)
+    public synchronized void fixUpOrdinals(final long timestamp, SchemaManager schemaManager)
             throws PersistitException {
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
@@ -197,11 +197,11 @@ public class RowDefCache {
                                 tableStatus.getOrdinal()));
                     }
                     if (ordinal != 0) {
-                        userRowDef.setOrdinal(ordinal);
+                        userRowDef.setOrdinal(timestamp, ordinal);
                     } else if (userRowDef.getOrdinal() != 0
                             && tableStatus.getOrdinal() == 0) {
                         ordinal = userRowDef.getOrdinal();
-                        tableStatus.setOrdinal(ordinal);
+                        tableStatus.setOrdinal(timestamp, ordinal);
                     }
                     if (ordinal != 0 && !assigned.add(ordinal)) {
                         throw new IllegalStateException(String.format(
@@ -219,7 +219,7 @@ public class RowDefCache {
                         // (if we knew that was...)
                         for (; assigned.contains(nextOrdinal); nextOrdinal++) {
                         }
-                        userRowDef.setOrdinal(nextOrdinal);
+                        userRowDef.setOrdinal(timestamp, nextOrdinal);
                         assigned.add(nextOrdinal);
                     }
                 }
@@ -316,7 +316,6 @@ public class RowDefCache {
         rowDef.setTreeName(groupTableTreeName);
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexDefs(indexDefList.toArray(new IndexDef[indexDefList.size()]));
-        rowDef.setOrdinal(0);
         return rowDef;
 
     }

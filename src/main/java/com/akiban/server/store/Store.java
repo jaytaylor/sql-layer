@@ -243,22 +243,6 @@ public interface Store extends Service<Store> {
      */
     void analyzeTable(final Session session, int tableId) throws Exception;
 
-    /**
-     * Register a CommittedUpdateListener to handle update events.
-     * 
-     * @param listener
-     *            The listener to add
-     */
-    void addCommittedUpdateListener(final CommittedUpdateListener listener);
-
-    /**
-     * Remove a CommitedUpdateListener.
-     * 
-     * @param listener
-     *            The listener to remove
-     */
-    void removeCommittedUpdateListener(final CommittedUpdateListener listener);
-
     boolean isDeferIndexes();
 
     void setDeferIndexes(final boolean b);

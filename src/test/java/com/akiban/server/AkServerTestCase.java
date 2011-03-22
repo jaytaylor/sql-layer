@@ -99,7 +99,7 @@ public abstract class AkServerTestCase {
         rowDefCache.clear();
         rowDefCache.setAIS(ais);
         AkServerTestSuite.markTableStatusClean(rowDefCache);
-        rowDefCache.fixUpOrdinals(schemaManager);
+        rowDefCache.fixUpOrdinals(0, schemaManager);
         return ais;
     }
     

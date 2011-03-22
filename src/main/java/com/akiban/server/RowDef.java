@@ -455,8 +455,8 @@ public class RowDef implements TreeLink {
         return tableStatus.getOrdinal();
     }
 
-    public void setOrdinal(final int ordinal) {
-        tableStatus.setOrdinal(ordinal);
+    public void setOrdinal(final long timestamp, final int ordinal) {
+        tableStatus.setOrdinal(timestamp, ordinal);
     }
     
     public boolean isUserTable() {
@@ -537,8 +537,8 @@ public class RowDef implements TreeLink {
         if (userTable.getAutoIncrementColumn() == null) {
             return -1;
         }
-        tableStatus.setAutoIncrement(true);
-        tableStatus.setAutoIncrementValue(userTable.getAutoIncrementColumn()
+        tableStatus.setAutoIncrementEnabled(0, true);
+        tableStatus.updateAutoIncrementValue(0, userTable.getAutoIncrementColumn()
                 .getInitialAutoIncrementValue().longValue());
         return userTable.getAutoIncrementColumn().getPosition();
     }

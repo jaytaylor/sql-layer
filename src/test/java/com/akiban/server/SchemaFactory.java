@@ -33,7 +33,7 @@ public class SchemaFactory
         AkibanInformationSchema ais = ais(ddl);
         RowDefCache rowDefCache = new FakeRowDefCache();
         rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinals(null);
+        rowDefCache.fixUpOrdinals(0, null);
         return rowDefCache;
     }
 
@@ -50,15 +50,15 @@ public class SchemaFactory
     private static class FakeRowDefCache extends RowDefCache
     {
         @Override
-        public void fixUpOrdinals(SchemaManager schemaManager) throws PersistitException
+        public void fixUpOrdinals(final long timestamp, SchemaManager schemaManager) throws PersistitException
         {
             assert schemaManager == null;
             for (RowDef groupRowDef : getRowDefs()) {
                 if (groupRowDef.isGroupTable()) {
-                    groupRowDef.setOrdinal(0);
+                    groupRowDef.setOrdinal(0, 0);
                     int userTableOrdinal = 1;
                     for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                        userRowDef.setOrdinal(userTableOrdinal++);
+                        userRowDef.setOrdinal(0, userTableOrdinal++);
                     }
                 }
             }

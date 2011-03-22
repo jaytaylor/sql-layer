@@ -112,8 +112,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static List<TableDefinition> aisSchema = readAisSchema();
 
-    private SchemaDef schemaDef;
-
     private AkibanInformationSchema ais;
 
     private ByteBuffer aisSafeCopy;
@@ -642,6 +640,32 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     public AkibanInformationSchema getAis(final Session session) {
         return ais;
     }
+    
+    
+    private AkibanInformationSchema constructAIS(final Session session) throws Exception {
+        AkibanInformationSchema ais;
+        final StringBuilder sb = new StringBuilder();
+        final Map<TableName, Integer> idMap = assembleSchema(session,
+                sb, true, false, false);
+        final String schemaText = sb.toString();
+        final SchemaDef schemaDef = SchemaDef.parseSchema(schemaText);
+        ais = new SchemaDefToAis(schemaDef, true).getAis();
+        // Reassign the table ID values.
+        for (final Map.Entry<TableName, Integer> entry : idMap
+                .entrySet()) {
+            Table table = ais.getTable(entry.getKey());
+            table.setTableId(entry.getValue());
+        }
+        for (final Map.Entry<TableName, GroupTable> entry : ais
+                .getGroupTables().entrySet()) {
+            final UserTable root = entry.getValue().getRoot();
+            final Integer rootId = idMap.get(root.getName());
+            assert rootId != null : "Group table with no root!";
+            entry.getValue().setTableId(
+                    TreeService.MAX_TABLES_PER_VOLUME - rootId);
+        }
+        return ais;
+    }
 
     private void refreshAIS(final Session session) throws Exception {
         try {
@@ -658,7 +682,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 final Map<TableName, Integer> idMap = assembleSchema(session,
                         sb, true, false, false);
                 final String schemaText = sb.toString();
-                schemaDef = SchemaDef.parseSchema(schemaText);
+                final SchemaDef schemaDef = SchemaDef.parseSchema(schemaText);
                 newAis = new SchemaDefToAis(schemaDef, true).getAis();
                 // Reassign the table ID values.
                 for (final Map.Entry<TableName, Integer> entry : idMap
@@ -717,7 +741,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         for (final TableDefinition tableStruct : aisSchema) {
             sb.append(tableStruct.getDDL()).append(AkServerUtil.NEW_LINE);
         }
-        schemaDef = SchemaDef.parseSchema(sb.toString());
+        final SchemaDef schemaDef = SchemaDef.parseSchema(sb.toString());
         ais = new SchemaDefToAis(schemaDef, true).getAis();
         forceNewTimestamp();
         aisTimestamp = saveTimestamp;

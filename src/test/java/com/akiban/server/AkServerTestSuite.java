@@ -68,7 +68,7 @@ public abstract class AkServerTestSuite {
         rowDefCache.clear();
         rowDefCache.setAIS(ais);
         markTableStatusClean(rowDefCache);
-        rowDefCache.fixUpOrdinals(schemaManager);
+        rowDefCache.fixUpOrdinals(0, schemaManager);
         return ais;
     }
 
