@@ -13,11 +13,9 @@
 -- along with this program.  If not, see http://www.gnu.org/licenses.
 --
 
-drop database if exists akiban_objects;
 drop database if exists akiban_information_schema;
 
 create database akiban_information_schema;
-create database akiban_objects;
 
 -- These grants ensure a user exists if it doesn't already. This is done so that drop user succeeds, so that
 -- create user succeeds. All this is necessary to make sure that a user exists whether or not it
@@ -29,7 +27,6 @@ drop user akiban@'localhost';
 create user akiban identified by 'akibanDB';
 create user akiban@'localhost' identified by 'akibanDB';
 grant all on akiban_information_schema.* to akiban, akiban@'localhost';
-grant all on akiban_objects.* to akiban, akiban@'localhost';
 
 use akiban_information_schema;
 
