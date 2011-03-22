@@ -15,7 +15,10 @@
 
 package com.akiban.qp;
 
+// Fields are untyped for now. Field name is just position within the type.
+
 public interface RowType
 {
+    int nFields();
     boolean ancestorOf(RowType type);
 }

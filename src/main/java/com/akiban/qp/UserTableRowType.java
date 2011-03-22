@@ -22,6 +22,13 @@ public class UserTableRowType implements RowType
 {
     // RowType interface
 
+
+    @Override
+    public int nFields()
+    {
+        return table.getColumnsIncludingInternal().size();
+    }
+
     @Override
     public boolean ancestorOf(RowType type)
     {

@@ -15,15 +15,22 @@
 
 package com.akiban.server.service.stats;
 
+import com.akiban.util.TapReport;
+
 @SuppressWarnings("unused") // jmx
 public interface StatisticsServiceMXBean {
-    int getHapiRequestsCount();
 
-    int getConnectionsOpened();
-    int getConnectionsClosed();
-    int getConnectionsErrored();
+    public void enableAll();
 
-    int getMysqlInsertsCount();
-    int getMysqlDeletesCount();
-    int getMysqlUpdatesCount();
+    public void disableAll();
+
+    public void setEnabled(final String regExPattern, final boolean on);
+
+    public void reset(final String regExPattern);
+
+    public void resetAll();
+
+    public String getReport();
+
+    public TapReport[] getReports(final String regExPattern);
 }

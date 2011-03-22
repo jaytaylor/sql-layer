@@ -47,7 +47,7 @@ public final class RowDataLegacyOutputRouter implements LegacyRowOutput {
     }
 
     @Override
-    public void wroteRow() throws RowOutputException {
+    public void wroteRow(boolean limitExceeded) throws RowOutputException {
         throw new UnsupportedOperationException();
     }
 

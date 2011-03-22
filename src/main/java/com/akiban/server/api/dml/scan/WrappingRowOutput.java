@@ -40,9 +40,11 @@ public class WrappingRowOutput implements LegacyRowOutput {
     }
 
     @Override
-    final public void wroteRow() throws RowOutputException {
-        ++rows;
-        postWroteRow();
+    final public void wroteRow(boolean limitExceeded) throws RowOutputException {
+        if (!limitExceeded) {
+            ++rows;
+            postWroteRow();
+        }
     }
 
     @Override

@@ -1,3 +1,4 @@
+
 /**
  * Copyright (C) 2011 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
@@ -37,6 +38,8 @@ tokens {
 	LTE = '<=';
 	NE = '!=';
 	EQ = '=';
+
+	LIMIT = ':LIMIT';
 }
 
 @header {
@@ -86,13 +89,24 @@ get_request returns[ParsedHapiGetRequest request]
 	COLON
 	table=string {request.setTable(table); }
 	COLON
-	predicate_using[request] ?
+	predicate_options[request] ?
 	predicate[request] (COMMA predicate[request])*
 	{ request.validate(); }
 	;
 
+predicate_options[ParsedHapiGetRequest request]
+	: PAREN_OPEN
+	predicate_using[request] ?
+	predicate_limit[request] ?
+	PAREN_CLOSE
+	;
+
 predicate_using[ParsedHapiGetRequest request]
-	: PAREN_OPEN using=string PAREN_CLOSE { request.setUsingTable(using); }
+	: using=string { request.setUsingTable(using); }
+	;
+
+predicate_limit[ParsedHapiGetRequest request]
+	: LIMIT EQ limit=string { request.setLimit(limit); }
 	;
 
 predicate [ParsedHapiGetRequest request]
@@ -111,7 +125,7 @@ op returns [SimpleHapiPredicate.Operator op]
 string returns [String string]
 	: S_CHARS { $string = ("NULL".equalsIgnoreCase($S_CHARS.text)) ? null : $S_CHARS.text; }
  	| QUOTE { final StringBuilder sb = new StringBuilder(); }
-		(S_CHARS { sb.append($S_CHARS.text); } | Q_CHARS { sb.append($Q_CHARS.text); })*
+		(S_CHARS { sb.append($S_CHARS.text); } | Q_CHARS { sb.append($Q_CHARS.text); } )*
 		QUOTE {
  		try { $string = java.net.URLDecoder.decode(sb.toString(), "UTF-8"); }
 		catch(java.io.UnsupportedEncodingException e) { throw new RuntimeException(e); }

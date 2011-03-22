@@ -41,7 +41,7 @@ public class RowDataOutput implements LegacyRowOutput {
     }
 
     @Override
-    public void wroteRow() throws RowOutputException {
+    public void wroteRow(boolean limitExceeded) throws RowOutputException {
         throw new UnsupportedOperationException("Shouldn't be calling wroteRow for output to an HAPI request");
     }
 
@@ -67,6 +67,7 @@ public class RowDataOutput implements LegacyRowOutput {
      * request) and returning the rows.
      *
      *
+     *
      * @param session the session in which to scan
      * @param dml the DMLFunctions to handle the scan
      * @param request the scan request
@@ -79,8 +80,7 @@ public class RowDataOutput implements LegacyRowOutput {
         final RowDataOutput output = new RowDataOutput();
         CursorId scanCursor = dml.openCursor(session, request);
         try {
-            while(dml.scanSome(session, scanCursor, output, -1))
-            {}
+            dml.scanSome(session, scanCursor, output);
             return output.getRowDatas();
         } catch (BufferFullException e) {
             LOG.error(String.format("This is unexpected, request: %s", request), e);

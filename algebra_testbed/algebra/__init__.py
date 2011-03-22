@@ -12,15 +12,3 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
-
-from operator import *
-
-from cut import *
-from extract import *
-from flatten import *
-from fulltablescan import *
-from indexedtablescan import *
-from indexscan import *
-from project import *
-from select import *
-from sort import *

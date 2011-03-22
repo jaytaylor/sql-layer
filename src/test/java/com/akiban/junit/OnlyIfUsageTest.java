@@ -43,6 +43,19 @@ public final class OnlyIfUsageTest {
         assertEquals("string", "foo", string);
     }
 
+    @Test @OnlyIfNot("isFoo")
+    public void notEqualsFoo() {
+        if ("foo".equals(string)) {
+            fail("found a foo!");
+        }
+    }
+
+    @Test @OnlyIf("hasThreeChars") @OnlyIfNot("lastCharR")
+    public void threeCharNoTrailingR() {
+        assertEquals("string length", 3, string.length());
+        assertFalse("last char was r! <" + string + '>', string.charAt(2) == 'r');
+    }
+
     @Test
     public void stringNotNull() {
         assertNotNull("string", string);
@@ -50,5 +63,14 @@ public final class OnlyIfUsageTest {
 
     public boolean isFoo() {
         return "foo".equals(string);
+    }
+
+    public boolean hasThreeChars() {
+        return string.length() == 3;
+    }
+
+    public boolean lastCharR() {
+        // for simplicity, we'll assume string not null, string.length > 0
+        return string.charAt( string.length() - 1) == 'r';
     }
 }

@@ -13,14 +13,14 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-import operator
+import physicaloperator
 
-UnaryOperator = operator.UnaryOperator
+SimpleOperator = physicaloperator.SimpleOperator
 
-class Select(UnaryOperator):
+class Select(SimpleOperator):
 
     def __init__(self, input, predicate_rowtype, predicate):
-        UnaryOperator.__init__(self, input)
+        SimpleOperator.__init__(self, input)
         self._predicate_rowtype = predicate_rowtype
         self._predicate = predicate
         self._selected = False

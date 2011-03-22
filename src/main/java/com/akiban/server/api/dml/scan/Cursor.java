@@ -21,13 +21,19 @@ public final class Cursor {
 
     private CursorState state = CursorState.FRESH;
     private final RowCollector rowCollector;
+    private final ScanLimit limit;
 
-    public Cursor(RowCollector rowCollector) {
+    public Cursor(RowCollector rowCollector, ScanLimit limit) {
         this.rowCollector = rowCollector;
+        this.limit = limit;
     }
 
     public RowCollector getRowCollector() {
         return rowCollector;
+    }
+
+    public ScanLimit getLimit() {
+        return limit;
     }
 
     public void setScanning() {

@@ -13,19 +13,32 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-import operator
+import physicaloperator
 
-UnaryOperator = operator.UnaryOperator
+PhysicalOperator = physicaloperator.PhysicalOperator
 
-class Cut(UnaryOperator):
+class Scan(PhysicalOperator):
 
-    def __init__(self, input, rowtype):
-        UnaryOperator.__init__(self, input)
-        self._rowtype = rowtype
+    def __init__(self, cursor):
+        PhysicalOperator.__init__(self, None)
+        self._cursor = cursor
+        self._done = False
+        self.count_random_access()
 
-    def handle_row(self, row):
-        if self._rowtype.ancestor_of(row.rowtype):
-            output_row = None
-        else:
-            output_row = row
+    def open(self):
+        pass
+
+    def next(self):
+        output_row = None
+        if not self._done:
+            output_row = self._cursor.next()
+            self.count_sequential_access()
+            if output_row is None:
+                self._done = True
         return output_row
+
+    def close(self):
+        self._done = True
+    
+    def stats(self):
+        return self._stats

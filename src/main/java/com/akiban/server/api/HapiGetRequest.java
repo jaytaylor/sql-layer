@@ -38,5 +38,7 @@ public interface HapiGetRequest {
      */
     TableName getUsingTable();
 
+    int getLimit();
+
     List<HapiPredicate> getPredicates();
 }
