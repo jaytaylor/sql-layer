@@ -571,14 +571,14 @@ public class AISBuilderTest
         builder.joinTables("co", "s", "c", "s", "o");
         builder.joinColumns("co", "s", "c", "c_id", "s", "o", "c_id");
 
-        builder.createGroup("group_01", "akiban_objects", "customers");
+        builder.createGroup("group_01", "s", "customers");
         builder.addTableToGroup("group_01", "s", "c");
         builder.addJoinToGroup("group_01", "co", 1);
         builder.groupingIsComplete();
 
         builder.akibanInformationSchema().checkIntegrity();
 
-        builder.createGroup("group_02", "akiban_objects", "orders");
+        builder.createGroup("group_02", "s", "orders");
         builder.moveTreeToEmptyGroup("s", "o", "group_02");
 
         //Assert.assertEquals("number of joins", 0, builder.akibanInformationSchema().getJoins().size());
