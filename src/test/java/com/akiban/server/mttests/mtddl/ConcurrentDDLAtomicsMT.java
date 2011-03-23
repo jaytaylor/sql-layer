@@ -60,7 +60,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public final class ConcurrencyAtomicsMT extends ApiTestBase {
+public final class ConcurrentDDLAtomicsMT extends ApiTestBase {
 
     private static final String SCHEMA = "cold";
     private static final String TABLE = "frosty";
