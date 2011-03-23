@@ -134,8 +134,8 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 @Override
                 public Delayer delayer(TimePoints timePoints) {
                     return new Delayer(timePoints, 0, 5000)
-                            .timepoint(1, "SCAN: PAUSE")
-                            .timepointAfter(1, "SCAN: CONVERTED");
+                            .markBefore(1, "SCAN: PAUSE")
+                            .markAfter(1, "SCAN: CONVERTED");
                 }
             });
         TimedCallable<List<NewRow>> scanCallable = callableBuilder.get();
@@ -221,12 +221,12 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             }
         }
 
-        public Delayer timepoint(int index, String text) {
+        public Delayer markBefore(int index, String text) {
             defineMessage(index, text, messagesBefore);
             return this;
         }
 
-        public Delayer timepointAfter(int index, String text) {
+        public Delayer markAfter(int index, String text) {
             defineMessage(index, text, messagesAfter);
             return this;
         }
@@ -742,7 +742,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 public Delayer delayer(TimePoints timePoints) {
                     long[] delays = new long[beforeRow+1];
                     delays[beforeRow] = delay;
-                    return new Delayer(timePoints, delays).timepoint(beforeRow, message);
+                    return new Delayer(timePoints, delays).markBefore(beforeRow, message);
                 }
             };
         }
