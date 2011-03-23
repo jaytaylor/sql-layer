@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.mttests.mtddl;
+package com.akiban.server.mttests.mtatomics;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.EasyUseColumnSelector;
