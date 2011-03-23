@@ -67,9 +67,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
-
-    private final Scanner scanner;
+public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
@@ -77,15 +75,31 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
 
     private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
     private final DDLFunctions ddlFunctions;
-
-    protected DMLFunctionsImpl(DDLFunctions ddlFunctions, Scanner scanner) {
-        this.ddlFunctions = ddlFunctions;
-        this.scanner = scanner;
-    }
+    private final Scanner scanner;
 
     public DMLFunctionsImpl(DDLFunctions ddlFunctions) {
-        this(ddlFunctions, new Scanner());
+        this(ddlFunctions, NONE);
     }
+
+    DMLFunctionsImpl(DDLFunctions ddlFunctions, ScanHooks scanHooks) {
+        this.ddlFunctions = ddlFunctions;
+        this.scanner = new Scanner(scanHooks);
+    }
+
+    interface ScanHooks {
+        void loopStartHook();
+        void preWroteRowHook();
+    }
+
+    private static final ScanHooks NONE = new ScanHooks() {
+        @Override
+        public void loopStartHook() {
+        }
+
+        @Override
+        public void preWroteRowHook() {
+        }
+    };
 
     @Override
     public TableStatistics getTableStatistics(Session session, int tableId,
@@ -347,7 +361,17 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         }
     }
 
-    protected static class Scanner {
+    static class Scanner {
+        private final ScanHooks scanHooks;
+
+        Scanner() {
+            this(NONE);
+        }
+
+        Scanner(ScanHooks scanHooks) {
+            this.scanHooks = scanHooks;
+        }
+
         /**
          * Do the actual scan. Refactored out of scanSome for ease of unit testing.
          *
@@ -424,7 +448,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             }
             boolean limitReached = false;
             while (!limitReached && !cursor.isFinished()) {
-                loopStartHook();
+                scanHooks.loopStartHook();
                 int bufferLastPos = buffer.position();
                 if (!rc.collectNextRow(buffer)) {
                     if (rc.hasMore()) {
@@ -436,7 +460,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                     assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
                     RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
                     limitReached = limit.limitReached(rowData);
-                    preWroteRowHook();
+                    scanHooks.preWroteRowHook();
                     output.wroteRow(limitReached);
                     if (limitReached || !rc.hasMore()) {
                         cursor.setFinished();
@@ -458,7 +482,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             RowCollector rc = cursor.getRowCollector();
             rc.outputToMessage(false);
             while (!cursor.isFinished()) {
-                loopStartHook();
+                scanHooks.loopStartHook();
                 RowData rowData = rc.collectNextRow();
                 if (rowData == null || limit.limitReached(rowData)) {
                     cursor.setFinished();
@@ -467,14 +491,6 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                     output.addRow(rowData);
                 }
             }
-        }
-
-        protected void loopStartHook() {
-            // nothing here
-        }
-
-        protected void preWroteRowHook() {
-            // nothing here
         }
     }
 
