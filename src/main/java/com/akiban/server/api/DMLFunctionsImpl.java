@@ -601,24 +601,9 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
-        final Collection<Index> indexes;
-
-        // Reject a truncate that would create orphan rows
-        if(utable != null) {
-            for(Join join : ((UserTable)table).getChildJoins()) {
-                final Table childTable = join.getChild();
-                final TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
-                if(stats.getRowCount() > 0) {
-                    String errorMsg = String.format("Child table %s has rows", childTable.getName().getTableName());
-                    throw new ForeignKeyConstraintDMLException(ErrorCode.FK_CONSTRAINT_VIOLATION, errorMsg);
-                }
-            }
-
-            indexes = utable.getIndexesIncludingInternal();
-        }
-        else {
-            indexes = table.getIndexes();
-        }
+        final Collection<Index> indexes = (utable != null)
+                                          ? utable.getIndexesIncludingInternal()
+                                          : table.getIndexes();
 
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
         Set<Integer> keyColumns = new HashSet<Integer>();

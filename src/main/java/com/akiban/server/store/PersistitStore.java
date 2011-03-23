@@ -815,6 +815,7 @@ public class PersistitStore implements Store {
             expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
             exchange.remove();
+            descendentRowDef.getTableStatus().incrementRowCount(-1);
             // ... and from the indexes
             for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
                 if (!indexDef.isHKeyEquivalent()) {
