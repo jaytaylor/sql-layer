@@ -19,8 +19,8 @@ import java.io.Serializable;
 
 public class TableName implements Serializable, Comparable<TableName>
 {
-    private String schemaName;
-    private String tableName;
+    private volatile String schemaName;
+    private volatile String tableName;
 
     @SuppressWarnings("unused")
     private TableName()
@@ -32,19 +32,6 @@ public class TableName implements Serializable, Comparable<TableName>
     {
         this.schemaName = schemaName;
         this.tableName = tableName;
-    }
-
-    public TableName(String schemaTable)
-    {
-        // this parses the schema & table from the MySQL version of this data
-        // which is stored at ./<schema>/<table>, The . is a path operator which
-        // may be different if the user specified different locations.
-
-        int tablePos = schemaTable.indexOf('/');
-        tableName = tableName.substring(tablePos + 1);
-        int schemaPos = schemaTable.indexOf('/', tablePos - 1);
-        int schemaLen = schemaTable.length() - schemaPos - tableName.length() - 1;
-        schemaName = schemaTable.substring(schemaPos + 1, schemaLen - 1);
     }
 
     public static TableName create(String schemaName, String tableName)

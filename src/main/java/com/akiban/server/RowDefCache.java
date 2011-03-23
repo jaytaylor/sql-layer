@@ -250,7 +250,7 @@ public class RowDefCache {
             if (c != null) {
                 UserTable table = c.getUserTable();
                 for(Index i : table.getIndexes()) {
-                    if(i.getIndexId() == index.getIndexId()) {
+                    if(i.getIndexId().equals(index.getIndexId())) {
                         tableName = table.getName().getTableName();
                         indexName = i.getIndexName().getName();
                         break;
