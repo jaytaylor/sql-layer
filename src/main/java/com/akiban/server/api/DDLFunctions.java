@@ -111,14 +111,10 @@ public interface DDLFunctions {
      * @param groupName the group to drop
      * @throws NullPointerException if groupName is null
      * @throws ProtectedTableDDLException if the given group contains protected tables
-     * @throws ForeignConstraintDDLException if dropping this group would create a foreign key violation
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void dropGroup(Session session, String groupName)
             throws ProtectedTableDDLException,
-            ForeignConstraintDDLException,
-            NoSuchTableException,
-            UnsupportedDropException,
             GenericInvalidOperationException;
 
     /**

@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
@@ -126,21 +127,21 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
 
     @Override
     public void dropGroup(Session session, String groupName)
-            throws ProtectedTableDDLException, GenericInvalidOperationException, NoSuchTableException,
-            UnsupportedDropException, ForeignConstraintDDLException
+            throws ProtectedTableDDLException, GenericInvalidOperationException
     {
         logger.trace("dropping group {}", groupName);
-        List<Integer> toDrop = new ArrayList<Integer>();
-        for(UserTable userTable : getAIS(session).getUserTables().values()) {
-            if(userTable.getGroup().getName().equals(groupName)) {
-                toDrop.add(userTable.getTableId());
-            }
+        final Group group = getAIS(session).getGroup(groupName);
+        if(group == null) {
+            return;
         }
-
-        // Child tables always have a higher id than parents, reverse sort to drop children first
-        Collections.sort(toDrop, Collections.reverseOrder());
-        for(Integer id : toDrop) {
-            dropTable(session, getTableName(session, id));
+        try {
+            final Table table = group.getGroupTable();
+            final RowDef rowDef = getRowDef(table.getTableId());
+            final TableName tableName = table.getName();
+            store().truncateGroup(session, rowDef.getRowDefId());
+            schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+        } catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
         }
     }
 
