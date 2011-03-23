@@ -122,29 +122,58 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         assertEquals("rows[0] fields", expectedFields, rowsScanned.get(0).getFields());
     }
 
-//    @Test // TODO fix this
-//    public void rowConvertedAfterTableDrop() throws Exception {
-//        final String index = "PRIMARY";
-//        final int tableId = tableWithTwoRows();
-//        final int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(index).getIndexId();
-//
-//        TimedCallable<List<NewRow>> scanCallable = getScanCallable(
-//                tableId, indexId, 0,
-//                new HookableDMLFI(ddl(), new DelayTopOfLoop(new Delayer()))
-//                );
-//
-//        TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
-//            @Override
-//            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-//                TableName table = new TableName(SCHEMA, TABLE);
-//                Timing.sleep(2000);
-//                timePoints.mark("TABLE: DROP>");
-//                ddl().dropTable(session, table);
-//                timePoints.mark("TABLE: <DROP");
-//                return null;
-//            }
-//        };
-//    }
+    @Test
+    public void rowConvertedAfterTableDrop() throws Exception {
+        final String index = "PRIMARY";
+        final int tableId = tableWithTwoRows();
+        final int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(index).getIndexId();
+
+        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(tableId, indexId)
+            .markFinish(false)
+            .beforeConversionDelayer(new DelayerFactory() {
+                @Override
+                public Delayer delayer(TimePoints timePoints) {
+                    return new Delayer(timePoints, 0, 5000)
+                            .timepoint(1, "SCAN: PAUSE")
+                            .timepointAfter(1, "SCAN: CONVERTED");
+                }
+            });
+        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get();
+
+        TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                TableName table = new TableName(SCHEMA, TABLE);
+                Timing.sleep(2000);
+                timePoints.mark("TABLE: DROP>");
+                ddl().dropTable(session, table);
+                timePoints.mark("TABLE: <DROP");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> dropIndexResult = dropIndexFuture.get();
+
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "TABLE: DROP>",
+                "TABLE: <DROP",
+                "SCAN: CONVERTED"
+        );
+
+        List<NewRow> rowsScanned = scanResult.getItem();
+        List<NewRow> rowsExpected = Arrays.asList(
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "mr melty")
+        );
+        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
+    }
 
     @Test
     public void scanPKWhileDropping() throws Exception {
@@ -158,13 +187,15 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
 
     private static class Delayer {
         private final long[] delays;
-        private final String[] messages;
+        private final String[] messagesBefore;
+        private final String[] messagesAfter;
         private final TimePoints timePoints;
         private int count;
 
         Delayer(TimePoints timePoints, long... delays) {
             this.delays = new long[delays.length];
-            this.messages = timePoints == null ? null : new String[delays.length];
+            this.messagesBefore = timePoints == null ? null : new String[delays.length];
+            this.messagesAfter = timePoints == null ? null : new String[delays.length];
             System.arraycopy(delays, 0, this.delays, 0, delays.length);
             this.timePoints = timePoints;
         }
@@ -175,22 +206,36 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 return;
             }
             long delay = count >= delays.length ? -1 : delays[count];
+            mark(messagesBefore);
+            Timing.sleep(delay);
+            mark(messagesAfter);
+            ++count;
+        }
+
+        private void mark(String[] messages) {
             if (timePoints != null) {
                 String message = messages[count];
                 if (message != null) {
                     timePoints.mark(message);
                 }
             }
-            Timing.sleep(delay);
-            ++count;
         }
 
-        public Delayer timepoint(int before, String text) {
-            ArgumentValidation.isGTE("after-index", before, 0);
-            ArgumentValidation.isLT("after-index", before, delays.length);
-            ArgumentValidation.notNull("timepoints", messages);
-            messages[before] = text;
+        public Delayer timepoint(int index, String text) {
+            defineMessage(index, text, messagesBefore);
             return this;
+        }
+
+        public Delayer timepointAfter(int index, String text) {
+            defineMessage(index, text, messagesAfter);
+            return this;
+        }
+
+        private void defineMessage(int index, String text, String[] messages) {
+            ArgumentValidation.isGTE("index", index, 0);
+            ArgumentValidation.isLT("index", index, delays.length);
+            ArgumentValidation.notNull("timepoints", messages);
+            messages[index] = text;
         }
     }
 
@@ -688,14 +733,18 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         }
 
         DelayScanCallableBuilder topOfLoopDelayer(final int beforeRow, final long delay, final String message) {
-            return topOfLoopDelayer(new DelayerFactory() {
+            return topOfLoopDelayer(singleDelayFactory(beforeRow, delay, message));
+        }
+
+        private DelayerFactory singleDelayFactory(final int beforeRow, final long delay, final String message) {
+            return new DelayerFactory() {
                 @Override
                 public Delayer delayer(TimePoints timePoints) {
                     long[] delays = new long[beforeRow+1];
                     delays[beforeRow] = delay;
                     return new Delayer(timePoints, delays).timepoint(beforeRow, message);
                 }
-            });
+            };
         }
 
         DelayScanCallableBuilder initialDelay(long delay) {
@@ -708,7 +757,6 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             return this;
         }
 
-        @SuppressWarnings("unused") // TODO
         DelayScanCallableBuilder beforeConversionDelayer(DelayerFactory delayer) {
             assert beforeConversionDelayer == null;
             beforeConversionDelayer = delayer;
