@@ -18,7 +18,8 @@ package com.akiban.server.mttests.mtddl;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
+import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.api.HookableDMLFI;
 import com.akiban.server.api.dml.EasyUseColumnSelector;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -85,7 +86,10 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(indexName).getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+
+        TimedCallable<List<NewRow>> scanCallable
+                = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get();
+
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -110,13 +114,65 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 "SCAN: PAUSE",
                 "TABLE: DROP>",
                 "TABLE: <DROP",
-//                "SCAN: TABLE DROPPED", // TODO can't happen yet, but will need to
                 "SCAN: FINISH"
         );
 
         List<NewRow> rowsScanned = scanResult.getItem();
         assertEquals("rows scanned size", 1, rowsScanned.size());
         assertEquals("rows[0] fields", expectedFields, rowsScanned.get(0).getFields());
+    }
+
+    @Test
+    public void rowConvertedAfterTableDrop() throws Exception {
+        final String index = "PRIMARY";
+        final int tableId = tableWithTwoRows();
+        final int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(index).getIndexId();
+
+        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(tableId, indexId)
+            .markFinish(false)
+            .beforeConversionDelayer(new DelayerFactory() {
+                @Override
+                public Delayer delayer(TimePoints timePoints) {
+                    return new Delayer(timePoints, 0, 5000)
+                            .markBefore(1, "SCAN: PAUSE")
+                            .markAfter(1, "SCAN: CONVERTED");
+                }
+            });
+        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get();
+
+        TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                TableName table = new TableName(SCHEMA, TABLE);
+                Timing.sleep(2000);
+                timePoints.mark("TABLE: DROP>");
+                ddl().dropTable(session, table);
+                timePoints.mark("TABLE: <DROP");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
+
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> dropIndexResult = dropIndexFuture.get();
+
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: START",
+                "SCAN: PAUSE",
+                "TABLE: DROP>",
+                "TABLE: <DROP",
+                "SCAN: CONVERTED"
+        );
+
+        List<NewRow> rowsScanned = scanResult.getItem();
+        List<NewRow> rowsExpected = Arrays.asList(
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "mr melty")
+        );
+        assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
     }
 
     @Test
@@ -129,39 +185,57 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         scanWhileDropping("name");
     }
 
-    private static class DelayBasedLimiter implements ScanLimit {
+    private static class Delayer {
         private final long[] delays;
-        private final String[] messages;
+        private final String[] messagesBefore;
+        private final String[] messagesAfter;
         private final TimePoints timePoints;
         private int count;
 
-        DelayBasedLimiter(TimePoints timePoints, long... delays) {
+        Delayer(TimePoints timePoints, long... delays) {
             this.delays = new long[delays.length];
-            this.messages = timePoints == null ? null : new String[delays.length];
+            this.messagesBefore = timePoints == null ? null : new String[delays.length];
+            this.messagesAfter = timePoints == null ? null : new String[delays.length];
             System.arraycopy(delays, 0, this.delays, 0, delays.length);
             this.timePoints = timePoints;
         }
 
-        @Override
-        public boolean limitReached(RowData row) {
+        public void delay() {
+            if (count >= delays.length) {
+                ++count; // not useful, just for record keeping (in case we look at this field in a debugger)
+                return;
+            }
             long delay = count >= delays.length ? -1 : delays[count];
+            mark(messagesBefore);
             Timing.sleep(delay);
+            mark(messagesAfter);
+            ++count;
+        }
+
+        private void mark(String[] messages) {
             if (timePoints != null) {
                 String message = messages[count];
                 if (message != null) {
                     timePoints.mark(message);
                 }
             }
-            ++count;
-            return false;
         }
 
-        public DelayBasedLimiter timepoint(int after, String text) {
-            ArgumentValidation.isGTE("after-index", after, 0);
-            ArgumentValidation.isLT("after-index", after, delays.length);
-            ArgumentValidation.notNull("timepoints", messages);
-            messages[after] = text;
+        public Delayer markBefore(int index, String text) {
+            defineMessage(index, text, messagesBefore);
             return this;
+        }
+
+        public Delayer markAfter(int index, String text) {
+            defineMessage(index, text, messagesAfter);
+            return this;
+        }
+
+        private void defineMessage(int index, String text, String[] messages) {
+            ArgumentValidation.isGTE("index", index, 0);
+            ArgumentValidation.isLT("index", index, delays.length);
+            ArgumentValidation.notNull("timepoints", messages);
+            messages[index] = text;
         }
     }
 
@@ -185,29 +259,9 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         Index ageIndex = ddl().getUserTable(session(), tableName).getIndex("age");
         assertTrue("age index's ID relative to name's", ageIndex.getIndexId() == nameIndex.getIndexId() + 1);
         final int nameIndexId = nameIndex.getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = new TimedCallable<List<NewRow>>() {
-            @Override
-            protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
-                ScanAllRequest request = new ScanAllRequest(
-                        tableId,
-                        new HashSet<Integer>(Arrays.asList(0, 1)),
-                        nameIndexId,
-                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                        new DelayBasedLimiter(timePoints, 0, 0, 5000).timepoint(2, "SCAN: PAUSE")
-                );
-                final CursorId cursorId = dml().openCursor(session, request);
-                CountingRowOutput output = new CountingRowOutput();
-                timePoints.mark("SCAN: START");
-                if (dml().scanSome(session, cursorId, output)) {
-                    timePoints.mark("SCAN: EARLY FINISH");
-                    return output.rows;
-                }
-                dml().closeCursor(session, cursorId);
-                timePoints.mark("SCAN: FINISH");
 
-                return output.rows;
-            }
-        };
+        TimedCallable<List<NewRow>> scanCallable
+                = new DelayScanCallableBuilder(tableId, nameIndexId).topOfLoopDelayer(2, 5000, "SCAN: PAUSE").get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -269,7 +323,11 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final TableName tableName = new TableName(SCHEMA, TABLE);
         final int indexId = ddl().getUserTable(session(), tableName).getIndex(indexName).getIndexId();
 
-        TimedCallable<List<NewRow>> scanCallable = delayThenScanAll(tableId, indexId);
+        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(tableId, indexId)
+            .topOfLoopDelayer(1, 100, "SCAN: FIRST")
+            .initialDelay(2500)
+            .markFinish(false);
+        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get();
         TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -308,31 +366,6 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
             }
         }
         assertTrue(String.format("saw %d nulls (out of %d rows)", nulls, rows.size()), nulls == 0);
-    }
-
-    private TimedCallable<List<NewRow>> delayThenScanAll(final int tableId, final int indexId) {
-        return new TimedCallable<List<NewRow>>() {
-            @Override
-            protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
-                Timing.sleep(2500);
-                ScanAllRequest request = new ScanAllRequest(
-                        tableId,
-                        new HashSet<Integer>(Arrays.asList(0, 1)),
-                        indexId,
-                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                        new DelayBasedLimiter(timePoints, 0).timepoint(0, "SCAN: FIRST")
-                );
-                final CursorId cursorId = dml().openCursor(session, request);
-                CountingRowOutput output = new CountingRowOutput();
-                timePoints.mark("SCAN: START");
-                while (dml().scanSome(session, cursorId, output)) {
-                    // do nothing
-                }
-                dml().closeCursor(session, cursorId);
-
-                return output.rows;
-            }
-        };
     }
 
     /**
@@ -382,7 +415,10 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+
+        TimedCallable<List<NewRow>> scanCallable
+                = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get();
+
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -408,7 +444,6 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 "INDEX: DROP>",
                 "INDEX: <DROP",
                 "SCAN: FINISH"
-//                "SCAN: INDEX DROPPED" // TODO can't happen yet, but will need to
         );
 
         List<NewRow> rowsScanned = scanResult.getItem();
@@ -442,7 +477,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                     return null;
                 }
             };
-            TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, index.getIndexId(), 0);
+            TimedCallable<List<NewRow>> scanCallable = new DelayScanCallableBuilder(tableId, index.getIndexId()).get();
 
             ExecutorService executor = Executors.newFixedThreadPool(2);
             Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
@@ -460,14 +495,7 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
                 return; // this is what we wanted to find
             }
             else if (comparison.matches("SCAN: START")) { // scan came before drop
-                if (comparison.getMarkNames().contains("SCAN: INDEX DROPPED")) {
-                    // TODO can't happen yet, but will need to
-                    assertTrue(String.format("rows scanned >= %d", NUMBER_OF_ROWS),
-                            scanResult.getItem().size() < NUMBER_OF_ROWS);
-                }
-                else {
-                    assertEquals("number of rows scanned", NUMBER_OF_ROWS, scanResult.getItem().size());
-                }
+                assertEquals("number of rows scanned", NUMBER_OF_ROWS, scanResult.getItem().size());
             }
             else {
                 fail(comparison.getMarkNames().toString());
@@ -482,7 +510,8 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<List<NewRow>> scanCallable
+                = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -520,7 +549,8 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<List<NewRow>> scanCallable
+                = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
 //        scanCallable = TransactionalTimedCallable.withRunnable( scanCallable, 10, 1000 );
 //        scanCallable = TransactionalTimedCallable.withoutRunnable(scanCallable);
 
@@ -568,7 +598,8 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<List<NewRow>> scanCallable
+                = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
 //        scanCallable = TransactionalTimedCallable.withRunnable( scanCallable, 10, 1000 );
 //        scanCallable = TransactionalTimedCallable.withoutRunnable(scanCallable);
 
@@ -617,7 +648,8 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
-        TimedCallable<List<NewRow>> scanCallable = getScanCallable(tableId, indexId, SCAN_WAIT);
+        TimedCallable<List<NewRow>> scanCallable
+            = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -675,40 +707,145 @@ public final class ConcurrencyAtomicsMT extends ApiTestBase {
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
-    private TimedCallable<List<NewRow>> getScanCallable(final int tableId, final int indexId, final int sleepBetween) {
-        return new TimedCallable<List<NewRow>>() {
-            @Override
-            protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
-                DelayBasedLimiter limiter = new DelayBasedLimiter(timePoints, 0, sleepBetween);
-                if (sleepBetween > 0) {
-                    limiter.timepoint(0, "SCAN: PAUSE");
-                }
-                ScanAllRequest request = new ScanAllRequest(
-                        tableId,
-                        new HashSet<Integer>(Arrays.asList(0, 1)),
-                        indexId,
-                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                        limiter
-                );
-                final CursorId cursorId;
-                try {
-                     cursorId = dml().openCursor(session, request);
-                } catch (NoSuchIndexException e) {
-                    timePoints.mark("SCAN: NO SUCH INDEX");
-                    return Collections.emptyList();
-                }
-                CountingRowOutput output = new CountingRowOutput();
-                timePoints.mark("SCAN: START");
-                if (dml().scanSome(session, cursorId, output)) {
-                    timePoints.mark("SCAN: EARLY FINISH");
-                    return output.rows;
-                }
-                dml().closeCursor(session, cursorId);
-                timePoints.mark("SCAN: FINISH");
+    private interface DelayerFactory {
+        Delayer delayer(TimePoints timePoints);
+    }
 
+
+    private class DelayScanCallableBuilder {
+        private final int tableId;
+        private final int indexId;
+
+        private boolean markFinish = true;
+        private long initialDelay = 0;
+        private DelayerFactory topOfLoopDelayer;
+        private DelayerFactory beforeConversionDelayer;
+
+        private DelayScanCallableBuilder(int tableId, int indexId) {
+            this.tableId = tableId;
+            this.indexId = indexId;
+        }
+
+        DelayScanCallableBuilder topOfLoopDelayer(DelayerFactory delayer) {
+            assert topOfLoopDelayer == null;
+            topOfLoopDelayer = delayer;
+            return this;
+        }
+
+        DelayScanCallableBuilder topOfLoopDelayer(final int beforeRow, final long delay, final String message) {
+            return topOfLoopDelayer(singleDelayFactory(beforeRow, delay, message));
+        }
+
+        private DelayerFactory singleDelayFactory(final int beforeRow, final long delay, final String message) {
+            return new DelayerFactory() {
+                @Override
+                public Delayer delayer(TimePoints timePoints) {
+                    long[] delays = new long[beforeRow+1];
+                    delays[beforeRow] = delay;
+                    return new Delayer(timePoints, delays).markBefore(beforeRow, message);
+                }
+            };
+        }
+
+        DelayScanCallableBuilder initialDelay(long delay) {
+            this.initialDelay = delay;
+            return this;
+        }
+
+        DelayScanCallableBuilder markFinish(boolean markFinish) {
+            this.markFinish = markFinish;
+            return this;
+        }
+
+        DelayScanCallableBuilder beforeConversionDelayer(DelayerFactory delayer) {
+            assert beforeConversionDelayer == null;
+            beforeConversionDelayer = delayer;
+            return this;
+        }
+
+        DelayableScanCallable get() {
+            return new DelayableScanCallable(
+                    tableId, indexId, topOfLoopDelayer, beforeConversionDelayer,
+                    markFinish, initialDelay
+            );
+        }
+    }
+
+    private class DelayableScanCallable extends TimedCallable<List<NewRow>> {
+        private final int tableId;
+        private final int indexId;
+        private final DelayerFactory topOfLoopDelayer;
+        private final DelayerFactory beforeConversionDelayer;
+        private final boolean markFinish;
+        private final long initialDelay;
+
+        protected DelayableScanCallable(int tableId, int indexId,
+                                        DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
+                                        boolean markFinish, long initialDelay)
+        {
+            this.tableId = tableId;
+            this.indexId = indexId;
+            this.topOfLoopDelayer = topOfLoopDelayer;
+            this.beforeConversionDelayer = beforeConversionDelayer;
+            this.markFinish = markFinish;
+            this.initialDelay = initialDelay;
+        }
+
+        private Delayer topOfLoopDelayer(TimePoints timePoints) {
+            return topOfLoopDelayer == null ? null : topOfLoopDelayer.delayer(timePoints);
+        }
+
+        private Delayer beforeConversionDelayer(TimePoints timePoints){
+            return beforeConversionDelayer == null ? null : beforeConversionDelayer.delayer(timePoints);
+        }
+
+        @Override
+        protected final List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
+            Timing.sleep(initialDelay);
+            final Delayer topOfLoopDelayer = topOfLoopDelayer(timePoints);
+            final Delayer beforeConversionDelayer = beforeConversionDelayer(timePoints);
+            DMLFunctions dml = new HookableDMLFI(ddl(), new HookableDMLFI.ScanHooks() {
+                @Override
+                public void loopStartHook() {
+                    if (topOfLoopDelayer != null) {
+                        topOfLoopDelayer.delay();
+                    }
+                }
+
+                @Override
+                public void preWroteRowHook() {
+                    if (beforeConversionDelayer != null) {
+                        beforeConversionDelayer.delay();
+                    }
+                }
+            });
+            ScanAllRequest request = new ScanAllRequest(
+                    tableId,
+                    new HashSet<Integer>(Arrays.asList(0, 1)),
+                    indexId,
+                    EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
+                    ScanLimit.NONE
+            );
+            final CursorId cursorId;
+            try {
+                cursorId = dml.openCursor(session, request);
+            } catch (NoSuchIndexException e) {
+                timePoints.mark("SCAN: NO SUCH INDEX");
+                return Collections.emptyList();
+            }
+            CountingRowOutput output = new CountingRowOutput();
+            timePoints.mark("SCAN: START");
+            if (dml.scanSome(session, cursorId, output)) {
+                timePoints.mark("SCAN: EARLY FINISH");
                 return output.rows;
             }
-        };
+            dml.closeCursor(session, cursorId);
+            if (markFinish) {
+                timePoints.mark("SCAN: FINISH");
+            }
+
+            return output.rows;
+        }
     }
 
     int tableWithTwoRows() throws InvalidOperationException {

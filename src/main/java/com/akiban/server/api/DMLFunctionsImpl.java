@@ -60,7 +60,6 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
@@ -68,9 +67,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
-
-    private final Scanner scanner = new Scanner();
+public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
@@ -78,10 +75,31 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
 
     private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
     private final DDLFunctions ddlFunctions;
+    private final Scanner scanner;
 
     public DMLFunctionsImpl(DDLFunctions ddlFunctions) {
-        this.ddlFunctions = ddlFunctions;
+        this(ddlFunctions, NONE);
     }
+
+    DMLFunctionsImpl(DDLFunctions ddlFunctions, ScanHooks scanHooks) {
+        this.ddlFunctions = ddlFunctions;
+        this.scanner = new Scanner(scanHooks);
+    }
+
+    interface ScanHooks {
+        void loopStartHook();
+        void preWroteRowHook();
+    }
+
+    private static final ScanHooks NONE = new ScanHooks() {
+        @Override
+        public void loopStartHook() {
+        }
+
+        @Override
+        public void preWroteRowHook() {
+        }
+    };
 
     @Override
     public TableStatistics getTableStatistics(Session session, int tableId,
@@ -343,7 +361,17 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
         }
     }
 
-    protected static class Scanner {
+    static class Scanner {
+        private final ScanHooks scanHooks;
+
+        Scanner() {
+            this(NONE);
+        }
+
+        Scanner(ScanHooks scanHooks) {
+            this.scanHooks = scanHooks;
+        }
+
         /**
          * Do the actual scan. Refactored out of scanSome for ease of unit testing.
          *
@@ -420,6 +448,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             }
             boolean limitReached = false;
             while (!limitReached && !cursor.isFinished()) {
+                scanHooks.loopStartHook();
                 int bufferLastPos = buffer.position();
                 if (!rc.collectNextRow(buffer)) {
                     if (rc.hasMore()) {
@@ -431,6 +460,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
                     assert bufferPos > bufferLastPos : String.format("false: %d >= %d", bufferPos, bufferLastPos);
                     RowData rowData = getRowData(buffer.array(), bufferLastPos, bufferPos - bufferLastPos);
                     limitReached = limit.limitReached(rowData);
+                    scanHooks.preWroteRowHook();
                     output.wroteRow(limitReached);
                     if (limitReached || !rc.hasMore()) {
                         cursor.setFinished();
@@ -452,6 +482,7 @@ public final class DMLFunctionsImpl extends ClientAPIBase implements DMLFunction
             RowCollector rc = cursor.getRowCollector();
             rc.outputToMessage(false);
             while (!cursor.isFinished()) {
+                scanHooks.loopStartHook();
                 RowData rowData = rc.collectNextRow();
                 if (rowData == null || limit.limitReached(rowData)) {
                     cursor.setFinished();
