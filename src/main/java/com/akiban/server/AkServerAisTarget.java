@@ -60,7 +60,7 @@ public class AkServerAisTarget extends Target {
             throw new IllegalStateException(
                     "Missing table definition for AIS table " + name);
         }
-        store.truncateTable(session, rowDef.getRowDefId());
+        store.truncateGroup(session, rowDef.getRowDefId());
     }
 
     @Override

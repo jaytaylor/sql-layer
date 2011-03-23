@@ -827,20 +827,21 @@ public class PersistitStore implements Store {
     }
 
     /**
-     * Remove contents of entire group containing the specified table. TODO:
-     * remove user table data from within a group.
+     * Remove data from the <b>entire group</b> that this RowDef ID is contained in.
+     * This includes all table and index data for all user and group tables in the group.
+     * @param session Session to work on.
+     * @param rowDefId RowDef ID to select group to truncate
+     * @throws PersistitException for a PersistIt level error (e.g. Rollback)
      */
     @Override
-    public void truncateTable(final Session session, final int rowDefId)
-            throws PersistitException, InvalidOperationException {
+    public void truncateGroup(final Session session, final int rowDefId)
+            throws PersistitException {
+        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
+        if (!groupRowDef.isGroupTable()) {
+            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
+        }
 
-        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        Transaction transaction = null;
-
-        RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
-                .getRowDef(rowDef.getGroupRowDefId());
-
-        transaction = treeService.getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
 
