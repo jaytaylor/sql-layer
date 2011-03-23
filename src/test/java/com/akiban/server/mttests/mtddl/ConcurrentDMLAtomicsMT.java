@@ -15,5 +15,5 @@
 
 package com.akiban.server.mttests.mtddl;
 
-public final class ConcurrentDMLAtomicsMT {
+public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
 }

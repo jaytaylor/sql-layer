@@ -48,10 +48,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public final class ConcurrentDDLAtomicsMT extends ApiTestBase {
-
-    private static final String SCHEMA = "cold";
-    private static final String TABLE = "frosty";
+public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void dropTableWhileScanningPK() throws Exception {
@@ -613,41 +610,6 @@ public final class ConcurrentDDLAtomicsMT extends ApiTestBase {
                         createNewRow(tableId, 2L, "icebox")
                 )
         );
-    }
-
-    private void scanUpdateConfirm(int tableId,
-                                   TimedCallable<List<NewRow>> scanCallable,
-                                   TimedCallable<Void> updateCallable,
-                                   List<NewRow> scanCallableExpected,
-                                   List<NewRow> endStateExpected)
-            throws Exception
-    {
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-        Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
-
-        TimedResult<List<NewRow>> scanResult = scanFuture.get();
-        TimedResult<Void> updateResult = updateFuture.get();
-
-        new TimePointsComparison(scanResult, updateResult).verify(
-                "SCAN: START",
-                "SCAN: PAUSE",
-                "UPDATE: IN",
-                "UPDATE: OUT",
-                "SCAN: FINISH"
-        );
-
-        assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
-        expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
-    }
-
-    int tableWithTwoRows() throws InvalidOperationException {
-        int id = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
-        writeRows(
-            createNewRow(id, 1L, "the snowman"),
-            createNewRow(id, 2L, "mr melty")
-        );
-        return id;
     }
 
 
