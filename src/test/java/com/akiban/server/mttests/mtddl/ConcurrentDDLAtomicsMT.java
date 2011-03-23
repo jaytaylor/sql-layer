@@ -18,19 +18,9 @@ package com.akiban.server.mttests.mtddl;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.HookableDMLFI;
 import com.akiban.server.api.dml.EasyUseColumnSelector;
-import com.akiban.server.api.dml.NoSuchIndexException;
-import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimePointsComparison;
@@ -46,9 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -653,150 +641,6 @@ public final class ConcurrentDDLAtomicsMT extends ApiTestBase {
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
-    private interface DelayerFactory {
-        Delayer delayer(TimePoints timePoints);
-    }
-
-
-    private static class DelayScanCallableBuilder {
-        private final int tableId;
-        private final int indexId;
-
-        private boolean markFinish = true;
-        private long initialDelay = 0;
-        private DelayerFactory topOfLoopDelayer;
-        private DelayerFactory beforeConversionDelayer;
-
-        private DelayScanCallableBuilder(int tableId, int indexId) {
-            this.tableId = tableId;
-            this.indexId = indexId;
-        }
-
-        DelayScanCallableBuilder topOfLoopDelayer(DelayerFactory delayer) {
-            assert topOfLoopDelayer == null;
-            topOfLoopDelayer = delayer;
-            return this;
-        }
-
-        DelayScanCallableBuilder topOfLoopDelayer(final int beforeRow, final long delay, final String message) {
-            return topOfLoopDelayer(singleDelayFactory(beforeRow, delay, message));
-        }
-
-        private DelayerFactory singleDelayFactory(final int beforeRow, final long delay, final String message) {
-            return new DelayerFactory() {
-                @Override
-                public Delayer delayer(TimePoints timePoints) {
-                    long[] delays = new long[beforeRow+1];
-                    delays[beforeRow] = delay;
-                    return new Delayer(timePoints, delays).markBefore(beforeRow, message);
-                }
-            };
-        }
-
-        DelayScanCallableBuilder initialDelay(long delay) {
-            this.initialDelay = delay;
-            return this;
-        }
-
-        DelayScanCallableBuilder markFinish(boolean markFinish) {
-            this.markFinish = markFinish;
-            return this;
-        }
-
-        DelayScanCallableBuilder beforeConversionDelayer(DelayerFactory delayer) {
-            assert beforeConversionDelayer == null;
-            beforeConversionDelayer = delayer;
-            return this;
-        }
-
-        DelayableScanCallable get(DDLFunctions ddl) {
-            return new DelayableScanCallable(
-                    tableId, indexId, ddl,
-                    topOfLoopDelayer, beforeConversionDelayer,
-                    markFinish, initialDelay
-            );
-        }
-    }
-
-    private static class DelayableScanCallable extends TimedCallable<List<NewRow>> {
-        private final int tableId;
-        private final int indexId;
-        private final DDLFunctions ddl;
-        private final DelayerFactory topOfLoopDelayer;
-        private final DelayerFactory beforeConversionDelayer;
-        private final boolean markFinish;
-        private final long initialDelay;
-
-        protected DelayableScanCallable(int tableId, int indexId, DDLFunctions ddl,
-                                        DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
-                                        boolean markFinish, long initialDelay)
-        {
-            this.tableId = tableId;
-            this.indexId = indexId;
-            this.ddl = ddl;
-            this.topOfLoopDelayer = topOfLoopDelayer;
-            this.beforeConversionDelayer = beforeConversionDelayer;
-            this.markFinish = markFinish;
-            this.initialDelay = initialDelay;
-        }
-
-        private Delayer topOfLoopDelayer(TimePoints timePoints) {
-            return topOfLoopDelayer == null ? null : topOfLoopDelayer.delayer(timePoints);
-        }
-
-        private Delayer beforeConversionDelayer(TimePoints timePoints){
-            return beforeConversionDelayer == null ? null : beforeConversionDelayer.delayer(timePoints);
-        }
-
-        @Override
-        protected final List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
-            Timing.sleep(initialDelay);
-            final Delayer topOfLoopDelayer = topOfLoopDelayer(timePoints);
-            final Delayer beforeConversionDelayer = beforeConversionDelayer(timePoints);
-            DMLFunctions dml = new HookableDMLFI(ddl, new HookableDMLFI.ScanHooks() {
-                @Override
-                public void loopStartHook() {
-                    if (topOfLoopDelayer != null) {
-                        topOfLoopDelayer.delay();
-                    }
-                }
-
-                @Override
-                public void preWroteRowHook() {
-                    if (beforeConversionDelayer != null) {
-                        beforeConversionDelayer.delay();
-                    }
-                }
-            });
-            ScanAllRequest request = new ScanAllRequest(
-                    tableId,
-                    new HashSet<Integer>(Arrays.asList(0, 1)),
-                    indexId,
-                    EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                    ScanLimit.NONE
-            );
-            final CursorId cursorId;
-            try {
-                cursorId = dml.openCursor(session, request);
-            } catch (NoSuchIndexException e) {
-                timePoints.mark("SCAN: NO SUCH INDEX");
-                return Collections.emptyList();
-            }
-            CountingRowOutput output = new CountingRowOutput();
-            timePoints.mark("SCAN: START");
-            if (dml.scanSome(session, cursorId, output)) {
-                timePoints.mark("SCAN: EARLY FINISH");
-                return output.rows;
-            }
-            dml.closeCursor(session, cursorId);
-            if (markFinish) {
-                timePoints.mark("SCAN: FINISH");
-            }
-
-            return output.rows;
-        }
-    }
-
     int tableWithTwoRows() throws InvalidOperationException {
         int id = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
         writeRows(
@@ -807,11 +651,4 @@ public final class ConcurrentDDLAtomicsMT extends ApiTestBase {
     }
 
 
-    private static class CountingRowOutput implements RowOutput {
-        private final List<NewRow> rows = new ArrayList<NewRow>();
-        @Override
-        public void output(NewRow row) throws RowOutputException {
-           rows.add(row);
-        }
-    }
 }
