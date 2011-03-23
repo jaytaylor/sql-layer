@@ -17,19 +17,17 @@ package com.akiban.server.mttests.mtutil;
 
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 public final class TimedResult<T> {
 
     static class TimeMarks  {
-        private final SortedMap<Long,List<String>> marks;
+        private final Map<Long,List<String>> marks;
 
         TimeMarks(Map<Long, List<String>> marks) {
-            this.marks = new TreeMap<Long, List<String>>(marks);
+            this.marks = marks;
         }
 
-        SortedMap<Long,List<String>> getMarks() {
+        Map<Long,List<String>> getMarks() {
             return marks;
         }
 
