@@ -17,7 +17,6 @@ package com.akiban.server.api;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,7 +61,6 @@ import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.util.RowDefNotFoundException;
-import com.akiban.message.ErrorCode;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -623,6 +621,31 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         }
     }
 
+    /**
+     * Determine if a UserTable can be truncated 'quickly' through the Store interface.
+     * This is possible if the entire group can be truncated. Specifically, all other
+     * tables in the group must have no rows.
+     * @param session Session to operation on
+     * @param userTable UserTable to determine if a fast truncate is possible on
+     * @return true if store.truncateGroup() used, false otherwise
+     */
+    private boolean canFastTruncate(Session session, UserTable userTable)
+            throws GenericInvalidOperationException, NoSuchTableException {
+        UserTable rootTable = userTable.getGroup().getGroupTable().getRoot();
+        for(Join join : rootTable.getChildJoins()) {
+            UserTable childTable = join.getChild();
+            if(!childTable.equals(userTable)) {
+                TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
+                if(stats.getRowCount() > 0) {
+                    return false;
+                }
+            }
+        }
+        // Only iterated over children, also check root table
+        return rootTable.equals(userTable) ||
+               getTableStatistics(session, rootTable.getTableId(), false).getRowCount() == 0;
+    }
+
     @Override
     public void truncateTable(final Session session, final int tableId)
             throws NoSuchTableException, UnsupportedModificationException,
@@ -632,35 +655,29 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
-        final Collection<Index> indexes;
-
-        // Reject a truncate that would create orphan rows
-        if(utable != null) {
-            for(Join join : ((UserTable)table).getChildJoins()) {
-                final Table childTable = join.getChild();
-                final TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
-                if(stats.getRowCount() > 0) {
-                    String errorMsg = String.format("Child table %s has rows", childTable.getName().getTableName());
-                    throw new ForeignKeyConstraintDMLException(ErrorCode.FK_CONSTRAINT_VIOLATION, errorMsg);
-                }
+        if(utable == null || canFastTruncate(session, utable)) {
+            final RowDef rowDef = ddlFunctions.getRowDef(table.getTableId());
+            try {
+                store().truncateGroup(session, rowDef.getRowDefId());
+                return;
             }
+            catch(Exception e) {
+                throw new GenericInvalidOperationException(e);
+            }
+        }
 
-            indexes = utable.getIndexesIncludingInternal();
-        }
-        else {
-            indexes = table.getIndexes();
-        }
+        // We can't do a "fast truncate" for whatever reason, so we have to delete row by row
+        // (one reason is orphan row maintenance). Do so with a full table scan.
 
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
         Set<Integer> keyColumns = new HashSet<Integer>();
-        for(Index index : indexes) {
+        for(Index index : utable.getIndexesIncludingInternal()) {
             for(IndexColumn col : index.getColumns()) {
                 int pos = col.getColumn().getPosition();
                 keyColumns.add(pos);
             }
         }
 
-        // Store.truncate() gets rid of the entire group, so roll our own by doing a table scan
         RowDataLegacyOutputRouter output = new RowDataLegacyOutputRouter();
         output.addHandler(new RowDataLegacyOutputRouter.Handler() {
             private LegacyRowWrapper rowWrapper = new LegacyRowWrapper();

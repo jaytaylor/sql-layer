@@ -287,14 +287,10 @@ public class RowDefCache {
         }
 
         // group table name
-        String groupTableName = null;
-        String groupTableTreeName = null;
-        for (final GroupTable groupTable : ais.getGroupTables().values()) {
-            if (groupTable.getRoot().equals(root)) {
-                groupTableName = groupTable.getName().getTableName();
-                groupTableTreeName = getTreeName(groupTable);
-            }
-        }
+        final GroupTable groupTable = root.getGroup().getGroupTable();
+        final String groupTableName = groupTable.getName().getTableName();
+        final String groupTableTreeName = getTreeName(groupTable);
+        
         assert groupTableName != null : root;
         assert groupTableTreeName != null : root;
 
