@@ -298,14 +298,16 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
              do {
                 try {
                     transaction.begin();
+                    output.mark();
                     hasMore = scanner.doScan(cursor, cursorId, output);
                     transaction.commit();
                     success = true;
                 } catch (RollbackException e) {
                     logger.trace("PersistIt error; retrying", e);
                     scanner.scanHooks.retryHook();
+                    output.rewind();
                 }
-            } while (!success);
+            } while (!success && ! cursor.isFinished());
         } catch (PersistitException e) {
             throw new GenericInvalidOperationException(e);
         }
