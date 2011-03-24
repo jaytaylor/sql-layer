@@ -13,26 +13,40 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.rowtype;
 
-public class Field implements Expression
+// Fields are untyped for now. Field name is just position within the type.
+
+public abstract class RowType
 {
-    // Expression interface
+    // RowType interface
 
-    @Override
-    public Object evaluate(Row row)
+    public final Schema schema()
     {
-        return row.field(position);
+        return schema;
     }
 
-    // Field interface
+    public abstract int typeId();
 
-    public Field(int position)
+    public final Ancestry ancestry()
     {
-        this.position = position;
+        return ancestry;
+    }
+
+    public abstract int nFields();
+
+    public abstract boolean ancestorOf(RowType type);
+
+    // For use by subclasses
+
+    protected RowType(Schema schema, Ancestry ancestry)
+    {
+        this.schema = schema;
+        this.ancestry = ancestry;
     }
 
     // Object state
 
-    private final int position;
+    private final Schema schema;
+    private final Ancestry ancestry;
 }

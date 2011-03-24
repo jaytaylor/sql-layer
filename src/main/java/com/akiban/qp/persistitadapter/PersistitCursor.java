@@ -17,7 +17,9 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.BTreeAdapterRuntimeException;
 import com.akiban.qp.Cursor;
-import com.akiban.qp.Row;
+import com.akiban.qp.HKey;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
@@ -26,8 +28,40 @@ import com.persistit.exception.PersistitException;
 
 class PersistitCursor implements Cursor
 {
-    // Cursor interface
+    // Row interface
 
+    @Override
+    public RowType rowType()
+    {
+        return row.rowType();
+    }
+
+    @Override
+    public Row currentRow()
+    {
+        return new PersistitRow(row);
+    }
+
+    @Override
+    public boolean ancestorOf(Row row)
+    {
+        return this.row.ancestorOf(row);
+    }
+
+    @Override
+    public <T> T field(int i)
+    {
+        return (T) row.field(i);
+    }
+
+    @Override
+    public HKey hKey()
+    {
+        return row.hKey();
+    }
+
+
+    // Cursor interface
 
     @Override
     public void open()
@@ -35,39 +69,41 @@ class PersistitCursor implements Cursor
     }
 
     @Override
-    public Row next()
+    public boolean next()
     {
         try {
-            if (exchange.traverse(direction, true)) {
+            if (!closed && exchange.traverse(Key.GT, true)) {
                 exchange.fetch();
                 row.copyFromExchange(exchange);
-                direction = Key.GT;
             } else {
-                row = null;
+                close();
             }
         } catch (PersistitException e) {
             throw new BTreeAdapterRuntimeException(e);
         } catch (InvalidOperationException e) {
             throw new BTreeAdapterRuntimeException(e);
         }
-        return row;
+        return !closed;
     }
 
     @Override
     public void close()
     {
-        persistit.releaseExchange(adapter.session, exchange);
+        if (!closed) {
+            persistit.releaseExchange(adapter.session, exchange);
+            row = null;
+            closed = true;
+        }
     }
 
     // PersistitCursor interface
 
-    PersistitCursor(PersistitAdapter adapter, PersistitStore persistit, Exchange exchange)
+    PersistitCursor(PersistitAdapter adapter, PersistitStore persistit, Exchange exchange) throws PersistitException
     {
         this.adapter = adapter;
         this.persistit = persistit;
-        this.exchange = exchange;
-        this.direction = Key.GTEQ;
-        this.row = new PersistitTableRow(adapter);
+        this.exchange = exchange.clear().append(Key.BEFORE);
+        this.row = new PersistitRow(adapter);
     }
 
     // Object state
@@ -75,6 +111,6 @@ class PersistitCursor implements Cursor
     private final PersistitAdapter adapter;
     private final PersistitStore persistit;
     private final Exchange exchange;
-    private Key.Direction direction;
-    private PersistitTableRow row;
+    private PersistitRow row;
+    private boolean closed = false;
 }

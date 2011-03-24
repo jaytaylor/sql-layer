@@ -15,23 +15,18 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.qp.HKey;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyState;
 
-class PersistitHKey
+class PersistitHKey implements HKey
 {
-    // PersistitHKey interface
+    // HKey interface
 
-    public void readKey(Exchange exchange)
+    public boolean prefixOf(HKey hKey)
     {
-        Key exchangeKey = exchange.getKey();
-        key = new KeyState(exchangeKey);
-        size = exchangeKey.getEncodedSize();
-    }
-
-    public boolean prefixOf(PersistitHKey that)
-    {
+        PersistitHKey that = (PersistitHKey) hKey;
         // Move into KeyState?
         if (this.size < that.size) {
             byte[] thisBytes = this.key.getBytes();
@@ -47,13 +42,23 @@ class PersistitHKey
         }
     }
 
+    // PersistitHKey interface
+
+    public void readKey(Exchange exchange)
+    {
+        Key exchangeKey = exchange.getKey();
+        key = new KeyState(exchangeKey);
+        size = exchangeKey.getEncodedSize();
+    }
+
     public PersistitHKey copy()
     {
         return new PersistitHKey(this);
     }
 
     public PersistitHKey()
-    {}
+    {
+    }
 
     // For use by this class
 

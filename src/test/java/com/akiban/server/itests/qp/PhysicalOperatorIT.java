@@ -16,13 +16,20 @@
 package com.akiban.server.itests.qp;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.*;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.Cursor;
+import com.akiban.qp.expression.*;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitTableRow;
+import com.akiban.qp.physicaloperator.Flatten_HKeyOrdered;
+import com.akiban.qp.physicaloperator.GroupScan_Default;
+import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.Select_HKeyOrdered;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.store.PersistitStore;
 import org.junit.Before;
@@ -52,6 +59,10 @@ public class PhysicalOperatorIT extends ApiTestBase
             "iid int not null key",
             "oid int",
             "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
+        schema = new Schema(rowDefCache().ais());
+        customerRowType = schema.userTableRowType(userTable(customer));
+        orderRowType = schema.userTableRowType(userTable(order));
+        itemRowType = schema.userTableRowType(userTable(item));
         db = new NewRow[]{createNewRow(customer, 1L),
                           createNewRow(customer, 2L),
                           createNewRow(order, 11L, 1L),
@@ -67,32 +78,85 @@ public class PhysicalOperatorIT extends ApiTestBase
                           createNewRow(item, 221L, 22L),
                           createNewRow(item, 222L, 22L)};
         writeRows(db);
+        adapter = new PersistitAdapter(schema, (PersistitStore) store(), session());
     }
 
     @Test
     public void testGroupScan() throws Exception
     {
-        PersistitAdapter adapter = new PersistitAdapter((PersistitStore) store(), session());
         GroupScan_Default groupScan = new GroupScan_Default(adapter, groupTable(customer));
-        compare(db, groupScan);
+        Row[] expected = new Row[]{row(customerRowType, 1L),
+                                   row(orderRowType, 11L, 1L),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(orderRowType, 12L, 1L),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(customerRowType, 2L),
+                                   row(orderRowType, 21L, 2L),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)
+        };
+        compare(expected, groupScan);
     }
 
     @Test
     public void testSelect()
     {
-        PersistitAdapter adapter = new PersistitAdapter((PersistitStore) store(), session());
-        RowType customerRowType = adapter.rowType(rowDefCache().rowDef(customer));
+        RowType customerRowType = schema.userTableRowType(userTable(customer));
         GroupScan_Default groupScan = new GroupScan_Default(adapter, groupTable(customer));
         Expression cidEq2 = new Compare(new Field(0), Comparison.EQ, new Literal(2L));
         Select_HKeyOrdered select = new Select_HKeyOrdered(groupScan, customerRowType, cidEq2);
-        NewRow[] expected = new NewRow[]{createNewRow(customer, 2L),
-                                         createNewRow(order, 21L, 2L),
-                                         createNewRow(order, 22L, 2L),
-                                         createNewRow(item, 211L, 21L),
-                                         createNewRow(item, 212L, 21L),
-                                         createNewRow(item, 221L, 22L),
-                                         createNewRow(item, 222L, 22L)};
+        Row[] expected = new Row[]{row(customerRowType, 2L),
+                                   row(orderRowType, 21L, 2L),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(orderRowType, 22L, 2L),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)};
         compare(expected, select);
+    }
+
+    @Test
+    public void testFlatten()
+    {
+        GroupScan_Default groupScan = new GroupScan_Default(adapter, groupTable(customer));
+        Flatten_HKeyOrdered flatten = new Flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
+        RowType flattenType = flatten.rowType();
+        Row[] expected = new Row[]{row(flattenType, 1L, 11L, 1L),
+                                   row(itemRowType, 111L, 11L),
+                                   row(itemRowType, 112L, 11L),
+                                   row(flattenType, 1L, 12L, 1L),
+                                   row(itemRowType, 121L, 12L),
+                                   row(itemRowType, 122L, 12L),
+                                   row(flattenType, 2L, 21L, 2L),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L),
+                                   row(flattenType, 2L, 22L, 2L),
+                                   row(itemRowType, 221L, 22L),
+                                   row(itemRowType, 222L, 22L)};
+        compare(expected, flatten);
+    }
+
+    @Test
+    public void testTwoFlattens()
+    {
+        GroupScan_Default groupScan = new GroupScan_Default(adapter, groupTable(customer));
+        Flatten_HKeyOrdered flattenCO = new Flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
+        Flatten_HKeyOrdered flattenCOI = new Flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType);
+        RowType flattenCOIType = flattenCOI.rowType();
+        Row[] expected = new Row[]{row(flattenCOIType, 1L, 11L, 1L, 111L, 11L),
+                                   row(flattenCOIType, 1L, 11L, 1L, 112L, 11L),
+                                   row(flattenCOIType, 1L, 12L, 1L, 121L, 12L),
+                                   row(flattenCOIType, 1L, 12L, 1L, 122L, 12L),
+                                   row(flattenCOIType, 2L, 21L, 2L, 211L, 21L),
+                                   row(flattenCOIType, 2L, 21L, 2L, 212L, 21L),
+                                   row(flattenCOIType, 2L, 22L, 2L, 221L, 22L),
+                                   row(flattenCOIType, 2L, 22L, 2L, 222L, 22L)};
+        compare(expected, flattenCOI);
     }
 
     private GroupTable groupTable(int userTableId)
@@ -101,29 +165,50 @@ public class PhysicalOperatorIT extends ApiTestBase
         return userTableRowDef.table().getGroup().getGroupTable();
     }
 
-    private void compare(NewRow[] expected, PhysicalOperator plan)
+    private UserTable userTable(int userTableId)
     {
-        List<NewRow> actual = new ArrayList<NewRow>();
-        plan.open();
-        Row row;
-        while ((row = plan.next()) != null) {
-            actual.add(((PersistitTableRow) row).rowWrapper().niceRow());
+        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        return userTableRowDef.userTable();
+    }
+
+    private Row row(RowType rowType, Object... fields)
+    {
+        return new TestRow(rowType, fields);
+    }
+
+    private void compare(Row[] expected, PhysicalOperator plan)
+    {
+        Cursor cursor = plan.cursor();
+        cursor.open();
+        int count = 0;
+        List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
+        while (cursor.next()) {
+            Row actualRow = cursor.currentRow();
+            assertTrue(equal(expected[count], actualRow));
+            count++;
+            actualRows.add(actualRow);
         }
-        assertEquals(expected.length, actual.size());
-        for (NewRow actualRow : actual) {
-            assertTrue(actualRow instanceof NiceRow);
-            boolean found = false;
-            for (int i = 0; !found && i < expected.length; i++) {
-                NewRow expectedRow = expected[i];
-                assertTrue(expectedRow instanceof NiceRow);
-                found = expectedRow.equals(actualRow);
-            }
-            assertTrue(found);
+        assertEquals(expected.length, count);
+    }
+
+    private boolean equal(Row expected, Row actual)
+    {
+        boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
+        for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
+            Object expectedField = expected.field(i);
+            Object actualField = actual.field(i);
+            equal = expectedField.equals(actualField);
         }
+        return equal;
     }
 
     private int customer;
     private int order;
     private int item;
+    private RowType customerRowType;
+    private RowType orderRowType;
+    private RowType itemRowType;
+    private Schema schema;
     private NewRow[] db;
+    PersistitAdapter adapter;
 }

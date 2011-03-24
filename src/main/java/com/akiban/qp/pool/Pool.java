@@ -13,26 +13,33 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.pool;
 
-public class Literal implements Expression
+import java.util.LinkedList;
+import java.util.Queue;
+
+/* public */ class Pool
 {
-    // Expression interface
-
-    @Override
-    public Object evaluate(Row row)
+    public Resource take()
     {
-        return value;
+        Resource resource = resources.remove();
+        resource.prepareForUse();
+        return resource;
     }
 
-    // Literal interface
-
-    public Literal(Object value)
+    public void add(Resource resource)
     {
-        this.value = value;
+        resource.prepareForDisuse();
+        resources.add(resource);
     }
 
     // Object state
 
-    private final Object value;
+    private final Queue<Resource> resources = new LinkedList<Resource>();
+
+    public interface Resource
+    {
+        void prepareForUse();
+        void prepareForDisuse();
+    }
 }

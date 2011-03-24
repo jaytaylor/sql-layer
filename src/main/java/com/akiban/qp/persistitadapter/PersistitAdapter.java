@@ -16,15 +16,14 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.*;
+import com.akiban.qp.BTreeAdapter;
+import com.akiban.qp.BTreeAdapterRuntimeException;
+import com.akiban.qp.Cursor;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.exception.PersistitException;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class PersistitAdapter implements BTreeAdapter
 {
@@ -46,26 +45,16 @@ public class PersistitAdapter implements BTreeAdapter
 
     // PersistitAdapter interface
 
-    public synchronized RowType rowType(RowDef rowDef)
+    public PersistitAdapter(Schema schema, PersistitStore persistit, Session session)
     {
-        int ordinal = rowDef.getOrdinal();
-        RowType type = rowTypeMap.get(ordinal);
-        if (type == null) {
-            type = new UserTableRowType(rowDef.userTable());
-            rowTypeMap.put(ordinal, type);
-        }
-        return type;
-    }
-
-    public PersistitAdapter(PersistitStore persistit, Session session)
-    {
+        this.schema = schema;
         this.persistit = persistit;
         this.session = session;
     }
 
     // Object state
 
+    final Schema schema;
     final PersistitStore persistit;
     final Session session;
-    final Map<Integer, RowType> rowTypeMap = new HashMap<Integer, RowType>(); // ordinal -> RowType
 }

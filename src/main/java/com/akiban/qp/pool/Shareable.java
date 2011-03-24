@@ -13,14 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.pool;
 
-import com.akiban.qp.row.Row;
-
-public interface Cursor extends Row
+/* public */ interface Shareable extends Pool.Resource
 {
-    void open();
-    boolean next();
-    void close();
-    Row currentRow();
+    Shareable share();
+    Shareable exclusive();
+    void release();
+    Pool pool();
+    int references();
 }

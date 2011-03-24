@@ -321,6 +321,12 @@ public class UserTable extends Table
         return count;
     }
 
+    public UserTable parentTable()
+    {
+        Join join = getParentJoin();
+        return join == null ? null : join.getParent();
+    }
+
     @SuppressWarnings("unused")
     private UserTable()
     {

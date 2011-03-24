@@ -13,14 +13,27 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.rowtype;
 
-import com.akiban.qp.row.Row;
-
-public interface Cursor extends Row
+public abstract class DerivedRowType extends RowType
 {
-    void open();
-    boolean next();
-    void close();
-    Row currentRow();
+    // RowType interface
+
+    @Override
+    public final int typeId()
+    {
+        return typeId;
+    }
+
+    // For use by subclasses
+
+    protected DerivedRowType(Schema schema, int typeId, Ancestry ancestry)
+    {
+        super(schema, ancestry);
+        this.typeId = typeId;
+    }
+
+    // Object state
+
+    private final int typeId;
 }

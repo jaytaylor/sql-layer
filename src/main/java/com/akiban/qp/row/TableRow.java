@@ -13,8 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.row;
 
-public interface PhysicalOperator extends Cursor
+import com.akiban.ais.model.UserTable;
+
+public abstract class TableRow extends RowBase
 {
+    public abstract UserTable table();
 }

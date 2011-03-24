@@ -13,7 +13,9 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.expression;
+
+import com.akiban.qp.row.Row;
 
 public class Compare implements Expression
 {

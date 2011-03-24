@@ -13,14 +13,46 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.row;
 
-import com.akiban.qp.row.Row;
-
-public interface Cursor extends Row
+public class ShareableRow // extends ShareableBase implements Row
 {
-    void open();
-    boolean next();
-    void close();
-    Row currentRow();
+/*
+    // Row interface
+
+    @Override
+    public RowType rowType()
+    {
+        return row.rowType();
+    }
+
+    @Override
+    public <T> T field(int i)
+    {
+        return row.field(i);
+    }
+
+    @Override
+    public HKey hKey()
+    {
+        return row.hKey();
+    }
+
+    @Override
+    public boolean ancestorOf(Row that)
+    {
+        return row.ancestorOf(that);
+    }
+    // ShareableRow interface
+
+    public ShareableRow(Pool pool, Row row)
+    {
+        super(pool);
+        this.row = row;
+    }
+
+    // Object interface
+
+    private final Row row;
+*/
 }

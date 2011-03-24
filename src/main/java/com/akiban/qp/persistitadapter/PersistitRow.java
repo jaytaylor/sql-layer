@@ -16,22 +16,19 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.Row;
-import com.akiban.qp.RowType;
-import com.akiban.qp.TableRow;
-import com.akiban.qp.UserTableRowType;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.TableRow;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
-// public for testing
-public class PersistitTableRow implements TableRow
+class PersistitRow extends TableRow
 {
     // Object interface
 
@@ -43,29 +40,16 @@ public class PersistitTableRow implements TableRow
 
     // Row interface
 
-
     @Override
-    public RowType type()
+    public RowType rowType()
     {
-        return adapter.rowType(row.getRowDef());
-    }
-
-    @Override
-    public Row copy()
-    {
-        return new PersistitTableRow(this);
+        return adapter.schema.userTableRowType(row.getRowDef().userTable());
     }
 
     @Override
     public <T> T field(int i)
     {
         return (T) row.get(i);
-    }
-
-    @Override
-    public <T> void field(int i, T value)
-    {
-        row.put(i, value);
     }
 
     // TableRow interface
@@ -76,23 +60,11 @@ public class PersistitTableRow implements TableRow
         return (UserTable) row.getRowDef().table();
     }
 
-    @Override
-    public boolean ancestorOf(Row row)
-    {
-        PersistitTableRow that = (PersistitTableRow) row;
-        return this.hKey().prefixOf(that.hKey());
-    }
-
-    // PersistitTableRow interface
+    // PersistitRow interface
 
     public PersistitHKey hKey()
     {
         return hKey;
-    }
-
-    public LegacyRowWrapper rowWrapper()
-    {
-        return row;
     }
 
     public void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
@@ -125,7 +97,7 @@ public class PersistitTableRow implements TableRow
         } while (exception != null);
     }
 
-    public PersistitTableRow(PersistitAdapter adapter)
+    public PersistitRow(PersistitAdapter adapter)
     {
         this.adapter = adapter;
         this.rowData = new RowData(EMPTY_BYTE_ARRAY);
@@ -133,9 +105,9 @@ public class PersistitTableRow implements TableRow
         this.hKey = new PersistitHKey();
     }
 
-    // For use by this class
+    // For use by this package
 
-    private PersistitTableRow(PersistitTableRow row)
+    PersistitRow(PersistitRow row)
     {
         this.adapter = row.adapter;
         this.rowData = row.rowData.copy();

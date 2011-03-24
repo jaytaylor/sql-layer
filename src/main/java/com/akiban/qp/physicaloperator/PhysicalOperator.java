@@ -13,13 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.physicaloperator;
 
-public interface Row
+import com.akiban.qp.Cursor;
+
+public interface PhysicalOperator
 {
-    RowType type();
-    Row copy();
-    boolean ancestorOf(Row row);
-    <T> T field(int i);
-    <T> void field(int i, T value);
+    Cursor cursor();
 }

@@ -13,15 +13,32 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.RowDef;
 
-public class UserTableRowType implements RowType
+import javax.swing.event.AncestorEvent;
+
+public class UserTableRowType extends RowType
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return table.toString();
+    }
+
+
     // RowType interface
 
+    @Override
+    public int typeId()
+    {
+        return ((RowDef) table.rowDef()).getOrdinal();
+    }
 
     @Override
     public int nFields()
@@ -34,7 +51,7 @@ public class UserTableRowType implements RowType
     {
         assert type instanceof UserTableRowType : type;
         // TODO: Something faster
-        UserTable ancestor = ((UserTableRowType)type).table;
+        UserTable ancestor = ((UserTableRowType) type).table;
         do {
             Join join = ancestor.getParentJoin();
             ancestor = join == null ? null : join.getParent();
@@ -44,8 +61,9 @@ public class UserTableRowType implements RowType
 
     // UserTableRowType interface
 
-    public UserTableRowType(UserTable table)
+    public UserTableRowType(Schema schema, UserTable table)
     {
+        super(schema, Ancestry.of(table));
         this.table = table;
     }
 

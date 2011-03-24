@@ -13,12 +13,30 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.pool;
 
-import com.akiban.ais.model.UserTable;
-
-public interface TableRow extends Row
+/* public */ class ShareableHolder<T extends Shareable>
 {
-    UserTable table();
-    boolean ancestorOf(Row row);
+    public void assign(T newResource)
+    {
+        if (resource != null) {
+            resource.release();
+        }
+        resource = newResource == null ? null : (T) newResource.share();
+    }
+
+    public T share()
+    {
+        return resource;
+    }
+
+    public T exclusive()
+    {
+        resource = (T) resource.exclusive();
+        return resource;
+    }
+
+    // Object state
+
+    private T resource;
 }

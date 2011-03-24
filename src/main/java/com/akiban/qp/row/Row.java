@@ -13,14 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.row;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.HKey;
+import com.akiban.qp.rowtype.RowType;
 
-public interface Cursor extends Row
+public interface Row
 {
-    void open();
-    boolean next();
-    void close();
-    Row currentRow();
+    RowType rowType();
+    <T> T field(int i);
+    HKey hKey();
+    boolean ancestorOf(Row that);
 }

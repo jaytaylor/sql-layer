@@ -13,39 +13,26 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.expression;
 
-import com.akiban.ais.model.GroupTable;
-
-public class GroupScan_Default implements PhysicalOperator
+public enum Comparison
 {
-    // PhysicalOperator interface
+    EQ("=="),
+    NE("!="),
+    LT("<"),
+    LE("<="),
+    GT(">"),
+    GE(">=");
 
-    @Override
-    public void open()
+    public String toString()
     {
+        return symbol;
     }
 
-    @Override
-    public Row next()
+    private Comparison(String symbol)
     {
-        return cursor.next();
+        this.symbol = symbol;
     }
 
-    @Override
-    public void close()
-    {
-        cursor.close();
-    }
-
-    // GroupScan_Default interface
-
-    public GroupScan_Default(BTreeAdapter btree, GroupTable groupTable)
-    {
-        this.cursor = btree.newCursor(groupTable);
-    }
-
-    // Object state
-
-    private final Cursor cursor;
+    private final String symbol;
 }
