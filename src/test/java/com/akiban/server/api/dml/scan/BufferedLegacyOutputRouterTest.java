@@ -41,6 +41,16 @@ public final class BufferedLegacyOutputRouterTest {
                 integers.add( wrap.getInt() );
             }
         }
+
+        @Override
+        public void mark() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void rewind() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @Test

@@ -23,11 +23,14 @@ import java.util.List;
 
 public final class RowDataLegacyOutputRouter implements LegacyRowOutput {
     public interface Handler {
+        void mark();
+        void rewind();
         void handleRow(RowData rowData) throws RowOutputException;
     }
 
     private final List<Handler> handlers = new ArrayList<Handler>();
     private int rows = 0;
+    private int markedRows = rows;
 
     /**
      * Adds a handler to this router. This method returns the handler back to you, as a convenience for when
@@ -67,5 +70,21 @@ public final class RowDataLegacyOutputRouter implements LegacyRowOutput {
     @Override
     public boolean getOutputToMessage() {
         return false;
+    }
+
+    @Override
+    public void mark() {
+        markedRows = rows;
+        for(Handler handler : handlers) {
+            handler.mark();
+        }
+    }
+
+    @Override
+    public void rewind() {
+        rows = markedRows;
+        for(Handler handler : handlers) {
+            handler.rewind();
+        }
     }
 }

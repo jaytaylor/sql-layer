@@ -33,6 +33,8 @@ import java.util.List;
  */
 public class BufferedLegacyOutputRouter extends WrappingRowOutput {
     public interface Handler {
+        void mark();
+        void rewind();
         void handleRow(byte[] bytes, int offset, int length) throws RowOutputException;
     }
 
@@ -92,5 +94,21 @@ public class BufferedLegacyOutputRouter extends WrappingRowOutput {
     public boolean getOutputToMessage()
     {
         return true;
+    }
+
+    @Override
+    public void mark() {
+        super.mark();
+        for (Handler handler : handlers) {
+            handler.mark();
+        }
+    }
+
+    @Override
+    public void rewind() {
+        super.rewind();
+        for (Handler handler : handlers) {
+            handler.rewind();
+        }
     }
 }

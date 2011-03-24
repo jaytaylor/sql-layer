@@ -17,7 +17,6 @@ package com.akiban.server.api;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -189,6 +188,16 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         public boolean getOutputToMessage()
         {
             return true;
+        }
+
+        @Override
+        public void mark() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void rewind() {
+            throw new UnsupportedOperationException();
         }
     }
 

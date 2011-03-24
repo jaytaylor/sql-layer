@@ -691,6 +691,16 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                     throw new RowOutputException(e);
                 }
             }
+
+            @Override
+            public void mark() {
+                // nothing to do
+            }
+
+            @Override
+            public void rewind() {
+                // nothing to do
+            }
         });
 
 
