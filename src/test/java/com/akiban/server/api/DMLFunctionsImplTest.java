@@ -26,6 +26,7 @@ import java.util.List;
 import com.akiban.server.RowData;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -219,7 +220,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansNoLimit() throws InvalidOperationException, BufferFullException {
+    public void scansNoLimit() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(ScanLimit.NONE, "Hi", "there", "pooh bear", "how are you there");
 
         try {
@@ -237,7 +238,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansWithLimit() throws InvalidOperationException, BufferFullException {
+    public void scansWithLimit() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(1), "hi", "world", "and", "universe");
 
         try {
@@ -253,7 +254,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scanEmptyRC() throws InvalidOperationException, BufferFullException {
+    public void scanEmptyRC() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(0));
         try {
             assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output));

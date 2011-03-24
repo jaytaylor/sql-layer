@@ -58,10 +58,14 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
+import com.persistit.Transaction;
+import com.persistit.exception.PersistitException;
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -281,7 +285,28 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        return scanner.doScan(cursor, cursorId, output);
+        boolean success = false;
+        Boolean hasMore = null;
+
+        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        try  {
+             do {
+                try {
+                    transaction.begin();
+                    hasMore = scanner.doScan(cursor, cursorId, output);
+                    transaction.commit();
+                    success = true;
+                } catch (RollbackException e) {
+                    logger.trace("PersistIt error; retrying", e);
+                }
+            } while (!success);
+        } catch (PersistitException e) {
+            throw new GenericInvalidOperationException(e);
+        }
+        finally {
+            transaction.end();
+        }
+        return hasMore;
     }
 
     private static class PooledConverter {
@@ -395,6 +420,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
          * @throws BufferFullException
          *             see
          *             {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @throws RollbackException
+         *             if scanning results in a RollbackException
          * @see #scanSome(Session, CursorId, LegacyRowOutput)
          */
         protected boolean doScan(Cursor cursor,
@@ -403,7 +430,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                 throws CursorIsFinishedException,
                        RowOutputException,
                        GenericInvalidOperationException,
-                       BufferFullException {
+                       BufferFullException,
+                       RollbackException
+        {
             assert cursor != null;
             assert cursorId != null;
             assert output != null;
@@ -428,7 +457,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                 return !cursor.isFinished();
             } catch (BufferFullException e) {
                 throw e; // Don't want this to be handled as an Exception
-            } catch (Exception e) {
+            } catch (RollbackException e) {
+                throw e; // Pass this up to be handled in scanSome
+            }
+            catch (Exception e) {
                 cursor.setFinished();
                 throw new GenericInvalidOperationException(e);
             }

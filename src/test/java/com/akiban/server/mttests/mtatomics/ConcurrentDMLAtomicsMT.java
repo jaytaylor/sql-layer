@@ -59,9 +59,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 tableId,
                 scanCallable,
                 updateCallable,
-                Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "icebox")
+                Arrays.<NewRow>asList(
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 1L, "the snowman"),
@@ -97,10 +95,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 tableId,
                 scanCallable,
                 updateCallable,
-                Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 5L, "the snowman")
+                Arrays.<NewRow>asList(
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 2L, "mr melty"),
@@ -147,9 +142,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 tableId,
                 scanCallable,
                 updateCallable,
-                Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 2L, "xtreme weather")
+                Arrays.<NewRow>asList(
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 1L, "a snowman"),
@@ -197,9 +190,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 tableId,
                 scanCallable,
                 updateCallable,
-                Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 2L, "xtreme weather")
+                Arrays.<NewRow>asList(
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 2L, "xtreme weather"),
