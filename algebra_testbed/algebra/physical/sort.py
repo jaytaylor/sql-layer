@@ -13,14 +13,14 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-import operator
+import physicaloperator
 
-Operator = operator.Operator
+PhysicalOperator = physicaloperator.PhysicalOperator
 
-class Sort(Operator):
+class Sort(PhysicalOperator):
 
     def __init__(self, input, rowtype, sort_key):
-        Operator.__init__(self)
+        PhysicalOperator.__init__(self, input)
         self._input = input
         self._rowtype = rowtype
         self._sort_key = sort_key

@@ -21,7 +21,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Represents a failing test.
+ * Represents a condition for running a test.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

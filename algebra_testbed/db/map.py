@@ -48,7 +48,7 @@ class Map(object):
             else:
                 position += 1
         if not cursor:
-            cursor = Cursor(self, position)
+            cursor = Cursor(self, position, end)
         return cursor
 
 class Index(Map):

@@ -16,6 +16,8 @@
 package com.akiban.server.service.memcache;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.junit.OnlyIf;
+import com.akiban.junit.OnlyIfNot;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiRequestException;
@@ -63,13 +65,20 @@ public final class HapiGetRequestTest {
             assertEquals("predicate value", value, actual.getValue());
             return this;
         }
+
+        HapiGetRequestBuilder limit(int limit) {
+            assert request.getLimit() < 0;
+            request.setLimit(Integer.toString(limit));
+            return this;
+        }
     }
 
     private static class Parameterizations {
         private final ParameterizationBuilder params = new ParameterizationBuilder();
 
         void addFailing(String queryString) {
-            params.addFailing(queryString, queryString, null);
+            params.add(queryString, queryString, null);
+//            params.addFailing(queryString, queryString, null);
         }
 
         HapiGetRequestBuilder add(String queryString, String schema, String table, String usingTable) {
@@ -115,6 +124,23 @@ public final class HapiGetRequestTest {
                 escape("☺"), escape("♪"), escape("☠"), escape("★"), escape("☘"));
         params.add(weirdQuery, "☺", "♪", "☠").predicate("★", EQ, "☘");
 
+        params.add("coi:customer:(:LIMIT=2)name=bob", "coi", "customer", "customer")
+                .predicate("name", EQ, "bob")
+                .limit(2);
+        params.add("coi:customer:(order:LIMIT=2)name=bob", "coi", "customer", "order")
+                .predicate("name", EQ, "bob")
+                .limit(2);
+        params.add("coi:customer:restriction=limit", "coi", "customer", "customer")
+                .predicate("restriction", EQ, "limit");
+        params.add("coi:customer:restriction='LIMIT'", "coi", "customer", "customer")
+                .predicate("restriction", EQ, "LIMIT");
+        params.add("coi:customer:(LIMIT)restriction=LIMIT", "coi", "customer", "LIMIT")
+                .predicate("restriction", EQ, "LIMIT");
+        params.add("coi:customer:(LIMIT:LIMIT=1)restriction=LIMIT", "coi", "customer", "LIMIT")
+                .predicate("restriction", EQ, "LIMIT").limit(1);
+        params.addFailing("coi:customer:(LIMIT=2)c=v");
+        params.addFailing("coi:customer:(:LIMIT=two)c=v");
+
         params.addFailing("coi:customer:name='☃'");
         params.addFailing("coi:customer:name=");
 
@@ -137,17 +163,12 @@ public final class HapiGetRequestTest {
         this.expectedRequest = request;
     }
 
-    @Test
-    public void test() throws HapiRequestException {
-        if (expectedRequest == null) {
-            testFailing();
-        }
-        else {
-            testWorking();
-        }
+    public boolean expectedToWork() {
+        return expectedRequest != null;
     }
 
-    private void testFailing() {
+    @Test @OnlyIfNot("expectedToWork")
+    public void fails() {
         Exception exception = null;
         try {
             HapiGetRequest request = ParsedHapiGetRequest.parse(query);
@@ -158,14 +179,39 @@ public final class HapiGetRequestTest {
         assertNotNull(query + "expected exception", exception);
     }
 
-    private void testWorking() throws HapiRequestException {
+    @Test @OnlyIf("expectedToWork")
+    public void equality() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " request", expectedRequest, actual);
-        assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
+    }
 
+    @Test @OnlyIf("expectedToWork")
+    public void hash() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
+        assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void schema() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " schema", expectedRequest.getSchema(), actual.getSchema());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void table() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " table", expectedRequest.getTable(), actual.getTable());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void predicateTable() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " usingtable", expectedRequest.getUsingTable(), actual.getUsingTable());
+    }
+
+    @Test @OnlyIf("expectedToWork")
+    public void predicates() throws  HapiRequestException {
+        HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " predicates", expectedRequest.getPredicates(), actual.getPredicates());
     }
 }

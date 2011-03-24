@@ -62,6 +62,7 @@ import com.persistit.KeyFilter;
 import com.persistit.KeyState;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.Persistit;
+import com.persistit.TimestampAllocator.Checkpoint;
 import com.persistit.Transaction;
 import com.persistit.Transaction.DefaultCommitListener;
 import com.persistit.Tree;
@@ -169,10 +170,18 @@ public class PersistitStore implements Store {
     }
 
     public synchronized void stop() throws Exception {
-        indexManager.shutDown();
-        indexManager = null;
         getDb().getManagement().setDisplayFilter(originalDisplayFilter);
+        treeService = null;
+        schemaManager = null;
+        indexManager = null;
+        rowDefCache = null;
     }
+    
+    @Override
+    public void crash() throws Exception {
+        stop();
+    }
+    
 
     @Override
     public Store cast() {
@@ -580,11 +589,12 @@ public class PersistitStore implements Store {
                     transaction.commit(new DefaultCommitListener() {
                         @Override
                         public void committed() {
+                            final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
                             final long t = transaction.getCommitTimestamp();
-                            ts.incrementRowCount(t, tsd.rowCountDelta);
-                            ts.updateAutoIncrementValue(t, tsd.autoIncrementValue);
-                            ts.updateUniqueIdValue(t, tsd.uniqueId);
-                            ts.updateWriteTime(t);
+                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
+                            ts.updateAutoIncrementValue(cp, t, tsd.autoIncrementValue);
+                            ts.updateUniqueIdValue(cp, t, tsd.uniqueId);
+                            ts.updateWriteTime(cp, t);
                         }
                     }, forceToDisk);
 
@@ -644,7 +654,7 @@ public class PersistitStore implements Store {
     @Override
     public void updateTableStats(final Session session, RowDef rowDef,
             long rowCount) throws Exception {
-        schemaManager.saveTableStatusRecords(session);
+        // no-up for now
     }
 
     @Override
@@ -718,11 +728,12 @@ public class PersistitStore implements Store {
                     transaction.commit(new DefaultCommitListener() {
                         @Override
                         public void committed() {
+                            final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
                             final long t = transaction.getCommitTimestamp();
-                            ts.incrementRowCount(t, tsd.rowCountDelta);
-                            ts.updateAutoIncrementValue(t, tsd.autoIncrementValue);
-                            ts.updateUniqueIdValue(t, tsd.uniqueId);
-                            ts.updateDeleteTime(t);
+                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
+                            ts.updateAutoIncrementValue(cp, t, tsd.autoIncrementValue);
+                            ts.updateUniqueIdValue(cp, t, tsd.uniqueId);
+                            ts.updateDeleteTime(cp, t);
                         }
                     }, forceToDisk);
 
@@ -813,11 +824,12 @@ public class PersistitStore implements Store {
                     transaction.commit(new DefaultCommitListener() {
                         @Override
                         public void committed() {
+                            final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
                             final long t = transaction.getCommitTimestamp();
-                            ts.incrementRowCount(t, tsd.rowCountDelta);
-                            ts.updateAutoIncrementValue(t, tsd.autoIncrementValue);
-                            ts.updateUniqueIdValue(t, tsd.uniqueId);
-                            ts.updateUpdateTime(t);
+                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
+                            ts.updateAutoIncrementValue(cp, t, tsd.autoIncrementValue);
+                            ts.updateUniqueIdValue(cp, t, tsd.uniqueId);
+                            ts.updateUpdateTime(cp, t);
                         }
                     }, forceToDisk);
 
@@ -933,14 +945,14 @@ public class PersistitStore implements Store {
                 }
                 final TableStatus ts0 = groupRowDef.getTableStatus();
                 tableStatusList.add(ts0);
-                schemaManager.saveTableStatusRecords(session);
                 transaction.commit(new DefaultCommitListener() {
                     @Override
                     public void committed() {
+                        final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
                         final long t = transaction.getCommitTimestamp();
                         for (final TableStatus ts : tableStatusList) {
-                            ts.zeroRowCount(t);
-                            ts.updateDeleteTime(t);
+                            ts.zeroRowCount(cp, t);
+                            ts.updateDeleteTime(cp, t);
                         }
                     }
                 }, forceToDisk);

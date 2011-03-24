@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
+import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
@@ -34,6 +35,38 @@ import java.util.*;
 import static junit.framework.Assert.*;
 
 public final class CBasicIT extends ApiTestBase {
+
+    @Test
+    public void simpleScanLimit() throws InvalidOperationException {
+        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+
+        expectRowCount(tableId, 0);
+        dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
+        expectRowCount(tableId, 1);
+        dml().writeRow(session(), createNewRow(tableId, 1, "foo bear") );
+        expectRowCount(tableId, 2);
+
+        Session session = new SessionImpl();
+        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1), 0, null, new FixedCountLimit(1));
+        ListRowOutput output = new ListRowOutput();
+
+        assertEquals("cursors", cursorSet(), dml().getCursors(session));
+        CursorId cursorId = dml().openCursor(session, request);
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
+        assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
+
+        boolean hasMore = dml().scanSome(session, cursorId, output);
+        assertFalse("more rows expected to be false", hasMore);
+        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
+
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
+        dml().closeCursor(session, cursorId);
+        assertEquals("cursors", cursorSet(), dml().getCursors(session));
+
+        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        expectedRows.add( createNewRow(tableId, 0L, "hello world") );
+        assertEquals("rows scanned", expectedRows, output.getRows());
+    }
 
     @Test
     public void simpleScan() throws InvalidOperationException {
@@ -54,12 +87,8 @@ public final class CBasicIT extends ApiTestBase {
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
         assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
 
-        boolean hasMore1 = dml().scanSome(session, cursorId, output, 1);
-        assertTrue("more rows expected", hasMore1);
-        assertEquals("state", CursorState.SCANNING, dml().getCursorState(session, cursorId));
-
-        boolean hasMore2 = dml().scanSome(session, cursorId, output, -1);
-        assertFalse("more rows found", hasMore2);
+        boolean hasMore = dml().scanSome(session, cursorId, output);
+        assertFalse("more rows found", hasMore);
         assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
 
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
@@ -70,6 +99,7 @@ public final class CBasicIT extends ApiTestBase {
         expectedRows.add( createNewRow(tableId, 0L, "hello world") );
         expectedRows.add( createNewRow(tableId, 1L, "foo bear") );
         assertEquals("rows scanned", expectedRows, output.getRows());
+
     }
 
     /*
@@ -142,6 +172,7 @@ public final class CBasicIT extends ApiTestBase {
     /**
      * Note that in legacy mode, even a partial scan request results in a full scan
      * @throws InvalidOperationException if something failed
+     * @throws BufferFullException if something failed
      */
     @Test
     public void partialRowScanLegacy() throws InvalidOperationException, BufferFullException {
@@ -152,11 +183,12 @@ public final class CBasicIT extends ApiTestBase {
         expectRowCount(tableId, 1);
 
         Session session = new SessionImpl();
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0)); // partial scan requested
+        // request a partial scan
+        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0), 0, null, new FixedCountLimit(1));
         LegacyRowOutput output = new WrappingRowOutput(ByteBuffer.allocate(1024 * 1024));
         CursorId cursorId = dml().openCursor(session, request);
 
-        dml().scanSome(session, cursorId, output, 1);
+        dml().scanSome(session, cursorId, output);
         assertEquals("rows read", 1, output.getRowsCount());
         dml().closeCursor(session, cursorId);
 
@@ -231,7 +263,7 @@ public final class CBasicIT extends ApiTestBase {
         final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
         Session session = new SessionImpl();
-        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
+        ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1), 0, null, new FixedCountLimit(1));
         ListRowOutput output = new ListRowOutput();
 
         assertEquals("cursors", cursorSet(), dml().getCursors(session));
@@ -239,13 +271,13 @@ public final class CBasicIT extends ApiTestBase {
         assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
         assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
 
-        boolean hasMore = dml().scanSome(session, cursorId, output, 1);
+        boolean hasMore = dml().scanSome(session, cursorId, output);
         assertFalse("no more rows expected", hasMore);
         assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
 
         CursorIsFinishedException caught = null;
         try {
-            dml().scanSome(session, cursorId, output, 0);
+            dml().scanSome(session, cursorId, output);
         } catch (CursorIsFinishedException e) {
             caught = e;
         }

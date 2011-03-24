@@ -39,9 +39,9 @@ import com.persistit.KeyFilter;
 import com.persistit.KeyHistogram;
 import com.persistit.KeyHistogram.KeyCount;
 import com.persistit.Persistit;
+import com.persistit.TimestampAllocator.Checkpoint;
 import com.persistit.Transaction;
 import com.persistit.Transaction.DefaultCommitListener;
-import com.persistit.TransactionRunnable;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
@@ -81,14 +81,6 @@ public class PersistitStoreIndexManager implements IndexManager {
         this.store = store;
     }
 
-    public void startUp() {
-
-    }
-
-    public void shutDown() {
-
-    }
-
     /*
      * (non-Javadoc)
      * 
@@ -125,19 +117,20 @@ public class PersistitStoreIndexManager implements IndexManager {
      * .service.session.Session, com.akiban.server.IndexDef)
      */
     @Override
-    public void deleteIndexAnalysis(final Session session, final IndexDef indexDef) throws PersistitException {
+    public void deleteIndexAnalysis(final Session session,
+            final IndexDef indexDef) throws PersistitException {
         final RowDef indexAnalysisRowDef = store.getRowDefCache().getRowDef(
                 ANALYSIS_TABLE_NAME);
         if (indexAnalysisRowDef == null) {
             // true for some unit tests
             return;
         }
-        final Exchange analysisEx = store
-                .getExchange(session, indexAnalysisRowDef, null);
+        final Exchange analysisEx = store.getExchange(session,
+                indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
         final TableStatusDelta tsd = store.tableStatusDelta(session);
         int retries = PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
-        
+
         for (;;) {
             transaction.begin();
             try {
@@ -148,8 +141,8 @@ public class PersistitStoreIndexManager implements IndexManager {
                 // Remove previous analysis
                 //
                 try {
-                    store.constructHKey(session, analysisEx, indexAnalysisRowDef,
-                            rowData, false, tsd);
+                    store.constructHKey(session, analysisEx,
+                            indexAnalysisRowDef, rowData, false, tsd);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {
@@ -157,16 +150,19 @@ public class PersistitStoreIndexManager implements IndexManager {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-                
+
                 final TableStatus ts = indexAnalysisRowDef.getTableStatus();
                 transaction.commit(new DefaultCommitListener() {
-                    
+
                     @Override
                     public void committed() {
+                        final Checkpoint cp = store.getDb()
+                                .getCurrentCheckpoint();
                         final long t = transaction.getCommitTimestamp();
-                        ts.zeroRowCount(t);
+                        ts.zeroRowCount(cp, t);
                     }
                 }, store.forceToDisk);
+                break;
 
             } catch (RollbackException re) {
                 if (--retries < 0) {
@@ -266,7 +262,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 .getFieldCount()];
         final TableStatusDelta tsd = store.tableStatusDelta(session);
         tsd.reset();
-        
+
         try {
 
             int retries = PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
@@ -366,19 +362,22 @@ public class PersistitStoreIndexManager implements IndexManager {
                     } catch (InvalidOperationException e) {
                         throw new RollbackException(e);
                     }
-                    
+
                     final TableStatus ts = indexAnalysisRowDef.getTableStatus();
 
                     transaction.commit(new DefaultCommitListener() {
-                        
+
                         @Override
                         public void committed() {
+                            final Checkpoint cp = store.getDb()
+                                    .getCurrentCheckpoint();
                             final long t = transaction.getCommitTimestamp();
-                            ts.zeroRowCount(t);
-                            ts.incrementRowCount(t, tsd.rowCountDelta);
-                            ts.updateWriteTime(t);
+                            ts.zeroRowCount(cp, t);
+                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
+                            ts.updateWriteTime(cp, t);
                         }
                     }, store.forceToDisk);
+                    break;
 
                 } catch (RollbackException re) {
                     if (--retries < 0) {

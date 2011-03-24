@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.persistit.TimestampAllocator.Checkpoint;
 import com.persistit.Value;
 import com.persistit.exception.ConversionException;
 
@@ -64,14 +65,18 @@ import com.persistit.exception.ConversionException;
  */
 public class TableStatus {
 
+    public static final Checkpoint CHECKPOINT_ZERO = new Checkpoint(0, 0);
+    
     private static final int VERSION = 100;
+
+    private final int tableId;
 
     private  RowDef currentRowDef;
 
     private int ordinal;
 
     // Used for pk-less tables
-    // This is a counter used to create new values - is transient
+    // This is a counter used to create new values.
     private long uniqueIdCounter;
 
     private boolean isAutoIncrement;
@@ -81,6 +86,9 @@ public class TableStatus {
     private long autoIncrementValue;
 
     // This is the maximum of all values actually committed
+    // This value, rather than uniqueIdCounter, is what
+    // gets serialized.
+    // 
     private long uniqueIdValue;
 
     private long rowCount;
@@ -95,19 +103,22 @@ public class TableStatus {
 
     private long lastDeleteTime;
 
-    private long timestamp;
+    private long checkpoint = CHECKPOINT_ZERO.getTimestamp();
+    
+    private boolean deleted = true;
 
     private boolean dirty;
-
+    
+    private TableStatus previous;
+    
     private static long now() {
         return System.currentTimeMillis();
     }
 
-    public TableStatus(final RowDef rowDef) {
-        this.currentRowDef = rowDef;
-        dirty = true;
+    public TableStatus(final int tableId) {
+        this.tableId = tableId;
     }
-
+    
     public synchronized int getRowDefId() {
         return currentRowDef.getRowDefId();
     }
@@ -152,74 +163,114 @@ public class TableStatus {
         return rowCount;
     }
     
-    public long getTimestamp() {
-        return timestamp;
+    public synchronized boolean isDeleted() {
+        return deleted;
     }
-
+    
     // ----------
     
+    public synchronized void setRowDef(final RowDef rowDef) {
+        if (previous != null) {
+            previous.setRowDef(rowDef);
+        }
+        this.currentRowDef = rowDef;
+        dirty = true;
+    }
 
-    public synchronized void setOrdinal(final long timestamp, int ordinal) {
+    public synchronized void setOrdinal(int ordinal) {
+        if (previous != null) {
+            previous.setOrdinal(ordinal);
+        }
         if (this.ordinal != ordinal) {
             this.ordinal = ordinal;
             dirty = true;
         }
     }
 
-    public synchronized void setAutoIncrementEnabled(final long timestamp, boolean isAutoIncrement) {
+    public synchronized void setAutoIncrementEnabled(boolean isAutoIncrement) {
         if (this.isAutoIncrement != isAutoIncrement) {
             this.isAutoIncrement = isAutoIncrement;
             dirty = true;
         }
     }
 
-    public synchronized void updateAutoIncrementValue(final long timestamp, long autoIncrementValue) {
+    public synchronized void updateAutoIncrementValue(final Checkpoint checkpoint, final long timestamp, long autoIncrementValue) {
+        if (split(checkpoint, timestamp)) {
+            updateAutoIncrementValue(CHECKPOINT_ZERO, timestamp, autoIncrementValue);
+        }
         this.autoIncrementValue = Math.max(this.autoIncrementValue,
                 autoIncrementValue);
+        dirty = true;
     }
 
-    public synchronized void updateUniqueIdValue(final long timestamp, long uniqueId) {
+    public synchronized void updateUniqueIdValue(final Checkpoint checkpoint, final long timestamp, long uniqueId) {
+        if (split(checkpoint, timestamp)) {
+            updateUniqueIdValue(CHECKPOINT_ZERO, timestamp, uniqueId);
+        }
         this.uniqueIdValue = Math.max(this.uniqueIdValue, uniqueId);
+        dirty = true;
     }
 
-    public synchronized void zeroRowCount(final long timestamp) {
+    public synchronized void zeroRowCount(final Checkpoint checkpoint, final long timestamp) {
+        if (split(checkpoint, timestamp)) {
+            zeroRowCount(CHECKPOINT_ZERO, timestamp);
+        }
         this.rowCount = 0;
         dirty = true;
     }
 
-    public synchronized void incrementRowCount(final long timestamp, long delta) {
+    public synchronized void incrementRowCount(final Checkpoint checkpoint, final long timestamp, long delta) {
+        if (split(checkpoint, timestamp)) {
+            incrementRowCount(CHECKPOINT_ZERO, timestamp, delta);
+        }
         this.rowCount = Math.max(0, this.rowCount + delta);
         dirty = true;
     }
 
-    public synchronized void updateWriteTime(final long timestamp) {
+    public synchronized void updateWriteTime(final Checkpoint checkpoint, final long timestamp) {
+        if (split(checkpoint, timestamp)) {
+            updateWriteTime(CHECKPOINT_ZERO, timestamp);
+        }
         this.lastWriteTime = now();
         dirty = true;
     }
 
-    public synchronized void updateReadTime(final long timestamp) {
+    public synchronized void updateReadTime(final Checkpoint checkpoint, final long timestamp) {
+        if (split(checkpoint, timestamp)) {
+            updateReadTime(CHECKPOINT_ZERO, timestamp);
+        }
         this.lastReadTime = now();
         dirty = true;
     }
 
-    public synchronized void updateUpdateTime(final long timestamp) {
+    public synchronized void updateUpdateTime(final Checkpoint checkpoint, final long timestamp) {
+        if (split(checkpoint, timestamp)) {
+            updateUpdateTime(CHECKPOINT_ZERO, timestamp);
+        }
         this.lastUpdateTime = now();
         dirty = true;
     }
 
-    public synchronized void updateDeleteTime(final long timestamp) {
+    public synchronized void updateDeleteTime(final Checkpoint checkpoint, final long timestamp) {
+        if (split(checkpoint, timestamp)) {
+            updateDeleteTime(CHECKPOINT_ZERO, timestamp);
+        }
         this.lastDeleteTime = now();
         dirty = true;
     }
     
+    public synchronized void delete(final Checkpoint checkpoint, final long timestamp) {
+        if (split(checkpoint, timestamp)) {
+            delete(CHECKPOINT_ZERO, timestamp);
+        }
+        this.deleted = true;
+        dirty = true;
+    }
+   
     // ------------------
 
     public synchronized long allocateNewUniqueId() {
         return uniqueIdCounter++;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
     }
 
     public synchronized void flushed() {
@@ -233,7 +284,64 @@ public class TableStatus {
                 autoIncrementValue, rowCount);
     }
 
+    private boolean split(final Checkpoint checkpoint, final long timestamp) {
+        if (checkpoint.getTimestamp() > this.checkpoint) {
+            final TableStatus clone = new TableStatus(tableId);
+            clone.autoIncrementValue = this.autoIncrementValue;
+            clone.checkpoint = this.checkpoint;
+            clone.creationTime = this.creationTime;
+            clone.currentRowDef = this.currentRowDef;
+            clone.deleted = this.deleted;
+            clone.dirty = this.dirty;
+            clone.isAutoIncrement = this.isAutoIncrement;
+            clone.lastDeleteTime = this.lastDeleteTime;
+            clone.lastReadTime = this.lastReadTime;
+            clone.lastUpdateTime = this.lastUpdateTime;
+            clone.lastWriteTime = this.lastWriteTime;
+            clone.ordinal = this.ordinal;
+            clone.previous = this.previous;
+            clone.rowCount = this.rowCount;
+            clone.uniqueIdCounter = this.uniqueIdCounter;
+            clone.uniqueIdValue = this.uniqueIdValue;
+            this.previous = clone;
+        }
+        return timestamp < this.checkpoint;
+    }
 
+    /**
+     * Find and return a version of this TableStatus whose checkpoint less than or
+     * equal to the supplied timestamp. If there is no such version then return 
+     * <code>null</code>
+     * @param the checkpointTimestamp of the desired TableStatus version
+     * @return  the TableStatus version, or <code>null</code> if there is none
+     */
+    public synchronized TableStatus version(final long checkpointTimestamp) {
+        TableStatus ts = this;
+        while (ts != null) {
+            if (ts.checkpoint <= checkpointTimestamp) {
+                break;
+            }
+            ts = ts.previous;
+        }
+        return ts;
+    }
+    
+    /**
+     * Remove any versions having timestamps before or equal to the supplied
+     * checkpoint timestamp.  The CheckpointListener does this after writing
+     * the records to the _status_ tree.
+     * @param checkpointTimestamp
+     */
+    public synchronized void pruneObsoleteVersions(final long checkpointTimestamp) {
+        TableStatus ts = this;
+        while (ts.previous != null) {
+            if (ts.previous.checkpoint <= checkpointTimestamp) {
+                ts.previous = null;
+                break;
+            }
+            ts = ts.previous;
+        }
+    }
     /**
      * Serialize this table status into the supplied Persistit Value object.
      * This eliminates the need to have a custom PersistitValueCoder and
@@ -262,7 +370,7 @@ public class TableStatus {
             value.put(lastReadTime);
             value.put(lastUpdateTime);
             value.put(lastDeleteTime);
-            value.put(timestamp);
+            value.put(checkpoint);
         } finally {
             value.setStreamMode(false);
         }
@@ -306,7 +414,7 @@ public class TableStatus {
             lastReadTime = value.getLong();
             lastUpdateTime = value.getLong();
             lastDeleteTime = value.getLong();
-            timestamp = value.getLong();
+            checkpoint = value.getLong();
         } finally {
             value.setStreamMode(false);
         }

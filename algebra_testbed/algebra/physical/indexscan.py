@@ -17,7 +17,7 @@ import scan
 
 Scan = scan.Scan
 
-class FullTableScan(Scan):
+class IndexScan(Scan):
 
-    def __init__(self, table):
-        Scan.__init__(self, table.cursor())
+    def __init__(self, index, start = None, end = None):
+        Scan.__init__(self, index.cursor(start, end))

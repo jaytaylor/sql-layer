@@ -60,7 +60,7 @@ public interface SchemaManager {
      */
     void createTableDefinition(Session session, String schemaName,
             String statement, boolean useOldId) throws Exception;
-    
+
     /**
      * Delete the table definition for the specified tableId. This method does
      * not disturb other table definition versions having the same table and
@@ -92,13 +92,6 @@ public interface SchemaManager {
      */
     void deleteSchemaDefinition(Session session, String schemaName)
             throws Exception;
-
-    /**
-     * Delete all schema data.
-     * 
-     * @throws Exception
-     */
-    void deleteAllDefinitions(Session session) throws Exception;
 
     /**
      * Get the most recently updated version of the table definition for a
@@ -158,7 +151,6 @@ public interface SchemaManager {
     String schemaString(Session session, boolean withGroupTables)
             throws Exception;
 
-
     /**
      * Return the system-wide Timestamp (as known from Persistit) for the last
      * update successfully committed to the schema database.
@@ -186,9 +178,27 @@ public interface SchemaManager {
      */
     int getSchemaGeneration();
 
-    void loadTableStatusRecords(final Session session) throws PersistitException;
-    
-    void removeStaleTableStatusRecords(final Session session) throws Exception;
-    
-    void saveTableStatusRecords(final Session session) throws PersistitException;
+    /**
+     * Load TableStatus records from backing store. This happens only when
+     * creating a new AIS due to a schema change or upon system startup.
+     * 
+     * @param session
+     * @throws Exception
+     */
+    public void loadTableStatusRecords(final Session session)
+            throws PersistitException;
+
+    /**
+     * Remove any TableStatus records belonging to tables that no longer exist.
+     * This method should be called by deleteTableDefinition.
+     * 
+     * @param session
+     * @throws PersistitException
+     */
+    public void removeStaleTableStatusRecords(final Session session,
+            final long timestamp) throws Exception;
+
+    public void saveTableStatusRecords(final Session session,
+            final long timestamp) throws PersistitException;
+
 }

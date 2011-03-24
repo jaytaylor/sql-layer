@@ -16,75 +16,77 @@
 package com.akiban.server.service.stats;
 
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.util.Tap;
+import com.akiban.util.TapReport;
 
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+public final class StatisticsServiceImpl implements StatisticsService,
+        Service<StatisticsService>, JmxManageable {
 
-public final class StatisticsServiceImpl implements StatisticsService, Service<StatisticsService>, JmxManageable {
-
-    private Map<CountingStat,AtomicInteger> countingStats;
+    private static final String STATISTICS_PROPERTY = "akserver.statistics";
 
     public StatisticsServiceImpl() {
-        final EnumMap<CountingStat,AtomicInteger> tmp = new EnumMap<CountingStat, AtomicInteger>(CountingStat.class);
-        for (CountingStat stat : CountingStat.values()) {
-            tmp.put(stat, new AtomicInteger(0));
-        }
-        countingStats = Collections.unmodifiableMap(tmp);
+    }
+
+    @Override
+    public void setEnabled(final String regExPattern, final boolean on) {
+        Tap.setEnabled(regExPattern, on);
+    }
+
+    @Override
+    public void reset(final String regExPattern) {
+        Tap.reset(regExPattern);
+    }
+
+    @Override
+    public TapReport[] getReport(final String regExPattern) {
+        return Tap.getReport(regExPattern);
     }
 
     private final StatisticsServiceMXBean bean = new StatisticsServiceMXBean() {
 
-        private int get(CountingStat which) {
-            return countingStats.get(which).get();
+        @Override
+        public void disableAll() {
+            Tap.setEnabled(".*", false);
         }
 
         @Override
-        public int getHapiRequestsCount() {
-            return get(CountingStat.HAPI_REQUESTS);
+        public void enableAll() {
+            Tap.setEnabled(".*", true);
         }
 
         @Override
-        public int getConnectionsOpened() {
-            return get(CountingStat.CONNECTIONS_OPENED);
+        public String getReport() {
+            return Tap.report();
         }
 
         @Override
-        public int getConnectionsClosed() {
-            return get(CountingStat.CONNECTIONS_CLOSED);
+        public TapReport[] getReports(String regExPattern) {
+            return Tap.getReport(regExPattern);
         }
 
         @Override
-        public int getConnectionsErrored() {
-            return get(CountingStat.CONNECTIONS_ERRORED);
+        public void reset(String regExPattern) {
+            Tap.reset(regExPattern);
         }
 
         @Override
-        public int getMysqlInsertsCount() {
-            return get(CountingStat.INSERTS);
+        public void resetAll() {
+            Tap.reset(".*");
         }
 
         @Override
-        public int getMysqlDeletesCount() {
-            return get(CountingStat.DELETES);
-        }
-
-        @Override
-        public int getMysqlUpdatesCount() {
-            return get(CountingStat.UPDATES);
+        public void setEnabled(String regExPattern, boolean on) {
+            Tap.setEnabled(regExPattern, on);
         }
     };
 
     @Override
-    public void incrementCount(CountingStat stat) {
-        countingStats.get(stat).incrementAndGet();
-    }
-
-    @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("Statistics", bean, StatisticsServiceMXBean.class);
+        return new JmxObjectInfo("Statistics", bean,
+                StatisticsServiceMXBean.class);
     }
 
     @Override
@@ -99,9 +101,22 @@ public final class StatisticsServiceImpl implements StatisticsService, Service<S
 
     @Override
     public void start() throws Exception {
+        ConfigurationService config = ServiceManagerImpl.get()
+                .getConfigurationService();
+        String stats_enable = config.getProperty(STATISTICS_PROPERTY, "");
+
+        if (stats_enable.length() > 0) {
+            Tap.setEnabled(stats_enable, true);
+        }
     }
 
     @Override
     public void stop() throws Exception {
     }
+    
+    
+    @Override
+    public void crash() throws Exception {
+    }
+
 }

@@ -23,6 +23,7 @@ import java.util.Arrays;
 public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
     private final int indexId;
     private final int scanFlags;
+    private final ScanLimit limit;
 
     @Override
     public int getIndexId() {
@@ -39,12 +40,14 @@ public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
                              RowData end,
                              byte[] columnBitMap,
                              int indexId,
-                             int scanFlags)
+                             int scanFlags,
+                             ScanLimit limit)
     throws TableDefinitionMismatchException
     {
         super(tableId, start, end, columnBitMap);
         this.indexId = indexId;
         this.scanFlags = scanFlags;
+        this.limit = limit;
     }
 
     @Override
@@ -52,5 +55,10 @@ public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
         return String.format("Scan[ tableId=%d, indexId=%d, scanFlags=0x%02X, projection=%s start=<%s> end=<%s>",
                 tableId, indexId, scanFlags, Arrays.toString(columnBitMap), start, end
         );
+    }
+
+    @Override
+    public ScanLimit getScanLimit() {
+        return limit;
     }
 }

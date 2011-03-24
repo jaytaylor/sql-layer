@@ -18,13 +18,14 @@ package com.akiban.server.itests;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,24 +35,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.RowData;
-import com.akiban.server.RowDefCache;
-import com.akiban.server.api.dml.scan.RowDataOutput;
-import com.akiban.server.service.memcache.HapiProcessorFactory;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.service.memcache.MemcacheService;
-import com.akiban.server.store.Store;
 import junit.framework.Assert;
+
 import org.junit.After;
 import org.junit.Before;
 
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.RowData;
+import com.akiban.server.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DDLFunctionsImpl;
@@ -62,6 +59,7 @@ import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -69,9 +67,14 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.UnitTestServiceFactory;
+import com.akiban.server.service.config.Property;
+import com.akiban.server.service.memcache.HapiProcessorFactory;
+import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -96,6 +99,10 @@ public class ApiTestBase {
 
         private TestServiceServiceFactory() {
             super(false, null);
+        }
+
+        private TestServiceServiceFactory(Collection<Property> properties) {
+            super(false, properties);
         }
 
         @Override
@@ -126,6 +133,11 @@ public class ApiTestBase {
                 @Override
                 public void stop() throws Exception {
                 }
+                
+                @Override
+                public void crash() throws Exception {
+                }
+                
             };
         }
     }
@@ -133,6 +145,10 @@ public class ApiTestBase {
     private static class TestServiceManager extends ServiceManagerImpl {
         private TestServiceManager() {
             super(new TestServiceServiceFactory());
+        }
+        
+        private TestServiceManager(Collection<Property> properties) {
+            super(new TestServiceServiceFactory(properties));
         }
     }
 
@@ -166,6 +182,22 @@ public class ApiTestBase {
         sm = null;
         session = null;
     }
+    
+    public final void crashTestServices() throws Exception {
+        sm.crashServices();
+        ddl = null;
+        dml = null;
+        sm = null;
+        session = null;
+    }
+    
+    public final void restartTestServices(Collection<Property> properties) throws Exception {
+        session = new SessionImpl();
+        sm = new TestServiceManager(properties);
+        sm.startServices();
+        ddl = new DDLFunctionsImpl();
+        dml = new DMLFunctionsImpl(ddl);
+    }
 
     protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
         memcache().setHapiProcessor(whichHapi);
@@ -195,7 +227,7 @@ public class ApiTestBase {
     protected final PersistitStore persistitStore() {
         return (PersistitStore) sm.getStore();
     }
-
+    
     protected final MemcacheService memcache() {
         return sm.getMemcacheService();
     }
@@ -203,6 +235,10 @@ public class ApiTestBase {
     protected final RowDefCache rowDefCache() {
         Store store = sm.getStore();
         return store.getRowDefCache();
+    }
+
+    protected final ServiceManager serviceManager() {
+        return sm;
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
@@ -250,7 +286,7 @@ public class ApiTestBase {
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, request);
 
-        while(dml().scanSome(session, cursorId, output, -1))
+        while(dml().scanSome(session, cursorId, output))
         {}
         dml().closeCursor(session, cursorId);
 

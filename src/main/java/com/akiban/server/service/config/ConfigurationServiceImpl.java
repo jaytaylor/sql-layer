@@ -140,6 +140,15 @@ public class ConfigurationServiceImpl implements ConfigurationService,
             }
         }
     }
+    
+    
+    @Override
+    public void crash() throws Exception {
+        // Note: do not call unloadProperties().
+        synchronized (INTERNAL_LOCK) {
+            properties = null;
+        }
+    }
 
     @Override
     public final JmxObjectInfo getJmxObjectInfo() {

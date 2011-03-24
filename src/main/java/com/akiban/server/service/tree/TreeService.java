@@ -15,6 +15,9 @@
 
 package com.akiban.server.service.tree;
 
+import java.util.Collection;
+
+import com.akiban.server.TableStatusAccumulator;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
@@ -72,4 +75,8 @@ public interface TreeService extends Service<TreeService> {
 
     int storeToAis(final Volume volume, final int storedTableId)
             throws PersistitException;
+    
+    void checkpoint();
+    
+    Collection<TableStatusAccumulator> getAccumulators();
 }

@@ -53,7 +53,7 @@ public final class BufferedLegacyOutputRouterTest {
 
         for (Integer i : expectedInts) {
             router.getOutputBuffer().putInt(i);
-            router.wroteRow();
+            router.wroteRow(false);
         }
 
         assertEquals("h1", expectedInts, h1.integers);
@@ -76,7 +76,7 @@ public final class BufferedLegacyOutputRouterTest {
         for (Integer i : expectedInts) {
             expectedBuffer.putInt(i);
             router.getOutputBuffer().putInt(i);
-            router.wroteRow();
+            router.wroteRow(false);
         }
 
         assertEquals("h1", expectedInts, h1.integers);

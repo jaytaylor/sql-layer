@@ -22,7 +22,14 @@ import java.nio.ByteBuffer;
 public interface LegacyRowOutput {
     ByteBuffer getOutputBuffer() throws RowOutputException;
 
-    void wroteRow() throws RowOutputException;
+    /**
+     * Signals that a row has been written into the buffer. It could be that the row actually caused the scan's
+     * limit to be exceeded, and that it should actually be disregarded; if so, that is communicated via
+     * limitExceeded
+     * @param limitExceeded whether the row that was written was actually in excess of the limit
+     * @throws RowOutputException if thrown during any processing that happens as a result of this method
+     */
+    void wroteRow(boolean limitExceeded) throws RowOutputException;
 
     void addRow(RowData rowData) throws RowOutputException;
 

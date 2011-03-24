@@ -19,46 +19,40 @@ import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.store.SchemaManager;
-import com.persistit.exception.PersistitException;
 
-public class SchemaFactory
-{
-    public RowDefCache rowDefCache(String ddl) throws Exception
-    {
-        return rowDefCache(new String[]{ddl});
+public class SchemaFactory {
+    public RowDefCache rowDefCache(String ddl) throws Exception {
+        return rowDefCache(new String[] { ddl });
     }
 
-    public RowDefCache rowDefCache(String[] ddl) throws Exception
-    {
+    public RowDefCache rowDefCache(String[] ddl) throws Exception {
         AkibanInformationSchema ais = ais(ddl);
         RowDefCache rowDefCache = new FakeRowDefCache();
         rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinals(0, null);
+        rowDefCache.fixUpOrdinals(null);
         return rowDefCache;
     }
 
-    public AkibanInformationSchema ais(String[] ddl) throws Exception
-    {
+    public AkibanInformationSchema ais(String[] ddl) throws Exception {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
         }
-        final SchemaDefToAis toAis = new SchemaDefToAis(SchemaDef.parseSchema(buffer.toString()), false);
+        final SchemaDefToAis toAis = new SchemaDefToAis(
+                SchemaDef.parseSchema(buffer.toString()), false);
         return toAis.getAis();
     }
 
-    private static class FakeRowDefCache extends RowDefCache
-    {
+    private static class FakeRowDefCache extends RowDefCache {
         @Override
-        public void fixUpOrdinals(final long timestamp, SchemaManager schemaManager) throws PersistitException
-        {
+        public void fixUpOrdinals(SchemaManager schemaManager) {
             assert schemaManager == null;
             for (RowDef groupRowDef : getRowDefs()) {
                 if (groupRowDef.isGroupTable()) {
-                    groupRowDef.setOrdinal(0, 0);
+                    groupRowDef.setOrdinal(0);
                     int userTableOrdinal = 1;
                     for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                        userRowDef.setOrdinal(0, userTableOrdinal++);
+                        userRowDef.setOrdinal(userTableOrdinal++);
                     }
                 }
             }

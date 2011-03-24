@@ -205,4 +205,10 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
     @Override
     public void stop() throws Exception {
     }
+    
+    @Override
+    public void crash() throws Exception {
+    }
+    
+    
 }

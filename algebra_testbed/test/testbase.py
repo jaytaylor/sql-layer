@@ -15,18 +15,22 @@
 
 from schema import *
 from db import *
-from algebra import *
+from algebra.logical import *
+from algebra.physical import *
 
-def run_plan(label, plan):
+def run_logical_plan(label, logical_plan):
+    run_physical_plan(label, logical_plan.generate_plan())
+
+def run_physical_plan(label, physical_plan):
     print '--------------------------------------------------------------------------------'
     print '%s:' % label
-    plan.open()
-    row = plan.next()
+    physical_plan.open()
+    row = physical_plan.next()
     while row:
         print row
-        row = plan.next()
-    plan.close()
-    stats = plan.stats()
+        row = physical_plan.next()
+    physical_plan.close()
+    stats = physical_plan.stats()
     print ('random: %s\t\tsequential: %s\t\tsort: %s' %
            (stats[RANDOM_ACCESS], stats[SEQUENTIAL_ACCESS], stats[SORT]))
 
@@ -73,7 +77,12 @@ coi.add(Row(Ti, {'hkey': [Tc, [3], To, [33], Ti, [331]], 'iid': 331, 'oid': 33, 
 coi.add(Row(Ti, {'hkey': [Tc, [3], To, [33], Ti, [332]], 'iid': 332, 'oid': 33, 'unit_price': 18.00, 'quantity': 18}))
 coi.close()
 
-# Add an index on customer.name
+# Index on customer.name
 
 TIcname = RowType('customer.name', ['name', 'hkey'], ['name'])
 customer_name_index = coi.add_index(Tc, TIcname)
+
+# Index on order.order_date
+
+TIodate = RowType('order.order_date', ['order_date', 'hkey'], ['order_date'])
+order_date_index = coi.add_index(To, TIodate)

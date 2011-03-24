@@ -31,6 +31,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.util.RowDefNotFoundException;
+import com.persistit.TimestampAllocator.Checkpoint;
 
 /**
  * Contain the relevant schema information for one version of a table
@@ -46,7 +47,7 @@ public class RowDef implements TreeLink {
 
     private final Table table;
 
-    private final TableStatus tableStatus;
+    private TableStatus tableStatus;
 
     /**
      * Array of FieldDef, one per column
@@ -112,15 +113,16 @@ public class RowDef implements TreeLink {
 
     /**
      * A bandage. Marks whether or not the RowDef has been deleted (e.g. during
-     * a dropTable operation). Determines whether to save or remove the TableStatus.
+     * a dropTable operation). Determines whether to save or remove the
+     * TableStatus.
      */
     private boolean isDeleted = false;
 
-
-    public RowDef(Table table) {
+    public RowDef(Table table, TableStatus ts) {
         this.table = table;
+        this.tableStatus = ts;
+        ts.setRowDef(this);
         table.rowDef(this);
-        this.tableStatus = new TableStatus(this);
         List<Column> columns = table.getColumnsIncludingInternal();
         this.fieldDefs = new FieldDef[columns.size()];
         for (Column column : columns) {
@@ -439,6 +441,10 @@ public class RowDef implements TreeLink {
         return tableStatus;
     }
 
+    public void setTableStatus(final TableStatus ts) {
+        this.tableStatus = ts;
+    }
+
     public String getTreeName() {
         return treeName;
     }
@@ -455,10 +461,10 @@ public class RowDef implements TreeLink {
         return tableStatus.getOrdinal();
     }
 
-    public void setOrdinal(final long timestamp, final int ordinal) {
-        tableStatus.setOrdinal(timestamp, ordinal);
+    public void setOrdinal(final int ordinal) {
+        tableStatus.setOrdinal(ordinal);
     }
-    
+
     public boolean isUserTable() {
         return !isGroupTable();
     }
@@ -524,7 +530,6 @@ public class RowDef implements TreeLink {
         isDeleted = deleted;
     }
 
-
     /*
      * Populate various fields needed for autoincrement processing. Likely to
      * change when server-side autoincrement support is implemented.
@@ -537,9 +542,10 @@ public class RowDef implements TreeLink {
         if (userTable.getAutoIncrementColumn() == null) {
             return -1;
         }
-        tableStatus.setAutoIncrementEnabled(0, true);
-        tableStatus.updateAutoIncrementValue(0, userTable.getAutoIncrementColumn()
-                .getInitialAutoIncrementValue().longValue());
+        tableStatus.setAutoIncrementEnabled(true);
+        tableStatus.updateAutoIncrementValue(TableStatus.CHECKPOINT_ZERO, 0, userTable
+                .getAutoIncrementColumn().getInitialAutoIncrementValue()
+                .longValue());
         return userTable.getAutoIncrementColumn().getPosition();
     }
 
@@ -656,8 +662,7 @@ public class RowDef implements TreeLink {
     @Override
     public boolean equals(final Object o) {
         final RowDef def = (RowDef) o;
-        return this == def ||
-               def.getRowDefId() == def.getRowDefId()
+        return this == def || def.getRowDefId() == def.getRowDefId()
                 && AkServerUtil.equals(table.getName(), def.table.getName())
                 && AkServerUtil.equals(treeName, def.treeName)
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
@@ -669,10 +674,8 @@ public class RowDef implements TreeLink {
 
     @Override
     public int hashCode() {
-        return getRowDefId()
-                ^ table.getName().hashCode()
-                ^ AkServerUtil.hashCode(treeName)
-                ^ Arrays.hashCode(fieldDefs)
+        return getRowDefId() ^ table.getName().hashCode()
+                ^ AkServerUtil.hashCode(treeName) ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(parentJoinFields);
     }
 

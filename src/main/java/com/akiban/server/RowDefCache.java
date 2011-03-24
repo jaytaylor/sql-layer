@@ -16,15 +16,16 @@
 package com.akiban.server;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -57,6 +58,8 @@ public class RowDefCache {
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
 
     private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
+    
+    private final Map<Integer, TableStatus> tableStatusMap = new HashMap<Integer, TableStatus>();
 
     private int hashCode;
 
@@ -98,6 +101,13 @@ public class RowDefCache {
 
     public synchronized List<RowDef> getRowDefs() {
         return new ArrayList<RowDef>(cacheMap.values());
+    }
+    
+    /**
+     * @return a copy if the TableStatus Map
+     */
+    public synchronized Map<Integer, TableStatus> getTableStatusMap() {
+        return new HashMap<Integer, TableStatus>(tableStatusMap);
     }
 
     public synchronized RowDef getRowDef(final String tableName)
@@ -172,8 +182,7 @@ public class RowDefCache {
      * @param schemaManager
      * @throws PersistitException
      */
-    public synchronized void fixUpOrdinals(final long timestamp, SchemaManager schemaManager)
-            throws PersistitException {
+    public synchronized void fixUpOrdinals(SchemaManager schemaManager) {
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
                 // groupTable has no ordinal
@@ -182,27 +191,8 @@ public class RowDefCache {
                 for (final RowDef userRowDef : groupRowDef
                         .getUserTableRowDefs()) {
                     final TableStatus tableStatus = userRowDef.getTableStatus();
-                    // Ensure that the loadTableStatusRecords method was called
-                    // before this.
-                    assert !tableStatus.isDirty();
-                    int ordinal = tableStatus == null ? 0 : tableStatus
+                    int ordinal = tableStatus
                             .getOrdinal();
-                    if (ordinal != 0
-                            && userRowDef.getOrdinal() != 0
-                            && tableStatus.getOrdinal() != userRowDef
-                                    .getOrdinal()) {
-                        throw new IllegalStateException(String.format(
-                                "Mismatched ordinals: %s and %s",
-                                userRowDef.getOrdinal(),
-                                tableStatus.getOrdinal()));
-                    }
-                    if (ordinal != 0) {
-                        userRowDef.setOrdinal(timestamp, ordinal);
-                    } else if (userRowDef.getOrdinal() != 0
-                            && tableStatus.getOrdinal() == 0) {
-                        ordinal = userRowDef.getOrdinal();
-                        tableStatus.setOrdinal(timestamp, ordinal);
-                    }
                     if (ordinal != 0 && !assigned.add(ordinal)) {
                         throw new IllegalStateException(String.format(
                                 "Non-unique ordinal value %s added to %s",
@@ -216,10 +206,10 @@ public class RowDefCache {
                         // find an unassigned value. Here we could try to
                         // optimize layout
                         // by assigning "bushy" values in some optimal pattern
-                        // (if we knew that was...)
+                        // (if we knew what that was...)
                         for (; assigned.contains(nextOrdinal); nextOrdinal++) {
                         }
-                        userRowDef.setOrdinal(timestamp, nextOrdinal);
+                        userRowDef.getTableStatus().setOrdinal(nextOrdinal);
                         assigned.add(nextOrdinal);
                     }
                 }
@@ -263,7 +253,8 @@ public class RowDefCache {
     }
 
     private RowDef createUserTableRowDef(AkibanInformationSchema ais, UserTable table) {
-        RowDef rowDef = new RowDef(table);
+        final TableStatus ts = getTableStatus(table);
+        RowDef rowDef = new RowDef(table, ts);
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
@@ -319,10 +310,22 @@ public class RowDefCache {
         return rowDef;
 
     }
+    
+    
+    private synchronized TableStatus getTableStatus(final Table table) {
+        final Integer tableId = table.getTableId();
+        TableStatus ts = tableStatusMap.get(tableId);
+        if (ts == null) {
+            ts = new TableStatus(tableId);
+            tableStatusMap.put(tableId, ts);
+        }
+        return ts;
+    }
 
     private RowDef createGroupTableRowDef(AkibanInformationSchema ais,
             GroupTable table) {
-        RowDef rowDef = new RowDef(table);
+        final TableStatus ts = getTableStatus(table);
+        RowDef rowDef = new RowDef(table, ts);
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();
         for (Column column : table.getColumnsIncludingInternal()) {
             Column userColumn = column.getUserColumn();

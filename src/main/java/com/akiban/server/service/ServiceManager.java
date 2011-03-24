@@ -20,6 +20,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -29,6 +30,8 @@ public interface ServiceManager {
     void startServices() throws Exception;
 
     void stopServices() throws Exception;
+    
+    void crashServices() throws Exception;
 
     ConfigurationService getConfigurationService();
     
@@ -45,6 +48,8 @@ public interface ServiceManager {
     SchemaManager getSchemaManager();
 
     JmxRegistryService getJmxRegistryService();
+    
+    StatisticsService getStatisticsService();
 
     <T> T getServiceByClass(Class<T> serviceClass);
 }

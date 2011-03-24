@@ -108,6 +108,11 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         }
         Tap.unregisterMXBean();
     }
+    
+    @Override
+    public void crash() throws Exception {
+        stop();
+    }
 
     public String host() {
         return AKSERVER_HOST;

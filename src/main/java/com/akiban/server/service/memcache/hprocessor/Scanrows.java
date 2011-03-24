@@ -41,6 +41,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
@@ -227,13 +228,25 @@ public class Scanrows implements HapiProcessor {
             validateRequest(session, request);
             RowDataStruct range = getScanRange(session, request);
 
+            final ScanLimit limit;
+            if (request.getLimit() < 0) {
+                limit = ScanLimit.NONE;
+            }
+            else {
+                limit = new PredicateLimit(
+                        ddlFunctions.getTableId(session, request.getUsingTable()),
+                        request.getLimit()
+                );
+            }
+
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     range.selectTable().getTableId(),
                     range.start(),
                     range.end(),
                     range.columnBitmap(),
                     range.indexId(),
-                    range.scanFlagsInt());
+                    range.scanFlagsInt(),
+                    limit);
             List<RowData> rows = null;
             while(rows == null) {
                 rows = RowDataOutput.scanFull(session, dmlFunctions, scanRequest);
