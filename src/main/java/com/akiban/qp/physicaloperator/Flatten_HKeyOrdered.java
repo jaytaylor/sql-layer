@@ -16,14 +16,11 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.Cursor;
-import com.akiban.qp.row.FlattenedRow;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ShareableRow;
+import com.akiban.qp.row.*;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class Flatten_HKeyOrdered implements PhysicalOperator
 {
@@ -65,6 +62,7 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
     public static final int INNER_JOIN = 0x04;
     public static final int LEFT_JOIN = 0x08;
     public static final int RIGHT_JOIN = 0x10;
+    static final int MAX_PENDING = 2;
 
     // Object state
 
@@ -92,9 +90,9 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
         @Override
         public boolean next()
         {
-            outputRow(pending.poll());
+            outputRow(pending.take());
             boolean moreInput;
-            while (outputRow() == null && ((moreInput = input.next()) || parent != null)) {
+            while (outputRow() == null && ((moreInput = input.next()) || parent.isNotNull())) {
                 if (!moreInput) {
                     // child rows are processed immediately. parent rows are not,
                     // because when seen, we don't know if the next row will be another
@@ -102,42 +100,42 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
                     // a row of type other than parent or child, or end of stream. If we get
                     // here, then input is exhausted, and the only possibly remaining row would
                     // be due to a childless parent waiting to be processed.
-                    generateLeftJoinRow(parent);
-                    parent = null;
+                    generateLeftJoinRow(parent.managedRow());
+                    parent.set(null);
                 } else {
                     RowType inputRowType = input.rowType();
                     if (inputRowType == parentType) {
                         if (keepParent) {
                             addToPending();
                         }
-                        if (parent != null) {
+                        if (parent.isNotNull()) {
                             // current parent row is childless, so it is left-join fodder.
-                            generateLeftJoinRow(parent);
+                            generateLeftJoinRow(parent.managedRow());
                         }
-                        parent = input.currentRow();
+                        parent.set(input.managedRow());
                     } else if (inputRowType == childType) {
                         if (keepChild) {
                             addToPending();
                         }
-                        if (parent != null && parent.ancestorOf(input)) {
+                        if (parent.isNotNull() && parent.ancestorOf(input)) {
                             // child is not an orphan
-                            generateInnerJoinRow(parent, input.currentRow());
+                            generateInnerJoinRow(parent.managedRow(), input.managedRow());
                         } else {
                             // child is an orphan
-                            parent = null;
-                            generateRightJoinRow(input.currentRow());
+                            parent.set(null);
+                            generateRightJoinRow(input.managedRow());
                         }
                     } else {
                         addToPending();
                         if (parentType.ancestorOf(inputRowType)) {
-                            if (parent != null && !parent.ancestorOf(input)) {
+                            if (parent.isNotNull() && !parent.ancestorOf(input)) {
                                 // We're past all descendents of the current parent
-                                parent = null;
+                                parent.set(null);
                             }
                         }
                     }
                 }
-                outputRow(pending.poll());
+                outputRow(pending.take());
             }
             return outputRow() != null;
         }
@@ -145,6 +143,8 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
         @Override
         public void close()
         {
+            parent.set(null);
+            pending.clear();
             input.close();
         }
 
@@ -157,14 +157,14 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
 
         // For use by this class
 
-        private void generateInnerJoinRow(Row parent, Row child)
+        private void generateInnerJoinRow(ManagedRow parent, ManagedRow child)
         {
             assert parent != null;
             assert child != null;
             pending.add(new FlattenedRow(flattenType, parent, child));
         }
 
-        private void generateLeftJoinRow(Row parent)
+        private void generateLeftJoinRow(ManagedRow parent)
         {
             assert parent != null;
             if (leftJoin) {
@@ -172,7 +172,7 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
             }
         }
 
-        private void generateRightJoinRow(Row child)
+        private void generateRightJoinRow(ManagedRow child)
         {
             assert child != null;
             if (rightJoin) {
@@ -188,9 +188,80 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
         // Object state
 
         private final Cursor input;
-        private Row parent;
-        // TODO: LinkedList is not a good choice, as there is an object allocated per element added. JDK doesn't
-        // TODO: seem to have an appropriate choice. Writing an array-based implementation is easy.
-        private final Queue<Row> pending = new LinkedList<Row>();
+        private final RowHolder<ManagedRow> parent = new RowHolder<ManagedRow>();
+        private final Pending pending = new Pending();
+    }
+
+    private static class Pending
+    {
+        public void add(Row row)
+        {
+            assert !full();
+            row(end, row.managedRow());
+            end = next(end);
+        }
+
+        public ManagedRow take()
+        {
+            ManagedRow row = null;
+            if (!empty()) {
+                row = row(start);
+                row(start, null);
+                start = next(start);
+            }
+            return row;
+        }
+
+        public void clear()
+        {
+            for (int i = 0; i <= MAX_PENDING; i++) {
+                row(i, null);
+            }
+        }
+
+        public Pending()
+        {
+            for (int i = 0; i <= MAX_PENDING; i++) {
+                queue[i] = new RowHolder<ManagedRow>();
+            }
+            start = 0;
+            end = 0;
+        }
+
+        // For use by this class
+
+        private ManagedRow row(int i)
+        {
+            return ((RowHolder<ManagedRow>) queue[i]).managedRow();
+        }
+
+        private void row(int i, ManagedRow row)
+        {
+            ((RowHolder<ManagedRow>)queue[i]).set(row);
+        }
+
+        private boolean empty()
+        {
+            return end == start;
+        }
+
+        private boolean full()
+        {
+            return next(end) == start;
+        }
+
+        private int next(int x)
+        {
+            if (x++ == MAX_PENDING) {
+                x = 0;
+            }
+            return x;
+        }
+
+        // Object state
+
+        private final Object[] queue = new Object[MAX_PENDING + 1];
+        private int start;
+        private int end;
     }
 }

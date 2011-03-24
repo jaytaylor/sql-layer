@@ -17,7 +17,9 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.Cursor;
 import com.akiban.qp.HKey;
+import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 
 public abstract class SingleRowCachingCursor implements Cursor
@@ -56,6 +58,12 @@ public abstract class SingleRowCachingCursor implements Cursor
         return row.hKey();
     }
 
+    @Override
+    public ManagedRow managedRow()
+    {
+        return row.managedRow();
+    }
+
     // Cursor interface
 
     @Override
@@ -68,24 +76,29 @@ public abstract class SingleRowCachingCursor implements Cursor
     public abstract void close();
 
     @Override
-    public Row currentRow()
+    public final Row currentRow()
     {
         return row;
     }
 
     // SingleRowCachingCursor interface
 
-    protected Row outputRow()
+    protected ManagedRow outputRow()
     {
-        return row;
+        return row.managedRow();
     }
 
     protected void outputRow(Row newRow)
     {
-        row = newRow;
+        row.set(newRow == null ? null : newRow.managedRow());
+    }
+
+    protected void outputRow(ManagedRow newRow)
+    {
+        row.set(newRow);
     }
 
     // Object state
 
-    private Row row;
+    private final RowHolder<ManagedRow> row = new RowHolder<ManagedRow>();
 }

@@ -58,13 +58,18 @@ public class GroupScan_Default implements PhysicalOperator
         public boolean next()
         {
             boolean next = cursor.next();
-            outputRow(next ? cursor.currentRow() : null);
+            if (next) {
+                outputRow(cursor.currentRow());
+            } else {
+                close();
+            }
             return next;
         }
 
         @Override
         public void close()
         {
+            outputRow(null);
             cursor.close();
         }
 

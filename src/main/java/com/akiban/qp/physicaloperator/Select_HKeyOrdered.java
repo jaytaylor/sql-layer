@@ -17,7 +17,9 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.Cursor;
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 
 public class Select_HKeyOrdered implements PhysicalOperator
@@ -66,15 +68,15 @@ public class Select_HKeyOrdered implements PhysicalOperator
                 if (input.rowType() == predicateRowType) {
                     // New row of predicateRowType
                     if ((Boolean) predicate.evaluate(input)) {
-                        selectedRow = input.currentRow();
+                        selectedRow.set(input.managedRow());
                         outputRow(selectedRow);
                     }
                 } else if (predicateRowType.ancestorOf(input.rowType())) {
                     // Row's type is a descendent of predicateRowType.
-                    if (selectedRow != null && selectedRow.ancestorOf(input)) {
-                        outputRow(input.currentRow());
+                    if (selectedRow.isNotNull() && selectedRow.ancestorOf(input)) {
+                        outputRow(input.managedRow());
                     } else {
-                        selectedRow = null;
+                        selectedRow.set(null);
                     }
                 } else {
                     outputRow(input.currentRow());
@@ -89,6 +91,7 @@ public class Select_HKeyOrdered implements PhysicalOperator
         @Override
         public void close()
         {
+            selectedRow.set(null);
             input.close();
         }
 
@@ -104,6 +107,6 @@ public class Select_HKeyOrdered implements PhysicalOperator
         private final Cursor input;
         // row is the last input row with type = predicateRowType. For that row, rowSelected records the result
         // of predicate.evaluate(row).
-        private Row selectedRow;
+        private final RowHolder<ManagedRow> selectedRow = new RowHolder<ManagedRow>();
     }
 }

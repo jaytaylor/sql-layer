@@ -15,9 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.TableRow;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -28,7 +26,9 @@ import com.persistit.Exchange;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
-class PersistitRow extends TableRow
+// Gets row state from PersistitCursor if possible. Before the cursor needs to move on, state is copied.
+
+class PersistitRow extends RowBase
 {
     // Object interface
 
@@ -52,23 +52,12 @@ class PersistitRow extends TableRow
         return (T) row.get(i);
     }
 
-    // TableRow interface
-
-    @Override
-    public UserTable table()
-    {
-        return (UserTable) row.getRowDef().table();
-    }
-
-    // PersistitRow interface
-
-    public PersistitHKey hKey()
-    {
-        return hKey;
-    }
+    // For use by this package
 
     public void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
     {
+        this.row = new LegacyRowWrapper((RowDef) null);
+        this.hKey = new PersistitHKey();
         RuntimeException exception;
         Value value = exchange.getValue();
         assert value.isDefined();
@@ -89,36 +78,25 @@ class PersistitRow extends TableRow
                 }
             }
             if (exception != null) {
-                byte[] buffer = rowData.getBytes();
-                int newSize = buffer.length == 0 ? INITIAL_ROW_SIZE : buffer.length * 2;
-                rowData = new RowData(new byte[newSize]);
-                row.setRowData(rowData);
+                rowData.reset(new byte[rowData.getBytes().length * 2]);
             }
         } while (exception != null);
     }
 
-    public PersistitRow(PersistitAdapter adapter)
+    public PersistitHKey hKey()
     {
-        this.adapter = adapter;
-        this.rowData = new RowData(EMPTY_BYTE_ARRAY);
-        this.row = new LegacyRowWrapper((RowDef) null);
-        this.hKey = new PersistitHKey();
+        return hKey;
     }
 
-    // For use by this package
 
-    PersistitRow(PersistitRow row)
+    PersistitRow(PersistitAdapter adapter)
     {
-        this.adapter = row.adapter;
-        this.rowData = row.rowData.copy();
-        this.row = new LegacyRowWrapper(this.rowData);
-        this.row.setRowDef(this.rowData.getRowDefId());
-        this.hKey = row.hKey.copy();
+        this.adapter = adapter;
+        this.rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
     }
 
     // Class state
 
-    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final int INITIAL_ROW_SIZE = 500;
 
     // Object state

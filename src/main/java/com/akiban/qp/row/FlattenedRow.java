@@ -19,7 +19,7 @@ import com.akiban.qp.HKey;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 
-public class FlattenedRow implements Row
+public class FlattenedRow extends RowBase
 {
     // Object interface
 
@@ -35,12 +35,6 @@ public class FlattenedRow implements Row
     public RowType rowType()
     {
         return rowType;
-    }
-
-    @Override
-    public boolean ancestorOf(Row row)
-    {
-        return hKey().prefixOf(row.hKey());
     }
 
     @Override
@@ -63,18 +57,18 @@ public class FlattenedRow implements Row
 
 // FlattenedRow interface
 
-    public FlattenedRow(FlattenedRowType rowType, Row parent, Row child)
+    public FlattenedRow(FlattenedRowType rowType, ManagedRow parent, ManagedRow child)
     {
         this.rowType = rowType;
-        this.parent = parent;
-        this.child = child;
+        this.parent.set(parent);
+        this.child.set(child);
         this.nParentFields = parent.rowType().nFields();
     }
 
     // Object state
 
     private final FlattenedRowType rowType;
-    private final Row parent;
-    private final Row child;
+    private final RowHolder<ManagedRow> parent = new RowHolder<ManagedRow>();
+    private final RowHolder<ManagedRow> child = new RowHolder<ManagedRow>();
     private final int nParentFields;
 }

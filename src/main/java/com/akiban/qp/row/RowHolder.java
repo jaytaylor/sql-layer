@@ -15,9 +15,19 @@
 
 package com.akiban.qp.row;
 
-public class ShareableRow // extends ShareableBase implements Row
+import com.akiban.qp.HKey;
+import com.akiban.qp.rowtype.RowType;
+
+public class RowHolder<MR extends ManagedRow> implements Row
 {
-/*
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return row.toString();
+    }
+
     // Row interface
 
     @Override
@@ -29,7 +39,7 @@ public class ShareableRow // extends ShareableBase implements Row
     @Override
     public <T> T field(int i)
     {
-        return row.field(i);
+        return (T) row.field(i);
     }
 
     @Override
@@ -43,16 +53,47 @@ public class ShareableRow // extends ShareableBase implements Row
     {
         return row.ancestorOf(that);
     }
-    // ShareableRow interface
 
-    public ShareableRow(Pool pool, Row row)
+    @Override
+    public MR managedRow()
     {
-        super(pool);
-        this.row = row;
+        return row;
     }
 
-    // Object interface
+    // RowHolder interface
 
-    private final Row row;
-*/
+    public void set(MR newRow)
+    {
+        if (row != null) {
+            row.release();
+        }
+        if (newRow != null) {
+            newRow.share();
+        }
+        row = newRow;
+    }
+
+    public boolean isNull()
+    {
+        return row == null;
+    }
+
+    public boolean isNotNull()
+    {
+        return row != null;
+    }
+
+    public RowHolder(MR row)
+    {
+        set(row);
+    }
+
+    public RowHolder()
+    {
+        set(null);
+    }
+
+    // Object state
+
+    private MR row;
 }

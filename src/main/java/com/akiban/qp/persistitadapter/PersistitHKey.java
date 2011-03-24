@@ -46,6 +46,7 @@ class PersistitHKey implements HKey
 
     public void readKey(Exchange exchange)
     {
+        // TODO: Instead of allocating a KeyState each time, it would be nice if KeyState allowed for reuse.
         Key exchangeKey = exchange.getKey();
         key = new KeyState(exchangeKey);
         size = exchangeKey.getEncodedSize();

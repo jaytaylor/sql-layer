@@ -45,6 +45,12 @@ public class PersistitAdapter implements BTreeAdapter
 
     // PersistitAdapter interface
 
+    public PersistitRow newRow()
+    {
+        // TODO: Pool rows?
+        return new PersistitRow(this);
+    }
+
     public PersistitAdapter(Schema schema, PersistitStore persistit, Session session)
     {
         this.schema = schema;

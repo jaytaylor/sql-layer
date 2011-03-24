@@ -18,7 +18,9 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.BTreeAdapterRuntimeException;
 import com.akiban.qp.Cursor;
 import com.akiban.qp.HKey;
+import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
@@ -39,7 +41,7 @@ class PersistitCursor implements Cursor
     @Override
     public Row currentRow()
     {
-        return new PersistitRow(row);
+        return row.managedRow();
     }
 
     @Override
@@ -60,6 +62,11 @@ class PersistitCursor implements Cursor
         return row.hKey();
     }
 
+    @Override
+    public ManagedRow managedRow()
+    {
+        return row.managedRow();
+    }
 
     // Cursor interface
 
@@ -74,7 +81,7 @@ class PersistitCursor implements Cursor
         try {
             if (!closed && exchange.traverse(Key.GT, true)) {
                 exchange.fetch();
-                row.copyFromExchange(exchange);
+                unsharedRow().managedRow().copyFromExchange(exchange);
             } else {
                 close();
             }
@@ -91,19 +98,29 @@ class PersistitCursor implements Cursor
     {
         if (!closed) {
             persistit.releaseExchange(adapter.session, exchange);
-            row = null;
+            row.set(null);
             closed = true;
         }
     }
 
-    // PersistitCursor interface
+    // For use by this package
 
     PersistitCursor(PersistitAdapter adapter, PersistitStore persistit, Exchange exchange) throws PersistitException
     {
         this.adapter = adapter;
         this.persistit = persistit;
         this.exchange = exchange.clear().append(Key.BEFORE);
-        this.row = new PersistitRow(adapter);
+        this.row = new RowHolder<PersistitRow>(adapter.newRow());
+    }
+
+    // For use by this class
+
+    private RowHolder<PersistitRow> unsharedRow()
+    {
+        if (row.managedRow().isShared()) {
+            row.set(adapter.newRow());
+        }
+        return row;
     }
 
     // Object state
@@ -111,6 +128,6 @@ class PersistitCursor implements Cursor
     private final PersistitAdapter adapter;
     private final PersistitStore persistit;
     private final Exchange exchange;
-    private PersistitRow row;
+    private final RowHolder<PersistitRow> row;
     private boolean closed = false;
 }
