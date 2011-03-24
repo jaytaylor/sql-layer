@@ -49,9 +49,10 @@ class ConcurrentAtomicsBase extends ApiTestBase {
 
         new TimePointsComparison(scanResult, updateResult).verify(
                 "SCAN: START",
-                "SCAN: PAUSE",
+                "(SCAN: PAUSE)>",
                 "UPDATE: IN",
                 "UPDATE: OUT",
+                "<(SCAN: PAUSE)",
                 "SCAN: RETRY",
                 "SCAN: FINISH"
         );

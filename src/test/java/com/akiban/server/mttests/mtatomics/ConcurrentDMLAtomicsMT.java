@@ -16,6 +16,7 @@
 package com.akiban.server.mttests.mtatomics;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.EasyUseColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -30,10 +31,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
-
     @Test
     public void updateUnIndexedColumnWhileScanning() throws Exception {
-        final int tableId = tableWithTwoRows();
+        final int tableId = tableWithThreeRows();
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
@@ -60,19 +60,19 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "icebox")
+                        createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "icebox")
+                        createNewRow(tableId, 2L, "icebox"),
+                        createNewRow(tableId, 99L, "zebras in snow")
                 )
         );
     }
 
     @Test
     public void updatePKColumnWhileScanning() throws Exception {
-        final int tableId = tableWithTwoRows();
+        final int tableId = tableWithThreeRows();
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
@@ -98,19 +98,19 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "mr melty")
+                        createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 5L, "the snowman")
+                        createNewRow(tableId, 5L, "the snowman"),
+                        createNewRow(tableId, 99L, "zebras in snow")
                 )
         );
     }
 
     @Test
     public void updateIndexedColumnWhileScanning() throws Exception {
-        final int tableId = tableWithTwoRows();
+        final int tableId = tableWithThreeRows();
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
@@ -147,18 +147,19 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty")
+                        createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 1L, "a snowman"),
-                        createNewRow(tableId, 2L, "xtreme weather")
+                        createNewRow(tableId, 2L, "xtreme weather"),
+                        createNewRow(tableId, 99L, "zebras in snow")
                 )
         );
     }
 
     @Test
     public void updateIndexedColumnAndPKWhileScanning() throws Exception {
-        final int tableId = tableWithTwoRows();
+        final int tableId = tableWithThreeRows();
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
@@ -196,12 +197,22 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty")
+                        createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 2L, "xtreme weather"),
-                        createNewRow(tableId, 10L, "a snowman")
+                        createNewRow(tableId, 10L, "a snowman"),
+                        createNewRow(tableId, 99L, "zebras in snow")
                 )
         );
+    }
+
+
+    protected int tableWithThreeRows() throws InvalidOperationException {
+        int tableId = tableWithTwoRows();
+        writeRows(
+                createNewRow(tableId, 99L, "zebras in snow")
+        );
+        return tableId;
     }
 }
