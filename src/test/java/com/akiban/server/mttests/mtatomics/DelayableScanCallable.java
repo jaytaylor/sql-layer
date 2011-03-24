@@ -67,7 +67,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     }
 
     @Override
-    protected final List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
+    protected final List<NewRow> doCall(final TimePoints timePoints, Session session) throws Exception {
         Timing.sleep(initialDelay);
         final Delayer topOfLoopDelayer = topOfLoopDelayer(timePoints);
         final Delayer beforeConversionDelayer = beforeConversionDelayer(timePoints);
@@ -84,6 +84,11 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
                 if (beforeConversionDelayer != null) {
                     beforeConversionDelayer.delay();
                 }
+            }
+
+            @Override
+            public void retryHook() {
+                timePoints.mark("SCAN: RETRY");
             }
         });
         ScanAllRequest request = new ScanAllRequest(

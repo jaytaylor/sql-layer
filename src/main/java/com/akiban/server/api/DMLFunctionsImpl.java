@@ -91,6 +91,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     interface ScanHooks {
         void loopStartHook();
         void preWroteRowHook();
+        void retryHook();
     }
 
     private static final ScanHooks NONE = new ScanHooks() {
@@ -100,6 +101,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
         @Override
         public void preWroteRowHook() {
+        }
+
+        @Override
+        public void retryHook() {
         }
     };
 
@@ -298,6 +303,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                     success = true;
                 } catch (RollbackException e) {
                     logger.trace("PersistIt error; retrying", e);
+                    scanner.scanHooks.retryHook();
                 }
             } while (!success);
         } catch (PersistitException e) {

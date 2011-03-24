@@ -52,6 +52,7 @@ class ConcurrentAtomicsBase extends ApiTestBase {
                 "SCAN: PAUSE",
                 "UPDATE: IN",
                 "UPDATE: OUT",
+                "SCAN: RETRY",
                 "SCAN: FINISH"
         );
 
