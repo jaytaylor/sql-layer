@@ -28,7 +28,6 @@ import com.akiban.server.itests.ApiTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -135,6 +134,7 @@ public final class MultiScanUpdateMT extends ApiTestBase {
             output.clear();
             try {
                 dml().scanSome(session(), cursorId, router);
+                router.reset(0);
                 hasMore = false;
             } catch (BufferFullException e) {
                 // that's fine, we just need another go
