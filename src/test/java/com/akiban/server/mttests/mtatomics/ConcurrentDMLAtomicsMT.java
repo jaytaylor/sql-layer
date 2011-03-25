@@ -351,11 +351,13 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
             NewRow row = output.getRows().get(0);
             assertTrue("row isn't NiceRow: " + row.getClass(), row instanceof NiceRow);
 
-            timePoints.mark("SCAN: PAUSE");
+            timePoints.mark("(SCAN: PAUSE)>");
             Timing.sleep(delayTime);
+            timePoints.mark("<(SCAN: PAUSE)");
 
             BufferedLegacyOutputRouter bigRouter = new BufferedLegacyOutputRouter(1024, false);
             bigRouter.addHandler(converter);
+            timePoints.mark("SCAN: RETRY");
             dml.scanSome(session, cursorId, bigRouter);
 
             dml.closeCursor(session, cursorId);
