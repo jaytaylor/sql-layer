@@ -487,6 +487,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             boolean limitReached = false;
             while (!limitReached && !cursor.isFinished()) {
                 scanHooks.loopStartHook();
+                output.mark();
                 int bufferLastPos = buffer.position();
                 if (!rc.collectNextRow(buffer)) {
                     if (rc.hasMore()) {
@@ -521,6 +522,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             rc.outputToMessage(false);
             while (!cursor.isFinished()) {
                 scanHooks.loopStartHook();
+                output.mark();
                 RowData rowData = rc.collectNextRow();
                 if (rowData == null || limit.limitReached(rowData)) {
                     cursor.setFinished();
