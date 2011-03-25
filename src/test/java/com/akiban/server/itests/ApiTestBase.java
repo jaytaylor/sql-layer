@@ -26,6 +26,7 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -40,6 +41,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.RowDataOutput;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -88,7 +90,11 @@ public class ApiTestBase {
         }
 
         public List<NewRow> getRows() {
-            return rows;
+            return Collections.unmodifiableList(rows);
+        }
+
+        public void clear() {
+            rows.clear();
         }
     }
 
@@ -263,6 +269,11 @@ public class ApiTestBase {
         }
     }
 
+    protected final <T> T get(NewRow row, int field, Class<T> as) {
+        Object o = row.get(field);
+        return as.cast(o);
+    }
+
     protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
@@ -273,7 +284,8 @@ public class ApiTestBase {
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
         }
-        return new ScanAllRequest(tableId, allCols);
+        int indexId = uTable.getIndex("PRIMARY").getIndexId();
+        return new ScanAllRequest(tableId, allCols, indexId, null, ScanLimit.NONE);
     }
 
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
