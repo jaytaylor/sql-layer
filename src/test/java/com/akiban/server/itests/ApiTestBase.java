@@ -39,6 +39,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
@@ -96,6 +97,13 @@ public class ApiTestBase {
             rows.clear();
         }
     }
+
+    public final static ColumnSelector ALL_COLUMNS = new ColumnSelector() {
+        @Override
+        public boolean includesColumn(int columnPosition) {
+            return true;
+        }
+    };
 
     private static class TestServiceServiceFactory extends UnitTestServiceFactory {
 
@@ -281,7 +289,11 @@ public class ApiTestBase {
         return new ScanAllRequest(tableId, allCols);
     }
 
-    protected final <T> T get(NewRow row, int field, Class<T> castAs) {
+    protected static <T> Set<T> set(T... items) {
+        return new HashSet<T>(Arrays.asList(items));
+    }
+
+    protected static <T> T get(NewRow row, int field, Class<T> castAs) {
         Object obj = row.get(field);
         return castAs.cast(obj);
     }
