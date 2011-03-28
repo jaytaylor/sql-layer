@@ -1157,18 +1157,22 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         for(String colName : tableDef.getPrimaryKey()) {
             final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
-            final String typeName = col.getType();
-            if(!ais.isTypeSupportedAsIndex(typeName)) {
-                complainAboutIndexDataType(schemaName, tableName, "PRIMARY", colName, typeName);
+            if(col != null) {
+                final String typeName = col.getType();
+                if(!ais.isTypeSupportedAsIndex(typeName)) {
+                    complainAboutIndexDataType(schemaName, tableName, "PRIMARY", colName, typeName);
+                }
             }
         }
 
         for(SchemaDef.IndexDef index : tableDef.getIndexes()) {
             for(String colName : index.getColumnNames()) {
                 final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
-                final String typeName = col.getType();
-                if(!ais.isTypeSupportedAsIndex(typeName)) {
-                    complainAboutIndexDataType(schemaName, tableName, index.getName(), colName, typeName);
+                if(col != null) {
+                    final String typeName = col.getType();
+                    if(!ais.isTypeSupportedAsIndex(typeName)) {
+                        complainAboutIndexDataType(schemaName, tableName, index.getName(), colName, typeName);
+                    }
                 }
             }
         }
