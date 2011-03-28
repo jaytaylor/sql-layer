@@ -23,16 +23,7 @@ import static org.junit.Assert.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -40,6 +31,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.RowDataOutput;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -94,8 +87,8 @@ public class ApiTestBase {
 
     private static class TestServiceServiceFactory extends UnitTestServiceFactory {
 
-        private TestServiceServiceFactory() {
-            super(false, null);
+        private TestServiceServiceFactory(Collection<Property> startupConfigProperties) {
+            super(false, startupConfigProperties);
         }
 
         @Override
@@ -131,8 +124,8 @@ public class ApiTestBase {
     }
 
     private static class TestServiceManager extends ServiceManagerImpl {
-        private TestServiceManager() {
-            super(new TestServiceServiceFactory());
+        private TestServiceManager(Collection<Property> startupConfigProperties) {
+            super(new TestServiceServiceFactory(startupConfigProperties));
         }
     }
 
@@ -152,7 +145,7 @@ public class ApiTestBase {
     @Before
     public final void startTestServices() throws Exception {
         session = new SessionImpl();
-        sm = new TestServiceManager( );
+        sm = new TestServiceManager(startupConfigProperties());
         sm.startServices();
         ddl = new DDLFunctionsImpl();
         dml = new DMLFunctionsImpl(ddl);
@@ -203,6 +196,10 @@ public class ApiTestBase {
     protected final RowDefCache rowDefCache() {
         Store store = sm.getStore();
         return store.getRowDefCache();
+    }
+
+    protected Collection<Property> startupConfigProperties() {
+        return null;
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
