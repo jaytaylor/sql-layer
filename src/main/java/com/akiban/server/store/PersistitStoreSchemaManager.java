@@ -144,10 +144,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * <li>it must be valid DDL syntax</li>
      * <li>it does not have a schema name reserved by Akiban</li>
      * <li>any references to other tables and columns must be valid</li>
-     * <li>TODO: any previously existing table definition having the same name
-     * is compatible, meaning that rows already stored under a previously
-     * existing definition of a table having the same schema name and table name
-     * can be transformed to a row of the new format.</li>
      * </ul>
      * 
      * @param session
@@ -203,6 +199,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final String tableName = tableDef.getCName().getName();
 
         validateTableDefinition(session, schemaName, tableDef);
+
+        // Some code below this point allows for the name to be non-unique in
+        // support of multi-generation tables. Reject here as it isn't yet complete.
+        final Table curTable = getAis(session).getTable(TableName.create(schemaName, tableName));
+        if (curTable != null) {
+            throw new InvalidOperationException(ErrorCode.DUPLICATE_TABLE,
+                                                String.format("Table `%s`.`%s` already exists",
+                                                              schemaName, tableName));
+        }
+
         Exchange ex = null;
         Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;

@@ -78,6 +78,7 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
             throwIfInstanceOf(JoinToWrongColumnsException.class, ioe);
             throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
+            throwIfInstanceOf(DuplicateTableNameException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }

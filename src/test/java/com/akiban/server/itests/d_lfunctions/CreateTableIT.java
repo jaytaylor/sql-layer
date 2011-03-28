@@ -399,7 +399,7 @@ public final class CreateTableIT extends ApiTestBase {
         createExpectException(GenericInvalidOperationException.class, "test", "t", "c1 text, key(c1(100)))");
     }
 
-    @Test(expected=DuplicateTableNameException.class)
+    @Test
     public void createDuplicateTable() throws InvalidOperationException {
         // bug705543
         createTable("test", "t", "c1 int key");
