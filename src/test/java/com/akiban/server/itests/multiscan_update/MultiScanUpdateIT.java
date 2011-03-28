@@ -38,7 +38,7 @@ import java.util.Iterator;
 
 import static org.junit.Assert.assertTrue;
 
-public final class MultiScanUpdateMT extends ApiTestBase {
+public final class MultiScanUpdateIT extends ApiTestBase {
     private final static String SCHEMA = "sch";
     private final static String TABLE = "tbl";
     private final static int MAX_ID = 1000;
