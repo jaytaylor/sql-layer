@@ -26,7 +26,6 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -41,8 +40,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.RowDataOutput;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -84,6 +81,7 @@ public class ApiTestBase {
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
+        private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
 
         @Override
         public void output(NewRow row) {
@@ -91,7 +89,7 @@ public class ApiTestBase {
         }
 
         public List<NewRow> getRows() {
-            return Collections.unmodifiableList(rows);
+            return rowsUnmodifiable;
         }
 
         public void clear() {
@@ -270,11 +268,6 @@ public class ApiTestBase {
         }
     }
 
-    protected final <T> T get(NewRow row, int field, Class<T> as) {
-        Object o = row.get(field);
-        return as.cast(o);
-    }
-
     protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
         assertEquals("rows scanned", Arrays.asList(expectedRows), scanAll(request));
     }
@@ -285,12 +278,12 @@ public class ApiTestBase {
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
         }
-        int indexId = uTable.getIndex("PRIMARY").getIndexId();
-        return new ScanAllRequest(
-                tableId, allCols, indexId,
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
-                ScanLimit.NONE
-        );
+        return new ScanAllRequest(tableId, allCols);
+    }
+
+    protected final <T> T get(NewRow row, int field, Class<T> castAs) {
+        Object obj = row.get(field);
+        return castAs.cast(obj);
     }
 
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
