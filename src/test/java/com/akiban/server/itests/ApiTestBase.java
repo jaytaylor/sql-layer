@@ -41,6 +41,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.scan.RowDataOutput;
+import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
@@ -285,7 +286,11 @@ public class ApiTestBase {
             allCols.add(i);
         }
         int indexId = uTable.getIndex("PRIMARY").getIndexId();
-        return new ScanAllRequest(tableId, allCols, indexId, null, ScanLimit.NONE);
+        return new ScanAllRequest(
+                tableId, allCols, indexId,
+                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
+                ScanLimit.NONE
+        );
     }
 
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
