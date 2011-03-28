@@ -1,0 +1,14 @@
+development:
+    host: "localhost"
+    port: "11211"
+    database: "social_rails_mdevelopment"
+
+test:
+    host: "localhost"
+    port: "11211"
+    database: "social_rails_mtest"
+
+production:
+    host: "localhost"
+    port: "11211"
+    database: "social_rails_mproduction"
