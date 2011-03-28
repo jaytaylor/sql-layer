@@ -798,6 +798,10 @@ public class SchemaDef {
         public String getCharset() {
             return charset;
         }
+
+        public List<IndexDef> getIndexes() {
+            return indexes;
+        }
     }
 
     private static final class IndexNameGenerator {
@@ -1012,6 +1016,10 @@ public class SchemaDef {
 
         public boolean isForeignKey() {
             return qualifiers.contains(IndexQualifier.FOREIGN_KEY);
+        }
+
+        public String getName() {
+            return name;
         }
     }
 

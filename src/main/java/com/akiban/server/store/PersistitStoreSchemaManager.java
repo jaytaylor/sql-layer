@@ -1112,6 +1112,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return cname;
     }
 
+    private void complainAboutIndexDataType(String schema, String table, String index, String column, String type)
+            throws InvalidOperationException {
+        throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_DATA_TYPE,
+                                            "Table `%s`.`%s` index `%s` has unsupported type `%s` from column `%s`",
+                                            schema, table, index, type, column);
+    }
+
     private void validateTableDefinition(final Session session,
             final String schemaName, final SchemaDef.UserTableDef tableDef)
             throws Exception {
@@ -1133,7 +1140,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         for(SchemaDef.ColumnDef col : tableDef.getColumns()) {
             final String typeName = col.getType();
-            if(ais.isTypeSupported(typeName) == false) {
+            if(!ais.isTypeSupported(typeName)) {
                 throw new InvalidOperationException(
                         ErrorCode.UNSUPPORTED_DATA_TYPE,
                         "Table `%s`.`%s` column `%s` is unsupported type %s",
@@ -1145,6 +1152,24 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         ErrorCode.UNSUPPORTED_CHARSET,
                         "Table `%s`.`%s` column `%s` has unsupported charset %s",
                         schemaName, tableName, col.getName(), charset);
+            }
+        }
+
+        for(String colName : tableDef.getPrimaryKey()) {
+            final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
+            final String typeName = col.getType();
+            if(!ais.isTypeSupportedAsIndex(typeName)) {
+                complainAboutIndexDataType(schemaName, tableName, "PRIMARY", colName, typeName);
+            }
+        }
+
+        for(SchemaDef.IndexDef index : tableDef.getIndexes()) {
+            for(String colName : index.getColumnNames()) {
+                final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
+                final String typeName = col.getType();
+                if(!ais.isTypeSupportedAsIndex(typeName)) {
+                    complainAboutIndexDataType(schemaName, tableName, index.getName(), colName, typeName);
+                }
             }
         }
 

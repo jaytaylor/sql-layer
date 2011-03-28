@@ -29,6 +29,7 @@ import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.itests.ApiTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -389,14 +390,14 @@ public final class CreateTableIT extends ApiTestBase {
     @Test
     public void unsupportedIndexTypes() throws InvalidOperationException {
         // bug716126/716126
-        createExpectException(GenericInvalidOperationException.class, "test", "t", "c1 float key");
-        createExpectException(GenericInvalidOperationException.class, "test", "t", "c1 double key");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 float key");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 double key");
         // bug741197/741058
-        createExpectException(GenericInvalidOperationException.class, "test", "t", "c1 time key");
-        createExpectException(GenericInvalidOperationException.class, "test", "t", "c1 year key");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 time key");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 year key");
         // bug737692
-        createExpectException(GenericInvalidOperationException.class, "test", "t", "c1 blob, key(c1(100)))");
-        createExpectException(GenericInvalidOperationException.class, "test", "t", "c1 text, key(c1(100)))");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 blob, key(c1(100)))");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 text, key(c1(100)))");
     }
 
     @Test
