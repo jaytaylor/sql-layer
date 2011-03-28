@@ -29,6 +29,7 @@ import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -38,6 +39,7 @@ import java.util.Iterator;
 
 import static org.junit.Assert.assertTrue;
 
+@Ignore("bug 744400")
 public final class MultiScanUpdateIT extends ApiTestBase {
     private final static String SCHEMA = "sch";
     private final static String TABLE = "tbl";
