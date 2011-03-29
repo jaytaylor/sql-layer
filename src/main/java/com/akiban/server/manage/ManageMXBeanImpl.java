@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.CustomQuery;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.Store;
 
@@ -41,14 +42,14 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public void shutdown() {
+        try {
+            ServiceManagerImpl.get().stopServices();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
         new Thread() {
             @Override
             public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 System.exit(0);
             }
         }.start();
