@@ -24,6 +24,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.Timing;
@@ -99,17 +100,17 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             timePoints.mark("SCAN: NO SUCH INDEX");
             return Collections.emptyList();
         }
-        CountingRowOutput output = new CountingRowOutput();
+        ApiTestBase.ListRowOutput output = new ApiTestBase.ListRowOutput();
         timePoints.mark("SCAN: START");
         if (dml.scanSome(session, cursorId, output)) {
             timePoints.mark("SCAN: EARLY FINISH");
-            return output.rows();
+            return output.getRows();
         }
         dml.closeCursor(session, cursorId);
         if (markFinish) {
             timePoints.mark("SCAN: FINISH");
         }
 
-        return output.rows();
+        return output.getRows();
     }
 }
