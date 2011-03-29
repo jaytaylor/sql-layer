@@ -153,13 +153,13 @@ public final class MultiScanUpdateIT extends ApiTestBase {
     }
 
     @Test(expected=ConcurrentScanAndUpdateException.class)
-    @OnlyIf("exceptionExpected")
+    @OnlyIf("exceptionExpected()")
     public void expectException() throws InvalidOperationException{
         test();
     }
 
     @Test
-    @OnlyIfNot("exceptionExpected")
+    @OnlyIfNot("exceptionExpected()")
     public void expectSuccess() throws InvalidOperationException{
         test();
     }
