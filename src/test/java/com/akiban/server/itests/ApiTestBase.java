@@ -81,6 +81,7 @@ public class ApiTestBase {
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
+        private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
 
         @Override
         public void output(NewRow row) {
@@ -88,7 +89,11 @@ public class ApiTestBase {
         }
 
         public List<NewRow> getRows() {
-            return rows;
+            return rowsUnmodifiable;
+        }
+
+        public void clear() {
+            rows.clear();
         }
     }
 
@@ -274,6 +279,11 @@ public class ApiTestBase {
             allCols.add(i);
         }
         return new ScanAllRequest(tableId, allCols);
+    }
+
+    protected final <T> T get(NewRow row, int field, Class<T> castAs) {
+        Object obj = row.get(field);
+        return castAs.cast(obj);
     }
 
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
