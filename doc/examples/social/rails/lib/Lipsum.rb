@@ -1,3 +1,18 @@
+#
+# Copyright (C) 2011 Akiban Technologies Inc.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License, version 3,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see http://www.gnu.org/licenses.
+#
+
 module Lipsum
   LOREM_IPSUM = <<-LIPSUM
   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec gravida mi vitae orci commodo laoreet. Pellentesque vestibulum, mi vitae porta accumsan, purus nisi tempus sem, vitae pretium ipsum risus et justo. Aliquam suscipit enim vel orci rutrum iaculis. In hac habitasse platea dictumst. Pellentesque dapibus, purus id vestibulum tempus, lacus augue fermentum nibh, vel eleifend sapien magna sit amet mi. Maecenas nunc nisl, porttitor nec tempus at, dictum gravida risus. Duis ut eros mauris. Vestibulum at nunc in ligula elementum ultrices. Vestibulum malesuada dapibus lorem, in euismod mi dictum vitae. Phasellus luctus justo quis urna viverra vel elementum velit consequat.
