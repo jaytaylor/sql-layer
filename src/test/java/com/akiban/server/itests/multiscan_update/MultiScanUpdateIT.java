@@ -17,6 +17,8 @@ package com.akiban.server.itests.multiscan_update;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.OnlyIf;
+import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.InvalidOperationException;
@@ -33,7 +35,6 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,10 +65,6 @@ public final class MultiScanUpdateIT extends ApiTestBase {
                 row.put(0, id + (MAX_ID * 10));
             }
 
-            @Override
-            boolean isPKUpdated() {
-                return true;
-            }
         },
         NAME {
             @Override
@@ -76,10 +73,6 @@ public final class MultiScanUpdateIT extends ApiTestBase {
                     row.put(1, name.substring(0, 10));
             }
 
-            @Override
-            boolean isPKUpdated() {
-                return false;
-            }
         },
         NONE {
             @Override
@@ -88,10 +81,6 @@ public final class MultiScanUpdateIT extends ApiTestBase {
                     row.put(2, nickname.substring(0, 11));
             }
 
-            @Override
-            boolean isPKUpdated() {
-                return false;
-            }
         },
         ALL {
             @Override
@@ -101,15 +90,10 @@ public final class MultiScanUpdateIT extends ApiTestBase {
                 NONE.updateInPlace(row);
             }
 
-            @Override
-            boolean isPKUpdated() {
-                return true;
-            }
         }
         ;
 
         abstract void updateInPlace(NewRow row);
-        abstract boolean isPKUpdated();
     }
 
     @NamedParameterizedRunner.TestParameters
@@ -169,6 +153,21 @@ public final class MultiScanUpdateIT extends ApiTestBase {
     }
 
     @Test(expected=ConcurrentScanAndUpdateException.class)
+    @OnlyIf("exceptionExpected")
+    public void expectException() throws InvalidOperationException{
+        test();
+    }
+
+    @Test
+    @OnlyIfNot("exceptionExpected")
+    public void expectSuccess() throws InvalidOperationException{
+        test();
+    }
+
+    public boolean exceptionExpected() {
+        return WhichIndex.ALL.equals(updateColumn) || scanIndex.equals(updateColumn);
+    }
+
     public void test() throws InvalidOperationException {
         final String scanIndexName;
         switch (scanIndex) {
