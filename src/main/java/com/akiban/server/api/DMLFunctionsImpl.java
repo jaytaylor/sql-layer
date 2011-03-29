@@ -27,10 +27,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
-import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
@@ -632,45 +635,61 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         }
     }
 
-    private void checkForModifiedCursors(Session session,
-                                         NewRow oldRow, NewRow newRow, ColumnSelector columnSelector, int tableId)
+    private void checkForModifiedCursors(
+            Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector, int tableId)
             throws NoSuchTableException
     {
-        boolean pkIsUpdated = false;
-        RowDef rowDef = ddlFunctions.getRowDef(tableId);
-        IndexDef pk = rowDef.getPKIndexDef();
-        if (pk != null) {
-            for (int pkField : pk.getFields()) {
-                if ( columnSelector.includesColumn(pkField)
-                        && !AkServerUtil.equals(oldRow.get(pkField), newRow.get(pkField))
-                ) {
-                    pkIsUpdated = true;
-                    break;
-                }
-            }
-        }
+        boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
         for (Cursor cursor : session.<Map<CursorId,Cursor>>get(MODULE_NAME, OPEN_CURSORS_MAP).values()) {
             RowCollector rc = cursor.getRowCollector();
-            if (rc.getTableId() != tableId) {
-                continue; // doesn't affect us
+            if (hKeyIsModified) {
+                // check whether the update is on this scan or its ancestors
+                int scanTableId = rc.getTableId();
+                while (scanTableId > 0) {
+                    if (scanTableId == tableId) {
+                        cursor.setScanModified();
+                        break;
+                    }
+                    scanTableId = ddlFunctions.getRowDef(scanTableId).getParentRowDefId();
+                }
             }
-            if (pkIsUpdated) {
-                cursor.setScanModified();
-                break;
-            }
-
-            IndexDef indexDef = rc.getIndexDef();
-            if (indexDef == null) {
-                indexDef = ddlFunctions.getRowDef(rc.getTableId()).getPKIndexDef();
-            }
-            for (int field : indexDef.getFields()) {
-                if (columnSelector.includesColumn(field) && !AkServerUtil.equals(oldRow.get(field), newRow.get(field))) {
-                    cursor.setScanModified();
-                    break;
+            else {
+                IndexDef indexDef = rc.getIndexDef();
+                if (indexDef == null) {
+                    indexDef = ddlFunctions.getRowDef(rc.getTableId()).getPKIndexDef();
+                }
+                if (indexDef != null) {
+                    for (int field : indexDef.getFields()) {
+                        if (columnSelector.includesColumn(field)
+                                && !AkServerUtil.equals(oldRow.get(field), newRow.get(field)))
+                        {
+                            cursor.setScanModified();
+                            break;
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private boolean isHKeyModified(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columns, int tableId)
+    {
+        UserTable userTable = ddlFunctions.getAIS(session).getUserTable(tableId);
+        HKey hKey = userTable.hKey();
+        for (HKeySegment segment : hKey.segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                Column column = hKeyColumn.column();
+                if (!column.getTable().equals(userTable)) {
+                    continue;
+                }
+                int pos = column.getPosition();
+                if (columns.includesColumn(pos) && !AkServerUtil.equals(oldRow.get(pos), newRow.get(pos))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
