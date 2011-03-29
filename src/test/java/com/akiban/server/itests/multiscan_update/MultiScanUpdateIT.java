@@ -165,7 +165,10 @@ public final class MultiScanUpdateIT extends ApiTestBase {
     }
 
     public boolean exceptionExpected() {
-        return WhichIndex.ALL.equals(updateColumn) || scanIndex.equals(updateColumn);
+        return
+                WhichIndex.ALL.equals(updateColumn)
+                || scanIndex.equals(updateColumn)
+                || WhichIndex.PK.equals(updateColumn);
     }
 
     public void test() throws InvalidOperationException {

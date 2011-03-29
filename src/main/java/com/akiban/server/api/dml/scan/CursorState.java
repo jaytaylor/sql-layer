@@ -32,6 +32,10 @@ public enum CursorState {
      */
     FINISHED,
     /**
+     * Scanning cannot continue because a field involved in the index has been modified.
+     */
+    CONCURRENT_MODIFICATION,
+    /**
      * The requested cursor is unknown or has been removed.
      */
     UNKNOWN_CURSOR
