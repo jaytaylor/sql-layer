@@ -203,7 +203,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // Some code below this point allows for the name to be non-unique in
         // support of multi-generation tables. Reject here as it isn't yet complete.
         final Table curTable = getAis(session).getTable(TableName.create(schemaName, tableName));
-        if (curTable != null) {
+        if (curTable != null && !useOldId) {
             throw new InvalidOperationException(ErrorCode.DUPLICATE_TABLE,
                                                 String.format("Table `%s`.`%s` already exists",
                                                               schemaName, tableName));
