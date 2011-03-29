@@ -23,7 +23,6 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
