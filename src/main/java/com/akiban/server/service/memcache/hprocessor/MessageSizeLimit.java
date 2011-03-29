@@ -35,7 +35,7 @@ public final class MessageSizeLimit implements ScanLimit
     {
         boolean limitReached = false;
         if (maxBytes > 0) {
-            totalBytes += previousRow.getBytes().length;
+            totalBytes += previousRow.getInnerSize();
             limitReached = totalBytes >= maxBytes;
         }
         return limitReached;
