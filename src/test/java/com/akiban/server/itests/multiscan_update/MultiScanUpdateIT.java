@@ -23,6 +23,7 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
+import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyOutputConverter;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -43,6 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -116,9 +118,8 @@ public final class MultiScanUpdateIT extends ApiTestBase {
 
         for (WhichIndex scanIndex : Arrays.asList(WhichIndex.PK, WhichIndex.NAME)) {
             for (WhichIndex updateIndex : WhichIndex.values()) {
-                builder.create(
+                builder.add(
                         String.format("scan %s update %s", scanIndex, updateIndex),
-                        ! updateIndex.isPKUpdated(),
                         scanIndex,
                         updateIndex);
             }
@@ -147,7 +148,7 @@ public final class MultiScanUpdateIT extends ApiTestBase {
         );
 
         for (int i = 1; i <= MAX_ID; ++i) {
-            writeRows( getRow(i) );
+            writeRows(getRow(i));
         }
     }
 
@@ -167,7 +168,7 @@ public final class MultiScanUpdateIT extends ApiTestBase {
         return createNewRow(tableId, (long) i, name, nickname);
     }
 
-    @Test
+    @Test(expected=ConcurrentScanAndUpdateException.class)
     public void test() throws InvalidOperationException {
         final String scanIndexName;
         switch (scanIndex) {
@@ -183,14 +184,34 @@ public final class MultiScanUpdateIT extends ApiTestBase {
         int scanIndexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(scanIndexName).getIndexId();
 
         ScanRequest request = new ScanAllRequest(tableId, set(0, 1, 2), scanIndexId, null, ScanLimit.NONE);
-        Iterator<NewRow> scanIterator = new ScanIterator(dml(), 1024, request);
+        ScanIterator scanIterator = new ScanIterator(dml(), 1024, request);
 
-        while (scanIterator.hasNext()) {
-            NewRow oldRow = scanIterator.next();
-            assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Long.class) <= MAX_ID);
-            NewRow newRow = new NiceRow(oldRow);
-            updateColumn.updateInPlace(newRow);
-            dml().updateRow(session(), oldRow, newRow, ALL_COLUMNS);
+        try {
+            while (scanIterator.hasNext()) {
+                NewRow oldRow = scanIterator.next();
+                assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Long.class) <= MAX_ID);
+                NewRow newRow = new NiceRow(oldRow);
+                updateColumn.updateInPlace(newRow);
+                dml().updateRow(session(), oldRow, newRow, ALL_COLUMNS);
+            }
+        } catch (ConcurrentScanAndUpdateRuntimeException e) {
+            assertEquals("calls to scanSome", 2, scanIterator.getScanSomeCalls());
+            throw e.cause;
+        }
+    }
+
+    private static class ConcurrentScanAndUpdateRuntimeException extends RuntimeException {
+        private final ConcurrentScanAndUpdateException cause;
+
+        private ConcurrentScanAndUpdateRuntimeException(ConcurrentScanAndUpdateException cause) {
+            super(cause);
+            this.cause = cause;
+        }
+
+        @Override
+        public Throwable getCause() {
+            assert super.getCause() == cause : String.format("%s != %s", super.getCause(), cause);
+            return cause;
         }
     }
 
@@ -202,8 +223,10 @@ public final class MultiScanUpdateIT extends ApiTestBase {
         private final CursorId cursorId;
         private final Session session = new SessionImpl();
         private final DMLFunctions dml;
+        private int scanSomeCalls;
 
         ScanIterator(DMLFunctions dml, int bufferSize, ScanRequest request) throws InvalidOperationException {
+            this.scanSomeCalls = 0;
             router = new BufferedLegacyOutputRouter(bufferSize, false);
             LegacyOutputConverter converter = new LegacyOutputConverter(dml);
             output = new ListRowOutput();
@@ -239,6 +262,7 @@ public final class MultiScanUpdateIT extends ApiTestBase {
             assert hasMore;
             assert ! (outputIterator != null && outputIterator.hasNext());
             output.clear();
+            ++scanSomeCalls;
             try {
                 dml().scanSome(session(), cursorId, router);
                 hasMore = false;
@@ -247,6 +271,8 @@ public final class MultiScanUpdateIT extends ApiTestBase {
                     throw new RuntimeException(e); // couldn't pick up even a single row!
                 }
                 router.reset(0);
+            } catch (ConcurrentScanAndUpdateException e) {
+                throw new ConcurrentScanAndUpdateRuntimeException(e);
             } catch (InvalidOperationException e) {
                 throw new RuntimeException(e);
             }
@@ -259,6 +285,10 @@ public final class MultiScanUpdateIT extends ApiTestBase {
 
         protected DMLFunctions dml() {
             return dml;
+        }
+
+        private int getScanSomeCalls() {
+            return scanSomeCalls;
         }
     }
 }
