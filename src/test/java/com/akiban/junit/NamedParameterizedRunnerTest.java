@@ -90,16 +90,23 @@ public final class NamedParameterizedRunnerTest
         public static List<Parameterization> params() { return builderList; }
 
         private final int number;
+        @SuppressWarnings("unused") public final boolean numberIs1; // used by @OnlyIf
 
         public OnlyIfTest(int number) {
             this.number = number;
+            this.numberIs1 = is1();
         }
 
         @Test
         public void alwaysRun() {}
 
-        @Test @OnlyIf("is1")
-        public void testIs1() {
+        @Test @OnlyIf("is1()")
+        public void testIs1Method() {
+            assertEquals("number", 1, number);
+        }
+
+        @Test @OnlyIf("numberIs1")
+        public void testIs1Field() {
             assertEquals("number", 1, number);
         }
 
@@ -260,13 +267,14 @@ public final class NamedParameterizedRunnerTest
 
         {
             ReifiedParamRunner forOne = map.get("Parameterization[PASSING one: [1] ]");
-            assertEquals("param one: " + forOne.describeChildren(), 2, forOne.getChildrenCount());
-            testFrameworkMethod(forOne, OnlyIfTest.class, "testIs1", true);
+            assertEquals("param one: " + forOne.describeChildren(), 3, forOne.getChildrenCount());
+            testFrameworkMethod(forOne, OnlyIfTest.class, "testIs1Method", true);
+            testFrameworkMethod(forOne, OnlyIfTest.class, "testIs1Field", true);
             testFrameworkMethod(forOne, OnlyIfTest.class, "alwaysRun", true);
         }
         {
             ReifiedParamRunner forTwo = map.get("Parameterization[PASSING two: [2] ]");
-            assertEquals("param one: " + forTwo.describeChildren(), 1, forTwo.getChildrenCount());
+            assertEquals("param two: " + forTwo.describeChildren(), 1, forTwo.getChildrenCount());
             testFrameworkMethod(forTwo, OnlyIfTest.class, "alwaysRun", true);
         }
     }
