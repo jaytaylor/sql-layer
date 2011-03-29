@@ -182,10 +182,6 @@ public final class MultiScanUpdateIT extends ApiTestBase {
         }
         int scanIndexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(scanIndexName).getIndexId();
 
-        scanAndUpdate(updateColumn, scanIndexId);
-    }
-
-    private void scanAndUpdate(WhichIndex updater, int scanIndexId) throws InvalidOperationException {
         ScanRequest request = new ScanAllRequest(tableId, set(0, 1, 2), scanIndexId, null, ScanLimit.NONE);
         Iterator<NewRow> scanIterator = new ScanIterator(dml(), 1024, request);
 
@@ -193,7 +189,7 @@ public final class MultiScanUpdateIT extends ApiTestBase {
             NewRow oldRow = scanIterator.next();
             assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Long.class) <= MAX_ID);
             NewRow newRow = new NiceRow(oldRow);
-            updater.updateInPlace(newRow);
+            updateColumn.updateInPlace(newRow);
             dml().updateRow(session(), oldRow, newRow, ALL_COLUMNS);
         }
     }
