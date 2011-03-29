@@ -15,36 +15,126 @@
 
 package com.akiban.server.itests.multiscan_update;
 
+import com.akiban.ais.model.TableName;
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.Parameterization;
+import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyOutputConverter;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.ScanAllRequest;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
-@Ignore("bug 744400")
+@RunWith(NamedParameterizedRunner.class)
 public final class MultiScanUpdateIT extends ApiTestBase {
+
     private final static String SCHEMA = "sch";
     private final static String TABLE = "tbl";
     private final static int MAX_ID = 1000;
+    private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
+
+    @SuppressWarnings("unused") // accessed via WhichIndex.values
+    private enum WhichIndex {
+        PK {
+            @Override
+            public void updateInPlace(NewRow row) {
+                long id = get(row, 0, Long.class);
+                row.put(0, id + (MAX_ID * 10));
+            }
+
+            @Override
+            boolean isPKUpdated() {
+                return true;
+            }
+        },
+        NAME {
+            @Override
+            public void updateInPlace(NewRow row) {
+                    String name = get(row, 1, String.class);
+                    row.put(1, name.substring(0, 10));
+            }
+
+            @Override
+            boolean isPKUpdated() {
+                return false;
+            }
+        },
+        NONE {
+            @Override
+            public void updateInPlace(NewRow row) {
+                    String nickname = get(row, 2, String.class);
+                    row.put(2, nickname.substring(0, 11));
+            }
+
+            @Override
+            boolean isPKUpdated() {
+                return false;
+            }
+        },
+        ALL {
+            @Override
+            void updateInPlace(NewRow row) {
+                PK.updateInPlace(row);
+                NAME.updateInPlace(row);
+                NONE.updateInPlace(row);
+            }
+
+            @Override
+            boolean isPKUpdated() {
+                return true;
+            }
+        }
+        ;
+
+        abstract void updateInPlace(NewRow row);
+        abstract boolean isPKUpdated();
+    }
+
+    @NamedParameterizedRunner.TestParameters
+    public static List<Parameterization> params() {
+        ParameterizationBuilder builder = new ParameterizationBuilder();
+
+        for (WhichIndex scanIndex : Arrays.asList(WhichIndex.PK, WhichIndex.NAME)) {
+            for (WhichIndex updateIndex : WhichIndex.values()) {
+                builder.create(
+                        String.format("scan %s update %s", scanIndex, updateIndex),
+                        ! updateIndex.isPKUpdated(),
+                        scanIndex,
+                        updateIndex);
+            }
+        }
+
+        return builder.asList();
+    }
+
+    private final WhichIndex scanIndex;
+    private final WhichIndex updateColumn;
     private int tableId;
+
+    public MultiScanUpdateIT(WhichIndex scanIndex, WhichIndex updateColumn) {
+        this.scanIndex = scanIndex;
+        this.updateColumn = updateColumn;
+    }
 
     @Before
     public void setUp() throws InvalidOperationException {
@@ -52,46 +142,59 @@ public final class MultiScanUpdateIT extends ApiTestBase {
                 SCHEMA, TABLE,
                 "id int key",
                 "name varchar (255)",
-                "nickname varchar (255)"
+                "nickname varchar (255)",
+                "key (name)"
         );
-        StringBuilder builder = new StringBuilder(255);
 
         for (int i = 1; i <= MAX_ID; ++i) {
-            for (int c = 0; c < 255; ++c) {
-                builder.append( i % 9 );
-            }
-            String name = builder.toString();
-            builder.setLength(0);
-
-            for (int c = 0; c < 255; ++c) {
-                builder.append((i % 9) + 1);
-            }
-            String nickname = builder.toString();
-            builder.setLength(0);
-            
-            writeRows(
-                    createNewRow(tableId, (long) i, name, nickname)
-            );
+            writeRows( getRow(i) );
         }
     }
 
-    @Test
-    public void updateWithMultiScans() throws InvalidOperationException {
-        Iterator<NewRow> scanIterator = new ScanIterator(dml(), 1024, scanAllRequest(tableId));
+    private NewRow getRow(int i) {
+        StringBuilder builder = new StringBuilder();
+        for (int c = 0; c < 255; ++c) {
+            builder.append( i % 9 );
+        }
+        String name = builder.toString();
+        builder.setLength(0);
 
-        ColumnSelector selector = new ColumnSelector() {
-            @Override
-            public boolean includesColumn(int columnPosition) {
-                return true;
-            }
-        };
+        for (int c = 0; c < 255; ++c) {
+            builder.append((i % 9) + 1);
+        }
+        String nickname = builder.toString();
+        builder.setLength(0);
+        return createNewRow(tableId, (long) i, name, nickname);
+    }
+
+    @Test
+    public void test() throws InvalidOperationException {
+        final String scanIndexName;
+        switch (scanIndex) {
+            case PK:
+                scanIndexName = "PRIMARY";
+                break;
+            case NAME:
+                scanIndexName = "NAME";
+                break;
+            default:
+                throw new RuntimeException(scanIndex.name());
+        }
+        int scanIndexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(scanIndexName).getIndexId();
+
+        scanAndUpdate(updateColumn, scanIndexId);
+    }
+
+    private void scanAndUpdate(WhichIndex updater, int scanIndexId) throws InvalidOperationException {
+        ScanRequest request = new ScanAllRequest(tableId, set(0, 1, 2), scanIndexId, null, ScanLimit.NONE);
+        Iterator<NewRow> scanIterator = new ScanIterator(dml(), 1024, request);
+
         while (scanIterator.hasNext()) {
             NewRow oldRow = scanIterator.next();
-            long id = get(oldRow, 0, Long.class);
-            assertTrue("saw updated row: " + oldRow, id <= MAX_ID);
-            NiceRow newRow = new NiceRow(oldRow);
-            newRow.put(0, id + (MAX_ID * 10) );
-            dml().updateRow(session(), oldRow, newRow, selector);
+            assertTrue("saw updated row: " + oldRow, get(oldRow, 0, Long.class) <= MAX_ID);
+            NewRow newRow = new NiceRow(oldRow);
+            updater.updateInPlace(newRow);
+            dml().updateRow(session(), oldRow, newRow, ALL_COLUMNS);
         }
     }
 
@@ -109,7 +212,7 @@ public final class MultiScanUpdateIT extends ApiTestBase {
             LegacyOutputConverter converter = new LegacyOutputConverter(dml);
             output = new ListRowOutput();
             converter.setOutput(output);
-            converter.setColumnsToScan(new HashSet<Integer>(Arrays.asList(0, 1)));
+            converter.setColumnsToScan(new HashSet<Integer>(Arrays.asList(0, 1, 2)));
             router.addHandler(converter);
             hasMore = true;
             cursorId = dml.openCursor(session(), request);
