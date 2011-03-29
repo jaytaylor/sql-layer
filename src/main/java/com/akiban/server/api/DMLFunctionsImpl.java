@@ -40,6 +40,7 @@ import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.*;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
+import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.CursorIsFinishedException;
@@ -69,7 +70,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
-    private static final Object OPEN_CURSORS_MAP = new Object();
+    private static final String OPEN_CURSORS_MAP = "OPEN_CURSORS_MAP";
+    private static final String SCANS_OPEN_WHILE_UPDATING = "SCANS_OPEN_WHILE_UPDATING";
 
     private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
     private final DDLFunctions ddlFunctions;
@@ -270,9 +272,11 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                    CursorIsUnknownException,
                    RowOutputException,
                    BufferFullException,
+                   ConcurrentScanAndUpdateException,
                    GenericInvalidOperationException
 
     {
+        checkScansOpenWhileUpdating(session, cursorId);
         logger.trace("scanning from {}", cursorId);
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
@@ -282,6 +286,15 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throw new CursorIsUnknownException(cursorId);
         }
         return scanner.doScan(cursor, cursorId, output);
+    }
+
+    private void checkScansOpenWhileUpdating(Session session, CursorId cursorId)
+            throws ConcurrentScanAndUpdateException
+    {
+        Set<CursorId> concurrentScans = session.get(MODULE_NAME, SCANS_OPEN_WHILE_UPDATING);
+        if (concurrentScans != null && concurrentScans.contains(cursorId)) {
+            throw new ConcurrentScanAndUpdateException("for cursor " + cursorId);
+        }
     }
 
     private static class PooledConverter {
@@ -342,6 +355,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                CursorIsUnknownException,
                RowOutputException,
                NoSuchTableException,
+               ConcurrentScanAndUpdateException,
                GenericInvalidOperationException
     {
         logger.trace("scanning from {}", cursorId);
@@ -507,6 +521,11 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         // it guarantees a Set<Cursor>
         Cursor removedCursor = cursors.remove(cursorId);
         removedCursor.getRowCollector().close();
+        
+        Set<CursorId> concurrentScans = session.get(MODULE_NAME, SCANS_OPEN_WHILE_UPDATING);
+        if (concurrentScans != null) {
+            concurrentScans.remove(cursorId);
+        }
     }
 
     @Override
@@ -606,6 +625,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             ForeignKeyConstraintDMLException, NoSuchRowException,
             GenericInvalidOperationException
     {
+        setScansOpenWhileUpdating(session);
         logger.trace("updating a row");
         final RowData oldData = niceRowToRowData(oldRow);
         final RowData newData = niceRowToRowData(newRow);
@@ -618,6 +638,17 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throwIfInstanceOf(NoSuchRowException.class, ioe);
             throwIfInstanceOf(DuplicateKeyException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
+        }
+    }
+
+    private void setScansOpenWhileUpdating(Session session) {
+        Set<CursorId> oldCursors = session.get(MODULE_NAME, SCANS_OPEN_WHILE_UPDATING);
+        Set<CursorId> currentCursors = getCursors(session);
+        if (oldCursors == null) {
+            session.put(MODULE_NAME, SCANS_OPEN_WHILE_UPDATING, new HashSet<CursorId>(currentCursors));
+        }
+        else {
+            oldCursors.addAll(currentCursors);
         }
     }
 

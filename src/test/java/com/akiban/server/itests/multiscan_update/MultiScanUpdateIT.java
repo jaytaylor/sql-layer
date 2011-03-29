@@ -184,7 +184,7 @@ public final class MultiScanUpdateIT extends ApiTestBase {
         int scanIndexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(scanIndexName).getIndexId();
 
         ScanRequest request = new ScanAllRequest(tableId, set(0, 1, 2), scanIndexId, null, ScanLimit.NONE);
-        ScanIterator scanIterator = new ScanIterator(dml(), 1024, request);
+        ScanIterator scanIterator = new ScanIterator(dml(), 1024, request, session());
 
         try {
             while (scanIterator.hasNext()) {
@@ -221,12 +221,15 @@ public final class MultiScanUpdateIT extends ApiTestBase {
         private Iterator<NewRow> outputIterator;
         boolean hasMore;
         private final CursorId cursorId;
-        private final Session session = new SessionImpl();
+        private final Session session;
         private final DMLFunctions dml;
         private int scanSomeCalls;
 
-        ScanIterator(DMLFunctions dml, int bufferSize, ScanRequest request) throws InvalidOperationException {
+        ScanIterator(DMLFunctions dml, int bufferSize, ScanRequest request, Session session)
+                throws InvalidOperationException
+        {
             this.scanSomeCalls = 0;
+            this.session = session;
             router = new BufferedLegacyOutputRouter(bufferSize, false);
             LegacyOutputConverter converter = new LegacyOutputConverter(dml);
             output = new ListRowOutput();
