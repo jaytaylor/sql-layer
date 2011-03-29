@@ -39,12 +39,14 @@ import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
+import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaId;
 
 public interface DDLFunctions {
     /**
      * Creates a table in a given schema with the given ddl.
+     * @param session the Session to run under.
      * @param schema may be null; if it is, and the schema must be provided in the DDL text
      * @param ddlText the DDL text: <tt>CREATE TABLE....</tt>
      * @throws ParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
@@ -63,6 +65,9 @@ public interface DDLFunctions {
      * @throws DuplicateColumnNameException if the table defines a (table_name, column_name) pair that already
      * @throws GenericInvalidOperationException if some other exception occurred
      * exists
+     * @throws JoinToMultipleParentsException if this table references multiple parents
+     * @throws UnsupportedDataTypeException if one of the columns is an unsupported data type
+     * @throws UnsupportedIndexDataTypeException if an unsupported type to index is indexed
      */
     void createTable(Session session, String schema, String ddlText)
             throws ParseException,
@@ -76,6 +81,7 @@ public interface DDLFunctions {
             DuplicateColumnNameException,
             UnsupportedDataTypeException,
             JoinToMultipleParentsException,
+            UnsupportedIndexDataTypeException,
             GenericInvalidOperationException;
 
     /**

@@ -133,6 +133,7 @@ public class Types {
 
     private final static List<Type> types = listOfTypes();
     private final static Set<Type> unsupported = setOfUnsupportedTypes();
+    private final static Set<Type> unsupportedInIndex = setOfUnsupportedIndexTypes();
     private final static Map<Type,Long[]> defaultParams = mapOfDefaults();
     
 
@@ -202,6 +203,25 @@ public class Types {
         return Collections.unmodifiableSet(unsupported);
     }
 
+    private static Set<Type> setOfUnsupportedIndexTypes() {
+        Set<Type> unsupported = new HashSet<Type>();
+        unsupported.add(FLOAT);
+        unsupported.add(U_FLOAT);
+        unsupported.add(DOUBLE);
+        unsupported.add(U_DOUBLE);
+        unsupported.add(TIME);
+        unsupported.add(YEAR);
+        unsupported.add(TINYBLOB);
+        unsupported.add(BLOB);
+        unsupported.add(MEDIUMBLOB);
+        unsupported.add(LONGBLOB);
+        unsupported.add(TINYTEXT);
+        unsupported.add(TEXT);
+        unsupported.add(MEDIUMTEXT);
+        unsupported.add(LONGTEXT);
+        return Collections.unmodifiableSet(unsupported);
+    }
+
     private static Map<Type,Long[]> mapOfDefaults() {
         Map<Type,Long[]> map = new HashMap<Type,Long[]>();
         map.put(BIT, new Long[]{1L,null});
@@ -212,12 +232,25 @@ public class Types {
         return Collections.unmodifiableMap(map);
     }
 
+    /**
+     * List of all known types.
+     */
 	public static List<Type> types() {
 		return types;
 	}
 
+    /**
+     * Set of all known types that are unsupported.
+     */
     public static Set<Type> unsupportedTypes() {
         return unsupported;
+    }
+
+    /**
+     * Set of all <b>supported</b> types that cannot be used in an index.
+     */
+    public static Set<Type> unsupportedIndexTypes() {
+        return unsupportedInIndex;
     }
 
     public static Map<Type,Long[]> defaultParams() {

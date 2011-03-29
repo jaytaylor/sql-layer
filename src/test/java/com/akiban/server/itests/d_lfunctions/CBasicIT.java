@@ -591,6 +591,7 @@ public final class CBasicIT extends ApiTestBase {
         assertEquals("pk", 1, pTable.getIndexes().size());
         assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
         assertEquals(pTable.getGroup(), cTable.getGroup());
+        dropAllTables();
 
         // Case 5: compatible key that is unnamed, unnamed fk
         pId = createTable("test", "p", "id int key");
