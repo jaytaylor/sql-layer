@@ -167,7 +167,7 @@ public final class HapiGetRequestTest {
         return expectedRequest != null;
     }
 
-    @Test @OnlyIfNot("expectedToWork")
+    @Test @OnlyIfNot("expectedToWork()")
     public void fails() {
         Exception exception = null;
         try {
@@ -179,37 +179,37 @@ public final class HapiGetRequestTest {
         assertNotNull(query + "expected exception", exception);
     }
 
-    @Test @OnlyIf("expectedToWork")
+    @Test @OnlyIf("expectedToWork()")
     public void equality() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " request", expectedRequest, actual);
     }
 
-    @Test @OnlyIf("expectedToWork")
+    @Test @OnlyIf("expectedToWork()")
     public void hash() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " hash", expectedRequest.hashCode(), actual.hashCode());
     }
 
-    @Test @OnlyIf("expectedToWork")
+    @Test @OnlyIf("expectedToWork()")
     public void schema() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " schema", expectedRequest.getSchema(), actual.getSchema());
     }
 
-    @Test @OnlyIf("expectedToWork")
+    @Test @OnlyIf("expectedToWork()")
     public void table() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " table", expectedRequest.getTable(), actual.getTable());
     }
 
-    @Test @OnlyIf("expectedToWork")
+    @Test @OnlyIf("expectedToWork()")
     public void predicateTable() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " usingtable", expectedRequest.getUsingTable(), actual.getUsingTable());
     }
 
-    @Test @OnlyIf("expectedToWork")
+    @Test @OnlyIf("expectedToWork()")
     public void predicates() throws  HapiRequestException {
         HapiGetRequest actual = ParsedHapiGetRequest.parse(query);
         assertEquals(query + " predicates", expectedRequest.getPredicates(), actual.getPredicates());
