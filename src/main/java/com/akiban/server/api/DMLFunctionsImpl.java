@@ -292,6 +292,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (CursorState.CONCURRENT_MODIFICATION.equals(cursor.getState())) {
             throw new ConcurrentScanAndUpdateException("for cursor " + cursorId);
         }
+        if (cursor.isFinished()) {
+            throw new CursorIsFinishedException(cursorId);
+        }
         return scanner.doScan(cursor, cursorId, output);
     }
 
@@ -415,12 +418,14 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                 throws CursorIsFinishedException,
                        RowOutputException,
                        GenericInvalidOperationException,
-                       BufferFullException {
+                       BufferFullException
+        {
             assert cursor != null;
             assert cursorId != null;
             assert output != null;
 
-            if (cursor.isFinished()) {
+            if (cursor.isClosed()) {
+                logger.error("Shouldn't have gotten a closed cursor. id = {} state = {}", cursorId, cursor.getState());
                 throw new CursorIsFinishedException(cursorId);
             }
 
@@ -642,6 +647,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
         for (Cursor cursor : session.<Map<CursorId,Cursor>>get(MODULE_NAME, OPEN_CURSORS_MAP).values()) {
+            if (cursor.isClosed()) {
+                continue;
+            }
             RowCollector rc = cursor.getRowCollector();
             if (hKeyIsModified) {
                 // check whether the update is on this scan or its ancestors

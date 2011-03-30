@@ -62,4 +62,8 @@ public final class Cursor {
     public CursorState getState() {
         return state;
     }
+
+    public boolean isClosed() {
+        return ! state.isOpenState();
+    }
 }
