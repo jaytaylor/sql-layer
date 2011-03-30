@@ -702,7 +702,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         for (HKeySegment segment : hKey.segments()) {
             for (HKeyColumn hKeyColumn : segment.columns()) {
                 Column column = hKeyColumn.column();
-                if (!column.getTable().equals(userTable)) {
+                if (column.getTable() != userTable) {
                     continue;
                 }
                 int pos = column.getPosition();
