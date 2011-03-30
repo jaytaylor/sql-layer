@@ -74,6 +74,13 @@ import org.slf4j.LoggerFactory;
 
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
+    private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ColumnSelector() {
+        @Override
+        public boolean includesColumn(int columnPosition) {
+            return true;
+        }
+    };
+
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final String OPEN_CURSORS_MAP = "OPEN_CURSORS_MAP";
@@ -624,6 +631,9 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
     {
         logger.trace("updating a row");
+        if (columnSelector == null) {
+            columnSelector = ALL_COLUMNS_SELECTOR;
+        }
         final RowData oldData = niceRowToRowData(oldRow);
         final RowData newData = niceRowToRowData(newRow);
 
@@ -646,7 +656,11 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     {
         boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
-        for (Cursor cursor : session.<Map<CursorId,Cursor>>get(MODULE_NAME, OPEN_CURSORS_MAP).values()) {
+        Map<CursorId,Cursor> cursorsMap = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
+        if (cursorsMap == null) {
+            return;
+        }
+        for (Cursor cursor : cursorsMap.values()) {
             if (cursor.isClosed()) {
                 continue;
             }
