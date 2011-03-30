@@ -30,7 +30,9 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -49,6 +51,10 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
                 Arrays.asList(
                         createNewRow(tableId, 2L, "c")
                 ),
+
+                createNewRow(tableId, 2L, "c"),
+                createNewRow(tableId, 2L, "a"),
+
                 Arrays.asList(
                         createNewRow(tableId, 2L, "a")
                 ),
@@ -59,7 +65,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
     }
 
     @Test// @Ignore("bug 746006")
-    public void oldKeysAreRemoved_2Rows_IndexChanged() throws InvalidOperationException {
+    public void oldKeysAreRemoved_2Rows_Partial_IndexChanged() throws InvalidOperationException {
         int tableId = table();
         runTest(
                 tableId,
@@ -71,6 +77,38 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
                         createNewRow(tableId, 1L, "b"),
                         createNewRow(tableId, 2L, "c")
                 ),
+
+                createNewRow(tableId, 2L, UNDEF),
+                createNewRow(tableId, 2L, "a"),
+
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 2L, "a")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 2L, "a"),
+                        createNewRow(tableId, 1L, "b")
+                )
+        );
+    }
+
+    @Test
+    public void oldKeysAreRemoved_2Rows_Full_IndexChanged() throws InvalidOperationException {
+        int tableId = table();
+        runTest(
+                tableId,
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 2L, "c")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 2L, "c")
+                ),
+
+                createNewRow(tableId, 2L, "c"),
+                createNewRow(tableId, 2L, "a"),
+
                 Arrays.asList(
                         createNewRow(tableId, 1L, "b"),
                         createNewRow(tableId, 2L, "a")
@@ -95,6 +133,10 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
                         createNewRow(tableId, 2L, "c"),
                         createNewRow(tableId, 1L, "d")
                 ),
+
+                createNewRow(tableId, 2L, "c"),
+                createNewRow(tableId, 2L, "a"),
+
                 Arrays.asList(
                         createNewRow(tableId, 1L, "d"),
                         createNewRow(tableId, 2L, "a")
@@ -109,28 +151,26 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
     public void runTest(int tableId,
                         List<NewRow> initialRows,
                         List<NewRow> initialRowsByName,
+                        NewRow rowToUpdate,
+                        NewRow updatedValue,
                         List<NewRow> endRows,
                         List<NewRow> endRowsByName
 
     ) throws InvalidOperationException
     {
-
-        if (!initialRows.contains( createNewRow(tableId, 2L, "c"))) {
-            throw new RuntimeException("required row not found");
-        }
-        if (initialRows.size() != endRows.size()) {
-            throw new RuntimeException("initial and end row lists must be of equal size");
+        Set<Integer> sizes = new HashSet<Integer>();
+        sizes.add( initialRows.size() );
+        sizes.add( initialRowsByName.size() );
+        sizes.add( endRows.size() );
+        sizes.add( endRowsByName.size() );
+        if(sizes.size() != 1) {
+            throw new RuntimeException("All lists must be of the same size");
         }
 
         writeRows( initialRows.toArray(new NewRow[initialRows.size()]) );
         expectRows(byNameScan(tableId), initialRowsByName.toArray(new NewRow[initialRowsByName.size()]));
 
-        NewRow oldMr = new NiceRow(tableId);
-        oldMr.put(0, 2L);
-        NewRow updatedMr = new NiceRow(tableId);
-        updatedMr.put(1, "a");
-
-        dml().updateRow(session(), oldMr, updatedMr, new EasyUseColumnSelector(1));
+        dml().updateRow(session(), rowToUpdate, updatedValue, new EasyUseColumnSelector(1));
 
         expectFullRows(
                 tableId,

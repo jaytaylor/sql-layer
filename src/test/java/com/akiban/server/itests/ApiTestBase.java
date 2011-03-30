@@ -72,6 +72,8 @@ import com.akiban.server.service.session.SessionImpl;
  */
 public class ApiTestBase {
 
+    protected final static Object UNDEF = new Object();
+
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
         private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
@@ -322,7 +324,9 @@ public class ApiTestBase {
     public static NewRow createNewRow(int tableId, Object... columns) {
         NewRow row = new NiceRow(tableId);
         for (int i=0; i < columns.length; ++i) {
-            row.put(i, columns[i] );
+            if (columns[i] != UNDEF) {
+                row.put(i, columns[i] );
+            }
         }
         return row;
     }
