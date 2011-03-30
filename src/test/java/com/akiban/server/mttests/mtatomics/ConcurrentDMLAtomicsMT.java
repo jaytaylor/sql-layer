@@ -34,6 +34,7 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.WrappingRowOutput;
 import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimedCallable;
+import com.akiban.server.mttests.mtutil.TimedResult;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
@@ -45,6 +46,10 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -80,6 +85,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
+                        createNewRow(tableId, 1L, "the snowman"),
+                        createNewRow(tableId, 2L, "icebox"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -118,6 +125,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
+                        createNewRow(tableId, 2L, "mr melty"),
+                        createNewRow(tableId, 5L, "the snowman"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -167,6 +176,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
+                        createNewRow(tableId, 1L, "a snowman"),
+                        createNewRow(tableId, 2L, "xtreme weather"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -217,6 +228,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
+                        createNewRow(tableId, 2L, "xtreme weather"),
+                        createNewRow(tableId, 10L, "a snowman"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -227,8 +240,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         );
     }
 
-    @Test
-    public void multipleScanSomeCalls() throws Exception {
+    @Test//(expected=ConcurrentScanAndUpdateException.class) // TODO uncomment after merge
+    public void multipleScanSomeCalls() throws Throwable {
         final int SCAN_WAIT = 5000;
         final int tableId = tableWithTwoRows();
         final int pkId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE))
@@ -260,19 +273,27 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
             }
         };
 
-        scanUpdateConfirm(
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
+
+        updateFuture.get();
+        Throwable scanFutureException = null;
+        try {
+            scanFuture.get();
+        } catch (ExecutionException e) {
+            scanFutureException = e.getCause();
+        }
+
+        expectFullRows(
                 tableId,
-                scanCallable,
-                updateCallable,
-                Arrays.asList(
-                        createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 2L, "xtreme weather")
-                ),
-                Arrays.asList(
-                        createNewRow(tableId, 2L, "xtreme weather"),
-                        createNewRow(tableId, 10L, "a snowman")
-                )
+                createNewRow(tableId, 2L, "xtreme weather"),
+                createNewRow(tableId, 10L, "a snowman")
         );
+
+        if (scanFutureException != null) {
+            throw scanFutureException;
+        }
     }
 
     private int findOneRowBufferSize(int tableId, int indexId) throws Exception {
