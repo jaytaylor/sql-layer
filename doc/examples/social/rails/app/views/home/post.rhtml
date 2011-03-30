@@ -1,0 +1,34 @@
+<h3>Post</h3>
+
+<ul>
+  <li>Title: <%= @post.title %></li>
+  <li>Author: <%= link_to @post.user.name, 
+              { :action => :user, :id => @post.user.id } %></li>
+  <li>Score: <%= @post.score %> (up: <%= @post.up_votes.size %>, down: <%= @post.down_votes.size %>)
+</ul>
+
+<p><%= @post.body %></p>
+
+<h3>Comments</h3>
+
+<ul>
+  <% @post.comments.each do |c| %>
+  <li><b>From <%= link_to c.user.name, {:action => :user, :id => c.user.id } %>:</b> <%= c.message %></li>
+  <% end %>
+</ul>
+
+<h3>Tags</h3>
+
+<ul>
+  <% @post.post_tags.each do |c| %>
+  <li><%= c.tag %></li>
+  <% end %>
+</ul>
+
+<h3>Links</h3>
+
+<ul>
+  <% @post.post_links.each do |c| %>
+  <li><a href="<%=c.link_url%>"><%= c.link_name %></a></li>
+  <% end %>
+</ul>

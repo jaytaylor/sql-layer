@@ -32,6 +32,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -257,9 +258,22 @@ public final class NamedParameterizedRunner extends Suite
         }
 
         private boolean runOnlyIf(String methodName, boolean mustEqual) throws OnlyIfException {
-            Class<?> testClass = getTestClass().getJavaClass();
+            boolean result;
+            if (methodName.endsWith("()")) {
+                methodName = methodName.substring(0, methodName.length() - 2); // snip off the "()"
+                result = execOnlyIfMethod(methodName);
+            }
+            else {
+                result = getOnlyIfField(methodName);
+            }
+            return result == mustEqual;
+        }
+
+
+        private boolean execOnlyIfMethod(String methodName) throws OnlyIfException {
             final Object result;
             final Method onlyIfMethod;
+            final Class<?> testClass = getTestClass().getJavaClass();
             try {
                 onlyIfMethod = testClass.getMethod(methodName);
             } catch (NoSuchMethodException e) {
@@ -275,9 +289,25 @@ public final class NamedParameterizedRunner extends Suite
                 throw new OnlyIfException("couldn't invoke " + methodName + "()", e);
             }
             try {
-                return ((Boolean)result == mustEqual);
+                return (Boolean) result;
             } catch (ClassCastException e) {
                 throw new OnlyIfException("method " + methodName + "() didn't return boolean", e);
+            }
+        }
+
+        private boolean getOnlyIfField(String fieldName) throws OnlyIfException {
+            final Class<?> testClass = getTestClass().getJavaClass();
+            final Field field;
+            try {
+                field = testClass.getField(fieldName);
+            } catch (Exception e) {
+                throw new OnlyIfException("Can't get field: " + fieldName, e);
+            }
+            try {
+                Object test = createTest();
+                return field.getBoolean(test);
+            } catch (Exception e) {
+                throw new OnlyIfException("couldn't get boolean field " + fieldName + "()", e);
             }
         }
 

@@ -512,7 +512,7 @@ public final class JsonHapiIT extends ApiTestBase {
         }
     }
 
-    @Test @OnlyIf("shouldCheckIndex")
+    @Test @OnlyIf("shouldCheckIndex()")
     public void correctIndex() throws HapiRequestException {
         HapiGetRequest request = ParsedHapiGetRequest.parse(runInfo.getQuery);
         Index expectedIndex;
