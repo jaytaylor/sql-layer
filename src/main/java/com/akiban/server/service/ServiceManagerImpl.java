@@ -166,13 +166,13 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
-        startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
-        startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(new DStarLServiceImpl(), jmxRegistry);
         startAndPut(new Log4JConfigurationServiceImpl(), jmxRegistry);
         startAndPut(new StatisticsServiceImpl(), jmxRegistry);
         loadCustomServices(jmxRegistry);
+        startAndPut(factory.memcacheService(), jmxRegistry);
+        startAndPut(factory.networkService(), jmxRegistry);
         afterStart();
 
         registerShutdownHook();
