@@ -128,6 +128,15 @@ public class AkServer implements Service<AkServer>, JmxManageable {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
+        // JVM shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shutdownBean.shutdown();
+            }
+        }, "ShutdownHook"));
+
+        // Bring system up
         final ServiceManager serviceManager = new ServiceManagerImpl(new DefaultServiceFactory());
         serviceManager.startServices();
 
@@ -138,13 +147,5 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         } catch(Exception e) {
             LOG.error("Exception registering shutdown bean", e);
         }
-
-        // JVM shutdown hook
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                shutdownBean.shutdown();
-            }
-        }, "ShutdownHook"));
     }
 }
