@@ -78,6 +78,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
     private final DDLFunctions ddlFunctions;
     private final Scanner scanner;
+    private static final int SCAN_RETRY_COUNT = 10;
 
     public DMLFunctionsImpl(DDLFunctions ddlFunctions) {
         this(ddlFunctions, NONE);
@@ -169,11 +170,22 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
         }
+        final CursorId cursorId = newUniqueCursor(request.getTableId());
+        reopen(session, cursorId, request, true);
+        logger.trace("cursor for scan: {} -> {}", System.identityHashCode(request), cursorId);
+        return cursorId;
+    }
+
+    private Cursor reopen(Session session, CursorId cursorId, ScanRequest request, boolean mustBeFresh)
+            throws NoSuchTableException, NoSuchColumnException,
+            NoSuchIndexException, GenericInvalidOperationException
+    {
         final RowCollector rc = getRowCollector(session, request);
-        final CursorId cursorId = newUniqueCursor(rc.getTableId());
-        final Cursor cursor = new Cursor(rc, request.getScanLimit());
+        final Cursor cursor = new Cursor(rc, request.getScanLimit(), request);
         Object old = session.put(MODULE_NAME, cursorId, new ScanData(request, cursor));
-        assert old == null : old;
+        if (mustBeFresh) {
+            assert old == null : old;
+        }
 
         Map<CursorId,Cursor> cursors = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
         if (cursors == null) {
@@ -181,9 +193,10 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             session.put(MODULE_NAME, OPEN_CURSORS_MAP, cursors);
         }
         Cursor oldCursor = cursors.put(cursorId, cursor);
-        assert oldCursor == null : String.format("%s -> %s conflicted with %s", cursor, cursors, oldCursor);
-        logger.trace("cursor for scan: {} -> {}", System.identityHashCode(request), cursorId);
-        return cursorId;
+        if (mustBeFresh) {
+            assert oldCursor == null : String.format("%s -> %s conflicted with %s", cursor, cursors, oldCursor);
+        }
+        return cursor;
     }
 
     private ScanRequest scanAllColumns(final Session session, final ScanRequest request) throws NoSuchTableException {
@@ -286,35 +299,42 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
 
-        final Cursor cursor = session.<ScanData> get(MODULE_NAME, cursorId).getCursor();
+        Cursor cursor = session.<ScanData> get(MODULE_NAME, cursorId).getCursor();
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        boolean success = false;
-        Boolean hasMore = null;
 
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
-        try  {
-             do {
+        int retriesLeft = SCAN_RETRY_COUNT;
+        while (true) {
+            output.mark();
+            try {
+                transaction.begin();
                 try {
-                    transaction.begin();
-                    output.mark();
-                    hasMore = scanner.doScan(cursor, cursorId, output);
+                    boolean ret = scanner.doScan(cursor, cursorId, output);
                     transaction.commit();
-                    success = true;
+                    return ret;
                 } catch (RollbackException e) {
                     logger.trace("PersistIt error; retrying", e);
                     scanner.scanHooks.retryHook();
                     output.rewind();
+                    if (--retriesLeft <= 0) {
+                        throw new GenericInvalidOperationException(e);
+                    }
+                    try {
+                        cursor = reopen(session, cursorId, cursor.getScanRequest(), false);
+                    } catch (InvalidOperationException e1) {
+                        throw new GenericInvalidOperationException(e1);
+                    }
+                } catch (PersistitException e) {
+                    throw new GenericInvalidOperationException(e);
+                } finally {
+                    transaction.end();
                 }
-            } while (!success && ! cursor.isFinished());
-        } catch (PersistitException e) {
-            throw new GenericInvalidOperationException(e);
+            } catch (PersistitException e) {
+                throw new GenericInvalidOperationException(e);
+            }
         }
-        finally {
-            transaction.end();
-        }
-        return hasMore;
     }
 
     private static class PooledConverter {
@@ -487,7 +507,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             boolean limitReached = false;
             while (!limitReached && !cursor.isFinished()) {
                 scanHooks.loopStartHook();
-                output.mark();
                 int bufferLastPos = buffer.position();
                 if (!rc.collectNextRow(buffer)) {
                     if (rc.hasMore()) {
@@ -522,7 +541,6 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             rc.outputToMessage(false);
             while (!cursor.isFinished()) {
                 scanHooks.loopStartHook();
-                output.mark();
                 RowData rowData = rc.collectNextRow();
                 if (rowData == null || limit.limitReached(rowData)) {
                     cursor.setFinished();

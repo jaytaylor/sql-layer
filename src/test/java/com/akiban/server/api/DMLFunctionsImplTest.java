@@ -214,7 +214,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
             stringsArray = strings;
             collector = new StringRowCollector(TABLE_ID, strings);
             output = new StringRowOutput();
-            cursor = new Cursor(collector, limit);
+            cursor = new Cursor(collector, limit, null);
             cursorId = new CursorId(5, TABLE_ID);
         }
     }
