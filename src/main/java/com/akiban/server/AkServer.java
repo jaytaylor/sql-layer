@@ -15,7 +15,6 @@
 
 package com.akiban.server;
 
-import com.akiban.server.service.config.ModuleConfiguration;
 import com.akiban.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,25 +41,7 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
 
     /**
-     * Config property name and default for the port on which the AkSserver will
-     * listen for requests.
-     *
-     * /** Port on which the AkSserver will listen for requests.
-     */
-    private final int AKSERVER_PORT;
-
-    /**
-     * Interface on which this akserver instance will listen. TODO - allow
-     * multiple NICs
-     */
-
-    private final String AKSERVER_HOST;
-
-    private static final boolean TCP_NO_DELAY =
-        Boolean.parseBoolean(System.getProperty("com.akiban.server.tcpNoDelay", "true"));
-
-    /**
-     * Name of this chunkserver. Must match one of the entries in
+     * Name of this akserver. Must match one of the entries in
      * /config/cluster.properties (managed by Admin).
      */
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
@@ -68,34 +49,20 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     private final JmxObjectInfo jmxObjectInfo;
 
     public AkServer() {
-        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(
-                this), ManageMXBean.class);
-        ModuleConfiguration config
-                = ServiceManagerImpl.get().getConfigurationService().getModuleConfiguration("akserver");
-        AKSERVER_PORT = Integer.parseInt( config.getProperty("port") );
-        AKSERVER_HOST = config.getProperty("host");
+        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(this), ManageMXBean.class);
     }
 
     @Override
     public void start() throws Exception {
-        LOG.warn(String.format("Starting chunkserver %s on port %s",
-                AKSERVER_NAME, AKSERVER_PORT));
+        LOG.info("Starting AkServer {}", AKSERVER_NAME);
         Tap.registerMXBean();
-        LOG.warn(String.format("Started chunkserver %s on port %s", AKSERVER_NAME, AKSERVER_PORT));
     }
 
     @Override
     public void stop() throws Exception
     {
+        LOG.info("Stopping AkServer {}", AKSERVER_NAME);
         Tap.unregisterMXBean();
-    }
-
-    public String host() {
-        return AKSERVER_HOST;
-    }
-
-    public int port() {
-        return AKSERVER_PORT;
     }
 
     public ServiceManager getServiceManager()

@@ -61,15 +61,8 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public int getNetworkPort() {
-        return akserver.port();
-    }
-
-    @Override
     public int getJmxPort() {
-        int jmxPort = Integer
-                .getInteger("com.sun.management.jmxremote.port", 0);
-        return jmxPort;
+        return Integer.getInteger("com.sun.management.jmxremote.port", 0);
     }
 
     @Override

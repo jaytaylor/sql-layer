@@ -22,8 +22,6 @@ public interface ManageMXBean {
 
     void shutdown();
 
-    int getNetworkPort();
-
     int getJmxPort();
 
     boolean isVerboseLoggingEnabled();

@@ -36,21 +36,25 @@ public class AkServerLifecycleTest {
 
     private ServiceManager serviceManager;
 
+    private int getNetworkPort() {
+        return Integer.parseInt(serviceManager.getConfigurationService().getProperty("akserver.port"));
+    }
+
     @Test
     public void testStartupShutdown() throws Exception {
         for (int i = 0; i < N; i++) {
-            AkServer akserver = startChunkServer();
-            stopChunkServer(akserver);
+            startAkServer();
+            stopAkServer();
         }
     }
 
     @Test
     public void testShutdownWithClosedConnections() throws Exception {
         for (int i = 0; i < N; i++) {
-            AkServer akserver = startChunkServer();
+            startAkServer();
             try {
                 AkibanConnection connection = new AkibanConnectionImpl(
-                        LOCALHOST, akserver.port());
+                        LOCALHOST, getNetworkPort());
                 for (int r = 0; r < N_REQUESTS; r++) {
                     TestRequest request = new TestRequest(r, 10, 10);
                     TestResponse response = (TestResponse) connection
@@ -59,7 +63,7 @@ public class AkServerLifecycleTest {
                 }
                 connection.close();
             } finally {
-                stopChunkServer(akserver);
+                stopAkServer();
             }
         }
     }
@@ -67,10 +71,10 @@ public class AkServerLifecycleTest {
     @Test
     public void testShutdownWithOpenConnections() throws Exception {
         for (int i = 0; i < N; i++) {
-            AkServer akserver = startChunkServer();
+            startAkServer();
             try {
                 AkibanConnection connection = new AkibanConnectionImpl(
-                        LOCALHOST, akserver.port());
+                        LOCALHOST, getNetworkPort());
                 for (int r = 0; r < N_REQUESTS; r++) {
                     TestRequest request = new TestRequest(r, 10, 10);
                     TestResponse response = (TestResponse) connection
@@ -78,12 +82,12 @@ public class AkServerLifecycleTest {
                     Assert.assertEquals(r, response.id());
                 }
             } finally {
-                stopChunkServer(akserver);
+                stopAkServer();
             }
         }
     }
 
-    private AkServer startChunkServer() throws Exception {
+    private void startAkServer() throws Exception {
         MessageRegistry.reset(); // In case a message registry is left over from
                                  // a previous test in the same JVM.
         serviceManager = UnitTestServiceFactory
@@ -98,17 +102,16 @@ public class AkServerLifecycleTest {
         } finally {
             System.setProperties(originalProperties);
         }
-        AkServer akserver = serviceManager.getAkSserver();
-        Assert.assertTrue(listeningOnPort(akserver.port()));
+        Assert.assertTrue(listeningOnPort(getNetworkPort()));
         MessageRegistry.reset();
         initializeMessageRegistry();
-        return akserver;
     }
 
-    private void stopChunkServer(AkServer akserver) throws Exception {
+    private void stopAkServer() throws Exception {
+        final int port = getNetworkPort();
         serviceManager.stopServices();
         serviceManager = null;
-        Assert.assertTrue(!listeningOnPort(akserver.port()));
+        Assert.assertTrue(!listeningOnPort(port));
         MessageRegistry.reset();
     }
 
