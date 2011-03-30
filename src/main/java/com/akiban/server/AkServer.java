@@ -40,7 +40,7 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     public static final String VERSION_STRING = getVersionString();
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
-    private static final ShutdownMXBeanImpl shutdown = new ShutdownMXBeanImpl();
+    private static final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl();
 
     
     /**
@@ -108,8 +108,6 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         private static final String BEAN_NAME = "com.akiban:type=SHUTDOWN";
 
         public ShutdownMXBeanImpl() {
-            createHook();
-            registerMXBean();
         }
 
         @Override
@@ -123,34 +121,30 @@ public class AkServer implements Service<AkServer>, JmxManageable {
                 e.printStackTrace();
             }
         }
-
-        private void createHook() {
-            Thread hook = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    shutdown();
-                }
-            }, "ShutdownHook");
-            Runtime.getRuntime().addShutdownHook(hook);
-        }
-
-        private void registerMXBean() {
-            try {
-                ManagementFactory.getPlatformMBeanServer().registerMBean(this, new ObjectName(BEAN_NAME));
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 
     /**
-     * @param args
-     *            the command line arguments
+     * @param args the command line arguments
      */
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         final ServiceManager serviceManager = new ServiceManagerImpl(new DefaultServiceFactory());
         serviceManager.startServices();
+
+        // JMX shutdown method
+        try {
+            ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
+            ManagementFactory.getPlatformMBeanServer().registerMBean(shutdownBean, name);
+        } catch(Exception e) {
+            LOG.error("Exception registering shutdown bean", e);
+        }
+
+        // JVM shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shutdownBean.shutdown();
+            }
+        }, "ShutdownHook"));
     }
 }
