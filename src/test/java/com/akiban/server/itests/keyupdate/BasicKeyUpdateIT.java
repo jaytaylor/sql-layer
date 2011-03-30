@@ -54,6 +54,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
 
                 createNewRow(tableId, 2L, "c"),
                 createNewRow(tableId, 2L, "a"),
+                set(1),
 
                 Arrays.asList(
                         createNewRow(tableId, 2L, "a")
@@ -64,7 +65,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
         );
     }
 
-    @Test// @Ignore("bug 746006")
+    @Test @Ignore("bug 746006")
     public void oldKeysAreRemoved_2Rows_Partial_IndexChanged() throws InvalidOperationException {
         int tableId = table();
         runTest(
@@ -80,6 +81,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
 
                 createNewRow(tableId, 2L, UNDEF),
                 createNewRow(tableId, 2L, "a"),
+                set(1),
 
                 Arrays.asList(
                         createNewRow(tableId, 1L, "b"),
@@ -108,6 +110,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
 
                 createNewRow(tableId, 2L, "c"),
                 createNewRow(tableId, 2L, "a"),
+                set(1),
 
                 Arrays.asList(
                         createNewRow(tableId, 1L, "b"),
@@ -115,6 +118,64 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
                 ),
                 Arrays.asList(
                         createNewRow(tableId, 2L, "a"),
+                        createNewRow(tableId, 1L, "b")
+                )
+        );
+    }
+
+    @Test @Ignore("bug 746006")
+    public void oldKeysAreRemoved_2Rows_Partial_IndexAndPKMovesBackward() throws InvalidOperationException {
+        int tableId = table();
+        runTest(
+                tableId,
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 2L, "c")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 2L, "c")
+                ),
+
+                createNewRow(tableId, 2L, UNDEF),
+                createNewRow(tableId, 0L, "a"),
+                set(0, 1),
+
+                Arrays.asList(
+                        createNewRow(tableId, 0L, "a"),
+                        createNewRow(tableId, 1L, "b")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 0L, "a"),
+                        createNewRow(tableId, 1L, "b")
+                )
+        );
+    }
+
+    @Test @Ignore("bug 746006")
+    public void oldKeysAreRemoved_2Rows_Partial_IndexAndPKMovesForward() throws InvalidOperationException {
+        int tableId = table();
+        runTest(
+                tableId,
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 2L, "c")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 2L, "c")
+                ),
+
+                createNewRow(tableId, 2L, UNDEF),
+                createNewRow(tableId, 3L, "a"),
+                set(0, 1),
+
+                Arrays.asList(
+                        createNewRow(tableId, 1L, "b"),
+                        createNewRow(tableId, 3L, "a")
+                ),
+                Arrays.asList(
+                        createNewRow(tableId, 0L, "a"),
                         createNewRow(tableId, 1L, "b")
                 )
         );
@@ -136,6 +197,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
 
                 createNewRow(tableId, 2L, "c"),
                 createNewRow(tableId, 2L, "a"),
+                set(1),
 
                 Arrays.asList(
                         createNewRow(tableId, 1L, "d"),
@@ -153,6 +215,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
                         List<NewRow> initialRowsByName,
                         NewRow rowToUpdate,
                         NewRow updatedValue,
+                        Set<Integer> fieldsToUpdate,
                         List<NewRow> endRows,
                         List<NewRow> endRowsByName
 
@@ -170,7 +233,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
         writeRows( initialRows.toArray(new NewRow[initialRows.size()]) );
         expectRows(byNameScan(tableId), initialRowsByName.toArray(new NewRow[initialRowsByName.size()]));
 
-        dml().updateRow(session(), rowToUpdate, updatedValue, new EasyUseColumnSelector(1));
+        dml().updateRow(session(), rowToUpdate, updatedValue, new EasyUseColumnSelector(fieldsToUpdate));
 
         expectFullRows(
                 tableId,
