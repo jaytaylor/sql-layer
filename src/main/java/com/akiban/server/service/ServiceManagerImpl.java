@@ -174,8 +174,6 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(factory.networkService(), jmxRegistry);
         afterStart();
-
-        registerShutdownHook();
     }
 
     private void loadCustomServices(JmxRegistryService jmxRegistry) throws Exception {
@@ -204,7 +202,6 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     public void stopServices() throws Exception {
-        unregisterShutdownHook();
         setServiceManager(null);
         List<Service> stopServices = new ArrayList<Service>(services.size());
         for (Service service : services.values()) {
@@ -274,29 +271,6 @@ public class ServiceManagerImpl implements ServiceManager
         assert serviceT.castClass().equals(ofClass) : String.format("%s != %s",
                 serviceT.castClass(), ofClass);
         return serviceT;
-    }
-
-    private void registerShutdownHook() {
-        shutdownHook = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    shutdownHook = null;
-                    ServiceManagerImpl.get().stopServices();
-                } catch (Exception e) {
-                    LOG.error("Caught exception while stopping services", e);
-                }
-            }
-        }, "ShutdownHook");
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
-    }
-
-    private void unregisterShutdownHook() {
-        final Thread hook = shutdownHook;
-        shutdownHook = null;
-        if (hook != null) {
-            Runtime.getRuntime().removeShutdownHook(hook);
-        }
     }
 
     /**

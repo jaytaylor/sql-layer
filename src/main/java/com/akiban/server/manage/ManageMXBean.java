@@ -20,8 +20,6 @@ public interface ManageMXBean {
 
     void ping();
 
-    void shutdown();
-
     int getJmxPort();
 
     boolean isVerboseLoggingEnabled();

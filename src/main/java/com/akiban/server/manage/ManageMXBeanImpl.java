@@ -41,26 +41,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public void shutdown() {
-        try {
-            ServiceManagerImpl.get().stopServices();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(250); // Give JMX method a chance to exit successfully
-                } catch(InterruptedException e) {
-                    e.printStackTrace();
-                }
-                System.exit(0);
-            }
-        }.start();
-    }
-
-    @Override
     public int getJmxPort() {
         return Integer.getInteger("com.sun.management.jmxremote.port", 0);
     }

@@ -28,18 +28,21 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 
+import javax.management.ObjectName;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 
 /**
  * @author peter
  */
 public class AkServer implements Service<AkServer>, JmxManageable {
-
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
+    private static final ShutdownMXBeanImpl shutdown = new ShutdownMXBeanImpl();
 
+    
     /**
      * Name of this akserver. Must match one of the entries in
      * /config/cluster.properties (managed by Admin).
@@ -75,7 +78,6 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         return jmxObjectInfo;
     }
 
-
     @Override
     public AkServer cast() {
         return this;
@@ -96,6 +98,51 @@ public class AkServer implements Service<AkServer>, JmxManageable {
             return "Error: " + e;
         }
     }
+
+    
+    public interface ShutdownMXBean {
+        public void shutdown();
+    }
+
+    private static class ShutdownMXBeanImpl implements ShutdownMXBean {
+        private static final String BEAN_NAME = "com.akiban:type=SHUTDOWN";
+
+        public ShutdownMXBeanImpl() {
+            createHook();
+            registerMXBean();
+        }
+
+        @Override
+        public void shutdown() {
+            try {
+                ServiceManager sm = ServiceManagerImpl.get();
+                if(sm != null) {
+                    sm.stopServices();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void createHook() {
+            Thread hook = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    shutdown();
+                }
+            }, "ShutdownHook");
+            Runtime.getRuntime().addShutdownHook(hook);
+        }
+
+        private void registerMXBean() {
+            try {
+                ManagementFactory.getPlatformMBeanServer().registerMBean(this, new ObjectName(BEAN_NAME));
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     /**
      * @param args
