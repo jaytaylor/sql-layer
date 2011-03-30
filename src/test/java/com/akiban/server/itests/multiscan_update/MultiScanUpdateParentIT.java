@@ -67,7 +67,7 @@ public final class MultiScanUpdateParentIT extends ApiTestBase {
     }
 
     @Test(expected=ConcurrentScanAndUpdateException.class)
-    public void updatedParentInvalidatesChild() throws InvalidOperationException {
+    public void updatedOrderInvalidatesItemScan() throws InvalidOperationException {
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId;
         try {
@@ -76,6 +76,29 @@ public final class MultiScanUpdateParentIT extends ApiTestBase {
                     session(),
                     createNewRow(oId, 2, 2),
                     createNewRow(oId, 2, 3),
+                    ALL_COLUMNS
+            );
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
+        }
+        try {
+            dml().scanSome(session(), cursorId, output);
+        } catch (ConcurrentScanAndUpdateException e) {
+            assertEquals("rows scanned", 0, output.getRows().size());
+            throw e;
+        }
+    }
+
+    @Test(expected=ConcurrentScanAndUpdateException.class)
+    public void updatedCustomerInvalidatesItemScan() throws InvalidOperationException {
+        ListRowOutput output = new ListRowOutput();
+        CursorId cursorId;
+        try {
+            cursorId = dml().openCursor(session(), scanAllRequest(iId));
+            dml().updateRow(
+                    session(),
+                    createNewRow(cId, 3),
+                    createNewRow(cId, 4),
                     ALL_COLUMNS
             );
         } catch (InvalidOperationException e) {
