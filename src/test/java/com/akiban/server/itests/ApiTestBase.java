@@ -32,7 +32,6 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.RowDataOutput;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
