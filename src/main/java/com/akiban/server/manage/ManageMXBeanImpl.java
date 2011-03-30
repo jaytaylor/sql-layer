@@ -50,6 +50,11 @@ public class ManageMXBeanImpl implements ManageMXBean {
         new Thread() {
             @Override
             public void run() {
+                try {
+                    Thread.sleep(250); // Give JMX method a chance to exit successfully
+                } catch(InterruptedException e) {
+                    e.printStackTrace();
+                }
                 System.exit(0);
             }
         }.start();

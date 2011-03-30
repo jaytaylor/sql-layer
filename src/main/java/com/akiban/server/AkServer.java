@@ -65,9 +65,6 @@ public class AkServer implements Service<AkServer>, JmxManageable {
      */
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
 
-
-    private volatile Thread _shutdownHook;
-    
     private final JmxObjectInfo jmxObjectInfo;
 
     public AkServer() {
@@ -85,27 +82,11 @@ public class AkServer implements Service<AkServer>, JmxManageable {
                 AKSERVER_NAME, AKSERVER_PORT));
         Tap.registerMXBean();
         LOG.warn(String.format("Started chunkserver %s on port %s", AKSERVER_NAME, AKSERVER_PORT));
-        _shutdownHook = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    _shutdownHook = null;
-                    ServiceManagerImpl.get().stopServices();
-                } catch (Exception e) {
-                    LOG.warn("Caught exception while stopping services", e);
-                }
-            }
-        }, "ShutdownHook");
-        Runtime.getRuntime().addShutdownHook(_shutdownHook);
     }
 
     @Override
     public void stop() throws Exception
     {
-        final Thread hook = _shutdownHook;
-        _shutdownHook = null;
-        if (hook != null) {
-            Runtime.getRuntime().removeShutdownHook(hook);
-        }
         Tap.unregisterMXBean();
     }
 
