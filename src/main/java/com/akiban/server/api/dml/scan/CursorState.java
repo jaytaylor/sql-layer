@@ -22,17 +22,32 @@ public enum CursorState {
     /**
      * Newly opened, hasn't started scanning yet.
      */
-    FRESH,
+    FRESH(true),
     /**
      * At least one scan, but more rows may be available.
      */
-    SCANNING,
+    SCANNING(true),
     /**
      * Scanning is complete; subsequent scan requests will fail.
      */
-    FINISHED,
+    FINISHED(false),
+    /**
+     * Scanning cannot continue because a field involved in the index has been modified.
+     */
+    CONCURRENT_MODIFICATION(false),
     /**
      * The requested cursor is unknown or has been removed.
      */
-    UNKNOWN_CURSOR
+    UNKNOWN_CURSOR(false)
+    ;
+
+    private final boolean isOpenState;
+
+    CursorState(boolean openState) {
+        isOpenState = openState;
+    }
+
+    public boolean isOpenState() {
+        return isOpenState;
+    }
 }

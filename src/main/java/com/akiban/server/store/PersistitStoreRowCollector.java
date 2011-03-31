@@ -876,6 +876,10 @@ public class PersistitStoreRowCollector implements RowCollector {
         return rowDefId;
     }
 
+    public IndexDef getIndexDef() {
+        return indexDef;
+    }
+
     public long getId() {
         return id;
     }

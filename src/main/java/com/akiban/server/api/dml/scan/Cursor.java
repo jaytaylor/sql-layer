@@ -55,7 +55,15 @@ public final class Cursor {
         return state.equals(CursorState.FINISHED);
     }
 
+    public void setScanModified() {
+        state = CursorState.CONCURRENT_MODIFICATION;
+    }
+
     public CursorState getState() {
         return state;
+    }
+
+    public boolean isClosed() {
+        return ! state.isOpenState();
     }
 }
