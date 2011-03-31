@@ -128,11 +128,11 @@ public class GroupsBuilderTest {
         aisBuilder.indexColumn("s2", "customer", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
 
         aisBuilder.basicSchemaIsComplete();
-        aisBuilder.createGroup("group1", "akiban_objects", "_akiban_customer");
+        aisBuilder.createGroup("group1", "group_schema", "_akiban_customer");
         aisBuilder.addTableToGroup("group1", "s", "customer");
         aisBuilder.addJoinToGroup("group1", "join3", 1);
         aisBuilder.addJoinToGroup("group1", "join2", 1);
-        aisBuilder.createGroup("group2", "akiban_objects", "_akiban_customer$1");
+        aisBuilder.createGroup("group2", "group_schema", "_akiban_customer$1");
         aisBuilder.addTableToGroup("group2", "s2", "customer");
 
         GroupsBuilder expectedGrouping = new GroupsBuilder("s");

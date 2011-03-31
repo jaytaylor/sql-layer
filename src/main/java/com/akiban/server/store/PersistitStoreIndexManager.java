@@ -129,6 +129,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
         final TableStatusDelta tsd = store.tableStatusDelta(session);
+
         int retries = PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
 
         for (;;) {
@@ -261,7 +262,9 @@ public class PersistitStoreIndexManager implements IndexManager {
         final Object[] indexValues = new Object[indexDef.getRowDef()
                 .getFieldCount()];
         final TableStatusDelta tsd = store.tableStatusDelta(session);
-        tsd.reset();
+        if (!transaction.isActive()) {
+            tsd.reset();
+        }
 
         try {
 

@@ -586,12 +586,6 @@ public class AISBuilder {
         return ais;
     }
 
-    public void applyGroupingDefinition(GroupingDefinition groupingDefinition) {
-        // clearGroupings(); TODO uncomment this when we're ready to implement
-        // this
-        throw new UnsupportedOperationException();
-    }
-
     private void generateGroupTableColumns(Group group) {
         LOG.debug("generating group table columns for group " + group);
         // Only generate columns if the group is connected, i.e., there is only

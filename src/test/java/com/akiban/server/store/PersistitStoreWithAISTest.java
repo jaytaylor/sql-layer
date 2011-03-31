@@ -369,12 +369,12 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
         for (int loop = 0; loop < 5; loop++) {
             final TestData td = new TestData(5, 5, 5, 5);
             td.insertTestRows();
-            store.truncateTable(session, td.defI.getRowDefId());
-            store.truncateTable(session, td.defO.getRowDefId());
-            store.truncateTable(session, td.defC.getRowDefId());
-            store.truncateTable(session, td.defCOI.getRowDefId());
-            store.truncateTable(session, td.defA.getRowDefId());
-            store.truncateTable(session, td.defX.getRowDefId());
+            store.truncateGroup(session, td.defI.getRowDefId());
+            store.truncateGroup(session, td.defO.getRowDefId());
+            store.truncateGroup(session, td.defC.getRowDefId());
+            store.truncateGroup(session, td.defCOI.getRowDefId());
+            store.truncateGroup(session, td.defA.getRowDefId());
+            store.truncateGroup(session, td.defX.getRowDefId());
 
             assertTrue(isGone(td.defCOI));
             assertTrue(isGone(td.defO));

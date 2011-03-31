@@ -145,9 +145,9 @@ public class PersistitStore implements Store {
         long autoIncrementValue = -1;
 
         void reset() {
-            long deltaCount = 0;
-            long uniqueId = -1;
-            long autoIncrementValue = -1;
+            rowCountDelta = 0;
+            uniqueId = -1;
+            autoIncrementValue = -1;
         }
 
         long uniqueId(final TableStatus ts) {
@@ -501,7 +501,9 @@ public class PersistitStore implements Store {
         final Transaction transaction = treeService.getTransaction(session);
         Exchange hEx = null;
         final TableStatusDelta tsd = tableStatusDelta(session);
-        tsd.reset();
+        if (!transaction.isActive()) {
+            tsd.reset();
+        }
         try {
             hEx = getExchange(session, rowDef, null);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -534,7 +536,7 @@ public class PersistitStore implements Store {
                             }
                         }
                     }
-                    tsd.rowCountDelta = 1;
+                    tsd.rowCountDelta++;
 
                     for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                         //
@@ -666,12 +668,15 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Exchange hEx = null;
         final TableStatusDelta tsd = tableStatusDelta(session);
-        tsd.reset();
+        final Transaction transaction = treeService.getTransaction(session);
+        if (!transaction.isActive()) {
+            tsd.reset();
+        }
+
 
         try {
             hEx = getExchange(session, rowDef, null);
 
-            final Transaction transaction = treeService.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -710,7 +715,7 @@ public class PersistitStore implements Store {
 
                     // Remove the h-row
                     hEx.remove();
-                    tsd.rowCountDelta = -1;
+                    tsd.rowCountDelta--;
 
                     // Remove the indexes, including the PK index
                     for (final IndexDef indexDef : rowDef.getIndexDefs()) {
@@ -766,12 +771,15 @@ public class PersistitStore implements Store {
         UPDATE_ROW_TAP.in();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Exchange hEx = null;
+        final Transaction transaction = treeService.getTransaction(session);
         final TableStatusDelta tsd = tableStatusDelta(session);
-        tsd.reset();
+        if (!transaction.isActive()) {
+            tsd.reset();
+        }
+
 
         try {
             hEx = getExchange(session, rowDef, null);
-            final Transaction transaction = treeService.getTransaction(session);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -881,6 +889,9 @@ public class PersistitStore implements Store {
             expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
             exchange.remove();
+            // TODO - must receive a TableStatusDelta object and mark the change there.
+            //
+            //descendentRowDef.getTableStatus().incrementRowCount(-1);
             // ... and from the indexes
             for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
                 if (!indexDef.isHKeyEquivalent()) {
@@ -894,16 +905,19 @@ public class PersistitStore implements Store {
     }
 
     /**
-     * Remove contents of entire group containing the specified table. TODO:
-     * remove user table data from within a group.
+     * Remove data from the <b>entire group</b> that this RowDef ID is contained in.
+     * This includes all table and index data for all user and group tables in the group.
+     * @param session Session to work on.
+     * @param rowDefId RowDef ID to select group to truncate
+     * @throws PersistitException for a PersistIt level error (e.g. Rollback)
      */
     @Override
-    public void truncateTable(final Session session, final int rowDefId)
-            throws PersistitException, InvalidOperationException {
-
-        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
-                .getRowDef(rowDef.getGroupRowDefId());
+    public void truncateGroup(final Session session, final int rowDefId)
+            throws PersistitException {
+        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
+        if (!groupRowDef.isGroupTable()) {
+            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
+        }
 
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;

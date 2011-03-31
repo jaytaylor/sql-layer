@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -87,7 +86,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private ConfigurationService configService;
 
-    private final static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
+    private static int instanceCount = 0;
 
     private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<String, SchemaNode>();
 
@@ -221,7 +220,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         configService = ServiceManagerImpl.get().getConfigurationService();
         assert getDb() == null;
         // TODO - remove this when sure we don't need it
-        assert INSTANCE_COUNT.incrementAndGet() == 1;
+        ++instanceCount;
+        assert instanceCount == 1 : instanceCount;
         final Properties properties = configService.getModuleConfiguration(
                 PERSISTIT_MODULE_NAME).getProperties();
         //
@@ -343,7 +343,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             dbRef.set(null);
         }
         // TODO - remove this when sure we don't need it
-        assert INSTANCE_COUNT.decrementAndGet() == 0;
+        --instanceCount;
+        assert instanceCount == 0 : instanceCount;
     }
 
     @Override
@@ -370,8 +371,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             db.crash();
             dbRef.set(null);
         }
-        // TODO - remove this when sure we don't need it
-        assert INSTANCE_COUNT.decrementAndGet() == 0;
+        --instanceCount;
+        assert instanceCount == 0 : instanceCount;
     }
 
 

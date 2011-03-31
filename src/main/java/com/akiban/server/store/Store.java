@@ -121,7 +121,7 @@ public interface Store extends Service<Store> {
     TableStatistics getTableStatistics(final Session session, final int tableId)
             throws Exception;
 
-    void truncateTable(final Session session, final int rowDefId)
+    void truncateGroup(final Session session, final int rowDefId)
             throws Exception;
 
     /**
