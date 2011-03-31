@@ -15,32 +15,30 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
 import com.akiban.qp.BTreeAdapter;
 import com.akiban.qp.Cursor;
-import com.akiban.qp.GroupCursor;
 
-public class GroupScan_Default implements PhysicalOperator
+public class IndexScan_Default implements PhysicalOperator
 {
     // PhysicalOperator interface
 
+    @Override
     public Cursor cursor(BTreeAdapter adapter)
     {
         return new Execution(adapter);
     }
 
-    // GroupScan_Default interface
+    // IndexScan_Default interface
 
-    public GroupScan_Default(BTreeAdapter btree, GroupTable groupTable)
+    public IndexScan_Default(Index index)
     {
-        this.btree = btree;
-        this.groupTable = groupTable;
+        this.index = index;
     }
 
     // Object state
 
-    private final BTreeAdapter btree;
-    private final GroupTable groupTable;
+    private final Index index;
 
     // Inner classes
 
@@ -78,11 +76,11 @@ public class GroupScan_Default implements PhysicalOperator
         Execution(BTreeAdapter adapter)
         {
             super(adapter);
-            this.cursor = btree.newGroupCursor(groupTable);
+            this.cursor = adapter.newIndexCursor(index);
         }
 
         // Object state
 
-        private final GroupCursor cursor;
+        private final Cursor cursor;
     }
 }

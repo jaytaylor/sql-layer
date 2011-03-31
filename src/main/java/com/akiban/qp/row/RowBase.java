@@ -26,7 +26,7 @@ public abstract class RowBase implements ManagedRow
     public abstract RowType rowType();
 
     @Override
-    public abstract <T> T field(int i);
+    public abstract Object field(int i);
 
     @Override
     public abstract HKey hKey();

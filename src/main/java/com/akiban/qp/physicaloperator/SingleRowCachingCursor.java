@@ -15,14 +15,13 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.Cursor;
-import com.akiban.qp.HKey;
+import com.akiban.qp.*;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 
-public abstract class SingleRowCachingCursor implements Cursor
+public abstract class SingleRowCachingCursor extends ExecutionBase implements IndexCursor, GroupCursor
 {
     // Object interface
 
@@ -47,9 +46,9 @@ public abstract class SingleRowCachingCursor implements Cursor
     }
 
     @Override
-    public <T> T field(int i)
+    public Object field(int i)
     {
-        return (T) row.field(i);
+        return row.field(i);
     }
 
     @Override
@@ -67,7 +66,16 @@ public abstract class SingleRowCachingCursor implements Cursor
     // Cursor interface
 
     @Override
-    public abstract void open();
+    public void open()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void open(HKey hKey)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public abstract boolean next();
@@ -96,6 +104,11 @@ public abstract class SingleRowCachingCursor implements Cursor
     protected void outputRow(ManagedRow newRow)
     {
         row.set(newRow);
+    }
+
+    protected SingleRowCachingCursor(BTreeAdapter adapter)
+    {
+        super(adapter);
     }
 
     // Object state

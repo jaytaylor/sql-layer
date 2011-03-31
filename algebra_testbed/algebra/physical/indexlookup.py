@@ -21,8 +21,6 @@ PhysicalOperator = physicaloperator.PhysicalOperator
 # Reference does not include group_key parameter. Included here
 # because testbed does not model hkeys accurately.
 
-_DONE = object()
-
 class IndexLookup(PhysicalOperator):
 
     # missing_types: Types of the group above the rowtype associated with the index.
@@ -36,54 +34,24 @@ class IndexLookup(PhysicalOperator):
         self._group_key = group_key
         self._group = group
         self._missing_types = missing_types
-        self._cursor = None
+        self._group_cursor = None
         self._index_row = None
         self._pending = collections.deque()
 
     def open(self):
         self._input.open()
+        self.advance_index()
 
     def next(self):
-        group_row = self.pending()
-        while group_row is None and self._index_row is not _DONE:
-            if self._index_row is None:
-                self._index_row = self._input.next()
-            if self._index_row is None:
-                self._index_row = _DONE
-            else:
-                if not self._cursor:
-                    key = [self._index_row[field] for field in self._group_key]
-                    # Retrieve rows based on hkey from index. The types of these rows
-                    # will be the hkey's rowtype and descendent types. The cursor actually
-                    # scans to the end, but later there is a check that the index row is
-                    # an ancestor of a row retrieved from the cursor.
-                    self._cursor = self._group.cursor(key, None)
-                    self.count_random_access()
-                    # Get rows of missing types. Try hkeys of length 2, 4, ... len(key) - 2. 
-                    # (Steps of 2 because hkey structure is [ordinal, [key values], ... ]
-                    hkey = key[0]
-                    hkey_prefix_length = 2
-                    while hkey_prefix_length < len(hkey):
-                        ancestor_hkey = hkey[:hkey_prefix_length]
-                        ancestor_cursor = self._group.cursor([ancestor_hkey], [ancestor_hkey])
-                        ancestor_row = ancestor_cursor.next()
-                        self.count_random_access()
-                        if ancestor_row is not None and ancestor_row.rowtype in self._missing_types:
-                            self._pending.append(ancestor_row)
-                        hkey_prefix_length += 2
-                # Get next row, ancestor if available
-                group_row = self.pending()
+        group_row = None
+        while group_row is None and self._index_row is not None:
+            group_row = self.pending()
+            if group_row is None:
+                group_row = self._group_cursor.next()
                 if group_row is None:
-                    group_row = self._cursor.next()
-                    self.count_sequential_access()
-                    if group_row:
-                        if not self._index_row.ancestor_of(group_row):
-                            group_row = None
-                            self._index_row = None
-                            self._cursor = None
-                    else:
-                        self._index_row = None
-                        self._cursor = None
+                    self.advance_index()
+            if group_row and not self._index_row.ancestor_of(group_row):
+                group_row = None
         return group_row
 
     def pending(self):
@@ -97,3 +65,30 @@ class IndexLookup(PhysicalOperator):
 
     def stats(self):
         return self._stats.merge(self._input.stats())
+
+    def advance_index(self):
+        # Retrieve rows based on hkey from index. The types of these rows
+        # will be the hkey's rowtype and descendent types. The cursor actually
+        # scans to the end, but later there is a check that the index row is
+        # an ancestor of a row retrieved from the cursor.
+        self._index_row = self._input.next()
+        self.count_sequential_access()
+        if self._index_row is not None:
+            key = [self._index_row[field] for field in self._group_key]
+            self._group_cursor = self._group.cursor(key, None)
+            self.count_random_access()
+            self.find_ancestors(key)
+
+    def find_ancestors(self, key):
+        # Get rows of missing types. Try hkeys of length 2, 4, ... len(key) - 2. 
+        # (Steps of 2 because hkey structure is [ordinal, [key values], ... ]
+        hkey = key[0]
+        hkey_prefix_length = 2
+        while hkey_prefix_length < len(hkey):
+            ancestor_hkey = hkey[:hkey_prefix_length]
+            ancestor_cursor = self._group.cursor([ancestor_hkey], [ancestor_hkey])
+            ancestor_row = ancestor_cursor.next()
+            self.count_random_access()
+            if ancestor_row is not None and ancestor_row.rowtype in self._missing_types:
+                self._pending.append(ancestor_row)
+            hkey_prefix_length += 2

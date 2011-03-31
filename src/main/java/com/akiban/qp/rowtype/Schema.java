@@ -16,6 +16,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 
@@ -30,15 +31,20 @@ public class Schema
     public Schema(AkibanInformationSchema ais)
     {
         typeIdCounter = -1;
+        // User tables: use ordinal as typeId
         for (UserTable userTable : ais.getUserTables().values()) {
             RowDef rowDef = (RowDef) userTable.rowDef();
             int ordinal = rowDef.getOrdinal();
-            int requiredEntries = ordinal + 1;
-            while (rowTypes.size() < requiredEntries) {
-                rowTypes.add(null);
-            }
-            rowTypes.set(ordinal, new UserTableRowType(this, userTable));
+            UserTableRowType userTableRowType = new UserTableRowType(this, userTable);
+            setRowType(ordinal, userTableRowType);
             typeIdCounter = max(typeIdCounter, ordinal);
+            // Indexes
+            for (Index index : userTable.getIndexesIncludingInternal()) {
+                int typeId = ++typeIdCounter;
+                IndexRowType indexRowType = new IndexRowType(this, index, typeId);
+                userTableRowType.addIndexRowType(indexRowType);
+                setRowType(typeId, indexRowType);
+            }
         }
         typeIdCounter++;
     }
@@ -49,14 +55,36 @@ public class Schema
         return (UserTableRowType) rowTypes.get(rowDef.getOrdinal());
     }
 
+    public synchronized IndexRowType indexRowType(Index index)
+    {
+        assert index.getTable().isUserTable() : index;
+        return userTableRowType((UserTable) index.getTable()).indexRowType(index);
+    }
+
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
     {
         return new FlattenedRowType(this, typeIdCounter++, parent, child);
     }
 
+    public int maxTypeId()
+    {
+        return rowTypes.size() - 1;
+    }
+
+    // For use by this class
+
+    private void setRowType(int typeId, RowType rowType)
+    {
+        int requiredEntries = typeId + 1;
+        while (rowTypes.size() < requiredEntries) {
+            rowTypes.add(null);
+        }
+        rowTypes.set(typeId, rowType);
+    }
+
     // Object state
 
-    // Field type is ArrayList, not List, to make it clear that null values are permitted.
+    // Type of rowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<RowType> rowTypes = new ArrayList<RowType>();
     private volatile int typeIdCounter;
 }

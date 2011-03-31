@@ -26,9 +26,7 @@ import com.persistit.Exchange;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
-// Gets row state from PersistitCursor if possible. Before the cursor needs to move on, state is copied.
-
-class PersistitRow extends RowBase
+class PersistitGroupRow extends RowBase
 {
     // Object interface
 
@@ -43,13 +41,13 @@ class PersistitRow extends RowBase
     @Override
     public RowType rowType()
     {
-        return adapter.schema.userTableRowType(row.getRowDef().userTable());
+        return adapter.schema().userTableRowType(row.getRowDef().userTable());
     }
 
     @Override
-    public <T> T field(int i)
+    public Object field(int i)
     {
-        return (T) row.get(i);
+        return row.get(i);
     }
 
     // For use by this package
@@ -57,7 +55,6 @@ class PersistitRow extends RowBase
     public void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
     {
         this.row = new LegacyRowWrapper((RowDef) null);
-        this.hKey = new PersistitHKey();
         RuntimeException exception;
         Value value = exchange.getValue();
         assert value.isDefined();
@@ -67,7 +64,7 @@ class PersistitRow extends RowBase
                 adapter.persistit.expandRowData(exchange, rowData);
                 row.setRowDef(rowData.getRowDefId());
                 row.setRowData(rowData);
-                hKey.readKey(exchange);
+                persistitHKey().copyFrom(exchange.getKey());
             } catch (ArrayIndexOutOfBoundsException e) {
                 exception = e;
             } catch (EncodingException e) {
@@ -85,14 +82,28 @@ class PersistitRow extends RowBase
 
     public PersistitHKey hKey()
     {
-        return hKey;
+        return currentHKey;
     }
 
 
-    PersistitRow(PersistitAdapter adapter)
+    PersistitGroupRow(PersistitAdapter adapter)
     {
         this.adapter = adapter;
         this.rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
+        this.typedHKeys = new PersistitHKey[adapter.schema().maxTypeId() + 1];
+    }
+
+    // For use by this class
+
+    private PersistitHKey persistitHKey()
+    {
+        RowDef rowDef = row.getRowDef();
+        currentHKey = typedHKeys[rowDef.getOrdinal()];
+        if (currentHKey == null) {
+            currentHKey = new PersistitHKey(adapter, rowDef.userTable().hKey());
+            typedHKeys[rowDef.getOrdinal()] = currentHKey;
+        }
+        return currentHKey;
     }
 
     // Class state
@@ -104,5 +115,6 @@ class PersistitRow extends RowBase
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;
-    private PersistitHKey hKey;
+    private PersistitHKey currentHKey;
+    private final PersistitHKey[] typedHKeys;
 }

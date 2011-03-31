@@ -15,43 +15,48 @@
 
 package com.akiban.qp.rowtype;
 
-// Fields are untyped for now. Field name is just position within the type.
+import com.akiban.ais.model.Index;
+import com.akiban.server.IndexDef;
 
-public abstract class RowType
+public class IndexRowType extends RowType
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return index.toString();
+    }
+
     // RowType interface
 
-    public final Schema schema()
+    @Override
+    public int nFields()
     {
-        return schema;
+        return ((IndexDef)index.indexDef()).indexKeyFields().length;
     }
 
-    public final int typeId()
+    @Override
+    public boolean ancestorOf(RowType type)
     {
-        return typeId;
+        assert false : "Not implemented yet";
+        return false;
     }
 
-    public final Ancestry ancestry()
+    // IndexRowType interface
+
+    public Index index()
     {
-        return ancestry;
+        return index;
     }
 
-    public abstract int nFields();
-
-    public abstract boolean ancestorOf(RowType type);
-
-    // For use by subclasses
-
-    protected RowType(Schema schema, int typeId, Ancestry ancestry)
+    public IndexRowType(Schema schema, Index index, int typeId)
     {
-        this.schema = schema;
-        this.typeId = typeId;
-        this.ancestry = ancestry;
+        super(schema, typeId, null);
+        this.index = index;
     }
 
     // Object state
 
-    private final Schema schema;
-    private final int typeId;
-    private final Ancestry ancestry;
+    private final Index index;
 }

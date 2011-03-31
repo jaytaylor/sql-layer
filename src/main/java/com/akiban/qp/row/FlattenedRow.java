@@ -38,13 +38,13 @@ public class FlattenedRow extends RowBase
     }
 
     @Override
-    public <T> T field(int i)
+    public Object field(int i)
     {
-        T field;
+        Object field;
         if (i < nParentFields) {
-            field = (T) parent.field(i);
+            field = parent.field(i);
         } else {
-            field = (T) child.field(i - nParentFields);
+            field = child.field(i - nParentFields);
         }
         return field;
     }

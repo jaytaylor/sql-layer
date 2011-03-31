@@ -13,14 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.rowtype;
+package com.akiban.qp.physicaloperator;
 
-public abstract class DerivedRowType extends RowType
+import com.akiban.qp.BTreeAdapter;
+
+public abstract class ExecutionBase
 {
-    // For use by subclasses
+    // ExecutionBase interface
 
-    protected DerivedRowType(Schema schema, int typeId, Ancestry ancestry)
+    protected ExecutionBase(BTreeAdapter adapter)
     {
-        super(schema, typeId, ancestry);
+        this.adapter = adapter;
     }
+
+    // Object state
+
+    protected final BTreeAdapter adapter;
 }

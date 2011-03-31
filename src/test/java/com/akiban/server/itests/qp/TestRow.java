@@ -31,9 +31,9 @@ public class TestRow extends RowBase
     }
 
     @Override
-    public <T> T field(int i)
+    public Object field(int i)
     {
-        return (T) fields[i];
+        return fields[i];
     }
 
     @Override

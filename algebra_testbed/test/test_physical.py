@@ -38,10 +38,10 @@ run_physical_plan("Scan the customer name index",
          IndexScan(customer_name_index))
  
 run_physical_plan("Scan the customer name index for 'ori'",
-         IndexScan(customer_name_index, ['ori']))
+         IndexScan(customer_name_index, ['ori'], ['ori']))
  
 run_physical_plan("Scan the customer name index for 'ori' and then find the row",
-         IndexLookup(IndexScan(customer_name_index, ['ori']), ['hkey'], coi))
+         IndexLookup(IndexScan(customer_name_index, ['ori'], ['ori']), ['hkey'], coi, []))
 
 run_physical_plan("Keep only orders (drop customers, items)",
          Extract(Cut(GroupScan(coi), Ti), To))

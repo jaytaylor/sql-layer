@@ -15,7 +15,9 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.BTreeAdapter;
 import com.akiban.qp.Cursor;
+import com.akiban.qp.GroupCursor;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
@@ -27,9 +29,9 @@ public class Select_HKeyOrdered implements PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor()
+    public Cursor cursor(BTreeAdapter adapter)
     {
-        return new Execution();
+        return new Execution(adapter);
     }
 
     // GroupScan_Default interface
@@ -97,14 +99,15 @@ public class Select_HKeyOrdered implements PhysicalOperator
 
         // Execution interface
 
-        Execution()
+        Execution(BTreeAdapter adapter)
         {
-            input = inputOperator.cursor();
+            super(adapter);
+            input = (GroupCursor) inputOperator.cursor(adapter);
         }
 
         // Object state
 
-        private final Cursor input;
+        private final GroupCursor input;
         // row is the last input row with type = predicateRowType. For that row, rowSelected records the result
         // of predicate.evaluate(row).
         private final RowHolder<ManagedRow> selectedRow = new RowHolder<ManagedRow>();

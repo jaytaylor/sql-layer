@@ -16,27 +16,39 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.BTreeAdapterRuntimeException;
-import com.akiban.qp.Cursor;
+import com.akiban.ais.model.Index;
+import com.akiban.qp.*;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.IndexDef;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-public class PersistitAdapter implements BTreeAdapter
+public class PersistitAdapter extends BTreeAdapter
 {
     // BTreeAdapter interface
 
     @Override
-    public Cursor newCursor(GroupTable table)
+    public GroupCursor newGroupCursor(GroupTable groupTable)
     {
-        Cursor cursor;
+        GroupCursor cursor;
         try {
-            cursor = new PersistitCursor(this,
-                                         persistit,
-                                         persistit.getExchange(session, (RowDef) table.rowDef(), null));
+            cursor = new PersistitGroupCursor(this, groupTable);
+        } catch (PersistitException e) {
+            throw new BTreeAdapterRuntimeException(e);
+        }
+        return cursor;
+    }
+
+    @Override
+    public IndexCursor newIndexCursor(Index index)
+    {
+        IndexCursor cursor;
+        try {
+            cursor = new PersistitIndexCursor(this, schema.indexRowType(index));
         } catch (PersistitException e) {
             throw new BTreeAdapterRuntimeException(e);
         }
@@ -45,22 +57,42 @@ public class PersistitAdapter implements BTreeAdapter
 
     // PersistitAdapter interface
 
-    public PersistitRow newRow()
+    public PersistitGroupRow newGroupRow()
     {
         // TODO: Pool rows?
-        return new PersistitRow(this);
+        return new PersistitGroupRow(this);
+    }
+
+    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    {
+        // TODO: Pool rows?
+        return new PersistitIndexRow(this, indexRowType);
+    }
+
+    public Exchange takeExchange(GroupTable table) throws PersistitException
+    {
+        return persistit.getExchange(session, (RowDef) table.rowDef(), null);
+    }
+
+    public Exchange takeExchange(Index index) throws PersistitException
+    {
+        return persistit.getExchange(session, null, (IndexDef) index.indexDef());
+    }
+
+    public void returnExchange(Exchange exchange)
+    {
+        persistit.releaseExchange(session, exchange);
     }
 
     public PersistitAdapter(Schema schema, PersistitStore persistit, Session session)
     {
-        this.schema = schema;
+        super(schema);
         this.persistit = persistit;
         this.session = session;
     }
 
     // Object state
 
-    final Schema schema;
     final PersistitStore persistit;
     final Session session;
 }

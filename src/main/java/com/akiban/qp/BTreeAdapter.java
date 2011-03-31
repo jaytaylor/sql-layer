@@ -16,8 +16,28 @@
 package com.akiban.qp;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.qp.rowtype.Schema;
 
-public interface BTreeAdapter
+public abstract class BTreeAdapter
 {
-    Cursor newCursor(GroupTable table);
+    public abstract GroupCursor newGroupCursor(GroupTable groupTable);
+
+    public abstract IndexCursor newIndexCursor(Index index);
+
+    public final Schema schema()
+    {
+        return schema;
+    }
+
+    // For use by subclasses
+
+    protected BTreeAdapter(Schema schema)
+    {
+        this.schema = schema;
+    }
+
+    // Object state
+
+    protected final Schema schema;
 }

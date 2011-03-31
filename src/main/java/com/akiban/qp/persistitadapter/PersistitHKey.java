@@ -16,22 +16,43 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.HKey;
-import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyState;
 
 class PersistitHKey implements HKey
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return persistitKey.toString();
+    }
+
     // HKey interface
 
+    public int segments()
+    {
+        return hKey.segments().size();
+    }
+
+    public void useSegments(int segments)
+    {
+        assert segments > 0 && segments < keyDepth.length : segments;
+        // setDepth shortens the key's encoded size if necessary but doesn't lengthen it.
+        // So setEncodedSize back to the original key length, permitting setDepth to work in all cases.
+        // (setEncodedSize is cheap.)
+        persistitKey.setEncodedSize(persistitKeySize);
+        persistitKey.setDepth(keyDepth[segments]);
+    }
+
+    // TODO: Move into Key?
     public boolean prefixOf(HKey hKey)
     {
         PersistitHKey that = (PersistitHKey) hKey;
-        // Move into KeyState?
-        if (this.size < that.size) {
-            byte[] thisBytes = this.key.getBytes();
-            byte[] thatBytes = that.key.getBytes();
-            for (int i = 0; i < this.size; i++) {
+        if (this.persistitKeySize <= that.persistitKeySize) {
+            byte[] thisBytes = this.persistitKey.getEncodedBytes();
+            byte[] thatBytes = that.persistitKey.getEncodedBytes();
+            for (int i = 0; i < this.persistitKeySize; i++) {
                 if (thisBytes[i] != thatBytes[i]) {
                     return false;
                 }
@@ -44,33 +65,39 @@ class PersistitHKey implements HKey
 
     // PersistitHKey interface
 
-    public void readKey(Exchange exchange)
+    public void copyFrom(Key source)
     {
-        // TODO: Instead of allocating a KeyState each time, it would be nice if KeyState allowed for reuse.
-        Key exchangeKey = exchange.getKey();
-        key = new KeyState(exchangeKey);
-        size = exchangeKey.getEncodedSize();
+        source.copyTo(persistitKey);
+        persistitKeySize = persistitKey.getEncodedSize();
     }
 
-    public PersistitHKey copy()
+    public void copyTo(Key target)
     {
-        return new PersistitHKey(this);
+        persistitKey.copyTo(target);
     }
 
-    public PersistitHKey()
+    public PersistitHKey(PersistitAdapter adapter, com.akiban.ais.model.HKey hKey)
     {
-    }
-
-    // For use by this class
-
-    private PersistitHKey(PersistitHKey hKey)
-    {
-        this.key = new KeyState(hKey.key.getBytes());
-        this.size = hKey.size;
+        this.adapter = adapter;
+        this.hKey = hKey;
+        this.persistitKey = new Key(adapter.persistit.getDb());
+        this.keyDepth = new int[hKey.segments().size() + 1];
+        int hKeySegments = hKey.segments().size();
+        for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
+            this.keyDepth[hKeySegment] =
+                hKeySegment == 0
+                ? 0
+                // + 1 to account for the ordinal
+                : this.keyDepth[hKeySegment - 1] + 1 + hKey.segments().get(hKeySegment - 1).columns().size();
+        }
     }
 
     // Object state
 
-    private KeyState key;
-    private int size;
+    private final PersistitAdapter adapter;
+    private final com.akiban.ais.model.HKey hKey;
+    private Key persistitKey;
+    private int persistitKeySize;
+    // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
+    private final int[] keyDepth;
 }

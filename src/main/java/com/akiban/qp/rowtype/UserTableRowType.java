@@ -15,11 +15,12 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 
-import javax.swing.event.AncestorEvent;
+import java.util.ArrayList;
 
 public class UserTableRowType extends RowType
 {
@@ -31,14 +32,7 @@ public class UserTableRowType extends RowType
         return table.toString();
     }
 
-
     // RowType interface
-
-    @Override
-    public int typeId()
-    {
-        return ((RowDef) table.rowDef()).getOrdinal();
-    }
 
     @Override
     public int nFields()
@@ -52,22 +46,44 @@ public class UserTableRowType extends RowType
         assert type instanceof UserTableRowType : type;
         // TODO: Something faster
         UserTable ancestor = ((UserTableRowType) type).table;
-        do {
+        while (ancestor != table && ancestor != null) {
             Join join = ancestor.getParentJoin();
             ancestor = join == null ? null : join.getParent();
-        } while (ancestor != table && ancestor != null);
+        }
         return ancestor != null;
     }
 
     // UserTableRowType interface
 
+    public UserTable userTable()
+    {
+        return table;
+    }
+
+    public IndexRowType indexRowType(Index index)
+    {
+        return indexRowTypes.get(index.getIndexId());
+    }
+
+    public void addIndexRowType(IndexRowType indexRowType)
+    {
+        Index index = indexRowType.index();
+        int requiredEntries = index.getIndexId() + 1;
+        while (indexRowTypes.size() < requiredEntries) {
+            indexRowTypes.add(null);
+        }
+        indexRowTypes.set(index.getIndexId(), indexRowType);
+    }
+
     public UserTableRowType(Schema schema, UserTable table)
     {
-        super(schema, Ancestry.of(table));
+        super(schema, ((RowDef) table.rowDef()).getOrdinal(), Ancestry.of(table));
         this.table = table;
     }
 
     // Object state
 
-    private UserTable table;
+    private final UserTable table;
+    // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
+    private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<IndexRowType>();
 }

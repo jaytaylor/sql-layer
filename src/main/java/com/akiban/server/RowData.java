@@ -622,4 +622,9 @@ public class RowData {
         return MINIMUM_RECORD_LENGTH + // header and trailer
                (rowDef.getFieldCount() + 7) / 8; // null bitmap
     }
+
+    public void copyBytesIn(byte[] source, int start, int end, int field)
+    {
+
+    }
 }

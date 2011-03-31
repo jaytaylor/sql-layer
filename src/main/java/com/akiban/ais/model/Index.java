@@ -197,6 +197,17 @@ public class Index implements Serializable, ModelNames, Traversable
         traversePreOrder(visitor);
     }
 
+    public Object indexDef()
+    {
+        return indexDef;
+    }
+
+    public void indexDef(Object indexDef)
+    {
+        assert indexDef.getClass().getName().equals("com.akiban.server.IndexDef") : indexDef.getClass();
+        this.indexDef = indexDef;
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
 
     private Table table;
@@ -207,4 +218,7 @@ public class Index implements Serializable, ModelNames, Traversable
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
     private transient HKey hKey;
+    // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
+    // all the RowDef stuff and have it visible to GWT.
+    private transient /* IndexDef */ Object indexDef;
 }

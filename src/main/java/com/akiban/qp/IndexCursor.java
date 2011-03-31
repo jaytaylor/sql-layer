@@ -13,14 +13,8 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.rowtype;
+package com.akiban.qp;
 
-public abstract class DerivedRowType extends RowType
+public interface IndexCursor extends Cursor
 {
-    // For use by subclasses
-
-    protected DerivedRowType(Schema schema, int typeId, Ancestry ancestry)
-    {
-        super(schema, typeId, ancestry);
-    }
 }

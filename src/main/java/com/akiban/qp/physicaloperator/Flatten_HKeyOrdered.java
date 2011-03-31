@@ -15,20 +15,22 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.BTreeAdapter;
 import com.akiban.qp.Cursor;
-import com.akiban.qp.row.*;
+import com.akiban.qp.GroupCursor;
+import com.akiban.qp.row.FlattenedRow;
+import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
-
-import java.util.*;
 
 public class Flatten_HKeyOrdered implements PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public Cursor cursor()
+    public Cursor cursor(BTreeAdapter adapter)
     {
-        return new Execution();
+        return new Execution(adapter);
     }
 
     // Flatten_HKeyOrdered interface
@@ -62,7 +64,7 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
     public static final int INNER_JOIN = 0x04;
     public static final int LEFT_JOIN = 0x08;
     public static final int RIGHT_JOIN = 0x10;
-    static final int MAX_PENDING = 2;
+    private static final int MAX_PENDING = 2;
 
     // Object state
 
@@ -150,9 +152,10 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
 
         // Execution interface
 
-        Execution()
+        Execution(BTreeAdapter adapter)
         {
-            this.input = inputOperator.cursor();
+            super(adapter);
+            this.input = (GroupCursor) inputOperator.cursor(adapter);
         }
 
         // For use by this class
@@ -187,81 +190,8 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
 
         // Object state
 
-        private final Cursor input;
+        private final GroupCursor input;
         private final RowHolder<ManagedRow> parent = new RowHolder<ManagedRow>();
-        private final Pending pending = new Pending();
-    }
-
-    private static class Pending
-    {
-        public void add(Row row)
-        {
-            assert !full();
-            row(end, row.managedRow());
-            end = next(end);
-        }
-
-        public ManagedRow take()
-        {
-            ManagedRow row = null;
-            if (!empty()) {
-                row = row(start);
-                row(start, null);
-                start = next(start);
-            }
-            return row;
-        }
-
-        public void clear()
-        {
-            for (int i = 0; i <= MAX_PENDING; i++) {
-                row(i, null);
-            }
-        }
-
-        public Pending()
-        {
-            for (int i = 0; i <= MAX_PENDING; i++) {
-                queue[i] = new RowHolder<ManagedRow>();
-            }
-            start = 0;
-            end = 0;
-        }
-
-        // For use by this class
-
-        private ManagedRow row(int i)
-        {
-            return ((RowHolder<ManagedRow>) queue[i]).managedRow();
-        }
-
-        private void row(int i, ManagedRow row)
-        {
-            ((RowHolder<ManagedRow>)queue[i]).set(row);
-        }
-
-        private boolean empty()
-        {
-            return end == start;
-        }
-
-        private boolean full()
-        {
-            return next(end) == start;
-        }
-
-        private int next(int x)
-        {
-            if (x++ == MAX_PENDING) {
-                x = 0;
-            }
-            return x;
-        }
-
-        // Object state
-
-        private final Object[] queue = new Object[MAX_PENDING + 1];
-        private int start;
-        private int end;
+        private final PendingRows pending = new PendingRows(MAX_PENDING);
     }
 }

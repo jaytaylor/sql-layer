@@ -13,14 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.rowtype;
+package com.akiban.qp;
 
-public abstract class DerivedRowType extends RowType
+public interface GroupCursor extends Cursor
 {
-    // For use by subclasses
-
-    protected DerivedRowType(Schema schema, int typeId, Ancestry ancestry)
-    {
-        super(schema, typeId, ancestry);
-    }
+    /**
+     * Starts a scan of the underlying table that will visit the row matching the given hKey
+     * and all descendent rows. Descendents will be scanned even if there is no ancestor matching the hkey,
+     * (i.e., orphan rows are scanned).
+     *
+     * @param hKey Limits the scan to rows matching this hKey, and descendents.
+     * @throws UnsupportedOperationException if applied to an index-based cursor.
+     */
+    void open(HKey hKey);
 }

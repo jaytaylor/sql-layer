@@ -15,9 +15,10 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.BTreeAdapter;
 import com.akiban.qp.Cursor;
 
 public interface PhysicalOperator
 {
-    Cursor cursor();
+    Cursor cursor(BTreeAdapter adapter);
 }

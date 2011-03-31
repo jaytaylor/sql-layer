@@ -37,9 +37,9 @@ public class RowHolder<MR extends ManagedRow> implements Row
     }
 
     @Override
-    public <T> T field(int i)
+    public Object field(int i)
     {
-        return (T) row.field(i);
+        return row.field(i);
     }
 
     @Override

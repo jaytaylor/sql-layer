@@ -18,17 +18,18 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.BTreeAdapterRuntimeException;
 import com.akiban.qp.Cursor;
 import com.akiban.qp.HKey;
+import com.akiban.qp.IndexCursor;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-class PersistitCursor implements Cursor
+class PersistitIndexCursor implements IndexCursor
 {
     // Row interface
 
@@ -51,9 +52,9 @@ class PersistitCursor implements Cursor
     }
 
     @Override
-    public <T> T field(int i)
+    public Object field(int i)
     {
-        return (T) row.field(i);
+        return row.field(i);
     }
 
     @Override
@@ -73,52 +74,54 @@ class PersistitCursor implements Cursor
     @Override
     public void open()
     {
+        try {
+            exchange = adapter.takeExchange(indexRowType.index()).clear().append(Key.BEFORE);
+        } catch (PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
     }
 
     @Override
     public boolean next()
     {
         try {
-            if (!closed && exchange.traverse(Key.GT, true)) {
-                exchange.fetch();
+            if (exchange != null && exchange.traverse(Key.GT, true)) {
                 unsharedRow().managedRow().copyFromExchange(exchange);
             } else {
                 close();
             }
         } catch (PersistitException e) {
             throw new BTreeAdapterRuntimeException(e);
-        } catch (InvalidOperationException e) {
-            throw new BTreeAdapterRuntimeException(e);
         }
-        return !closed;
+        return exchange != null;
     }
 
     @Override
     public void close()
     {
-        if (!closed) {
-            persistit.releaseExchange(adapter.session, exchange);
+        if (exchange != null) {
+            adapter.returnExchange(exchange);
+            exchange = null;
             row.set(null);
-            closed = true;
         }
     }
 
     // For use by this package
 
-    PersistitCursor(PersistitAdapter adapter, PersistitStore persistit, Exchange exchange) throws PersistitException
+    PersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType)
+        throws PersistitException
     {
         this.adapter = adapter;
-        this.persistit = persistit;
-        this.exchange = exchange.clear().append(Key.BEFORE);
-        this.row = new RowHolder<PersistitRow>(adapter.newRow());
+        this.indexRowType = indexRowType;
+        this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
     }
 
     // For use by this class
 
-    private RowHolder<PersistitRow> unsharedRow()
+    private RowHolder<PersistitIndexRow> unsharedRow() throws PersistitException
     {
         if (row.managedRow().isShared()) {
-            row.set(adapter.newRow());
+            row.set(adapter.newIndexRow(indexRowType));
         }
         return row;
     }
@@ -126,8 +129,7 @@ class PersistitCursor implements Cursor
     // Object state
 
     private final PersistitAdapter adapter;
-    private final PersistitStore persistit;
-    private final Exchange exchange;
-    private final RowHolder<PersistitRow> row;
-    private boolean closed = false;
+    private final IndexRowType indexRowType;
+    private final RowHolder<PersistitIndexRow> row;
+    private Exchange exchange;
 }

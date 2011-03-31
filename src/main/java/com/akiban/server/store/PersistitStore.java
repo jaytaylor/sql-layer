@@ -155,6 +155,11 @@ public class PersistitStore implements Store {
         }
     }
 
+    public Key getKey(Session session) throws PersistitException
+    {
+        return treeService.getKey(session);
+    }
+
     public void releaseExchange(final Session session, final Exchange exchange) {
         treeService.releaseExchange(session, exchange);
     }
@@ -304,7 +309,7 @@ public class PersistitStore implements Store {
      * @param indexKey
      * @param indexDef
      */
-    void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final IndexDef indexDef) {
+    public void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final IndexDef indexDef) {
         final IndexDef.I2H[] fassoc = indexDef.hkeyFields();
         hKey.clear();
         for (int index = 0; index < fassoc.length; index++) {
@@ -322,6 +327,33 @@ public class PersistitStore implements Store {
             }
         }
     }
+
+/*
+    public void constructRowDataFromIndexKey(Key indexKey, IndexDef indexDef, RowData rowData)
+    {
+        // Make sure that rowData is big enough
+        assert rowData.getBytes().length >= RowData.MINIMUM_RECORD_LENGTH + Key.MAX_KEY_LENGTH;
+        // Set null flags for fields not in index
+        BitSet nullMap = new BitSet();
+        RowDef rowDef = indexDef.getRowDef();
+        for (int i = 0; i < rowDef.getFieldCount(); i++) {
+            nullMap.set(i, true);
+        }
+        for (int fieldPosition : indexDef.getFields()) {
+            nullMap.set(fieldPosition, false);
+        }
+        rowData.setupNullMap(nullMap, 0, 0, rowDef.getFieldCount());
+        // TODO: Set null flags for null values in indexKey
+        // Copy non-null fields from indexKey to rowData
+        for (int fieldPosition : indexDef.getFields()) {
+            indexKey.indexTo(fieldPosition);
+            int indexKeyFrom = indexKey.getIndex();
+            indexKey.indexTo(fieldPosition + 1);
+            int indexKeyTo = indexKey.getIndex();
+            rowData.copyBytesFrom(indexKey.getEncodedBytes(), indexKeyFrom, indexKeyTo, fieldPosition);
+        }
+    }
+*/
 
     /**
      * Given an indexDef, construct the corresponding hkey containing nulls.

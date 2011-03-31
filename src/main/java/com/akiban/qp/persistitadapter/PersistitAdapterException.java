@@ -13,14 +13,14 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.rowtype;
+package com.akiban.qp.persistitadapter;
 
-public abstract class DerivedRowType extends RowType
+import com.akiban.qp.BTreeAdapterRuntimeException;
+
+public class PersistitAdapterException extends BTreeAdapterRuntimeException
 {
-    // For use by subclasses
-
-    protected DerivedRowType(Schema schema, int typeId, Ancestry ancestry)
+    PersistitAdapterException(Exception exception)
     {
-        super(schema, typeId, ancestry);
+        super(exception);
     }
 }

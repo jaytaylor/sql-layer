@@ -19,8 +19,25 @@ import com.akiban.qp.row.Row;
 
 public interface Cursor extends Row
 {
+    /**
+     * Starts a complete scan of the underlying table or index.
+     */
     void open();
+
+    /**
+     * Advances to the next row of the underlying table or index.
+     * @return true if there is a next row, false otherwise.
+     */
     boolean next();
+
+    /**
+     * Terminates the scan of the underlying table or index. Further calls to next() will return false.
+     */
     void close();
+
+    /**
+     * The current row of the underlying table or index.
+     * @return The current row of the underlying table or index, or null if the scan has ended.
+     */
     Row currentRow();
 }

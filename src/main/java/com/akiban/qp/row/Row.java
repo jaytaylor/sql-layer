@@ -21,7 +21,7 @@ import com.akiban.qp.rowtype.RowType;
 public interface Row
 {
     RowType rowType();
-    <T> T field(int i);
+    Object field(int i);
     HKey hKey();
     boolean ancestorOf(Row that);
     ManagedRow managedRow();
