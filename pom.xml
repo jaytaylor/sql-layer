@@ -324,7 +324,7 @@
                     <exclude>conf/config/jvm.options</exclude>
                     <exclude>doc/examples/social/rails/README</exclude>
                     <exclude>doc/examples/social/rails/Rakefile</exclude>
-                    <exclude>doc/examples/release_notes.txt</exclude>
+                    <exclude>doc/release_notes.txt</exclude>
                     <exclude>src/bin/aisread</exclude>
                     <exclude>src/bin/aiswrite</exclude>
                     <!-- Files requiring a specific format (packaging control, test output, etc) -->
