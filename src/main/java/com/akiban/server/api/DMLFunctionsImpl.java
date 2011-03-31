@@ -631,14 +631,16 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
     {
         logger.trace("updating a row");
-        if (columnSelector == null) {
-            columnSelector = ALL_COLUMNS_SELECTOR;
-        }
         final RowData oldData = niceRowToRowData(oldRow);
         final RowData newData = niceRowToRowData(newRow);
 
         final int tableId = LegacyUtils.matchRowDatas(oldData, newData);
-        checkForModifiedCursors(session, oldRow, newRow, columnSelector, tableId);
+        checkForModifiedCursors(
+                session,
+                oldRow, newRow,
+                columnSelector == null ? ALL_COLUMNS_SELECTOR : columnSelector,
+                tableId
+        );
 
         try {
             store().updateRow(session, oldData, newData, columnSelector);
