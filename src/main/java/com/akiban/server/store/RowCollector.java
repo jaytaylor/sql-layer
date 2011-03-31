@@ -15,6 +15,7 @@
 
 package com.akiban.server.store;
 
+import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 
 import java.nio.ByteBuffer;
@@ -54,7 +55,9 @@ public interface RowCollector {
     public long getDeliveredBytes();
     
     public int getTableId();
-    
+
+    public IndexDef getIndexDef();
+
     public long getId();
 
     public void outputToMessage(boolean outputToMessage);

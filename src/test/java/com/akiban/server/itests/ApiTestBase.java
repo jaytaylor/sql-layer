@@ -23,23 +23,16 @@ import static org.junit.Assert.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDefCache;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.RowDataOutput;
+import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -79,8 +72,11 @@ import com.akiban.server.service.session.SessionImpl;
  * various convenience testing methods.</p>
  */
 public class ApiTestBase {
+    protected final static Object UNDEF = new Object();
+
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
+        private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
         private int mark = 0;
 
         @Override
@@ -89,7 +85,11 @@ public class ApiTestBase {
         }
 
         public List<NewRow> getRows() {
-            return rows;
+            return rowsUnmodifiable;
+        }
+
+        public void clear() {
+            rows.clear();
         }
 
         @Override
@@ -103,10 +103,17 @@ public class ApiTestBase {
         }
     }
 
+    public final static ColumnSelector ALL_COLUMNS = new ColumnSelector() {
+        @Override
+        public boolean includesColumn(int columnPosition) {
+            return true;
+        }
+    };
+
     private static class TestServiceServiceFactory extends UnitTestServiceFactory {
 
-        private TestServiceServiceFactory() {
-            super(false, null);
+        private TestServiceServiceFactory(Collection<Property> startupConfigProperties) {
+            super(false, startupConfigProperties);
         }
 
         @Override
@@ -142,15 +149,15 @@ public class ApiTestBase {
     }
 
     private static class TestServiceManager extends ServiceManagerImpl {
-        private TestServiceManager() {
-            super(new TestServiceServiceFactory());
+        private TestServiceManager(Collection<Property> startupConfigProperties) {
+            super(new TestServiceServiceFactory(startupConfigProperties));
         }
     }
 
     protected ApiTestBase()
     {
         final String name = this.getClass().getSimpleName();
-        assertTrue("Please name integration tests FooIT or FooMT instead of FooTest or somethign else",
+        assertTrue("Please name integration tests FooIT or FooMT instead of FooTest or something else",
                 name.endsWith("IT") || name.endsWith("MT")
         );
     }
@@ -163,7 +170,7 @@ public class ApiTestBase {
     @Before
     public final void startTestServices() throws Exception {
         session = new SessionImpl();
-        sm = new TestServiceManager( );
+        sm = new TestServiceManager(startupConfigProperties());
         sm.startServices();
         ddl = new DDLFunctionsImpl();
         dml = new DMLFunctionsImpl(ddl);
@@ -214,6 +221,10 @@ public class ApiTestBase {
     protected final RowDefCache rowDefCache() {
         Store store = sm.getStore();
         return store.getRowDefCache();
+    }
+
+    protected Collection<Property> startupConfigProperties() {
+        return null;
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
@@ -287,6 +298,15 @@ public class ApiTestBase {
         return new ScanAllRequest(tableId, allCols);
     }
 
+    protected static <T> Set<T> set(T... items) {
+        return new HashSet<T>(Arrays.asList(items));
+    }
+
+    protected static <T> T get(NewRow row, int field, Class<T> castAs) {
+        Object obj = row.get(field);
+        return castAs.cast(obj);
+    }
+
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
         ScanRequest all = scanAllRequest(tableId);
         expectRows(all, expectedRows);
@@ -315,7 +335,9 @@ public class ApiTestBase {
     public static NewRow createNewRow(int tableId, Object... columns) {
         NewRow row = new NiceRow(tableId);
         for (int i=0; i < columns.length; ++i) {
-            row.put(i, columns[i] );
+            if (columns[i] != UNDEF) {
+                row.put(i, columns[i] );
+            }
         }
         return row;
     }

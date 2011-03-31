@@ -15,7 +15,6 @@
 
 package com.akiban.server;
 
-import com.akiban.server.service.config.ModuleConfiguration;
 import com.akiban.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,92 +28,44 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 
+import javax.management.ObjectName;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 
 /**
  * @author peter
  */
 public class AkServer implements Service<AkServer>, JmxManageable {
-
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
+    private static final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl();
 
+    
     /**
-     * Config property name and default for the port on which the AkSserver will
-     * listen for requests.
-     *
-     * /** Port on which the AkSserver will listen for requests.
-     */
-    private final int AKSERVER_PORT;
-
-    /**
-     * Interface on which this akserver instance will listen. TODO - allow
-     * multiple NICs
-     */
-
-    private final String AKSERVER_HOST;
-
-    private static final boolean TCP_NO_DELAY =
-        Boolean.parseBoolean(System.getProperty("com.akiban.server.tcpNoDelay", "true"));
-
-    /**
-     * Name of this chunkserver. Must match one of the entries in
+     * Name of this akserver. Must match one of the entries in
      * /config/cluster.properties (managed by Admin).
      */
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
 
-
-    private volatile Thread _shutdownHook;
-    
     private final JmxObjectInfo jmxObjectInfo;
 
     public AkServer() {
-        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(
-                this), ManageMXBean.class);
-        ModuleConfiguration config
-                = ServiceManagerImpl.get().getConfigurationService().getModuleConfiguration("akserver");
-        AKSERVER_PORT = Integer.parseInt( config.getProperty("port") );
-        AKSERVER_HOST = config.getProperty("host");
+        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(this), ManageMXBean.class);
     }
 
     @Override
     public void start() throws Exception {
-        LOG.warn(String.format("Starting chunkserver %s on port %s",
-                AKSERVER_NAME, AKSERVER_PORT));
+        LOG.info("Starting AkServer {}", AKSERVER_NAME);
         Tap.registerMXBean();
-        LOG.warn(String.format("Started chunkserver %s on port %s", AKSERVER_NAME, AKSERVER_PORT));
-        _shutdownHook = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    _shutdownHook = null;
-                    ServiceManagerImpl.get().stopServices();
-                } catch (Exception e) {
-                    LOG.warn("Caught exception while stopping services", e);
-                }
-            }
-        }, "ShutdownHook");
-        Runtime.getRuntime().addShutdownHook(_shutdownHook);
     }
 
     @Override
     public void stop() throws Exception
     {
-        final Thread hook = _shutdownHook;
-        _shutdownHook = null;
-        if (hook != null) {
-            Runtime.getRuntime().removeShutdownHook(hook);
-        }
+        LOG.info("Stopping AkServer {}", AKSERVER_NAME);
         Tap.unregisterMXBean();
-    }
-
-    public String host() {
-        return AKSERVER_HOST;
-    }
-
-    public int port() {
-        return AKSERVER_PORT;
     }
 
     public ServiceManager getServiceManager()
@@ -126,7 +77,6 @@ public class AkServer implements Service<AkServer>, JmxManageable {
     public JmxObjectInfo getJmxObjectInfo() {
         return jmxObjectInfo;
     }
-
 
     @Override
     public AkServer cast() {
@@ -149,13 +99,53 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         }
     }
 
+    
+    public interface ShutdownMXBean {
+        public void shutdown();
+    }
+
+    private static class ShutdownMXBeanImpl implements ShutdownMXBean {
+        private static final String BEAN_NAME = "com.akiban:type=SHUTDOWN";
+
+        public ShutdownMXBeanImpl() {
+        }
+
+        @Override
+        public void shutdown() {
+            try {
+                ServiceManager sm = ServiceManagerImpl.get();
+                if(sm != null) {
+                    sm.stopServices();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
     /**
-     * @param args
-     *            the command line arguments
+     * @param args the command line arguments
      */
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
+        // JVM shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                shutdownBean.shutdown();
+            }
+        }, "ShutdownHook"));
+
+        // Bring system up
         final ServiceManager serviceManager = new ServiceManagerImpl(new DefaultServiceFactory());
         serviceManager.startServices();
+
+        // JMX shutdown method
+        try {
+            ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
+            ManagementFactory.getPlatformMBeanServer().registerMBean(shutdownBean, name);
+        } catch(Exception e) {
+            LOG.error("Exception registering shutdown bean", e);
+        }
     }
 }

@@ -44,6 +44,7 @@ import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
+import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaId;
 import com.akiban.server.util.RowDefNotFoundException;
@@ -67,7 +68,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             GroupWithProtectedTableException, JoinToUnknownTableException,
             JoinToWrongColumnsException, JoinToMultipleParentsException,
             NoPrimaryKeyException, DuplicateColumnNameException,
-            UnsupportedDataTypeException, GenericInvalidOperationException
+            UnsupportedDataTypeException, UnsupportedIndexDataTypeException,
+            GenericInvalidOperationException
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
@@ -78,6 +80,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
             throwIfInstanceOf(JoinToWrongColumnsException.class, ioe);
             throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
+            throwIfInstanceOf(DuplicateTableNameException.class, ioe);
+            throwIfInstanceOf(UnsupportedIndexDataTypeException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }

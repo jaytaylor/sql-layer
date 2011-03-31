@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -123,6 +124,11 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         @Override
         public int getTableId() {
             return tableId;
+        }
+
+        @Override
+        public IndexDef getIndexDef() {
+            throw new UnsupportedOperationException();
         }
 
         @Override

@@ -27,11 +27,17 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.AkServerUtil;
+import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
@@ -40,6 +46,7 @@ import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.*;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ColumnSet;
+import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.CursorIsFinishedException;
@@ -71,9 +78,16 @@ import org.slf4j.LoggerFactory;
 
 public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
+    private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ColumnSelector() {
+        @Override
+        public boolean includesColumn(int columnPosition) {
+            return true;
+        }
+    };
+
     private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
-    private static final Object OPEN_CURSORS_MAP = new Object();
+    private static final String OPEN_CURSORS_MAP = "OPEN_CURSORS_MAP";
 
     private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
     private final DDLFunctions ddlFunctions;
@@ -292,6 +306,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                    CursorIsUnknownException,
                    RowOutputException,
                    BufferFullException,
+                   ConcurrentScanAndUpdateException,
                    GenericInvalidOperationException
 
     {
@@ -303,7 +318,13 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-
+        if (CursorState.CONCURRENT_MODIFICATION.equals(cursor.getState())) {
+            throw new ConcurrentScanAndUpdateException("for cursor " + cursorId);
+        }
+        if (cursor.isFinished()) {
+            throw new CursorIsFinishedException(cursorId);
+        }
+        
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         int retriesLeft = SCAN_RETRY_COUNT;
         while (true) {
@@ -395,6 +416,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                CursorIsUnknownException,
                RowOutputException,
                NoSuchTableException,
+               ConcurrentScanAndUpdateException,
                GenericInvalidOperationException
     {
         logger.trace("scanning from {}", cursorId);
@@ -465,7 +487,8 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             assert cursorId != null;
             assert output != null;
 
-            if (cursor.isFinished()) {
+            if (cursor.isClosed()) {
+                logger.error("Shouldn't have gotten a closed cursor. id = {} state = {}", cursorId, cursor.getState());
                 throw new CursorIsFinishedException(cursorId);
             }
 
@@ -670,7 +693,14 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         final RowData oldData = niceRowToRowData(oldRow);
         final RowData newData = niceRowToRowData(newRow);
 
-        LegacyUtils.matchRowDatas(oldData, newData);
+        final int tableId = LegacyUtils.matchRowDatas(oldData, newData);
+        checkForModifiedCursors(
+                session,
+                oldRow, newRow,
+                columnSelector == null ? ALL_COLUMNS_SELECTOR : columnSelector,
+                tableId
+        );
+
         try {
             store().updateRow(session, oldData, newData, columnSelector);
         } catch (Exception e) {
@@ -679,6 +709,70 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
             throwIfInstanceOf(DuplicateKeyException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
+    }
+
+    private void checkForModifiedCursors(
+            Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector, int tableId)
+            throws NoSuchTableException
+    {
+        boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
+
+        Map<CursorId,Cursor> cursorsMap = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
+        if (cursorsMap == null) {
+            return;
+        }
+        for (Cursor cursor : cursorsMap.values()) {
+            if (cursor.isClosed()) {
+                continue;
+            }
+            RowCollector rc = cursor.getRowCollector();
+            if (hKeyIsModified) {
+                // check whether the update is on this scan or its ancestors
+                int scanTableId = rc.getTableId();
+                while (scanTableId > 0) {
+                    if (scanTableId == tableId) {
+                        cursor.setScanModified();
+                        break;
+                    }
+                    scanTableId = ddlFunctions.getRowDef(scanTableId).getParentRowDefId();
+                }
+            }
+            else {
+                IndexDef indexDef = rc.getIndexDef();
+                if (indexDef == null) {
+                    indexDef = ddlFunctions.getRowDef(rc.getTableId()).getPKIndexDef();
+                }
+                if (indexDef != null) {
+                    for (int field : indexDef.getFields()) {
+                        if (columnSelector.includesColumn(field)
+                                && !AkServerUtil.equals(oldRow.get(field), newRow.get(field)))
+                        {
+                            cursor.setScanModified();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isHKeyModified(Session session, NewRow oldRow, NewRow newRow, ColumnSelector columns, int tableId)
+    {
+        UserTable userTable = ddlFunctions.getAIS(session).getUserTable(tableId);
+        HKey hKey = userTable.hKey();
+        for (HKeySegment segment : hKey.segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                Column column = hKeyColumn.column();
+                if (column.getTable() != userTable) {
+                    continue;
+                }
+                int pos = column.getPosition();
+                if (columns.includesColumn(pos) && !AkServerUtil.equals(oldRow.get(pos), newRow.get(pos))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

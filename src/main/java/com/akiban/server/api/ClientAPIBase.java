@@ -26,6 +26,7 @@ import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
+import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.ForeignKeyConstraintDMLException;
 import com.akiban.server.api.dml.NoSuchColumnException;
@@ -99,6 +100,8 @@ abstract class ClientAPIBase {
                     return new JoinToWrongColumnsException(ioe);
                 case JOIN_TO_MULTIPLE_PARENTS:
                     return new JoinToMultipleParentsException(ioe);
+                case UNSUPPORTED_INDEX_DATA_TYPE:
+                    return new UnsupportedIndexDataTypeException(ioe);
                 case DUPLICATE_TABLE:
                     return new DuplicateTableNameException(ioe);
                 case UNSUPPORTED_DROP:

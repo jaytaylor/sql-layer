@@ -48,6 +48,7 @@ public final class ClientAPIBaseLaundryTest {
             ErrorCode.MALFORMED_REQUEST, // shouldn't happen from D*LFunctions layer
             ErrorCode.TABLEDEF_MISMATCH, // D*LFunctions layer will throw TableDefinitionMismatchException directly
             ErrorCode.ROW_OUTPUT, // D*LFunctions layer will throw RowOutputException directly
+            ErrorCode.CONCURRENT_MODIFICATION, // DMLFunctions will throw this directly
 
             ErrorCode.NO_REFERENCED_ROW, // TODO: not sure what this means!
     };

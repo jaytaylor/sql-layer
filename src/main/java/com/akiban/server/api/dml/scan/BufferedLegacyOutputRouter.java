@@ -90,6 +90,11 @@ public class BufferedLegacyOutputRouter extends WrappingRowOutput {
         }
     }
 
+    public void reset(int toBufferPos) {
+        wrapped.position(toBufferPos);
+        lastPosition = toBufferPos;
+    }
+
     @Override
     public boolean getOutputToMessage()
     {
