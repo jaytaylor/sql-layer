@@ -65,7 +65,7 @@ public final class BasicKeyUpdateIT extends ApiTestBase {
         );
     }
 
-    @Test @Ignore("bug 746006")
+    @Test
     public void oldKeysAreRemoved_2Rows_Partial_IndexChanged() throws InvalidOperationException {
         int tableId = table();
         runTest(
