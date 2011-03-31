@@ -23,6 +23,7 @@ import com.akiban.server.api.dml.EasyUseColumnSelector;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
+import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyOutputConverter;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
@@ -33,11 +34,13 @@ import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.WrappingRowOutput;
 import com.akiban.server.mttests.mtutil.TimePoints;
+import com.akiban.server.mttests.mtutil.TimePointsComparison;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.TimedResult;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -54,6 +57,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
     @Test
@@ -67,11 +71,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                NewRow old = new NiceRow(tableId);
-                old.put(0, 2L);
-                NewRow updated = new NiceRow(tableId);
-                updated.put(0, 2L);
-                updated.put(1, "icebox");
+                NewRow old = createNewRow(tableId, 2L, "mr melty");
+                NewRow updated = createNewRow(tableId, 2L, "icebox");
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
                 dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(1));
@@ -108,10 +109,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                NewRow old = new NiceRow(tableId);
-                old.put(0, 1L);
-                NewRow updated = new NiceRow(tableId);
-                updated.put(0, 5L);
+                NewRow old = createNewRow(tableId, 1L, "the snowman");
+                NewRow updated = createNewRow(tableId, 5L);
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
                 dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(0));
@@ -151,16 +150,10 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                NewRow oldSnowman = new NiceRow(tableId);
-                oldSnowman.put(0, 2L);
-                NewRow updatedSnowman = new NiceRow(tableId);
-                updatedSnowman.put(0, 2L);
-                updatedSnowman.put(1, "xtreme weather");
-
-                NewRow oldMr = new NiceRow(tableId);
-                oldMr.put(0, 1L);
-                NewRow updatedMr = new NiceRow(tableId);
-                updatedMr.put(1, "a snowman");
+                NewRow oldSnowman = createNewRow(tableId, 1L, "the snowman");
+                NewRow updatedSnowman = createNewRow(tableId, UNDEF, "a snowman");
+                NewRow oldMr = createNewRow(tableId, 2L, "mr melty");
+                NewRow updatedMr = createNewRow(tableId, UNDEF, "xtreme weather");
 
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
@@ -202,22 +195,15 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                NewRow oldSnowman = new NiceRow(tableId);
-                oldSnowman.put(0, 2L);
-                NewRow updatedSnowman = new NiceRow(tableId);
-                updatedSnowman.put(0, 2L);
-                updatedSnowman.put(1, "xtreme weather");
-
-                NewRow oldMr = new NiceRow(tableId);
-                oldMr.put(0, 1L);
-                NewRow updatedMr = new NiceRow(tableId);
-                updatedMr.put(0, 10L);
-                updatedMr.put(1, "a snowman");
+                NewRow oldSnowman = createNewRow(tableId, 1L, "the snowman");
+                NewRow updatedSnowman = createNewRow(tableId, 10L, "a snowman");
+                NewRow oldMr = createNewRow(tableId, 2L, "mr melty");
+                NewRow updatedMr = createNewRow(tableId, 2L, "xtreme weather");
 
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(1));
-                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(0, 1));
+                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(0, 1));
+                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }
@@ -228,8 +214,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 2L, "xtreme weather"),
                         createNewRow(tableId, 10L, "a snowman"),
+                        createNewRow(tableId, 2L, "xtreme weather"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -240,7 +226,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         );
     }
 
-    @Test//(expected=ConcurrentScanAndUpdateException.class) // TODO uncomment after merge
+    @Ignore("bug 746681")
+    @Test(expected=ConcurrentScanAndUpdateException.class)
     public void multipleScanSomeCalls() throws Throwable {
         final int SCAN_WAIT = 5000;
         final int tableId = tableWithTwoRows();
@@ -252,22 +239,15 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                NewRow oldSnowman = new NiceRow(tableId);
-                oldSnowman.put(0, 2L);
-                NewRow updatedSnowman = new NiceRow(tableId);
-                updatedSnowman.put(0, 2L);
-                updatedSnowman.put(1, "xtreme weather");
-
-                NewRow oldMr = new NiceRow(tableId);
-                oldMr.put(0, 1L);
-                NewRow updatedMr = new NiceRow(tableId);
-                updatedMr.put(0, 10L);
-                updatedMr.put(1, "a snowman");
+                NewRow oldSnowman = createNewRow(tableId, 1L, "the snowman");
+                NewRow updatedSnowman = createNewRow(tableId, 10L, "a snowman");
+                NewRow oldMr = createNewRow(tableId, 2L, "mr melty");
+                NewRow updatedMr = createNewRow(tableId, 2L, "xtreme weather");
 
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(1));
-                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(0, 1));
+                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(0, 1));
+                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }
@@ -277,10 +257,12 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
         Future<TimedResult<Void>> updateFuture = executor.submit(updateCallable);
 
-        updateFuture.get();
+        TimedResult<Void> updateResult =updateFuture.get();
         Throwable scanFutureException = null;
         try {
-            scanFuture.get();
+            TimedResult<List<NewRow>> result = scanFuture.get();
+            TimePointsComparison comparison = new TimePointsComparison(updateResult, result);
+            fail( String.format("%s => %s", comparison, result.getItem()) );
         } catch (ExecutionException e) {
             scanFutureException = e.getCause();
         }
@@ -365,6 +347,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
             try {
                 dml.scanSome(session, cursorId, smallRouter);
             } catch (BufferFullException e) {
+                timePoints.mark("SCAN: FIRST BUFFER FULL");
                 bufferFilled = true;
             }
             assertTrue("should have had more!", bufferFilled);
@@ -378,7 +361,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
 
             BufferedLegacyOutputRouter bigRouter = new BufferedLegacyOutputRouter(1024, false);
             bigRouter.addHandler(converter);
-            timePoints.mark("SCAN: RETRY");
+            timePoints.mark("SCAN: SECOND (should fail)");
             dml.scanSome(session, cursorId, bigRouter);
 
             dml.closeCursor(session, cursorId);
