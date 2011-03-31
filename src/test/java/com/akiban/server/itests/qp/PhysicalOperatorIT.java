@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 public class PhysicalOperatorIT extends ApiTestBase
@@ -313,8 +314,7 @@ public class PhysicalOperatorIT extends ApiTestBase
             List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
             while (cursor.next()) {
                 Row actualRow = cursor.currentRow();
-                System.out.println(actualRow);
-                // assertTrue(equal(expected[count], actualRow));
+                assertTrue(equal(expected[count], actualRow));
                 count++;
                 actualRows.add(actualRow);
             }
