@@ -25,17 +25,26 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.max;
 
-public class IndexLookup_Default implements PhysicalOperator
+public class IndexLookup_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(BTreeAdapter adapter)
+    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
     {
-        return new Execution(adapter);
+        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
+        return ops[operatorId];
+    }
+
+    @Override
+    public void assignOperatorIds(AtomicInteger idGenerator)
+    {
+        inputOperator.assignOperatorIds(idGenerator);
+        super.assignOperatorIds(idGenerator);
     }
 
     // IndexLookup_Default interface
@@ -141,10 +150,10 @@ public class IndexLookup_Default implements PhysicalOperator
 
         // Execution interface
 
-        Execution(BTreeAdapter adapter)
+        Execution(BTreeAdapter adapter, OperatorExecution input)
         {
             super(adapter);
-            this.indexInput = (IndexCursor) inputOperator.cursor(adapter);
+            this.indexInput = (IndexCursor) input;
             this.groupCursor = adapter.newGroupCursor(groupTable);
             this.ancestorCursor = adapter.newGroupCursor(groupTable);
             this.pending = new PendingRows(missingTypeDepth.length);

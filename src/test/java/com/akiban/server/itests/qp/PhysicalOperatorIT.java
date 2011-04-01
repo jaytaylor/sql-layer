@@ -26,14 +26,12 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.*;
 import com.akiban.qp.row.IndexBound;
-import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
@@ -100,6 +98,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     public void testGroupScan() throws Exception
     {
         GroupScan_Default groupScan = new GroupScan_Default(adapter, coi);
+        Executable executable = new Executable(adapter, groupScan);
         Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 11L, 1L, "ori"),
                                    row(itemRowType, 111L, 11L),
@@ -115,7 +114,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)
         };
-        compare(expected, groupScan, null);
+        compare(expected, executable, null);
     }
 
     @Test
@@ -131,7 +130,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, select, null);
+        compare(expected, new Executable(adapter, select), null);
     }
 
     @Test
@@ -152,7 +151,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(flattenType, 2L, "abc", 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, flatten, null);
+        compare(expected, new Executable(adapter, flatten), null);
     }
 
     @Test
@@ -170,7 +169,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
-        compare(expected, flattenCOI, null);
+        compare(expected, new Executable(adapter, flattenCOI), null);
     }
 
     @Test
@@ -181,7 +180,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2}",
                                          "{1,(long)1}"};
-        compareRenderedHKeys(expected, indexScan, null);
+        compareRenderedHKeys(expected, new Executable(adapter, indexScan), null);
     }
 
     @Test
@@ -194,7 +193,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                          "{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}",
                                          "{1,(long)2,2,(long)21}"};
-        compareRenderedHKeys(expected, indexScan, null);
+        compareRenderedHKeys(expected, new Executable(adapter, indexScan), null);
     }
 
     @Test
@@ -216,7 +215,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, indexLookup, null);
+        compare(expected, new Executable(adapter, indexLookup), null);
     }
 
     @Test
@@ -242,7 +241,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, indexLookup, null);
+        compare(expected, new Executable(adapter, indexLookup), null);
     }
 
     @Test
@@ -276,21 +275,20 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(customerRowType, 2L, "abc"),
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, indexLookup, null);
+        compare(expected, new Executable(adapter, indexLookup), null);
     }
 
     @Test
     public void testRestrictedIndexScan()
     {
         IndexScan_Default indexScan = new IndexScan_Default(index(order, "salesman"));
-        IndexCursor cursor = (IndexCursor) indexScan.cursor(adapter);
         IndexBound lo = new IndexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "jack"));
         IndexBound hi = new IndexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "tom"));
         IndexKeyRange range = new IndexKeyRange(lo, true, hi, false);
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}"};
-        compareRenderedHKeys(expected, indexScan, range);
+        compareRenderedHKeys(expected, new Executable(adapter, indexScan), range);
     }
 
     @Test
@@ -305,7 +303,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, indexLookup, matchTom);
+        compare(expected, new Executable(adapter, indexLookup), matchTom);
 
     }
 
@@ -354,9 +352,9 @@ public class PhysicalOperatorIT extends ApiTestBase
         return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
     }
 
-    private void compare(Row[] expected, PhysicalOperator plan, IndexKeyRange range)
+    private void compare(Row[] expected, Executable query, IndexKeyRange range)
     {
-        Cursor cursor = plan.cursor(adapter);
+        Cursor cursor = query.cursor();
         int count;
         try {
             if (range == null) {
@@ -378,9 +376,9 @@ public class PhysicalOperatorIT extends ApiTestBase
         assertEquals(expected.length, count);
     }
 
-    private void compareRenderedHKeys(String[] expected, PhysicalOperator plan, IndexKeyRange range)
+    private void compareRenderedHKeys(String[] expected, Executable query, IndexKeyRange range)
     {
-        Cursor cursor = plan.cursor(adapter);
+        Cursor cursor = query.cursor();
         int count;
         try {
             if (range == null) {

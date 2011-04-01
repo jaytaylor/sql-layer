@@ -16,12 +16,20 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.BTreeAdapter;
+import com.akiban.qp.Cursor;
 
-public abstract class ExecutionBase
+public abstract class OperatorExecution implements Cursor
 {
-    // ExecutionBase interface
+    // OperatorExecution interface
 
-    protected ExecutionBase(BTreeAdapter adapter)
+    public void bind(Object object)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    // For use by subclasses
+
+    protected OperatorExecution(BTreeAdapter adapter)
     {
         this.adapter = adapter;
     }

@@ -21,14 +21,16 @@ import com.akiban.qp.Cursor;
 import com.akiban.qp.IndexCursor;
 import com.akiban.qp.expression.IndexKeyRange;
 
-public class IndexScan_Default implements PhysicalOperator
+public class IndexScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
+
     @Override
-    public Cursor cursor(BTreeAdapter adapter)
+    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
     {
-        return new Execution(adapter);
+        ops[operatorId] = new Execution(adapter);
+        return ops[operatorId];
     }
 
     // IndexScan_Default interface

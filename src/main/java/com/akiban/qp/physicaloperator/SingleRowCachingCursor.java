@@ -21,7 +21,7 @@ import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
-public abstract class SingleRowCachingCursor extends ExecutionBase implements IndexCursor, GroupCursor
+public abstract class SingleRowCachingCursor extends OperatorExecution implements IndexCursor, GroupCursor
 {
     // Object interface
 

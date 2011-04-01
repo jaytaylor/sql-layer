@@ -16,7 +16,6 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.Cursor;
 import com.akiban.qp.GroupCursor;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.ManagedRow;
@@ -24,13 +23,23 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 
-public class Flatten_HKeyOrdered implements PhysicalOperator
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class Flatten_HKeyOrdered extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public Cursor cursor(BTreeAdapter adapter)
+    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
     {
-        return new Execution(adapter);
+        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
+        return ops[operatorId];
+    }
+
+    @Override
+    public void assignOperatorIds(AtomicInteger idGenerator)
+    {
+        inputOperator.assignOperatorIds(idGenerator);
+        super.assignOperatorIds(idGenerator);
     }
 
     // Flatten_HKeyOrdered interface
@@ -153,10 +162,10 @@ public class Flatten_HKeyOrdered implements PhysicalOperator
 
         // Execution interface
 
-        Execution(BTreeAdapter adapter)
+        Execution(BTreeAdapter adapter, OperatorExecution input)
         {
             super(adapter);
-            this.input = (GroupCursor) inputOperator.cursor(adapter);
+            this.input = (GroupCursor) input;
         }
 
         // For use by this class

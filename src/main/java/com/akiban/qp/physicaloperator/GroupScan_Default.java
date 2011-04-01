@@ -20,13 +20,16 @@ import com.akiban.qp.BTreeAdapter;
 import com.akiban.qp.Cursor;
 import com.akiban.qp.GroupCursor;
 
-public class GroupScan_Default implements PhysicalOperator
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class GroupScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public Cursor cursor(BTreeAdapter adapter)
+    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
     {
-        return new Execution(adapter);
+        ops[operatorId] = new Execution(adapter);
+        return ops[operatorId];
     }
 
     // GroupScan_Default interface

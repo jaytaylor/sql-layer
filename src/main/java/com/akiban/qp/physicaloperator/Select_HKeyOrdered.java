@@ -20,20 +20,28 @@ import com.akiban.qp.Cursor;
 import com.akiban.qp.GroupCursor;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.ManagedRow;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 
-public class Select_HKeyOrdered implements PhysicalOperator
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class Select_HKeyOrdered extends PhysicalOperator
 {
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(BTreeAdapter adapter)
+    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
     {
-        return new Execution(adapter);
+        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
+        return ops[operatorId];
     }
 
+    @Override
+    public void assignOperatorIds(AtomicInteger idGenerator)
+    {
+        inputOperator.assignOperatorIds(idGenerator);
+        super.assignOperatorIds(idGenerator);
+    }
     // GroupScan_Default interface
 
     public Select_HKeyOrdered(PhysicalOperator inputOperator, RowType predicateRowType, Expression predicate)
@@ -100,15 +108,15 @@ public class Select_HKeyOrdered implements PhysicalOperator
 
         // Execution interface
 
-        Execution(BTreeAdapter adapter)
+        Execution(BTreeAdapter adapter, OperatorExecution input)
         {
             super(adapter);
-            input = (GroupCursor) inputOperator.cursor(adapter);
+            this.input = input;
         }
 
         // Object state
 
-        private final GroupCursor input;
+        private final Cursor input;
         // row is the last input row with type = predicateRowType. For that row, rowSelected records the result
         // of predicate.evaluate(row).
         private final RowHolder<ManagedRow> selectedRow = new RowHolder<ManagedRow>();

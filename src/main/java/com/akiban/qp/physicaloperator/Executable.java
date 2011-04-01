@@ -16,26 +16,37 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.BTreeAdapter;
+import com.akiban.qp.Cursor;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class PhysicalOperator
+public class Executable
 {
-    // PhysicalOperator interface
-
-    public final int operatorId()
+    public Executable(BTreeAdapter adapter, PhysicalOperator root)
     {
-        return operatorId;
+        this.root = root;
+        // Assign operator ids
+        AtomicInteger idGenerator = new AtomicInteger(0);
+        root.assignOperatorIds(idGenerator);
+        int nOperators = idGenerator.get();
+        // Instantiate plan
+        ops = new OperatorExecution[nOperators];
+        root.instantiate(adapter, ops);
     }
 
-    public void assignOperatorIds(AtomicInteger idGenerator)
+    public Executable bind(PhysicalOperator operator, Object value)
     {
-        operatorId = idGenerator.getAndIncrement();
+        ops[operator.operatorId()].bind(value);
+        return this;
     }
 
-    public abstract OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops);
+    public Cursor cursor()
+    {
+        return ops[root.operatorId()];
+    }
 
     // Object state
 
-    protected int operatorId = -1;
+    private final PhysicalOperator root;
+    private OperatorExecution[] ops;
 }
