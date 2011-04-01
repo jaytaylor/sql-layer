@@ -16,7 +16,15 @@
 package com.akiban.server.service.d_l;
 
 final class HookUtil {
-    static RuntimeException launder(Throwable t) {
-        return (t instanceof RuntimeException) ? (RuntimeException) t : new RuntimeException(t);
+    static <T extends Throwable> void throwIf(Throwable t, Class<T> ifClass) throws T {
+        if (ifClass.isInstance(t)) {
+            throw ifClass.cast(t);
+        }
+    }
+
+    static Error throwAlways(Throwable t) {
+        throwIf(t, RuntimeException.class);
+        throwIf(t, Error.class);
+        return new Error("not a RuntimeException, checked exception or Error?!", t);
     }
 }

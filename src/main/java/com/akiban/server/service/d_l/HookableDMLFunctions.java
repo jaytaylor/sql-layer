@@ -46,7 +46,8 @@ import com.akiban.server.service.session.SessionImpl;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.server.service.d_l.HookUtil.launder;
+import static com.akiban.server.service.d_l.HookUtil.throwIf;
+import static com.akiban.server.service.d_l.HookUtil.throwAlways;
 
 public final class HookableDMLFunctions implements DMLFunctions {
 
@@ -65,7 +66,9 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.getTableStatistics(session, tableId, updateFirst);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.GET_TABLE_STATISTICS, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.GET_TABLE_STATISTICS);
         }
@@ -78,7 +81,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.openCursor(session, request);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.OPEN_CURSOR, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throwIf(t, NoSuchColumnException.class);
+            throwIf(t, NoSuchIndexException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.OPEN_CURSOR);
         }
@@ -91,7 +98,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.getCursorState(session, cursorId);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.GET_CURSOR_STATE, t);
-            throw launder(t);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.GET_CURSOR_STATE);
         }
@@ -104,7 +111,13 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.scanSome(session, cursorId, output);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.SCAN_SOME, t);
-            throw launder(t);
+            throwIf(t, CursorIsFinishedException.class);
+            throwIf(t, CursorIsUnknownException.class);
+            throwIf(t, RowOutputException.class);
+            throwIf(t, BufferFullException.class);
+            throwIf(t, ConcurrentScanAndUpdateException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.SCAN_SOME);
         }
@@ -117,7 +130,13 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.scanSome(session, cursorId, output);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.SCAN_SOME, t);
-            throw launder(t);
+            throwIf(t, CursorIsFinishedException.class);
+            throwIf(t, CursorIsUnknownException.class);
+            throwIf(t, RowOutputException.class);
+            throwIf(t, NoSuchTableException.class);
+            throwIf(t, ConcurrentScanAndUpdateException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.SCAN_SOME);
         }
@@ -130,7 +149,8 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.closeCursor(session, cursorId);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.CLOSE_CURSOR, t);
-            throw launder(t);
+            throwIf(t, CursorIsUnknownException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.CLOSE_CURSOR);
         }
@@ -143,7 +163,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.getCursors(session);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.GET_CURSORS, t);
-            throw launder(t);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.GET_CURSORS);
         }
@@ -157,7 +177,8 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.convertNewRow(row);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.CONVERT_NEW_ROW, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.CONVERT_NEW_ROW);
         }
@@ -171,7 +192,8 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.convertRowData(rowData);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.CONVERT_ROW_DATA, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.CONVERT_ROW_DATA);
         }
@@ -185,7 +207,8 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.convertRowDatas(rowDatas);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.CONVERT_ROW_DATAS, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.CONVERT_ROW_DATAS);
         }
@@ -198,7 +221,12 @@ public final class HookableDMLFunctions implements DMLFunctions {
             return delegate.writeRow(session, row);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.WRITE_ROW, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throwIf(t, UnsupportedModificationException.class);
+            throwIf(t, TableDefinitionMismatchException.class);
+            throwIf(t, DuplicateKeyException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.WRITE_ROW);
         }
@@ -211,7 +239,13 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.deleteRow(session, row);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.DELETE_ROW, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throwIf(t, UnsupportedModificationException.class);
+            throwIf(t, ForeignKeyConstraintDMLException.class);
+            throwIf(t, NoSuchRowException.class);
+            throwIf(t, TableDefinitionMismatchException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.DELETE_ROW);
         }
@@ -224,7 +258,14 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.updateRow(session, oldRow, newRow, columnSelector);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.UPDATE_ROW, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throwIf(t, DuplicateKeyException.class);
+            throwIf(t, TableDefinitionMismatchException.class);
+            throwIf(t, UnsupportedModificationException.class);
+            throwIf(t, ForeignKeyConstraintDMLException.class);
+            throwIf(t, NoSuchRowException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.UPDATE_ROW);
         }
@@ -237,7 +278,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
             delegate.truncateTable(session, tableId);
         } catch (Throwable t) {
             hook.hookFunctionCatch(session, DDLFunction.TRUNCATE_TABLE, t);
-            throw launder(t);
+            throwIf(t, NoSuchTableException.class);
+            throwIf(t, UnsupportedModificationException.class);
+            throwIf(t, ForeignKeyConstraintDMLException.class);
+            throwIf(t, GenericInvalidOperationException.class);
+            throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DDLFunction.TRUNCATE_TABLE);
         }
