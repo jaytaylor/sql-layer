@@ -18,6 +18,7 @@ package com.akiban.util;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class MultipleCauseException extends RuntimeException {
@@ -39,5 +40,9 @@ public final class MultipleCauseException extends RuntimeException {
         printWriter.flush();
         stringWriter.flush();
         return stringWriter.toString();
+    }
+
+    public List<Throwable> getCauses() {
+        return Collections.unmodifiableList(causes);
     }
 }

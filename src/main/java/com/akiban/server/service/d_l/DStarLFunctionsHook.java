@@ -20,7 +20,7 @@ import com.akiban.server.service.session.Session;
 public interface DStarLFunctionsHook {
     static enum DStarLType {
         DDL_FUNCTIONS,
-        DML_FUNCTIONS
+        DML_FUNCTIONS,
     }
 
     static enum DDLFunction {
