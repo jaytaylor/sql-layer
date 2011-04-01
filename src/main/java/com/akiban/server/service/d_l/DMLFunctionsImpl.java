@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.server.service.d_l;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -42,6 +42,10 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.api.GenericInvalidOperationException;
+import com.akiban.server.api.LegacyUtils;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.*;
 import com.akiban.server.api.dml.scan.BufferFullException;
@@ -72,7 +76,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
+class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ColumnSelector() {
         @Override
@@ -89,7 +93,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private final DDLFunctions ddlFunctions;
     private final Scanner scanner;
 
-    public DMLFunctionsImpl(DDLFunctions ddlFunctions) {
+    DMLFunctionsImpl(DDLFunctions ddlFunctions) {
         this(ddlFunctions, NONE);
     }
 

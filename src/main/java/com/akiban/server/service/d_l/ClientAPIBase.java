@@ -13,9 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.server.service.d_l;
 
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;

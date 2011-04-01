@@ -17,7 +17,7 @@ package com.akiban.server.mttests.mtatomics;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.HookableDMLFI;
+import com.akiban.server.service.d_l.HookableDMLFI;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
