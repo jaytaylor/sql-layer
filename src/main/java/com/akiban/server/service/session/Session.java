@@ -33,6 +33,7 @@ public interface Session
     void close();
 
     public static class Key<T> {
+        private final Class<?> owner;
         private final String name;
         private final T defaultValue;
 
@@ -45,7 +46,11 @@ public interface Session
         }
 
         private Key(String name, T defaultValue, int stackFramesToOwner) {
-            Class<?> owner = Thread.currentThread().getStackTrace()[stackFramesToOwner + 1].getClass();
+            try {
+                owner = Class.forName(Thread.currentThread().getStackTrace()[stackFramesToOwner + 2].getClassName());
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
             this.name = String.format("%s<%s>", owner.getSimpleName(), name);
             this.defaultValue = defaultValue;
         }
@@ -58,26 +63,20 @@ public interface Session
         public T getDefaultValue() {
             return defaultValue;
         }
+
+        Class<?> getOwner() {
+            return owner;
+        }
     }
 
     public static final class MapKey<K,V> extends Key<Map<K,V>> {
-        private final V defaultValue;
 
         public static <K,V> MapKey<K,V> ofMap(String name) {
-            return new MapKey<K,V>(name, null);
+            return new MapKey<K,V>(name);
         }
 
-        public static <K,V> MapKey<K,V> ofMap(String name, V defaultValue) {
-            return new MapKey<K,V>(name, defaultValue);
-        }
-
-        private MapKey(String name, V defaultValue) {
+        private MapKey(String name) {
             super(name, null, 3);
-            this.defaultValue = defaultValue;
-        }
-
-        public V getDefaultMapValue() {
-            return defaultValue;
         }
 
         Key<Map<K,V>> asKey() {

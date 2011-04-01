@@ -42,7 +42,7 @@ public final class SessionImpl implements Session
     public <K,V> V get(MapKey<K,V> mapKey, K key) {
         Map<K,V> map = get( mapKey.asKey() );
         if (map == null) {
-            return mapKey.getDefaultMapValue();
+            return null;
         }
         return map.get(key);
     }
