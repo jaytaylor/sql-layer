@@ -21,10 +21,10 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.service.d_l.DDLFunctionsImpl;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
@@ -38,7 +38,7 @@ public final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
     private final Session session;
 
     DefaultProcessedRequest(HapiGetRequest request, Session session) throws HapiRequestException {
-        this(request, session, new DDLFunctionsImpl());
+        this(request, session, ServiceManagerImpl.get().getDStarL().ddlFunctions());
     }
 
     public DefaultProcessedRequest(HapiGetRequest request, Session session, DDLFunctions ddlFunctions)

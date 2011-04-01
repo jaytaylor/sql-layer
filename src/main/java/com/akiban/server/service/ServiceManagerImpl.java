@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.d_l.DStarLService;
 import com.akiban.server.service.d_l.DStarLServiceImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
@@ -116,6 +117,11 @@ public class ServiceManagerImpl implements ServiceManager
     @Override
     public StatisticsService getStatisticsService() {
         return getService(StatisticsService.class);
+    }
+
+    @Override
+    public DStarLService getDStarL() {
+        return getService(DStarLService.class);
     }
 
     /**

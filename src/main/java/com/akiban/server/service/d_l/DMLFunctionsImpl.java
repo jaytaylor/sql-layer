@@ -76,7 +76,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
+class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
 
     private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ColumnSelector() {
         @Override
@@ -93,7 +93,7 @@ public class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
     private final DDLFunctions ddlFunctions;
     private final Scanner scanner;
 
-    public DMLFunctionsImpl(DDLFunctions ddlFunctions) {
+    DMLFunctionsImpl(DDLFunctions ddlFunctions) {
         this(ddlFunctions, NONE);
     }
 

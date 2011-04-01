@@ -15,15 +15,6 @@
 
 package com.akiban.server.service.d_l;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.staticgrouping.Group;
-import com.akiban.ais.model.staticgrouping.Grouping;
-import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
-import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.service.Service;

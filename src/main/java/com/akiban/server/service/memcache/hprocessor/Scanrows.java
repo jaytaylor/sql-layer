@@ -26,9 +26,7 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.service.d_l.DDLFunctionsImpl;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.service.d_l.DMLFunctionsImpl;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiPredicate;
@@ -59,9 +57,6 @@ public class Scanrows implements HapiProcessor {
     public static Scanrows instance() {
         return new Scanrows();
     }
-
-    private final DDLFunctions ddlFunctions = new DDLFunctionsImpl();
-    private final DMLFunctions dmlFunctions = new DMLFunctionsImpl(ddlFunctions);
 
     private static class RowDataStruct {
         final EnumSet<ScanFlag> scanFlags;
@@ -234,11 +229,11 @@ public class Scanrows implements HapiProcessor {
                     configureLimit(session, request));
             List<RowData> rows = null;
             while(rows == null) {
-                rows = RowDataOutput.scanFull(session, dmlFunctions, scanRequest);
+                rows = RowDataOutput.scanFull(session, dmlFunctions(), scanRequest);
             }
 
             outputter.output(
-                    new DefaultProcessedRequest(request, session, ddlFunctions),
+                    new DefaultProcessedRequest(request, session, ddlFunctions()),
                     rows,
                     outputStream
             );
@@ -264,7 +259,7 @@ public class Scanrows implements HapiProcessor {
         // Row limit
         ScanLimit countLimit = null;
         if (request.getLimit() >= 0) {
-            countLimit = new PredicateLimit(ddlFunctions.getTableId(session, request.getUsingTable()),
+            countLimit = new PredicateLimit(ddlFunctions().getTableId(session, request.getUsingTable()),
                                             request.getLimit());
         }
         limit =
@@ -286,7 +281,7 @@ public class Scanrows implements HapiProcessor {
 
     private boolean predicateChildOfHRoot(Session session, HapiGetRequest request) throws HapiRequestException {
         // Validate that the predicate table is a child of the hroot table
-        UserTable predicateTable = ddlFunctions.getAIS(session).getUserTable(request.getUsingTable());
+        UserTable predicateTable = ddlFunctions().getAIS(session).getUserTable(request.getUsingTable());
         if (predicateTable == null) {
             throw new HapiRequestException("unknown predicate table: " + request.getUsingTable(), UNKNOWN_IDENTIFIER);
         }
@@ -315,7 +310,7 @@ public class Scanrows implements HapiProcessor {
             throws HapiRequestException, NoSuchTableException
     {
         Index index = findHapiRequestIndex(session, request);
-        RowDataStruct ret = new RowDataStruct(ddlFunctions, index, request, session);
+        RowDataStruct ret = new RowDataStruct(ddlFunctions(), index, request, session);
 
         for (HapiPredicate predicate : request.getPredicates()) {
             switch (predicate.getOp()) {
@@ -500,7 +495,7 @@ public class Scanrows implements HapiProcessor {
     {
         final UserTable table;
         try {
-            table = ddlFunctions.getUserTable(session, request.getUsingTable());
+            table = ddlFunctions().getUserTable(session, request.getUsingTable());
         } catch (NoSuchTableException e) {
             throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
         }
@@ -580,5 +575,13 @@ public class Scanrows implements HapiProcessor {
             indexColumns.add(indexColumn.getColumn().getName());
         }
         return indexColumns;
+    }
+
+    private static DDLFunctions ddlFunctions() {
+        return ServiceManagerImpl.get().getDStarL().ddlFunctions();
+    }
+
+    private static DMLFunctions dmlFunctions() {
+        return ServiceManagerImpl.get().getDStarL().dmlFunctions();
     }
 }

@@ -33,7 +33,6 @@ import com.akiban.server.RowDefCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
-import com.akiban.server.service.d_l.DDLFunctionsImpl;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -49,7 +48,6 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.service.d_l.DMLFunctionsImpl;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -151,8 +149,6 @@ public class ApiTestBase {
         );
     }
 
-    private DMLFunctions dml;
-    private DDLFunctions ddl;
     private ServiceManager sm;
     private Session session;
 
@@ -161,15 +157,11 @@ public class ApiTestBase {
         session = new SessionImpl();
         sm = new TestServiceManager(startupConfigProperties());
         sm.startServices();
-        ddl = new DDLFunctionsImpl();
-        dml = new DMLFunctionsImpl(ddl);
     }
 
     @After
     public final void stopTestServices() throws Exception {
         sm.stopServices();
-        ddl = null;
-        dml = null;
         sm = null;
         session = null;
     }
@@ -184,11 +176,11 @@ public class ApiTestBase {
     }
     
     protected final DMLFunctions dml() {
-        return dml;
+        return sm.getDStarL().dmlFunctions();
     }
 
     protected final DDLFunctions ddl() {
-        return ddl;
+        return sm.getDStarL().ddlFunctions();
     }
 
     protected final Store store() {

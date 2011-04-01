@@ -55,14 +55,9 @@ import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DDLFunctionsImpl extends ClientAPIBase implements
-        DDLFunctions {
+final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
 
     private final static Logger logger = LoggerFactory.getLogger(DDLFunctionsImpl.class);
-
-    public static DDLFunctions instance() {
-        return new DDLFunctionsImpl();
-    }
 
     @Override
     public void createTable(Session session, String schema, String ddlText)

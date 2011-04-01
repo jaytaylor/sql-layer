@@ -18,8 +18,7 @@ package com.akiban.server.api;
 import static org.junit.Assert.assertEquals;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.server.service.d_l.DDLFunctionsImpl;
-import com.akiban.server.service.d_l.DMLFunctionsImpl;
+import com.akiban.server.service.ServiceManagerImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,16 +28,12 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+
 public final class ApiTest extends AkServerTestCase {
 
     private class ApiPair {
-        final DMLFunctionsImpl dml;
-        final DDLFunctionsImpl ddl;
-        
-        private ApiPair() {
-            ddl = new DDLFunctionsImpl();
-            dml = new DMLFunctionsImpl(ddl);
-        }
+        final DMLFunctions dml = ServiceManagerImpl.get().getDStarL().dmlFunctions();
+        final DDLFunctions ddl = ServiceManagerImpl.get().getDStarL().ddlFunctions();
     }
     
     @Before
