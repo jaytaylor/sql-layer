@@ -16,8 +16,6 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.Index;
-import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.IndexCursor;
 import com.akiban.qp.expression.IndexKeyRange;
 
 public class IndexScan_Default extends PhysicalOperator
@@ -26,7 +24,7 @@ public class IndexScan_Default extends PhysicalOperator
 
 
     @Override
-    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
+    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
     {
         ops[operatorId] = new Execution(adapter);
         return ops[operatorId];
@@ -84,7 +82,7 @@ public class IndexScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(BTreeAdapter adapter)
+        Execution(StoreAdapter adapter)
         {
             super(adapter);
             this.cursor = adapter.newIndexCursor(index);

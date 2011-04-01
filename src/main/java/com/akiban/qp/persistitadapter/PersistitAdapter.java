@@ -17,7 +17,10 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.qp.*;
+import com.akiban.qp.physicaloperator.GroupCursor;
+import com.akiban.qp.physicaloperator.IndexCursor;
+import com.akiban.qp.physicaloperator.StoreAdapter;
+import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.IndexDef;
@@ -27,9 +30,9 @@ import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-public class PersistitAdapter extends BTreeAdapter
+public class PersistitAdapter extends StoreAdapter
 {
-    // BTreeAdapter interface
+    // StoreAdapter interface
 
     @Override
     public GroupCursor newGroupCursor(GroupTable groupTable)
@@ -38,7 +41,7 @@ public class PersistitAdapter extends BTreeAdapter
         try {
             cursor = new PersistitGroupCursor(this, groupTable);
         } catch (PersistitException e) {
-            throw new BTreeAdapterRuntimeException(e);
+            throw new StoreAdapterRuntimeException(e);
         }
         return cursor;
     }
@@ -50,7 +53,7 @@ public class PersistitAdapter extends BTreeAdapter
         try {
             cursor = new PersistitIndexCursor(this, schema.indexRowType(index));
         } catch (PersistitException e) {
-            throw new BTreeAdapterRuntimeException(e);
+            throw new StoreAdapterRuntimeException(e);
         }
         return cursor;
     }

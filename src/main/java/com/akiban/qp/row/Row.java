@@ -15,7 +15,6 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.HKey;
 import com.akiban.qp.rowtype.RowType;
 
 public interface Row

@@ -17,10 +17,7 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.Cursor;
-import com.akiban.qp.GroupCursor;
-import com.akiban.qp.HKey;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -36,7 +33,7 @@ public class IndexLookup_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
+    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
     {
         ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
         return ops[operatorId];
@@ -145,7 +142,7 @@ public class IndexLookup_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(BTreeAdapter adapter, OperatorExecution input)
+        Execution(StoreAdapter adapter, OperatorExecution input)
         {
             super(adapter);
             this.indexInput = input;

@@ -16,7 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.HKey;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;

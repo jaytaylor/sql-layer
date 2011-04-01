@@ -16,18 +16,13 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.Cursor;
-import com.akiban.qp.GroupCursor;
-import com.akiban.qp.HKey;
-
-import java.util.concurrent.atomic.AtomicInteger;
+import com.akiban.qp.row.HKey;
 
 public class GroupScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
+    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
     {
         ops[operatorId] = new Execution(adapter);
         return ops[operatorId];
@@ -35,15 +30,15 @@ public class GroupScan_Default extends PhysicalOperator
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(BTreeAdapter btree, GroupTable groupTable)
+    public GroupScan_Default(StoreAdapter store, GroupTable groupTable)
     {
-        this.btree = btree;
+        this.store = store;
         this.groupTable = groupTable;
     }
 
     // Object state
 
-    private final BTreeAdapter btree;
+    private final StoreAdapter store;
     private final GroupTable groupTable;
 
     // Inner classes
@@ -87,10 +82,10 @@ public class GroupScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(BTreeAdapter adapter)
+        Execution(StoreAdapter adapter)
         {
             super(adapter);
-            this.cursor = btree.newGroupCursor(groupTable);
+            this.cursor = store.newGroupCursor(groupTable);
         }
 
         // Object state

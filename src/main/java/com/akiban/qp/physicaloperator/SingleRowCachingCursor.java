@@ -15,8 +15,8 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.*;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
@@ -80,7 +80,7 @@ public abstract class SingleRowCachingCursor extends OperatorExecution implement
         row.set(newRow);
     }
 
-    protected SingleRowCachingCursor(BTreeAdapter adapter)
+    protected SingleRowCachingCursor(StoreAdapter adapter)
     {
         super(adapter);
     }

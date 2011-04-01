@@ -15,7 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.HKey;
+import com.akiban.qp.row.HKey;
 import com.persistit.Key;
 
 class PersistitHKey implements HKey

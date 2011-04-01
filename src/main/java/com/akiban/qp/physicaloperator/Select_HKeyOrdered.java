@@ -15,9 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.Cursor;
-import com.akiban.qp.GroupCursor;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
@@ -30,7 +27,7 @@ public class Select_HKeyOrdered extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops)
+    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
     {
         ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
         return ops[operatorId];
@@ -108,7 +105,7 @@ public class Select_HKeyOrdered extends PhysicalOperator
 
         // Execution interface
 
-        Execution(BTreeAdapter adapter, OperatorExecution input)
+        Execution(StoreAdapter adapter, OperatorExecution input)
         {
             super(adapter);
             this.input = input;

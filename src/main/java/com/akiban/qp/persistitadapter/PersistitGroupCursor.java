@@ -16,13 +16,11 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.BTreeAdapterRuntimeException;
-import com.akiban.qp.GroupCursor;
-import com.akiban.qp.HKey;
+import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.physicaloperator.GroupCursor;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.ManagedRow;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -59,9 +57,9 @@ class PersistitGroupCursor implements GroupCursor
                 close();
             }
         } catch (PersistitException e) {
-            throw new BTreeAdapterRuntimeException(e);
+            throw new StoreAdapterRuntimeException(e);
         } catch (InvalidOperationException e) {
-            throw new BTreeAdapterRuntimeException(e);
+            throw new StoreAdapterRuntimeException(e);
         }
         return exchange != null;
     }

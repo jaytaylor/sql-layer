@@ -15,7 +15,7 @@
 
 package com.akiban.server.itests.qp;
 
-import com.akiban.qp.HKey;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;

@@ -15,8 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.BTreeAdapter;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class PhysicalOperator
@@ -33,7 +31,7 @@ public abstract class PhysicalOperator
         operatorId = idGenerator.getAndIncrement();
     }
 
-    public abstract OperatorExecution instantiate(BTreeAdapter adapter, OperatorExecution[] ops);
+    public abstract OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops);
 
     // Object state
 

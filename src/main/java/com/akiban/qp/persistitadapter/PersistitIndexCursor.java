@@ -15,9 +15,8 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.BTreeAdapterRuntimeException;
-import com.akiban.qp.IndexCursor;
+import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
@@ -55,7 +54,7 @@ class PersistitIndexCursor implements IndexCursor
                 close();
             }
         } catch (PersistitException e) {
-            throw new BTreeAdapterRuntimeException(e);
+            throw new StoreAdapterRuntimeException(e);
         }
         return exchange != null;
     }

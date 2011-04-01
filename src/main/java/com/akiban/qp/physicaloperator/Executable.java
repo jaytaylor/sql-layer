@@ -15,14 +15,11 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.Cursor;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Executable
 {
-    public Executable(BTreeAdapter adapter, PhysicalOperator root)
+    public Executable(StoreAdapter adapter, PhysicalOperator root)
     {
         this.root = root;
         // Assign operator ids
