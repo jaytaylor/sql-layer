@@ -20,7 +20,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.Cursor;
-import com.akiban.qp.IndexCursor;
 import com.akiban.qp.expression.*;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
@@ -114,7 +113,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)
         };
-        compare(expected, executable, null);
+        compare(expected, executable);
     }
 
     @Test
@@ -130,7 +129,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, new Executable(adapter, select), null);
+        compare(expected, new Executable(adapter, select));
     }
 
     @Test
@@ -151,7 +150,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(flattenType, 2L, "abc", 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, new Executable(adapter, flatten), null);
+        compare(expected, new Executable(adapter, flatten));
     }
 
     @Test
@@ -169,7 +168,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
-        compare(expected, new Executable(adapter, flattenCOI), null);
+        compare(expected, new Executable(adapter, flattenCOI));
     }
 
     @Test
@@ -180,7 +179,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2}",
                                          "{1,(long)1}"};
-        compareRenderedHKeys(expected, new Executable(adapter, indexScan), null);
+        compareRenderedHKeys(expected, new Executable(adapter, indexScan));
     }
 
     @Test
@@ -193,7 +192,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                          "{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}",
                                          "{1,(long)2,2,(long)21}"};
-        compareRenderedHKeys(expected, new Executable(adapter, indexScan), null);
+        compareRenderedHKeys(expected, new Executable(adapter, indexScan));
     }
 
     @Test
@@ -215,7 +214,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, new Executable(adapter, indexLookup), null);
+        compare(expected, new Executable(adapter, indexLookup));
     }
 
     @Test
@@ -241,7 +240,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, new Executable(adapter, indexLookup), null);
+        compare(expected, new Executable(adapter, indexLookup));
     }
 
     @Test
@@ -275,7 +274,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(customerRowType, 2L, "abc"),
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, new Executable(adapter, indexLookup), null);
+        compare(expected, new Executable(adapter, indexLookup));
     }
 
     @Test
@@ -288,7 +287,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}"};
-        compareRenderedHKeys(expected, new Executable(adapter, indexScan), range);
+        compareRenderedHKeys(expected, new Executable(adapter, indexScan).bind(indexScan, range));
     }
 
     @Test
@@ -303,7 +302,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, new Executable(adapter, indexLookup), matchTom);
+        compare(expected, new Executable(adapter, indexLookup).bind(indexScan, matchTom));
 
     }
 
@@ -340,7 +339,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         return new TestRow(rowType, fields);
     }
 
-    private Row row(int tableId, Object ... values /* alternating field position and value */)
+    private Row row(int tableId, Object... values /* alternating field position and value */)
     {
         NiceRow niceRow = new NiceRow(order);
         int i = 0;
@@ -352,16 +351,12 @@ public class PhysicalOperatorIT extends ApiTestBase
         return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
     }
 
-    private void compare(Row[] expected, Executable query, IndexKeyRange range)
+    private void compare(Row[] expected, Executable query)
     {
         Cursor cursor = query.cursor();
         int count;
         try {
-            if (range == null) {
-                cursor.open();
-            } else {
-                ((IndexCursor)cursor).open(range);
-            }
+            cursor.open();
             count = 0;
             List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
             while (cursor.next()) {
@@ -376,16 +371,12 @@ public class PhysicalOperatorIT extends ApiTestBase
         assertEquals(expected.length, count);
     }
 
-    private void compareRenderedHKeys(String[] expected, Executable query, IndexKeyRange range)
+    private void compareRenderedHKeys(String[] expected, Executable query)
     {
         Cursor cursor = query.cursor();
         int count;
         try {
-            if (range == null) {
-                cursor.open();
-            } else {
-                ((IndexCursor)cursor).open(range);
-            }
+            cursor.open();
             count = 0;
             List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
             while (cursor.next()) {

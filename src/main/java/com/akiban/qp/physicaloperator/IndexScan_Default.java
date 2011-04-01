@@ -17,7 +17,6 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.Index;
 import com.akiban.qp.BTreeAdapter;
-import com.akiban.qp.Cursor;
 import com.akiban.qp.IndexCursor;
 import com.akiban.qp.expression.IndexKeyRange;
 
@@ -48,18 +47,20 @@ public class IndexScan_Default extends PhysicalOperator
 
     private class Execution extends SingleRowCachingCursor
     {
+        // OperatorExecution interface
+
+        @Override
+        public void bind(Object object)
+        {
+            cursor.open((IndexKeyRange) object);
+        }
+
         // Cursor interface
 
         @Override
         public void open()
         {
             cursor.open();
-        }
-
-        @Override
-        public void open(IndexKeyRange keyRange)
-        {
-            cursor.open(keyRange);
         }
 
         @Override

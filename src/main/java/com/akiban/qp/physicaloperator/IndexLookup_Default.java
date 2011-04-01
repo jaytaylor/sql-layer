@@ -17,8 +17,10 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.*;
-import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.BTreeAdapter;
+import com.akiban.qp.Cursor;
+import com.akiban.qp.GroupCursor;
+import com.akiban.qp.HKey;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -80,13 +82,6 @@ public class IndexLookup_Default extends PhysicalOperator
         public void open()
         {
             indexInput.open();
-            advanceIndex();
-        }
-
-        @Override
-        public void open(IndexKeyRange keyRange)
-        {
-            indexInput.open(keyRange);
             advanceIndex();
         }
 
@@ -153,7 +148,7 @@ public class IndexLookup_Default extends PhysicalOperator
         Execution(BTreeAdapter adapter, OperatorExecution input)
         {
             super(adapter);
-            this.indexInput = (IndexCursor) input;
+            this.indexInput = input;
             this.groupCursor = adapter.newGroupCursor(groupTable);
             this.ancestorCursor = adapter.newGroupCursor(groupTable);
             this.pending = new PendingRows(missingTypeDepth.length);
@@ -177,7 +172,7 @@ public class IndexLookup_Default extends PhysicalOperator
 
         // Object state
 
-        private final IndexCursor indexInput;
+        private final Cursor indexInput;
         private final RowHolder<ManagedRow> indexRow = new RowHolder<ManagedRow>();
         private final GroupCursor groupCursor;
         private final GroupCursor ancestorCursor;

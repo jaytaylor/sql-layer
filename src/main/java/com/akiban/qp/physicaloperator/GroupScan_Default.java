@@ -19,6 +19,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.BTreeAdapter;
 import com.akiban.qp.Cursor;
 import com.akiban.qp.GroupCursor;
+import com.akiban.qp.HKey;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,6 +50,14 @@ public class GroupScan_Default extends PhysicalOperator
 
     private class Execution extends SingleRowCachingCursor
     {
+        // OperatorExecution interface
+
+        @Override
+        public void bind(Object object)
+        {
+            cursor.open((HKey) object);
+        }
+
         // Cursor interface
 
         @Override
