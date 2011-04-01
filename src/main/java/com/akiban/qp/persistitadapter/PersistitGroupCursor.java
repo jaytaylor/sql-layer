@@ -30,44 +30,6 @@ import com.persistit.exception.PersistitException;
 
 class PersistitGroupCursor implements GroupCursor
 {
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return row.rowType();
-    }
-
-    @Override
-    public Row currentRow()
-    {
-        return row.managedRow();
-    }
-
-    @Override
-    public boolean ancestorOf(Row row)
-    {
-        return this.row.ancestorOf(row);
-    }
-
-    @Override
-    public Object field(int i)
-    {
-        return row.field(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return row.hKey();
-    }
-
-    @Override
-    public ManagedRow managedRow()
-    {
-        return row.managedRow();
-    }
-
     // Cursor interface
 
     @Override
@@ -77,23 +39,6 @@ class PersistitGroupCursor implements GroupCursor
         try {
             exchange = adapter.takeExchange(groupTable).clear().append(Key.BEFORE);
             direction = Key.GT;
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
-    }
-
-    @Override
-    public void open(HKey hKey)
-    {
-        hKeyRestricted = true;
-        try {
-            PersistitHKey persistitHKey = (PersistitHKey) hKey;
-            exchange = adapter.takeExchange(groupTable);
-            Key exchangeKey = exchange.getKey();
-            exchangeKey.clear();
-            persistitHKey.copyTo(exchangeKey);
-            persistitHKey.copyTo(restriction);
-            direction = Key.GTEQ;
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -127,6 +72,31 @@ class PersistitGroupCursor implements GroupCursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
+        }
+    }
+
+    @Override
+    public ManagedRow currentRow()
+    {
+        return row.managedRow();
+    }
+
+    // GroupCursor interface
+
+    @Override
+    public void open(HKey hKey)
+    {
+        hKeyRestricted = true;
+        try {
+            PersistitHKey persistitHKey = (PersistitHKey) hKey;
+            exchange = adapter.takeExchange(groupTable);
+            Key exchangeKey = exchange.getKey();
+            exchangeKey.clear();
+            persistitHKey.copyTo(exchangeKey);
+            persistitHKey.copyTo(restriction);
+            direction = Key.GTEQ;
+        } catch (PersistitException e) {
+            throw new PersistitAdapterException(e);
         }
     }
 

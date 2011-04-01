@@ -13,17 +13,30 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp;
+package com.akiban.qp.row;
 
-import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.rowtype.IndexKeyType;
 
-public interface IndexCursor extends Cursor
+public class IndexBound
 {
-    /**
-     * Starts a scan of the underlying table that will visit index rows whose key is inside the given keyRange.
-     *
-     * @param keyRange Range of index keys to be visited.
-     * @throws UnsupportedOperationException if applied to a group-based cursor.
-     */
-    void open(IndexKeyRange keyRange);
+    public IndexKeyType indexKeyType()
+    {
+        return indexKeyType;
+    }
+
+    public Row row()
+    {
+        return row;
+    }
+
+    public IndexBound(IndexKeyType indexKeyType, Row row)
+    {
+        this.indexKeyType = indexKeyType;
+        this.row = row;
+    }
+
+    // Object state
+
+    private final IndexKeyType indexKeyType;
+    private final Row row;
 }

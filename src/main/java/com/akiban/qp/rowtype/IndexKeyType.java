@@ -18,7 +18,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.Index;
 import com.akiban.server.IndexDef;
 
-public class IndexRowType extends RowType
+public class IndexKeyType extends RowType
 {
     // Object interface
 
@@ -33,7 +33,7 @@ public class IndexRowType extends RowType
     @Override
     public int nFields()
     {
-        return ((IndexDef)index.indexDef()).indexKeyFields().length;
+        return index.getColumns().size();
     }
 
     @Override
@@ -44,25 +44,18 @@ public class IndexRowType extends RowType
 
     // IndexRowType interface
 
-    public IndexKeyType keyType()
-    {
-        return keyType;
-    }
-
     public Index index()
     {
         return index;
     }
 
-    public IndexRowType(Schema schema, Index index)
+    public IndexKeyType(Schema schema, Index index)
     {
         super(schema, schema.nextTypeId(), null);
         this.index = index;
-        this.keyType = new IndexKeyType(schema, index);
     }
 
     // Object state
 
     private final Index index;
-    private final IndexKeyType keyType;
 }

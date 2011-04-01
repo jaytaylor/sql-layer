@@ -15,60 +15,21 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.BTreeAdapterRuntimeException;
-import com.akiban.qp.Cursor;
-import com.akiban.qp.HKey;
 import com.akiban.qp.IndexCursor;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.ManagedRow;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.InvalidOperationException;
+import com.akiban.server.IndexDef;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 
 class PersistitIndexCursor implements IndexCursor
 {
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return row.rowType();
-    }
-
-    @Override
-    public Row currentRow()
-    {
-        return row.managedRow();
-    }
-
-    @Override
-    public boolean ancestorOf(Row row)
-    {
-        return this.row.ancestorOf(row);
-    }
-
-    @Override
-    public Object field(int i)
-    {
-        return row.field(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return row.hKey();
-    }
-
-    @Override
-    public ManagedRow managedRow()
-    {
-        return row.managedRow();
-    }
-
     // Cursor interface
 
     @Override
@@ -85,7 +46,10 @@ class PersistitIndexCursor implements IndexCursor
     public boolean next()
     {
         try {
-            if (exchange != null && exchange.traverse(Key.GT, true)) {
+            if (exchange != null &&
+                (indexFilter == null
+                 ? exchange.traverse(Key.GT, true)
+                 : exchange.traverse(Key.GT, indexFilter, 0))) {
                 unsharedRow().managedRow().copyFromExchange(exchange);
             } else {
                 close();
@@ -102,8 +66,24 @@ class PersistitIndexCursor implements IndexCursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
+            indexFilter = null;
             row.set(null);
         }
+    }
+
+    @Override
+    public ManagedRow currentRow()
+    {
+        return row.managedRow();
+    }
+
+    // IndexCursor interface
+
+    @Override
+    public void open(IndexKeyRange keyRange)
+    {
+        open();
+        indexFilter = PersistitIndexFilter.computeIndexFilter(exchange.getKey(), indexDef(), keyRange);
     }
 
     // For use by this package
@@ -126,10 +106,16 @@ class PersistitIndexCursor implements IndexCursor
         return row;
     }
 
+    private IndexDef indexDef()
+    {
+        return (IndexDef) indexRowType.index().indexDef();
+    }
+
     // Object state
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
     private final RowHolder<PersistitIndexRow> row;
     private Exchange exchange;
+    private KeyFilter indexFilter;
 }

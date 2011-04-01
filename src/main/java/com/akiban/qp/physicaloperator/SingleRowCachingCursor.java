@@ -16,10 +16,10 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.*;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
-import com.akiban.qp.rowtype.RowType;
 
 public abstract class SingleRowCachingCursor extends ExecutionBase implements IndexCursor, GroupCursor
 {
@@ -29,38 +29,6 @@ public abstract class SingleRowCachingCursor extends ExecutionBase implements In
     public String toString()
     {
         return row == null ? null : row.toString();
-    }
-
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return row.rowType();
-    }
-
-    @Override
-    public boolean ancestorOf(Row row)
-    {
-        return this.row.ancestorOf(row);
-    }
-
-    @Override
-    public Object field(int i)
-    {
-        return row.field(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return row.hKey();
-    }
-
-    @Override
-    public ManagedRow managedRow()
-    {
-        return row.managedRow();
     }
 
     // Cursor interface
@@ -78,15 +46,21 @@ public abstract class SingleRowCachingCursor extends ExecutionBase implements In
     }
 
     @Override
+    public void open(IndexKeyRange keyRange)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public abstract boolean next();
 
     @Override
     public abstract void close();
 
     @Override
-    public final Row currentRow()
+    public final ManagedRow currentRow()
     {
-        return row;
+        return row.managedRow();
     }
 
     // SingleRowCachingCursor interface

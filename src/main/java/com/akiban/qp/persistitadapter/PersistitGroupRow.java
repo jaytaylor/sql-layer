@@ -26,7 +26,8 @@ import com.persistit.Exchange;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
-class PersistitGroupRow extends RowBase
+// public for access by PhysicalOperatorIT
+public class PersistitGroupRow extends RowBase
 {
     // Object interface
 
@@ -50,9 +51,27 @@ class PersistitGroupRow extends RowBase
         return row.get(i);
     }
 
+    public PersistitHKey hKey()
+    {
+        return currentHKey;
+    }
+
+    // PersistitGroupRow interface
+
+    static PersistitGroupRow newPersistitGroupRow(PersistitAdapter adapter)
+    {
+        return new PersistitGroupRow(adapter);
+    }
+
+    // For use by PhysicalOperatorIT
+    public static PersistitGroupRow newPersistitGroupRow(PersistitAdapter adapter, RowData rowData)
+    {
+        return new PersistitGroupRow(adapter, rowData);
+    }
+
     // For use by this package
 
-    public void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
+    void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
     {
         this.row = new LegacyRowWrapper((RowDef) null);
         RuntimeException exception;
@@ -80,17 +99,9 @@ class PersistitGroupRow extends RowBase
         } while (exception != null);
     }
 
-    public PersistitHKey hKey()
+    RowData rowData()
     {
-        return currentHKey;
-    }
-
-
-    PersistitGroupRow(PersistitAdapter adapter)
-    {
-        this.adapter = adapter;
-        this.rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
-        this.typedHKeys = new PersistitHKey[adapter.schema().maxTypeId() + 1];
+        return rowData;
     }
 
     // For use by this class
@@ -104,6 +115,18 @@ class PersistitGroupRow extends RowBase
             typedHKeys[rowDef.getOrdinal()] = currentHKey;
         }
         return currentHKey;
+    }
+
+    private PersistitGroupRow(PersistitAdapter adapter)
+    {
+        this(adapter, new RowData(new byte[INITIAL_ROW_SIZE]));
+    }
+
+    private PersistitGroupRow(PersistitAdapter adapter, RowData rowData)
+    {
+        this.adapter = adapter;
+        this.rowData = rowData;
+        this.typedHKeys = new PersistitHKey[adapter.schema().maxTypeId() + 1];
     }
 
     // Class state

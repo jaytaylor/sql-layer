@@ -60,7 +60,7 @@ public class PersistitAdapter extends BTreeAdapter
     public PersistitGroupRow newGroupRow()
     {
         // TODO: Pool rows?
-        return new PersistitGroupRow(this);
+        return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException

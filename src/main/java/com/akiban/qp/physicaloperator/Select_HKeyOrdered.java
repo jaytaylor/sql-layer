@@ -67,21 +67,22 @@ public class Select_HKeyOrdered implements PhysicalOperator
             outputRow(null);
             boolean moreInput = input.next();
             while (outputRow() == null && moreInput) {
-                if (input.rowType() == predicateRowType) {
+                ManagedRow inputRow = input.currentRow();
+                if (inputRow.rowType() == predicateRowType) {
                     // New row of predicateRowType
-                    if ((Boolean) predicate.evaluate(input)) {
-                        selectedRow.set(input.managedRow());
+                    if ((Boolean) predicate.evaluate(inputRow)) {
+                        selectedRow.set(inputRow);
                         outputRow(selectedRow);
                     }
-                } else if (predicateRowType.ancestorOf(input.rowType())) {
+                } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                     // Row's type is a descendent of predicateRowType.
-                    if (selectedRow.isNotNull() && selectedRow.ancestorOf(input)) {
-                        outputRow(input.managedRow());
+                    if (selectedRow.isNotNull() && selectedRow.ancestorOf(inputRow)) {
+                        outputRow(inputRow);
                     } else {
                         selectedRow.set(null);
                     }
                 } else {
-                    outputRow(input.currentRow());
+                    outputRow(inputRow);
                 }
                 if (outputRow() == null) {
                     moreInput = input.next();

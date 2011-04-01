@@ -39,11 +39,11 @@ public class Schema
             setRowType(ordinal, userTableRowType);
             typeIdCounter = max(typeIdCounter, ordinal);
             // Indexes
+            typeIdCounter++;
             for (Index index : userTable.getIndexesIncludingInternal()) {
-                int typeId = ++typeIdCounter;
-                IndexRowType indexRowType = new IndexRowType(this, index, typeId);
+                IndexRowType indexRowType = new IndexRowType(this, index);
                 userTableRowType.addIndexRowType(indexRowType);
-                setRowType(typeId, indexRowType);
+                setRowType(indexRowType.typeId(), indexRowType);
             }
         }
         typeIdCounter++;
@@ -69,6 +69,13 @@ public class Schema
     public int maxTypeId()
     {
         return rowTypes.size() - 1;
+    }
+
+    // For use by this package
+
+    synchronized int nextTypeId()
+    {
+        return typeIdCounter++;
     }
 
     // For use by this class

@@ -20,15 +20,22 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.Cursor;
+import com.akiban.qp.IndexCursor;
 import com.akiban.qp.expression.*;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.*;
+import com.akiban.qp.row.IndexBound;
+import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.store.PersistitStore;
 import org.junit.Before;
@@ -69,6 +76,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
         customerNameIndexRowType = schema.indexRowType(index(customer, "name"));
+        orderSalesmanIndexRowType = schema.indexRowType(index(order, "salesman"));
         coi = groupTable(customer);
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
@@ -107,7 +115,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)
         };
-        compare(expected, groupScan);
+        compare(expected, groupScan, null);
     }
 
     @Test
@@ -123,7 +131,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, select);
+        compare(expected, select, null);
     }
 
     @Test
@@ -144,7 +152,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(flattenType, 2L, "abc", 22L, 2L, "jack"),
                                    row(itemRowType, 221L, 22L),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, flatten);
+        compare(expected, flatten, null);
     }
 
     @Test
@@ -162,7 +170,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
                                    row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
-        compare(expected, flattenCOI);
+        compare(expected, flattenCOI, null);
     }
 
     @Test
@@ -173,7 +181,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2}",
                                          "{1,(long)1}"};
-        compareRenderedHKeys(expected, indexScan);
+        compareRenderedHKeys(expected, indexScan, null);
     }
 
     @Test
@@ -186,7 +194,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                          "{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}",
                                          "{1,(long)2,2,(long)21}"};
-        compareRenderedHKeys(expected, indexScan);
+        compareRenderedHKeys(expected, indexScan, null);
     }
 
     @Test
@@ -208,7 +216,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, indexLookup);
+        compare(expected, indexLookup, null);
     }
 
     @Test
@@ -234,11 +242,11 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compare(expected, indexLookup);
+        compare(expected, indexLookup, null);
     }
 
     @Test
-    public void testIndexLookupWithTwoAncestor()
+    public void testIndexLookupWithTwoAncestors()
     {
         IndexScan_Default indexScan = new IndexScan_Default(index(item, "oid"));
         IndexLookup_Default indexLookup = new IndexLookup_Default(indexScan,
@@ -268,7 +276,37 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(customerRowType, 2L, "abc"),
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 222L, 22L)};
-        compare(expected, indexLookup);
+        compare(expected, indexLookup, null);
+    }
+
+    @Test
+    public void testRestrictedIndexScan()
+    {
+        IndexScan_Default indexScan = new IndexScan_Default(index(order, "salesman"));
+        IndexCursor cursor = (IndexCursor) indexScan.cursor(adapter);
+        IndexBound lo = new IndexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "jack"));
+        IndexBound hi = new IndexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "tom"));
+        IndexKeyRange range = new IndexKeyRange(lo, true, hi, false);
+        // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
+        String[] expected = new String[]{"{1,(long)2,2,(long)22}",
+                                         "{1,(long)1,2,(long)11}"};
+        compareRenderedHKeys(expected, indexScan, range);
+    }
+
+    @Test
+    public void testRestrictedIndexLookup()
+    {
+        IndexScan_Default indexScan = new IndexScan_Default(index(order, "salesman"));
+        IndexBound tom = new IndexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "tom"));
+        IndexKeyRange matchTom = new IndexKeyRange(tom, true, tom, true);
+        IndexLookup_Default indexLookup = new IndexLookup_Default(indexScan,
+                                                                  coi,
+                                                                  Collections.<RowType>emptyList());
+        Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
+                                   row(itemRowType, 211L, 21L),
+                                   row(itemRowType, 212L, 21L)};
+        compare(expected, indexLookup, matchTom);
+
     }
 
     private GroupTable groupTable(int userTableId)
@@ -304,12 +342,28 @@ public class PhysicalOperatorIT extends ApiTestBase
         return new TestRow(rowType, fields);
     }
 
-    private void compare(Row[] expected, PhysicalOperator plan)
+    private Row row(int tableId, Object ... values /* alternating field position and value */)
+    {
+        NiceRow niceRow = new NiceRow(order);
+        int i = 0;
+        while (i < values.length) {
+            int position = (Integer) values[i++];
+            Object value = values[i++];
+            niceRow.put(position, value);
+        }
+        return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
+    }
+
+    private void compare(Row[] expected, PhysicalOperator plan, IndexKeyRange range)
     {
         Cursor cursor = plan.cursor(adapter);
         int count;
         try {
-            cursor.open();
+            if (range == null) {
+                cursor.open();
+            } else {
+                ((IndexCursor)cursor).open(range);
+            }
             count = 0;
             List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
             while (cursor.next()) {
@@ -324,12 +378,16 @@ public class PhysicalOperatorIT extends ApiTestBase
         assertEquals(expected.length, count);
     }
 
-    private void compareRenderedHKeys(String[] expected, PhysicalOperator plan)
+    private void compareRenderedHKeys(String[] expected, PhysicalOperator plan, IndexKeyRange range)
     {
         Cursor cursor = plan.cursor(adapter);
         int count;
         try {
-            cursor.open();
+            if (range == null) {
+                cursor.open();
+            } else {
+                ((IndexCursor)cursor).open(range);
+            }
             count = 0;
             List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
             while (cursor.next()) {
@@ -361,7 +419,8 @@ public class PhysicalOperatorIT extends ApiTestBase
     private RowType customerRowType;
     private RowType orderRowType;
     private RowType itemRowType;
-    private RowType customerNameIndexRowType;
+    private IndexRowType customerNameIndexRowType;
+    private IndexRowType orderSalesmanIndexRowType;
     private GroupTable coi;
     private Schema schema;
     private NewRow[] db;

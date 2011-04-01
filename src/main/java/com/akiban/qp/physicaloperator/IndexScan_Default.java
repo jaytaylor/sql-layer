@@ -18,6 +18,8 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.BTreeAdapter;
 import com.akiban.qp.Cursor;
+import com.akiban.qp.IndexCursor;
+import com.akiban.qp.expression.IndexKeyRange;
 
 public class IndexScan_Default implements PhysicalOperator
 {
@@ -53,6 +55,12 @@ public class IndexScan_Default implements PhysicalOperator
         }
 
         @Override
+        public void open(IndexKeyRange keyRange)
+        {
+            cursor.open(keyRange);
+        }
+
+        @Override
         public boolean next()
         {
             boolean next = cursor.next();
@@ -81,6 +89,6 @@ public class IndexScan_Default implements PhysicalOperator
 
         // Object state
 
-        private final Cursor cursor;
+        private final IndexCursor cursor;
     }
 }

@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.*;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -74,6 +75,13 @@ public class IndexLookup_Default implements PhysicalOperator
         }
 
         @Override
+        public void open(IndexKeyRange keyRange)
+        {
+            indexInput.open(keyRange);
+            advanceIndex();
+        }
+
+        @Override
         public boolean next()
         {
             ManagedRow groupRow = null;
@@ -81,7 +89,7 @@ public class IndexLookup_Default implements PhysicalOperator
                 groupRow = pending.take();
                 if (groupRow == null) {
                     if (groupCursor.next()) {
-                        groupRow = groupCursor.managedRow();
+                        groupRow = groupCursor.currentRow();
                         if (groupRow != null && !indexRow.ancestorOf(groupRow)) {
                             groupRow = null;
                         }
@@ -107,7 +115,7 @@ public class IndexLookup_Default implements PhysicalOperator
         {
             groupCursor.close();
             if (indexInput.next()) {
-                indexRow.set(indexInput.managedRow());
+                indexRow.set(indexInput.currentRow());
                 groupCursor.open(indexRow.hKey());
                 findAncestors();
             } else {
@@ -150,7 +158,7 @@ public class IndexLookup_Default implements PhysicalOperator
             try {
                 ancestorCursor.open(indexRow.hKey());
                 if (ancestorCursor.next()) {
-                    row = ancestorCursor.managedRow();
+                    row = ancestorCursor.currentRow();
                 }
             } finally {
                 ancestorCursor.close();
