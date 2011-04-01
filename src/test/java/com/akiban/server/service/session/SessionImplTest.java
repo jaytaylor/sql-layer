@@ -76,7 +76,7 @@ public final class SessionImplTest {
 
         assertEquals("current value", 3, session.remove(key).intValue());
         Integer last = session.get(key);
-        assertEquals("old value", -1, old.intValue());
+        assertEquals("old value", -1, last.intValue());
     }
 
     @Test
