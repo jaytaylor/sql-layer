@@ -53,9 +53,9 @@ public final class HookableDMLFunctions implements DMLFunctions {
     private final DMLFunctions delegate;
     private final DStarLFunctionsHook hook;
 
-    public HookableDMLFunctions(DMLFunctions delegate, DStarLFunctionsHook... hooks) {
+    public HookableDMLFunctions(DMLFunctions delegate, List<DStarLFunctionsHook> hooks) {
         this.delegate = delegate;
-        this.hook = hooks.length == 1 ? hooks[0] : new CompositeHook(hooks);
+        this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
     }
 
     @Override

@@ -45,6 +45,7 @@ import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.SchemaId;
 
 import java.util.Collection;
+import java.util.List;
 
 import static com.akiban.server.service.d_l.HookUtil.launder;
 
@@ -53,9 +54,9 @@ public final class HookableDDLFunctions implements DDLFunctions {
     private final DDLFunctions delegate;
     private final DStarLFunctionsHook hook;
 
-    public HookableDDLFunctions(DDLFunctions delegate, DStarLFunctionsHook... hooks) {
+    public HookableDDLFunctions(DDLFunctions delegate, List<DStarLFunctionsHook> hooks) {
         this.delegate = delegate;
-        this.hook = hooks.length == 1 ? hooks[0] : new CompositeHook(hooks);
+        this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
     }
 
     @Override

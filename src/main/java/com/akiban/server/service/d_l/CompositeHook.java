@@ -19,7 +19,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.util.MultipleCauseException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,10 +28,8 @@ public final class CompositeHook implements DStarLFunctionsHook {
 
     private final List<DStarLFunctionsHook> hooks;
 
-    public CompositeHook(DStarLFunctionsHook... hooks) {
-        this.hooks = Collections.unmodifiableList(
-                new ArrayList<DStarLFunctionsHook>(Arrays.asList(hooks))
-        );
+    public CompositeHook(List<DStarLFunctionsHook> hooks) {
+        this.hooks = Collections.unmodifiableList(new ArrayList<DStarLFunctionsHook>(hooks));
     }
 
     @Override
