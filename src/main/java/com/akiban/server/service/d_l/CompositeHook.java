@@ -74,6 +74,7 @@ public final class CompositeHook implements DStarLFunctionsHook {
                 eToThrow = forException(eToThrow, e);
             }
         }
+        session.remove(MODULE, COUNT);
         if (eToThrow != null) {
             throw eToThrow;
         }
