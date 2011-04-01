@@ -76,7 +76,7 @@ import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
+class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ColumnSelector() {
         @Override
@@ -85,19 +85,19 @@ class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
         }
     };
 
-    private static final Class<?> MODULE_NAME = DMLFunctionsImpl.class;
+    private static final Class<?> MODULE_NAME = BasicDMLFunctions.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final String OPEN_CURSORS_MAP = "OPEN_CURSORS_MAP";
 
-    private final static Logger logger = LoggerFactory.getLogger(DMLFunctionsImpl.class);
+    private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;
     private final Scanner scanner;
 
-    DMLFunctionsImpl(DDLFunctions ddlFunctions) {
+    BasicDMLFunctions(DDLFunctions ddlFunctions) {
         this(ddlFunctions, NONE);
     }
 
-    DMLFunctionsImpl(DDLFunctions ddlFunctions, ScanHooks scanHooks) {
+    BasicDMLFunctions(DDLFunctions ddlFunctions, ScanHooks scanHooks) {
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner(scanHooks);
     }

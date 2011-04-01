@@ -17,9 +17,9 @@ package com.akiban.server.service.d_l;
 
 import com.akiban.server.api.DDLFunctions;
 
-public final class HookableDMLFI extends DMLFunctionsImpl {
+public final class HookableDMLFI extends BasicDMLFunctions {
 
-    public interface ScanHooks extends DMLFunctionsImpl.ScanHooks {
+    public interface ScanHooks extends BasicDMLFunctions.ScanHooks {
         // not adding anything, just promoting visibility
     }
 

@@ -40,16 +40,16 @@ import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.store.RowCollector;
 
-public final class DMLFunctionsImplTest extends AkServerTestCase {
+public final class BasicDMLFunctionsTest extends AkServerTestCase {
     
-    private static class DummyScanner extends DMLFunctionsImpl.Scanner {
+    private static class DummyScanner extends BasicDMLFunctions.Scanner {
         @Override
         protected RowData getRowData(byte[] bytes, int offset, int length) {
             return null;
         }
     }
     
-    private final DMLFunctionsImpl.Scanner scanner = new DummyScanner();
+    private final BasicDMLFunctions.Scanner scanner = new DummyScanner();
     
     private static class StringRowCollector implements RowCollector {
         private final List<String> strings;
