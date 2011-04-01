@@ -63,8 +63,8 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             if (ddlFunctions == null) {
                 throw new ServiceNotStartedException();
             }
-            ddlFunctions = new DDLFunctionsImpl();
-            dmlFunctions = new DMLFunctionsImpl(ddlFunctions);
+            ddlFunctions = null;
+            dmlFunctions = null;
         }
     }
 
