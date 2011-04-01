@@ -18,6 +18,8 @@ package com.akiban.server.api;
 import static org.junit.Assert.assertEquals;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.server.service.d_l.DDLFunctionsImpl;
+import com.akiban.server.service.d_l.DMLFunctionsImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

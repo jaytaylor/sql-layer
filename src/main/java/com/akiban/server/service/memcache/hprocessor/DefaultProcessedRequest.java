@@ -21,7 +21,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DDLFunctionsImpl;
+import com.akiban.server.service.d_l.DDLFunctionsImpl;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;

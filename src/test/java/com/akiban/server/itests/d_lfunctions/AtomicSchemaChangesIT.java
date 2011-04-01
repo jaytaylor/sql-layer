@@ -18,7 +18,7 @@ package com.akiban.server.itests.d_lfunctions;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.api.DDLFunctionsImpl;
+import com.akiban.server.service.d_l.DDLFunctionsImpl;
 import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
