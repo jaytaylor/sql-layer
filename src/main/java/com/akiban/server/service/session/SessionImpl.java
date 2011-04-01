@@ -18,29 +18,60 @@ package com.akiban.server.service.session;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.akiban.util.ArgumentValidation;
-
 public final class SessionImpl implements Session
 {
-
-    private final Map<Key,Object> map = new HashMap<Key,Object>();
+    private static final Object NULL_OBJ = new Object();
+    private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T get(Class<?> module, Object key) {
-        return (T) map.get(new Key(module, key));
+    public <T> T get(Session.Key<T> key) {
+        return launder(key, map.get(key));
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T put(Class<?> module, Object key, T item) {
-        return (T) map.put(new Key(module, key), item);
+    public <T> T put(Session.Key<T> key, T item) {
+        return launder(key, map.put(key, item == null ? NULL_OBJ : item));
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T remove(Class<?> module, Object key) {
-        return (T) map.remove(new Key(module, key));
+    public <T> T remove(Key<T> key) {
+        return launder(key, map.remove(key));
+    }
+
+    @Override
+    public <K,V> V get(MapKey<K,V> mapKey, K key) {
+        Map<K,V> map = get( mapKey.asKey() );
+        if (map == null) {
+            return mapKey.getDefaultMapValue();
+        }
+        return map.get(key);
+    }
+
+    @Override
+    public <K,V> V put(MapKey<K,V> mapKey, K key, V value) {
+        Map<K,V> map = get( mapKey.asKey() );
+        if (map == null) {
+            map = new HashMap<K, V>();
+            put(mapKey.asKey(), map);
+        }
+        return map.put(key, value);
+    }
+
+    @Override
+    public <K,V> V remove(MapKey<K,V> mapKey, K key) {
+        Map<K,V> map = get( mapKey.asKey() );
+        if (map == null) {
+            return null;
+        }
+        return map.remove(key);
+    }
+
+    private static <T> T launder(Key<T> key, Object o) {
+        @SuppressWarnings("unchecked") T t = (T) o;
+        if (t == null) {
+            return key.getDefaultValue();
+        }
+        return t == NULL_OBJ ? null : t;
     }
 
     @Override
@@ -50,40 +81,5 @@ public final class SessionImpl implements Session
         // Later, we'll close any "resource" that is added to the session.
         //
         map.clear();
-    }
-    
-    private static class Key
-    {
-        private final Class<?> module;
-        private final Object key;
-
-        Key(Class<?> module, Object key) {
-            ArgumentValidation.notNull("module", module);
-            this.module = module;
-            this.key = key;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Key key1 = (Key) o;
-
-            return !(key != null ? !key.equals(key1.key) : key1.key != null) && module.equals(key1.module);
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = module.hashCode();
-            result = 31 * result + (key != null ? key.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s:%s", module.getSimpleName(), key);
-        }
     }
 }

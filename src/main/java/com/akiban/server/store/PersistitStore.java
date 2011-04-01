@@ -55,6 +55,7 @@ import com.persistit.exception.TransactionFailedException;
 
 public class PersistitStore implements Store {
 
+    private static final Session.Key<Map<Integer, List<RowCollector>>> COLLECTORS = Session.Key.of("collectors");
     final static int INITIAL_BUFFER_SIZE = 1024;
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class
@@ -1003,11 +1004,10 @@ public class PersistitStore implements Store {
 
     private List<RowCollector> collectorsForTableId(final Session session,
             final int tableId) {
-        Map<Integer, List<RowCollector>> map = session.get(PersistitStore.class,
-                "collectors");
+        Map<Integer, List<RowCollector>> map = session.get(COLLECTORS);
         if (map == null) {
             map = new HashMap<Integer, List<RowCollector>>();
-            session.put(PersistitStore.class, "collectors", map);
+            session.put(COLLECTORS, map);
         }
         List<RowCollector> list = map.get(tableId);
         if (list == null) {

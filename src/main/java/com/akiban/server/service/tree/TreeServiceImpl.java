@@ -49,6 +49,8 @@ import com.persistit.exception.PersistitException;
 public class TreeServiceImpl implements TreeService, Service<TreeService>,
         JmxManageable {
 
+    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.of("exchangemap");
+
     private final static int MEGA = 1024 * 1024;
 
     private static final Logger LOG = LoggerFactory
@@ -399,12 +401,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     private List<Exchange> exchangeList(final Session session, final Tree tree) {
-        Map<Tree, List<Exchange>> map = session.get(TreeServiceImpl.class,
-                "exchangemap");
+        Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
         List<Exchange> list;
         if (map == null) {
             map = new HashMap<Tree, List<Exchange>>();
-            session.put(TreeServiceImpl.class, "exchangemap", map);
+            session.put(EXCHANGE_MAP, map);
             list = new ArrayList<Exchange>();
             map.put(tree, list);
         } else {

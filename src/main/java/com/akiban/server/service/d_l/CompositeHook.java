@@ -23,8 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 public final class CompositeHook implements DStarLFunctionsHook {
-    private final Class<CompositeHook> MODULE = CompositeHook.class;
-    private final Object COUNT = "SUCCESS_COUNT";
+    private final Session.Key<Integer> COUNT = Session.Key.of("SUCCESS_COUNT");
 
     private final List<DStarLFunctionsHook> hooks;
 
@@ -34,7 +33,7 @@ public final class CompositeHook implements DStarLFunctionsHook {
 
     @Override
     public void hookFunctionIn(Session session, DDLFunction function) {
-        assert session.get(MODULE, COUNT) == null : session.get(MODULE, COUNT);
+        assert session.get(COUNT) == null : session.get(COUNT);
 
         int successes = 0;
         try {
@@ -43,7 +42,7 @@ public final class CompositeHook implements DStarLFunctionsHook {
                 ++successes;
             }
         } catch (RuntimeException e) {
-            Integer old = session.put(MODULE, COUNT, successes);
+            Integer old = session.put(COUNT, successes);
             assert old == null : old;
             throw e;
         }
@@ -74,14 +73,14 @@ public final class CompositeHook implements DStarLFunctionsHook {
                 eToThrow = forException(eToThrow, e);
             }
         }
-        session.remove(MODULE, COUNT);
+        session.remove(COUNT);
         if (eToThrow != null) {
             throw eToThrow;
         }
     }
 
     private List<DStarLFunctionsHook> hooks(Session session) {
-        Integer previousSuccesses = session.get(MODULE, COUNT);
+        Integer previousSuccesses = session.get(COUNT);
         return previousSuccesses == null ? this.hooks : hooks.subList(0, previousSuccesses + 1);
     }
 

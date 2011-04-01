@@ -85,9 +85,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
     };
 
-    private static final Class<?> MODULE_NAME = BasicDMLFunctions.class;
     private static final AtomicLong cursorsCount = new AtomicLong();
-    private static final String OPEN_CURSORS_MAP = "OPEN_CURSORS_MAP";
+    private static final Session.MapKey<CursorId,ScanData> CURSORS_TO_SCANDATA = Session.MapKey.ofMap("CURSORS_TO_SCANDATA");
+    private static final Session.Key<Map<CursorId,Cursor>> OPEN_CURSORS_MAP = Session.Key.of("OPEN_CURSORS_MAP");
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;
@@ -181,13 +181,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         final RowCollector rc = getRowCollector(session, request);
         final CursorId cursorId = newUniqueCursor(rc.getTableId());
         final Cursor cursor = new Cursor(rc, request.getScanLimit());
-        Object old = session.put(MODULE_NAME, cursorId, new ScanData(request, cursor));
+        Object old = session.put(CURSORS_TO_SCANDATA, cursorId, new ScanData(request, cursor));
         assert old == null : old;
 
-        Map<CursorId,Cursor> cursors = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
+        Map<CursorId,Cursor> cursors = session.get(OPEN_CURSORS_MAP);
         if (cursors == null) {
             cursors = new HashMap<CursorId,Cursor>();
-            session.put(MODULE_NAME, OPEN_CURSORS_MAP, cursors);
+            session.put(OPEN_CURSORS_MAP, cursors);
         }
         Cursor oldCursor = cursors.put(cursorId, cursor);
         assert oldCursor == null : String.format("%s -> %s conflicted with %s", cursor, cursors, oldCursor);
@@ -275,7 +275,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public CursorState getCursorState(Session session, CursorId cursorId) {
-        final ScanData extraData = session.get(MODULE_NAME, cursorId);
+        final ScanData extraData = session.get(CURSORS_TO_SCANDATA, cursorId);
         if (extraData == null || extraData.getCursor() == null) {
             return CursorState.UNKNOWN_CURSOR;
         }
@@ -296,7 +296,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
 
-        final Cursor cursor = session.<ScanData> get(MODULE_NAME, cursorId).getCursor();
+        final Cursor cursor = session.get(CURSORS_TO_SCANDATA, cursorId).getCursor();
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
@@ -371,7 +371,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                GenericInvalidOperationException
     {
         logger.trace("scanning from {}", cursorId);
-        final ScanData scanData = session.get(MODULE_NAME, cursorId);
+        final ScanData scanData = session.get(CURSORS_TO_SCANDATA, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
         final PooledConverter converter = getPooledConverter(output, scanColumns);
@@ -526,11 +526,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("closing cursor {}", cursorId);
         ArgumentValidation.notNull("cursor ID", cursorId);
-        final ScanData scanData = session.remove(MODULE_NAME, cursorId);
+        final ScanData scanData = session.remove(CURSORS_TO_SCANDATA, cursorId);
         if (scanData == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        Map<CursorId,Cursor> cursors = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
+        Map<CursorId,Cursor> cursors = session.get(OPEN_CURSORS_MAP);
         // cursors should not be null, since the cursor isn't null and creating
         // it guarantees a Set<Cursor>
         Cursor removedCursor = cursors.remove(cursorId);
@@ -539,7 +539,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public Set<CursorId> getCursors(Session session) {
-        Map<CursorId,Cursor> cursors = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
+        Map<CursorId,Cursor> cursors = session.get(OPEN_CURSORS_MAP);
         if (cursors == null) {
             return Collections.emptySet();
         }
@@ -662,7 +662,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
-        Map<CursorId,Cursor> cursorsMap = session.get(MODULE_NAME, OPEN_CURSORS_MAP);
+        Map<CursorId,Cursor> cursorsMap = session.get(OPEN_CURSORS_MAP);
         if (cursorsMap == null) {
             return;
         }
