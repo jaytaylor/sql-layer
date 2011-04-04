@@ -45,7 +45,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@org.junit.Ignore
 public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
@@ -307,8 +306,14 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         int rowCount;
         long dropTime;
         float factor = 1.5f; // after we write N rows, we'll write an additional (factor-1)*N rows as buffer
+        int parentId = createTable(SCHEMA, TABLE+"parent", "id int key");
+        writeRows(
+                createNewRow(parentId, 1)
+        );
+        final String[] childTableDDL = {"id int key", "pid int", "name varchar(32)", "key(name)",
+                "CONSTRAINT __akiban_p FOREIGN KEY __akiban_p(pid) REFERENCES " +TABLE+"parent(id)"};
         do {
-            int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
+            int tableId = createTable(SCHEMA, TABLE, childTableDDL);
             rowCount = 1;
             final long writeStart = System.currentTimeMillis();
             while (System.currentTimeMillis() - writeStart < msForDropping) {
@@ -328,7 +333,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             factor += 0.2;
         } while(dropTime < msForDropping);
 
-        int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
+        int tableId = createTable(SCHEMA, TABLE, childTableDDL);
         for(int i = 1; i < rowCount ; ++i) {
             writeRows(
                     createNewRow(tableId, i, Integer.toString(i))
