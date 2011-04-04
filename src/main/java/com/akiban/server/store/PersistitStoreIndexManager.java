@@ -30,18 +30,15 @@ import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatistics.Histogram;
 import com.akiban.server.TableStatistics.HistogramSample;
-import com.akiban.server.TableStatus;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStore.TableStatusDelta;
+import com.akiban.server.service.tree.TreeService;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.KeyHistogram;
 import com.persistit.KeyHistogram.KeyCount;
 import com.persistit.Persistit;
-import com.persistit.TimestampAllocator.Checkpoint;
 import com.persistit.Transaction;
-import com.persistit.Transaction.DefaultCommitListener;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
@@ -77,8 +74,13 @@ public class PersistitStoreIndexManager implements IndexManager {
 
     private final PersistitStore store;
 
-    public PersistitStoreIndexManager(final PersistitStore store) {
+    private final TreeService treeService;
+
+    public PersistitStoreIndexManager(final PersistitStore store,
+            final TreeService treeService) {
+
         this.store = store;
+        this.treeService = treeService;
     }
 
     /*
@@ -128,7 +130,6 @@ public class PersistitStoreIndexManager implements IndexManager {
         final Exchange analysisEx = store.getExchange(session,
                 indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
-        final TableStatusDelta tsd = store.tableStatusDelta(session);
 
         int retries = PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
 
@@ -143,7 +144,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 //
                 try {
                     store.constructHKey(session, analysisEx,
-                            indexAnalysisRowDef, rowData, false, tsd);
+                            indexAnalysisRowDef, rowData, false);
                     analysisEx.getKey().cut();
                     analysisEx.remove(Key.GT);
                 } catch (PersistitException e) {
@@ -151,18 +152,8 @@ public class PersistitStoreIndexManager implements IndexManager {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-
-                final TableStatus ts = indexAnalysisRowDef.getTableStatus();
-                transaction.commit(new DefaultCommitListener() {
-
-                    @Override
-                    public void committed() {
-                        final Checkpoint cp = store.getDb()
-                                .getCurrentCheckpoint();
-                        final long t = transaction.getCommitTimestamp();
-                        ts.zeroRowCount(cp, t);
-                    }
-                }, store.forceToDisk);
+                treeService.getTableStatusCache().zeroRowCount(
+                        indexAnalysisRowDef.getRowDefId());
                 break;
 
             } catch (RollbackException re) {
@@ -225,7 +216,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 - STARTING_TREE_DEPTH);
         while (treeLevel >= 0) {
             if (treeLevel == 0 && keyFilter != null) {
-                // At leave leaf level of an htable - here we limit the
+                // At leaf level of an htable - here we limit the
                 // keyFilter depth to count only keys that match exactly.
                 keyFilter = keyFilter.limit(keyFilter.getMinimumDepth(),
                         keyFilter.getMinimumDepth());
@@ -261,10 +252,6 @@ public class PersistitStoreIndexManager implements IndexManager {
         final RowData indexRowData = new RowData(new byte[ROW_DATA_LENGTH]);
         final Object[] indexValues = new Object[indexDef.getRowDef()
                 .getFieldCount()];
-        final TableStatusDelta tsd = store.tableStatusDelta(session);
-        if (!transaction.isActive()) {
-            tsd.reset();
-        }
 
         try {
 
@@ -281,7 +268,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                     //
                     try {
                         store.constructHKey(session, analysisEx,
-                                indexAnalysisRowDef, rowData, false, tsd);
+                                indexAnalysisRowDef, rowData, false);
                         analysisEx.getKey().cut();
                         analysisEx.remove(Key.GT);
                     } catch (PersistitException e) {
@@ -365,21 +352,10 @@ public class PersistitStoreIndexManager implements IndexManager {
                     } catch (InvalidOperationException e) {
                         throw new RollbackException(e);
                     }
+                    treeService.getTableStatusCache().incrementRowCount(
+                            indexAnalysisRowDef.getRowDefId());
 
-                    final TableStatus ts = indexAnalysisRowDef.getTableStatus();
-
-                    transaction.commit(new DefaultCommitListener() {
-
-                        @Override
-                        public void committed() {
-                            final Checkpoint cp = store.getDb()
-                                    .getCurrentCheckpoint();
-                            final long t = transaction.getCommitTimestamp();
-                            ts.zeroRowCount(cp, t);
-                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
-                            ts.updateWriteTime(cp, t);
-                        }
-                    }, store.forceToDisk);
+                    transaction.commit(store.forceToDisk);
                     break;
 
                 } catch (RollbackException re) {

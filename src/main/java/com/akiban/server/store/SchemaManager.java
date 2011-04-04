@@ -178,27 +178,4 @@ public interface SchemaManager {
      */
     int getSchemaGeneration();
 
-    /**
-     * Load TableStatus records from backing store. This happens only when
-     * creating a new AIS due to a schema change or upon system startup.
-     * 
-     * @param session
-     * @throws Exception
-     */
-    public void loadTableStatusRecords(final Session session)
-            throws PersistitException;
-
-    /**
-     * Remove any TableStatus records belonging to tables that no longer exist.
-     * This method should be called by deleteTableDefinition.
-     * 
-     * @param session
-     * @throws PersistitException
-     */
-    public void removeStaleTableStatusRecords(final Session session,
-            final long timestamp) throws Exception;
-
-    public void saveTableStatusRecords(final Session session,
-            final long timestamp) throws PersistitException;
-
 }

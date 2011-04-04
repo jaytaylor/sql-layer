@@ -24,7 +24,6 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
-import com.akiban.server.store.TableStatusService;
 
 public interface ServiceFactory
 {
@@ -41,8 +40,6 @@ public interface ServiceFactory
     Service<TreeService> treeService();
     
     Service<SchemaManager> schemaManager();
-    
-    Service<TableStatusService> tableStatusService();
     
     Service<Store> storeService();
 

@@ -47,6 +47,7 @@ import com.akiban.server.RowDefCache;
 import com.akiban.server.RowType;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -119,6 +120,8 @@ public class PersistitStore implements Store {
     RowDefCache rowDefCache;
 
     TreeService treeService;
+    
+    TableStatusCache tableStatusCache;
 
     boolean forceToDisk = false; // default to "group commit"
 
@@ -132,37 +135,12 @@ public class PersistitStore implements Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    /**
-     * Holds autoIncrement and uniqueId values assigned during an update. These
-     * get applied to TableStatus during commit.
-     * 
-     * @author peter
-     * 
-     */
-    final static class TableStatusDelta {
-        long rowCountDelta = 0;
-        long uniqueId = -1;
-        long autoIncrementValue = -1;
-
-        void reset() {
-            rowCountDelta = 0;
-            uniqueId = -1;
-            autoIncrementValue = -1;
-        }
-
-        long uniqueId(final TableStatus ts) {
-            if (uniqueId < 0) {
-                uniqueId = ts.allocateNewUniqueId();
-            }
-            return uniqueId;
-        }
-    }
-
     public synchronized void start() throws Exception {
         treeService = ServiceManagerImpl.get().getTreeService();
+        tableStatusCache = treeService.getTableStatusCache();
         schemaManager = ServiceManagerImpl.get().getSchemaManager();
-        indexManager = new PersistitStoreIndexManager(this);
-        rowDefCache = new RowDefCache();
+        indexManager = new PersistitStoreIndexManager(this, treeService);
+        rowDefCache = new RowDefCache(tableStatusCache);
         originalDisplayFilter = getDb().getManagement().getDisplayFilter();
         getDb().getManagement().setDisplayFilter(
                 new RowDataDisplayFilter(this, treeService,
@@ -216,10 +194,11 @@ public class PersistitStore implements Store {
     // For a table that does not contain its own hkey, this method uses the
     // parent join
     // columns as needed to find the hkey of the parent table.
-    void constructHKey(Session session, Exchange hEx, RowDef rowDef,
-            RowData rowData, boolean insertingRow, TableStatusDelta tsd)
+    long constructHKey(Session session, Exchange hEx, RowDef rowDef,
+            RowData rowData, boolean insertingRow)
             throws PersistitException, InvalidOperationException {
         // Initialize the hkey being constructed
+        long uniqueId = -1;
         Key hKey = hEx.getKey();
         hKey.clear();
         // Metadata for the row's table
@@ -290,10 +269,10 @@ public class PersistitStore implements Store {
                         // TableStatus.
                         TableStatus tableStatus = segmentRowDef
                                 .getTableStatus();
-                        long rowId = tsd.uniqueId(tableStatus);
-                        hKey.append(rowId);
+                        uniqueId = tableStatus.allocateNewUniqueId();
+                        hKey.append(uniqueId);
                         // Write rowId into the value part of the row also.
-                        rowData.updateNonNullLong(fieldDef, rowId);
+                        rowData.updateNonNullLong(fieldDef, uniqueId);
                     } else {
                         appendKeyField(hKey, fieldDef, rowData);
                     }
@@ -303,6 +282,7 @@ public class PersistitStore implements Store {
         if (parentPKExchange != null) {
             releaseExchange(session, parentPKExchange);
         }
+        return uniqueId;
     }
 
     void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
@@ -500,23 +480,19 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         final Transaction transaction = treeService.getTransaction(session);
         Exchange hEx = null;
-        final TableStatusDelta tsd = tableStatusDelta(session);
-        if (!transaction.isActive()) {
-            tsd.reset();
-        }
         try {
+            long uniqueId = -1;
             hEx = getExchange(session, rowDef, null);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = rowDef.getTableStatus();
 
                     //
                     // Does the heavy lifting of looking up the full hkey in
                     // parent's primary index if necessary.
                     //
-                    constructHKey(session, hEx, rowDef, rowData, true, tsd);
+                    uniqueId = constructHKey(session, hEx, rowDef, rowData, true);
                     if (hEx.isValueDefined()) {
                         complainAboutDuplicateKey("PRIMARY", hEx.getKey());
                     }
@@ -524,19 +500,20 @@ public class PersistitStore implements Store {
                     packRowData(hEx, rowDef, rowData);
                     // Store the h-row
                     hEx.store();
-                    if (ts.isAutoIncrement()) {
+                    if (rowDef.isAutoIncrement()) {
                         final long location = rowDef.fieldLocation(rowData,
                                 rowDef.getAutoIncrementField());
                         if (location != 0) {
                             final long autoIncrementValue = rowData
                                     .getIntegerValue((int) location,
                                             (int) (location >>> 32));
-                            if (autoIncrementValue > ts.getAutoIncrementValue()) {
-                                tsd.autoIncrementValue = autoIncrementValue;
-                            }
+                            tableStatusCache.updateAutoIncrementValue(rowDefId, autoIncrementValue);
                         }
                     }
-                    tsd.rowCountDelta++;
+                    tableStatusCache.incrementRowCount(rowDefId);
+                    if (uniqueId > 0) {
+                        tableStatusCache.updateUniqueIdValue(rowDefId, uniqueId);
+                    }
 
                     for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                         //
@@ -586,19 +563,8 @@ public class PersistitStore implements Store {
                         }
                     }
                     propagateDownGroup(session, hEx);
-
+                    transaction.commit(forceToDisk);
                     TX_COMMIT_TAP.in();
-                    transaction.commit(new DefaultCommitListener() {
-                        @Override
-                        public void committed() {
-                            final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
-                            final long t = transaction.getCommitTimestamp();
-                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
-                            ts.updateAutoIncrementValue(cp, t, tsd.autoIncrementValue);
-                            ts.updateUniqueIdValue(cp, t, tsd.uniqueId);
-                            ts.updateWriteTime(cp, t);
-                        }
-                    }, forceToDisk);
 
                     break;
                 } catch (RollbackException re) {
@@ -667,12 +633,7 @@ public class PersistitStore implements Store {
 
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Exchange hEx = null;
-        final TableStatusDelta tsd = tableStatusDelta(session);
         final Transaction transaction = treeService.getTransaction(session);
-        if (!transaction.isActive()) {
-            tsd.reset();
-        }
-
 
         try {
             hEx = getExchange(session, rowDef, null);
@@ -683,7 +644,7 @@ public class PersistitStore implements Store {
                 try {
                     final TableStatus ts = rowDef.getTableStatus();
 
-                    constructHKey(session, hEx, rowDef, rowData, false, tsd);
+                    constructHKey(session, hEx, rowDef, rowData, false);
                     hEx.fetch();
                     //
                     // Verify that the row exists
@@ -715,7 +676,7 @@ public class PersistitStore implements Store {
 
                     // Remove the h-row
                     hEx.remove();
-                    tsd.rowCountDelta--;
+                    tableStatusCache.decrementRowCount(rowDefId);
 
                     // Remove the indexes, including the PK index
                     for (final IndexDef indexDef : rowDef.getIndexDefs()) {
@@ -730,17 +691,7 @@ public class PersistitStore implements Store {
                     // of these rows need to be maintained.
                     propagateDownGroup(session, hEx);
 
-                    transaction.commit(new DefaultCommitListener() {
-                        @Override
-                        public void committed() {
-                            final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
-                            final long t = transaction.getCommitTimestamp();
-                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
-                            ts.updateAutoIncrementValue(cp, t, tsd.autoIncrementValue);
-                            ts.updateUniqueIdValue(cp, t, tsd.uniqueId);
-                            ts.updateDeleteTime(cp, t);
-                        }
-                    }, forceToDisk);
+                    transaction.commit(forceToDisk);
 
                     return;
                 } catch (RollbackException re) {
@@ -772,10 +723,6 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         Exchange hEx = null;
         final Transaction transaction = treeService.getTransaction(session);
-        final TableStatusDelta tsd = tableStatusDelta(session);
-        if (!transaction.isActive()) {
-            tsd.reset();
-        }
 
 
         try {
@@ -785,7 +732,7 @@ public class PersistitStore implements Store {
                 transaction.begin();
                 try {
                     final TableStatus ts = rowDef.getTableStatus();
-                    constructHKey(session, hEx, rowDef, oldRowData, false, tsd);
+                    constructHKey(session, hEx, rowDef, oldRowData, false);
                     hEx.fetch();
                     //
                     // Verify that the row exists
@@ -829,17 +776,7 @@ public class PersistitStore implements Store {
                         }
                     }
 
-                    transaction.commit(new DefaultCommitListener() {
-                        @Override
-                        public void committed() {
-                            final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
-                            final long t = transaction.getCommitTimestamp();
-                            ts.incrementRowCount(cp, t, tsd.rowCountDelta);
-                            ts.updateAutoIncrementValue(cp, t, tsd.autoIncrementValue);
-                            ts.updateUniqueIdValue(cp, t, tsd.uniqueId);
-                            ts.updateUpdateTime(cp, t);
-                        }
-                    }, forceToDisk);
+                    transaction.commit(forceToDisk);
 
                     return;
                 } catch (RollbackException re) {
@@ -889,10 +826,7 @@ public class PersistitStore implements Store {
             expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
             exchange.remove();
-            // TODO - must receive a TableStatusDelta object and mark the change there.
-            //
-            //descendentRowDef.getTableStatus().incrementRowCount(-1);
-            // ... and from the indexes
+            tableStatusCache.decrementRowCount(descendentRowDefId);
             for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
                 if (!indexDef.isHKeyEquivalent()) {
                     deleteIndex(session, indexDef, descendentRowDef,
@@ -947,29 +881,15 @@ public class PersistitStore implements Store {
                 //
                 // remove the htable tree
                 //
-                final List<TableStatus> tableStatusList = new ArrayList<TableStatus>();
                 final Exchange hEx = getExchange(session, groupRowDef, null);
                 hEx.removeAll();
                 releaseExchange(session, hEx);
                 for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
-                    final RowDef childRowDef = groupRowDef
-                            .getUserTableRowDefs()[i];
-                    final TableStatus ts1 = childRowDef.getTableStatus();
-                    tableStatusList.add(ts1);
+                    final int childRowDefId = groupRowDef
+                            .getUserTableRowDefs()[i].getRowDefId();
+                    tableStatusCache.zeroRowCount(childRowDefId);
                 }
-                final TableStatus ts0 = groupRowDef.getTableStatus();
-                tableStatusList.add(ts0);
-                transaction.commit(new DefaultCommitListener() {
-                    @Override
-                    public void committed() {
-                        final Checkpoint cp = treeService.getDb().getCurrentCheckpoint();
-                        final long t = transaction.getCommitTimestamp();
-                        for (final TableStatus ts : tableStatusList) {
-                            ts.zeroRowCount(cp, t);
-                            ts.updateDeleteTime(cp, t);
-                        }
-                    }
-                }, forceToDisk);
+                transaction.commit(forceToDisk);
                 return;
             } catch (RollbackException re) {
                 if (--retries < 0) {
@@ -1120,17 +1040,6 @@ public class PersistitStore implements Store {
                     + rowDefId);
         }
         return rowDef;
-    }
-
-    TableStatusDelta tableStatusDelta(final Session session) {
-        TableStatusDelta tsd = session.get(PersistitStore.class,
-                TABLE_STATUS_DELTA_SESSION_KEY);
-        if (tsd == null) {
-            tsd = new TableStatusDelta();
-            session.put(PersistitStore.class, TABLE_STATUS_DELTA_SESSION_KEY,
-                    tsd);
-        }
-        return tsd;
     }
 
     public RowCollector newRowCollector(Session session, ScanRowsRequest request)

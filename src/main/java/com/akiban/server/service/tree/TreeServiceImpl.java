@@ -18,7 +18,6 @@ package com.akiban.server.service.tree;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,17 +32,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.RowData;
-import com.akiban.server.TableStatusAccumulator;
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Persistit;
-import com.persistit.RecoveryManager.RecoveryListener;
 import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.Volume;
@@ -94,7 +90,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private int volumeOffsetCounter = 0;
 
-    private final Map<Integer, TableStatusAccumulator> accumulator = new HashMap<Integer, TableStatusAccumulator>();
+    private final Map<String, TreeLink> schemaLinkMap = new HashMap<String, TreeLink>();
+
+    private final Map<String, TreeLink> statusLinkMap = new HashMap<String, TreeLink>();
+
+    private TableStatusCache tableStatusCache;
 
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
@@ -131,88 +131,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
          */
         public String getVolumeString() {
             return volumeString;
-        }
-    }
-
-    private class TableStatusRecoveryListener implements RecoveryListener {
-
-        private final RecoveryListener defaultListener;
-
-        private TableStatusRecoveryListener(RecoveryListener defaultListener) {
-            this.defaultListener = defaultListener;
-        }
-
-        @Override
-        public void startRecovery(long address, long timestamp)
-                throws PersistitException {
-            defaultListener.startRecovery(address, timestamp);
-        }
-
-        @Override
-        public void startTransaction(long address, long timestamp)
-                throws PersistitException {
-            defaultListener.startTransaction(address, timestamp);
-        }
-
-        @Override
-        public void store(long address, long timestamp, Exchange exchange)
-                throws PersistitException {
-            final boolean exists = exchange.isValueDefined();
-            defaultListener.store(address, timestamp, exchange);
-            if (selectedTree(exchange)
-                    && exchange.getValue().getEncodedSize() > RowData.MINIMUM_RECORD_LENGTH
-                            - RowData.ENVELOPE_SIZE) {
-                final int tableId = AkServerUtil.getInt(exchange.getValue()
-                        .getEncodedBytes(), RowData.O_ROW_DEF_ID
-                        - RowData.LEFT_ENVELOPE_SIZE);
-                TableStatusAccumulator tsa = accumulator.get(tableId);
-                if (tsa == null) {
-                    tsa = new TableStatusAccumulator(tableId);
-                    accumulator.put(tableId, tsa);
-                }
-                if (exists) {
-                    tsa.update(timestamp,
-                            exchange.getValue().getEncodedBytes(), 0, exchange
-                                    .getValue().getEncodedSize());
-                } else {
-                    tsa.insert(timestamp,
-                            exchange.getValue().getEncodedBytes(), 0, exchange
-                                    .getValue().getEncodedSize());
-                }
-            }
-
-        }
-
-        @Override
-        public void removeKeyRange(long address, long timestamp,
-                Exchange exchange, Key from, Key to) throws PersistitException {
-            if (selectedTree(exchange)) {
-            }
-            defaultListener.removeKeyRange(address, timestamp, exchange, from, to);
-        }
-
-        @Override
-        public void removeTree(long address, long timestamp, Exchange exchange)
-                throws PersistitException {
-            defaultListener.removeTree(address, timestamp, exchange);
-        }
-
-        @Override
-        public void endTransaction(long address, long timestamp)
-                throws PersistitException {
-            defaultListener.endRecovery(address, timestamp);
-        }
-
-        @Override
-        public void endRecovery(long address, long timestamp)
-                throws PersistitException {
-            defaultListener.endRecovery(address, timestamp);
-        }
-        
-        private boolean selectedTree(final Exchange exchange) {
-            final String treeName = exchange.getTree().getName();
-            final String volumeName = exchange.getVolume().getName();
-            return TableStatusAccumulator.selected(volumeName, treeName);
         }
     }
 
@@ -279,11 +197,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         //
         Persistit db = new Persistit();
         dbRef.set(db);
+
+        tableStatusCache = new TableStatusCache(db, this);
+        tableStatusCache.register();
+
         db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
-        final RecoveryListener defaultListener = db.getRecoveryManager()
-                .getDefaultRecoveryListener();
-        db.getRecoveryManager().setRecoveryListener(
-                new TableStatusRecoveryListener(defaultListener));
         db.initialize(properties);
         buildSchemaMap();
 
@@ -342,6 +260,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             db.close();
             dbRef.set(null);
         }
+        schemaLinkMap.clear();
+        statusLinkMap.clear();
         // TODO - remove this when sure we don't need it
         --instanceCount;
         assert instanceCount == 0 : instanceCount;
@@ -361,8 +281,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     public Persistit getDb() {
         return dbRef.get();
     }
-    
-    
+
     @Override
     public void crash() throws Exception {
         Persistit db = getDb();
@@ -374,7 +293,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         --instanceCount;
         assert instanceCount == 0 : instanceCount;
     }
-
 
     @Override
     public Exchange getExchange(final Session session, final TreeLink link)
@@ -412,10 +330,15 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     public long getTimestamp(final Session session) {
         return getDb().getTransaction().getTimestamp();
     }
-    
+
     @Override
     public void checkpoint() {
         getDb().checkpoint();
+    }
+
+    @Override
+    public TableStatusCache getTableStatusCache() {
+        return tableStatusCache;
     }
 
     @Override
@@ -472,12 +395,6 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return tableId + offset;
     }
 
-    @Override
-    public Collection<TableStatusAccumulator> getAccumulators() {
-        return accumulator.values();
-    }
-    
-    
     private TreeCache populateTreeCache(final TreeLink link)
             throws PersistitException {
         TreeCache cache = (TreeCache) link.getTreeCache();
@@ -498,6 +415,14 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     private int tableIdOffset(final Volume volume) {
+        while (volume.getAppCache() == null) {
+            synchronized (this) {
+                if (volume.getAppCache() == null) {
+                    volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
+                    volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
+                }
+            }
+        }
         return ((Integer) volume.getAppCache()).intValue();
     }
 
@@ -509,6 +434,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             if (volume.getAppCache() == null) {
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
+                final Exchange exchange = new Exchange(getDb(), volume, treeName, true);
+                tableStatusCache.loadOneVolume(exchange);
             }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
@@ -556,6 +483,43 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             return substitute(vs, schemaName, null);
         }
         return null;
+    }
+
+    public TreeLink treeLink(final String schemaName, final String treeName) {
+        final Map<String, TreeLink> map = treeName == STATUS_TREE_NAME ? statusLinkMap
+                : schemaLinkMap;
+        TreeLink link;
+        synchronized (map) {
+            link = map.get(schemaName);
+            if (link == null) {
+                link = new TreeLink() {
+                    TreeCache cache;
+
+                    @Override
+                    public String getSchemaName() {
+                        return schemaName;
+                    }
+
+                    @Override
+                    public String getTreeName() {
+                        return treeName;
+                    }
+
+                    @Override
+                    public void setTreeCache(TreeCache cache) {
+                        this.cache = cache;
+                    }
+
+                    @Override
+                    public TreeCache getTreeCache() {
+                        return cache;
+                    }
+
+                };
+                map.put(schemaName, link);
+            }
+        }
+        return link;
     }
 
     void buildSchemaMap() {

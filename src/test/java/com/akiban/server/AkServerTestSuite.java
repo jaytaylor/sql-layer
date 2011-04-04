@@ -71,16 +71,4 @@ public abstract class AkServerTestSuite {
         return ais;
     }
 
-    /**
-     * This call marks all TableStatus records as flushed (not dirty) without
-     * actually trying to load save status records. This is only for unit tests
-     * that start with empty storage.
-     * 
-     * @param rowDefCache
-     */
-    static void markTableStatusClean(final RowDefCache rowDefCache) {
-        for (final RowDef rowDef : rowDefCache.getRowDefs()) {
-            rowDef.getTableStatus().flushed();
-        }
-    }
 }

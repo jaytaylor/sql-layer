@@ -30,10 +30,8 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeServiceImpl;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.store.PersistitStoreTableStatusService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
-import com.akiban.server.store.TableStatusService;
 
 public class DefaultServiceFactory implements ServiceFactory {
 
@@ -46,7 +44,6 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<TreeService> treeService;
     private Service<Store> storeService;
     private Service<SchemaManager> schemaService;
-    private Service<TableStatusService> tableStatusManager;
     private Service<MemcacheService> memcacheService;
     
     @Override
@@ -113,14 +110,6 @@ public class DefaultServiceFactory implements ServiceFactory {
             schemaService = new PersistitStoreSchemaManager();
         }
         return schemaService;
-    }
-
-    @Override
-    public Service<TableStatusService> tableStatusService() {
-        if (tableStatusManager == null) {
-            tableStatusManager = new PersistitStoreTableStatusService();
-        }
-        return tableStatusManager;
     }
     
     public Service<MemcacheService> memcacheService()

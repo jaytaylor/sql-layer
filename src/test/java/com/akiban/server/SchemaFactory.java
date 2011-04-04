@@ -44,6 +44,9 @@ public class SchemaFactory {
     }
 
     private static class FakeRowDefCache extends RowDefCache {
+        public FakeRowDefCache() {
+            super(new TableStatusCache(null, null));
+        }
         @Override
         public void fixUpOrdinals(SchemaManager schemaManager) {
             assert schemaManager == null;

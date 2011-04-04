@@ -59,12 +59,16 @@ public class RowDefCache {
 
     private final Map<String, Integer> nameMap = new TreeMap<String, Integer>();
     
-    private final Map<Integer, TableStatus> tableStatusMap = new HashMap<Integer, TableStatus>();
-
+    private TableStatusCache tableStatusCache;
+    
     private int hashCode;
 
     {
         LATEST = this;
+    }
+    
+    public RowDefCache(final TableStatusCache tableStatusCache) {
+        this.tableStatusCache = tableStatusCache;
     }
 
     public static RowDefCache latest() {
@@ -101,13 +105,6 @@ public class RowDefCache {
 
     public synchronized List<RowDef> getRowDefs() {
         return new ArrayList<RowDef>(cacheMap.values());
-    }
-    
-    /**
-     * @return a copy if the TableStatus Map
-     */
-    public synchronized Map<Integer, TableStatus> getTableStatusMap() {
-        return new HashMap<Integer, TableStatus>(tableStatusMap);
     }
 
     public synchronized RowDef getRowDef(final String tableName)
@@ -253,8 +250,7 @@ public class RowDefCache {
     }
 
     private RowDef createUserTableRowDef(AkibanInformationSchema ais, UserTable table) {
-        final TableStatus ts = getTableStatus(table);
-        RowDef rowDef = new RowDef(table, ts);
+        RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
@@ -307,21 +303,9 @@ public class RowDefCache {
 
     }
     
-    
-    private synchronized TableStatus getTableStatus(final Table table) {
-        final Integer tableId = table.getTableId();
-        TableStatus ts = tableStatusMap.get(tableId);
-        if (ts == null) {
-            ts = new TableStatus(tableId);
-            tableStatusMap.put(tableId, ts);
-        }
-        return ts;
-    }
-
     private RowDef createGroupTableRowDef(AkibanInformationSchema ais,
             GroupTable table) {
-        final TableStatus ts = getTableStatus(table);
-        RowDef rowDef = new RowDef(table, ts);
+        RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();
         for (Column column : table.getColumnsIncludingInternal()) {
             Column userColumn = column.getUserColumn();
