@@ -38,17 +38,25 @@ class DelayScanCallableBuilder {
         return this;
     }
 
-    DelayScanCallableBuilder topOfLoopDelayer(final int beforeRow, final long delay, final String message) {
-        return topOfLoopDelayer(singleDelayFactory(beforeRow, delay, message));
+    DelayScanCallableBuilder topOfLoopDelayer(int beforeRow, long delay, String message) {
+        return topOfLoopDelayer(beforeRow, delay, String.format("(%s)>", message), String.format("<(%s)", message));
     }
 
-    private DelayerFactory singleDelayFactory(final int beforeRow, final long delay, final String message) {
+    DelayScanCallableBuilder topOfLoopDelayer(int beforeRow, long delay, String messageIn, String messageOut) {
+        return topOfLoopDelayer(singleDelayFactory(beforeRow, delay, messageIn, messageOut));
+    }
+
+    private DelayerFactory singleDelayFactory(final int beforeRow, final long delay,
+                                              final String messageIn, final String messageOut)
+    {
         return new DelayerFactory() {
             @Override
             public Delayer delayer(TimePoints timePoints) {
                 long[] delays = new long[beforeRow+1];
                 delays[beforeRow] = delay;
-                return new Delayer(timePoints, delays).markBefore(beforeRow, message);
+                return new Delayer(timePoints, delays)
+                        .markBefore(beforeRow, messageIn)
+                        .markAfter(beforeRow, messageOut);
             }
         };
     }

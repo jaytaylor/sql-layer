@@ -37,6 +37,7 @@ import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.store.Store;
+import com.akiban.util.ListUtils;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -69,12 +70,12 @@ import com.akiban.server.service.session.SessionImpl;
  * various convenience testing methods.</p>
  */
 public class ApiTestBase {
-
     protected final static Object UNDEF = new Object();
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
         private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
+        private int mark = 0;
 
         @Override
         public void output(NewRow row) {
@@ -87,6 +88,16 @@ public class ApiTestBase {
 
         public void clear() {
             rows.clear();
+        }
+
+        @Override
+        public void mark() {
+            mark = rows.size();
+        }
+
+        @Override
+        public void rewind() {
+            ListUtils.truncate(rows, mark);
         }
     }
 

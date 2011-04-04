@@ -17,7 +17,6 @@ package com.akiban.server.service.d_l;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -29,6 +28,7 @@ import com.akiban.server.RowData;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -197,6 +197,16 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         {
             return true;
         }
+
+        @Override
+        public void mark() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void rewind() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static class TestingStruct {
@@ -211,13 +221,13 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
             stringsArray = strings;
             collector = new StringRowCollector(TABLE_ID, strings);
             output = new StringRowOutput();
-            cursor = new Cursor(collector, limit);
+            cursor = new Cursor(collector, limit, null);
             cursorId = new CursorId(5, TABLE_ID);
         }
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansNoLimit() throws InvalidOperationException, BufferFullException {
+    public void scansNoLimit() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(ScanLimit.NONE, "Hi", "there", "pooh bear", "how are you there");
 
         try {
@@ -235,7 +245,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scansWithLimit() throws InvalidOperationException, BufferFullException {
+    public void scansWithLimit() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(1), "hi", "world", "and", "universe");
 
         try {
@@ -251,7 +261,7 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
     }
 
     @Test(expected= CursorIsFinishedException.class)
-    public void scanEmptyRC() throws InvalidOperationException, BufferFullException {
+    public void scanEmptyRC() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(0));
         try {
             assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output));

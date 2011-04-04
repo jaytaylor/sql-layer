@@ -21,6 +21,7 @@ import com.akiban.server.RowData;
 import com.akiban.util.ArgumentValidation;
 
 public class WrappingRowOutput implements LegacyRowOutput {
+    private int markPos = -1;
     protected final ByteBuffer wrapped;
     private int rows;
 
@@ -66,5 +67,15 @@ public class WrappingRowOutput implements LegacyRowOutput {
     public boolean getOutputToMessage()
     {
         return true;
+    }
+
+    @Override
+    public void mark() {
+        markPos = wrapped.position();
+    }
+
+    @Override
+    public void rewind() {
+        wrapped.position(markPos);
     }
 }

@@ -113,6 +113,7 @@ public final class TimePointsComparison {
     public List<String> getMarkNames() {
         List<String> markNames = new ArrayList<String>();
         for (Collection<String> marksList : marks) {
+            assertEquals("individual marks lists must be singletons; size ", 1, marksList.size());
             markNames.addAll(marksList);
         }
         return markNames;
@@ -134,5 +135,10 @@ public final class TimePointsComparison {
         List<String> expected = Arrays.asList(expectedMessages);
         List<String> actual = getMarkNames();
         return expected.equals(actual);
+    }
+
+    @Override
+    public String toString() {
+        return marks.toString();
     }
 }

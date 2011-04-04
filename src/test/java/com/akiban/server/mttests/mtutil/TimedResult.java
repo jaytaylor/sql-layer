@@ -15,8 +15,10 @@
 
 package com.akiban.server.mttests.mtutil;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public final class TimedResult<T> {
 
@@ -51,5 +53,17 @@ public final class TimedResult<T> {
 
     TimeMarks timePoints() {
         return timePoints;
+    }
+
+    @Override
+    public String toString() {
+        Map<Long,List<String>> marks = timePoints().getMarks();
+        long lowestValue = Collections.min(marks.keySet());
+        TreeMap<Long,List<String>> marksSorted = new TreeMap<Long, List<String>>();
+        for (Map.Entry<Long,List<String>> entry : marks.entrySet()) {
+            marksSorted.put(entry.getKey() - lowestValue, entry.getValue());
+        }
+
+        return String.format("TimedResult<{%s} => %s>", marksSorted, getItem());
     }
 }

@@ -19,17 +19,20 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 public class RowDataOutput implements LegacyRowOutput {
     private final static Logger LOG = LoggerFactory.getLogger(RowDataOutput.class);
 
     private final List<RowData> rowDatas = new ArrayList<RowData>();
+    private int markedRows = 0;
 
     public List<RowData> getRowDatas() {
         return rowDatas;
@@ -60,6 +63,16 @@ public class RowDataOutput implements LegacyRowOutput {
     public boolean getOutputToMessage()
     {
         return false;
+    }
+
+    @Override
+    public void mark() {
+        markedRows = rowDatas.size();
+    }
+
+    @Override
+    public void rewind() {
+        ListUtils.truncate(rowDatas, markedRows);
     }
 
     /**

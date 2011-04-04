@@ -22,10 +22,12 @@ public final class Cursor {
     private CursorState state = CursorState.FRESH;
     private final RowCollector rowCollector;
     private final ScanLimit limit;
+    private final ScanRequest scanRequest;
 
-    public Cursor(RowCollector rowCollector, ScanLimit limit) {
+    public Cursor(RowCollector rowCollector, ScanLimit limit, ScanRequest scanRequest) {
         this.rowCollector = rowCollector;
         this.limit = limit;
+        this.scanRequest = scanRequest;
     }
 
     public RowCollector getRowCollector() {
@@ -34,6 +36,10 @@ public final class Cursor {
 
     public ScanLimit getLimit() {
         return limit;
+    }
+
+    public ScanRequest getScanRequest() {
+        return scanRequest;
     }
 
     public void setScanning() {
