@@ -23,10 +23,12 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.itests.ApiTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -382,6 +384,29 @@ public final class CreateTableIT extends ApiTestBase {
     public void bug728003() throws InvalidOperationException {
         createTable("test", "p", "id varchar(32) key");
         createTable("test", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id)");
+    }
+
+    @Test
+    public void unsupportedIndexTypes() throws InvalidOperationException {
+        // bug716126/716126
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 float key");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 double key");
+        // bug741197/741058
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 time key");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 year key");
+        // bug737692
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 blob, key(c1(100)))");
+        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 text, key(c1(100)))");
+    }
+
+    @Test
+    public void createDuplicateTable() throws InvalidOperationException {
+        // bug705543
+        createTable("test", "t", "c1 int key");
+        createExpectException(DuplicateTableNameException.class, "test", "t", "c1 int key");
+        createExpectException(DuplicateTableNameException.class, "test", "t", "c1 bigint key");
+        createExpectException(DuplicateTableNameException.class, "test", "t", "c1 varchar(32) key");
+        createExpectException(DuplicateTableNameException.class, "test", "t", "c1 int key, c2 varchar(32)");
     }
 
 

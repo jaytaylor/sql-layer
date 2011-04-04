@@ -130,6 +130,21 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
         }
 
         @Override
+        public int getMinWorkerThreads() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getMaxWorkerThreads() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getShutdownWaitSeconds() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public NetworkService cast() {
             return this;
         }

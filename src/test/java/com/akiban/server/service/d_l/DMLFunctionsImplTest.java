@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.server.service.d_l;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
+import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import org.junit.Assert;
@@ -123,6 +125,11 @@ public final class DMLFunctionsImplTest extends AkServerTestCase {
         @Override
         public int getTableId() {
             return tableId;
+        }
+
+        @Override
+        public IndexDef getIndexDef() {
+            throw new UnsupportedOperationException();
         }
 
         @Override

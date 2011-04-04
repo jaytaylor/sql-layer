@@ -1,0 +1,49 @@
+Welcome to the Social Rails Application
+
+<h3>Most Commented On Blog Posts</h3>
+
+<table>
+  <thead><tr><th>Comments</th><th>Score</th>
+             <th>Title</th><th>Author</th></thead>
+  <tbody>
+<% for post in @most_commented %>
+  <tr>
+    <td><%= post.comments.size %></td>
+    <td><%= post.score %></td>
+    <td><%= link_to post.title, {:action => :post, :id => post.id } %></td>
+    <td align="right"><%= link_to post.user.name, {:action => :user, :id => post.user.id } %></td>
+  </tr>
+<% end %>
+  </tbody>
+</table>
+
+
+<h3>Highest Scoring Blog Posts</h3>
+
+<table>
+  <thead><tr><th>Score</th><th>Comments</th>
+             <th>Title</th><th>Author</th></thead>
+  <tbody>
+<% for post in @highest_score %>
+  <tr>
+    <td><%= post.score %></td>
+    <td><%= post.comments.size %></td>
+    <td><%= link_to post.title, {:action => :post, :id => post.id } %></td>
+    <td align="right"><%= link_to post.user.name, {:action => :user, :id => post.user.id } %></td>
+  </tr>
+<% end %>
+  </tbody>
+</table>
+
+<h3>Most Popular People</h3>
+<table>
+  <thead><tr><th>Friends</th><th>Author</th></thead>
+  <tbody>
+<% for user in @most_friends %>
+  <tr>
+    <td><%= user.user_friends.size %></td>
+    <td><%= link_to user.name, {:action => :user, :id => user.id } %></td>
+  </tr>
+<% end %>
+  </tbody>
+</table>

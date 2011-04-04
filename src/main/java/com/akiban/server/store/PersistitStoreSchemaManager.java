@@ -118,10 +118,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * <li>it must be valid DDL syntax</li>
      * <li>it does not have a schema name reserved by Akiban</li>
      * <li>any references to other tables and columns must be valid</li>
-     * <li>TODO: any previously existing table definition having the same name
-     * is compatible, meaning that rows already stored under a previously
-     * existing definition of a table having the same schema name and table name
-     * can be transformed to a row of the new format.</li>
      * </ul>
      * 
      * @param session
@@ -175,6 +171,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final String tableName = tableDef.getCName().getName();
 
         validateTableDefinition(session, schemaName, tableDef);
+
+        // Some code below this point allows for the name to be non-unique in
+        // support of multi-generation tables. Reject here as it isn't yet complete.
+        final Table curTable = getAis(session).getTable(TableName.create(schemaName, tableName));
+        if (curTable != null && !useOldId) {
+            throw new InvalidOperationException(ErrorCode.DUPLICATE_TABLE,
+                                                String.format("Table `%s`.`%s` already exists",
+                                                              schemaName, tableName));
+        }
+
         Exchange ex = null;
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -928,6 +934,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return cname;
     }
 
+    private void complainAboutIndexDataType(String schema, String table, String index, String column, String type)
+            throws InvalidOperationException {
+        throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_DATA_TYPE,
+                                            "Table `%s`.`%s` index `%s` has unsupported type `%s` from column `%s`",
+                                            schema, table, index, type, column);
+    }
+
     private void validateTableDefinition(final Session session,
             final String schemaName, final SchemaDef.UserTableDef tableDef)
             throws Exception {
@@ -947,7 +960,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         for (SchemaDef.ColumnDef col : tableDef.getColumns()) {
             final String typeName = col.getType();
-            if (ais.isTypeSupported(typeName) == false) {
+            if(!ais.isTypeSupported(typeName)) {
                 throw new InvalidOperationException(
                         ErrorCode.UNSUPPORTED_DATA_TYPE,
                         "Table `%s`.`%s` column `%s` is unsupported type %s",
@@ -962,8 +975,29 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
 
-        final List<SchemaDef.ReferenceDef> parentJoins = tableDef
-                .getAkibanJoinRefs();
+        for(String colName : tableDef.getPrimaryKey()) {
+            final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
+            if(col != null) {
+                final String typeName = col.getType();
+                if(!ais.isTypeSupportedAsIndex(typeName)) {
+                    complainAboutIndexDataType(schemaName, tableName, "PRIMARY", colName, typeName);
+                }
+            }
+        }
+
+        for(SchemaDef.IndexDef index : tableDef.getIndexes()) {
+            for(String colName : index.getColumnNames()) {
+                final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
+                if(col != null) {
+                    final String typeName = col.getType();
+                    if(!ais.isTypeSupportedAsIndex(typeName)) {
+                        complainAboutIndexDataType(schemaName, tableName, index.getName(), colName, typeName);
+                    }
+                }
+            }
+        }
+
+        final List<SchemaDef.ReferenceDef> parentJoins = tableDef.getAkibanJoinRefs();
         if (parentJoins.isEmpty()) {
             return;
         }

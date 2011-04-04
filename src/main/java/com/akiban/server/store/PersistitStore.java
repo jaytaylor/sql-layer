@@ -770,8 +770,7 @@ public class PersistitStore implements Store {
                         //
                         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                             if (!indexDef.isHKeyEquivalent()) {
-                                updateIndex(session, indexDef, rowDef,
-                                        oldRowData, mergedRowData, hEx.getKey());
+                                updateIndex(session, indexDef, rowDef, currentRow, mergedRowData, hEx.getKey());
                             }
                         }
                     }

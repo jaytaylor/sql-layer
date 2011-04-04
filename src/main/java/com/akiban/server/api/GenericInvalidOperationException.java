@@ -27,12 +27,12 @@ import com.akiban.server.InvalidOperationException;
 public final class GenericInvalidOperationException extends InvalidOperationException {
     private final InvalidOperationException cause;
 
-    GenericInvalidOperationException(InvalidOperationException e) {
+    public GenericInvalidOperationException(InvalidOperationException e) {
         super(e.getCode(), e.getShortMessage(), e);
         this.cause = e;
     }
 
-    GenericInvalidOperationException(Throwable t) {
+    public GenericInvalidOperationException(Throwable t) {
         super(t);
         this.cause = (t instanceof InvalidOperationException)
                 ? (InvalidOperationException) t

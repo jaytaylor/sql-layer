@@ -13,23 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.mttests.mtatomics;
+package com.akiban.server.api.ddl;
 
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
+import com.akiban.server.InvalidOperationException;
+import com.akiban.message.ErrorCode;
 
-import java.util.ArrayList;
-import java.util.List;
-
-class CountingRowOutput implements RowOutput {
-    private final List<NewRow> rows = new ArrayList<NewRow>();
-    @Override
-    public void output(NewRow row) throws RowOutputException {
-       rows.add(row);
+public class UnsupportedIndexDataTypeException extends DDLException {
+    public UnsupportedIndexDataTypeException(InvalidOperationException e) {
+        this(e.getMessage());
     }
 
-    public List<NewRow> rows() {
-        return rows;
+    public UnsupportedIndexDataTypeException(String message) {
+        super(ErrorCode.UNSUPPORTED_INDEX_DATA_TYPE, message);
     }
 }

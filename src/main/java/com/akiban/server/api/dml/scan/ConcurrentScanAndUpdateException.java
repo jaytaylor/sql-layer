@@ -13,15 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.server.api.dml.scan;
 
-public final class HookableDMLFI extends DMLFunctionsImpl {
+import com.akiban.message.ErrorCode;
+import com.akiban.server.api.dml.DMLException;
 
-    public interface ScanHooks extends DMLFunctionsImpl.ScanHooks {
-        // not adding anything, just promoting visibility
-    }
-
-    public HookableDMLFI(DDLFunctions ddlFunctions, ScanHooks scanHooks) {
-        super(ddlFunctions, scanHooks);
+public final class ConcurrentScanAndUpdateException extends DMLException {
+    public ConcurrentScanAndUpdateException(String message) {
+        super(ErrorCode.CONCURRENT_MODIFICATION, message);
     }
 }

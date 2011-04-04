@@ -22,6 +22,10 @@ public final class EasyUseColumnSelector implements ColumnSelector {
 
     private final Set<Integer> set;
 
+    public EasyUseColumnSelector(Set<Integer> set) {
+        this.set = new HashSet<Integer>(set);
+    }
+
     public EasyUseColumnSelector(int... selectedPositions) {
         set = new HashSet<Integer>();
         for (int i : selectedPositions) {

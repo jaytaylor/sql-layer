@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api;
+package com.akiban.server.service.d_l;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +29,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.DuplicateColumnNameException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
@@ -44,6 +47,7 @@ import com.akiban.server.api.ddl.ProtectedTableDDLException;
 import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
+import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaId;
 import com.akiban.server.util.RowDefNotFoundException;
@@ -51,14 +55,9 @@ import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DDLFunctionsImpl extends ClientAPIBase implements
-        DDLFunctions {
+final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
 
     private final static Logger logger = LoggerFactory.getLogger(DDLFunctionsImpl.class);
-
-    public static DDLFunctions instance() {
-        return new DDLFunctionsImpl();
-    }
 
     @Override
     public void createTable(Session session, String schema, String ddlText)
@@ -67,7 +66,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             GroupWithProtectedTableException, JoinToUnknownTableException,
             JoinToWrongColumnsException, JoinToMultipleParentsException,
             NoPrimaryKeyException, DuplicateColumnNameException,
-            UnsupportedDataTypeException, GenericInvalidOperationException
+            UnsupportedDataTypeException, UnsupportedIndexDataTypeException,
+            GenericInvalidOperationException
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
@@ -78,6 +78,8 @@ public final class DDLFunctionsImpl extends ClientAPIBase implements
             throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
             throwIfInstanceOf(JoinToWrongColumnsException.class, ioe);
             throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
+            throwIfInstanceOf(DuplicateTableNameException.class, ioe);
+            throwIfInstanceOf(UnsupportedIndexDataTypeException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }

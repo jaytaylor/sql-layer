@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.d_l.DStarLService;
 import com.akiban.server.service.d_l.DStarLServiceImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
@@ -35,12 +36,15 @@ import com.akiban.server.service.stats.StatisticsServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServiceManagerImpl implements ServiceManager
 {
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
     static final String CUSTOM_LOAD_SERVICE = "akserver.services.customload";
-    // TODO: Supply the factory externally.
+    private static final Logger LOG = LoggerFactory.getLogger(ServiceManagerImpl.class.getName());
+    private volatile Thread shutdownHook;
     private final ServiceFactory factory;
     private Map<Class<?>, Service<?>> services; // for each key-val, the ?
                                                 // should be the same; (T.class
@@ -56,7 +60,7 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     /**
-     * This constructor is made protected for unit testing.
+     * Construct ServiceManagerImpl with a given factory.
      * 
      * @param factory
      *            the factory that creates the services this instance manages
@@ -115,6 +119,11 @@ public class ServiceManagerImpl implements ServiceManager
         return getService(StatisticsService.class);
     }
 
+    @Override
+    public DStarLService getDStarL() {
+        return getService(DStarLService.class);
+    }
+
     /**
      * <p>
      * Returns a service by its registered class. For instance, if you have a
@@ -163,13 +172,13 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
-        startAndPut(factory.networkService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
-        startAndPut(factory.memcacheService(), jmxRegistry);
         startAndPut(new DStarLServiceImpl(), jmxRegistry);
         startAndPut(new Log4JConfigurationServiceImpl(), jmxRegistry);
         startAndPut(new StatisticsServiceImpl(), jmxRegistry);
         loadCustomServices(jmxRegistry);
+        startAndPut(factory.memcacheService(), jmxRegistry);
+        startAndPut(factory.networkService(), jmxRegistry);
         afterStart();
     }
 
@@ -204,18 +213,16 @@ public class ServiceManagerImpl implements ServiceManager
         for (Service service : services.values()) {
             stopServices.add(service);
         }
-        // System.out.println("Preparing to shut down services: " +
-        // stopServices); // TODO change to logging
         ListIterator<Service> reverseIter = stopServices
                 .listIterator(stopServices.size());
         List<Exception> exceptions = new ArrayList<Exception>();
         while (reverseIter.hasPrevious()) {
             try {
                 Service service = reverseIter.previous();
-                // System.out.println("Shutting down service: " +
-                // service.getClass()); // TODO change to logging
+                LOG.info("Shutting down service {}", service.getClass().getName());
                 service.stop();
             } catch (Exception t) {
+                LOG.error("Error stopping service", t);
                 exceptions.add(t);
             }
         }
