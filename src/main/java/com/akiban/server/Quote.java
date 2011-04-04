@@ -79,7 +79,7 @@ public enum Quote {
             throw new IllegalArgumentException(charset.name());
         }
         if (quote.quoteChar != null) {
-            appender.append(quote.quoteChar);
+            appender.append(quote.quoteChar.charValue());
         }
         int wrote = writeDirect(appender, bytes, offset, length, charset, quote.escapeControlChars);
         assert !(wrote > length) : "wrote " + wrote + " of " + length;
