@@ -63,9 +63,7 @@ import com.persistit.KeyFilter;
 import com.persistit.KeyState;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.Persistit;
-import com.persistit.TimestampAllocator.Checkpoint;
 import com.persistit.Transaction;
-import com.persistit.Transaction.DefaultCommitListener;
 import com.persistit.Tree;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
@@ -108,8 +106,6 @@ public class PersistitStore implements Store {
     private final static int KEY_STATE_SIZE_OVERHEAD = 50;
 
     private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
-    private final static String TABLE_STATUS_DELTA_SESSION_KEY = "tsdKey";
 
     private final static String COLLECTORS_SESSION_KEY = "collectors";
 

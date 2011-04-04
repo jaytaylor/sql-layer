@@ -542,10 +542,6 @@ public class RowDef implements TreeLink {
         this.userTableRowDefs = userTableRowDefs;
     }
 
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
     public void setDeleted(boolean deleted) {
         isDeleted = deleted;
     }

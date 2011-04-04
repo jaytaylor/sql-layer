@@ -15,7 +15,6 @@
 
 package com.akiban.server;
 
-import com.persistit.TimestampAllocator.Checkpoint;
 import com.persistit.Value;
 import com.persistit.exception.ConversionException;
 
@@ -103,8 +102,6 @@ public class TableStatus {
 
     private long timestamp;
     
-    private boolean deleted = true;
-
     private boolean dirty;
 
     private static long now() {
@@ -130,7 +127,6 @@ public class TableStatus {
         this.lastUpdateTime = ts.lastUpdateTime;
         this.lastWriteTime = ts.lastWriteTime;
         this.timestamp = ts.timestamp;
-        this.deleted = ts.deleted;
         this.dirty = ts.dirty;
     }
 
@@ -180,10 +176,6 @@ public class TableStatus {
 
     public synchronized long getRowCount() {
         return rowCount;
-    }
-
-    public synchronized boolean isDeleted() {
-        return deleted;
     }
 
     // ----------
