@@ -434,7 +434,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             if (volume.getAppCache() == null) {
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-                final Exchange exchange = new Exchange(getDb(), volume, treeName, true);
+                final Exchange exchange = new Exchange(getDb(), volume, STATUS_TREE_NAME, true);
                 tableStatusCache.loadOneVolume(exchange);
             }
             return volume;
