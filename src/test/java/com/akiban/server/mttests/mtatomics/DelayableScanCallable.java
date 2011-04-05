@@ -133,9 +133,25 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             }
             dml.closeCursor(session, cursorId);
 
+            if (scanhooksService.isHookInstalled(session)) {
+                throw new ScanHooksNotRemovedException();
+            }
             return output.getRows();
-        } finally {
-            assertFalse("scanhooks not removed!", scanhooksService.isHookInstalled(session));
+        } catch (Exception e) {
+            if (scanhooksService.isHookInstalled(session)) {
+                throw new ScanHooksNotRemovedException(e);
+            }
+            else throw e;
+        }
+    }
+
+    private static class ScanHooksNotRemovedException extends RuntimeException {
+        private ScanHooksNotRemovedException() {
+            super("scanhooks not removed!");
+        }
+
+        private ScanHooksNotRemovedException(Throwable cause) {
+            super("scanhooks not removed!", cause);
         }
     }
 }
