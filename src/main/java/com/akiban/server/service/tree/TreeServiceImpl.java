@@ -25,8 +25,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -45,6 +43,8 @@ import com.persistit.exception.PersistitException;
 
 public class TreeServiceImpl implements TreeService, Service<TreeService>,
         JmxManageable {
+
+    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.of("exchangemap");
 
     private final static int MEGA = 1024 * 1024;
 
@@ -78,7 +78,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
 
     private ConfigurationService configService;
 
-    private final static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
+    private static int instanceCount = 0;
 
     private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<String, SchemaNode>();
 
@@ -128,7 +128,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         configService = ServiceManagerImpl.get().getConfigurationService();
         assert getDb() == null;
         // TODO - remove this when sure we don't need it
-        assert INSTANCE_COUNT.incrementAndGet() == 1;
+        ++instanceCount;
+        assert instanceCount == 1 : instanceCount;
         final Properties properties = configService.getModuleConfiguration(
                 PERSISTIT_MODULE_NAME).getProperties();
         //
@@ -246,7 +247,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             dbRef.set(null);
         }
         // TODO - remove this when sure we don't need it
-        assert INSTANCE_COUNT.decrementAndGet() == 0;
+        --instanceCount;
+        assert instanceCount == 0 : instanceCount;
     }
 
     @Override
@@ -400,12 +402,11 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     private List<Exchange> exchangeList(final Session session, final Tree tree) {
-        Map<Tree, List<Exchange>> map = session.get(TreeServiceImpl.class,
-                "exchangemap");
+        Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
         List<Exchange> list;
         if (map == null) {
             map = new HashMap<Tree, List<Exchange>>();
-            session.put(TreeServiceImpl.class, "exchangemap", map);
+            session.put(EXCHANGE_MAP, map);
             list = new ArrayList<Exchange>();
             map.put(tree, list);
         } else {

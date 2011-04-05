@@ -136,9 +136,18 @@ public class FieldDef {
 
     @Override
     public boolean equals(final Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        if (!o.getClass().equals(FieldDef.class)) {
+            return false;
+        }
         FieldDef def = (FieldDef) o;
-        return type == def.type && columnName == def.columnName
-                && encoding == def.encoding && column.getPosition() == def.column.getPosition()
+        return type.equals(type) && columnName.equals(def.columnName)
+                && encoding == def.encoding && column.getPosition().equals(def.column.getPosition())
                 && AkServerUtil.equals(typeParameter1, def.typeParameter1)
                 && AkServerUtil.equals(typeParameter2, def.typeParameter2);
     }

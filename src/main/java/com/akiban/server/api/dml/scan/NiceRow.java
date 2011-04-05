@@ -45,6 +45,11 @@ public class NiceRow extends NewRow {
         this.tableId = tableId;
     }
 
+    public NiceRow(NewRow copyFrom) {
+        this(copyFrom.getTableId(), copyFrom.getRowDef());
+        fields.putAll( copyFrom.getFields() );
+    }
+
     @Override
     public Object put(int index, Object object) {
         ArgumentValidation.notNull("column", index);

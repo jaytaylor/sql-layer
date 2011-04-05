@@ -43,8 +43,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         return instance;
     }
 
-    private static final Class<?> MODULE = Fetchrows.class;
-    private static final String SESSION_BUFFER = "SESSION_BUFFER";
+    private static final Session.Key<ByteBuffer> SESSION_BUFFER = Session.Key.of("SESSION_BUFFER");
 
     private final AtomicInteger capacity = new AtomicInteger(65536);
 
@@ -78,10 +77,10 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
             );
         }
 
-        ByteBuffer buffer = session.get(MODULE, SESSION_BUFFER);
+        ByteBuffer buffer = session.get(SESSION_BUFFER);
         if (buffer == null) {
             buffer = ByteBuffer.allocate(capacity.get());
-            session.put(MODULE, SESSION_BUFFER, buffer);
+            session.put(SESSION_BUFFER, buffer);
         }
         else {
             buffer.clear();

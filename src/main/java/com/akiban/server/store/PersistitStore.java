@@ -55,6 +55,7 @@ import com.persistit.exception.TransactionFailedException;
 
 public class PersistitStore implements Store {
 
+    private static final Session.Key<Map<Integer, List<RowCollector>>> COLLECTORS = Session.Key.of("collectors");
     final static int INITIAL_BUFFER_SIZE = 1024;
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStore.class
@@ -784,7 +785,7 @@ public class PersistitStore implements Store {
                         //
                         for (final IndexDef indexDef : rowDef.getIndexDefs()) {
                             if (!indexDef.isHKeyEquivalent()) {
-                                updateIndex(session, indexDef, rowDef, oldRowData, mergedRowData, hEx.getKey());
+                                updateIndex(session, indexDef, rowDef, currentRow, mergedRowData, hEx.getKey());
                             }
                         }
                     }
@@ -847,6 +848,7 @@ public class PersistitStore implements Store {
             expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
             exchange.remove();
+            descendentRowDef.getTableStatus().incrementRowCount(-1);
             // ... and from the indexes
             for (IndexDef indexDef : descendentRowDef.getIndexDefs()) {
                 if (!indexDef.isHKeyEquivalent()) {
@@ -859,20 +861,21 @@ public class PersistitStore implements Store {
     }
 
     /**
-     * Remove contents of entire group containing the specified table. TODO:
-     * remove user table data from within a group.
+     * Remove data from the <b>entire group</b> that this RowDef ID is contained in.
+     * This includes all table and index data for all user and group tables in the group.
+     * @param session Session to work on.
+     * @param rowDefId RowDef ID to select group to truncate
+     * @throws PersistitException for a PersistIt level error (e.g. Rollback)
      */
     @Override
-    public void truncateTable(final Session session, final int rowDefId)
-            throws PersistitException, InvalidOperationException {
+    public void truncateGroup(final Session session, final int rowDefId)
+            throws PersistitException {
+        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
+        if (!groupRowDef.isGroupTable()) {
+            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
+        }
 
-        final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
-        Transaction transaction = null;
-
-        RowDef groupRowDef = rowDef.isGroupTable() ? rowDef : rowDefCache
-                .getRowDef(rowDef.getGroupRowDefId());
-
-        transaction = treeService.getTransaction(session);
+        Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {
 
@@ -1033,11 +1036,10 @@ public class PersistitStore implements Store {
 
     private List<RowCollector> collectorsForTableId(final Session session,
             final int tableId) {
-        Map<Integer, List<RowCollector>> map = session.get(PersistitStore.class,
-                "collectors");
+        Map<Integer, List<RowCollector>> map = session.get(COLLECTORS);
         if (map == null) {
             map = new HashMap<Integer, List<RowCollector>>();
-            session.put(PersistitStore.class, "collectors", map);
+            session.put(COLLECTORS, map);
         }
         List<RowCollector> list = map.get(tableId);
         if (list == null) {

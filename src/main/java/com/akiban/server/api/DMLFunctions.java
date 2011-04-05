@@ -30,6 +30,7 @@ import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.api.dml.UnsupportedModificationException;
 import com.akiban.server.api.dml.scan.BufferFullException;
+import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.CursorIsUnknownException;
@@ -116,6 +117,7 @@ public interface DMLFunctions {
      * <tt>false</tt>
      * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
      * @throws RowOutputException if the given RowOutput threw an exception while writing a row
+     * @throws ConcurrentScanAndUpdateException if an update has happened since opening the scan and this call
      * @throws GenericInvalidOperationException if some other exception occurred
      * @throws BufferFullException if the output buffer couldn't fit the rows
      */
@@ -124,6 +126,7 @@ public interface DMLFunctions {
             CursorIsUnknownException,
             RowOutputException,
             BufferFullException,
+            ConcurrentScanAndUpdateException,
             GenericInvalidOperationException;
 
     /**
@@ -171,6 +174,7 @@ public interface DMLFunctions {
      * @throws CursorIsUnknownException if the given cursor is unknown (or has been closed)
      * @throws RowOutputException if the given RowOutput threw an exception while writing a row
      * @throws NoSuchTableException if the table ID specified by cursorId isn't recognized
+     * @throws ConcurrentScanAndUpdateException if an update has happened since opening the scan and this call
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     boolean scanSome(Session session, CursorId cursorId, RowOutput output)
@@ -178,6 +182,7 @@ public interface DMLFunctions {
             CursorIsUnknownException,
             RowOutputException,
             NoSuchTableException,
+            ConcurrentScanAndUpdateException,
             GenericInvalidOperationException;
 
     /**

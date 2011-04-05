@@ -18,9 +18,8 @@ package com.akiban.server.itests.d_lfunctions;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.api.DDLFunctionsImpl;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.store.SchemaManager;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.store.TableDefinition;
 import org.junit.Test;
 
@@ -139,8 +138,7 @@ public class AtomicSchemaChangesIT extends ApiTestBase
 
     private Map<String, TableDefinition> createTableStatements(String schema) throws Exception
     {
-        SchemaManager schemaManager = ((DDLFunctionsImpl) ddl()).schemaManager();
-        return schemaManager.getTableDefinitions(session(), schema);
+        return ServiceManagerImpl.get().getSchemaManager().getTableDefinitions(session(), schema);
     }
 
     private static final int BUFFER_SIZE = 100000; // 100K

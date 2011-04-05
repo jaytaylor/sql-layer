@@ -1,0 +1,39 @@
+<h3>User's Page</h3>
+
+<ul>
+  <li>Name: <%= @user.name %>
+</ul>
+
+<h3>This User's Posts</h3>
+
+<table>
+  <thead><tr><th>Score</th><th>Comments</th>
+             <th>Title</th></thead>
+  <tbody>
+<% for post in @user.posts[0..10] %>
+  <tr>
+    <td><%= post.score %></td>
+    <td><%= post.comments.size %></td>
+    <td><%= link_to post.title, {:action => :post, :id => post.id } %></td>
+  </tr>
+<% end %>
+  </tbody>
+</table>
+
+<h3>Highest Scoring Among Friends</h3>
+
+<table>
+  <thead><tr><th>Friend's Score</th><th>Comments</th>
+             <th>Title</th><th>Author</th></thead>
+  <tbody>
+<% for post in @highest_score %>
+  <tr>
+    <td><%= post.calc_score %></td>
+    <td><%= post.comments.size %></td>
+    <td><%= link_to post.title, {:action => :post, :id => post.id } %></td>
+    <td><%= link_to post.user.name, {:action => :user, :id => post.user.id } %></td>
+  </tr>
+<% end %>
+  </tbody>
+</table>
+

@@ -72,4 +72,14 @@ public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.H
     public void setColumnsToScan(Set<Integer> columns) {
         this.columnsToScan = columns;
     }
+
+    @Override
+    public void mark() {
+        output.mark();
+    }
+
+    @Override
+    public void rewind() {
+        output.rewind();
+    }
 }

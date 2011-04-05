@@ -39,7 +39,7 @@ import com.akiban.ais.io.Writer;
  * binary format. All real work is done by SchemaDef and SchemaDefToAis.
  */
 public class DDLSource {
-    private final static int MAX_AIS_SIZE = 2 << 20; // 1MB, implied by net msg
+    private final static int MAX_AIS_SIZE = 1 << 20; // 1MB, implied by net msg
     private final static String SQL_FORMAT = "sql";
     private final static String BINARY_FORMAT = "binary";
 
@@ -105,7 +105,7 @@ public class DDLSource {
             final Writer writer = new Writer(target);
             writer.save(ais);
             rawAis.flip();
-            outputStream.write(rawAis.array());
+            outputStream.write(rawAis.array(), rawAis.position(), rawAis.limit());
             outputStream.close();
         }
     }

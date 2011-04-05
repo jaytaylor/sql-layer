@@ -36,4 +36,16 @@ public interface LegacyRowOutput {
     int getRowsCount();
 
     boolean getOutputToMessage();
+
+    /**
+     * Marks a state for this output. Scans may have to be retried; the scan loop will first mark the LegacyRowOutput
+     * and then {@link #rewind()} it before retrying, if necessary.
+     */
+    void mark();
+
+    /**
+     * Tells this LegacyRowOutput to go back to its previously marked state. If there was no previously marked
+     * state, this behavior is undefined by the LegacyRowOutput interface.
+     */
+    void rewind();
 }

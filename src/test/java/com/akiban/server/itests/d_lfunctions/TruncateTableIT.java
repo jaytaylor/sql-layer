@@ -138,10 +138,7 @@ public final class TruncateTableIT extends ApiTestBase {
         assertEquals("Rows scanned", 0, rows.size());
     }
 
-    /*
-     * TODO: This should pass when orphan rows are in and tuncate() is updated
-     */
-    @Test(expected=ForeignKeyConstraintDMLException.class)
+    @Test
     public void truncateParentWithChildRows() throws InvalidOperationException {
         int parentId = createTable("test",
                                    "parent",

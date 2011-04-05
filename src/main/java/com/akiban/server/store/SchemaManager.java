@@ -41,21 +41,19 @@ import com.persistit.exception.PersistitException;
 public interface SchemaManager {
 
     /**
-     * Create or update a table definition. This method attempts to parse and
+     * Create table definition. This method attempts to parse and
      * validate the supplied CREATE TABLE statement. If valid, this method
      * allocates a new tableId and stores a canonical form of the statement with
-     * that tableId. Given a valid statement, this method succeeds even if there
-     * already is a table of the same name defined for the specified schema. The
-     * new statement is given a new, unique tableId but the old definition is
-     * left intact to allow interpreting previously stored rows.
-     * 
-     * TODO: this method will verify that if this is an updated table
-     * definition, that the update is feasible.
-     * 
-     * @param schemaName
-     * @param tableName
-     * @param statement
-     * @param useOldId
+     * that tableId.
+     *
+     * If useOldId is false, creating a table with a pre-existing schema.name will
+     * be rejected with an exception. If useOldId is true, the current definition
+     * will be replaced with no compatibility checking.
+     *
+     * @param session Session to operation under
+     * @param schemaName Default schema name to use if statement does not contain one
+     * @param statement A valid DDL statement (e.g. create table t(...))
+     * @param useOldId Whether or not to replace existing statement if it exists
      * @throws Exception
      */
     void createTableDefinition(Session session, String schemaName,

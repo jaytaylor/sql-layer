@@ -60,8 +60,7 @@ import static com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory.
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     private static final String VERSION_STRING = getVersionString();
-    private static final Class<?> MODULE = AkibanCommandHandler.class;
-    private static final String OUTPUTSTREAM_CACHE = "OUTPUTSTREAM_CACHE";
+    private static final Session.Key<ByteArrayOutputStream> OUTPUTSTREAM_CACHE = Session.Key.of("OUTPUTSTREAM_CACHE");
     private final static Tap HAPI_GETS_TAP = Tap.add("hapi: get_string");
 
     private static class UnsupportedMemcachedException extends
@@ -326,11 +325,10 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     }
 
     private static ByteArrayOutputStream getOutputStream(Session session) {
-        ByteArrayOutputStream outputStream = session.get(MODULE,
-                OUTPUTSTREAM_CACHE);
+        ByteArrayOutputStream outputStream = session.get(OUTPUTSTREAM_CACHE);
         if (outputStream == null) {
             outputStream = new ByteArrayOutputStream(1024);
-            session.put(MODULE, OUTPUTSTREAM_CACHE, outputStream);
+            session.put(OUTPUTSTREAM_CACHE, outputStream);
         } else {
             outputStream.reset();
         }

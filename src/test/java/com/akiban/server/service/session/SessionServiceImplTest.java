@@ -286,17 +286,32 @@ public final class SessionServiceImplTest {
     private static class DummySession implements Session
     {
         @Override
-        public <T> T get(Class<?> module, Object key) {
+        public <T> T get(Key<T> key) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T put(Class<?> module, Object key, T item) {
+        public <T> T put(Key<T> key, T item) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T remove(Class<?> module, Object key) {
+        public <T> T remove(Key<T> key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <K, V> V get(MapKey<K, V> mapKey, K key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <K, V> V put(MapKey<K, V> mapKey, K key, V value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <K, V> V remove(MapKey<K, V> mapKey, K key) {
             throw new UnsupportedOperationException();
         }
 
