@@ -29,7 +29,7 @@ public class SchemaFactory {
         AkibanInformationSchema ais = ais(ddl);
         RowDefCache rowDefCache = new FakeRowDefCache();
         rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinals(null);
+        rowDefCache.fixUpOrdinalsForTest();
         return rowDefCache;
     }
 
@@ -48,8 +48,7 @@ public class SchemaFactory {
             super(new TableStatusCache(null, null));
         }
         @Override
-        public void fixUpOrdinals(SchemaManager schemaManager) {
-            assert schemaManager == null;
+        public void fixUpOrdinals() {
             for (RowDef groupRowDef : getRowDefs()) {
                 if (groupRowDef.isGroupTable()) {
                     groupRowDef.setOrdinal(0);
@@ -59,6 +58,11 @@ public class SchemaFactory {
                     }
                 }
             }
+        }
+        
+        @Override
+        public void fixUpOrdinalsForTest() {
+            fixUpOrdinals();
         }
     }
 }

@@ -173,12 +173,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         validateTableDefinition(session, schemaName, tableDef);
 
         // Some code below this point allows for the name to be non-unique in
-        // support of multi-generation tables. Reject here as it isn't yet complete.
-        final Table curTable = getAis(session).getTable(TableName.create(schemaName, tableName));
+        // support of multi-generation tables. Reject here as it isn't yet
+        // complete.
+        final Table curTable = getAis(session).getTable(
+                TableName.create(schemaName, tableName));
         if (curTable != null && !useOldId) {
             throw new InvalidOperationException(ErrorCode.DUPLICATE_TABLE,
-                                                String.format("Table `%s`.`%s` already exists",
-                                                              schemaName, tableName));
+                    String.format("Table `%s`.`%s` already exists", schemaName,
+                            tableName));
         }
 
         Exchange ex = null;
@@ -627,9 +629,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * representation of the akiban_information_schema itself.
      * 
      * It would be more efficient to generate this value lazily, after multiple
-     * table definitions have been created.  However, the validateTableDefinition
-     * method requires an up-to-date AIS, so for now we have to construct
-     * a new AIS after every schema change.
+     * table definitions have been created. However, the validateTableDefinition
+     * method requires an up-to-date AIS, so for now we have to construct a new
+     * AIS after every schema change.
      * 
      * @param session
      */
@@ -638,8 +640,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return ais;
     }
 
-    private synchronized AkibanInformationSchema constructAIS(final Session session)
-            throws Exception {
+    private synchronized AkibanInformationSchema constructAIS(
+            final Session session) throws Exception {
         AkibanInformationSchema newAis;
         final StringBuilder sb = new StringBuilder();
         final Map<TableName, Integer> idMap = assembleSchema(session, sb, true,
@@ -749,7 +751,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     final String schemaName = ex.getKey().indexTo(-1)
                             .decodeString();
                     ex.append(Key.BEFORE);
-                    final TreeLink link = treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
+                    final TreeLink link = treeService.treeLink(schemaName,
+                            SCHEMA_TREE_NAME);
                     if (treeService.isContainer(ex, link)) {
                         if (withCreateSchemaStatements) {
                             sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
@@ -866,7 +869,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         this.rowDefCache = null;
         this.serviceManager = null;
     }
-    
+
     @Override
     public void crash() throws Exception {
         stop();
@@ -876,15 +879,32 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * Create an AIS during the startup process so that the AIS tables are
      * populated and a visible. This can't be done until both this Service and
      * the PersistitStore service are fully initialized and registered, so it is
-     * done as an "afterStart" step.
+     * done as an "afterStart" step. It is done within the scope of a
+     * transaction so that the TableStatus ordinal fields can be updated
+     * transactionally in {@link RowDefCache#fixUpOrdinals()}.
      */
     @Override
     public void afterStart() throws Exception {
-        final Session session = new SessionImpl();
-        final AkibanInformationSchema ais = constructAIS(session);
-        forceNewTimestamp();
-        commitAIS(ais, updateTimestamp.get());
         final TreeService treeService = serviceManager.getTreeService();
+        final Session session = new SessionImpl();
+        final Transaction transaction = treeService.getTransaction(session);
+        int retries = MAX_TRANSACTION_RETRY_COUNT;
+        for (;;) {
+            try {
+                transaction.begin();
+                final AkibanInformationSchema ais = constructAIS(session);
+                forceNewTimestamp();
+                commitAIS(ais, updateTimestamp.get());
+                transaction.commit();
+                break;
+            } catch (RollbackException e) {
+                if (--retries < 0) {
+                    throw new TransactionFailedException();
+                }
+            } finally {
+                transaction.end();
+            }
+        }
         treeService.checkpoint();
     }
 
@@ -897,7 +917,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final RowDefCache rowDefCache = getRowDefCache();
         rowDefCache.clear();
         rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinals(PersistitStoreSchemaManager.this);
+        rowDefCache.fixUpOrdinals();
         updateTimestamp.set(timestamp);
         this.ais = ais;
     }
@@ -934,11 +954,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return cname;
     }
 
-    private void complainAboutIndexDataType(String schema, String table, String index, String column, String type)
+    private void complainAboutIndexDataType(String schema, String table,
+            String index, String column, String type)
             throws InvalidOperationException {
-        throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_DATA_TYPE,
-                                            "Table `%s`.`%s` index `%s` has unsupported type `%s` from column `%s`",
-                                            schema, table, index, type, column);
+        throw new InvalidOperationException(
+                ErrorCode.UNSUPPORTED_INDEX_DATA_TYPE,
+                "Table `%s`.`%s` index `%s` has unsupported type `%s` from column `%s`",
+                schema, table, index, type, column);
     }
 
     private void validateTableDefinition(final Session session,
@@ -960,7 +982,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
         for (SchemaDef.ColumnDef col : tableDef.getColumns()) {
             final String typeName = col.getType();
-            if(!ais.isTypeSupported(typeName)) {
+            if (!ais.isTypeSupported(typeName)) {
                 throw new InvalidOperationException(
                         ErrorCode.UNSUPPORTED_DATA_TYPE,
                         "Table `%s`.`%s` column `%s` is unsupported type %s",
@@ -975,29 +997,32 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
 
-        for(String colName : tableDef.getPrimaryKey()) {
+        for (String colName : tableDef.getPrimaryKey()) {
             final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
-            if(col != null) {
+            if (col != null) {
                 final String typeName = col.getType();
-                if(!ais.isTypeSupportedAsIndex(typeName)) {
-                    complainAboutIndexDataType(schemaName, tableName, "PRIMARY", colName, typeName);
+                if (!ais.isTypeSupportedAsIndex(typeName)) {
+                    complainAboutIndexDataType(schemaName, tableName,
+                            "PRIMARY", colName, typeName);
                 }
             }
         }
 
-        for(SchemaDef.IndexDef index : tableDef.getIndexes()) {
-            for(String colName : index.getColumnNames()) {
+        for (SchemaDef.IndexDef index : tableDef.getIndexes()) {
+            for (String colName : index.getColumnNames()) {
                 final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
-                if(col != null) {
+                if (col != null) {
                     final String typeName = col.getType();
-                    if(!ais.isTypeSupportedAsIndex(typeName)) {
-                        complainAboutIndexDataType(schemaName, tableName, index.getName(), colName, typeName);
+                    if (!ais.isTypeSupportedAsIndex(typeName)) {
+                        complainAboutIndexDataType(schemaName, tableName,
+                                index.getName(), colName, typeName);
                     }
                 }
             }
         }
 
-        final List<SchemaDef.ReferenceDef> parentJoins = tableDef.getAkibanJoinRefs();
+        final List<SchemaDef.ReferenceDef> parentJoins = tableDef
+                .getAkibanJoinRefs();
         if (parentJoins.isEmpty()) {
             return;
         }

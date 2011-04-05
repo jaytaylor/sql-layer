@@ -98,7 +98,7 @@ public abstract class AkServerTestCase {
                 .getAisForTests(resourceName);
         rowDefCache.clear();
         rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinals(schemaManager);
+        rowDefCache.fixUpOrdinalsForTest();
         return ais;
     }
     

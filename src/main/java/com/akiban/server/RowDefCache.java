@@ -179,7 +179,7 @@ public class RowDefCache {
      * @param schemaManager
      * @throws PersistitException
      */
-    public synchronized void fixUpOrdinals(SchemaManager schemaManager) {
+    public synchronized void fixUpOrdinals() {
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
                 // groupTable has no ordinal
@@ -214,6 +214,22 @@ public class RowDefCache {
                     throw new IllegalStateException(String.format(
                             "Inconsistent ordinal number assignments: %s",
                             assigned));
+                }
+            }
+        }
+    }
+
+    /**
+     * Simpler version (non-transactional) for use in unit tests.
+     */
+    public synchronized void fixUpOrdinalsForTest() {
+        for (final RowDef groupRowDef : getRowDefs()) {
+            if (groupRowDef.isGroupTable()) {
+                // groupTable has no ordinal
+                int nextOrdinal = 1;
+                for (final RowDef userRowDef : groupRowDef
+                        .getUserTableRowDefs()) {
+                    userRowDef.getTableStatus().setOrdinal(nextOrdinal++);
                 }
             }
         }
