@@ -49,6 +49,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     private final boolean markFinish;
     private final long finishDelay;
     private final long initialDelay;
+    private volatile ApiTestBase.ListRowOutput output;
 
     DelayableScanCallable(int tableId, int indexId, DDLFunctions ddl,
                           DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
@@ -121,11 +122,14 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             DMLFunctions dml = ServiceManagerImpl.get().getDStarL().dmlFunctions();
             try {
                 cursorId = dml.openCursor(session, request);
-            } catch (NoSuchIndexException e) {
-                timePoints.mark("SCAN: NO SUCH INDEX");
-                return Collections.emptyList();
+            } catch (Exception e) {
+                ScanhooksDStarLService.ScanHooks removed = scanhooksService.removeHook(session);
+                if (removed != scanHooks) {
+                    throw new RuntimeException("hook not removed correctly", e);
+                }
+                throw e;
             }
-            ApiTestBase.ListRowOutput output = new ApiTestBase.ListRowOutput();
+            output = new ApiTestBase.ListRowOutput();
             timePoints.mark("SCAN: START");
             if (dml.scanSome(session, cursorId, output)) {
                 timePoints.mark("SCAN: EARLY FINISH");
@@ -138,11 +142,17 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             }
             return output.getRows();
         } catch (Exception e) {
+            timePoints.mark("SCAN: exception " + e.getClass().getSimpleName());
             if (scanhooksService.isHookInstalled(session)) {
                 throw new ScanHooksNotRemovedException(e);
             }
             else throw e;
         }
+    }
+
+    public List<NewRow> getRows() {
+        ApiTestBase.ListRowOutput outputLocal = output;
+        return outputLocal == null ? Collections.<NewRow>emptyList() : outputLocal.getRows();
     }
 
     private static class ScanHooksNotRemovedException extends RuntimeException {

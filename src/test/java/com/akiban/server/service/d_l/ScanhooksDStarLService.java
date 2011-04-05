@@ -46,6 +46,10 @@ public final class ScanhooksDStarLService extends DStarLServiceImpl {
         return session.put(SCANHOOKS_KEY, hook);
     }
 
+    public ScanHooks removeHook(Session session) {
+        return session.remove(SCANHOOKS_KEY);
+    }
+
     public boolean isHookInstalled(Session session) {
         return session.get(SCANHOOKS_KEY) != null;
     }

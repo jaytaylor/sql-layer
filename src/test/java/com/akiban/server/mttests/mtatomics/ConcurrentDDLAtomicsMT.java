@@ -19,6 +19,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimePointsComparison;
@@ -34,7 +35,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -143,6 +143,12 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             }
         };
 
+        // Has to happen before the table is dropped!
+        List<NewRow> rowsExpected = Arrays.asList(
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "mr melty")
+        );
+
         ExecutorService executor = Executors.newFixedThreadPool(2);
         Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
         Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
@@ -159,10 +165,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         );
 
         List<NewRow> rowsScanned = scanResult.getItem();
-        List<NewRow> rowsExpected = Arrays.asList(
-                createNewRow(tableId, 1L, "the snowman"),
-                createNewRow(tableId, 2L, "mr melty")
-        );
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
     }
 
@@ -225,8 +227,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         new TimePointsComparison(scanResult, dropIndexResult).verify(
                 "SCAN: START",
-                "SCAN: PAUSE",
+                "(SCAN: PAUSE)>",
                 "DROP: IN",
+                "<(SCAN: PAUSE)",
                 "SCAN: FINISH",
                 "DROP: OUT"
         );
@@ -325,7 +328,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 .topOfLoopDelayer(1, 100, "SCAN: FIRST")
                 .initialDelay(2500)
                 .markFinish(false);
-        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get(ddl());
+        DelayableScanCallable scanCallable = callableBuilder.get(ddl());
         TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -340,30 +343,22 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
         Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
 
-        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        try {
+            scanFuture.get();
+            fail("expected an exception!");
+        } catch (ExecutionException e) {
+            if (!NoSuchTableException.class.equals(e.getCause().getClass())) {
+                throw new RuntimeException("Expected a NoSuchTableException!", e.getCause());
+            }
+        }
         TimedResult<Void> updateResult = updateFuture.get();
 
-        new TimePointsComparison(scanResult, updateResult).verify(
+        new TimePointsComparison(updateResult).verify(
                 "DROP: IN",
-                "SCAN: START",
-                "SCAN: FIRST",
                 "DROP: OUT"
         );
 
-        List<NewRow> rows = scanResult.getItem();
-        assertFalse("rows were empty!", rows.isEmpty());
-        int nulls = 0;
-        for (NewRow row : rows) {
-            Map<Integer,Object> fields = row.getFields();
-            Long id = (Long)fields.get(0);
-            Object name = fields.get(1);
-            assertEquals("fields size", 2, row.getFields().size());
-            assertEquals("string component", id == null ? null : id.toString(), name == null ? null : name.toString());
-            if (id == null) {
-                ++nulls;
-            }
-        }
-        assertTrue(String.format("saw %d nulls (out of %d rows)", nulls, rows.size()), nulls == 0);
+        assertTrue("rows weren't empty!", scanCallable.getRows().isEmpty());
     }
 
     /**
@@ -444,8 +439,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         new TimePointsComparison(scanResult, dropIndexResult).verify(
                 "SCAN: START",
-                "SCAN: PAUSE",
+                "(SCAN: PAUSE)>",
                 "INDEX: DROP>",
+                "<(SCAN: PAUSE)",
                 "SCAN: FINISH",
                 "INDEX: <DROP"
         );
