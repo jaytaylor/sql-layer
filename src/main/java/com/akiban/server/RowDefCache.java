@@ -222,7 +222,7 @@ public class RowDefCache {
     /**
      * Simpler version (non-transactional) for use in unit tests.
      */
-    public synchronized void fixUpOrdinalsForTest() {
+    void fixUpOrdinalsForTest() {
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
                 // groupTable has no ordinal

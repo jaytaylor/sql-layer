@@ -247,27 +247,21 @@ public class ServiceManagerImpl implements ServiceManager
         for (Service service : services.values()) {
             crashServices.add(service);
         }
-        // System.out.println("Preparing to shut down services: " +
-        // stopServices); // TODO change to logging
         ListIterator<Service> reverseIter = crashServices
                 .listIterator(crashServices.size());
-        List<Exception> exceptions = new ArrayList<Exception>();
+        List<Throwable> throwables = new ArrayList<Throwable>();
         while (reverseIter.hasPrevious()) {
             try {
                 Service service = reverseIter.previous();
-                // System.out.println("Shutting down service: " +
-                // service.getClass()); // TODO change to logging
+                LOG.info("Crashing down service {}", service.getClass().getName());
                 service.crash();
-            } catch (Exception t) {
-                exceptions.add(t);
+            } catch (Throwable t) {
+                throwables.add(t);
             }
         }
-        if (!exceptions.isEmpty()) {
-            if (exceptions.size() == 1) {
-                throw exceptions.get(0);
-            }
-            throw new Exception("Failure(s) while shutting down services: "
-                    + exceptions, exceptions.get(0));
+        if (!throwables.isEmpty()) {
+            throw new Exception("Failure(s) while crashing services: "
+                    + throwables, throwables.get(0));
         }
     }
 
