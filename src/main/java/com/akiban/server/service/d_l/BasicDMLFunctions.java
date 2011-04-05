@@ -99,12 +99,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static final int SCAN_RETRY_COUNT = 10;
 
     BasicDMLFunctions(DDLFunctions ddlFunctions) {
-        this(ddlFunctions, NONE);
-    }
-
-    BasicDMLFunctions(DDLFunctions ddlFunctions, ScanHooks scanHooks) {
         this.ddlFunctions = ddlFunctions;
-        this.scanner = new Scanner(scanHooks);
+        this.scanner = new Scanner();
     }
 
     interface ScanHooks {
@@ -113,7 +109,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         void retryHook();
     }
 
-    private static final ScanHooks NONE = new ScanHooks() {
+    static final ScanHooks NONE = new ScanHooks() {
         @Override
         public void loopStartHook() {
         }
@@ -304,8 +300,21 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         return extraData.getCursor().getState();
     }
 
+
     @Override
     public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
+            throws CursorIsFinishedException,
+            CursorIsUnknownException,
+            RowOutputException,
+            BufferFullException,
+            ConcurrentScanAndUpdateException,
+            GenericInvalidOperationException
+
+    {
+        return scanSome(session, cursorId, output, NONE);
+    }
+
+    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks)
             throws CursorIsFinishedException,
                    CursorIsUnknownException,
                    RowOutputException,
@@ -336,12 +345,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             try {
                 transaction.begin();
                 try {
-                    boolean ret = scanner.doScan(cursor, cursorId, output);
+                    boolean ret = scanner.doScan(cursor, cursorId, output, scanHooks);
                     transaction.commit();
                     return ret;
                 } catch (RollbackException e) {
                     logger.trace("PersistIt error; retrying", e);
-                    scanner.scanHooks.retryHook();
+                    scanHooks.retryHook();
                     output.rewind();
                     if (--retriesLeft <= 0) {
                         throw new GenericInvalidOperationException(e);
@@ -416,6 +425,17 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public boolean scanSome(Session session, CursorId cursorId, RowOutput output)
+            throws CursorIsFinishedException,
+            CursorIsUnknownException,
+            RowOutputException,
+            NoSuchTableException,
+            ConcurrentScanAndUpdateException,
+            GenericInvalidOperationException
+    {
+        return scanSome(session, cursorId, output, NONE);
+    }
+
+    public boolean scanSome(Session session, CursorId cursorId, RowOutput output, ScanHooks scanHooks)
         throws CursorIsFinishedException,
                CursorIsUnknownException,
                RowOutputException,
@@ -429,7 +449,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
         final PooledConverter converter = getPooledConverter(output, scanColumns);
         try {
-            return scanSome(session, cursorId, converter.getLegacyOutput());
+            return scanSome(session, cursorId, converter.getLegacyOutput(), scanHooks);
         }
         catch (BufferFullException e) {
             throw new RowOutputException(e);
@@ -439,16 +459,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     static class Scanner {
-        private final ScanHooks scanHooks;
-
-        Scanner() {
-            this(NONE);
-        }
-
-        Scanner(ScanHooks scanHooks) {
-            this.scanHooks = scanHooks;
-        }
-
         /**
          * Do the actual scan. Refactored out of scanSome for ease of unit testing.
          *
@@ -460,6 +470,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
          * @param output
          *            the output; see
          *            {@link #scanSome(Session, CursorId, LegacyRowOutput)}
+         * @param scanHooks the scan hooks to use
          * @return whether more rows remain to be scanned; see
          *         {@link #scanSome(Session, CursorId, LegacyRowOutput)}
          * @throws CursorIsFinishedException
@@ -480,7 +491,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
          */
         protected boolean doScan(Cursor cursor,
                                         CursorId cursorId,
-                                        LegacyRowOutput output)
+                                        LegacyRowOutput output,
+                                        ScanHooks scanHooks)
                 throws CursorIsFinishedException,
                        RowOutputException,
                        GenericInvalidOperationException,
@@ -505,9 +517,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 }
                 cursor.setScanning();
                 if (output.getOutputToMessage()) {
-                    collectRowsIntoBuffer(cursor, output, limit);
+                    collectRowsIntoBuffer(cursor, output, limit, scanHooks);
                 } else {
-                    collectRows(cursor, output, limit);
+                    collectRows(cursor, output, limit, scanHooks);
                 }
                 return !cursor.isFinished();
             } catch (BufferFullException e) {
@@ -522,7 +534,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-        private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
+        private void collectRowsIntoBuffer(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
             throws Exception
         {
             RowCollector rc = cursor.getRowCollector();
@@ -561,7 +573,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
 
         // Returns true if cursor ran out of rows before reaching the limit, false otherwise.
-        private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit)
+        private void collectRows(Cursor cursor, LegacyRowOutput output, ScanLimit limit, ScanHooks scanHooks)
             throws Exception
         {
             RowCollector rc = cursor.getRowCollector();

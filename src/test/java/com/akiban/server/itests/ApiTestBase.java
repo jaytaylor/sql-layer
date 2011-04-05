@@ -108,9 +108,9 @@ public class ApiTestBase {
         }
     };
 
-    private static class TestServiceServiceFactory extends UnitTestServiceFactory {
+    protected static class TestServiceServiceFactory extends UnitTestServiceFactory {
 
-        private TestServiceServiceFactory(Collection<Property> startupConfigProperties) {
+        protected TestServiceServiceFactory(Collection<Property> startupConfigProperties) {
             super(false, startupConfigProperties);
         }
 
@@ -146,9 +146,10 @@ public class ApiTestBase {
         }
     }
 
-    private static class TestServiceManager extends ServiceManagerImpl {
-        private TestServiceManager(Collection<Property> startupConfigProperties) {
-            super(new TestServiceServiceFactory(startupConfigProperties));
+    protected static class TestServiceManager extends ServiceManagerImpl {
+
+        protected TestServiceManager(TestServiceServiceFactory serviceFactory) {
+            super(serviceFactory);
         }
     }
 
@@ -166,8 +167,16 @@ public class ApiTestBase {
     @Before
     public final void startTestServices() throws Exception {
         session = new SessionImpl();
-        sm = new TestServiceManager(startupConfigProperties());
+        sm = createServiceManager( createServiceFactory(startupConfigProperties()) );
         sm.startServices();
+    }
+
+    protected TestServiceManager createServiceManager(TestServiceServiceFactory serviceFactory) {
+        return new TestServiceManager(serviceFactory);
+    }
+
+    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
+        return new TestServiceServiceFactory(startupConfigProperties);
     }
 
     @After
