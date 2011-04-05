@@ -55,9 +55,9 @@ import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
+final class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
-    private final static Logger logger = LoggerFactory.getLogger(DDLFunctionsImpl.class);
+    private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     @Override
     public void createTable(Session session, String schema, String ddlText)
@@ -104,7 +104,7 @@ final class DDLFunctionsImpl extends ClientAPIBase implements DDLFunctions {
         }
 
         try {
-            DMLFunctions dml = new DMLFunctionsImpl(this);
+            DMLFunctions dml = new BasicDMLFunctions(this);
             dml.truncateTable(session, table.getTableId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         } catch (Exception e) {

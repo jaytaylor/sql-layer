@@ -22,6 +22,9 @@ import com.akiban.server.service.ServiceNotStartedException;
 import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.jmx.JmxManageable;
 
+import java.util.Collections;
+import java.util.List;
+
 public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {
 
     private final Object MONITOR = new Object();
@@ -52,8 +55,9 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             if (ddlFunctions != null) {
                 throw new ServiceStartupException("service already started");
             }
-            ddlFunctions = new DDLFunctionsImpl();
-            dmlFunctions = new DMLFunctionsImpl(ddlFunctions);
+            List<DStarLFunctionsHook> hooks = getHooks();
+            ddlFunctions = new HookableDDLFunctions(new BasicDDLFunctions(), hooks);
+            dmlFunctions = new HookableDMLFunctions(new BasicDMLFunctions(ddlFunctions), hooks);
         }
     }
 
@@ -84,5 +88,9 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
             throw new ServiceNotStartedException();
         }
         return ret;
+    }
+
+    protected List<DStarLFunctionsHook> getHooks() {
+        return Collections.emptyList();
     }
 }

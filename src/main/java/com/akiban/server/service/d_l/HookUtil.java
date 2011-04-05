@@ -15,15 +15,16 @@
 
 package com.akiban.server.service.d_l;
 
-import com.akiban.server.api.DDLFunctions;
-
-public final class HookableDMLFI extends BasicDMLFunctions {
-
-    public interface ScanHooks extends BasicDMLFunctions.ScanHooks {
-        // not adding anything, just promoting visibility
+final class HookUtil {
+    static <T extends Throwable> void throwIf(Throwable t, Class<T> ifClass) throws T {
+        if (ifClass.isInstance(t)) {
+            throw ifClass.cast(t);
+        }
     }
 
-    public HookableDMLFI(DDLFunctions ddlFunctions, ScanHooks scanHooks) {
-        super(ddlFunctions, scanHooks);
+    static Error throwAlways(Throwable t) {
+        throwIf(t, RuntimeException.class);
+        throwIf(t, Error.class);
+        return new Error("not a RuntimeException, checked exception or Error?!", t);
     }
 }
