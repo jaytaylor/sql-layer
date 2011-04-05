@@ -64,15 +64,11 @@ public final class ScanhooksDStarLService extends DStarLServiceImpl {
                 ConcurrentScanAndUpdateException,
                 GenericInvalidOperationException
         {
-            ScanHooks hooks = session.get(SCANHOOKS_KEY);
+            ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
                 hooks = BasicDMLFunctions.NONE;
             }
-            try {
-                return super.scanSome(session, cursorId, output, hooks);
-            } finally {
-                session.remove(SCANHOOKS_KEY);
-            }
+            return super.scanSome(session, cursorId, output, hooks);
         }
 
         @Override
@@ -84,15 +80,11 @@ public final class ScanhooksDStarLService extends DStarLServiceImpl {
                 NoSuchTableException,
                 GenericInvalidOperationException
         {
-            ScanHooks hooks = session.get(SCANHOOKS_KEY);
+            ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
                 hooks = BasicDMLFunctions.NONE;
             }
-            try {
-                return super.scanSome(session, cursorId, output, hooks);
-            } finally {
-                session.remove(SCANHOOKS_KEY);
-            }
+            return super.scanSome(session, cursorId, output, hooks);
         }
     }
 }
