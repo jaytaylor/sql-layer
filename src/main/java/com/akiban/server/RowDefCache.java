@@ -206,7 +206,7 @@ public class RowDefCache {
                         // (if we knew what that was...)
                         for (; assigned.contains(nextOrdinal); nextOrdinal++) {
                         }
-                        userRowDef.getTableStatus().setOrdinal(nextOrdinal);
+                        tableStatusCache.setOrdinal(userRowDef.getRowDefId(), nextOrdinal);
                         assigned.add(nextOrdinal);
                     }
                 }

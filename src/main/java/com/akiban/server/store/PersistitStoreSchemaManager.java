@@ -638,21 +638,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return ais;
     }
 
-    private AkibanInformationSchema constructAIS(final Session session)
+    private synchronized AkibanInformationSchema constructAIS(final Session session)
             throws Exception {
-        AkibanInformationSchema ais;
+        AkibanInformationSchema newAis;
         final StringBuilder sb = new StringBuilder();
         final Map<TableName, Integer> idMap = assembleSchema(session, sb, true,
                 false, false);
         final String schemaText = sb.toString();
         final SchemaDef schemaDef = SchemaDef.parseSchema(schemaText);
-        ais = new SchemaDefToAis(schemaDef, true).getAis();
+        newAis = new SchemaDefToAis(schemaDef, true).getAis();
         // Reassign the table ID values.
         for (final Map.Entry<TableName, Integer> entry : idMap.entrySet()) {
-            Table table = ais.getTable(entry.getKey());
+            Table table = newAis.getTable(entry.getKey());
             table.setTableId(entry.getValue());
         }
-        for (final Map.Entry<TableName, GroupTable> entry : ais
+        for (final Map.Entry<TableName, GroupTable> entry : newAis
                 .getGroupTables().entrySet()) {
             final UserTable root = entry.getValue().getRoot();
             final Integer rootId = idMap.get(root.getName());
@@ -660,7 +660,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             entry.getValue().setTableId(
                     TreeService.MAX_TABLES_PER_VOLUME - rootId);
         }
-        return ais;
+        return newAis;
     }
 
     public AkibanInformationSchema getAisForTests(final String schema)

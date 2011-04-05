@@ -323,7 +323,7 @@ public class ApiTestBase {
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
         ScanRequest all = scanAllRequest(tableId);
         expectRows(all, expectedRows);
-//        expectRowCount(tableId, expectedRows.length); TODO broken pending fix to bug 703136
+        expectRowCount(tableId, expectedRows.length);
     }
 
     protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
