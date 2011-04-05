@@ -17,7 +17,6 @@ package com.akiban.server.mttests.mtatomics;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.service.d_l.HookableDMLFI;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -28,6 +27,9 @@ import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.Timing;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.d_l.DStarLService;
+import com.akiban.server.service.d_l.ScanhooksDStarLService;
 import com.akiban.server.service.session.Session;
 
 import java.util.Arrays;
@@ -35,6 +37,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+
+import static org.junit.Assert.*;
 
 class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     private final int tableId;
@@ -71,7 +75,8 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         Timing.sleep(initialDelay);
         final Delayer topOfLoopDelayer = topOfLoopDelayer(timePoints);
         final Delayer beforeConversionDelayer = beforeConversionDelayer(timePoints);
-        DMLFunctions dml = new HookableDMLFI(ddl, new HookableDMLFI.ScanHooks() {
+
+        ScanhooksDStarLService.ScanHooks scanHooks = new ScanhooksDStarLService.ScanHooks() {
             @Override
             public void loopStartHook() {
                 if (topOfLoopDelayer != null) {
@@ -90,7 +95,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             public void retryHook() {
                 timePoints.mark("SCAN: RETRY");
             }
-        });
+        };
         ScanAllRequest request = new ScanAllRequest(
                 tableId,
                 new HashSet<Integer>(Arrays.asList(0, 1)),
@@ -98,24 +103,32 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
                 EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
                 ScanLimit.NONE
         );
-        final CursorId cursorId;
+        DStarLService dstarLService = ServiceManagerImpl.get().getDStarL();
+        ScanhooksDStarLService scanhooksService = (ScanhooksDStarLService) dstarLService;
+        assertNull("previous scanhook defined!", scanhooksService.installHook(session, scanHooks));
         try {
-            cursorId = dml.openCursor(session, request);
-        } catch (NoSuchIndexException e) {
-            timePoints.mark("SCAN: NO SUCH INDEX");
-            return Collections.emptyList();
-        }
-        ApiTestBase.ListRowOutput output = new ApiTestBase.ListRowOutput();
-        timePoints.mark("SCAN: START");
-        if (dml.scanSome(session, cursorId, output)) {
-            timePoints.mark("SCAN: EARLY FINISH");
-            return output.getRows();
-        }
-        dml.closeCursor(session, cursorId);
-        if (markFinish) {
-            timePoints.mark("SCAN: FINISH");
-        }
+            final CursorId cursorId;
+            DMLFunctions dml = ServiceManagerImpl.get().getDStarL().dmlFunctions();
+            try {
+                cursorId = dml.openCursor(session, request);
+            } catch (NoSuchIndexException e) {
+                timePoints.mark("SCAN: NO SUCH INDEX");
+                return Collections.emptyList();
+            }
+            ApiTestBase.ListRowOutput output = new ApiTestBase.ListRowOutput();
+            timePoints.mark("SCAN: START");
+            if (dml.scanSome(session, cursorId, output)) {
+                timePoints.mark("SCAN: EARLY FINISH");
+                return output.getRows();
+            }
+            dml.closeCursor(session, cursorId);
+            if (markFinish) {
+                timePoints.mark("SCAN: FINISH");
+            }
 
-        return output.getRows();
+            return output.getRows();
+        } finally {
+            assertFalse("scanhooks not removed!", scanhooksService.isHookInstalled(session));
+        }
     }
 }

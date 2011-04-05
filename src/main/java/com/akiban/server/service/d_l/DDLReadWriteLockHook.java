@@ -27,32 +27,23 @@ public final class DDLReadWriteLockHook implements DStarLFunctionsHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DDLReadWriteLockHook.class);
     private static final Session.Key<Lock> LOCK_KEY = Session.Key.of("READWRITE_LOCK");
-    private static final Session.Key<Boolean> WRITE_LOCK_FAILED = Session.Key.of("WRITE_LOCK_FAILURE");
     static final String IS_LOCK_FAIR_PROPERTY = "akserver.dstarl.lock.fair";
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock( isFair() );
 
     @Override
     public void hookFunctionIn(Session session, DDLFunction function) {
-        assert session.get(WRITE_LOCK_FAILED) == null
-                : "WRITE_LOCK_FAILURE not cleared: " + session.get(WRITE_LOCK_FAILED);
-        final Lock oldLock;
+        final Lock lock;
         if (DStarLFunctionsHook.DStarLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
-            Lock lock = readWriteLock.writeLock();
-            // We have a single-threaded write thread design, so there should never be contention for this lock
-            boolean lockWorked = lock.tryLock();
-            if (lockWorked) {
-                oldLock = session.put(LOCK_KEY, lock);
-            } else {
-                session.put(WRITE_LOCK_FAILED, true);
-                throw new IllegalStateException("write lock has contention!");
-            }
+            assert (!readWriteLock.isWriteLocked()) || readWriteLock.isWriteLockedByCurrentThread()
+                    : "Another thread has the write lock! Writes are supposed to be single-threaded";
+            lock = readWriteLock.writeLock();
         }
         else {
-            Lock lock = readWriteLock.readLock();
-            oldLock = session.put(LOCK_KEY, lock);
-            lock.lock();
+            lock = readWriteLock.readLock();
         }
+        Lock oldLock = session.put(LOCK_KEY, lock);
+        lock.lock();
         assert oldLock == null : oldLock;
     }
 
@@ -65,9 +56,6 @@ public final class DDLReadWriteLockHook implements DStarLFunctionsHook {
     public void hookFunctionFinally(Session session, DDLFunction function) {
         Lock lock = session.remove(LOCK_KEY);
         if (lock == null) {
-            if (Boolean.TRUE.equals(session.remove(WRITE_LOCK_FAILED))) {
-                return; // exception was already thrown in hookFunctionIn
-            }
             String errString = "Lock was null! Some lock has escaped, and this could be a deadlock!";
             LOGGER.error(errString);
             throw new NullPointerException(errString);
