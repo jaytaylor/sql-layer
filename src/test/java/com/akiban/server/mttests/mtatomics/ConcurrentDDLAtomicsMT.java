@@ -52,22 +52,27 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void dropTableWhileScanningPK() throws Exception {
-        Map<Integer,Object> expectedFields = new HashMap<Integer, Object>();
-        expectedFields.put(0, 1L);
-        expectedFields.put(1, "the snowman");
-        dropTableWhileScanning("PRIMARY", expectedFields);
+        final int tableId = tableWithTwoRows();
+        dropTableWhileScanning(
+                tableId,
+                "PRIMARY",
+                createNewRow(tableId, 1L, "the snowman"),
+                createNewRow(tableId, 2L, "mr melty")
+        );
     }
 
     @Test
     public void dropTableWhileScanningOnIndex() throws Exception {
-        Map<Integer,Object> expectedFields = new HashMap<Integer, Object>();
-        expectedFields.put(0, 2L);
-        expectedFields.put(1, "mr melty");
-        dropTableWhileScanning("name", expectedFields);
+        final int tableId = tableWithTwoRows();
+        dropTableWhileScanning(
+                tableId,
+                "name",
+                createNewRow(tableId, 2L, "mr melty"),
+                createNewRow(tableId, 1L, "the snowman")
+        );
     }
 
-    private void dropTableWhileScanning(String indexName, Map<Integer,Object> expectedFields) throws Exception {
-        final int tableId = tableWithTwoRows();
+    private void dropTableWhileScanning(int tableId, String indexName, NewRow... expectedScanRows) throws Exception {
         final int SCAN_WAIT = 5000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(indexName).getIndexId();
@@ -96,15 +101,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         new TimePointsComparison(scanResult, dropIndexResult).verify(
                 "SCAN: START",
-                "SCAN: PAUSE",
+                "(SCAN: PAUSE)>",
                 "TABLE: DROP>",
+                "<(SCAN: PAUSE)",
                 "SCAN: FINISH",
                 "TABLE: <DROP"
         );
 
         List<NewRow> rowsScanned = scanResult.getItem();
-        assertEquals("rows scanned size", 1, rowsScanned.size());
-        assertEquals("rows[0] fields", expectedFields, rowsScanned.get(0).getFields());
+        assertEquals("rows scanned size", expectedScanRows.length, rowsScanned.size());
+        assertEquals("rows", Arrays.asList(expectedScanRows), rowsScanned);
     }
 
     @Test

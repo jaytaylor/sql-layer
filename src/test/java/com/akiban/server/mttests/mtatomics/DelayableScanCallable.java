@@ -47,11 +47,12 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     private final DelayerFactory topOfLoopDelayer;
     private final DelayerFactory beforeConversionDelayer;
     private final boolean markFinish;
+    private final long finishDelay;
     private final long initialDelay;
 
     DelayableScanCallable(int tableId, int indexId, DDLFunctions ddl,
                           DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
-                          boolean markFinish, long initialDelay)
+                          boolean markFinish, long initialDelay, long finishDelay)
     {
         this.tableId = tableId;
         this.indexId = indexId;
@@ -60,6 +61,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         this.beforeConversionDelayer = beforeConversionDelayer;
         this.markFinish = markFinish;
         this.initialDelay = initialDelay;
+        this.finishDelay = finishDelay;
     }
 
     private Delayer topOfLoopDelayer(TimePoints timePoints) {
@@ -95,6 +97,14 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             public void retryHook() {
                 timePoints.mark("SCAN: RETRY");
             }
+
+            @Override
+            public void scanSomeFinishedWellHook() {
+                if (markFinish) {
+                    timePoints.mark("SCAN: FINISH");
+                }
+                Timing.sleep(finishDelay);
+            }
         };
         ScanAllRequest request = new ScanAllRequest(
                 tableId,
@@ -122,9 +132,6 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
                 return output.getRows();
             }
             dml.closeCursor(session, cursorId);
-            if (markFinish) {
-                timePoints.mark("SCAN: FINISH");
-            }
 
             return output.getRows();
         } finally {
