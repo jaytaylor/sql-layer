@@ -28,6 +28,8 @@ public final class DDLReadWriteLockHook implements DStarLFunctionsHook {
     private static final Logger LOGGER = LoggerFactory.getLogger(DDLReadWriteLockHook.class);
     private static final Session.Key<Lock> LOCK_KEY = Session.Key.of("READWRITE_LOCK");
     static final String IS_LOCK_FAIR_PROPERTY = "akserver.dstarl.lock.fair";
+    private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.of("WRITE_LOCK_TAKEN");
+    static final String WRITE_LOCK_TAKEN_MESSAGE = "Another thread has the write lock! Writes are supposed to be single-threaded";
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock( isFair() );
 
@@ -35,8 +37,10 @@ public final class DDLReadWriteLockHook implements DStarLFunctionsHook {
     public void hookFunctionIn(Session session, DDLFunction function) {
         final Lock lock;
         if (DStarLFunctionsHook.DStarLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
-            assert (!readWriteLock.isWriteLocked()) || readWriteLock.isWriteLockedByCurrentThread()
-                    : "Another thread has the write lock! Writes are supposed to be single-threaded";
+            if (readWriteLock.isWriteLocked() && (!readWriteLock.isWriteLockedByCurrentThread())) {
+                session.put(WRITE_LOCK_TAKEN, true);
+                throw new IllegalStateException(WRITE_LOCK_TAKEN_MESSAGE);
+            }
             lock = readWriteLock.writeLock();
         }
         else {
@@ -56,6 +60,10 @@ public final class DDLReadWriteLockHook implements DStarLFunctionsHook {
     public void hookFunctionFinally(Session session, DDLFunction function, Throwable t) {
         Lock lock = session.remove(LOCK_KEY);
         if (lock == null) {
+            Boolean writeLockWasTaken = session.remove(WRITE_LOCK_TAKEN);
+            if (writeLockWasTaken != null && writeLockWasTaken) {
+                return; // assertion was thrown
+            }
             throw new LockNotSetException(t);
         }
         lock.unlock();
