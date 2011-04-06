@@ -69,5 +69,5 @@ public interface DStarLFunctionsHook {
     }
     void hookFunctionIn(Session session, DDLFunction function);
     void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable);
-    void hookFunctionFinally(Session session, DDLFunction function);
+    void hookFunctionFinally(Session session, DDLFunction function, Throwable throwable);
 }

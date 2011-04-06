@@ -53,12 +53,10 @@ public final class DDLReadWriteLockHook implements DStarLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionFinally(Session session, DDLFunction function) {
+    public void hookFunctionFinally(Session session, DDLFunction function, Throwable t) {
         Lock lock = session.remove(LOCK_KEY);
         if (lock == null) {
-            String errString = "Lock was null! Some lock has escaped, and this could be a deadlock!";
-            LOGGER.error(errString);
-            throw new NullPointerException(errString);
+            throw new LockNotSetException(t);
         }
         lock.unlock();
     }
@@ -66,5 +64,13 @@ public final class DDLReadWriteLockHook implements DStarLFunctionsHook {
     private static boolean isFair() {
         String isFairString = ServiceManagerImpl.get().getConfigurationService().getProperty(IS_LOCK_FAIR_PROPERTY);
         return Boolean.parseBoolean(isFairString);
+    }
+
+    private static class LockNotSetException extends RuntimeException {
+        private static final String ERR_STRING = "Lock was null! Some lock has escaped, and this could be a deadlock!";
+        private LockNotSetException(Throwable cause) {
+            super(ERR_STRING, cause);
+            LOGGER.error(ERR_STRING);
+        }
     }
 }

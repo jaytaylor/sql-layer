@@ -62,10 +62,12 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public void createTable(Session session, String schema, String ddlText) throws ParseException, UnsupportedCharsetException, ProtectedTableDDLException, DuplicateTableNameException, GroupWithProtectedTableException, JoinToUnknownTableException, JoinToWrongColumnsException, JoinToMultipleParentsException, NoPrimaryKeyException, DuplicateColumnNameException, UnsupportedDataTypeException, UnsupportedIndexDataTypeException, GenericInvalidOperationException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.CREATE_TABLE);
             delegate.createTable(session, schema, ddlText);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.CREATE_TABLE, t);
             throwIf(t, ParseException.class);
             throwIf(t, UnsupportedCharsetException.class);
@@ -82,16 +84,18 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.CREATE_TABLE);
+            hook.hookFunctionFinally(session, DDLFunction.CREATE_TABLE, thrown);
         }
     }
 
     @Override
     public void dropTable(Session session, TableName tableName) throws ProtectedTableDDLException, ForeignConstraintDDLException, UnsupportedDropException, GenericInvalidOperationException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.DROP_TABLE);
             delegate.dropTable(session, tableName);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.DROP_TABLE, t);
             throwIf(t, ProtectedTableDDLException.class);
             throwIf(t, ForeignConstraintDDLException.class);
@@ -99,208 +103,236 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.DROP_TABLE);
+            hook.hookFunctionFinally(session, DDLFunction.DROP_TABLE, thrown);
         }
     }
 
     @Override
     public void dropSchema(Session session, String schemaName) throws ProtectedTableDDLException, ForeignConstraintDDLException, GenericInvalidOperationException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.DROP_SCHEMA);
             delegate.dropSchema(session, schemaName);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.DROP_SCHEMA, t);
             throwIf(t, ProtectedTableDDLException.class);
             throwIf(t, ForeignConstraintDDLException.class);
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.DROP_SCHEMA);
+            hook.hookFunctionFinally(session, DDLFunction.DROP_SCHEMA, thrown);
         }
     }
 
     @Override
     public void dropGroup(Session session, String groupName) throws ProtectedTableDDLException, GenericInvalidOperationException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.DROP_GROUP);
             delegate.dropGroup(session, groupName);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.DROP_GROUP, t);
             throwIf(t, ProtectedTableDDLException.class);
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.DROP_GROUP);
+            hook.hookFunctionFinally(session, DDLFunction.DROP_GROUP, thrown);
         }
     }
 
     @Override
     public AkibanInformationSchema getAIS(final Session session) {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_AIS);
             return delegate.getAIS(session);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_AIS, t);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_AIS);
+            hook.hookFunctionFinally(session, DDLFunction.GET_AIS, thrown);
         }
     }
 
     @Override
     public int getTableId(Session session, TableName tableName) throws NoSuchTableException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_TABLE_ID);
             return delegate.getTableId(session, tableName);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_TABLE_ID, t);
             throwIf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_TABLE_ID);
+            hook.hookFunctionFinally(session, DDLFunction.GET_TABLE_ID, thrown);
         }
     }
 
     @Override
     public Table getTable(Session session, int tableId) throws NoSuchTableException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_TABLE_BY_ID);
             return delegate.getTable(session, tableId);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_TABLE_BY_ID, t);
             throwIf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_TABLE_BY_ID);
+            hook.hookFunctionFinally(session, DDLFunction.GET_TABLE_BY_ID, thrown);
         }
     }
 
     @Override
     public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_TABLE_BY_NAME);
             return delegate.getTable(session, tableName);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_TABLE_BY_NAME, t);
             throwIf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_TABLE_BY_NAME);
+            hook.hookFunctionFinally(session, DDLFunction.GET_TABLE_BY_NAME, thrown);
         }
     }
 
     @Override
     public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_USER_TABLE_BY_NAME);
             return delegate.getUserTable(session, tableName);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_USER_TABLE_BY_NAME, t);
             throwIf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_USER_TABLE_BY_NAME);
+            hook.hookFunctionFinally(session, DDLFunction.GET_USER_TABLE_BY_NAME, thrown);
         }
     }
 
     @Override
     public TableName getTableName(Session session, int tableId) throws NoSuchTableException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_USER_TABLE_BY_ID);
             return delegate.getTableName(session, tableId);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_USER_TABLE_BY_ID, t);
             throwIf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_USER_TABLE_BY_ID);
+            hook.hookFunctionFinally(session, DDLFunction.GET_USER_TABLE_BY_ID, thrown);
         }
     }
 
     @Override
     public RowDef getRowDef(int tableId) throws NoSuchTableException {
         Session session = new SessionImpl();
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_ROWDEF);
             return delegate.getRowDef(tableId);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_ROWDEF, t);
             throwIf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_ROWDEF);
+            hook.hookFunctionFinally(session, DDLFunction.GET_ROWDEF, thrown);
         }
     }
 
     @Override
     public String getDDLs(final Session session) throws InvalidOperationException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_DDLS);
             return delegate.getDDLs(session);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_DDLS, t);
             throwIf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_DDLS);
+            hook.hookFunctionFinally(session, DDLFunction.GET_DDLS, thrown);
         }
     }
 
     @Override
     public SchemaId getSchemaID() throws InvalidOperationException {
         Session session = new SessionImpl();
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.GET_SCHEMA_ID);
             return delegate.getSchemaID();
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.GET_SCHEMA_ID, t);
             throwIf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.GET_SCHEMA_ID);
+            hook.hookFunctionFinally(session, DDLFunction.GET_SCHEMA_ID, thrown);
         }
     }
 
     @Override
     public void forceGenerationUpdate() throws InvalidOperationException {
         Session session = new SessionImpl();
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.FORCE_GENERATION_UPDATE);
             delegate.forceGenerationUpdate();
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.FORCE_GENERATION_UPDATE, t);
             throwIf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.FORCE_GENERATION_UPDATE);
+            hook.hookFunctionFinally(session, DDLFunction.FORCE_GENERATION_UPDATE, thrown);
         }
     }
 
     @Override
     public void createIndexes(final Session session, Collection<Index> indexesToAdd) throws InvalidOperationException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.CREATE_INDEXES);
             delegate.createIndexes(session, indexesToAdd);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.CREATE_INDEXES, t);
             throwIf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.CREATE_INDEXES);
+            hook.hookFunctionFinally(session, DDLFunction.CREATE_INDEXES, thrown);
         }
     }
 
     @Override
     public void dropIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop) throws InvalidOperationException {
+        Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DDLFunction.DROP_INDEXES);
             delegate.dropIndexes(session, tableName, indexNamesToDrop);
         } catch (Throwable t) {
+            thrown = t;
             hook.hookFunctionCatch(session, DDLFunction.DROP_INDEXES, t);
             throwIf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DDLFunction.DROP_INDEXES);
+            hook.hookFunctionFinally(session, DDLFunction.DROP_INDEXES, thrown);
         }
     }
 }
