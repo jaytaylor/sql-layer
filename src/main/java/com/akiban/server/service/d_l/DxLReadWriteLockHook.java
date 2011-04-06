@@ -27,7 +27,7 @@ public final class DxLReadWriteLockHook implements DXLFunctionsHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DxLReadWriteLockHook.class);
     private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.ofStack("READWRITE_LOCK");
-    static final String IS_LOCK_FAIR_PROPERTY = "akserver.dstarl.lock.fair";
+    static final String IS_LOCK_FAIR_PROPERTY = "akserver.dxl.lock.fair";
     private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.of("WRITE_LOCK_TAKEN");
     static final String WRITE_LOCK_TAKEN_MESSAGE = "Another thread has the write lock! Writes are supposed to be single-threaded";
 

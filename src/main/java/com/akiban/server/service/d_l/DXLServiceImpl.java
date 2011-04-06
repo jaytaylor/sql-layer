@@ -36,7 +36,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DStarL", bean, DXLMXBean.class);
+        return new JmxObjectInfo("DXL", bean, DXLMXBean.class);
     }
 
     @Override
