@@ -152,7 +152,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-                treeService.getTableStatusCache().zeroRowCount(
+                treeService.getTableStatusCache().truncate(
                         indexAnalysisRowDef.getRowDefId());
                 break;
 

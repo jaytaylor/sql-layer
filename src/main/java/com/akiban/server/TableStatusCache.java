@@ -47,9 +47,10 @@ public class TableStatusCache extends TransactionalCache {
 
     private final static byte INCREMENT = 1;
     private final static byte DECREMENT = 2;
-    private final static byte ZERO = 3;
+    private final static byte TRUNCATE = 3;
     private final static byte AUTO_INCREMENT = 4;
     private final static byte UNIQUEID = 5;
+    private final static byte DROP = 6;
     private final static byte ASSIGN_ORDINAL = 100;
 
     private final Map<Integer, TableStatus> _tableStatusMap = new HashMap<Integer, TableStatus>(
@@ -71,7 +72,6 @@ public class TableStatusCache extends TransactionalCache {
             TableStatusCache tsc = (TableStatusCache) tc;
             final TableStatus ts = tsc.getTableStatus(_arg);
             ts.incrementRowCount(1);
-            ts.updateWriteTime();
         }
 
         @Override
@@ -111,7 +111,6 @@ public class TableStatusCache extends TransactionalCache {
             TableStatusCache tsc = (TableStatusCache) tc;
             final TableStatus ts = tsc.getTableStatus(_arg);
             ts.incrementRowCount(-1);
-            ts.updateDeleteTime();
         }
 
         @Override
@@ -135,13 +134,13 @@ public class TableStatusCache extends TransactionalCache {
         }
     }
 
-    static class ZeroRowCount extends UpdateInt {
+    static class Truncate extends UpdateInt {
 
-        ZeroRowCount() {
-            super(ZERO);
+        Truncate() {
+            super(TRUNCATE);
         }
 
-        ZeroRowCount(final int tableId) {
+        Truncate(final int tableId) {
             this();
             _arg = tableId;
         }
@@ -150,13 +149,37 @@ public class TableStatusCache extends TransactionalCache {
         public void apply(final TransactionalCache tc) {
             TableStatusCache tsc = (TableStatusCache) tc;
             final TableStatus ts = tsc.getTableStatus(_arg);
-            ts.zeroRowCount();
-            ts.updateDeleteTime();
+            ts.truncate();
         }
 
         @Override
         public String toString() {
-            return String.format("<TruncateRowCount:%d>", _arg);
+            return String.format("<Truncate:%d>", _arg);
+        }
+    }
+    
+    static class Drop extends UpdateInt {
+        
+        Drop() {
+            super(DROP);
+        }
+        
+        Drop(final int tableId) {
+            this();
+            _arg = tableId;
+        }
+
+        @Override
+        public void apply(final TransactionalCache tc) {
+            TableStatusCache tsc = (TableStatusCache) tc;
+            final TableStatus ts = tsc.getTableStatus(_arg);
+            ts.drop();
+        }
+
+        @Override
+        public String toString() {
+            return String.format("<" +
+            		"<Drop:%d>", _arg);
         }
     }
 
@@ -271,8 +294,8 @@ public class TableStatusCache extends TransactionalCache {
             return new IncrementRowCount();
         case DECREMENT:
             return new DecrementRowCount();
-        case ZERO:
-            return new ZeroRowCount();
+        case TRUNCATE:
+            return new Truncate();
         case AUTO_INCREMENT:
             return new AutoIncrementUpdate();
         case UNIQUEID:
@@ -353,11 +376,12 @@ public class TableStatusCache extends TransactionalCache {
             int tableId = treeService.storeToAis(exchange.getVolume(),
                     storedTableId);
             if (exchange.getValue().isDefined()) {
-                if (_tableStatusMap.containsKey(tableId)) {
+                TableStatus ts = _tableStatusMap.get(tableId);
+                if (ts != null && ts.getCreationTime() != 0) {
                     throw new IllegalStateException("TableID " + tableId
                             + " already loaded");
                 }
-                TableStatus ts = new TableStatus(tableId);
+                ts = new TableStatus(tableId);
                 ts.get(exchange.getValue());
                 _tableStatusMap.put(tableId, ts);
             }
@@ -392,8 +416,8 @@ public class TableStatusCache extends TransactionalCache {
         update(new DecrementRowCount(tableId));
     }
 
-    public void zeroRowCount(final int tableId) {
-        update(new ZeroRowCount(tableId));
+    public void truncate(final int tableId) {
+        update(new Truncate(tableId));
     }
 
     public void updateAutoIncrementValue(final int tableId, final long value) {

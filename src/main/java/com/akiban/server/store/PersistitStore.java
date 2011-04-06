@@ -882,7 +882,7 @@ public class PersistitStore implements Store {
                 for (int i = 0; i < groupRowDef.getUserTableRowDefs().length; i++) {
                     final int childRowDefId = groupRowDef
                             .getUserTableRowDefs()[i].getRowDefId();
-                    tableStatusCache.zeroRowCount(childRowDefId);
+                    tableStatusCache.truncate(childRowDefId);
                 }
                 transaction.commit(forceToDisk);
                 return;

@@ -110,6 +110,7 @@ public class TableStatus {
 
     public TableStatus(final int tableId) {
         this.tableId = tableId;
+        this.creationTime = now();
     }
     
     public TableStatus(final TableStatus ts) {
@@ -210,13 +211,37 @@ public class TableStatus {
         dirty = true;
     }
 
-    public synchronized void zeroRowCount() {
-        this.rowCount = 0;
+    /**
+     * Invoked by truncate
+     */
+    public synchronized void truncate() {
+        rowCount = 0;
+        autoIncrementValue = 0;
+        uniqueIdCounter = 0;
+        uniqueIdValue = 0;
+        updateDeleteTime();
         dirty = true;
     }
-
+    
+    public synchronized void drop() {
+        truncate();
+        isAutoIncrement = false;
+        ordinal = 0;
+        creationTime = 0;
+        lastDeleteTime = 0;
+        lastReadTime = 0;
+        lastUpdateTime = 0;
+        lastWriteTime = 0;
+        dirty = true;
+    }
+    
     public synchronized void incrementRowCount(long delta) {
         this.rowCount = Math.max(0, this.rowCount + delta);
+        if (delta > 0) {
+            updateWriteTime();
+        } else {
+            updateDeleteTime();
+        }
         dirty = true;
     }
 
