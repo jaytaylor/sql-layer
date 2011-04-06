@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public final class DxLReadWriteLockHook implements DXLFunctionsHook {
+final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DxLReadWriteLockHook.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DXLReadWriteLockHook.class);
     private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.ofStack("READWRITE_LOCK");
     static final String IS_LOCK_FAIR_PROPERTY = "akserver.dxl.lock.fair";
     private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.of("WRITE_LOCK_TAKEN");
@@ -33,13 +33,13 @@ public final class DxLReadWriteLockHook implements DXLFunctionsHook {
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock( isFair() );
 
-    private final static DxLReadWriteLockHook INSTANCE = new DxLReadWriteLockHook();
+    private final static DXLReadWriteLockHook INSTANCE = new DXLReadWriteLockHook();
 
-    public static DxLReadWriteLockHook only() {
+    public static DXLReadWriteLockHook only() {
         return INSTANCE;
     }
 
-    private DxLReadWriteLockHook() {
+    private DXLReadWriteLockHook() {
         // Having multiple of these introduces the possibility of a deadlock, for all the usual deadlocky reasons
     }
 

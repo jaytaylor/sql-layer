@@ -101,6 +101,6 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     protected List<DXLFunctionsHook> getHooks() {
-        return Collections.<DXLFunctionsHook>singletonList(DxLReadWriteLockHook.only());
+        return Collections.<DXLFunctionsHook>singletonList(DXLReadWriteLockHook.only());
     }
 }
