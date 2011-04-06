@@ -18,7 +18,7 @@ package com.akiban.server.service.d_l;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 
-public interface DStarLService {
+public interface DXLService {
     DDLFunctions ddlFunctions();
     DMLFunctions dmlFunctions();
 }

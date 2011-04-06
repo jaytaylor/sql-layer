@@ -25,7 +25,7 @@ import com.akiban.server.service.jmx.JmxManageable;
 import java.util.Collections;
 import java.util.List;
 
-public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {
+public class DStarLServiceImpl implements DXLService, Service<DXLService>, JmxManageable {
 
     private final Object MONITOR = new Object();
 
@@ -40,13 +40,13 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
     }
 
     @Override
-    public DStarLService cast() {
+    public DXLService cast() {
         return this;
     }
 
     @Override
-    public Class<DStarLService> castClass() {
-        return DStarLService.class;
+    public Class<DXLService> castClass() {
+        return DXLService.class;
     }
 
     @Override
