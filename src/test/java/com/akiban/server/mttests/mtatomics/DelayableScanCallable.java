@@ -113,8 +113,8 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
                 EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
                 ScanLimit.NONE
         );
-        DXLService dstarLService = ServiceManagerImpl.get().getDXL();
-        ScanhooksDXLService scanhooksService = (ScanhooksDXLService) dstarLService;
+        DXLService dxlService = ServiceManagerImpl.get().getDXL();
+        ScanhooksDXLService scanhooksService = (ScanhooksDXLService) dxlService;
         assertNull("previous scanhook defined!", scanhooksService.installHook(session, scanHooks));
         try {
             final CursorId cursorId;
