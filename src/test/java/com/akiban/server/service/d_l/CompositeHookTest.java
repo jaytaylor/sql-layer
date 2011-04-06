@@ -41,10 +41,10 @@ public final class CompositeHookTest {
 
     @Test
     public void noExceptions() {
-        DStarLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
+        DXLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
 
-        hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, null);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, null);
 
         check(
                 "alpha into GET_AIS",
@@ -59,12 +59,12 @@ public final class CompositeHookTest {
 
     @Test
     public void wrappedThrowsException() {
-        DStarLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
+        DXLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
 
         MySampleException e = new MySampleException();
-        hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE);
-        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE, e);
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE, e);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.CREATE_TABLE);
+        hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.CREATE_TABLE, e);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.CREATE_TABLE, e);
 
         check(
                 "alpha into CREATE_TABLE",
@@ -83,17 +83,17 @@ public final class CompositeHookTest {
 
     @Test
     public void crashOnIn() {
-        DStarLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_IN", "gamma");
+        DXLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_IN", "gamma");
 
         try {
-            hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+            hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
             fail();
         } catch (MySampleCash e) {
             // good
         }
         MySampleException e = new MySampleException();
-        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
 
         check(
                 "alpha into GET_AIS",
@@ -109,17 +109,17 @@ public final class CompositeHookTest {
 
     @Test
     public void crashOnCatch() {
-        DStarLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_CATCH", "gamma");
+        DXLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_CATCH", "gamma");
 
-        hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
         MySampleException e = new MySampleException();
         try {
-            hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
         } catch (MySampleCash e1) {
             // good
         }
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
 
         check(
                 "alpha into GET_AIS",
@@ -138,13 +138,13 @@ public final class CompositeHookTest {
 
     @Test
     public void crashOnFinally() {
-        DStarLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_FINALLY", "gamma");
+        DXLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_FINALLY", "gamma");
 
         MySampleException e = new MySampleException();
-        hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
-        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
         try {
-            hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
         } catch (MySampleCash e1) {
             // good
@@ -167,17 +167,17 @@ public final class CompositeHookTest {
 
     @Test
     public void multipleCrashes() {
-        DStarLFunctionsHook hook = compose(output,
+        DXLFunctionsHook hook = compose(output,
                 "alpha",
                 "beta: CRASH_CATCH CRASH_FINALLY",
                 "gamma: CRASH_CATCH CRASH_FINALLY",
                 "delta"
         );
 
-        hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
         MySampleException e = new MySampleException();
         try {
-            hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
         } catch (MultipleCauseException e1) {
             assertEquals("causes", 2, e1.getCauses().size());
@@ -185,7 +185,7 @@ public final class CompositeHookTest {
         }
 
         try {
-            hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
         } catch (MultipleCauseException e1) {
             assertEquals("causes", 2, e1.getCauses().size());
@@ -218,15 +218,15 @@ public final class CompositeHookTest {
         assertEquals("messages", Arrays.asList(expected), output);
     }
 
-    DStarLFunctionsHook compose(List<String> output, String... messages) {
-        List<DStarLFunctionsHook> hooks = new ArrayList<DStarLFunctionsHook>();
+    DXLFunctionsHook compose(List<String> output, String... messages) {
+        List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
         for (String message : messages) {
             hooks.add( new ToListHook(message, output) );
         }
         return new CompositeHook(hooks);
     }
 
-    private static class ToListHook implements DStarLFunctionsHook {
+    private static class ToListHook implements DXLFunctionsHook {
         private final String message;
         private final List<String> output;
 

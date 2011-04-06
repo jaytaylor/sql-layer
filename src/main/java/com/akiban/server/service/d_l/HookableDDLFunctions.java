@@ -39,7 +39,7 @@ import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
-import com.akiban.server.service.d_l.DStarLFunctionsHook.DDLFunction;
+import com.akiban.server.service.d_l.DXLFunctionsHook.DDLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.SchemaId;
@@ -53,9 +53,9 @@ import static com.akiban.server.service.d_l.HookUtil.throwAlways;
 public final class HookableDDLFunctions implements DDLFunctions {
 
     private final DDLFunctions delegate;
-    private final DStarLFunctionsHook hook;
+    private final DXLFunctionsHook hook;
 
-    public HookableDDLFunctions(DDLFunctions delegate, List<DStarLFunctionsHook> hooks) {
+    public HookableDDLFunctions(DDLFunctions delegate, List<DXLFunctionsHook> hooks) {
         this.delegate = delegate;
         this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
     }

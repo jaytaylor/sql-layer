@@ -51,7 +51,7 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
 
     @Override
     public void start() throws Exception {
-        List<DStarLFunctionsHook> hooks = getHooks();
+        List<DXLFunctionsHook> hooks = getHooks();
         DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(), hooks);
         DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(localDdlFunctions), hooks);
         synchronized (MONITOR) {
@@ -100,7 +100,7 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
         return ret;
     }
 
-    protected List<DStarLFunctionsHook> getHooks() {
-        return Collections.<DStarLFunctionsHook>singletonList(DxLReadWriteLockHook.only());
+    protected List<DXLFunctionsHook> getHooks() {
+        return Collections.<DXLFunctionsHook>singletonList(DxLReadWriteLockHook.only());
     }
 }

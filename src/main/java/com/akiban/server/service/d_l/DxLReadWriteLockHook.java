@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public final class DxLReadWriteLockHook implements DStarLFunctionsHook {
+public final class DxLReadWriteLockHook implements DXLFunctionsHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DxLReadWriteLockHook.class);
     private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.ofStack("READWRITE_LOCK");

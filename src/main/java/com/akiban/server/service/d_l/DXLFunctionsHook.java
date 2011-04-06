@@ -17,7 +17,7 @@ package com.akiban.server.service.d_l;
 
 import com.akiban.server.service.session.Session;
 
-public interface DStarLFunctionsHook {
+public interface DXLFunctionsHook {
     static enum DXLType {
         DDL_FUNCTIONS_WRITE,
         DDL_FUNCTIONS_READ,
