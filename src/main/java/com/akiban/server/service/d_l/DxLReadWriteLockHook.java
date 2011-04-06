@@ -33,6 +33,16 @@ public final class DxLReadWriteLockHook implements DStarLFunctionsHook {
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock( isFair() );
 
+    private final static DxLReadWriteLockHook INSTANCE = new DxLReadWriteLockHook();
+
+    public static DxLReadWriteLockHook only() {
+        return INSTANCE;
+    }
+
+    private DxLReadWriteLockHook() {
+        // Having multiple of these introduces the possibility of a deadlock, for all the usual deadlocky reasons
+    }
+
     @Override
     public void hookFunctionIn(Session session, DDLFunction function) {
         final Lock lock;
