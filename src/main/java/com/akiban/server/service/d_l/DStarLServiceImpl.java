@@ -32,11 +32,11 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
     private volatile DDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
 
-    private final DStarLMXBean bean = new MyDStarLMXBeanImpl(this);
+    private final DXLMXBean bean = new MyDStarLMXBeanImpl(this);
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DStarL", bean, DStarLMXBean.class);
+        return new JmxObjectInfo("DStarL", bean, DXLMXBean.class);
     }
 
     @Override

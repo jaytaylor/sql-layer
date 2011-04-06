@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-class MyDStarLMXBeanImpl implements DStarLMXBean {
+class MyDStarLMXBeanImpl implements DXLMXBean {
     private DStarLServiceImpl dStarLService;
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
 

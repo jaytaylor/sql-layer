@@ -18,7 +18,7 @@ package com.akiban.server.service.d_l;
 import java.util.List;
 
 @SuppressWarnings("unused") // jmx
-public interface DStarLMXBean {
+public interface DXLMXBean {
     String getUsingSchema();
     void setUsingSchema(String schema);
 
