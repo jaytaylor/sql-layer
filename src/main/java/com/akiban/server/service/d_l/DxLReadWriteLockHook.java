@@ -46,7 +46,7 @@ public final class DxLReadWriteLockHook implements DStarLFunctionsHook {
     @Override
     public void hookFunctionIn(Session session, DDLFunction function) {
         final Lock lock;
-        if (DStarLFunctionsHook.DStarLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
+        if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
             if (readWriteLock.isWriteLocked() && (!readWriteLock.isWriteLockedByCurrentThread())) {
                 session.put(WRITE_LOCK_TAKEN, true);
                 throw new IllegalStateException(WRITE_LOCK_TAKEN_MESSAGE);
