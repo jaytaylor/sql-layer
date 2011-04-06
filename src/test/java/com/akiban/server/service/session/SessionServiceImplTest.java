@@ -316,6 +316,16 @@ public final class SessionServiceImplTest {
         }
 
         @Override
+        public <T> void push(StackKey<T> key, T item) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T pop(StackKey<T> key) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void close()
         {
             throw new UnsupportedOperationException();

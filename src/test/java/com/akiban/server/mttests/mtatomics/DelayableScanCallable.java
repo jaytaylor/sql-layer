@@ -47,11 +47,13 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     private final DelayerFactory topOfLoopDelayer;
     private final DelayerFactory beforeConversionDelayer;
     private final boolean markFinish;
+    private final long finishDelay;
     private final long initialDelay;
+    private volatile ApiTestBase.ListRowOutput output;
 
     DelayableScanCallable(int tableId, int indexId, DDLFunctions ddl,
                           DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
-                          boolean markFinish, long initialDelay)
+                          boolean markFinish, long initialDelay, long finishDelay)
     {
         this.tableId = tableId;
         this.indexId = indexId;
@@ -60,6 +62,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         this.beforeConversionDelayer = beforeConversionDelayer;
         this.markFinish = markFinish;
         this.initialDelay = initialDelay;
+        this.finishDelay = finishDelay;
     }
 
     private Delayer topOfLoopDelayer(TimePoints timePoints) {
@@ -95,6 +98,14 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             public void retryHook() {
                 timePoints.mark("SCAN: RETRY");
             }
+
+            @Override
+            public void scanSomeFinishedWellHook() {
+                if (markFinish) {
+                    timePoints.mark("SCAN: FINISH");
+                }
+                Timing.sleep(finishDelay);
+            }
         };
         ScanAllRequest request = new ScanAllRequest(
                 tableId,
@@ -111,24 +122,46 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             DMLFunctions dml = ServiceManagerImpl.get().getDStarL().dmlFunctions();
             try {
                 cursorId = dml.openCursor(session, request);
-            } catch (NoSuchIndexException e) {
-                timePoints.mark("SCAN: NO SUCH INDEX");
-                return Collections.emptyList();
+            } catch (Exception e) {
+                ScanhooksDStarLService.ScanHooks removed = scanhooksService.removeHook(session);
+                if (removed != scanHooks) {
+                    throw new RuntimeException("hook not removed correctly", e);
+                }
+                throw e;
             }
-            ApiTestBase.ListRowOutput output = new ApiTestBase.ListRowOutput();
+            output = new ApiTestBase.ListRowOutput();
             timePoints.mark("SCAN: START");
             if (dml.scanSome(session, cursorId, output)) {
                 timePoints.mark("SCAN: EARLY FINISH");
                 return output.getRows();
             }
             dml.closeCursor(session, cursorId);
-            if (markFinish) {
-                timePoints.mark("SCAN: FINISH");
-            }
 
+            if (scanhooksService.isHookInstalled(session)) {
+                throw new ScanHooksNotRemovedException();
+            }
             return output.getRows();
-        } finally {
-            assertFalse("scanhooks not removed!", scanhooksService.isHookInstalled(session));
+        } catch (Exception e) {
+            timePoints.mark("SCAN: exception " + e.getClass().getSimpleName());
+            if (scanhooksService.isHookInstalled(session)) {
+                throw new ScanHooksNotRemovedException(e);
+            }
+            else throw e;
+        }
+    }
+
+    public List<NewRow> getRows() {
+        ApiTestBase.ListRowOutput outputLocal = output;
+        return outputLocal == null ? Collections.<NewRow>emptyList() : outputLocal.getRows();
+    }
+
+    private static class ScanHooksNotRemovedException extends RuntimeException {
+        private ScanHooksNotRemovedException() {
+            super("scanhooks not removed!");
+        }
+
+        private ScanHooksNotRemovedException(Throwable cause) {
+            super("scanhooks not removed!", cause);
         }
     }
 }

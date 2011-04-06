@@ -107,6 +107,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         void loopStartHook();
         void preWroteRowHook();
         void retryHook();
+        void scanSomeFinishedWellHook();
     }
 
     static final ScanHooks NONE = new ScanHooks() {
@@ -120,6 +121,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         @Override
         public void retryHook() {
+        }
+
+        @Override
+        public void scanSomeFinishedWellHook() {
         }
     };
 
@@ -347,6 +352,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 try {
                     boolean ret = scanner.doScan(cursor, cursorId, output, scanHooks);
                     transaction.commit();
+                    scanHooks.scanSomeFinishedWellHook();
                     return ret;
                 } catch (RollbackException e) {
                     logger.trace("PersistIt error; retrying", e);

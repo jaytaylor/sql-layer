@@ -64,11 +64,11 @@ public final class CompositeHook implements DStarLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionFinally(Session session, DDLFunction function) {
+    public void hookFunctionFinally(Session session, DDLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
         for (DStarLFunctionsHook hook : hooks(session) ) {
             try {
-                hook.hookFunctionFinally(session, function);
+                hook.hookFunctionFinally(session, function, throwable);
             } catch (RuntimeException e) {
                 eToThrow = forException(eToThrow, e);
             }

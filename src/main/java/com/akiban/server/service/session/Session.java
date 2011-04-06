@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.session;
 
+import java.util.Deque;
 import java.util.Map;
 
 public interface Session
@@ -26,6 +27,9 @@ public interface Session
     <K,V> V get(MapKey<K,V> mapKey, K key);
     <K,V> V put(MapKey<K,V> mapKey, K key, V value);
     <K,V> V remove(MapKey<K,V> mapKey, K key);
+
+    <T> void push(StackKey<T> key, T item);
+    <T> T pop(StackKey<T> key);
 
     /**
      * Closes all the resources managed by this session.
@@ -80,6 +84,21 @@ public interface Session
         }
 
         Key<Map<K,V>> asKey() {
+            return this;
+        }
+    }
+
+    public static final class StackKey<T> extends Key<Deque<T>> {
+
+        public static <K> StackKey<K> ofStack(String name) {
+            return new StackKey<K>(name);
+        }
+
+        private StackKey(String name) {
+            super(name, null, 3);
+        }
+
+        public Key<Deque<T>> asKey() {
             return this;
         }
     }

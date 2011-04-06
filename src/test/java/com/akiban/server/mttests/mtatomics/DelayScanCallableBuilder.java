@@ -19,6 +19,9 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.mttests.mtutil.TimePoints;
 
 class DelayScanCallableBuilder {
+
+    private static final long DEFAULT_FINISH_DELAY = 750;
+
     private final int tableId;
     private final int indexId;
 
@@ -81,7 +84,7 @@ class DelayScanCallableBuilder {
         return new DelayableScanCallable(
                 tableId, indexId, ddl,
                 topOfLoopDelayer, beforeConversionDelayer,
-                markFinish, initialDelay
+                markFinish, initialDelay, DEFAULT_FINISH_DELAY
         );
     }
 }

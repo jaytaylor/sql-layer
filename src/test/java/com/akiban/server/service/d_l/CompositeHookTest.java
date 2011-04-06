@@ -44,7 +44,7 @@ public final class CompositeHookTest {
         DStarLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
 
         hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, null);
 
         check(
                 "alpha into GET_AIS",
@@ -61,9 +61,10 @@ public final class CompositeHookTest {
     public void wrappedThrowsException() {
         DStarLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
 
+        MySampleException e = new MySampleException();
         hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE);
-        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE, new MySampleException());
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE);
+        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE, e);
+        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.CREATE_TABLE, e);
 
         check(
                 "alpha into CREATE_TABLE",
@@ -90,8 +91,9 @@ public final class CompositeHookTest {
         } catch (MySampleCash e) {
             // good
         }
-        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, new MySampleException());
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+        MySampleException e = new MySampleException();
+        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
 
         check(
                 "alpha into GET_AIS",
@@ -110,13 +112,14 @@ public final class CompositeHookTest {
         DStarLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_CATCH", "gamma");
 
         hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+        MySampleException e = new MySampleException();
         try {
-            hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, new MySampleException());
+            hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
-        } catch (MySampleCash e) {
+        } catch (MySampleCash e1) {
             // good
         }
-        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
 
         check(
                 "alpha into GET_AIS",
@@ -137,12 +140,13 @@ public final class CompositeHookTest {
     public void crashOnFinally() {
         DStarLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_FINALLY", "gamma");
 
+        MySampleException e = new MySampleException();
         hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
-        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, new MySampleException());
+        hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
         try {
-            hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+            hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
-        } catch (MySampleCash e) {
+        } catch (MySampleCash e1) {
             // good
         }
 
@@ -171,19 +175,20 @@ public final class CompositeHookTest {
         );
 
         hook.hookFunctionIn(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+        MySampleException e = new MySampleException();
         try {
-            hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, new MySampleException());
+            hook.hookFunctionCatch(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
-        } catch (MultipleCauseException e) {
-            assertEquals("causes", 2, e.getCauses().size());
+        } catch (MultipleCauseException e1) {
+            assertEquals("causes", 2, e1.getCauses().size());
             // good
         }
 
         try {
-            hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS);
+            hook.hookFunctionFinally(session, DStarLFunctionsHook.DDLFunction.GET_AIS, e);
             fail();
-        } catch (MultipleCauseException e) {
-            assertEquals("causes", 2, e.getCauses().size());
+        } catch (MultipleCauseException e1) {
+            assertEquals("causes", 2, e1.getCauses().size());
             // good
         }
 
@@ -254,7 +259,7 @@ public final class CompositeHookTest {
         }
 
         @Override
-        public void hookFunctionFinally(Session session, DDLFunction function) {
+        public void hookFunctionFinally(Session session, DDLFunction function, Throwable thrown) {
             output.add(String.format("%s out of %s", message, function.name()));
             if (message.contains("CRASH_FINALLY")) {
                 throw new MySampleCash();
