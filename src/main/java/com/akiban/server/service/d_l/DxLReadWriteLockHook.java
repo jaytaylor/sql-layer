@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public final class DxLReadWriteLockHook implements DStarLFunctionsHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DxLReadWriteLockHook.class);
-    private static final Session.Key<Lock> LOCK_KEY = Session.Key.of("READWRITE_LOCK");
+    private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.ofStack("READWRITE_LOCK");
     static final String IS_LOCK_FAIR_PROPERTY = "akserver.dstarl.lock.fair";
     private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.of("WRITE_LOCK_TAKEN");
     static final String WRITE_LOCK_TAKEN_MESSAGE = "Another thread has the write lock! Writes are supposed to be single-threaded";
@@ -56,9 +56,8 @@ public final class DxLReadWriteLockHook implements DStarLFunctionsHook {
         else {
             lock = readWriteLock.readLock();
         }
-        Lock oldLock = session.put(LOCK_KEY, lock);
+        session.push(LOCK_KEY, lock);
         lock.lock();
-        assert oldLock == null : oldLock;
     }
 
     @Override
@@ -68,7 +67,7 @@ public final class DxLReadWriteLockHook implements DStarLFunctionsHook {
 
     @Override
     public void hookFunctionFinally(Session session, DDLFunction function, Throwable t) {
-        Lock lock = session.remove(LOCK_KEY);
+        Lock lock = session.pop(LOCK_KEY);
         if (lock == null) {
             Boolean writeLockWasTaken = session.remove(WRITE_LOCK_TAKEN);
             if (writeLockWasTaken != null && writeLockWasTaken) {

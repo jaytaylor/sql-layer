@@ -15,6 +15,8 @@
 
 package com.akiban.server.service.session;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,6 +66,25 @@ public final class SessionImpl implements Session
             return null;
         }
         return map.remove(key);
+    }
+
+    @Override
+    public <T> void push(StackKey<T> key, T item) {
+        Deque<T> deque = get( key.asKey() );
+        if (deque == null) {
+            deque = new ArrayDeque<T>();
+            put(key.asKey(), deque);
+        }
+        deque.offerLast(item);
+    }
+
+    @Override
+    public <T> T pop(StackKey<T> key) {
+        Deque<T> deque = get( key.asKey() );
+        if (deque == null) {
+            return null;
+        }
+        return deque.pollLast();
     }
 
     private static <T> T launder(Key<T> key, Object o) {
