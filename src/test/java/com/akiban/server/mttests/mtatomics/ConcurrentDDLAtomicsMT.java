@@ -448,11 +448,13 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         List<NewRow> rowsScanned = scanResult.getItem();
         List<NewRow> rowsExpected = Arrays.asList(
-                createNewRow(tableId, 2L, "mr melty")
+                createNewRow(tableId, 2L, "mr melty"),
+                createNewRow(tableId, 1L, "the snowman")
         );
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
     }
 
+    @org.junit.Ignore("bug 752082")
     @Test(timeout=60000)
     public void scanWhileDroppingIndex() throws Exception {
         final int NUMBER_OF_ROWS = 10000;
