@@ -32,7 +32,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     private volatile DDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
 
-    private final DXLMXBean bean = new MyDStarLMXBeanImpl(this);
+    private final DXLMXBean bean = new DXLMXBeanImpl(this);
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
