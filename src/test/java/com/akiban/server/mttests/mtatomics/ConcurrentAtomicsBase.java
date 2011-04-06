@@ -86,7 +86,7 @@ class ConcurrentAtomicsBase extends ApiTestBase {
         }
 
         @Override
-        public Service<DXLService> dstarlService() {
+        public Service<DXLService> dxlService() {
             return new ScanhooksDXLService();
         }
     }

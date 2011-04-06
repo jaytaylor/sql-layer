@@ -126,7 +126,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     }
 
     @Override
-    public Service<DXLService> dstarlService() {
+    public Service<DXLService> dxlService() {
         if (dstarlService == null) {
             dstarlService = new DXLServiceImpl();
         }

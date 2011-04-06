@@ -46,5 +46,5 @@ public interface ServiceFactory
 
     Service<MemcacheService> memcacheService();
 
-    Service<DXLService> dstarlService();
+    Service<DXLService> dxlService();
 }
