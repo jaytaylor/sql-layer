@@ -47,7 +47,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<Store> storeService;
     private Service<SchemaManager> schemaService;
     private Service<MemcacheService> memcacheService;
-    private Service<DXLService> dstarlService;
+    private Service<DXLService> dxlService;
     
     @Override
     public Service<ConfigurationService> configurationService() {
@@ -127,9 +127,9 @@ public class DefaultServiceFactory implements ServiceFactory {
 
     @Override
     public Service<DXLService> dxlService() {
-        if (dstarlService == null) {
-            dstarlService = new DXLServiceImpl();
+        if (dxlService == null) {
+            dxlService = new DXLServiceImpl();
         }
-        return dstarlService;
+        return dxlService;
     }
 }
