@@ -21,7 +21,14 @@ import com.akiban.server.itests.ApiTestBase;
 import com.akiban.server.mttests.mtutil.TimePointsComparison;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.TimedResult;
+import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.config.Property;
+import com.akiban.server.service.d_l.DStarLService;
+import com.akiban.server.service.d_l.ScanhooksDStarLService;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,5 +75,21 @@ class ConcurrentAtomicsBase extends ApiTestBase {
             createNewRow(id, 2L, "mr melty")
         );
         return id;
+    }
+
+    @Override
+    protected TestServiceServiceFactory createServiceFactory(Collection<Property> startupConfigProperties) {
+        return new ScanhooksServiceFactory(startupConfigProperties);
+    }
+
+    private static class ScanhooksServiceFactory extends TestServiceServiceFactory {
+        private ScanhooksServiceFactory(Collection<Property> startupConfigProperties) {
+            super(startupConfigProperties);
+        }
+
+        @Override
+        public Service<DStarLService> dstarlService() {
+            return new ScanhooksDStarLService();
+        }
     }
 }

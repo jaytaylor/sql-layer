@@ -51,14 +51,24 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
 
     @Override
     public void start() throws Exception {
+        List<DStarLFunctionsHook> hooks = getHooks();
+        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(), hooks);
+        DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(localDdlFunctions), hooks);
         synchronized (MONITOR) {
             if (ddlFunctions != null) {
                 throw new ServiceStartupException("service already started");
             }
-            List<DStarLFunctionsHook> hooks = getHooks();
-            ddlFunctions = new HookableDDLFunctions(new BasicDDLFunctions(), hooks);
-            dmlFunctions = new HookableDMLFunctions(new BasicDMLFunctions(ddlFunctions), hooks);
+            ddlFunctions = localDdlFunctions;
+            dmlFunctions = localDmlFunctions;
         }
+    }
+
+    DMLFunctions createDMLFunctions(DDLFunctions newlyCreatedDDLF) {
+        return new BasicDMLFunctions(newlyCreatedDDLF);
+    }
+
+    DDLFunctions createDDLFunctions() {
+        return new BasicDDLFunctions();
     }
 
     @Override

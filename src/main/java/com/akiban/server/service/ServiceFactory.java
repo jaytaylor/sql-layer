@@ -17,6 +17,7 @@ package com.akiban.server.service;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.d_l.DStarLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.network.NetworkService;
@@ -44,4 +45,6 @@ public interface ServiceFactory
     Service<Store> storeService();
 
     Service<MemcacheService> memcacheService();
+
+    Service<DStarLService> dstarlService();
 }

@@ -231,7 +231,7 @@ public final class BasicDMLFunctionsTest extends AkServerTestCase {
         final TestingStruct s = new TestingStruct(ScanLimit.NONE, "Hi", "there", "pooh bear", "how are you there");
 
         try {
-            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output));
+            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.NONE));
 
             assertEquals("rc rows delivered", s.stringsArray.length, s.collector.getDeliveredRows());
             assertEquals("output rows written", s.stringsArray.length, s.output.getRowsCount());
@@ -241,7 +241,7 @@ public final class BasicDMLFunctionsTest extends AkServerTestCase {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output);
+        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.NONE);
     }
 
     @Test(expected= CursorIsFinishedException.class)
@@ -249,7 +249,7 @@ public final class BasicDMLFunctionsTest extends AkServerTestCase {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(1), "hi", "world", "and", "universe");
 
         try {
-            assertFalse("expected no more", scanner.doScan(s.cursor, s.cursorId, s.output));
+            assertFalse("expected no more", scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.NONE));
             assertEquals("rc rows delivered", 2, s.collector.getDeliveredRows());
             assertEquals("output rows written", 1, s.output.getRowsCount());
             assertEquals("rows seen", Arrays.asList("hi"), s.output.getStrings());
@@ -257,18 +257,18 @@ public final class BasicDMLFunctionsTest extends AkServerTestCase {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output);
+        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.NONE);
     }
 
     @Test(expected= CursorIsFinishedException.class)
     public void scanEmptyRC() throws InvalidOperationException, BufferFullException, PersistitException {
         final TestingStruct s = new TestingStruct(new FixedCountLimit(0));
         try {
-            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output));
+            assertFalse("expected end", scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.NONE));
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
 
-        scanner.doScan(s.cursor, s.cursorId, s.output);
+        scanner.doScan(s.cursor, s.cursorId, s.output, BasicDMLFunctions.NONE);
     }
 }
