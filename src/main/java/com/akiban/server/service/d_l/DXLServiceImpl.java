@@ -25,7 +25,7 @@ import com.akiban.server.service.jmx.JmxManageable;
 import java.util.Collections;
 import java.util.List;
 
-public class DStarLServiceImpl implements DXLService, Service<DXLService>, JmxManageable {
+public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManageable {
 
     private final Object MONITOR = new Object();
 
