@@ -52,5 +52,5 @@ public interface ServiceManager {
 
     <T> T getServiceByClass(Class<T> serviceClass);
 
-    DXLService getDStarL();
+    DXLService getDXL();
 }

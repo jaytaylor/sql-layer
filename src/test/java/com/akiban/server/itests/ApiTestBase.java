@@ -196,11 +196,11 @@ public class ApiTestBase {
     }
     
     protected final DMLFunctions dml() {
-        return sm.getDStarL().dmlFunctions();
+        return sm.getDXL().dmlFunctions();
     }
 
     protected final DDLFunctions ddl() {
-        return sm.getDStarL().ddlFunctions();
+        return sm.getDXL().ddlFunctions();
     }
 
     protected final Store store() {

@@ -32,8 +32,8 @@ import com.akiban.server.service.session.SessionImpl;
 public final class ApiTest extends AkServerTestCase {
 
     private class ApiPair {
-        final DMLFunctions dml = ServiceManagerImpl.get().getDStarL().dmlFunctions();
-        final DDLFunctions ddl = ServiceManagerImpl.get().getDStarL().ddlFunctions();
+        final DMLFunctions dml = ServiceManagerImpl.get().getDXL().dmlFunctions();
+        final DDLFunctions ddl = ServiceManagerImpl.get().getDXL().ddlFunctions();
     }
     
     @Before

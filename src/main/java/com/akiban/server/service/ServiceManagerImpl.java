@@ -119,7 +119,7 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     @Override
-    public DXLService getDStarL() {
+    public DXLService getDXL() {
         return getService(DXLService.class);
     }
 
