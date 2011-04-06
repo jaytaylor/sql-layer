@@ -101,6 +101,6 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
     }
 
     protected List<DStarLFunctionsHook> getHooks() {
-        return Collections.<DStarLFunctionsHook>singletonList(new DDLReadWriteLockHook());
+        return Collections.<DStarLFunctionsHook>singletonList(new DxLReadWriteLockHook());
     }
 }
