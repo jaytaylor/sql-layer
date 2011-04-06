@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.max;
 
-public class IndexLookup_Default extends PhysicalOperator
+class IndexLookup_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 

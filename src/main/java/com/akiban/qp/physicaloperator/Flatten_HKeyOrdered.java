@@ -23,7 +23,7 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Flatten_HKeyOrdered extends PhysicalOperator
+class Flatten_HKeyOrdered extends PhysicalOperator
 {
     // PhysicalOperator interface
 
@@ -40,17 +40,12 @@ public class Flatten_HKeyOrdered extends PhysicalOperator
         super.assignOperatorIds(idGenerator);
     }
 
-    // Flatten_HKeyOrdered interface
-
     public FlattenedRowType rowType()
     {
         return flattenType;
     }
 
-    public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType)
-    {
-        this(inputOperator, parentType, childType, 0);
-    }
+    // Flatten_HKeyOrdered interface
 
     public Flatten_HKeyOrdered(PhysicalOperator inputOperator, RowType parentType, RowType childType, int flags)
     {
@@ -66,6 +61,7 @@ public class Flatten_HKeyOrdered extends PhysicalOperator
 
     // Class state
 
+    public static final int DEFAULT = 0x00;
     public static final int KEEP_PARENT = 0x01;
     public static final int KEEP_CHILD = 0x02;
     public static final int INNER_JOIN = 0x04;

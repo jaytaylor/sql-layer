@@ -17,7 +17,7 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.row.Row;
 
-public class Compare implements Expression
+class Compare implements Expression
 {
     // Predicate interface
 
@@ -46,7 +46,7 @@ public class Compare implements Expression
 
     // Compare predicate
 
-    public Compare(Expression left, Comparison comparison, Expression right)
+    Compare(Expression left, Comparison comparison, Expression right)
     {
         this.left = left;
         this.right = right;

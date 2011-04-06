@@ -22,7 +22,7 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Select_HKeyOrdered extends PhysicalOperator
+class Select_HKeyOrdered extends PhysicalOperator
 {
     // PhysicalOperator interface
 

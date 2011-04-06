@@ -15,8 +15,6 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.row.IndexBound;
-
 public class IndexKeyRange
 {
     public IndexBound lo()
@@ -49,7 +47,7 @@ public class IndexKeyRange
      * @param hi Upper bound of the range.
      * @param hiInclusive True if the upper bound is inclusive, false if exclusive.
      */
-    public IndexKeyRange(IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)
+    IndexKeyRange(IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)
     {
         if (lo == null && loInclusive) {
             throw new IllegalArgumentException();
@@ -62,12 +60,6 @@ public class IndexKeyRange
         this.hi = hi;
         this.hiInclusive = hiInclusive;
     }
-
-    // Class state
-
-    public static final int KEY_BELOW_RANGE = -1;
-    public static final int KEY_IN_RANGE = 0;
-    public static final int KEY_ABOVE_RANGE = 1;
 
     // Object state
 

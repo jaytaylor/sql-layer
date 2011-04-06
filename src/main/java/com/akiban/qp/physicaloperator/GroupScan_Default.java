@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.row.HKey;
 
-public class GroupScan_Default extends PhysicalOperator
+class GroupScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 

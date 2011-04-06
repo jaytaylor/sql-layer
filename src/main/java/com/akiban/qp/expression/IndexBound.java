@@ -13,8 +13,9 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.qp.expression;
 
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexKeyType;
 
 public class IndexBound
@@ -29,7 +30,7 @@ public class IndexBound
         return row;
     }
 
-    public IndexBound(IndexKeyType indexKeyType, Row row)
+    IndexBound(IndexKeyType indexKeyType, Row row)
     {
         this.indexKeyType = indexKeyType;
         this.row = row;

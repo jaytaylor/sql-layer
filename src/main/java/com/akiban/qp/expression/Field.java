@@ -17,7 +17,7 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.row.Row;
 
-public class Field implements Expression
+class Field implements Expression
 {
     // Expression interface
 
@@ -29,7 +29,7 @@ public class Field implements Expression
 
     // Field interface
 
-    public Field(int position)
+    Field(int position)
     {
         this.position = position;
     }

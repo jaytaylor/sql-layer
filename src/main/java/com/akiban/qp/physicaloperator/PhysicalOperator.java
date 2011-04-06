@@ -15,6 +15,8 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.rowtype.RowType;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class PhysicalOperator
@@ -29,6 +31,15 @@ public abstract class PhysicalOperator
     public void assignOperatorIds(AtomicInteger idGenerator)
     {
         operatorId = idGenerator.getAndIncrement();
+    }
+
+    // I'm not sure I like having this as part of the interface. On one hand, operators like Flatten create new
+    // RowTypes and its handy to get access to those new RowTypes. On the other hand, not all operators do this,
+    // and it's conceivable we'll have to invent an operator for which this doesn't make sense, e.g., it creates
+    // multiple RowTypes.
+    public RowType rowType()
+    {
+        throw new UnsupportedOperationException();
     }
 
     public abstract OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops);

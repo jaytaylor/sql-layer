@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
 
-public class IndexScan_Default extends PhysicalOperator
+class IndexScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 

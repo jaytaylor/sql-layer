@@ -15,8 +15,8 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.IndexBound;
 import com.akiban.server.FieldDef;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;

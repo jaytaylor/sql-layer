@@ -17,7 +17,7 @@ package com.akiban.qp.expression;
 
 import com.akiban.qp.row.Row;
 
-public class Literal implements Expression
+class Literal implements Expression
 {
     // Expression interface
 
@@ -29,7 +29,7 @@ public class Literal implements Expression
 
     // Literal interface
 
-    public Literal(Object value)
+    Literal(Object value)
     {
         this.value = value;
     }
