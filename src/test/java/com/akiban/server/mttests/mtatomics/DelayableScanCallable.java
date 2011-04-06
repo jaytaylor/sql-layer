@@ -28,7 +28,7 @@ import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.d_l.DXLService;
-import com.akiban.server.service.d_l.ScanhooksDStarLService;
+import com.akiban.server.service.d_l.ScanhooksDXLService;
 import com.akiban.server.service.session.Session;
 
 import java.util.Arrays;
@@ -78,7 +78,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         final Delayer topOfLoopDelayer = topOfLoopDelayer(timePoints);
         final Delayer beforeConversionDelayer = beforeConversionDelayer(timePoints);
 
-        ScanhooksDStarLService.ScanHooks scanHooks = new ScanhooksDStarLService.ScanHooks() {
+        ScanhooksDXLService.ScanHooks scanHooks = new ScanhooksDXLService.ScanHooks() {
             @Override
             public void loopStartHook() {
                 if (topOfLoopDelayer != null) {
@@ -114,7 +114,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
                 ScanLimit.NONE
         );
         DXLService dstarLService = ServiceManagerImpl.get().getDStarL();
-        ScanhooksDStarLService scanhooksService = (ScanhooksDStarLService) dstarLService;
+        ScanhooksDXLService scanhooksService = (ScanhooksDXLService) dstarLService;
         assertNull("previous scanhook defined!", scanhooksService.installHook(session, scanHooks));
         try {
             final CursorId cursorId;
@@ -122,7 +122,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             try {
                 cursorId = dml.openCursor(session, request);
             } catch (Exception e) {
-                ScanhooksDStarLService.ScanHooks removed = scanhooksService.removeHook(session);
+                ScanhooksDXLService.ScanHooks removed = scanhooksService.removeHook(session);
                 if (removed != scanHooks) {
                     throw new RuntimeException("hook not removed correctly", e);
                 }
