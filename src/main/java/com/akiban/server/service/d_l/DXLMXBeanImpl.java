@@ -33,12 +33,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-class MyDStarLMXBeanImpl implements DStarLMXBean {
-    private DStarLServiceImpl dStarLService;
+class DXLMXBeanImpl implements DXLMXBean {
+    private DXLServiceImpl dxlService;
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
 
-    public MyDStarLMXBeanImpl(DStarLServiceImpl dStarLService) {
-        this.dStarLService = dStarLService;
+    public DXLMXBeanImpl(DXLServiceImpl dxlService) {
+        this.dxlService = dxlService;
     }
 
     @Override
@@ -53,7 +53,7 @@ class MyDStarLMXBeanImpl implements DStarLMXBean {
 
     public void createTable(String schema, String ddl) {
         try {
-            dStarLService.ddlFunctions().createTable(new SessionImpl(), schema, ddl);
+            dxlService.ddlFunctions().createTable(new SessionImpl(), schema, ddl);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
@@ -66,7 +66,7 @@ class MyDStarLMXBeanImpl implements DStarLMXBean {
 
     public void dropTable(String schema, String tableName) {
         try {
-            dStarLService.ddlFunctions().dropTable(new SessionImpl(), new TableName(schema, tableName));
+            dxlService.ddlFunctions().dropTable(new SessionImpl(), new TableName(schema, tableName));
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
@@ -80,7 +80,7 @@ class MyDStarLMXBeanImpl implements DStarLMXBean {
     @Override
     public void dropGroupBySchema(String schemaName)
     {
-        AkibanInformationSchema ais = dStarLService.ddlFunctions().getAIS(new SessionImpl());
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new SessionImpl());
         for(TableName table : ais.getGroupTables().keySet())
         {
             String currentSchema = table.getSchemaName();
@@ -94,7 +94,7 @@ class MyDStarLMXBeanImpl implements DStarLMXBean {
     @Override
     public void dropGroup(String groupName) {
         try {
-            dStarLService.ddlFunctions().dropGroup(new SessionImpl(), groupName);
+            dxlService.ddlFunctions().dropGroup(new SessionImpl(), groupName);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +102,7 @@ class MyDStarLMXBeanImpl implements DStarLMXBean {
 
     @Override
     public void dropAllGroups() {
-        for(String groupName : dStarLService.ddlFunctions().getAIS(new SessionImpl()).getGroups().keySet()) {
+        for(String groupName : dxlService.ddlFunctions().getAIS(new SessionImpl()).getGroups().keySet()) {
             dropGroup(groupName);
         }
     }
@@ -113,7 +113,7 @@ class MyDStarLMXBeanImpl implements DStarLMXBean {
     }
 
     public List<String> getGrouping(String schema) {
-        AkibanInformationSchema ais = dStarLService.ddlFunctions().getAIS(new SessionImpl());
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new SessionImpl());
         Grouping grouping = GroupsBuilder.fromAis(ais, schema);
 
         stripAISFromGrouping(grouping);
@@ -125,14 +125,14 @@ class MyDStarLMXBeanImpl implements DStarLMXBean {
     public void writeRow(String schema, String table, String fields) {
         try {
             final Session session = new SessionImpl();
-            int tableId = dStarLService.ddlFunctions().getTableId(session, new TableName(schema, table));
+            int tableId = dxlService.ddlFunctions().getTableId(session, new TableName(schema, table));
             NewRow row = new NiceRow(tableId);
             String[] fieldsArray = fields.split(",\\s*");
             for (int i=0; i < fieldsArray.length; ++i) {
                 String field = java.net.URLDecoder.decode(fieldsArray[i], "UTF-8");
                 row.put(i, field);
             }
-            dStarLService.dmlFunctions().writeRow(session, row);
+            dxlService.dmlFunctions().writeRow(session, row);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e.getMessage());
         } catch (UnsupportedEncodingException e) {

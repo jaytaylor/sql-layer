@@ -29,7 +29,7 @@ import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.service.session.Session;
 
-public final class ScanhooksDStarLService extends DStarLServiceImpl {
+public final class ScanhooksDXLService extends DXLServiceImpl {
 
     private final static Session.Key<ScanHooks> SCANHOOKS_KEY = Session.Key.of("SCANHOOKS");
 

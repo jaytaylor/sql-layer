@@ -23,30 +23,30 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public final class DxLReadWriteLockHook implements DStarLFunctionsHook {
+final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DxLReadWriteLockHook.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DXLReadWriteLockHook.class);
     private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.ofStack("READWRITE_LOCK");
-    static final String IS_LOCK_FAIR_PROPERTY = "akserver.dstarl.lock.fair";
+    static final String IS_LOCK_FAIR_PROPERTY = "akserver.dxl.lock.fair";
     private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.of("WRITE_LOCK_TAKEN");
     static final String WRITE_LOCK_TAKEN_MESSAGE = "Another thread has the write lock! Writes are supposed to be single-threaded";
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock( isFair() );
 
-    private final static DxLReadWriteLockHook INSTANCE = new DxLReadWriteLockHook();
+    private final static DXLReadWriteLockHook INSTANCE = new DXLReadWriteLockHook();
 
-    public static DxLReadWriteLockHook only() {
+    public static DXLReadWriteLockHook only() {
         return INSTANCE;
     }
 
-    private DxLReadWriteLockHook() {
+    private DXLReadWriteLockHook() {
         // Having multiple of these introduces the possibility of a deadlock, for all the usual deadlocky reasons
     }
 
     @Override
     public void hookFunctionIn(Session session, DDLFunction function) {
         final Lock lock;
-        if (DStarLFunctionsHook.DStarLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
+        if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
             if (readWriteLock.isWriteLocked() && (!readWriteLock.isWriteLockedByCurrentThread())) {
                 session.put(WRITE_LOCK_TAKEN, true);
                 throw new IllegalStateException(WRITE_LOCK_TAKEN_MESSAGE);

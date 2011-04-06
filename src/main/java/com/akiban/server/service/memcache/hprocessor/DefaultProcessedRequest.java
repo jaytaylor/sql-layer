@@ -38,7 +38,7 @@ public final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
     private final Session session;
 
     DefaultProcessedRequest(HapiGetRequest request, Session session) throws HapiRequestException {
-        this(request, session, ServiceManagerImpl.get().getDStarL().ddlFunctions());
+        this(request, session, ServiceManagerImpl.get().getDXL().ddlFunctions());
     }
 
     public DefaultProcessedRequest(HapiGetRequest request, Session session, DDLFunctions ddlFunctions)

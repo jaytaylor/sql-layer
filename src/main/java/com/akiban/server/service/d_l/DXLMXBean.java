@@ -15,10 +15,24 @@
 
 package com.akiban.server.service.d_l;
 
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.api.DMLFunctions;
+import java.util.List;
 
-public interface DStarLService {
-    DDLFunctions ddlFunctions();
-    DMLFunctions dmlFunctions();
+@SuppressWarnings("unused") // jmx
+public interface DXLMXBean {
+    String getUsingSchema();
+    void setUsingSchema(String schema);
+
+    void createTable(String ddl);
+
+    void dropTable(String tableName);
+
+    void dropGroup(String groupName);
+    
+    void dropGroupBySchema(String schemaName);
+
+    void dropAllGroups();
+
+    void writeRow(String table, String fields);
+
+    List<String> getGrouping();
 }

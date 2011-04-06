@@ -25,33 +25,33 @@ import com.akiban.server.service.jmx.JmxManageable;
 import java.util.Collections;
 import java.util.List;
 
-public class DStarLServiceImpl implements DStarLService, Service<DStarLService>, JmxManageable {
+public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManageable {
 
     private final Object MONITOR = new Object();
 
     private volatile DDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
 
-    private final DStarLMXBean bean = new MyDStarLMXBeanImpl(this);
+    private final DXLMXBean bean = new DXLMXBeanImpl(this);
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DStarL", bean, DStarLMXBean.class);
+        return new JmxObjectInfo("DXL", bean, DXLMXBean.class);
     }
 
     @Override
-    public DStarLService cast() {
+    public DXLService cast() {
         return this;
     }
 
     @Override
-    public Class<DStarLService> castClass() {
-        return DStarLService.class;
+    public Class<DXLService> castClass() {
+        return DXLService.class;
     }
 
     @Override
     public void start() throws Exception {
-        List<DStarLFunctionsHook> hooks = getHooks();
+        List<DXLFunctionsHook> hooks = getHooks();
         DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(), hooks);
         DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(localDdlFunctions), hooks);
         synchronized (MONITOR) {
@@ -100,7 +100,7 @@ public class DStarLServiceImpl implements DStarLService, Service<DStarLService>,
         return ret;
     }
 
-    protected List<DStarLFunctionsHook> getHooks() {
-        return Collections.<DStarLFunctionsHook>singletonList(DxLReadWriteLockHook.only());
+    protected List<DXLFunctionsHook> getHooks() {
+        return Collections.<DXLFunctionsHook>singletonList(DXLReadWriteLockHook.only());
     }
 }

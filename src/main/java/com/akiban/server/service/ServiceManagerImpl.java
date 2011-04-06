@@ -24,8 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.d_l.DStarLService;
-import com.akiban.server.service.d_l.DStarLServiceImpl;
+import com.akiban.server.service.d_l.DXLService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
@@ -120,8 +119,8 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     @Override
-    public DStarLService getDStarL() {
-        return getService(DStarLService.class);
+    public DXLService getDXL() {
+        return getService(DXLService.class);
     }
 
     /**
@@ -173,7 +172,7 @@ public class ServiceManagerImpl implements ServiceManager
         startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
         startAndPut(factory.chunkserverService(), jmxRegistry);
-        startAndPut(factory.dstarlService(), jmxRegistry);
+        startAndPut(factory.dxlService(), jmxRegistry);
         startAndPut(new Log4JConfigurationServiceImpl(), jmxRegistry);
         startAndPut(new StatisticsServiceImpl(), jmxRegistry);
         loadCustomServices(jmxRegistry);

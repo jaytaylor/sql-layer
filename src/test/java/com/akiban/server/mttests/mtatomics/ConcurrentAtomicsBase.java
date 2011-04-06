@@ -22,11 +22,9 @@ import com.akiban.server.mttests.mtutil.TimePointsComparison;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.TimedResult;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.Property;
-import com.akiban.server.service.d_l.DStarLService;
-import com.akiban.server.service.d_l.ScanhooksDStarLService;
+import com.akiban.server.service.d_l.DXLService;
+import com.akiban.server.service.d_l.ScanhooksDXLService;
 
 import java.util.Collection;
 import java.util.List;
@@ -88,8 +86,8 @@ class ConcurrentAtomicsBase extends ApiTestBase {
         }
 
         @Override
-        public Service<DStarLService> dstarlService() {
-            return new ScanhooksDStarLService();
+        public Service<DXLService> dxlService() {
+            return new ScanhooksDXLService();
         }
     }
 }

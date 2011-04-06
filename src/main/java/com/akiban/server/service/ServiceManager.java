@@ -16,9 +16,8 @@
 package com.akiban.server.service;
 
 import com.akiban.server.AkServer;
-import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.d_l.DStarLService;
+import com.akiban.server.service.d_l.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
@@ -53,5 +52,5 @@ public interface ServiceManager {
 
     <T> T getServiceByClass(Class<T> serviceClass);
 
-    DStarLService getDStarL();
+    DXLService getDXL();
 }

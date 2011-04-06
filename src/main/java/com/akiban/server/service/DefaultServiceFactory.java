@@ -18,8 +18,8 @@ package com.akiban.server.service;
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.ConfigurationServiceImpl;
-import com.akiban.server.service.d_l.DStarLService;
-import com.akiban.server.service.d_l.DStarLServiceImpl;
+import com.akiban.server.service.d_l.DXLService;
+import com.akiban.server.service.d_l.DXLServiceImpl;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -47,7 +47,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<Store> storeService;
     private Service<SchemaManager> schemaService;
     private Service<MemcacheService> memcacheService;
-    private Service<DStarLService> dstarlService;
+    private Service<DXLService> dxlService;
     
     @Override
     public Service<ConfigurationService> configurationService() {
@@ -126,10 +126,10 @@ public class DefaultServiceFactory implements ServiceFactory {
     }
 
     @Override
-    public Service<DStarLService> dstarlService() {
-        if (dstarlService == null) {
-            dstarlService = new DStarLServiceImpl();
+    public Service<DXLService> dxlService() {
+        if (dxlService == null) {
+            dxlService = new DXLServiceImpl();
         }
-        return dstarlService;
+        return dxlService;
     }
 }

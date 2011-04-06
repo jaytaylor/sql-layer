@@ -578,10 +578,10 @@ public class Scanrows implements HapiProcessor {
     }
 
     private static DDLFunctions ddlFunctions() {
-        return ServiceManagerImpl.get().getDStarL().ddlFunctions();
+        return ServiceManagerImpl.get().getDXL().ddlFunctions();
     }
 
     private static DMLFunctions dmlFunctions() {
-        return ServiceManagerImpl.get().getDStarL().dmlFunctions();
+        return ServiceManagerImpl.get().getDXL().dmlFunctions();
     }
 }

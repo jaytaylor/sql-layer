@@ -22,13 +22,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class CompositeHook implements DStarLFunctionsHook {
+public final class CompositeHook implements DXLFunctionsHook {
     private final Session.Key<Integer> COUNT = Session.Key.of("SUCCESS_COUNT");
 
-    private final List<DStarLFunctionsHook> hooks;
+    private final List<DXLFunctionsHook> hooks;
 
-    public CompositeHook(List<DStarLFunctionsHook> hooks) {
-        this.hooks = Collections.unmodifiableList(new ArrayList<DStarLFunctionsHook>(hooks));
+    public CompositeHook(List<DXLFunctionsHook> hooks) {
+        this.hooks = Collections.unmodifiableList(new ArrayList<DXLFunctionsHook>(hooks));
     }
 
     @Override
@@ -37,7 +37,7 @@ public final class CompositeHook implements DStarLFunctionsHook {
 
         int successes = 0;
         try {
-            for (DStarLFunctionsHook hook : hooks) {
+            for (DXLFunctionsHook hook : hooks) {
                 hook.hookFunctionIn(session, function);
                 ++successes;
             }
@@ -51,7 +51,7 @@ public final class CompositeHook implements DStarLFunctionsHook {
     @Override
     public void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
-        for (DStarLFunctionsHook hook : hooks(session) ) {
+        for (DXLFunctionsHook hook : hooks(session) ) {
             try {
                 hook.hookFunctionCatch(session, function, throwable);
             } catch (RuntimeException e) {
@@ -66,7 +66,7 @@ public final class CompositeHook implements DStarLFunctionsHook {
     @Override
     public void hookFunctionFinally(Session session, DDLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
-        for (DStarLFunctionsHook hook : hooks(session) ) {
+        for (DXLFunctionsHook hook : hooks(session) ) {
             try {
                 hook.hookFunctionFinally(session, function, throwable);
             } catch (RuntimeException e) {
@@ -79,7 +79,7 @@ public final class CompositeHook implements DStarLFunctionsHook {
         }
     }
 
-    private List<DStarLFunctionsHook> hooks(Session session) {
+    private List<DXLFunctionsHook> hooks(Session session) {
         Integer previousSuccesses = session.get(COUNT);
         return previousSuccesses == null ? this.hooks : hooks.subList(0, previousSuccesses + 1);
     }
