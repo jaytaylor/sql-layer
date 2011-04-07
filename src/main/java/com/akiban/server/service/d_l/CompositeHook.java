@@ -32,7 +32,7 @@ public final class CompositeHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionIn(Session session, DDLFunction function) {
+    public void hookFunctionIn(Session session, DXLFunction function) {
         assert session.get(COUNT) == null : session.get(COUNT);
 
         int successes = 0;
@@ -49,7 +49,7 @@ public final class CompositeHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable) {
+    public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
         for (DXLFunctionsHook hook : hooks(session) ) {
             try {
@@ -64,7 +64,7 @@ public final class CompositeHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionFinally(Session session, DDLFunction function, Throwable throwable) {
+    public void hookFunctionFinally(Session session, DXLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
         for (DXLFunctionsHook hook : hooks(session) ) {
             try {
