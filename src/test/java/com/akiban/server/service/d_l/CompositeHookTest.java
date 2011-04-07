@@ -43,8 +43,8 @@ public final class CompositeHookTest {
     public void noExceptions() {
         DXLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
 
-        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
-        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, null);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_AIS);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_AIS, null);
 
         check(
                 "alpha into GET_AIS",
@@ -62,9 +62,9 @@ public final class CompositeHookTest {
         DXLFunctionsHook hook = compose(output, "alpha", "beta", "gamma");
 
         MySampleException e = new MySampleException();
-        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.CREATE_TABLE);
-        hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.CREATE_TABLE, e);
-        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.CREATE_TABLE, e);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_TABLE);
+        hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CREATE_TABLE, e);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CREATE_TABLE, e);
 
         check(
                 "alpha into CREATE_TABLE",
@@ -86,14 +86,14 @@ public final class CompositeHookTest {
         DXLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_IN", "gamma");
 
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
+            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_AIS);
             fail();
         } catch (MySampleCash e) {
             // good
         }
         MySampleException e = new MySampleException();
-        hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
-        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
 
         check(
                 "alpha into GET_AIS",
@@ -111,15 +111,15 @@ public final class CompositeHookTest {
     public void crashOnCatch() {
         DXLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_CATCH", "gamma");
 
-        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_AIS);
         MySampleException e = new MySampleException();
         try {
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
             fail();
         } catch (MySampleCash e1) {
             // good
         }
-        hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
 
         check(
                 "alpha into GET_AIS",
@@ -141,10 +141,10 @@ public final class CompositeHookTest {
         DXLFunctionsHook hook = compose(output, "alpha", "beta: CRASH_FINALLY", "gamma");
 
         MySampleException e = new MySampleException();
-        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
-        hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_AIS);
+        hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
         try {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
             fail();
         } catch (MySampleCash e1) {
             // good
@@ -174,10 +174,10 @@ public final class CompositeHookTest {
                 "delta"
         );
 
-        hook.hookFunctionIn(session, DXLFunctionsHook.DDLFunction.GET_AIS);
+        hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_AIS);
         MySampleException e = new MySampleException();
         try {
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
             fail();
         } catch (MultipleCauseException e1) {
             assertEquals("causes", 2, e1.getCauses().size());
@@ -185,7 +185,7 @@ public final class CompositeHookTest {
         }
 
         try {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DDLFunction.GET_AIS, e);
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_AIS, e);
             fail();
         } catch (MultipleCauseException e1) {
             assertEquals("causes", 2, e1.getCauses().size());
@@ -236,7 +236,7 @@ public final class CompositeHookTest {
         }
 
         @Override
-        public void hookFunctionIn(Session session, DDLFunction function) {
+        public void hookFunctionIn(Session session, DXLFunction function) {
             output.add(String.format("%s into %s", message, function.name()));
             if (message.contains("CRASH_IN")) {
                 throw new MySampleCash();
@@ -244,7 +244,7 @@ public final class CompositeHookTest {
         }
 
         @Override
-        public void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable) {
+        public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
             output.add(
                     String.format(
                             "%s caught %s in %s",
@@ -259,7 +259,7 @@ public final class CompositeHookTest {
         }
 
         @Override
-        public void hookFunctionFinally(Session session, DDLFunction function, Throwable thrown) {
+        public void hookFunctionFinally(Session session, DXLFunction function, Throwable thrown) {
             output.add(String.format("%s out of %s", message, function.name()));
             if (message.contains("CRASH_FINALLY")) {
                 throw new MySampleCash();

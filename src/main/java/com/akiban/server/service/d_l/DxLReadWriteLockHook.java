@@ -44,7 +44,7 @@ final class DXLReadWriteLockHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionIn(Session session, DDLFunction function) {
+    public void hookFunctionIn(Session session, DXLFunction function) {
         final Lock lock;
         if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
             if (readWriteLock.isWriteLocked() && (!readWriteLock.isWriteLockedByCurrentThread())) {
@@ -61,12 +61,12 @@ final class DXLReadWriteLockHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable) {
+    public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
         // nothing to do
     }
 
     @Override
-    public void hookFunctionFinally(Session session, DDLFunction function, Throwable t) {
+    public void hookFunctionFinally(Session session, DXLFunction function, Throwable t) {
         Lock lock = session.pop(LOCK_KEY);
         if (lock == null) {
             Boolean writeLockWasTaken = session.remove(WRITE_LOCK_TAKEN);
