@@ -15,6 +15,7 @@
 
 package com.akiban.server.mttests.mtutil;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,13 +58,34 @@ public final class TimedResult<T> {
 
     @Override
     public String toString() {
-        Map<Long,List<String>> marks = timePoints().getMarks();
-        long lowestValue = Collections.min(marks.keySet());
+        return toString( getLowestTimeStamp() );
+    }
+
+    private Long getLowestTimeStamp() {
+        return Collections.min(timePoints().getMarks().keySet());
+    }
+
+    private String toString(long baseTimestamp) {
         TreeMap<Long,List<String>> marksSorted = new TreeMap<Long, List<String>>();
-        for (Map.Entry<Long,List<String>> entry : marks.entrySet()) {
-            marksSorted.put(entry.getKey() - lowestValue, entry.getValue());
+        for (Map.Entry<Long,List<String>> entry :  timePoints().getMarks().entrySet()) {
+            marksSorted.put(entry.getKey() - baseTimestamp, entry.getValue());
         }
 
-        return String.format("TimedResult<{%s} => %s>", marksSorted, getItem());
+        return String.format("TimedResult<base=%d {%s} => %s>", baseTimestamp, marksSorted, getItem());
+    }
+
+    public static String toString(TimedResult... timedResults) {
+        TreeMap<Long,TimedResult> resultsByLowest = new TreeMap<Long, TimedResult>();
+
+        for (TimedResult timedResult : timedResults) {
+            resultsByLowest.put(timedResult.getLowestTimeStamp(), timedResult);
+        }
+
+        long lowest = resultsByLowest.firstKey();
+        List<String> strings = new ArrayList<String>();
+        for (TimedResult timedResult : resultsByLowest.values()) {
+            strings.add( timedResult.toString(lowest) );
+        }
+        return strings.toString();
     }
 }
