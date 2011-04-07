@@ -55,14 +55,12 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
-import com.akiban.server.TableStatus;
 import com.akiban.server.service.AfterStart;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
-import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
@@ -281,7 +279,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
                 }, SCHEMA_TREE_NAME);
 
+                serviceManager.getTreeService().getTableStatusCache().drop(tableId);
                 final AkibanInformationSchema ais = constructAIS(session);
+
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
@@ -468,6 +468,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                                 .decodeInt();
                         ex2.clear().append(BY_ID).append(tableId).remove();
                         ex1.remove();
+                        serviceManager.getTreeService().getTableStatusCache().drop(tableId);
                     }
                 } catch (PersistitException e) {
                     LOG.error("Failed to delete schema " + schemaName, e);

@@ -168,7 +168,7 @@ public class TableStatusCache extends TransactionalCache {
             this();
             _arg = tableId;
         }
-
+        
         @Override
         public void apply(final TransactionalCache tc) {
             TableStatusCache tsc = (TableStatusCache) tc;
@@ -418,6 +418,10 @@ public class TableStatusCache extends TransactionalCache {
 
     public void truncate(final int tableId) {
         update(new Truncate(tableId));
+    }
+    
+    public void drop(final int tableId) {
+        update(new Drop(tableId));
     }
 
     public void updateAutoIncrementValue(final int tableId, final long value) {

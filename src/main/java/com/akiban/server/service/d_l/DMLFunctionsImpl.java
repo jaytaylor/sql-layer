@@ -816,6 +816,11 @@ class DMLFunctionsImpl extends ClientAPIBase implements DMLFunctions {
                 thrown = e;
             }
         }
+        try {
+            store().truncateTableStatus(session, tableId);
+        } catch(Exception e) {
+            throw new GenericInvalidOperationException(e);
+        }
         if (thrown != null) {
             throw new RuntimeException("Internal error", thrown);
         }
