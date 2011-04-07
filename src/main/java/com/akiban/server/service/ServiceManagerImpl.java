@@ -43,7 +43,6 @@ public class ServiceManagerImpl implements ServiceManager
     private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
     static final String CUSTOM_LOAD_SERVICE = "akserver.services.customload";
     private static final Logger LOG = LoggerFactory.getLogger(ServiceManagerImpl.class.getName());
-    private volatile Thread shutdownHook;
     private final ServiceFactory factory;
     private Map<Class<?>, Service<?>> services; // for each key-val, the ?
                                                 // should be the same; (T.class
@@ -150,6 +149,7 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     public void startServices() throws Exception {
+        LOG.info("Starting up services");
 
         Service<JmxRegistryService> jmxRegistryService = factory
                 .jmxRegistryService();
@@ -192,6 +192,7 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     private void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
+        LOG.debug("Starting up service {}", service.getClass().getName());
         service.start();
         Service<?> old = services.put(service.castClass(), service);
         if (old != null) {
@@ -215,10 +216,11 @@ public class ServiceManagerImpl implements ServiceManager
         ListIterator<Service> reverseIter = stopServices
                 .listIterator(stopServices.size());
         List<Exception> exceptions = new ArrayList<Exception>();
+        LOG.info("Shutting down services");
         while (reverseIter.hasPrevious()) {
             try {
                 Service service = reverseIter.previous();
-                LOG.info("Shutting down service {}", service.getClass().getName());
+                LOG.debug("Shutting down service {}", service.getClass().getName());
                 service.stop();
             } catch (Exception t) {
                 LOG.error("Error stopping service", t);
