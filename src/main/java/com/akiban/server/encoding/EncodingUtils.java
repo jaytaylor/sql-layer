@@ -48,7 +48,7 @@ abstract class EncodingUtils {
         }
     }
 
-    private static int putInt(final byte[] bytes, final int offset, final long value,
+    public static int putInt(final byte[] bytes, final int offset, final long value,
                final int width) {
         switch (width) {
             case 1:

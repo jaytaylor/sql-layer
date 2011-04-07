@@ -15,28 +15,100 @@
 
 package com.akiban.server.encoding;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-
+import com.akiban.ais.model.Type;
 import com.akiban.server.FieldDef;
+import com.akiban.server.Quote;
 import com.akiban.server.RowData;
+import com.akiban.util.AkibanAppender;
+import com.persistit.Key;
 
-public final class DateEncoder extends AbstractDateEncoder {
-    DateEncoder() {
+/**
+ * Encoder for working with dates when stored as a 3 byte int using
+ * the encoding of DD + MM×32 + YYYY×512. This is how MySQL stores the
+ * SQL DATE type.
+ * See: http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+ */
+public final class DateEncoder extends EncodingBase<Integer> {
+    final int STORAGE_SIZE = 3;
+
+    static int objectToDateInt(Object obj) {
+        final int value;
+        if(obj == null) {
+            value = 0;
+        } else if(obj instanceof String) {
+            // YYYY-MM-DD
+            final String values[] = ((String)obj).split("-");
+            final int year = Integer.parseInt(values[0]);
+            final int month = Integer.parseInt(values[1]);
+            final int day = Integer.parseInt(values[2]);
+            value = day + month*32 + year*512;
+        } else if(obj instanceof Number) {
+            value = ((Number)obj).intValue();
+        } else {
+            throw new IllegalArgumentException("Requires String or Number");
+        }
+        return value;
+    }
+
+    static String dateIntToString(int value) {
+        final int year = value / 512;
+        final int month = (value / 32) % 16;
+        final int day = value % 32;
+        return String.format("%04d-%02d-%02d", year, month, day);
     }
 
     @Override
-    public Date toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
+    public boolean validate(Type type) {
+        return type.fixedSize() && (type.maxSizeBytes() == STORAGE_SIZE);
+    }
 
-        final int v = (int) rowData.getIntegerValue((int) location, 3);
-        final int year = v / (32 * 16);
-        final int month = (v / 32) % 16;
-        final int day = v % 32;
+    @Override
+    public Integer toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
+        final int location = (int) getLocation(fieldDef, rowData);
+        return (int)rowData.getIntegerValue(location, STORAGE_SIZE);
+    }
 
-        final Calendar calendar = new GregorianCalendar();
-        calendar.set(year - 1900, month -1, day);
-        return calendar.getTime();
+    @Override
+    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
+        assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
+        final int longValue = objectToDateInt(value);
+        return EncodingUtils.putInt(dest, offset, longValue, STORAGE_SIZE);
+    }
+
+    @Override
+    public int widthFromObject(FieldDef fieldDef, Object value) {
+        return fieldDef.getMaxStorageSize();
+    }
+
+    @Override
+    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
+        final int location = (int)fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
+        if(location == 0) {
+            key.append(null);
+        } else {
+            final int value = (int)rowData.getIntegerValue(location, STORAGE_SIZE);
+            key.append(value);
+        }
+    }
+
+    @Override
+    public void toKey(FieldDef fieldDef, Object value, Key key) {
+        assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
+        if(value == null) {
+            key.append(null);
+        } else {
+            final int v = 0x00FFFFFF & objectToDateInt(value);
+            key.append(v);
+        }
+    }
+
+    @Override
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
+        try {
+            final int value = toObject(fieldDef, rowData);
+            sb.append(dateIntToString(value));
+        } catch(EncodingException e) {
+            sb.append("null");
+        }
     }
 }
