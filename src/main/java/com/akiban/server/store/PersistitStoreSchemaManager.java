@@ -407,6 +407,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
                     ex1.remove();
                     ex3.clear().append(tableId).remove();
+                    serviceManager.getTreeService().getTableStatusCache().drop(tableId);
                 }
             } catch (PersistitException e) {
                 LOG.error("Failed to delete table " + schemaName + "."
