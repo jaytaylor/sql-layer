@@ -27,8 +27,8 @@ import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.d_l.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.d_l.DXLService;
-import com.akiban.server.service.d_l.ScanhooksDXLService;
 import com.akiban.server.service.session.Session;
 
 import java.util.Arrays;
@@ -78,7 +78,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         final Delayer topOfLoopDelayer = topOfLoopDelayer(timePoints);
         final Delayer beforeConversionDelayer = beforeConversionDelayer(timePoints);
 
-        ScanhooksDXLService.ScanHooks scanHooks = new ScanhooksDXLService.ScanHooks() {
+        ConcurrencyAtomicsDXLService.ScanHooks scanHooks = new ConcurrencyAtomicsDXLService.ScanHooks() {
             @Override
             public void loopStartHook() {
                 if (topOfLoopDelayer != null) {
@@ -114,15 +114,15 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
                 ScanLimit.NONE
         );
         DXLService dxlService = ServiceManagerImpl.get().getDXL();
-        ScanhooksDXLService scanhooksService = (ScanhooksDXLService) dxlService;
-        assertNull("previous scanhook defined!", scanhooksService.installHook(session, scanHooks));
+        ConcurrencyAtomicsDXLService concurrencyAtomicsService = (ConcurrencyAtomicsDXLService) dxlService;
+        assertNull("previous scanhook defined!", concurrencyAtomicsService.installHook(session, scanHooks));
         try {
             final CursorId cursorId;
             DMLFunctions dml = ServiceManagerImpl.get().getDXL().dmlFunctions();
             try {
                 cursorId = dml.openCursor(session, request);
             } catch (Exception e) {
-                ScanhooksDXLService.ScanHooks removed = scanhooksService.removeHook(session);
+                ConcurrencyAtomicsDXLService.ScanHooks removed = concurrencyAtomicsService.removeHook(session);
                 if (removed != scanHooks) {
                     throw new RuntimeException("hook not removed correctly", e);
                 }
@@ -136,13 +136,13 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             }
             dml.closeCursor(session, cursorId);
 
-            if (scanhooksService.isHookInstalled(session)) {
+            if (concurrencyAtomicsService.isHookInstalled(session)) {
                 throw new ScanHooksNotRemovedException();
             }
             return output.getRows();
         } catch (Exception e) {
             timePoints.mark("SCAN: exception " + e.getClass().getSimpleName());
-            if (scanhooksService.isHookInstalled(session)) {
+            if (concurrencyAtomicsService.isHookInstalled(session)) {
                 throw new ScanHooksNotRemovedException(e);
             }
             else throw e;
