@@ -481,7 +481,6 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
 
         TimedCallable<Throwable> dropIndexCallable = new TimedExceptionCatcher() {
-
             @Override
             protected void doOrThrow(TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(DROP_START_LENGTH);
@@ -518,6 +517,11 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                     timePoints.mark("SCAN: NoSuchIndexException");
                 }
             }
+
+            @Override
+            protected void handleCaught(TimePoints timePoints, Session session, Throwable t) {
+                timePoints.mark("SCAN: Unexpected exception " + t.getClass().getSimpleName());
+            }
         };
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -526,6 +530,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         TimedResult<Throwable> scanResult = scanFuture.get();
         TimedResult<Throwable> dropIndexResult = dropIndexFuture.get();
+
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: PREPARING",
+                "(SCAN: PAUSE)>",
+                "DROP: PREPARING",
+                "DROP: IN",
+                "<(SCAN: PAUSE)",
+                "DROP: OUT",
+                "SCAN: NoSuchIndexException"
+        );
 
         TimedExceptionCatcher.throwIfThrown(scanResult);
         TimedExceptionCatcher.throwIfThrown(dropIndexResult);

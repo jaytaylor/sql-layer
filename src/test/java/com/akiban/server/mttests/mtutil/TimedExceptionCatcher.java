@@ -28,8 +28,13 @@ public abstract class TimedExceptionCatcher extends TimedCallable<Throwable> {
             doOrThrow(timePoints, session);
         } catch (Throwable caught) {
             t = caught;
+            handleCaught(timePoints, session, t);
         }
         return t;
+    }
+
+    protected void handleCaught(TimePoints timePoints, Session session, Throwable t) {
+        // nothing
     }
 
     public static <T extends Throwable> void throwIfThrown(TimedResult<T> timedResult) throws T {
