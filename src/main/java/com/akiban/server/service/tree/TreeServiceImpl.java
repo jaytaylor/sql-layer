@@ -196,10 +196,12 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         db.initialize(properties);
         buildSchemaMap();
 
-        if (LOG.isInfoEnabled()) {
-            LOG.info("PersistitStore datapath=" + db.getProperty("datapath")
-                    + (bufferSize / 1024) + "k_buffers="
-                    + db.getProperty("buffer.count." + bufferSize));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("PersistitStore datapath={} {} k_buffers={}", new Object[] {
+                    db.getProperty("datapath"),
+                    bufferSize / 1024,
+                    db.getProperty("buffer.count." + bufferSize)
+            });
         }
     }
 

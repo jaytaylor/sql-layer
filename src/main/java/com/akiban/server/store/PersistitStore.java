@@ -954,10 +954,7 @@ public class PersistitStore implements Store {
             final int tableId) throws InvalidOperationException {
         final List<RowCollector> list = collectorsForTableId(session, tableId);
         if (list.isEmpty()) {
-            if (LOG.isInfoEnabled()) {
-                LOG.info("Nested RowCollector on tableId=" + tableId
-                        + " depth=" + (list.size() + 1));
-            }
+            LOG.debug("Nested RowCollector on tableId={} depth={}", tableId, (list.size() + 1));
             throw new InvalidOperationException(ErrorCode.CURSOR_IS_FINISHED,
                     "No RowCollector for tableId=%d (depth=%d)", tableId,
                     list.size() + 1);
@@ -971,10 +968,7 @@ public class PersistitStore implements Store {
         final Integer tableId = rc.getTableId();
         final List<RowCollector> list = collectorsForTableId(session, tableId);
         if (!list.isEmpty()) {
-            if (LOG.isInfoEnabled()) {
-                LOG.info("Note: Nested RowCollector on tableId=" + tableId
-                        + " depth=" + (list.size() + 1));
-            }
+            LOG.debug("Note: Nested RowCollector on tableId={} depth={}", tableId, list.size() + 1);
             assert list.get(list.size() - 1) != rc : "Redundant call";
             //
             // This disallows the patch because we agreed not to fix the
@@ -1510,9 +1504,13 @@ public class PersistitStore implements Store {
             }
             flushIndexes(session);
             if (LOG.isInfoEnabled()) {
-                LOG.info("Inserted " + indexKeyCount
-                        + " index keys into group " + rowDef.getSchemaName()
-                        + "." + rowDef.getTableName());
+                LOG.debug(
+                        "Inserted {} index keys into group {}.{}", new Object[] {
+                        indexKeyCount,
+                        rowDef.getSchemaName(),
+                        rowDef.getTableName()
+                        }
+                );
             }
         }
     }
@@ -1563,9 +1561,11 @@ public class PersistitStore implements Store {
         }
         final long elapsed = System.nanoTime() - start;
         if (LOG.isInfoEnabled()) {
-            LOG.info(String.format("Index builder inserted %s keys "
-                    + "into index tree %s in %,d seconds", keys.size(), iEx
-                    .getTree().getName(), elapsed / 1000000000));
+            LOG.debug("Index builder inserted {} keys into index tree {} in {} seconds", new Object[]{
+                    keys.size(),
+                    iEx.getTree().getName(),
+                    elapsed / 1000000000
+            });
         }
     }
 
