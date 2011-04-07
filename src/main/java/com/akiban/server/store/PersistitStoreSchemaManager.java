@@ -906,7 +906,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 transaction.end();
             }
         }
-        treeService.checkpoint();
     }
 
     static long now() {
