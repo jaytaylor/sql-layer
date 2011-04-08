@@ -15,6 +15,8 @@
 
 package com.akiban.server.service.d_l;
 
+import com.akiban.ais.model.TableName;
+import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
@@ -27,10 +29,14 @@ import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
+import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.service.session.Session;
 
-public final class ScanhooksDXLService extends DXLServiceImpl {
+import java.util.Collection;
 
+public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
+
+    private final static Session.Key<Long> DELAY_ON_DROP_INDEX = Session.Key.of("DELAY_ON_DROP_INDEX");
     private final static Session.Key<ScanHooks> SCANHOOKS_KEY = Session.Key.of("SCANHOOKS");
 
     public interface ScanHooks extends BasicDMLFunctions.ScanHooks {
@@ -42,16 +48,29 @@ public final class ScanhooksDXLService extends DXLServiceImpl {
         return new ScanhooksDMLFunctions(newlyCreatedDDLF);
     }
 
-    public ScanHooks installHook(Session session, ScanHooks hook) {
+    @Override
+    DDLFunctions createDDLFunctions() {
+        return new ConcurrencyAtomicsDDLFunctions();
+    }
+
+    public static ScanHooks installScanHook(Session session, ScanHooks hook) {
         return session.put(SCANHOOKS_KEY, hook);
     }
 
-    public ScanHooks removeHook(Session session) {
+    public static ScanHooks removeScanHook(Session session) {
         return session.remove(SCANHOOKS_KEY);
     }
 
-    public boolean isHookInstalled(Session session) {
+    public static boolean isScanHookInstalled(Session session) {
         return session.get(SCANHOOKS_KEY) != null;
+    }
+
+    public static void delayNextDropIndex(Session session, long amount) {
+        session.put(DELAY_ON_DROP_INDEX, amount);
+    }
+
+    public static boolean isDropIndexDelayInstalled(Session session) {
+        return session.get(DELAY_ON_DROP_INDEX) != null;
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
@@ -89,6 +108,17 @@ public final class ScanhooksDXLService extends DXLServiceImpl {
                 hooks = BasicDMLFunctions.NONE;
             }
             return super.scanSome(session, cursorId, output, hooks);
+        }
+    }
+
+    private static class ConcurrencyAtomicsDDLFunctions extends BasicDDLFunctions {
+        @Override
+        public void dropIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop) throws InvalidOperationException {
+            Long shouldDelay = session.remove(DELAY_ON_DROP_INDEX);
+            if (shouldDelay != null) {
+                Timing.sleep(shouldDelay);
+            }
+            super.dropIndexes(session, tableName, indexNamesToDrop);
         }
     }
 }

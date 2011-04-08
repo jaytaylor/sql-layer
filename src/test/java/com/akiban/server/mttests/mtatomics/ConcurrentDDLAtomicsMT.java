@@ -20,12 +20,19 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.NoSuchIndexException;
+import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.ScanAllRequest;
+import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimePointsComparison;
 import com.akiban.server.mttests.mtutil.TimedCallable;
+import com.akiban.server.mttests.mtutil.TimedExceptionCatcher;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.mttests.mtutil.TimedResult;
+import com.akiban.server.service.d_l.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import org.junit.Test;
@@ -35,9 +42,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -454,55 +461,87 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         assertEquals("rows scanned (in order)", rowsExpected, rowsScanned);
     }
 
-    @org.junit.Ignore("bug 752082")
-    @Test(timeout=60000)
-    public void scanWhileDroppingIndex() throws Exception {
-        final int NUMBER_OF_ROWS = 10000;
+    @Test
+    public void scanWhileDroppingIndex() throws Throwable {
+        final long SCAN_PAUSE_LENGTH = 2500;
+        final long DROP_START_LENGTH = 1000;
+        final long DROP_PAUSE_LENGTH = 2500;
+
+
+        final int NUMBER_OF_ROWS = 100;
         final int initialTableId = createTable(SCHEMA, TABLE, "id int key", "age int", "key(age)");
         final TableName tableName = new TableName(SCHEMA, TABLE);
         for(int i=0; i < NUMBER_OF_ROWS; ++i) {
             writeRows(createNewRow(initialTableId, i, i + 1));
         }
 
-        while(true) {
-            final Index index = ddl().getUserTable(session(), tableName).getIndex("age");
-            final Collection<String> indexNameCollection = Collections.singleton(index.getIndexName().getName());
-            final int tableId = ddl().getTableId(session(), tableName);
-            assertEquals("table id changed", initialTableId, tableId);
+        final Index index = ddl().getUserTable(session(), tableName).getIndex("age");
+        final Collection<String> indexNameCollection = Collections.singleton(index.getIndexName().getName());
+        final int tableId = ddl().getTableId(session(), tableName);
 
-            TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
-                @Override
-                protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                    timePoints.mark("DROP: IN");
-                    ddl().dropIndexes(new SessionImpl(), tableName, indexNameCollection);
-                    timePoints.mark("DROP: OUT");
-                    return null;
+
+        TimedCallable<Throwable> dropIndexCallable = new TimedExceptionCatcher() {
+            @Override
+            protected void doOrThrow(TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(DROP_START_LENGTH);
+                timePoints.mark("DROP: PREPARING");
+                ConcurrencyAtomicsDXLService.delayNextDropIndex(session, DROP_PAUSE_LENGTH);
+
+                timePoints.mark("DROP: IN");
+                ddl().dropIndexes(session, tableName, indexNameCollection);
+                assertFalse("drop hook not removed!", ConcurrencyAtomicsDXLService.isDropIndexDelayInstalled(session));
+                timePoints.mark("DROP: OUT");
+            }
+        };
+        TimedCallable<Throwable> scanCallable = new TimedExceptionCatcher() {
+            @Override
+            protected void doOrThrow(TimePoints timePoints, Session session) throws Exception {
+                timePoints.mark("SCAN: PREPARING");
+
+                ScanAllRequest request = new ScanAllRequest(
+                        tableId,
+                        new HashSet<Integer>(Arrays.asList(0, 1)),
+                        index.getIndexId(),
+                        EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
+                        ScanLimit.NONE
+                );
+
+                timePoints.mark("(SCAN: PAUSE)>");
+                Timing.sleep(SCAN_PAUSE_LENGTH);
+                timePoints.mark("<(SCAN: PAUSE)");
+                try {
+                    CursorId cursorId = dml().openCursor(session, request);
+                    timePoints.mark("SCAN: cursorID opened");
+                    dml().closeCursor(session, cursorId);
+                } catch (NoSuchIndexException e) {
+                    timePoints.mark("SCAN: NoSuchIndexException");
                 }
-            };
-            TimedCallable<List<NewRow>> scanCallable = new DelayScanCallableBuilder(tableId, index.getIndexId()).get(ddl());
-
-            ExecutorService executor = Executors.newFixedThreadPool(2);
-            Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-            Future<TimedResult<Void>> dropIndexFuture = executor.submit(dropIndexCallable);
-
-            TimedResult<List<NewRow>> scanResult = scanFuture.get();
-            TimedResult<Void> dropIndexResult = dropIndexFuture.get();
-
-            TimePointsComparison comparison = new TimePointsComparison(scanResult, dropIndexResult);
-            if (comparison.matches( // drop came before scan
-                    "DROP: IN",
-                    "SCAN: NO SUCH INDEX",
-                    "DROP: OUT"
-            )) {
-                return; // this is what we wanted to find
             }
-            else if (comparison.matches("SCAN: START")) { // scan came before drop
-                assertEquals("number of rows scanned", NUMBER_OF_ROWS, scanResult.getItem().size());
+
+            @Override
+            protected void handleCaught(TimePoints timePoints, Session session, Throwable t) {
+                timePoints.mark("SCAN: Unexpected exception " + t.getClass().getSimpleName());
             }
-            else {
-                fail(comparison.getMarkNames().toString());
-            }
-            ddl().createIndexes(session(), Collections.singleton(index));
-        }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<Throwable>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Throwable>> dropIndexFuture = executor.submit(dropIndexCallable);
+
+        TimedResult<Throwable> scanResult = scanFuture.get();
+        TimedResult<Throwable> dropIndexResult = dropIndexFuture.get();
+
+        new TimePointsComparison(scanResult, dropIndexResult).verify(
+                "SCAN: PREPARING",
+                "(SCAN: PAUSE)>",
+                "DROP: PREPARING",
+                "DROP: IN",
+                "<(SCAN: PAUSE)",
+                "DROP: OUT",
+                "SCAN: NoSuchIndexException"
+        );
+
+        TimedExceptionCatcher.throwIfThrown(scanResult);
+        TimedExceptionCatcher.throwIfThrown(dropIndexResult);
     }
 }

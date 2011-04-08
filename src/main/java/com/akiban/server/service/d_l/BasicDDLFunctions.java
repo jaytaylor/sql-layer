@@ -55,7 +55,7 @@ import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
+class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
