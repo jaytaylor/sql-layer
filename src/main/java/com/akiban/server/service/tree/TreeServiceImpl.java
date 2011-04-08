@@ -50,7 +50,7 @@ import com.persistit.exception.PersistitException;
 public class TreeServiceImpl implements TreeService, Service<TreeService>,
         JmxManageable {
 
-    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.of("exchangemap");
+    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.named("exchangemap");
 
     private final static int MEGA = 1024 * 1024;
 

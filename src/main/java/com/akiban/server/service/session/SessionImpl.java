@@ -87,10 +87,11 @@ public final class SessionImpl implements Session
         return deque.pollLast();
     }
 
+    @SuppressWarnings("unused") // "key" is used only for generic type inference
     private static <T> T launder(Key<T> key, Object o) {
         @SuppressWarnings("unchecked") T t = (T) o;
         if (t == null) {
-            return key.getDefaultValue();
+            return null;
         }
         return t == NULL_OBJ ? null : t;
     }

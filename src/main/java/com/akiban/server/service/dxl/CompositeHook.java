@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 public final class CompositeHook implements DXLFunctionsHook {
-    private final Session.Key<Integer> COUNT = Session.Key.of("SUCCESS_COUNT");
+    private final Session.Key<Integer> COUNT = Session.Key.named("SUCCESS_COUNT");
 
     private final List<DXLFunctionsHook> hooks;
 
