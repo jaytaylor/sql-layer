@@ -82,7 +82,7 @@ class DelayScanCallableBuilder {
 
     DelayableScanCallable get(DDLFunctions ddl) {
         return new DelayableScanCallable(
-                tableId, indexId, ddl,
+                tableId, indexId,
                 topOfLoopDelayer, beforeConversionDelayer,
                 markFinish, initialDelay, DEFAULT_FINISH_DELAY
         );

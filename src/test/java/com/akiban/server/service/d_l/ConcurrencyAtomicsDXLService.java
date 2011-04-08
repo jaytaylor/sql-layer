@@ -53,15 +53,15 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         return new ConcurrencyAtomicsDDLFunctions();
     }
 
-    public ScanHooks installHook(Session session, ScanHooks hook) {
+    public static ScanHooks installScanHook(Session session, ScanHooks hook) {
         return session.put(SCANHOOKS_KEY, hook);
     }
 
-    public ScanHooks removeHook(Session session) {
+    public static ScanHooks removeScanHook(Session session) {
         return session.remove(SCANHOOKS_KEY);
     }
 
-    public boolean isHookInstalled(Session session) {
+    public static boolean isScanHookInstalled(Session session) {
         return session.get(SCANHOOKS_KEY) != null;
     }
 
