@@ -92,12 +92,12 @@ public final class SessionImplTest {
 
     @Test
     public void keyMapOwner() {
-        assertEquals("owner", SessionImplTest.class, Session.MapKey.<Object,Object>ofMap("whatever").getOwner());
+        assertEquals("owner", SessionImplTest.class, Session.MapKey.<Object,Object>mapNamed("whatever").getOwner());
     }
 
     @Test
     public void mapMethods() {
-        Session.MapKey<Integer,String> key = Session.MapKey.ofMap("foo");
+        Session.MapKey<Integer,String> key = Session.MapKey.mapNamed("foo");
 
         assertNull("initial value for 1", session.get(key, 1));
         assertNull("initial displacement for 1", session.put(key, 1, "one"));
@@ -110,7 +110,7 @@ public final class SessionImplTest {
 
     @Test
     public void removeFromMapBeforeGetting() {
-        Session.MapKey<Integer,String> key = Session.MapKey.ofMap("foo");
+        Session.MapKey<Integer,String> key = Session.MapKey.mapNamed("foo");
         assertEquals("removal value for 1", null, session.remove(key, 1));
     }
 }

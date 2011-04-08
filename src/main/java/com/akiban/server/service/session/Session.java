@@ -75,7 +75,7 @@ public interface Session
 
     public static final class MapKey<K,V> extends Key<Map<K,V>> {
 
-        public static <K,V> MapKey<K,V> ofMap(String name) {
+        public static <K,V> MapKey<K,V> mapNamed(String name) {
             return new MapKey<K,V>(name);
         }
 
@@ -90,7 +90,7 @@ public interface Session
 
     public static final class StackKey<T> extends Key<Deque<T>> {
 
-        public static <K> StackKey<K> ofStack(String name) {
+        public static <K> StackKey<K> stackNamed(String name) {
             return new StackKey<K>(name);
         }
 
