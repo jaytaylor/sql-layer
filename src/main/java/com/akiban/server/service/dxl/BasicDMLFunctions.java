@@ -27,6 +27,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -35,6 +36,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
@@ -68,6 +70,7 @@ import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -313,6 +316,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             RowOutputException,
             BufferFullException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException
 
     {
@@ -325,6 +329,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                    RowOutputException,
                    BufferFullException,
                    ConcurrentScanAndUpdateException,
+                   TableDefinitionChangedException,
                    GenericInvalidOperationException
 
     {
@@ -338,6 +343,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
         if (CursorState.CONCURRENT_MODIFICATION.equals(cursor.getState())) {
             throw new ConcurrentScanAndUpdateException("for cursor " + cursorId);
+        }
+        if (CursorState.DDL_MODIFICATION.equals(cursor.getState())) {
+            throw new TableDefinitionChangedException("a table's definition has changed!");
         }
         if (cursor.isFinished()) {
             throw new CursorIsFinishedException(cursorId);
@@ -436,6 +444,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             RowOutputException,
             NoSuchTableException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException
     {
         return scanSome(session, cursorId, output, NONE);
@@ -447,6 +456,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                RowOutputException,
                NoSuchTableException,
                ConcurrentScanAndUpdateException,
+               TableDefinitionChangedException,
                GenericInvalidOperationException
     {
         logger.trace("scanning from {}", cursorId);
@@ -730,6 +740,43 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throwIfInstanceOf(NoSuchRowException.class, ioe);
             throwIfInstanceOf(DuplicateKeyException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
+        }
+    }
+
+    private void checkCursorsForDDLModification(Session session, TableName tableName) throws NoSuchTableException {
+        Map<CursorId,ScanData> cursorsMap = session.get(CURSORS_TO_SCANDATA);
+        if (cursorsMap == null) {
+            return;
+        }
+
+        final int tableId;
+        final int gTableId;
+        {
+            AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+            UserTable userTable = ais.getUserTable(tableName);
+            if (userTable == null) {
+                Table groupTable = ais.getGroupTable(tableName);
+                if (groupTable == null) {
+                    throw new NoSuchTableException(tableName);
+                }
+                tableId = gTableId = groupTable.getTableId();
+            }
+            else {
+                tableId = userTable.getTableId();
+                gTableId = userTable.getGroup().getGroupTable().getTableId();
+            }
+        }
+
+        for (ScanData scanData : cursorsMap.values()) {
+            Cursor cursor = scanData.getCursor();
+            if (cursor.isClosed()) {
+                continue;
+            }
+            ScanRequest request = cursor.getScanRequest();
+            int scanTableId = request.getTableId();
+            if (scanTableId == tableId || scanTableId == gTableId) {
+                cursor.setDDLModified();
+            }
         }
     }
 
