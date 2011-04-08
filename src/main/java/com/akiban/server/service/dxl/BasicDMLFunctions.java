@@ -18,7 +18,6 @@ package com.akiban.server.service.dxl;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -90,8 +89,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     };
 
     private static final AtomicLong cursorsCount = new AtomicLong();
-    private static final Session.MapKey<CursorId,ScanData> CURSORS_TO_SCANDATA = Session.MapKey.ofMap("CURSORS_TO_SCANDATA");
-    private static final Session.Key<Map<CursorId,Cursor>> OPEN_CURSORS_MAP = Session.Key.of("OPEN_CURSORS_MAP");
+    private static final Session.MapKey<CursorId,ScanData> CURSORS_TO_SCANDATA = Session.MapKey.mapNamed("CURSORS_TO_SCANDATA");
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;
@@ -205,16 +203,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         if (mustBeFresh) {
             assert old == null : old;
         }
-
-        Map<CursorId,Cursor> cursors = session.get(OPEN_CURSORS_MAP);
-        if (cursors == null) {
-            cursors = new HashMap<CursorId,Cursor>();
-            session.put(OPEN_CURSORS_MAP, cursors);
-        }
-        Cursor oldCursor = cursors.put(cursorId, cursor);
-        if (mustBeFresh) {
-            assert oldCursor == null : String.format("%s -> %s conflicted with %s", cursor, cursors, oldCursor);
-        }
+        
         return cursor;
     }
 
@@ -607,16 +596,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         if (scanData == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        Map<CursorId,Cursor> cursors = session.get(OPEN_CURSORS_MAP);
-        // cursors should not be null, since the cursor isn't null and creating
-        // it guarantees a Set<Cursor>
-        Cursor removedCursor = cursors.remove(cursorId);
+
+        Cursor removedCursor = scanData.getCursor();
         removedCursor.getRowCollector().close();
     }
 
     @Override
     public Set<CursorId> getCursors(Session session) {
-        Map<CursorId,Cursor> cursors = session.get(OPEN_CURSORS_MAP);
+        Map<CursorId,ScanData> cursors = session.get(CURSORS_TO_SCANDATA);
         if (cursors == null) {
             return Collections.emptySet();
         }
@@ -739,11 +726,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
-        Map<CursorId,Cursor> cursorsMap = session.get(OPEN_CURSORS_MAP);
+        Map<CursorId,ScanData> cursorsMap = session.get(CURSORS_TO_SCANDATA);
         if (cursorsMap == null) {
             return;
         }
-        for (Cursor cursor : cursorsMap.values()) {
+        for (ScanData scanData : cursorsMap.values()) {
+            Cursor cursor = scanData.getCursor();
             if (cursor.isClosed()) {
                 continue;
             }

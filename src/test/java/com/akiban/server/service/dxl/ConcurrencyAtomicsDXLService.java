@@ -36,8 +36,8 @@ import java.util.Collection;
 
 public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
-    private final static Session.Key<Long> DELAY_ON_DROP_INDEX = Session.Key.of("DELAY_ON_DROP_INDEX");
-    private final static Session.Key<ScanHooks> SCANHOOKS_KEY = Session.Key.of("SCANHOOKS");
+    private final static Session.Key<Long> DELAY_ON_DROP_INDEX = Session.Key.named("DELAY_ON_DROP_INDEX");
+    private final static Session.Key<ScanHooks> SCANHOOKS_KEY = Session.Key.named("SCANHOOKS");
 
     public interface ScanHooks extends BasicDMLFunctions.ScanHooks {
         // not adding anything, just promoting visibility

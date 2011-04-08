@@ -43,7 +43,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         return instance;
     }
 
-    private static final Session.Key<ByteBuffer> SESSION_BUFFER = Session.Key.of("SESSION_BUFFER");
+    private static final Session.Key<ByteBuffer> SESSION_BUFFER = Session.Key.named("SESSION_BUFFER");
 
     private final AtomicInteger capacity = new AtomicInteger(65536);
 

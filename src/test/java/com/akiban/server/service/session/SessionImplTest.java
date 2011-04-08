@@ -37,12 +37,12 @@ public final class SessionImplTest {
 
     @Test
     public void keyOwner() {
-        assertEquals("owner", SessionImplTest.class, Session.Key.<Object>of("whatever").getOwner());
+        assertEquals("owner", SessionImplTest.class, Session.Key.<Object>named("whatever").getOwner());
     }
 
     @Test
     public void noDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo");
+        Session.Key<Integer> key = Session.Key.named("foo");
 
         Integer old1 = session.put(key, 2);
         assertNull("not null: " + old1, old1);
@@ -57,47 +57,14 @@ public final class SessionImplTest {
         assertNull("not null: " + last, last);
     }
 
-
-    @Test
-    public void getWithDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo", -1);
-
-        assertEquals("current value", -1, session.get(key).intValue());
-    }
-
-    @Test
-    public void putWithDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo", -1);
-
-        Integer old = session.put(key, 3);
-        assertEquals("old value", -1, old.intValue());
-
-        assertEquals("current value", 3, session.get(key).intValue());
-
-        assertEquals("current value", 3, session.remove(key).intValue());
-        Integer last = session.get(key);
-        assertEquals("old value", -1, last.intValue());
-    }
-
-    @Test
-    public void putNullWithDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo", -1);
-
-        Integer old = session.put(key, null);
-        assertEquals("old value", -1, old.intValue());
-
-        Integer current = session.get(key);
-        assertNull("not null: " + current, current);
-    }
-
     @Test
     public void keyMapOwner() {
-        assertEquals("owner", SessionImplTest.class, Session.MapKey.<Object,Object>ofMap("whatever").getOwner());
+        assertEquals("owner", SessionImplTest.class, Session.MapKey.<Object,Object>mapNamed("whatever").getOwner());
     }
 
     @Test
     public void mapMethods() {
-        Session.MapKey<Integer,String> key = Session.MapKey.ofMap("foo");
+        Session.MapKey<Integer,String> key = Session.MapKey.mapNamed("foo");
 
         assertNull("initial value for 1", session.get(key, 1));
         assertNull("initial displacement for 1", session.put(key, 1, "one"));
@@ -110,7 +77,7 @@ public final class SessionImplTest {
 
     @Test
     public void removeFromMapBeforeGetting() {
-        Session.MapKey<Integer,String> key = Session.MapKey.ofMap("foo");
+        Session.MapKey<Integer,String> key = Session.MapKey.mapNamed("foo");
         assertEquals("removal value for 1", null, session.remove(key, 1));
     }
 }
