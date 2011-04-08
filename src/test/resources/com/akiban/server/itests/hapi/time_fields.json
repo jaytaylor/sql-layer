@@ -1,0 +1,34 @@
+{
+
+"setup" : {
+    "processors_default" : ["scanrows"],
+
+    "schema" : "test",
+
+    "tables" : [
+        ["times", "id int key", "t time", "index(t)],
+    ],
+
+    "write_rows" : {
+        "times"  : [
+            [1, "17:06:59"],
+            [2, "01:01:42"],
+            [3, "00:00:00"]
+        ],
+    }
+},
+
+"tests" : {
+    "all_times" : {
+        "get"           : "test:times:id>0",
+        "expect result" : {
+            "@times" : [
+                {"id" : 1, "t" : "17:06:59"},
+                {"id" : 2, "t" : "01:01:42"},
+                {"id" : 3, "t" : "00:00:00"}
+            ]
+        }
+    }
+}
+
+}

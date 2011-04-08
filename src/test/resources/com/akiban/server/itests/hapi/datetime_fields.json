@@ -1,0 +1,34 @@
+{
+
+"setup" : {
+    "processors_default" : ["scanrows"],
+
+    "schema" : "test",
+
+    "tables" : [
+        ["datetimes", "id int key", "dt datetime", "index(dt)"]
+    ],
+
+    "write_rows" : {
+        "datetimes"  : [
+            [1, "2011-04-07 17:06:59"],
+            [2, "1901-01-01 01:01:42"],
+            [3, "0000-00-00 00:00:00"]
+        ]
+    }
+},
+
+"tests" : {
+    "all_datetimes" : {
+        "get"           : "test:datetimes:id>0",
+        "expect result" : {
+            "@datetimes" : [
+                {"id" : 1, "dt" : "2011-04-07 17:06:59"},
+                {"id" : 2, "dt" : "1901-01-01 01:01:42"},
+                {"id" : 3, "dt" : "0000-00-00 00:00:00"}
+            ]
+        }
+    }
+}
+
+}

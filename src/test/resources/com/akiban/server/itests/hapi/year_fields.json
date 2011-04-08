@@ -1,0 +1,63 @@
+{
+
+"setup" : {
+    "processors_default" : ["scanrows"],
+
+    "schema" : "test",
+
+    "tables" : [
+        ["years", "id int key", "y year", "index(y)"]
+    ],
+
+    "write_rows" : {
+        "years"  : [
+            [1, "2011"],
+            [2, "1901"],
+            [3, "0000"]
+        ]
+    }
+},
+
+"tests" : {
+    "select_all" : {
+        "get" : "test:years:id>0",
+        "expect result" : {
+            "@years" : [
+                {"id" : 1, "y" : "2011"},
+                {"id" : 2, "y" : "1901"},
+                {"id" : 3, "y" : "0000"}
+            ]
+        }
+    },
+
+
+    "index_less" : {
+        "get" : "test:years:y<'2000'",
+        "expect result" : {
+            "@years" : [
+                {"id" : 2, "y" : "1901"},
+                {"id" : 3, "y" : "0000"}
+            ]
+        }
+    },
+
+    "index_equal" : {
+        "get" : "test:years:y='1901'",
+        "expect result" : {
+            "@years" : [
+                {"id" : 2, "y" : "1901"}
+            ]
+        }
+    },
+
+    "index_greater" : {
+        "get" : "test:years:y>'1950'",
+        "expect result" : {
+            "@years" : [
+                {"id" : 1, "y" : "2011"}
+            ]
+        }
+    },
+}
+
+}
