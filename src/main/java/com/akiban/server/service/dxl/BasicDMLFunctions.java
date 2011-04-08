@@ -701,43 +701,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
     }
 
-    private void checkCursorsForDDLModification(Session session, TableName tableName) throws NoSuchTableException {
-        Map<CursorId,ScanData> cursorsMap = getScanDataMap(session);
-        if (cursorsMap == null) {
-            return;
-        }
-
-        final int tableId;
-        final int gTableId;
-        {
-            AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-            UserTable userTable = ais.getUserTable(tableName);
-            if (userTable == null) {
-                Table groupTable = ais.getGroupTable(tableName);
-                if (groupTable == null) {
-                    throw new NoSuchTableException(tableName);
-                }
-                tableId = gTableId = groupTable.getTableId();
-            }
-            else {
-                tableId = userTable.getTableId();
-                gTableId = userTable.getGroup().getGroupTable().getTableId();
-            }
-        }
-
-        for (ScanData scanData : cursorsMap.values()) {
-            Cursor cursor = scanData.getCursor();
-            if (cursor.isClosed()) {
-                continue;
-            }
-            ScanRequest request = cursor.getScanRequest();
-            int scanTableId = request.getTableId();
-            if (scanTableId == tableId || scanTableId == gTableId) {
-                cursor.setDDLModified();
-            }
-        }
-    }
-
     private void checkForModifiedCursors(
             Session session, NewRow oldRow, NewRow newRow, ColumnSelector columnSelector, int tableId)
             throws NoSuchTableException
