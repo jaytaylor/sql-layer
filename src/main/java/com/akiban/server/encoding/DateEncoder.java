@@ -31,17 +31,22 @@ import com.persistit.Key;
 public final class DateEncoder extends EncodingBase<Integer> {
     final int STORAGE_SIZE = 3;
 
-    static int objectToDateInt(Object obj) {
+    static int encodeFromObject(Object obj) {
         final int value;
         if(obj == null) {
             value = 0;
         } else if(obj instanceof String) {
             // YYYY-MM-DD
             final String values[] = ((String)obj).split("-");
-            final int year = Integer.parseInt(values[0]);
-            final int month = Integer.parseInt(values[1]);
-            final int day = Integer.parseInt(values[2]);
-            value = day + month*32 + year*512;
+            int y = 0, m = 0, d = 0;
+            switch(values.length) {
+                case 3: d = Integer.parseInt(values[2]); // fall
+                case 2: m = Integer.parseInt(values[1]); // fall
+                case 1: y = Integer.parseInt(values[0]); break;
+                default:
+                    throw new IllegalArgumentException("Invalid date string");
+            }
+            value = d + m*32 + y*512;
         } else if(obj instanceof Number) {
             value = ((Number)obj).intValue();
         } else {
@@ -50,7 +55,7 @@ public final class DateEncoder extends EncodingBase<Integer> {
         return value;
     }
 
-    static String dateIntToString(int value) {
+    static String decodeToString(int value) {
         final int year = value / 512;
         final int month = (value / 32) % 16;
         final int day = value % 32;
@@ -64,14 +69,14 @@ public final class DateEncoder extends EncodingBase<Integer> {
 
     @Override
     public Integer toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final int location = (int) getLocation(fieldDef, rowData);
+        final int location = (int)getLocation(fieldDef, rowData);
         return (int)rowData.getIntegerValue(location, STORAGE_SIZE);
     }
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
         assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
-        final int longValue = objectToDateInt(value);
+        final int longValue = encodeFromObject(value);
         return EncodingUtils.putInt(dest, offset, longValue, STORAGE_SIZE);
     }
 
@@ -97,7 +102,7 @@ public final class DateEncoder extends EncodingBase<Integer> {
         if(value == null) {
             key.append(null);
         } else {
-            final int v = 0x00FFFFFF & objectToDateInt(value);
+            final int v = 0x00FFFFFF & encodeFromObject(value);
             key.append(v);
         }
     }
@@ -106,7 +111,7 @@ public final class DateEncoder extends EncodingBase<Integer> {
     public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
         try {
             final int value = toObject(fieldDef, rowData);
-            sb.append(dateIntToString(value));
+            sb.append(decodeToString(value));
         } catch(EncodingException e) {
             sb.append("null");
         }
