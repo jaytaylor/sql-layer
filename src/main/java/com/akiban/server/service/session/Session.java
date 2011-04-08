@@ -41,11 +41,11 @@ public interface Session
         private final String name;
         private final T defaultValue;
 
-        public static <T> Key<T> of(String name) {
+        public static <T> Key<T> named(String name) {
             return new Key<T>(name, null, 1);
         }
 
-        public static <T> Key<T> of(String name, T defaultValue) {
+        public static <T> Key<T> named(String name, T defaultValue) {
             return new Key<T>(name, defaultValue, 1);
         }
 

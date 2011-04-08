@@ -91,7 +91,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final Session.MapKey<CursorId,ScanData> CURSORS_TO_SCANDATA = Session.MapKey.ofMap("CURSORS_TO_SCANDATA");
-    private static final Session.Key<Map<CursorId,Cursor>> OPEN_CURSORS_MAP = Session.Key.of("OPEN_CURSORS_MAP");
+    private static final Session.Key<Map<CursorId,Cursor>> OPEN_CURSORS_MAP = Session.Key.named("OPEN_CURSORS_MAP");
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;

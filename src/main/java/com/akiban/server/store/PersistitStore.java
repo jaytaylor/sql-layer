@@ -72,7 +72,7 @@ import com.persistit.exception.TransactionFailedException;
 
 public class PersistitStore implements Store {
 
-    private static final Session.Key<Map<Integer, List<RowCollector>>> COLLECTORS = Session.Key.of("collectors");
+    private static final Session.Key<Map<Integer, List<RowCollector>>> COLLECTORS = Session.Key.named("collectors");
     final static int INITIAL_BUFFER_SIZE = 1024;
 
     private static final Logger LOG = LoggerFactory

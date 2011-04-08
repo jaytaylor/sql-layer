@@ -37,12 +37,12 @@ public final class SessionImplTest {
 
     @Test
     public void keyOwner() {
-        assertEquals("owner", SessionImplTest.class, Session.Key.<Object>of("whatever").getOwner());
+        assertEquals("owner", SessionImplTest.class, Session.Key.<Object>named("whatever").getOwner());
     }
 
     @Test
     public void noDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo");
+        Session.Key<Integer> key = Session.Key.named("foo");
 
         Integer old1 = session.put(key, 2);
         assertNull("not null: " + old1, old1);
@@ -60,14 +60,14 @@ public final class SessionImplTest {
 
     @Test
     public void getWithDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo", -1);
+        Session.Key<Integer> key = Session.Key.named("foo", -1);
 
         assertEquals("current value", -1, session.get(key).intValue());
     }
 
     @Test
     public void putWithDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo", -1);
+        Session.Key<Integer> key = Session.Key.named("foo", -1);
 
         Integer old = session.put(key, 3);
         assertEquals("old value", -1, old.intValue());
@@ -81,7 +81,7 @@ public final class SessionImplTest {
 
     @Test
     public void putNullWithDefault() {
-        Session.Key<Integer> key = Session.Key.of("foo", -1);
+        Session.Key<Integer> key = Session.Key.named("foo", -1);
 
         Integer old = session.put(key, null);
         assertEquals("old value", -1, old.intValue());
