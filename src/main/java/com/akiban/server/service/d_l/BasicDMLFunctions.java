@@ -597,8 +597,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throw new CursorIsUnknownException(cursorId);
         }
 
-        ScanData closedScanData = session.remove(CURSORS_TO_SCANDATA, cursorId);
-        Cursor removedCursor = closedScanData.getCursor();
+        Cursor removedCursor = scanData.getCursor();
         removedCursor.getRowCollector().close();
     }
 
