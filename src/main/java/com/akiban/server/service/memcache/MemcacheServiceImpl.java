@@ -196,6 +196,13 @@ public class MemcacheServiceImpl implements MemcacheService,
         stopDaemon();
         store.set(null);
     }
+    
+    @Override
+    public void crash() throws Exception {
+        // Shutdown the network threads so a new instance can start up.
+        stop();
+    }
+    
 
     //
     // start/stopDaemon inspired by com.thimbleware.jmemcached.MemCacheDaemon

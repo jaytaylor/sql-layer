@@ -39,4 +39,5 @@ public interface Service<T>
 
     void start() throws Exception;
     void stop() throws Exception;
+    void crash() throws Exception;
 }

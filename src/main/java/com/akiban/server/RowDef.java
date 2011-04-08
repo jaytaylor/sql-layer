@@ -70,6 +70,12 @@ public class RowDef implements TreeLink {
     private int autoIncrementField;
 
     /**
+     * Auto-Increment delta. This is the amount by which the auto-increment
+     * counter should be incremented for each new row.
+     */
+    private long autoIncrementDelta;
+
+    /**
      * RowDefs of constituent user tables. Populated only if this is the RowDef
      * for a group table. Null if this is the RowDef for a user table.
      */
@@ -112,15 +118,16 @@ public class RowDef implements TreeLink {
 
     /**
      * A bandage. Marks whether or not the RowDef has been deleted (e.g. during
-     * a dropTable operation). Determines whether to save or remove the TableStatus.
+     * a dropTable operation). Determines whether to save or remove the
+     * TableStatus.
      */
     private boolean isDeleted = false;
 
-
-    public RowDef(Table table) {
+    public RowDef(Table table, final TableStatus tableStatus) {
         this.table = table;
+        this.tableStatus = tableStatus;
+        tableStatus.setRowDef(this);
         table.rowDef(this);
-        this.tableStatus = new TableStatus(this);
         List<Column> columns = table.getColumnsIncludingInternal();
         this.fieldDefs = new FieldDef[columns.size()];
         for (Column column : columns) {
@@ -129,7 +136,26 @@ public class RowDef implements TreeLink {
         fieldCoordinates = new int[(fieldDefs.length + 7) / 8][];
         varLenFieldMap = new byte[(fieldDefs.length + 7) / 8][];
         preComputeFieldCoordinates(fieldDefs);
-        autoIncrementField = setUpAutoIncrementStuff();
+        autoIncrementField = -1;
+        if (table.isUserTable()) {
+            final UserTable userTable = (UserTable) table;
+            if (userTable.getAutoIncrementColumn() != null) {
+                autoIncrementField = userTable.getAutoIncrementColumn()
+                        .getPosition();
+                //
+                // TODO - receive non-default value from adapter.
+                //
+                autoIncrementDelta = 1;
+                final long initialAutoIncrementValue = userTable.getAutoIncrementColumn()
+                        .getInitialAutoIncrementValue().longValue();
+                //
+                // Safe to do these here, non-transactionally, since recovery would
+                // redo these anyway.
+                //
+                tableStatus.setAutoIncrement(true);
+                tableStatus.updateAutoIncrementValue(initialAutoIncrementValue);
+            }
+        }
     }
 
     public Table table() {
@@ -431,12 +457,12 @@ public class RowDef implements TreeLink {
         return table.getTableId();
     }
 
-    public String getTableName() {
-        return table.getName().getTableName();
-    }
-
     public TableStatus getTableStatus() {
         return tableStatus;
+    }
+
+    public String getTableName() {
+        return table.getName().getTableName();
     }
 
     public String getTreeName() {
@@ -458,7 +484,7 @@ public class RowDef implements TreeLink {
     public void setOrdinal(final int ordinal) {
         tableStatus.setOrdinal(ordinal);
     }
-    
+
     public boolean isUserTable() {
         return !isGroupTable();
     }
@@ -486,7 +512,7 @@ public class RowDef implements TreeLink {
     public int getAutoIncrementField() {
         return autoIncrementField;
     }
-
+    
     public int getHKeyDepth() {
         return hkeyDepth;
     }
@@ -516,33 +542,18 @@ public class RowDef implements TreeLink {
         this.userTableRowDefs = userTableRowDefs;
     }
 
-    public boolean isDeleted() {
-        return isDeleted;
-    }
-
     public void setDeleted(boolean deleted) {
         isDeleted = deleted;
     }
 
-
-    /*
-     * Populate various fields needed for autoincrement processing. Likely to
-     * change when server-side autoincrement support is implemented.
-     */
-    private int setUpAutoIncrementStuff() {
-        if (table.isGroupTable()) {
-            return -1;
-        }
-        final UserTable userTable = (UserTable) table;
-        if (userTable.getAutoIncrementColumn() == null) {
-            return -1;
-        }
-        tableStatus.setAutoIncrement(true);
-        tableStatus.setAutoIncrementValue(userTable.getAutoIncrementColumn()
-                .getInitialAutoIncrementValue().longValue());
-        return userTable.getAutoIncrementColumn().getPosition();
+    public boolean isAutoIncrement() {
+        return autoIncrementField != -1;
     }
 
+    public long getAutoIncrementDelta() {
+        return autoIncrementDelta;
+    }
+    
     /**
      * Compute lookup tables used to in the {@link #fieldLocation(RowData, int)}
      * method. This method is invoked once when a RowDef is first constructed.
@@ -656,8 +667,7 @@ public class RowDef implements TreeLink {
     @Override
     public boolean equals(final Object o) {
         final RowDef def = (RowDef) o;
-        return this == def ||
-               def.getRowDefId() == def.getRowDefId()
+        return this == def || def.getRowDefId() == def.getRowDefId()
                 && AkServerUtil.equals(table.getName(), def.table.getName())
                 && AkServerUtil.equals(treeName, def.treeName)
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
@@ -669,10 +679,8 @@ public class RowDef implements TreeLink {
 
     @Override
     public int hashCode() {
-        return getRowDefId()
-                ^ table.getName().hashCode()
-                ^ AkServerUtil.hashCode(treeName)
-                ^ Arrays.hashCode(fieldDefs)
+        return getRowDefId() ^ table.getName().hashCode()
+                ^ AkServerUtil.hashCode(treeName) ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(parentJoinFields);
     }
 

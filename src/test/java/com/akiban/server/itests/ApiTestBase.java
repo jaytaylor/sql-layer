@@ -18,12 +18,27 @@ package com.akiban.server.itests;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import junit.framework.Assert;
+
+import org.junit.After;
+import org.junit.Before;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -38,9 +53,6 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.store.Store;
 import com.akiban.util.ListUtils;
-import junit.framework.Assert;
-import org.junit.After;
-import org.junit.Before;
 
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -142,6 +154,11 @@ public class ApiTestBase {
                 @Override
                 public void stop() throws Exception {
                 }
+                
+                @Override
+                public void crash() throws Exception {
+                }
+                
             };
         }
     }
@@ -185,6 +202,18 @@ public class ApiTestBase {
         sm = null;
         session = null;
     }
+    
+    public final void crashTestServices() throws Exception {
+        sm.crashServices();
+        sm = null;
+        session = null;
+    }
+    
+    public final void restartTestServices(Collection<Property> properties) throws Exception {
+        session = new SessionImpl();
+        sm = createServiceManager( createServiceFactory(properties) );
+        sm.startServices();
+    }
 
     protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
         memcache().setHapiProcessor(whichHapi);
@@ -214,7 +243,7 @@ public class ApiTestBase {
     protected final PersistitStore persistitStore() {
         return (PersistitStore) sm.getStore();
     }
-
+    
     protected final MemcacheService memcache() {
         return sm.getMemcacheService();
     }
@@ -222,6 +251,10 @@ public class ApiTestBase {
     protected final RowDefCache rowDefCache() {
         Store store = sm.getStore();
         return store.getRowDefCache();
+    }
+
+    protected final ServiceManager serviceManager() {
+        return sm;
     }
 
     protected Collection<Property> startupConfigProperties() {
@@ -311,7 +344,7 @@ public class ApiTestBase {
     protected final void expectFullRows(int tableId, NewRow... expectedRows) throws InvalidOperationException {
         ScanRequest all = scanAllRequest(tableId);
         expectRows(all, expectedRows);
-//        expectRowCount(tableId, expectedRows.length); TODO broken pending fix to bug 703136
+        expectRowCount(tableId, expectedRows.length);
     }
 
     protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {

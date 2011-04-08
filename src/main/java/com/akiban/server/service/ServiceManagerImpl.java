@@ -235,6 +235,36 @@ public class ServiceManagerImpl implements ServiceManager
                     + exceptions, exceptions.get(0));
         }
     }
+    
+    /**
+     * Crash all the services. The crash method abruptly stops the service without
+     * performing its graceful shutdown processing. This method is intended for
+     * recovery testing and not for production use.
+     * @throws Exception
+     */
+    public void crashServices() throws Exception {
+        setServiceManager(null);
+        List<Service> crashServices = new ArrayList<Service>(services.size());
+        for (Service service : services.values()) {
+            crashServices.add(service);
+        }
+        ListIterator<Service> reverseIter = crashServices
+                .listIterator(crashServices.size());
+        List<Throwable> throwables = new ArrayList<Throwable>();
+        while (reverseIter.hasPrevious()) {
+            try {
+                Service service = reverseIter.previous();
+                LOG.info("Crashing down service {}", service.getClass().getName());
+                service.crash();
+            } catch (Throwable t) {
+                throwables.add(t);
+            }
+        }
+        if (!throwables.isEmpty()) {
+            throw new Exception("Failure(s) while crashing services: "
+                    + throwables, throwables.get(0));
+        }
+    }
 
     // TODO - Review this.
     // Need this to construct an AIS instance. Both SchemaService

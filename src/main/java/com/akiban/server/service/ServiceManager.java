@@ -31,6 +31,8 @@ public interface ServiceManager {
     void startServices() throws Exception;
 
     void stopServices() throws Exception;
+    
+    void crashServices() throws Exception;
 
     ConfigurationService getConfigurationService();
     

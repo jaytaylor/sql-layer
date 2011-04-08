@@ -29,6 +29,7 @@ import com.akiban.server.message.ScanRowsRequest;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -123,6 +124,9 @@ public interface Store extends Service<Store> {
 
     void truncateGroup(final Session session, final int rowDefId)
             throws Exception;
+
+    void truncateTableStatus(Session session, int rowDefId)
+        throws PersistitException;
 
     /**
      * <p>
@@ -243,22 +247,6 @@ public interface Store extends Service<Store> {
      */
     void analyzeTable(final Session session, int tableId) throws Exception;
 
-    /**
-     * Register a CommittedUpdateListener to handle update events.
-     * 
-     * @param listener
-     *            The listener to add
-     */
-    void addCommittedUpdateListener(final CommittedUpdateListener listener);
-
-    /**
-     * Remove a CommitedUpdateListener.
-     * 
-     * @param listener
-     *            The listener to remove
-     */
-    void removeCommittedUpdateListener(final CommittedUpdateListener listener);
-
     boolean isDeferIndexes();
 
     void setDeferIndexes(final boolean b);
@@ -272,4 +260,5 @@ public interface Store extends Service<Store> {
     void buildIndexes(Session session, String string);
     
     void flushIndexes(Session session);
+
 }

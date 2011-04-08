@@ -71,6 +71,12 @@ public final class ServiceManagerImplTest {
                 throw new Exception("already stopped");
             }
         }
+        
+        @Override
+        public void crash() throws Exception {
+            stop();
+        }
+
 
         public boolean isStarted() {
             return isStarted.get();
