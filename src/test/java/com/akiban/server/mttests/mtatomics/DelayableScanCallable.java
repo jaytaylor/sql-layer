@@ -27,8 +27,8 @@ import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.d_l.DXLService;
-import com.akiban.server.service.d_l.ScanhooksDXLService;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.dxl.ScanhooksDXLService;
 import com.akiban.server.service.session.Session;
 
 import java.util.Arrays;

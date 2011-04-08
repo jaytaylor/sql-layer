@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -39,7 +39,7 @@ import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
-import com.akiban.server.service.d_l.DXLFunctionsHook.DXLFunction;
+import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.SchemaId;
@@ -47,8 +47,8 @@ import com.akiban.server.store.SchemaId;
 import java.util.Collection;
 import java.util.List;
 
-import static com.akiban.server.service.d_l.HookUtil.throwIf;
-import static com.akiban.server.service.d_l.HookUtil.throwAlways;
+import static com.akiban.server.service.dxl.HookUtil.throwIf;
+import static com.akiban.server.service.dxl.HookUtil.throwAlways;
 
 public final class HookableDDLFunctions implements DDLFunctions {
 

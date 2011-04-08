@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.d_l.DXLService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;

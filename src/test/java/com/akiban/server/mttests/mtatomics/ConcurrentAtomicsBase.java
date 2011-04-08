@@ -23,8 +23,8 @@ import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.TimedResult;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.Property;
-import com.akiban.server.service.d_l.DXLService;
-import com.akiban.server.service.d_l.ScanhooksDXLService;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.dxl.ScanhooksDXLService;
 
 import java.util.Collection;
 import java.util.List;
