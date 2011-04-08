@@ -251,7 +251,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(NoSuchIndexException.class, ioe);
+            throw new GenericInvalidOperationException(ioe);
         }
     }
 

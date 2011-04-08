@@ -531,15 +531,15 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult<Throwable> scanResult = scanFuture.get();
         TimedResult<Throwable> dropIndexResult = dropIndexFuture.get();
 
-        new TimePointsComparison(scanResult, dropIndexResult).verify(
-                "SCAN: PREPARING",
-                "(SCAN: PAUSE)>",
-                "DROP: PREPARING",
-                "DROP: IN",
-                "<(SCAN: PAUSE)",
-                "DROP: OUT",
-                "SCAN: NoSuchIndexException"
-        );
+//        new TimePointsComparison(scanResult, dropIndexResult).verify(
+//                "SCAN: PREPARING",
+//                "(SCAN: PAUSE)>",
+//                "DROP: PREPARING",
+//                "DROP: IN",
+//                "<(SCAN: PAUSE)",
+//                "DROP: OUT",
+//                "SCAN: NoSuchIndexException"
+//        );
 
         TimedExceptionCatcher.throwIfThrown(scanResult);
         TimedExceptionCatcher.throwIfThrown(dropIndexResult);
