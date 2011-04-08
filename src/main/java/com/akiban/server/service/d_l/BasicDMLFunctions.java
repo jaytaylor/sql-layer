@@ -90,7 +90,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private static final AtomicLong cursorsCount = new AtomicLong();
     private static final Session.MapKey<CursorId,ScanData> CURSORS_TO_SCANDATA = Session.MapKey.mapNamed("CURSORS_TO_SCANDATA");
-    private static final Session.MapKey<CursorId,Cursor> OPEN_CURSORS = Session.MapKey.mapNamed("OPEN_CURSORS_MAP");
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;
@@ -204,11 +203,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         if (mustBeFresh) {
             assert old == null : old;
         }
-
-        Cursor oldCursor = session.put(OPEN_CURSORS, cursorId, cursor);
-        if (mustBeFresh) {
-            assert oldCursor == null : String.format("%s conflicted with %s", cursor, oldCursor);
-        }
+        
         return cursor;
     }
 
@@ -601,13 +596,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         if (scanData == null) {
             throw new CursorIsUnknownException(cursorId);
         }
-        Cursor removedCursor = session.remove(OPEN_CURSORS, cursorId);
+
+        ScanData closedScanData = session.remove(CURSORS_TO_SCANDATA, cursorId);
+        Cursor removedCursor = closedScanData.getCursor();
         removedCursor.getRowCollector().close();
     }
 
     @Override
     public Set<CursorId> getCursors(Session session) {
-        Map<CursorId,Cursor> cursors = session.get(OPEN_CURSORS);
+        Map<CursorId,ScanData> cursors = session.get(CURSORS_TO_SCANDATA);
         if (cursors == null) {
             return Collections.emptySet();
         }
@@ -730,11 +727,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
-        Map<CursorId,Cursor> cursorsMap = session.get(OPEN_CURSORS);
+        Map<CursorId,ScanData> cursorsMap = session.get(CURSORS_TO_SCANDATA);
         if (cursorsMap == null) {
             return;
         }
-        for (Cursor cursor : cursorsMap.values()) {
+        for (ScanData scanData : cursorsMap.values()) {
+            Cursor cursor = scanData.getCursor();
             if (cursor.isClosed()) {
                 continue;
             }
