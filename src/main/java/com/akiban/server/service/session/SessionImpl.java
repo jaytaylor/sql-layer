@@ -27,17 +27,17 @@ public final class SessionImpl implements Session
 
     @Override
     public <T> T get(Session.Key<T> key) {
-        return launder(key, map.get(key));
+        return launder(map.get(key));
     }
 
     @Override
     public <T> T put(Session.Key<T> key, T item) {
-        return launder(key, map.put(key, item == null ? NULL_OBJ : item));
+        return launder(map.put(key, item == null ? NULL_OBJ : item));
     }
 
     @Override
     public <T> T remove(Key<T> key) {
-        return launder(key, map.remove(key));
+        return launder(map.remove(key));
     }
 
     @Override
@@ -87,10 +87,10 @@ public final class SessionImpl implements Session
         return deque.pollLast();
     }
 
-    private static <T> T launder(Key<T> key, Object o) {
+    private static <T> T launder(Object o) {
         @SuppressWarnings("unchecked") T t = (T) o;
         if (t == null) {
-            return key.getDefaultValue();
+            return null;
         }
         return t == NULL_OBJ ? null : t;
     }

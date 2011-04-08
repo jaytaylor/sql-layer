@@ -36,36 +36,27 @@ public interface Session
      */
     void close();
 
+    @SuppressWarnings("unused") // for <T> parameter; it's only useful for compile-time checking
     public static class Key<T> {
         private final Class<?> owner;
         private final String name;
-        private final T defaultValue;
 
         public static <T> Key<T> named(String name) {
-            return new Key<T>(name, null, 1);
+            return new Key<T>(name, 1);
         }
 
-        public static <T> Key<T> named(String name, T defaultValue) {
-            return new Key<T>(name, defaultValue, 1);
-        }
-
-        private Key(String name, T defaultValue, int stackFramesToOwner) {
+        private Key(String name, int stackFramesToOwner) {
             try {
                 owner = Class.forName(Thread.currentThread().getStackTrace()[stackFramesToOwner + 2].getClassName());
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
             this.name = String.format("%s<%s>", owner.getSimpleName(), name);
-            this.defaultValue = defaultValue;
         }
 
         @Override
         public String toString() {
             return name;
-        }
-
-        public T getDefaultValue() {
-            return defaultValue;
         }
 
         Class<?> getOwner() {
@@ -80,7 +71,7 @@ public interface Session
         }
 
         private MapKey(String name) {
-            super(name, null, 3);
+            super(name, 3);
         }
 
         Key<Map<K,V>> asKey() {
@@ -95,7 +86,7 @@ public interface Session
         }
 
         private StackKey(String name) {
-            super(name, null, 3);
+            super(name, 3);
         }
 
         public Key<Deque<T>> asKey() {

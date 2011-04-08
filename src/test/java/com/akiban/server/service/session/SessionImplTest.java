@@ -57,39 +57,6 @@ public final class SessionImplTest {
         assertNull("not null: " + last, last);
     }
 
-
-    @Test
-    public void getWithDefault() {
-        Session.Key<Integer> key = Session.Key.named("foo", -1);
-
-        assertEquals("current value", -1, session.get(key).intValue());
-    }
-
-    @Test
-    public void putWithDefault() {
-        Session.Key<Integer> key = Session.Key.named("foo", -1);
-
-        Integer old = session.put(key, 3);
-        assertEquals("old value", -1, old.intValue());
-
-        assertEquals("current value", 3, session.get(key).intValue());
-
-        assertEquals("current value", 3, session.remove(key).intValue());
-        Integer last = session.get(key);
-        assertEquals("old value", -1, last.intValue());
-    }
-
-    @Test
-    public void putNullWithDefault() {
-        Session.Key<Integer> key = Session.Key.named("foo", -1);
-
-        Integer old = session.put(key, null);
-        assertEquals("old value", -1, old.intValue());
-
-        Integer current = session.get(key);
-        assertNull("not null: " + current, current);
-    }
-
     @Test
     public void keyMapOwner() {
         assertEquals("owner", SessionImplTest.class, Session.MapKey.<Object,Object>mapNamed("whatever").getOwner());
