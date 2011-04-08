@@ -77,7 +77,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
-            schemaManager().createTableDefinition(session, schema, ddlText, false);
+            TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText, false);
+            checkCursorsForDDLModification(session, tableName);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ParseException.class, ioe);
@@ -113,6 +114,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             DMLFunctions dml = new BasicDMLFunctions(this);
             dml.truncateTable(session, table.getTableId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+            checkCursorsForDDLModification(session, tableName);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -146,6 +148,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final TableName tableName = table.getName();
             store().truncateGroup(session, rowDef.getRowDefId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+            checkCursorsForDDLModification(session, tableName);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -335,6 +338,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            checkCursorsForDDLModification(session, tableName);
 
             // Trigger build of new index trees
             store().buildIndexes(session, sb.toString());
@@ -398,6 +402,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            checkCursorsForDDLModification(session, tableName);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
