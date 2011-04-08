@@ -91,8 +91,8 @@ public final class DateEncoder extends EncodingBase<Integer> {
         if(location == 0) {
             key.append(null);
         } else {
-            final int value = (int)rowData.getIntegerValue(location, STORAGE_SIZE);
-            key.append(value);
+            final int v = 0x00FFFFFF & (int)rowData.getIntegerValue(location, STORAGE_SIZE);
+            key.append(v);
         }
     }
 
@@ -111,7 +111,7 @@ public final class DateEncoder extends EncodingBase<Integer> {
     public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
         try {
             final int value = toObject(fieldDef, rowData);
-            sb.append(decodeToString(value));
+            quote.append(sb, decodeToString(value));
         } catch(EncodingException e) {
             sb.append("null");
         }

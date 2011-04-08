@@ -210,7 +210,6 @@ public class Types {
         unsupported.add(DOUBLE);
         unsupported.add(U_DOUBLE);
         unsupported.add(TIME);
-        unsupported.add(YEAR);
         unsupported.add(TINYBLOB);
         unsupported.add(BLOB);
         unsupported.add(MEDIUMBLOB);
