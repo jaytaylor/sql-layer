@@ -15,7 +15,6 @@
 
 package com.akiban.server.mttests.mtatomics;
 
-import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -27,7 +26,7 @@ import com.akiban.server.mttests.mtutil.TimePoints;
 import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.d_l.ConcurrencyAtomicsDXLService;
+import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.session.Session;
 
 import java.util.Arrays;

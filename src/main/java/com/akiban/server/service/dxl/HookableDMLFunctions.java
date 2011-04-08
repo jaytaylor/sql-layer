@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.dxl;
 
 import com.akiban.server.RowData;
 import com.akiban.server.TableStatistics;
@@ -39,15 +39,15 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.service.d_l.DXLFunctionsHook.DXLFunction;
+import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.server.service.d_l.HookUtil.throwIf;
-import static com.akiban.server.service.d_l.HookUtil.throwAlways;
+import static com.akiban.server.service.dxl.HookUtil.throwIf;
+import static com.akiban.server.service.dxl.HookUtil.throwAlways;
 
 public final class HookableDMLFunctions implements DMLFunctions {
 

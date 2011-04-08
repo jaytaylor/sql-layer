@@ -32,7 +32,7 @@ import com.akiban.server.mttests.mtutil.TimedCallable;
 import com.akiban.server.mttests.mtutil.TimedExceptionCatcher;
 import com.akiban.server.mttests.mtutil.Timing;
 import com.akiban.server.mttests.mtutil.TimedResult;
-import com.akiban.server.service.d_l.ConcurrencyAtomicsDXLService;
+import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 import org.junit.Test;
