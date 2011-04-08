@@ -98,7 +98,7 @@ public final class DDLInvalidatesScansIT extends ApiTestBase {
         assertEquals("rows scanned", expectedCustomers(), output.getRows());
     }
 
-    @Test
+    @Test(expected=TableDefinitionChangedException.class)
     public void dropTableScanOnGroup() throws InvalidOperationException {
         final CursorId cursor;
         try {
@@ -114,7 +114,7 @@ public final class DDLInvalidatesScansIT extends ApiTestBase {
         scanExpectingException(cursor);
     }
 
-    @Test
+    @Test(expected=TableDefinitionChangedException.class)
     public void addTableScanOnGroup() throws InvalidOperationException {
         final CursorId cursor;
         try {
@@ -130,7 +130,7 @@ public final class DDLInvalidatesScansIT extends ApiTestBase {
         scanExpectingException(cursor);
     }
 
-    @Test
+    @Test(expected=TableDefinitionChangedException.class)
     public void dropIndexScanOnGroup() throws InvalidOperationException {
         final CursorId cursor;
         try {
@@ -151,7 +151,7 @@ public final class DDLInvalidatesScansIT extends ApiTestBase {
         scanExpectingException(cursor);
     }
 
-    @Test
+    @Test(expected=TableDefinitionChangedException.class)
     public void addIndexScanOnGroup() throws InvalidOperationException {
         final CursorId cursor;
         try {
@@ -172,7 +172,7 @@ public final class DDLInvalidatesScansIT extends ApiTestBase {
         final CursorId cursor;
         try {
             cursor = openFullScan(SCHEMA, ORDERS, "date");
-            ddl().dropIndexes(session(), tableName(SCHEMA, ORDERS), Collections.singleton("sku"));
+            ddl().dropIndexes(session(), tableName(SCHEMA, ORDERS), Collections.singleton("date"));
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }

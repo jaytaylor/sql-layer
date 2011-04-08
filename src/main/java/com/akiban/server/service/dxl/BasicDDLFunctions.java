@@ -78,7 +78,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
             TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText, false);
-            checkCursorsForDDLModification(session, tableName);
+            checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ParseException.class, ioe);
@@ -114,7 +114,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             DMLFunctions dml = new BasicDMLFunctions(this);
             dml.truncateTable(session, table.getTableId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
-            checkCursorsForDDLModification(session, tableName);
+            checkCursorsForDDLModification(session, table);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -148,7 +148,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final TableName tableName = table.getName();
             store().truncateGroup(session, rowDef.getRowDefId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
-            checkCursorsForDDLModification(session, tableName);
+            checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -338,7 +338,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
-            checkCursorsForDDLModification(session, tableName);
+            checkCursorsForDDLModification(session, table);
 
             // Trigger build of new index trees
             store().buildIndexes(session, sb.toString());
@@ -402,13 +402,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
-            checkCursorsForDDLModification(session, tableName);
+            checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
     }
 
-    private void checkCursorsForDDLModification(Session session, TableName tableName) throws NoSuchTableException {
+    private void checkCursorsForDDLModification(Session session, Table table) throws NoSuchTableException {
         Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {
             return;
@@ -417,18 +417,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final int tableId;
         final int gTableId;
         {
-            AkibanInformationSchema ais = getAIS(session);
-            UserTable userTable = ais.getUserTable(tableName);
-            if (userTable == null) {
-                Table groupTable = ais.getGroupTable(tableName);
-                if (groupTable == null) {
-                    throw new NoSuchTableException(tableName);
-                }
-                tableId = gTableId = groupTable.getTableId();
+            if (table.isUserTable()) {
+                tableId = table.getTableId();
+                gTableId = table.getGroup().getGroupTable().getTableId();
             }
             else {
-                tableId = userTable.getTableId();
-                gTableId = userTable.getGroup().getGroupTable().getTableId();
+                tableId = gTableId = table.getTableId();
             }
         }
 
