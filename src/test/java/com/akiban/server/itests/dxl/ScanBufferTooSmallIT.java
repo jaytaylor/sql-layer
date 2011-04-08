@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.itests.d_lfunctions;
+package com.akiban.server.itests.dxl;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.HapiGetRequest;
@@ -21,7 +21,6 @@ import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.itests.ApiTestBase;

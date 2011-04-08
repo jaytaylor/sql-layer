@@ -13,13 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.itests.d_lfunctions;
+package com.akiban.server.itests.dxl;
 
 import com.akiban.ais.model.Table;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.dml.ForeignKeyConstraintDMLException;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
