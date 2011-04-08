@@ -43,6 +43,11 @@ public class AkServerAisSource extends Source {
     }
 
     @Override
+    public int readVersion ()
+    {
+        return MetaModel.only().getModelVersion();
+    }
+    @Override
     protected final void read(String typename, Receiver receiver)
             throws Exception {
         ModelObject modelObject = MetaModel.only().definition(typename);

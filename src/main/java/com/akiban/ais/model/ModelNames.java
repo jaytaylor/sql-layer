@@ -17,6 +17,7 @@ package com.akiban.ais.model;
 
 public interface ModelNames
 {
+    String version = "version";
     // type
     String type = "type";
     String type_name = "name";

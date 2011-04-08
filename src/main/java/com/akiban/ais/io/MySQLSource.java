@@ -46,6 +46,13 @@ public class MySQLSource extends Source
         Statement stmt = connection.createStatement();
         stmt.close();
     }
+    
+    @Override 
+    public int readVersion ()
+    {
+        // there is no version number stored in the AIS model currently. 
+        return MetaModel.only().getModelVersion();
+    }
 
     @Override
     protected final void read(String typename, Receiver receiver) throws Exception

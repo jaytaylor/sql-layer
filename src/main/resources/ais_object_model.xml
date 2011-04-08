@@ -17,6 +17,7 @@
 -->
 
 <model>
+    <version>1</version>
 	<object name="type" tableName="akiban_information_schema.types">
 		<attr name="name" type="String" />
 		<attr name="parameters" type="Integer" />

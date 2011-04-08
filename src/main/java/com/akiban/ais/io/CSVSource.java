@@ -45,6 +45,12 @@ public class CSVSource extends Source
         advance();
     }
 
+    @Override 
+    public int readVersion ()
+    {
+        return MetaModel.only().getModelVersion();
+    }
+    
     @Override
     protected final void read(String typename, Receiver receiver) throws Exception
     {

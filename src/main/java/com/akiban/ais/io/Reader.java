@@ -184,6 +184,12 @@ public class Reader
             }
         });
     }
+    
+    private void loadVersion() throws Exception
+    {
+        int modelVersion = source.readVersion();
+        assert (modelVersion == ais.getModelVersion());
+    }
 
     protected void close() throws Exception
     {
@@ -207,6 +213,7 @@ public class Reader
     {
     	this.ais = ais;
         try {
+            loadVersion();
             loadTypes();
             loadGroups();
             loadTables();
