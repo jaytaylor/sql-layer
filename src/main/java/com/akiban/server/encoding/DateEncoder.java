@@ -91,7 +91,7 @@ public final class DateEncoder extends EncodingBase<Integer> {
         if(location == 0) {
             key.append(null);
         } else {
-            final int v = 0x00FFFFFF & (int)rowData.getIntegerValue(location, STORAGE_SIZE);
+            final int v = (int)rowData.getIntegerValue(location, STORAGE_SIZE);
             key.append(v);
         }
     }
@@ -102,7 +102,7 @@ public final class DateEncoder extends EncodingBase<Integer> {
         if(value == null) {
             key.append(null);
         } else {
-            final int v = 0x00FFFFFF & encodeFromObject(value);
+            final int v = encodeFromObject(value);
             key.append(v);
         }
     }

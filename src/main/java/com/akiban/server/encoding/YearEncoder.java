@@ -58,14 +58,14 @@ public final class YearEncoder extends EncodingBase<Integer> {
     @Override
     public Integer toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
         final int location = (int)getLocation(fieldDef, rowData);
-        return (int)rowData.getIntegerValue(location, STORAGE_SIZE);
+        return (int)rowData.getIntegerValue(location, STORAGE_SIZE) & 0xFF;
     }
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
         assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
         final int longValue = encodeFromObject(value);
-        return EncodingUtils.putInt(dest, offset, longValue, STORAGE_SIZE);
+        return EncodingUtils.putUInt(dest, offset, longValue, STORAGE_SIZE);
     }
 
     @Override
@@ -79,7 +79,7 @@ public final class YearEncoder extends EncodingBase<Integer> {
         if(location == 0) {
             key.append(null);
         } else {
-            final int v = 0x000000FF & (int)rowData.getIntegerValue(location, STORAGE_SIZE);
+            final int v = (int)rowData.getIntegerValue(location, STORAGE_SIZE) & 0xFF;
             key.append(v);
         }
     }
@@ -90,7 +90,7 @@ public final class YearEncoder extends EncodingBase<Integer> {
         if(value == null) {
             key.append(null);
         } else {
-            final int v = 0x000000FF & encodeFromObject(value);
+            final int v = encodeFromObject(value) & 0xFF;
             key.append(v);
         }
     }

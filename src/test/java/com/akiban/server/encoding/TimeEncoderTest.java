@@ -1,0 +1,104 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
+package com.akiban.server.encoding;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
+public class TimeEncoderTest {
+    private class TestElement {
+        private final int asInt;
+        private final Object asObject;
+        private final String asString;
+
+        public TestElement(String str, Number num) {
+            this.asInt = num.intValue();
+            this.asObject = num;
+            this.asString = str;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("(%d, %s, %s)", asInt, asString, asObject);
+        }
+    }
+
+    private final TestElement[] TEST_CASES = {
+            new TestElement("00:00:00", 0),
+            new TestElement("00:00:01", 1),
+            new TestElement("-00:00:01", -1),
+            new TestElement("838:59:59", 3020399),
+            new TestElement("-838:59:59", -3020399),
+            new TestElement("14:20:32", new Integer(51632)),
+            new TestElement("-147:21:01", new Long(-530461))
+    };
+
+    private String encodeAndDecode(String dateStr) {
+        final int val = TimeEncoder.encodeFromObject(dateStr);
+        return TimeEncoder.decodeToString(val);
+    }
+
+    @Test
+    public void encodingToInt() {
+        for(TestElement t : TEST_CASES) {
+            final int encodeFromNum = TimeEncoder.encodeFromObject(t.asObject);
+            final int encodeFromStr = TimeEncoder.encodeFromObject(t.asString);
+            assertEquals("Number->int: " + t, t.asInt, encodeFromNum);
+            assertEquals("String->int: " + t, t.asInt, encodeFromStr);
+        }
+    }
+
+    @Test
+    public void decodingToString() {
+        for(TestElement t : TEST_CASES) {
+            final String decoded = TimeEncoder.decodeToString(t.asInt);
+            assertEquals("int->String: " + t, t.asString, decoded);
+        }
+    }
+
+    @Test
+    public void nullIsZero() {
+        assertEquals(0, TimeEncoder.encodeFromObject(null));
+        assertEquals("00:00:00", TimeEncoder.decodeToString(0));
+    }
+
+    @Test
+    public void partiallySpecified() {
+        assertEquals("00:00:02", encodeAndDecode("2"));
+        assertEquals("00:00:20", encodeAndDecode("20"));
+        assertEquals("00:03:21", encodeAndDecode("201"));
+        assertEquals("00:33:31", encodeAndDecode("2011"));
+        assertEquals("00:05:42", encodeAndDecode("5:42"));
+        assertEquals("-00:00:42", encodeAndDecode("-42"));
+        assertEquals("-00:10:02", encodeAndDecode("-10:02"));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void invalidNumber() {
+        encodeAndDecode("20111zebra");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noNumbers() {
+        encodeAndDecode("zebra");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void tooManyParts() {
+        encodeAndDecode("01:02:03:04");
+    }
+}

@@ -32,7 +32,6 @@
         }
     },
 
-
     "index_less" : {
         "get" : "test:years:y<'2000'",
         "expect result" : {
