@@ -1,0 +1,74 @@
+{
+
+"setup" : {
+    "processors_default" : ["scanrows"],
+
+    "schema" : "test",
+
+    "tables" : [
+        ["times", "id int key", "t timestamp", "index(t)"]
+    ],
+
+    "write_rows" : {
+        "times"  : [
+            [1, 1000000000],
+            [2, 0],
+            [3, 1111111111],
+            [4, 1342177280],
+            [5, 2034061609],
+            [6, 45678],
+            [7, 987654321]
+        ]
+    }
+},
+
+"tests" : {
+    "select_all" : {
+        "get" : "test:times:id>0",
+        "expect result" : {
+            "@times" : [
+                {"id" : 1, "t" : 1000000000},
+                {"id" : 2, "t" : 0},
+                {"id" : 3, "t" : 1111111111},
+                {"id" : 4, "t" : 1342177280},
+                {"id" : 5, "t" : 2034061609},
+                {"id" : 6, "t" : 45678},
+                {"id" : 7, "t" : 987654321}
+            ]
+        }
+    },
+
+    "index_less" : {
+        "get" : "test:times:t<120000000",
+        "expect result" : {
+            "@times" : [
+                {"id" : 2, "t" : 0},
+                {"id" : 6, "t" : 45678}
+            ]
+        }
+    },
+
+    "index_equal" : {
+        "get" : "test:times:t=1111111111",
+        "expect result" : {
+            "@times" : [
+                {"id" : 3, "t" : 1111111111},
+            ]
+        }
+    },
+
+    "index_greater" : {
+        "get" : "test:times:t>530841600",
+        "expect result" : {
+            "@times" : [
+                {"id" : 7, "t" : 987654321},
+                {"id" : 1, "t" : 1000000000},
+                {"id" : 3, "t" : 1111111111},
+                {"id" : 4, "t" : 1342177280},
+                {"id" : 5, "t" : 2034061609}
+            ]
+        }
+    }
+}
+
+}
