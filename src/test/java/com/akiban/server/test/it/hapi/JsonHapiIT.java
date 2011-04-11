@@ -23,7 +23,6 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.test.it.ApiTestBase;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
@@ -32,6 +31,7 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.OnlyIf;
 import com.akiban.junit.Parameterization;
 import com.akiban.message.ErrorCode;
+import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -146,7 +146,7 @@ import static org.junit.Assert.*;
  * </p>
  */
 @RunWith(NamedParameterizedRunner.class)
-public final class JsonHapiIT extends ApiTestBase {
+public final class JsonHapiIT extends ITBase {
     private static final String SUFFIX_JSON = ".json";
     private static final String PREFIX_DISABLED = "disabled_";
 

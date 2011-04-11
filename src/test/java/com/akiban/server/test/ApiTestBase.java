@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it;
+package com.akiban.server.test;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -170,12 +170,14 @@ public class ApiTestBase {
         }
     }
 
-    protected ApiTestBase()
+    protected ApiTestBase(String suffix)
     {
         final String name = this.getClass().getSimpleName();
-        assertTrue("Please name integration tests FooIT or FooMT instead of FooTest or something else",
-                name.endsWith("IT") || name.endsWith("MT")
-        );
+        if (!name.endsWith(suffix)) {
+            throw new RuntimeException(
+                    String.format("You must rename %s to something like Foo%s", name, suffix)
+            );
+        }
     }
 
     private ServiceManager sm;

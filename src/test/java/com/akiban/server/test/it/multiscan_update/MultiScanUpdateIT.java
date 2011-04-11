@@ -33,8 +33,8 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.test.it.ApiTestBase;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class MultiScanUpdateIT extends ApiTestBase {
+public final class MultiScanUpdateIT extends ITBase {
 
     private final static String SCHEMA = "sch";
     private final static String TABLE = "tbl";

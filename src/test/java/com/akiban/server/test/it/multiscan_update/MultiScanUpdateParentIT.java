@@ -18,7 +18,7 @@ package com.akiban.server.test.it.multiscan_update;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
  * We'll open a scan against {@code items.quantity}, then update an order (which happens to not be unrelated to
  * any item), then get rows from the scan and confirm the exception.</p>
  */
-public final class MultiScanUpdateParentIT extends ApiTestBase {
+public final class MultiScanUpdateParentIT extends ITBase {
     private static final String SCHEMA = "sc";
     private int cId;
     private int oId;

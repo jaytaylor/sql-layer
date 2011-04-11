@@ -19,7 +19,7 @@ import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,7 +28,7 @@ import java.util.*;
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
 
-public class KeyUpdateWithMoreComplexSchemaIT extends ApiTestBase
+public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
 {
     @Before
     public void before() throws Exception

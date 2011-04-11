@@ -20,7 +20,7 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mthapi.common.HapiValidationError;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
-public class HapiMTBase extends ApiTestBase {
+public class HapiMTBase extends MTBase {
     final static Logger LOG = LoggerFactory.getLogger(HapiMTBase.class);
 
     private static class RunThreadsException extends RuntimeException {

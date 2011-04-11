@@ -20,13 +20,13 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class GroupNameCollisionIT extends ApiTestBase {
+public class GroupNameCollisionIT extends ITBase {
     @Test
     public void tablesWithSameNames() {
 

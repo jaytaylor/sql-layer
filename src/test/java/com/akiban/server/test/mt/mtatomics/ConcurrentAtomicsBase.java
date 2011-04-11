@@ -17,7 +17,7 @@ package com.akiban.server.test.mt.mtatomics;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
 import com.akiban.server.test.mt.mtutil.TimedResult;
@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 
-class ConcurrentAtomicsBase extends ApiTestBase {
+class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA = "cold";
     protected static final String TABLE = "frosty";
 

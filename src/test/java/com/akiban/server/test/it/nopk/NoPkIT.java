@@ -15,10 +15,10 @@
 
 package com.akiban.server.test.it.nopk;
 
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
-public final class NoPkIT extends ApiTestBase {
+public final class NoPkIT extends ITBase {
     @Test
     public void replAkiban() throws Exception {
         int tableId = createTable("test", "REPL_C", "I INT");

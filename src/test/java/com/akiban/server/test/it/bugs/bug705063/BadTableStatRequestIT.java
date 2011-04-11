@@ -17,10 +17,10 @@ package com.akiban.server.test.it.bugs.bug705063;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
-public final class BadTableStatRequestIT extends ApiTestBase {
+public final class BadTableStatRequestIT extends ITBase {
     @Test(expected= NoSuchTableException.class)
     public void noTablesDefined() throws InvalidOperationException {
         dml().getTableStatistics(session(), 1, false);

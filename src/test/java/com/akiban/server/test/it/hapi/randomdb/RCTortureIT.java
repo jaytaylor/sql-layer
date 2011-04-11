@@ -20,9 +20,9 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ApiTestBase;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.test.it.ITBase;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
 // To run this test manually, set -DdebugMode=true. This will continue past test failures, print database contents,
 // print each query, and for expected != actual, print both, nicely formatted. To investigate a single
 
-public class RCTortureIT extends ApiTestBase
+public class RCTortureIT extends ITBase
 {
     @Test
     public void testRepeatedly() throws Exception

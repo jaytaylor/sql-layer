@@ -17,7 +17,7 @@ package com.akiban.server.test.it.bugs.bug701580;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -25,7 +25,7 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
-public final class SpuriousDuplicateKeyIT extends ApiTestBase {
+public final class SpuriousDuplicateKeyIT extends ITBase {
     @Test
     public void simpleOnce() throws Exception {
         simpleTestCase();

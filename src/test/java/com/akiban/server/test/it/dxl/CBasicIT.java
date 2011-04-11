@@ -24,9 +24,9 @@ import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.api.dml.scan.*;
-import com.akiban.server.test.it.ApiTestBase;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -34,7 +34,7 @@ import java.util.*;
 
 import static junit.framework.Assert.*;
 
-public final class CBasicIT extends ApiTestBase {
+public final class CBasicIT extends ITBase {
 
     @Test
     public void simpleScanLimit() throws InvalidOperationException {

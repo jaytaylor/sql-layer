@@ -23,7 +23,7 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -35,7 +35,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
-public final class BasicKeyUpdateIT extends ApiTestBase {
+public final class BasicKeyUpdateIT extends ITBase {
     protected static final String SCHEMA = "cold";
     protected static final String TABLE = "frosty";
 

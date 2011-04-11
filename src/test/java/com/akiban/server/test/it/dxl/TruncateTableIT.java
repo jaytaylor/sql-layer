@@ -23,7 +23,7 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -31,7 +31,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-public final class TruncateTableIT extends ApiTestBase {
+public final class TruncateTableIT extends ITBase {
     @Test
     public void basic() throws InvalidOperationException {
         int tableId = createTable("test", "t", "id int key");
