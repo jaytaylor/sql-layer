@@ -16,7 +16,6 @@
 package com.akiban.server.store;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -213,7 +212,7 @@ public class PersistitStoreIndexManager implements IndexManager {
         final Exchange analysisEx = store
                 .getExchange(session, indexAnalysisRowDef, null);
         final Transaction transaction = analysisEx.getTransaction();
-        final Date now = new Date();
+        final long now = System.currentTimeMillis() / 1000;
         final KeyHistogram keyHistogram0 = keyHistogram;
         final int multiplier = (int) (Math.pow(INDEX_LEVEL_MULTIPLIER,
                 keyHistogram.getTreeDepth()));
