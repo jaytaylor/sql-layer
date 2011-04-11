@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TimeEncoderTest {
     private class TestElement {
-        private final int asInt;
+        private final long asInt;
         private final Object asObject;
         private final String asString;
 
@@ -37,6 +37,8 @@ public class TimeEncoderTest {
         }
     }
 
+    private final LongEncoderBase ENCODER = EncoderFactory.TIME;
+
     private final TestElement[] TEST_CASES = {
             new TestElement("00:00:00", 0),
             new TestElement("00:00:01", 1),
@@ -48,15 +50,15 @@ public class TimeEncoderTest {
     };
 
     private String encodeAndDecode(String dateStr) {
-        final int val = TimeEncoder.encodeFromObject(dateStr);
-        return TimeEncoder.decodeToString(val);
+        final long val = ENCODER.encodeFromObject(dateStr);
+        return ENCODER.decodeToString(val);
     }
 
     @Test
     public void encodingToInt() {
         for(TestElement t : TEST_CASES) {
-            final int encodeFromNum = TimeEncoder.encodeFromObject(t.asObject);
-            final int encodeFromStr = TimeEncoder.encodeFromObject(t.asString);
+            final long encodeFromNum = ENCODER.encodeFromObject(t.asObject);
+            final long encodeFromStr = ENCODER.encodeFromObject(t.asString);
             assertEquals("Number->int: " + t, t.asInt, encodeFromNum);
             assertEquals("String->int: " + t, t.asInt, encodeFromStr);
         }
@@ -65,15 +67,15 @@ public class TimeEncoderTest {
     @Test
     public void decodingToString() {
         for(TestElement t : TEST_CASES) {
-            final String decoded = TimeEncoder.decodeToString(t.asInt);
+            final String decoded = ENCODER.decodeToString(t.asInt);
             assertEquals("int->String: " + t, t.asString, decoded);
         }
     }
 
     @Test
     public void nullIsZero() {
-        assertEquals(0, TimeEncoder.encodeFromObject(null));
-        assertEquals("00:00:00", TimeEncoder.decodeToString(0));
+        assertEquals(0, ENCODER.encodeFromObject(null));
+        assertEquals("00:00:00", ENCODER.decodeToString(0));
     }
 
     @Test

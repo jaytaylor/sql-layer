@@ -23,11 +23,11 @@ import com.persistit.Key;
 
 abstract class LongEncoderBase extends EncodingBase<Long> {
 
-    abstract long encodeFromObject(Object obj);
+    abstract public long encodeFromObject(Object obj);
     
-    abstract String decodeToString(long value);
+    abstract public String decodeToString(long value);
 
-    abstract boolean shouldQuoteString();
+    abstract public boolean shouldQuoteString();
     
 
     @Override
