@@ -19,7 +19,7 @@ import com.akiban.server.test.daily.DailyBase;
 import com.akiban.server.test.mt.mtutil.Timing;
 import org.junit.Test;
 
-public final class LotsOfServicesIT extends DailyBase {
+public final class LotsOfServicesDT extends DailyBase {
     @Test
     public void loop() throws Exception{
 
