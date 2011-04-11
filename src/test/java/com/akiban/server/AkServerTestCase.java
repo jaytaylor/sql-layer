@@ -98,8 +98,7 @@ public abstract class AkServerTestCase {
                 .getAisForTests(resourceName);
         rowDefCache.clear();
         rowDefCache.setAIS(ais);
-        AkServerTestSuite.markTableStatusClean(rowDefCache);
-        rowDefCache.fixUpOrdinals(schemaManager);
+        rowDefCache.fixUpOrdinalsForTest();
         return ais;
     }
     

@@ -113,4 +113,10 @@ public final class StatisticsServiceImpl implements StatisticsService,
     @Override
     public void stop() throws Exception {
     }
+    
+    
+    @Override
+    public void crash() throws Exception {
+    }
+
 }

@@ -71,10 +71,6 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
                         + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         baseSetUp();
         manager = getSchemaManager();
-        // This sets the TableFlusher thread to flush more aggressively.
-        // Is intended to stimulate RollbackExceptions.
-        // TODO - remove when TableFlusher has been replaced.
-        ((PersistitStoreSchemaManager)manager).rescheduleTableFlusher(500);
         base = manager.getAis(session).getUserTables().size();
         assertTables("user tables");
         assertDDLS();

@@ -53,6 +53,10 @@ public final class SessionServiceImpl implements SessionService, JmxManageable, 
     public void stop() throws Exception {
         // No-op
     }
+    
+    @Override
+    public void crash() throws Exception {
+    }
 
     @Override
     public SessionService cast() {

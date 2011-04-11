@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.dxl;
 
 import java.util.List;
 

@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.dxl;
 
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -26,9 +26,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DXLReadWriteLockHook.class);
-    private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.ofStack("READWRITE_LOCK");
+    private static final Session.StackKey<Lock> LOCK_KEY = Session.StackKey.stackNamed("READWRITE_LOCK");
     static final String IS_LOCK_FAIR_PROPERTY = "akserver.dxl.lock.fair";
-    private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.of("WRITE_LOCK_TAKEN");
+    private static final Session.Key<Boolean> WRITE_LOCK_TAKEN = Session.Key.named("WRITE_LOCK_TAKEN");
     static final String WRITE_LOCK_TAKEN_MESSAGE = "Another thread has the write lock! Writes are supposed to be single-threaded";
 
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock( isFair() );
@@ -44,7 +44,7 @@ final class DXLReadWriteLockHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionIn(Session session, DDLFunction function) {
+    public void hookFunctionIn(Session session, DXLFunction function) {
         final Lock lock;
         if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
             if (readWriteLock.isWriteLocked() && (!readWriteLock.isWriteLockedByCurrentThread())) {
@@ -61,12 +61,12 @@ final class DXLReadWriteLockHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable) {
+    public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
         // nothing to do
     }
 
     @Override
-    public void hookFunctionFinally(Session session, DDLFunction function, Throwable t) {
+    public void hookFunctionFinally(Session session, DXLFunction function, Throwable t) {
         Lock lock = session.pop(LOCK_KEY);
         if (lock == null) {
             Boolean writeLockWasTaken = session.remove(WRITE_LOCK_TAKEN);

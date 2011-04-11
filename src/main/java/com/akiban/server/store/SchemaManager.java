@@ -58,7 +58,7 @@ public interface SchemaManager {
      */
     void createTableDefinition(Session session, String schemaName,
             String statement, boolean useOldId) throws Exception;
-    
+
     /**
      * Delete the table definition for the specified tableId. This method does
      * not disturb other table definition versions having the same table and
@@ -90,13 +90,6 @@ public interface SchemaManager {
      */
     void deleteSchemaDefinition(Session session, String schemaName)
             throws Exception;
-
-    /**
-     * Delete all schema data.
-     * 
-     * @throws Exception
-     */
-    void deleteAllDefinitions(Session session) throws Exception;
 
     /**
      * Get the most recently updated version of the table definition for a
@@ -156,7 +149,6 @@ public interface SchemaManager {
     String schemaString(Session session, boolean withGroupTables)
             throws Exception;
 
-
     /**
      * Return the system-wide Timestamp (as known from Persistit) for the last
      * update successfully committed to the schema database.
@@ -184,9 +176,4 @@ public interface SchemaManager {
      */
     int getSchemaGeneration();
 
-    void loadTableStatusRecords(final Session session) throws PersistitException;
-    
-    void removeStaleTableStatusRecords(final Session session) throws Exception;
-    
-    void saveTableStatusRecords(final Session session) throws PersistitException;
 }

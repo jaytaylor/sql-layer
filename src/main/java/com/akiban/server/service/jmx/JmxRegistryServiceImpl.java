@@ -190,6 +190,15 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
             started = false;
         }
     }
+    
+    @Override
+    public void crash() throws Exception {
+        // Nice to unregister these so that a restarted instance can
+        // register new instances.
+        stop();
+    }
+    
+
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {

@@ -163,6 +163,12 @@ public class UnitTestServiceFactory extends DefaultServiceFactory {
         public void stop() throws Exception {
             // do nothing
         }
+        
+        @Override
+        public void crash() throws Exception {
+            // do nothing
+        }
+        
     }
 
     private class TestConfigService extends ConfigurationServiceImpl {

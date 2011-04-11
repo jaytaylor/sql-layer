@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.dxl;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.util.MultipleCauseException;
@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 public final class CompositeHook implements DXLFunctionsHook {
-    private final Session.Key<Integer> COUNT = Session.Key.of("SUCCESS_COUNT");
+    private final Session.Key<Integer> COUNT = Session.Key.named("SUCCESS_COUNT");
 
     private final List<DXLFunctionsHook> hooks;
 
@@ -32,7 +32,7 @@ public final class CompositeHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionIn(Session session, DDLFunction function) {
+    public void hookFunctionIn(Session session, DXLFunction function) {
         assert session.get(COUNT) == null : session.get(COUNT);
 
         int successes = 0;
@@ -49,7 +49,7 @@ public final class CompositeHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable) {
+    public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
         for (DXLFunctionsHook hook : hooks(session) ) {
             try {
@@ -64,7 +64,7 @@ public final class CompositeHook implements DXLFunctionsHook {
     }
 
     @Override
-    public void hookFunctionFinally(Session session, DDLFunction function, Throwable throwable) {
+    public void hookFunctionFinally(Session session, DXLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
         for (DXLFunctionsHook hook : hooks(session) ) {
             try {

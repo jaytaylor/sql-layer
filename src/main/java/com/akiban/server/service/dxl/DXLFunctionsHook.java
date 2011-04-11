@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.dxl;
 
 import com.akiban.server.service.session.Session;
 
@@ -24,7 +24,7 @@ public interface DXLFunctionsHook {
         DML_FUNCTIONS,
     }
 
-    static enum DDLFunction {
+    static enum DXLFunction {
         CREATE_TABLE(DXLType.DDL_FUNCTIONS_WRITE),
         DROP_TABLE(DXLType.DDL_FUNCTIONS_WRITE),
         DROP_SCHEMA(DXLType.DDL_FUNCTIONS_WRITE),
@@ -59,7 +59,7 @@ public interface DXLFunctionsHook {
 
         private final DXLType type;
 
-        DDLFunction(DXLType type) {
+        DXLFunction(DXLType type) {
             this.type = type;
         }
 
@@ -67,7 +67,7 @@ public interface DXLFunctionsHook {
             return type;
         }
     }
-    void hookFunctionIn(Session session, DDLFunction function);
-    void hookFunctionCatch(Session session, DDLFunction function, Throwable throwable);
-    void hookFunctionFinally(Session session, DDLFunction function, Throwable throwable);
+    void hookFunctionIn(Session session, DXLFunction function);
+    void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable);
+    void hookFunctionFinally(Session session, DXLFunction function, Throwable throwable);
 }

@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.d_l;
+package com.akiban.server.service.dxl;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -102,5 +102,9 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     protected List<DXLFunctionsHook> getHooks() {
         return Collections.<DXLFunctionsHook>singletonList(DXLReadWriteLockHook.only());
+    }
+    
+    @Override
+    public void crash() throws Exception {
     }
 }

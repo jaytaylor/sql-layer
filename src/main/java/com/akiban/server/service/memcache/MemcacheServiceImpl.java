@@ -176,7 +176,7 @@ public class MemcacheServiceImpl implements MemcacheService,
             final String portString = serviceManager.getConfigurationService()
                     .getProperty("akserver.memcached.port");
 
-            LOG.info("Starting memcache service on port " + portString);
+            LOG.debug("Starting memcache service on port {}", portString);
 
             this.port = Integer.parseInt(portString);
             final InetSocketAddress addr = new InetSocketAddress(port);
@@ -193,10 +193,16 @@ public class MemcacheServiceImpl implements MemcacheService,
 
     @Override
     public void stop() {
-        LOG.info("Stopping memcache service");
         stopDaemon();
         store.set(null);
     }
+    
+    @Override
+    public void crash() throws Exception {
+        // Shutdown the network threads so a new instance can start up.
+        stop();
+    }
+    
 
     //
     // start/stopDaemon inspired by com.thimbleware.jmemcached.MemCacheDaemon
@@ -226,11 +232,11 @@ public class MemcacheServiceImpl implements MemcacheService,
         Channel serverChannel = bootstrap.bind(addr);
         allChannels.add(serverChannel);
 
-        LOG.info("Listening on " + addr);
+        LOG.debug("Listening on {}", addr);
     }
 
     private void stopDaemon() {
-        LOG.info("Shutting down daemon");
+        LOG.debug("Shutting down daemon");
 
         ChannelGroupFuture future = allChannels.close();
         future.awaitUninterruptibly();
