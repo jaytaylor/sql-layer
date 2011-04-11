@@ -18,21 +18,72 @@ package com.akiban.server.encoding;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
+import com.akiban.server.RowDef;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 abstract class LongEncoderBase extends EncodingBase<Long> {
 
-    abstract public long encodeFromObject(Object obj);
-    
-    abstract public String decodeToString(long value);
+    /**
+     * Encode an object to a long. The only strict requirement is null
+     * must be handled. In general, at least String and Number should be
+     * supported as well.
+     * @param obj object to encode
+     * @return encoded value
+     */
+    public long encodeFromObject(Object obj) {
+        final long value;
+        if(obj == null) {
+            value = 0;
+        } else if(obj instanceof Number) {
+            value = ((Number) obj).longValue();
+        } else if(obj instanceof String) {
+            value = Long.parseLong((String) obj);
+        } else {
+            throw new IllegalArgumentException("Requires Number or String");
+        }
+        return value;
+    }
 
-    abstract public boolean shouldQuoteString();
-    
+    /**
+     * Decode a long value into a string representation.
+     * @param value encoded value to decode
+     * @return string representation
+     */
+    public String decodeToString(long value) {
+        return String.format("%d", value);
+    }
 
+    /**
+     * Whether or not the value returned from decodeToString() should be
+     * quoted in {@link LongEncoderBase#toString(FieldDef, RowData, AkibanAppender, Quote)}.
+     * @return true if string needs quoted, false otherwise
+     */
+    public boolean shouldQuoteString() {
+        return false;
+    }
+
+    /**
+     * Retrieve stored value from an existing RowData.
+     * @param rowData RowData to take value from
+     * @param offsetAndWidth value containing both offset and width of the field,
+     * see {@link RowDef#fieldLocation(RowData, int)}
+     * @return encoded value
+     */
+    protected long fromRowData(RowData rowData, long offsetAndWidth) {
+        final int offset = (int)offsetAndWidth;
+        final int width = (int)(offsetAndWidth >>> 32);
+        final int shiftSize = 64 - width*8;
+        long v = rowData.getIntegerValue(offset, width);
+        v <<= shiftSize;
+        v >>= shiftSize;
+        return v;
+    }
+
+    
     @Override
     public Long toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long offsetAndWidth = getLocation(fieldDef, rowData);
+        final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
         return fromRowData(rowData, offsetAndWidth);
     }
 
@@ -50,7 +101,7 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
 
     @Override
     public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-        final long offsetAndWidth = getLocation(fieldDef, rowData);
+        final long offsetAndWidth = getOffsetAndWidth(fieldDef, rowData);
         if((int)offsetAndWidth == 0) {
             key.append(null);
         } else {
@@ -72,7 +123,7 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
     @Override
     public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
         try {
-            final long offsetAndWidth = getLocation(fieldDef, rowData);
+            final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
             final long value = fromRowData(rowData, offsetAndWidth);
             final String string = decodeToString(value);
             if(shouldQuoteString()) {
@@ -84,15 +135,5 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
         } catch(EncodingException e) {
             sb.append("null");
         }
-    }
-
-    protected long fromRowData(RowData rowData, long offsetAndWidth) {
-        final int offset = (int)offsetAndWidth;
-        final int width = (int)(offsetAndWidth >>> 32);
-        final int shiftSize = 64 - width*8;
-        long v = rowData.getIntegerValue(offset, width);
-        v <<= shiftSize;
-        v >>= shiftSize;
-        return v;
     }
 }
