@@ -16,67 +16,20 @@
 package com.akiban.server.encoding;
 
 import org.junit.Test;
-
 import java.math.BigInteger;
 
-import static org.junit.Assert.assertEquals;
-
-public class DateTimeEncoderTest {
-    private class TestElement {
-        private final long asLong;
-        private final Object asObject;
-        private final String asString;
-
-        public TestElement(String str, Number num) {
-            this.asLong = num.longValue();
-            this.asObject = num;
-            this.asString = str;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("(%d, %s, %s)", asLong, asString, asObject);
-        }
+public class DateTimeEncoderTest extends LongEncoderTestBase {
+    public DateTimeEncoderTest() {
+        super(EncoderFactory.DATETIME,
+              new TestElement[] {
+                new TestElement("0000-00-00 00:00:00", 0),
+                new TestElement("1000-01-01 00:00:00", 10000101000000L),
+                new TestElement("9999-12-31 23:59:59", 99991231235959L),
+                new TestElement("2011-04-10 17:04:03", Long.valueOf(20110410170403L)),
+                new TestElement("1986-10-28 05:20:00", BigInteger.valueOf(19861028052000L))
+              });
     }
-
-    private final LongEncoderBase ENCODER = EncoderFactory.DATETIME;
     
-    private final TestElement[] TEST_CASES = {
-            new TestElement("0000-00-00 00:00:00", 0),
-            new TestElement("1000-01-01 00:00:00", 10000101000000L),
-            new TestElement("9999-12-31 23:59:59", 99991231235959L),
-            new TestElement("2011-04-10 17:04:03", Long.valueOf(20110410170403L)),
-            new TestElement("1986-10-28 05:20:00", BigInteger.valueOf(19861028052000L))
-    };
-
-    private String encodeAndDecode(String dateStr) {
-        final long val = ENCODER.encodeFromObject(dateStr);
-        return ENCODER.decodeToString(val);
-    }
-
-    @Test
-    public void encodingToInt() {
-        for(TestElement t : TEST_CASES) {
-            final long encodeFromNum = ENCODER.encodeFromObject(t.asObject);
-            final long encodeFromStr = ENCODER.encodeFromObject(t.asString);
-            assertEquals("Number->int: " + t, t.asLong, encodeFromNum);
-            assertEquals("String->int: " + t, t.asLong, encodeFromStr);
-        }
-    }
-
-    @Test
-    public void decodingToString() {
-        for(TestElement t : TEST_CASES) {
-            final String decoded = ENCODER.decodeToString(t.asLong);
-            assertEquals("int->String: " + t, t.asString, decoded);
-        }
-    }
-
-    @Test
-    public void nullIsZero() {
-        assertEquals(0, ENCODER.encodeFromObject(null));
-        assertEquals("0000-00-00 00:00:00", ENCODER.decodeToString(0));
-    }
 
     @Test(expected=IllegalArgumentException.class)
     public void datePartNotNumber() {
