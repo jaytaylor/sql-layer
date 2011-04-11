@@ -72,6 +72,5 @@ abstract public class LongEncoderTestBase {
     @Test
     public void nullIsZero() {
         assertEquals(0, ENCODER.encodeFromObject(null));
-        assertEquals("0000", ENCODER.decodeToString(0));
     }
 }

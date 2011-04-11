@@ -21,68 +21,22 @@ import java.math.BigInteger;
 
 import static org.junit.Assert.assertEquals;
 
-public class DateEncoderTest {
-    private class TestElement {
-        private final int asInt;
-        private final Object asObject;
-        private final String asString;
-
-        public TestElement(String str, Number num) {
-            this.asInt = num.intValue();
-            this.asObject = num;
-            this.asString = str;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("(%d, %s, %s)", asInt, asString, asObject);
-        }
+public class DateEncoderTest extends LongEncoderTestBase {
+    public DateEncoderTest() {
+        super(EncoderFactory.DATE,
+              new TestElement[] {
+                new TestElement("0000-00-00", 0),
+                new TestElement("0000-00-31", 31),
+                new TestElement("0000-01-31", 63),
+                new TestElement("0000-12-00", 384),
+                new TestElement("1986-10-28", 1017180),
+                new TestElement("2011-04-07", 1029767),
+                new TestElement("1620-11-21", 829813),
+                new TestElement("0320-06-14", new Integer(164046)),
+                new TestElement("9999-12-25", new Long(5119897))
+              });
     }
-
-    private final LongEncoderBase ENCODER = EncoderFactory.DATE;
     
-    private final TestElement[] TEST_CASES = {
-            // Zero dates
-            new TestElement("0000-00-00", 0),
-            new TestElement("0000-00-31", 31),
-            new TestElement("0000-01-31", 63),
-            new TestElement("0000-12-00", 384),
-            // Valid dates
-            new TestElement("1986-10-28", 1017180),
-            new TestElement("2011-04-07", 1029767),
-            new TestElement("1620-11-21", new Integer(829813)),
-            new TestElement("0320-06-14", new Long(164046)),
-            new TestElement("9999-12-25", BigInteger.valueOf(5119897))
-    };
-
-    private String encodeAndDecode(String dateStr) {
-        final long val = ENCODER.encodeFromObject(dateStr);
-        return ENCODER.decodeToString(val);
-    }
-
-    @Test
-    public void encodingToInt() {
-        for(TestElement t : TEST_CASES) {
-            final long encodeFromNum = ENCODER.encodeFromObject(t.asObject);
-            final long encodeFromStr = ENCODER.encodeFromObject(t.asString);
-            assertEquals("Number->int: " + t, t.asInt, encodeFromNum);
-            assertEquals("String->int: " + t, t.asInt, encodeFromStr);
-        }
-    }
-
-    @Test
-    public void decodingToString() {
-        for(TestElement t : TEST_CASES) {
-            final String decoded = ENCODER.decodeToString(t.asInt);
-            assertEquals("int->String: " + t, t.asString, decoded);
-        }
-    }
-
-    @Test
-    public void nullIsZero() {
-        assertEquals(0, ENCODER.encodeFromObject(null));
-        assertEquals("0000-00-00", ENCODER.decodeToString(0));
-    }
 
     @Test
     public void partiallySpecified() {

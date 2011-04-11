@@ -33,8 +33,7 @@ public class YearEncoderTest extends LongEncoderTestBase {
                 new TestElement("2155", 255),
                 new TestElement("2011", new Integer(111)),
                 new TestElement("1986", new Long(86))
-              }
-        );
+              });
     }
 
     @Test
