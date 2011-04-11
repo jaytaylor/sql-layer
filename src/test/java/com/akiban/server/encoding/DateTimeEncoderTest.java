@@ -39,6 +39,8 @@ public class DateTimeEncoderTest {
         }
     }
 
+    private final LongEncoderBase ENCODER = EncoderFactory.DATETIME;
+    
     private final TestElement[] TEST_CASES = {
             new TestElement("0000-00-00 00:00:00", 0),
             new TestElement("1000-01-01 00:00:00", 10000101000000L),
@@ -48,15 +50,15 @@ public class DateTimeEncoderTest {
     };
 
     private String encodeAndDecode(String dateStr) {
-        final long val = DateTimeEncoder.encodeFromObject(dateStr);
-        return DateTimeEncoder.decodeToString(val);
+        final long val = ENCODER.encodeFromObject(dateStr);
+        return ENCODER.decodeToString(val);
     }
 
     @Test
     public void encodingToInt() {
         for(TestElement t : TEST_CASES) {
-            final long encodeFromNum = DateTimeEncoder.encodeFromObject(t.asObject);
-            final long encodeFromStr = DateTimeEncoder.encodeFromObject(t.asString);
+            final long encodeFromNum = ENCODER.encodeFromObject(t.asObject);
+            final long encodeFromStr = ENCODER.encodeFromObject(t.asString);
             assertEquals("Number->int: " + t, t.asLong, encodeFromNum);
             assertEquals("String->int: " + t, t.asLong, encodeFromStr);
         }
@@ -65,15 +67,15 @@ public class DateTimeEncoderTest {
     @Test
     public void decodingToString() {
         for(TestElement t : TEST_CASES) {
-            final String decoded = DateTimeEncoder.decodeToString(t.asLong);
+            final String decoded = ENCODER.decodeToString(t.asLong);
             assertEquals("int->String: " + t, t.asString, decoded);
         }
     }
 
     @Test
     public void nullIsZero() {
-        assertEquals(0, DateTimeEncoder.encodeFromObject(null));
-        assertEquals("0000-00-00 00:00:00", DateTimeEncoder.decodeToString(0));
+        assertEquals(0, ENCODER.encodeFromObject(null));
+        assertEquals("0000-00-00 00:00:00", ENCODER.decodeToString(0));
     }
 
     @Test(expected=IllegalArgumentException.class)
