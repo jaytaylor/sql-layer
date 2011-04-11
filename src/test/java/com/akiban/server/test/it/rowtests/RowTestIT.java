@@ -20,13 +20,13 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 
-public class RowTestIT extends ApiTestBase
+public class RowTestIT extends ITBase
 {
     @Test
     public void rowConversionTestNoNulls() throws InvalidOperationException

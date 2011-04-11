@@ -18,14 +18,14 @@ package com.akiban.server.test.it.bugs.bug696096;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static junit.framework.Assert.*;
 
-public final class DuplicateKeyValueMessageIT extends ApiTestBase {
+public final class DuplicateKeyValueMessageIT extends ITBase {
     private int tableId;
 
     @Before

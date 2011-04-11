@@ -21,10 +21,10 @@ import com.akiban.server.api.dml.ByteArrayColumnSelector;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
-public class RowUpdateIT extends ApiTestBase
+public class RowUpdateIT extends ITBase
 {
     @Test
     public void testReplaceEntireRow() throws InvalidOperationException

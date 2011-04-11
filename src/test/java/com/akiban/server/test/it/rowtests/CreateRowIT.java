@@ -19,13 +19,13 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import static junit.framework.Assert.fail;
 import static junit.framework.Assert.assertEquals;
 
-public class CreateRowIT extends ApiTestBase
+public class CreateRowIT extends ITBase
 {
     @Test
     public void smallRowCantGrow() throws InvalidOperationException

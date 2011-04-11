@@ -18,7 +18,7 @@ package com.akiban.server.test.it.bugs.bug701614;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
 import org.junit.Test;
 
@@ -26,7 +26,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertNotNull;
 
-public final class MissingColumnsIT extends ApiTestBase {
+public final class MissingColumnsIT extends ITBase {
     @Test
     public void testForMissingColumns() throws InvalidOperationException, IOException {
         int tableId = loadBlocksTable();

@@ -28,7 +28,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.RowData;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import com.akiban.ais.model.Column;
@@ -40,7 +40,7 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NewRowBuilder;
 
-public final class COIBasicIT extends ApiTestBase {
+public final class COIBasicIT extends ITBase {
     private static class TableIds {
         public final int c;
         public final int o;

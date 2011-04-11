@@ -18,13 +18,13 @@ package com.akiban.server.test.it.bugs.bug695544;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.dml.DuplicateKeyException;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public final class ParsingUniqueIT extends ApiTestBase {
+public final class ParsingUniqueIT extends ITBase {
     private final static String SCHEMA = "sc1";
     private final static String TABLE = "tb1";
     private int tableId;

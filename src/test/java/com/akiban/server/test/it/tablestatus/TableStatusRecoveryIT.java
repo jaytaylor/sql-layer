@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.Collection;
 
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
@@ -28,7 +28,7 @@ import com.akiban.server.TableStatus;
 import com.akiban.server.service.config.Property;
 import com.persistit.Persistit;
 
-public class TableStatusRecoveryIT extends ApiTestBase {
+public class TableStatusRecoveryIT extends ITBase {
     
     @Test
     public void simpleInsertRowCountTest() throws Exception {

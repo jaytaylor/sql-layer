@@ -29,7 +29,7 @@ import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-public final class CreateTableIT extends ApiTestBase {
+public final class CreateTableIT extends ITBase {
     // TODO: ENUM/SET parsing and AIS support (unsupported for Halo)
     @Test
     public void bug686972() throws InvalidOperationException {

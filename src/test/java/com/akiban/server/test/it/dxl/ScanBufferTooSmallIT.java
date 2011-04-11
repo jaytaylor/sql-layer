@@ -23,9 +23,9 @@ import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
-import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.DummyOutputter;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 
-public final class ScanBufferTooSmallIT extends ApiTestBase {
+public final class ScanBufferTooSmallIT extends ITBase {
 
     private int cid;
     private int oid;

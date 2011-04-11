@@ -18,9 +18,9 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.store.TableDefinition;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -28,7 +28,7 @@ import java.util.Map;
 
 import static junit.framework.Assert.*;
 
-public class AtomicSchemaChangesIT extends ApiTestBase
+public class AtomicSchemaChangesIT extends ITBase
 {
     // The tests catch Throwable, because some of the breakage scenarios actually survive the DDL and AIS
     // layers, and instead cause createTable to fail an assertion.

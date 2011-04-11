@@ -22,8 +22,8 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
-import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-public final class CachedProcessorIT extends ApiTestBase {
+public final class CachedProcessorIT extends ITBase {
 
     private static class RowDataStruct {
         private final RowData rowData;

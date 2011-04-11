@@ -18,11 +18,11 @@ package com.akiban.server.test.it.hapi;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
+import com.akiban.server.test.it.ITBase;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -34,7 +34,7 @@ import java.util.List;
 
 import static junit.framework.Assert.assertTrue;
 
-public class MessageSizeLimitIT extends ApiTestBase
+public class MessageSizeLimitIT extends ITBase
 {
     @Test
     public void test() throws Exception

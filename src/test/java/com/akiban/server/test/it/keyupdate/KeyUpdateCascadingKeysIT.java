@@ -18,8 +18,8 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.ApiTestBase;
 import com.akiban.message.ErrorCode;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,7 +34,7 @@ import static junit.framework.Assert.fail;
 
 // Like KeyUpdateIT, but with cascading keys
 
-public class KeyUpdateCascadingKeysIT extends ApiTestBase
+public class KeyUpdateCascadingKeysIT extends ITBase
 {
     @Before
     public void before() throws Exception

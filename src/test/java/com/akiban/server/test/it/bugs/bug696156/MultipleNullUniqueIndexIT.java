@@ -18,13 +18,13 @@ package com.akiban.server.test.it.bugs.bug696156;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class MultipleNullUniqueIndexIT  extends ApiTestBase {
+public class MultipleNullUniqueIndexIT  extends ITBase {
 
     @Test
     public void reportTestCase() throws InvalidOperationException {

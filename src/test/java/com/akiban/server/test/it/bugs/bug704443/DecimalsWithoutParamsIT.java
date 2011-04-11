@@ -19,7 +19,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -32,7 +32,7 @@ import java.util.TreeSet;
 
 import static junit.framework.Assert.*;
 
-public final class DecimalsWithoutParamsIT extends ApiTestBase {
+public final class DecimalsWithoutParamsIT extends ITBase {
     @Test
     public void decimalHasNoParams() throws InvalidOperationException {
         int t1Id = createTable("schema", "t1",

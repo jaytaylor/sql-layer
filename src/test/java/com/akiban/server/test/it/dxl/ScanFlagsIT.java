@@ -22,9 +22,9 @@ import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyScanRequest;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -33,7 +33,7 @@ import java.util.List;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
-public class ScanFlagsIT extends ApiTestBase
+public class ScanFlagsIT extends ITBase
 {
     @Test
     public void testFullScanAsc() throws InvalidOperationException
