@@ -29,7 +29,7 @@ import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
-import com.akiban.server.mttests.mtutil.Timing;
+import com.akiban.server.test.mt.mtutil.Timing;
 import com.akiban.server.service.session.Session;
 
 import java.util.Collection;
