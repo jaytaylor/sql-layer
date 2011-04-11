@@ -16,21 +16,17 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
-import com.akiban.server.FieldDef;
-import com.akiban.server.Quote;
 import com.akiban.server.RowData;
-import com.akiban.util.AkibanAppender;
-import com.persistit.Key;
 
 /**
  * Encoder for working with years when stored as a 1 byte int in the
  * range of 0, 1901-2155.  This is how MySQL stores the SQL YEAR type.
  * See: http://dev.mysql.com/doc/refman/5.5/en/year.html
  */
-public final class YearEncoder extends EncodingBase<Integer> {
-    final int STORAGE_SIZE = 1;
+public final class YearEncoder extends LongEncoderBase {
 
-    static int encodeFromObject(Object obj) {
+    @Override
+    public long encodeFromObject(Object obj) {
         final int value;
         if(obj == null) {
             value = 0;
@@ -45,63 +41,25 @@ public final class YearEncoder extends EncodingBase<Integer> {
         return value;
     }
 
-    static String decodeToString(int value) {
-        final int year = (value == 0) ? 0 : (1900 + value);
+    @Override
+    public String decodeToString(long value) {
+        final long year = (value == 0) ? 0 : (1900 + value);
         return String.format("%04d", year);
     }
 
     @Override
+    public boolean shouldQuoteString() {
+        return true;
+    }
+
+    @Override
     public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == STORAGE_SIZE);
+        return type.fixedSize() && (type.maxSizeBytes() == 1);
     }
 
     @Override
-    public Integer toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final int location = (int)getLocation(fieldDef, rowData);
-        return (int)rowData.getIntegerValue(location, STORAGE_SIZE) & 0xFF;
-    }
-
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
-        final int longValue = encodeFromObject(value);
-        return EncodingUtils.putUInt(dest, offset, longValue, STORAGE_SIZE);
-    }
-
-    @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
-        return fieldDef.getMaxStorageSize();
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-        final int location = (int)fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
-        if(location == 0) {
-            key.append(null);
-        } else {
-            final int v = (int)rowData.getIntegerValue(location, STORAGE_SIZE) & 0xFF;
-            key.append(v);
-        }
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, Object value, Key key) {
-        assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
-        if(value == null) {
-            key.append(null);
-        } else {
-            final int v = encodeFromObject(value) & 0xFF;
-            key.append(v);
-        }
-    }
-
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        try {
-            final int value = toObject(fieldDef, rowData);
-            quote.append(sb, decodeToString(value));
-        } catch(EncodingException e) {
-            sb.append("null");
-        }
+    protected long fromRowData(RowData rowData, long offsetAndWidth) {
+        // Something wrong about how 1 byte values are stored/retrieved. Work around for now.
+        return super.fromRowData(rowData, offsetAndWidth) & 0xFF;
     }
 }

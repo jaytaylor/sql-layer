@@ -72,7 +72,8 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
     @Override
     public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
         try {
-            final Long value = toObject(fieldDef, rowData);
+            final long offsetAndWidth = getLocation(fieldDef, rowData);
+            final long value = fromRowData(rowData, offsetAndWidth);
             final String string = decodeToString(value);
             if(shouldQuoteString()) {
                 quote.append(sb, string);
@@ -85,8 +86,7 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
         }
     }
 
-
-    private static long fromRowData(RowData rowData, long offsetAndWidth) {
+    protected long fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
         final int shiftSize = 64 - width*8;
