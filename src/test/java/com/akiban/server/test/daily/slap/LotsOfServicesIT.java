@@ -13,16 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.itests.slap;
+package com.akiban.server.test.daily.slap;
 
-import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.mttests.mtutil.Timing;
+import com.akiban.server.test.daily.DailyBase;
+import com.akiban.server.test.mt.mtutil.Timing;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-@org.junit.Ignore("ignore this test until we know where to put it")
-public final class LotsOfServicesIT extends ApiTestBase {
+public final class LotsOfServicesIT extends DailyBase {
     @Test
     public void loop() throws Exception{
 
@@ -41,10 +38,5 @@ public final class LotsOfServicesIT extends ApiTestBase {
         }
 
         startTestServices(); // so that ApiTestBase's @After has something to shut down
-    }
-
-    @Test
-    public void doNotCheckThisIn() {
-        fail("don't check this class in without an @Ignore. It takes too long");
     }
 }
