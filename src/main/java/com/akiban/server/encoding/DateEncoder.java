@@ -16,11 +16,6 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
-import com.akiban.server.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.RowData;
-import com.akiban.util.AkibanAppender;
-import com.persistit.Key;
 
 /**
  * Encoder for working with dates when stored as a 3 byte int using
@@ -28,10 +23,10 @@ import com.persistit.Key;
  * SQL DATE type.
  * See: http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
  */
-public final class DateEncoder extends EncodingBase<Integer> {
-    final int STORAGE_SIZE = 3;
+public final class DateEncoder extends LongEncoderBase {
 
-    static int encodeFromObject(Object obj) {
+    @Override
+    public long encodeFromObject(Object obj) {
         final int value;
         if(obj == null) {
             value = 0;
@@ -55,65 +50,21 @@ public final class DateEncoder extends EncodingBase<Integer> {
         return value;
     }
 
-    static String decodeToString(int value) {
-        final int year = value / 512;
-        final int month = (value / 32) % 16;
-        final int day = value % 32;
+    @Override
+    public String decodeToString(long value) {
+        final long year = value / 512;
+        final long month = (value / 32) % 16;
+        final long day = value % 32;
         return String.format("%04d-%02d-%02d", year, month, day);
     }
 
     @Override
+    public boolean shouldQuoteString() {
+        return true;
+    }
+
+    @Override
     public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == STORAGE_SIZE);
-    }
-
-    @Override
-    public Integer toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final int location = (int)getLocation(fieldDef, rowData);
-        return (int)rowData.getIntegerValue(location, STORAGE_SIZE);
-    }
-
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
-        final int longValue = encodeFromObject(value);
-        return EncodingUtils.putInt(dest, offset, longValue, STORAGE_SIZE);
-    }
-
-    @Override
-    public int widthFromObject(FieldDef fieldDef, Object value) {
-        return fieldDef.getMaxStorageSize();
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-        final int location = (int)fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
-        if(location == 0) {
-            key.append(null);
-        } else {
-            final int v = (int)rowData.getIntegerValue(location, STORAGE_SIZE);
-            key.append(v);
-        }
-    }
-
-    @Override
-    public void toKey(FieldDef fieldDef, Object value, Key key) {
-        assert fieldDef.getMaxStorageSize() == STORAGE_SIZE : fieldDef;
-        if(value == null) {
-            key.append(null);
-        } else {
-            final int v = encodeFromObject(value);
-            key.append(v);
-        }
-    }
-
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        try {
-            final int value = toObject(fieldDef, rowData);
-            quote.append(sb, decodeToString(value));
-        } catch(EncodingException e) {
-            sb.append("null");
-        }
+        return type.fixedSize() && (type.maxSizeBytes() == 3);
     }
 }
