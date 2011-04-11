@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -34,6 +35,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
@@ -67,7 +69,9 @@ import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.service.dxl.BasicDXLMiddleman.ScanData;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
@@ -79,6 +83,11 @@ import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanData;
+import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanDataMap;
+import static com.akiban.server.service.dxl.BasicDXLMiddleman.putScanData;
+import static com.akiban.server.service.dxl.BasicDXLMiddleman.removeScanData;
+
 class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ColumnSelector() {
@@ -89,7 +98,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     };
 
     private static final AtomicLong cursorsCount = new AtomicLong();
-    private static final Session.MapKey<CursorId,ScanData> CURSORS_TO_SCANDATA = Session.MapKey.mapNamed("CURSORS_TO_SCANDATA");
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;
@@ -144,40 +152,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
     }
 
-    private static final class ScanData {
-        private final Cursor cursor;
-        private final byte[] scanColumns;
-        private final boolean scanAll;
-        private Set<Integer> scanColumnsUnpacked;
-
-        ScanData(ScanRequest request, Cursor cursor) {
-            scanColumns = request.getColumnBitMap();
-            scanAll = request.scanAllColumns();
-            this.cursor = cursor;
-        }
-
-        public Set<Integer> getScanColumns() {
-            if (scanColumnsUnpacked == null) {
-                scanColumnsUnpacked = ColumnSet.unpackFromLegacy(scanColumns);
-            }
-            return scanColumnsUnpacked;
-        }
-
-        public Cursor getCursor() {
-            return cursor;
-        }
-
-        public boolean scanAll() {
-            return scanAll;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("ScanData[cursor=%s, columns=%s]", cursor,
-                    getScanColumns());
-        }
-    }
-
     @Override
     public CursorId openCursor(Session session, ScanRequest request)
             throws NoSuchTableException, NoSuchColumnException,
@@ -199,7 +173,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         final RowCollector rc = getRowCollector(session, request);
         final Cursor cursor = new Cursor(rc, request.getScanLimit(), request);
-        Object old = session.put(CURSORS_TO_SCANDATA, cursorId, new ScanData(request, cursor));
+        Object old = putScanData(session, cursorId, new ScanData(request, cursor));
         if (mustBeFresh) {
             assert old == null : old;
         }
@@ -277,7 +251,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(NoSuchIndexException.class, ioe);
+            throw new GenericInvalidOperationException(ioe);
         }
     }
 
@@ -287,7 +263,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public CursorState getCursorState(Session session, CursorId cursorId) {
-        final ScanData extraData = session.get(CURSORS_TO_SCANDATA, cursorId);
+        final ScanData extraData = getScanData(session, cursorId);
         if (extraData == null || extraData.getCursor() == null) {
             return CursorState.UNKNOWN_CURSOR;
         }
@@ -302,6 +278,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             RowOutputException,
             BufferFullException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException
 
     {
@@ -314,6 +291,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                    RowOutputException,
                    BufferFullException,
                    ConcurrentScanAndUpdateException,
+                   TableDefinitionChangedException,
                    GenericInvalidOperationException
 
     {
@@ -321,12 +299,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         ArgumentValidation.notNull("cursor", cursorId);
         ArgumentValidation.notNull("output", output);
 
-        Cursor cursor = session.get(CURSORS_TO_SCANDATA, cursorId).getCursor();
+        Cursor cursor = getScanData(session, cursorId).getCursor();
         if (cursor == null) {
             throw new CursorIsUnknownException(cursorId);
         }
         if (CursorState.CONCURRENT_MODIFICATION.equals(cursor.getState())) {
             throw new ConcurrentScanAndUpdateException("for cursor " + cursorId);
+        }
+        if (CursorState.DDL_MODIFICATION.equals(cursor.getState())) {
+            throw new TableDefinitionChangedException("a table's definition has changed!");
         }
         if (cursor.isFinished()) {
             throw new CursorIsFinishedException(cursorId);
@@ -425,6 +406,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             RowOutputException,
             NoSuchTableException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException
     {
         return scanSome(session, cursorId, output, NONE);
@@ -436,10 +418,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                RowOutputException,
                NoSuchTableException,
                ConcurrentScanAndUpdateException,
+               TableDefinitionChangedException,
                GenericInvalidOperationException
     {
         logger.trace("scanning from {}", cursorId);
-        final ScanData scanData = session.get(CURSORS_TO_SCANDATA, cursorId);
+        final ScanData scanData = getScanData(session, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
         final PooledConverter converter = getPooledConverter(output, scanColumns);
@@ -592,7 +575,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("closing cursor {}", cursorId);
         ArgumentValidation.notNull("cursor ID", cursorId);
-        final ScanData scanData = session.remove(CURSORS_TO_SCANDATA, cursorId);
+        final ScanData scanData = removeScanData(session, cursorId);
         if (scanData == null) {
             throw new CursorIsUnknownException(cursorId);
         }
@@ -603,7 +586,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public Set<CursorId> getCursors(Session session) {
-        Map<CursorId,ScanData> cursors = session.get(CURSORS_TO_SCANDATA);
+        Map<CursorId,ScanData> cursors = getScanDataMap(session);
         if (cursors == null) {
             return Collections.emptySet();
         }
@@ -726,7 +709,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         boolean hKeyIsModified = isHKeyModified(session, oldRow, newRow, columnSelector, tableId);
 
-        Map<CursorId,ScanData> cursorsMap = session.get(CURSORS_TO_SCANDATA);
+        Map<CursorId,ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {
             return;
         }

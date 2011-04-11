@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.api.dml.scan.ScanFlag;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -334,6 +337,41 @@ public class ApiTestBase {
         return new ScanAllRequest(tableId, allCols);
     }
 
+    protected final int indexId(String schema, String table, String index) {
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        UserTable userTable = ais.getUserTable(schema, table);
+        Index aisIndex = userTable.getIndex(index);
+        if (aisIndex == null) {
+            throw new RuntimeException("no such index: " + index);
+        }
+        return aisIndex.getIndexId();
+    }
+
+    protected final CursorId openFullScan(String schema, String table, String index) throws InvalidOperationException {
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        UserTable userTable = ais.getUserTable(schema, table);
+        Index aisIndex = userTable.getIndex(index);
+        if (aisIndex == null) {
+            throw new RuntimeException("no such index: " + index);
+        }
+        return openFullScan(
+                userTable.getTableId(),
+                aisIndex.getIndexId()
+        );
+    }
+
+    protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
+        Table uTable = ddl().getTable(session(), tableId);
+        Set<Integer> allCols = new HashSet<Integer>();
+        for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
+            allCols.add(i);
+        }
+        ScanRequest request = new ScanAllRequest(tableId, allCols, indexId,
+                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+        );
+        return dml().openCursor(session(), request);
+    }
+
     protected static <T> Set<T> set(T... items) {
         return new HashSet<T>(Arrays.asList(items));
     }
@@ -441,6 +479,10 @@ public class ApiTestBase {
 
     protected final TableName tableName(String schema, String table) {
         return new TableName(schema, table);
+    }
+
+    protected final UserTable getUserTable(String schema, String name) throws NoSuchTableException {
+        return ddl().getUserTable(session(), tableName(schema, name));
     }
 
     protected final UserTable getUserTable(int tableId) {

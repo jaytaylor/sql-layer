@@ -33,6 +33,7 @@ import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ModuleConfiguration;
@@ -229,7 +230,11 @@ public class Scanrows implements HapiProcessor {
                     configureLimit(session, request));
             List<RowData> rows = null;
             while(rows == null) {
-                rows = RowDataOutput.scanFull(session, dmlFunctions(), scanRequest);
+                try {
+                    rows = RowDataOutput.scanFull(session, dmlFunctions(), scanRequest);
+                } catch (NoSuchIndexException e) {
+                    throw new HapiRequestException("no index found for query: " + request, UNSUPPORTED_REQUEST);
+                }
             }
 
             outputter.output(

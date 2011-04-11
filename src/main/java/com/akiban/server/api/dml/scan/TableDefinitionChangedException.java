@@ -13,17 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.api.dml;
+package com.akiban.server.api.dml.scan;
 
 import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
-public final class NoSuchIndexException extends DMLException {
-    public NoSuchIndexException(String message) {
-        super(ErrorCode.NO_INDEX, message);
-    }
-
-    public NoSuchIndexException(InvalidOperationException e) {
-    super(e);
+public final class TableDefinitionChangedException extends InvalidOperationException {
+    public TableDefinitionChangedException(String message) {
+        super(ErrorCode.TABLE_DEFINITION_CHANGED, message);
     }
 }

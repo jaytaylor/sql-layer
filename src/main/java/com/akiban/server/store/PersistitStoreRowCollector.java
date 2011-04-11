@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.model.*;
+import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.NoSuchIndexException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,7 +158,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                                byte[] columnBitMap,
                                RowDef rowDef,
                                int indexId)
-        throws PersistitException
+        throws PersistitException, NoSuchIndexException
     {
         this.id = counter.incrementAndGet();
         this.store = store;
@@ -185,6 +187,9 @@ public class PersistitStoreRowCollector implements RowCollector {
 
             if (indexId != 0) {
                 final IndexDef def = rowDef.getIndexDef(indexId);
+                if (def == null) {
+                    throw new NoSuchIndexException("no such index: " + indexId);
+                }
                 // Don't use the primary key index for ROOT tables - the
                 // index tree is not populated because it is redundant
                 // with the h-tree itself.

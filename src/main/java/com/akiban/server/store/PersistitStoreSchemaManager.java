@@ -132,7 +132,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      *             exception
      */
     @Override
-    public void createTableDefinition(final Session session,
+    public TableName createTableDefinition(final Session session,
             final String defaultSchemaName, final String statement,
             final boolean useOldId) throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
@@ -173,8 +173,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // Some code below this point allows for the name to be non-unique in
         // support of multi-generation tables. Reject here as it isn't yet
         // complete.
-        final Table curTable = getAis(session).getTable(
-                TableName.create(schemaName, tableName));
+        final TableName tableNameFull = TableName.create(schemaName, tableName);
+        final Table curTable = getAis(session).getTable(tableNameFull);
         if (curTable != null && !useOldId) {
             throw new InvalidOperationException(ErrorCode.DUPLICATE_TABLE,
                     String.format("Table `%s`.`%s` already exists", schemaName,
@@ -195,7 +195,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     ex.clear().append(BY_ID).append(tableId).fetch();
                     final String previousValue = ex.getValue().getString();
                     if (canonical.equals(previousValue)) {
-                        return;
+                        return tableNameFull;
                     } else if (useOldId == true) {
                         ex.getValue().put(canonical);
                         ex.clear().append(BY_ID).append(tableId).store();
@@ -223,7 +223,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
 
                 }, forceToDisk);
-                break;
+                return tableNameFull;
             } catch (RollbackException e) {
                 if (--retries < 0) {
                     throw new TransactionFailedException();
@@ -856,7 +856,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public Class castClass() {
+    public Class<SchemaManager> castClass() {
         return SchemaManager.class;
     }
 
