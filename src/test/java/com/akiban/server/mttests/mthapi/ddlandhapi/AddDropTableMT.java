@@ -54,7 +54,7 @@ public final class AddDropTableMT extends HapiMTBase {
     private static final int ADDRESSES_PER_CUSTOMER = 2;
 
     @Test
-    public void addDropIndex() {
+    public void addDropTables() {
         SaisBuilder builder = new SaisBuilder();
 
         builder.table("customers", "cid", "age")
