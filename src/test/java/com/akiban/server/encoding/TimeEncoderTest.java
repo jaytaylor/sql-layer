@@ -19,65 +19,21 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class TimeEncoderTest {
-    private class TestElement {
-        private final long asInt;
-        private final Object asObject;
-        private final String asString;
-
-        public TestElement(String str, Number num) {
-            this.asInt = num.intValue();
-            this.asObject = num;
-            this.asString = str;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("(%d, %s, %s)", asInt, asString, asObject);
-        }
+public class TimeEncoderTest extends LongEncoderTestBase {
+    public TimeEncoderTest() {
+        super(EncoderFactory.TIME,
+              new TestElement[] {
+                new TestElement("00:00:00", 0),
+                new TestElement("00:00:01", 1),
+                new TestElement("-00:00:01", -1),
+                new TestElement("838:59:59", 3020399),
+                new TestElement("-838:59:59", -3020399),
+                new TestElement("14:20:32", new Integer(51632)),
+                new TestElement("-147:21:01", new Long(-530461))
+              });
     }
 
-    private final LongEncoderBase ENCODER = EncoderFactory.TIME;
-
-    private final TestElement[] TEST_CASES = {
-            new TestElement("00:00:00", 0),
-            new TestElement("00:00:01", 1),
-            new TestElement("-00:00:01", -1),
-            new TestElement("838:59:59", 3020399),
-            new TestElement("-838:59:59", -3020399),
-            new TestElement("14:20:32", new Integer(51632)),
-            new TestElement("-147:21:01", new Long(-530461))
-    };
-
-    private String encodeAndDecode(String dateStr) {
-        final long val = ENCODER.encodeFromObject(dateStr);
-        return ENCODER.decodeToString(val);
-    }
-
-    @Test
-    public void encodingToInt() {
-        for(TestElement t : TEST_CASES) {
-            final long encodeFromNum = ENCODER.encodeFromObject(t.asObject);
-            final long encodeFromStr = ENCODER.encodeFromObject(t.asString);
-            assertEquals("Number->int: " + t, t.asInt, encodeFromNum);
-            assertEquals("String->int: " + t, t.asInt, encodeFromStr);
-        }
-    }
-
-    @Test
-    public void decodingToString() {
-        for(TestElement t : TEST_CASES) {
-            final String decoded = ENCODER.decodeToString(t.asInt);
-            assertEquals("int->String: " + t, t.asString, decoded);
-        }
-    }
-
-    @Test
-    public void nullIsZero() {
-        assertEquals(0, ENCODER.encodeFromObject(null));
-        assertEquals("00:00:00", ENCODER.decodeToString(0));
-    }
-
+    
     @Test
     public void partiallySpecified() {
         assertEquals("00:00:02", encodeAndDecode("2"));
