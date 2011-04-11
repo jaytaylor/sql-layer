@@ -19,65 +19,22 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class YearEncoderTest {
-    private class TestElement {
-        private final int asInt;
-        private final Object asObject;
-        private final String asString;
+public class YearEncoderTest extends LongEncoderTestBase {
 
-        public TestElement(String str, Number num) {
-            this.asInt = num.intValue();
-            this.asObject = num;
-            this.asString = str;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("(%d, %s, %s)", asInt, asString, asObject);
-        }
-    }
-
-    private final LongEncoderBase ENCODER = EncoderFactory.YEAR;
-
-    private final TestElement[] TEST_CASES = {
-            new TestElement("0000", 0),
-            new TestElement("1901", 1),
-            new TestElement("1950", 50),
-            new TestElement("2000", 100),
-            new TestElement("2028", 128),
-            new TestElement("2029", 129),
-            new TestElement("2155", 255),
-            new TestElement("2011", new Integer(111)),
-            new TestElement("1986", new Long(86))
-    };
-
-    private String encodeAndDecode(String dateStr) {
-        final long val = ENCODER.encodeFromObject(dateStr);
-        return ENCODER.decodeToString(val);
-    }
-
-    @Test
-    public void encodingToInt() {
-        for(TestElement t : TEST_CASES) {
-            final long encodeFromNum = ENCODER.encodeFromObject(t.asObject);
-            final long encodeFromStr = ENCODER.encodeFromObject(t.asString);
-            assertEquals("Number->int: " + t, t.asInt, encodeFromNum);
-            assertEquals("String->int: " + t, t.asInt, encodeFromStr);
-        }
-    }
-
-    @Test
-    public void decodingToString() {
-        for(TestElement t : TEST_CASES) {
-            final String decoded = ENCODER.decodeToString(t.asInt);
-            assertEquals("int->String: " + t, t.asString, decoded);
-        }
-    }
-
-    @Test
-    public void nullIsZero() {
-        assertEquals(0, ENCODER.encodeFromObject(null));
-        assertEquals("0000", ENCODER.decodeToString(0));
+    public YearEncoderTest() {
+        super(EncoderFactory.YEAR,
+              new TestElement[] {
+                new TestElement("0000", 0),
+                new TestElement("1901", 1),
+                new TestElement("1950", 50),
+                new TestElement("2000", 100),
+                new TestElement("2028", 128),
+                new TestElement("2029", 129),
+                new TestElement("2155", 255),
+                new TestElement("2011", new Integer(111)),
+                new TestElement("1986", new Long(86))
+              }
+        );
     }
 
     @Test
