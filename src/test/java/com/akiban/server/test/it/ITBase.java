@@ -17,7 +17,7 @@ package com.akiban.server.test.it;
 
 import com.akiban.server.test.ApiTestBase;
 
-public class ITBase extends ApiTestBase {
+public abstract class ITBase extends ApiTestBase {
     public ITBase() {
         super("IT");
     }
