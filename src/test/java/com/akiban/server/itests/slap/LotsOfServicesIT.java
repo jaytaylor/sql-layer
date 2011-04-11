@@ -21,13 +21,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+@org.junit.Ignore("ignore this test until we know where to put it")
 public final class LotsOfServicesIT extends ApiTestBase {
     @Test
-    public void inLoop() throws Exception{
+    public void loop() throws Exception{
 
-        stopTestServices();
+        stopTestServices(); // shut down ApiTestBase's @Before services
 
-        final int LOOP_COUNT = 500;
+        final int LOOP_COUNT = 1000;
         int i=0;
         try {
             for (; i < LOOP_COUNT; ++i) {
@@ -38,6 +39,8 @@ public final class LotsOfServicesIT extends ApiTestBase {
         } catch (Throwable e) {
             throw new RuntimeException("At i="+i, e);
         }
+
+        startTestServices(); // so that ApiTestBase's @After has something to shut down
     }
 
     @Test
