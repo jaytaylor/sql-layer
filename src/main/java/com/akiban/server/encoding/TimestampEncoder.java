@@ -17,24 +17,41 @@ package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 /**
  * Encoder for working with time when stored as a 4 byte int (standard
  * UNIX timestamp). This is how MySQL stores the SQL TIMESTAMP type.
+ * <p><b>NOTE</b>: Both input and output is GMT+0 based.</p>
  * See: http://dev.mysql.com/doc/refman/5.5/en/timestamp.html
  * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
  */
 public final class TimestampEncoder extends LongEncoderBase {
+    final SimpleDateFormat SDF;
+
     TimestampEncoder() {
+        SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SDF.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
     
     @Override
     public long encodeFromObject(Object obj) {
-        int value = 0;
-        if(obj instanceof String) {
-            value = Integer.parseInt((String)obj);
+        long value;
+        if(obj == null) {
+            value = 0;
+        } else if(obj instanceof String) {
+            final String s = (String)obj;
+            try {
+                value = SDF.parse(s).getTime() / 1000;
+            } catch(ParseException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
         } else if(obj instanceof Number) {
             value = ((Number)obj).intValue();
-        } else if(obj != null) {
+        } else {
             throw new IllegalArgumentException("Requires String or Number");
         }
         return value;
@@ -42,12 +59,12 @@ public final class TimestampEncoder extends LongEncoderBase {
 
     @Override
     public String decodeToString(long value) {
-        return String.format("%d", value);
+        return SDF.format(new Date(value*1000));
     }
 
     @Override
     public boolean shouldQuoteString() {
-        return false;
+        return true;
     }
 
     @Override

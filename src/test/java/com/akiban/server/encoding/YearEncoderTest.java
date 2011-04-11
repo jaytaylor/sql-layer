@@ -20,7 +20,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class YearEncoderTest extends LongEncoderTestBase {
-
     public YearEncoderTest() {
         super(EncoderFactory.YEAR,
               new TestElement[] {
