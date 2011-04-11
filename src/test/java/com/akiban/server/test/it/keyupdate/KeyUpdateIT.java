@@ -18,7 +18,7 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import com.akiban.message.ErrorCode;
 import org.junit.Before;
 import org.junit.Test;

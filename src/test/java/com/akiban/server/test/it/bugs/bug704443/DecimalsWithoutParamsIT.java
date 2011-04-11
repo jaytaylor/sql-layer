@@ -19,7 +19,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 import java.math.BigDecimal;

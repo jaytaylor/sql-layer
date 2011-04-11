@@ -28,7 +28,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.RowData;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 import com.akiban.ais.model.Column;

@@ -20,11 +20,11 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.Collection;
 
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
-import com.akiban.server.test.it.ApiTestBase;
 import com.akiban.server.service.config.Property;
 import com.persistit.Persistit;
 

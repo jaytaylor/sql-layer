@@ -17,7 +17,7 @@ package com.akiban.server.test.it.bugs.bug701580;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 import java.util.HashSet;

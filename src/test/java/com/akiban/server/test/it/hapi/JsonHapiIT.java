@@ -23,7 +23,7 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;

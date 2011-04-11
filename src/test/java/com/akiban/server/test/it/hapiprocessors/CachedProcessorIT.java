@@ -22,7 +22,7 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
 import org.junit.Before;
 import org.junit.Test;

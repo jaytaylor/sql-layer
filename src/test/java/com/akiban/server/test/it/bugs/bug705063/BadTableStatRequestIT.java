@@ -17,7 +17,7 @@ package com.akiban.server.test.it.bugs.bug705063;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 public final class BadTableStatRequestIT extends ApiTestBase {

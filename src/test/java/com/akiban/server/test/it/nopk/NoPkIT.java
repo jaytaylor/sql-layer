@@ -15,7 +15,7 @@
 
 package com.akiban.server.test.it.nopk;
 
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 public final class NoPkIT extends ApiTestBase {

@@ -16,7 +16,7 @@
 package com.akiban.server.test.it.bugs.bug702555;
 
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Test;
 
 public final class TableAndColumnDuplicationIT extends ApiTestBase {

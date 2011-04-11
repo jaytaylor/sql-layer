@@ -18,7 +18,7 @@ package com.akiban.server.test.it.bugs.bug696096;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

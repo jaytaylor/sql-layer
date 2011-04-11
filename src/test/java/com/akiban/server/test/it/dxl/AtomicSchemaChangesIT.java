@@ -18,7 +18,7 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.io.MessageTarget;
 import com.akiban.ais.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.store.TableDefinition;
 import org.junit.Test;

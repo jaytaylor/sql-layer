@@ -18,7 +18,7 @@ package com.akiban.server.test.it.multiscan_update;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 import org.junit.Before;
 import org.junit.Test;
 

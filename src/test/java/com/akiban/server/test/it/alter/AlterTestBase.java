@@ -27,7 +27,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.common.ResolutionException;
-import com.akiban.server.test.it.ApiTestBase;
+import com.akiban.server.test.ApiTestBase;
 
 public class AlterTestBase extends ApiTestBase {
     public AkibanInformationSchema createAISWithTable(int tableId) throws NoSuchTableException, ResolutionException {
