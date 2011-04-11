@@ -24,14 +24,9 @@ import com.akiban.ais.model.Type;
  * See: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
  */
 public final class DateTimeEncoder extends LongEncoderBase {
-    static final long DATE_SCALE = 1000000L;
-    static final long YEAR_SCALE = 10000L * DATE_SCALE;
-    static final long MONTH_SCALE = 100L * DATE_SCALE;
-    static final long DAY_SCALE = 1L * DATE_SCALE;
-    static final long HOUR_SCALE = 10000L;
-    static final long MIN_SCALE = 100L;
-    static final long SEC_SCALE = 1L;
-
+    DateTimeEncoder() {
+    }
+    
     @Override
     public long encodeFromObject(Object obj) {
         final long value;
@@ -88,4 +83,13 @@ public final class DateTimeEncoder extends LongEncoderBase {
     public boolean validate(Type type) {
         return type.fixedSize() && (type.maxSizeBytes() == 8);
     }
+
+    
+    static final long DATE_SCALE = 1000000L;
+    static final long YEAR_SCALE = 10000L * DATE_SCALE;
+    static final long MONTH_SCALE = 100L * DATE_SCALE;
+    static final long DAY_SCALE = 1L * DATE_SCALE;
+    static final long HOUR_SCALE = 10000L;
+    static final long MIN_SCALE = 100L;
+    static final long SEC_SCALE = 1L;
 }

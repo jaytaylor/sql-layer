@@ -24,7 +24,9 @@ import com.akiban.server.RowData;
  * See: http://dev.mysql.com/doc/refman/5.5/en/year.html
  */
 public final class YearEncoder extends LongEncoderBase {
-
+    YearEncoder() {
+    }
+    
     @Override
     public long encodeFromObject(Object obj) {
         final int value;

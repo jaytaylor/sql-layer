@@ -24,7 +24,9 @@ import com.akiban.ais.model.Type;
  * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
  */
 public final class TimestampEncoder extends LongEncoderBase {
-
+    TimestampEncoder() {
+    }
+    
     @Override
     public long encodeFromObject(Object obj) {
         int value = 0;

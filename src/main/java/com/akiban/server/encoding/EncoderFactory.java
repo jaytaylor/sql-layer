@@ -43,7 +43,6 @@ public final class EncoderFactory {
     public static final DateTimeEncoder DATETIME = new DateTimeEncoder();
     public static final TimestampEncoder TIMESTAMP = new TimestampEncoder();
     public static final YearEncoder YEAR = new YearEncoder();
-    public static final UnsupportedTypeEncoder BIT = new UnsupportedTypeEncoder("BIT");
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
     private static Map<String,Encoding<?>> encodingMap = null;

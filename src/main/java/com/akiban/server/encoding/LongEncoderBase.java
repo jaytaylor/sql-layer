@@ -23,7 +23,9 @@ import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 abstract class LongEncoderBase extends EncodingBase<Long> {
-
+    LongEncoderBase() {
+    }
+    
     /**
      * Encode an object to a long. The only strict requirement is null
      * must be handled. In general, at least String and Number should be
