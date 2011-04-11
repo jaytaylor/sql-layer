@@ -14,13 +14,8 @@
  */
 package com.akiban.ais.metamodel;
 
-public class MetaModelException extends RuntimeException {
-
-    public MetaModelException (Exception ex) {
-        super (ex);
-    }
-    
-    public MetaModelException (String message) {
+public class MetaModelVersionMismatchException extends MetaModelException {
+    public MetaModelVersionMismatchException (final String message) {
         super (message);
     }
 }

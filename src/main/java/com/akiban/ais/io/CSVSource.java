@@ -46,9 +46,11 @@ public class CSVSource extends Source
     }
 
     @Override 
-    public int readVersion ()
+    public int readVersion()
     {
-        return MetaModel.only().getModelVersion();
+        int modelVersion = Integer.parseInt(unquote(row[field]));
+        advance();
+        return modelVersion;
     }
     
     @Override

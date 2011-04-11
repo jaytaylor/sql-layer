@@ -74,8 +74,10 @@ public class MetaModel
     private void getVersion() throws XPathExpressionException
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
-        XPathExpression expr = xpath.compile("//model/version");
-        modelVersion =  ((Double)expr.evaluate(document, XPathConstants.NUMBER)).intValue();
+        XPathExpression expr = xpath.compile("//model");
+        Node modelNode = (Node) expr.evaluate(document, XPathConstants.NODE); 
+        modelVersion = Integer.valueOf(attributeValue(modelNode.getAttributes(), "version"));
+        //modelVersion =  ((Double)expr.evaluate(document, XPathConstants.NUMBER)).intValue();
     }
     
     private void analyze() throws XPathExpressionException

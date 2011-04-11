@@ -42,7 +42,7 @@ public class Writer implements ModelNames
     
     private void saveVersion (AkibanInformationSchema ais) throws Exception
     {
-        target.writeCount(ais.getModelVersion());
+        target.writeVersion(ais.getModelVersion());
     }
 
     private void saveTypes(AkibanInformationSchema ais) throws Exception
