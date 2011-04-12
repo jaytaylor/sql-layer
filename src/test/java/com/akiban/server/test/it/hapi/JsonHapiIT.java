@@ -176,7 +176,7 @@ public final class JsonHapiIT extends ITBase {
     private static final String[] TEST_KEYS_REQUIRED = {TEST_GET};
     private static final String[] TEST_KEYS_OPTIONAL = {TEST_WRITE_ROWS, TEST_PASSING, TEST_EXPECT, TEST_ERROR,
                                                         COMMENT, TEST_PROCESSORS, TEST_INDEX};
-    private static final String[] DEFAULT_TEST_PROCESSORS = {"FETCHROWS", "SCANROWS"};
+    private static final String[] DEFAULT_TEST_PROCESSORS = {"SCANROWS"};
 
     private static final String[] SECTIONS_REQUIRED = {SETUP, TESTS};
     private static final String[] SECTIONS_OPTIONAL = {COMMENT, PASSING_DEFAULT};

@@ -18,13 +18,11 @@ package com.akiban.server.service.memcache;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.service.memcache.hprocessor.CachedProcessor;
 import com.akiban.server.service.memcache.hprocessor.EmptyRows;
-import com.akiban.server.service.memcache.hprocessor.Fetchrows;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 
 @SuppressWarnings("unused")
 public // jmx
 enum HapiProcessorFactory {
-    FETCHROWS(Fetchrows.instance()),
     EMPTY(EmptyRows.instance()),
     SCANROWS(null) {
         @Override
