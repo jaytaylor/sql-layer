@@ -15,52 +15,60 @@
 
 package com.akiban.server.encoding;
 
-import java.text.ParseException;
-import java.util.Date;
-
 import com.akiban.ais.model.Type;
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
 
-public final class TimestampEncoder extends DateTimeEncoder {
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+/**
+ * Encoder for working with time when stored as a 4 byte int (standard
+ * UNIX timestamp). This is how MySQL stores the SQL TIMESTAMP type.
+ * <p><b>NOTE</b>: Both input and output is GMT+0 based.</p>
+ * See: http://dev.mysql.com/doc/refman/5.5/en/timestamp.html
+ * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+ */
+public final class TimestampEncoder extends LongEncoderBase {
+    final SimpleDateFormat SDF;
+
     TimestampEncoder() {
+        SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SDF.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
-
+    
     @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                          int offset) {
-        final long v;
-        if (value instanceof String) {
+    public long encodeFromObject(Object obj) {
+        long value;
+        if(obj == null) {
+            value = 0;
+        } else if(obj instanceof String) {
+            final String s = (String)obj;
             try {
-                final Date date = EncodingUtils.getDateFormat(DateTimeEncoder.SDF_DATETIME).parse(
-                        (String) value);
-                v = (int) (date.getTime() / 1000);
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
+                value = SDF.parse(s).getTime() / 1000;
+            } catch(ParseException e) {
+                throw new IllegalArgumentException(e.getMessage());
             }
-        } else if (value instanceof Date) {
-            final Date date = (Date) value;
-            v = (int) (date.getTime() / 1000);
-        } else if (value instanceof Long) {
-            v = ((Long) value).longValue();
+        } else if(obj instanceof Number) {
+            value = ((Number)obj).intValue();
         } else {
-            throw new IllegalArgumentException(
-                    "Requires a String or a Date");
+            throw new IllegalArgumentException("Requires String or Number");
         }
-        return EncodingUtils.putUInt(dest, offset, v, 4);
+        return value;
     }
 
     @Override
-    public Date toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
-        final long time = ((long) rowData.getIntegerValue(
-                (int) location, 4)) * 1000;
-        return new Date(time);
+    public String decodeToString(long value) {
+        return SDF.format(new Date(value*1000));
+    }
+
+    @Override
+    public boolean shouldQuoteString() {
+        return true;
     }
 
     @Override
     public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return type.fixedSize() && w == 4;
+        return type.fixedSize() && (type.maxSizeBytes() == 4);
     }
 }

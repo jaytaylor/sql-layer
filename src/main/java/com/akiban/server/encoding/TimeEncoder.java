@@ -15,24 +15,68 @@
 
 package com.akiban.server.encoding;
 
-import java.util.Date;
+import com.akiban.ais.model.Type;
 
-import com.akiban.server.FieldDef;
-import com.akiban.server.RowData;
 
-public final class TimeEncoder extends AbstractDateEncoder {
+/**
+ * Encoder for working with time when stored as a 3 byte int encoded as
+ * HH*3600 + MM*60 + SS. This is how MySQL stores the SQL TIME type.
+ * See: http://dev.mysql.com/doc/refman/5.5/en/time.html
+ * and  http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
+ */
+public final class TimeEncoder extends LongEncoderBase {
     TimeEncoder() {
+    }
+    
+    @Override
+    public long encodeFromObject(Object obj) {
+        int value = 0;
+        if(obj instanceof String) {
+            // (-)HH:MM:SS
+            String str = (String)obj;
+            int mul = 1;
+            if(str.length() > 0 && str.charAt(0) == '-') {
+                mul = -1;
+                str = str.substring(1);
+            }
+            final String values[] = str.split(":");
+            final int scaleArray[] = {3600, 60, 1};
+            int offset;
+            switch(values.length) {
+                case 3: offset = 0; break;
+                case 2: offset = 1; break;
+                case 1: offset = 2; break;
+                default:
+                    throw new IllegalArgumentException("Invalid TIME string");
+            }
+            for(int i = 0; i < values.length; ++i, ++offset) {
+                value += Integer.parseInt(values[i]) * scaleArray[offset];
+            }
+            value *= mul;
+        } else if(obj instanceof Number) {
+            value = ((Number)obj).intValue();
+        } else if(obj != null) {
+            throw new IllegalArgumentException("Requires String or Number");
+        }
+        return value;
     }
 
     @Override
-    public Date toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
-        final int v = (int) rowData.getIntegerValue((int) location, 3);
-        // http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
-        final int day = v / 1000000;
-        final int hour = (v / 10000) % 100;
-        final int minute = (v / 100) % 100;
-        final int second = v % 100;
-        return new Date(0, 0, day, hour, minute, second);
+    public String decodeToString(long value) {
+        final int abs = Math.abs((int)value);
+        final int hour = abs / 3600;
+        final int minute = (abs - hour*3600) / 60;
+        final int second = abs - minute*60 - hour*3600;
+        return String.format("%s%02d:%02d:%02d", abs != value ? "-" : "", hour, minute, second);
+    }
+
+    @Override
+    public boolean shouldQuoteString() {
+        return true;
+    }
+
+    @Override
+    public boolean validate(Type type) {
+        return type.fixedSize() && (type.maxSizeBytes() == 3);
     }
 }

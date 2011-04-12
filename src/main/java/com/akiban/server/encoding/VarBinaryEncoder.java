@@ -51,7 +51,7 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
 
     @Override
     public ByteBuffer toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
+        final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
         int offset = (int) location + fieldDef.getPrefixSize();
         int size = (int) (location >>> 32) - fieldDef.getPrefixSize();
 

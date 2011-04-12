@@ -26,7 +26,7 @@ import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 public final class DecimalEncoder extends EncodingBase<BigDecimal> {
-    public DecimalEncoder() {
+    DecimalEncoder() {
     }
     
     //
