@@ -549,51 +549,6 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
         // verify them automatically.
     }
 
-    @Test
-    public void testFetchRows() throws Exception {
-        final TestData td = new TestData(5, 5, 5, 5);
-        td.insertTestRows();
-        {
-            final List<RowData> list = store.fetchRows(session,
-                    "data_dictionary_test", "item", "part_id", 1001001,
-                    1001005, "item");
-            assertEquals(5, list.size());
-        }
-
-        {
-            final List<RowData> list = store.fetchRows(session,
-                    "data_dictionary_test", "customer", "customer_id", 1, 1,
-                    "item");
-            assertEquals(31, list.size());
-            dump("c.cid = 1", list);
-        }
-
-        {
-            final List<RowData> list = store.fetchRows(session,
-                    "data_dictionary_test", "order", "customer_id", 1, 1,
-                    "item");
-            dump("o.cid = 1", list);
-            assertEquals(30, list.size());
-        }
-
-        {
-            final List<RowData> list = store.fetchRows(session,
-                    "data_dictionary_test", "customer", "customer_id", 1, 2,
-                    "address");
-            assertEquals(5, list.size());
-        }
-
-        {
-            final List<RowData> list = store.fetchRows(session,
-                    "data_dictionary_test", "customer", "customer_id", 1, 1,
-                    null);
-            for (final RowData rowData : list) {
-                System.out.println(rowData.toString(rowDefCache));
-            }
-            assertEquals(157, list.size());
-        }
-    }
-
     private void dump(String label, List<RowData> rows) {
         System.out.println(label + ":");
         for (RowData row : rows) {
