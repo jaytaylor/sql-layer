@@ -15,6 +15,9 @@
 
 package com.akiban.qp.physicaloperator;
 
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Executable
@@ -31,9 +34,15 @@ public class Executable
         root.instantiate(adapter, ops);
     }
 
-    public Executable bind(PhysicalOperator operator, Object value)
+    public Executable bind(PhysicalOperator operator, IndexKeyRange keyRange)
     {
-        ops[operator.operatorId()].bind(value);
+        ops[operator.operatorId()].bind(keyRange);
+        return this;
+    }
+
+    public Executable bind(PhysicalOperator operator, HKey hKey)
+    {
+        ops[operator.operatorId()].bind(hKey);
         return this;
     }
 

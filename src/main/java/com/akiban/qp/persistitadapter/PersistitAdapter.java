@@ -60,6 +60,11 @@ public class PersistitAdapter extends StoreAdapter
 
     // PersistitAdapter interface
 
+    public RowDef rowDef(int tableId)
+    {
+        return persistit.getRowDefCache().getRowDef(tableId);
+    }
+
     public PersistitGroupRow newGroupRow()
     {
         // TODO: Pool rows?
@@ -92,10 +97,12 @@ public class PersistitAdapter extends StoreAdapter
         super(schema);
         this.persistit = persistit;
         this.session = session;
+        this.filterFactory = new PersistitFilterFactory(this);
     }
 
     // Object state
 
     final PersistitStore persistit;
     final Session session;
+    final PersistitFilterFactory filterFactory;
 }

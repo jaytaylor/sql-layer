@@ -19,23 +19,29 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.*;
+import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Executable;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
+import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.RowCollector;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,6 +54,7 @@ import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.*;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class PhysicalOperatorIT extends ApiTestBase
 {
@@ -308,6 +315,43 @@ public class PhysicalOperatorIT extends ApiTestBase
         compareRows(expected, new Executable(adapter, indexLookup).bind(indexScan, matchTom));
 
     }
+
+/*
+    @Test
+    public void testOperatorBasedRowCollector_SecondaryIndex() throws Exception
+    {
+        HapiPredicate customerABC = new SimpleHapiPredicate(userTable(customer).getName(),
+                                                            "name",
+                                                            HapiPredicate.Operator.EQ,
+                                                            "abc");
+        RowCollector rc = OperatorBasedRowCollector.newCollector(session(),
+                                                                 (PersistitStore) store(),
+                                                                 userTable(customer),
+                                                                 Arrays.asList(customerABC));
+        while (rc.hasMore()) {
+            RowData rowData = rc.collectNextRow();
+            System.out.println(rowData);
+        }
+    }
+
+    @Test
+    public void testOperatorBasedRowCollector_PKIndex() throws Exception
+    {
+        HapiPredicate customer2 = new SimpleHapiPredicate(userTable(customer).getName(),
+                                                          "cid",
+                                                          HapiPredicate.Operator.EQ,
+                                                          "2");
+        RowCollector rc = OperatorBasedRowCollector.newCollector(session(),
+                                                                 (PersistitStore) store(),
+                                                                 userTable(customer),
+                                                                 Arrays.asList(customer2));
+        while (rc.hasMore()) {
+            RowData rowData = rc.collectNextRow();
+            System.out.println(rowData);
+        }
+        fail(); // This isn't returning any rows! Should be the same as for customer.name="abc" (previous test)
+    }
+*/
 
     private GroupTable groupTable(int userTableId)
     {

@@ -16,12 +16,7 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Index implements Serializable, ModelNames, Traversable
 {
@@ -206,6 +201,38 @@ public class Index implements Serializable, ModelNames, Traversable
     {
         assert indexDef.getClass().getName().equals("com.akiban.server.IndexDef") : indexDef.getClass();
         this.indexDef = indexDef;
+    }
+
+    public Index userTableIndex()
+    {
+        Index userTableIndex = null;
+        if (table.isUserTable()) {
+            userTableIndex = this;
+        } else {
+            List<Column> userColumns = new ArrayList<Column>();
+            UserTable userTable = null;
+            for (IndexColumn indexColumn : getColumns()) {
+                Column userColumn = indexColumn.getColumn().getUserColumn();
+                userColumns.add(userColumn);
+                if (userTable == null) {
+                    userTable = userColumn.getUserTable();
+                } else {
+                    assert userTable == userColumn.getUserTable() : userColumn;
+                }
+            }
+            assert userTable != null;
+            for (Index index : userTable.getIndexesIncludingInternal()) {
+                List<Column> indexColumns = new ArrayList<Column>();
+                for (IndexColumn indexColumn : index.getColumns()) {
+                    indexColumns.add(indexColumn.getColumn());
+                }
+                if (userColumns.equals(indexColumns)) {
+                    userTableIndex = index;
+                }
+            }
+            assert userTableIndex != null;
+        }
+        return userTableIndex;
     }
 
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";

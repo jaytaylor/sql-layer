@@ -34,10 +34,14 @@ class PersistitIndexCursor implements IndexCursor
     @Override
     public void open()
     {
+        assert exchange == null;
         try {
             exchange = adapter.takeExchange(indexRowType.index()).clear().append(Key.BEFORE);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
+        }
+        if (keyRange != null) {
+            indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), indexDef(), keyRange);
         }
     }
 
@@ -65,6 +69,7 @@ class PersistitIndexCursor implements IndexCursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
+            keyRange = null;
             indexFilter = null;
             row.set(null);
         }
@@ -79,10 +84,9 @@ class PersistitIndexCursor implements IndexCursor
     // IndexCursor interface
 
     @Override
-    public void open(IndexKeyRange keyRange)
+    public void bind(IndexKeyRange keyRange)
     {
-        open();
-        indexFilter = PersistitIndexFilter.computeIndexFilter(exchange.getKey(), indexDef(), keyRange);
+        this.keyRange = keyRange;
     }
 
     // For use by this package
@@ -115,6 +119,7 @@ class PersistitIndexCursor implements IndexCursor
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
     private final RowHolder<PersistitIndexRow> row;
+    private IndexKeyRange keyRange;
     private Exchange exchange;
     private KeyFilter indexFilter;
 }

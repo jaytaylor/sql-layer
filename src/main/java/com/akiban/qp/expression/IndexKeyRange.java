@@ -17,6 +17,23 @@ package com.akiban.qp.expression;
 
 public class IndexKeyRange
 {
+    public String toString()
+    {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append('(');
+        if (lo != null) {
+            buffer.append(loInclusive() ? ">=" : ">");
+            buffer.append(lo.toString());
+        }
+        buffer.append(',');
+        if (hi != null) {
+            buffer.append(hiInclusive() ? "<=" : "<");
+            buffer.append(hi.toString());
+        }
+        buffer.append(')');
+        return buffer.toString();
+    }
+
     public IndexBound lo()
     {
         return lo;
@@ -47,7 +64,7 @@ public class IndexKeyRange
      * @param hi Upper bound of the range.
      * @param hiInclusive True if the upper bound is inclusive, false if exclusive.
      */
-    IndexKeyRange(IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)
+    public IndexKeyRange(IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)
     {
         if (lo == null && loInclusive) {
             throw new IllegalArgumentException();

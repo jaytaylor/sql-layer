@@ -141,6 +141,11 @@ public class RowDef implements TreeLink {
         return (UserTable) table;
     }
 
+    public GroupTable groupTable() {
+        assert table instanceof GroupTable : this;
+        return (GroupTable) table;
+    }
+
     /**
      * Display the fieldCoordinates array
      */

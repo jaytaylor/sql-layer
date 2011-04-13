@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -1098,14 +1099,26 @@ public class PersistitStore implements Store {
                                      end,
                                      indexId,
                                      scanFlags);
-        RowCollector rc = new PersistitStoreRowCollector(session,
-                                                         this,
-                                                         scanFlags,
-                                                         start,
-                                                         end,
-                                                         columnBitMap,
-                                                         rowDef,
-                                                         indexId);
+        RowCollector rc;
+        if (Boolean.getBoolean("operators")) {
+            rc = OperatorBasedRowCollector.newCollector(session,
+                                                        this,
+                                                        rowDef,
+                                                        indexId,
+                                                        scanFlags,
+                                                        start,
+                                                        end,
+                                                        columnBitMap);
+        } else {
+            rc = new PersistitStoreRowCollector(session,
+                                                this,
+                                                scanFlags,
+                                                start,
+                                                end,
+                                                columnBitMap,
+                                                rowDef,
+                                                indexId);
+        }
         NEW_COLLECTOR_TAP.out();
         return rc;
     }

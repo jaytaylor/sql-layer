@@ -20,6 +20,11 @@ import com.akiban.qp.rowtype.IndexKeyType;
 
 public class IndexBound
 {
+    public String toString()
+    {
+        return String.format("%s=%s", indexKeyType, row);
+    }
+
     public IndexKeyType indexKeyType()
     {
         return indexKeyType;
@@ -30,7 +35,7 @@ public class IndexBound
         return row;
     }
 
-    IndexBound(IndexKeyType indexKeyType, Row row)
+    public IndexBound(IndexKeyType indexKeyType, Row row)
     {
         this.indexKeyType = indexKeyType;
         this.row = row;

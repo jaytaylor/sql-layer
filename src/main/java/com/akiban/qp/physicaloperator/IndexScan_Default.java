@@ -48,9 +48,9 @@ class IndexScan_Default extends PhysicalOperator
         // OperatorExecution interface
 
         @Override
-        public void bind(Object object)
+        public void bind(IndexKeyRange keyRange)
         {
-            cursor.open((IndexKeyRange) object);
+            cursor.bind(keyRange);
         }
 
         // Cursor interface

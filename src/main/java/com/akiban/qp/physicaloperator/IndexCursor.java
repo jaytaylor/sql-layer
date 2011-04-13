@@ -20,10 +20,10 @@ import com.akiban.qp.expression.IndexKeyRange;
 public interface IndexCursor extends Cursor
 {
     /**
-     * Starts a scan of the underlying table that will visit index rows whose key is inside the given keyRange.
+     * Limit the cursor to visit rows whose keys lie within keyRange.
      *
      * @param keyRange Range of index keys to be visited.
      * @throws UnsupportedOperationException if applied to a group-based cursor.
      */
-    void open(IndexKeyRange keyRange);
+    void bind(IndexKeyRange keyRange);
 }

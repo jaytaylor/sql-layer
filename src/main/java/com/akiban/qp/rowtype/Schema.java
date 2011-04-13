@@ -30,23 +30,29 @@ public class Schema
 {
     public Schema(AkibanInformationSchema ais)
     {
-        typeIdCounter = -1;
+        this.ais = ais;
+        this.typeIdCounter = -1;
         // User tables: use ordinal as typeId
         for (UserTable userTable : ais.getUserTables().values()) {
             RowDef rowDef = (RowDef) userTable.rowDef();
             int ordinal = rowDef.getOrdinal();
             UserTableRowType userTableRowType = new UserTableRowType(this, userTable);
             setRowType(ordinal, userTableRowType);
-            typeIdCounter = max(typeIdCounter, ordinal);
+            this.typeIdCounter = max(this.typeIdCounter, ordinal);
             // Indexes
-            typeIdCounter++;
+            this.typeIdCounter++;
             for (Index index : userTable.getIndexesIncludingInternal()) {
                 IndexRowType indexRowType = new IndexRowType(this, index);
                 userTableRowType.addIndexRowType(indexRowType);
                 setRowType(indexRowType.typeId(), indexRowType);
             }
         }
-        typeIdCounter++;
+        this.typeIdCounter++;
+    }
+
+    public AkibanInformationSchema ais()
+    {
+        return ais;
     }
 
     public synchronized UserTableRowType userTableRowType(UserTable table)
@@ -91,6 +97,7 @@ public class Schema
 
     // Object state
 
+    private final AkibanInformationSchema ais;
     // Type of rowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<RowType> rowTypes = new ArrayList<RowType>();
     private volatile int typeIdCounter;

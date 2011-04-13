@@ -85,28 +85,29 @@ class IndexLookup_Default extends PhysicalOperator
         @Override
         public boolean next()
         {
-            ManagedRow groupRow = null;
-            while (groupRow == null && indexRow.isNotNull()) {
-                groupRow = pending.take();
-                if (groupRow == null) {
+            groupRow.set(null);
+            while (groupRow.isNull() && indexRow.isNotNull()) {
+                groupRow.set(pending.take());
+                if (groupRow.isNull()) {
                     if (groupCursor.next()) {
-                        groupRow = groupCursor.currentRow();
-                        if (groupRow != null && !indexRow.ancestorOf(groupRow)) {
-                            groupRow = null;
+                        groupRow.set(groupCursor.currentRow());
+                        if (groupRow.isNotNull() && !indexRow.ancestorOf(groupRow.managedRow())) {
+                            groupRow.set(null);
                         }
                     } else {
                         advanceIndex();
                     }
                 }
             }
-            outputRow(groupRow);
-            return groupRow != null;
+            outputRow(groupRow.managedRow());
+            return groupRow.isNotNull();
         }
 
         @Override
         public void close()
         {
             outputRow(null);
+            ancestorRow.set(null);
             indexInput.close();
         }
 
@@ -117,7 +118,8 @@ class IndexLookup_Default extends PhysicalOperator
             groupCursor.close();
             if (indexInput.next()) {
                 indexRow.set(indexInput.currentRow());
-                groupCursor.open(indexRow.hKey());
+                groupCursor.bind(indexRow.hKey());
+                groupCursor.open();
                 findAncestors();
             } else {
                 indexRow.set(null);
@@ -131,9 +133,9 @@ class IndexLookup_Default extends PhysicalOperator
             for (int i = 1; i < missingTypeDepth.length; i++) {
                 int depth = missingTypeDepth[i];
                 hKey.useSegments(depth);
-                ManagedRow ancestor = readAncestorRow();
-                if (ancestor != null) {
-                    pending.add(ancestor);
+                readAncestorRow();
+                if (ancestorRow.isNotNull()) {
+                    pending.add(ancestorRow.managedRow());
                 }
             }
             // Restore the hkey to its original state
@@ -153,18 +155,17 @@ class IndexLookup_Default extends PhysicalOperator
 
         // For use by this class
 
-        private ManagedRow readAncestorRow()
+        private void readAncestorRow()
         {
-            ManagedRow row = null;
             try {
-                ancestorCursor.open(indexRow.hKey());
+                ancestorCursor.bind(indexRow.hKey());
+                ancestorCursor.open();
                 if (ancestorCursor.next()) {
-                    row = ancestorCursor.currentRow();
+                    ancestorRow.set(ancestorCursor.currentRow());
                 }
             } finally {
                 ancestorCursor.close();
             }
-            return row;
         }
 
         // Object state
@@ -172,7 +173,9 @@ class IndexLookup_Default extends PhysicalOperator
         private final Cursor indexInput;
         private final RowHolder<ManagedRow> indexRow = new RowHolder<ManagedRow>();
         private final GroupCursor groupCursor;
+        private final RowHolder<ManagedRow> groupRow = new RowHolder<ManagedRow>();
         private final GroupCursor ancestorCursor;
+        private final RowHolder<ManagedRow> ancestorRow = new RowHolder<ManagedRow>();
         private final PendingRows pending;
     }
 }

@@ -34,7 +34,7 @@ public class PersistitGroupRow extends RowBase
     @Override
     public String toString()
     {
-        return row.toString();
+        return rowData == null ? null : rowData.toString();
     }
 
     // Row interface
@@ -75,8 +75,6 @@ public class PersistitGroupRow extends RowBase
     {
         this.row = new LegacyRowWrapper((RowDef) null);
         RuntimeException exception;
-        Value value = exchange.getValue();
-        assert value.isDefined();
         do {
             try {
                 exception = null;
@@ -99,7 +97,7 @@ public class PersistitGroupRow extends RowBase
         } while (exception != null);
     }
 
-    RowData rowData()
+    public RowData rowData()
     {
         return rowData;
     }

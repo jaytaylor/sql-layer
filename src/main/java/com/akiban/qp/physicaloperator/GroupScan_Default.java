@@ -16,6 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 
 class GroupScan_Default extends PhysicalOperator
@@ -48,9 +49,15 @@ class GroupScan_Default extends PhysicalOperator
         // OperatorExecution interface
 
         @Override
-        public void bind(Object object)
+        public void bind(IndexKeyRange keyRange)
         {
-            cursor.open((HKey) object);
+            cursor.bind(keyRange);
+        }
+
+        @Override
+        public void bind(HKey hKey)
+        {
+            cursor.bind(hKey);
         }
 
         // Cursor interface

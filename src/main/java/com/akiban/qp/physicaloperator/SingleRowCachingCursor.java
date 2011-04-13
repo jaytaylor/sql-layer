@@ -40,18 +40,6 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
     }
 
     @Override
-    public void open(HKey hKey)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void open(IndexKeyRange keyRange)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public abstract boolean next();
 
     @Override
@@ -61,6 +49,20 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
     public final ManagedRow currentRow()
     {
         return row.managedRow();
+    }
+
+    // OperatorExecution interface
+
+    @Override
+    public void bind(IndexKeyRange keyRange)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void bind(HKey hKey)
+    {
+        throw new UnsupportedOperationException();
     }
 
     // SingleRowCachingCursor interface

@@ -44,5 +44,20 @@ public interface HapiPredicate {
         public String toString() {
             return toString;
         }
+
+        public boolean lowerBound()
+        {
+            return this == GT || this == GTE;
+        }
+
+        public boolean upperBound()
+        {
+            return this == LT || this == LTE;
+        }
+
+        public boolean inclusive()
+        {
+            return this == EQ || this == LTE || this == GTE;
+        }
     }
 }

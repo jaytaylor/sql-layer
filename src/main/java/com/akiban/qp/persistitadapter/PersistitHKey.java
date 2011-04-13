@@ -25,14 +25,14 @@ class PersistitHKey implements HKey
     @Override
     public String toString()
     {
-        return persistitKey.toString();
+        return hKey.toString();
     }
 
     // HKey interface
 
     public int segments()
     {
-        return hKey.segments().size();
+        return hKeyMetadata.segments().size();
     }
 
     public void useSegments(int segments)
@@ -41,18 +41,18 @@ class PersistitHKey implements HKey
         // setDepth shortens the key's encoded size if necessary but doesn't lengthen it.
         // So setEncodedSize back to the original key length, permitting setDepth to work in all cases.
         // (setEncodedSize is cheap.)
-        persistitKey.setEncodedSize(persistitKeySize);
-        persistitKey.setDepth(keyDepth[segments]);
+        hKey.setEncodedSize(hKeySize);
+        hKey.setDepth(keyDepth[segments]);
     }
 
     // TODO: Move into Key?
     public boolean prefixOf(HKey hKey)
     {
         PersistitHKey that = (PersistitHKey) hKey;
-        if (this.persistitKeySize <= that.persistitKeySize) {
-            byte[] thisBytes = this.persistitKey.getEncodedBytes();
-            byte[] thatBytes = that.persistitKey.getEncodedBytes();
-            for (int i = 0; i < this.persistitKeySize; i++) {
+        if (this.hKeySize <= that.hKeySize) {
+            byte[] thisBytes = this.hKey.getEncodedBytes();
+            byte[] thatBytes = that.hKey.getEncodedBytes();
+            for (int i = 0; i < this.hKeySize; i++) {
                 if (thisBytes[i] != thatBytes[i]) {
                     return false;
                 }
@@ -67,37 +67,43 @@ class PersistitHKey implements HKey
 
     public void copyFrom(Key source)
     {
-        source.copyTo(persistitKey);
-        persistitKeySize = persistitKey.getEncodedSize();
+        source.copyTo(hKey);
+        hKeySize = hKey.getEncodedSize();
     }
 
     public void copyTo(Key target)
     {
-        persistitKey.copyTo(target);
+        hKey.copyTo(target);
     }
 
-    public PersistitHKey(PersistitAdapter adapter, com.akiban.ais.model.HKey hKey)
+    public PersistitHKey(PersistitAdapter adapter, com.akiban.ais.model.HKey hKeyMetadata)
     {
         this.adapter = adapter;
-        this.hKey = hKey;
-        this.persistitKey = new Key(adapter.persistit.getDb());
-        this.keyDepth = new int[hKey.segments().size() + 1];
-        int hKeySegments = hKey.segments().size();
+        this.hKeyMetadata = hKeyMetadata;
+        this.hKey = new Key(adapter.persistit.getDb());
+        this.keyDepth = new int[hKeyMetadata.segments().size() + 1];
+        int hKeySegments = hKeyMetadata.segments().size();
         for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
             this.keyDepth[hKeySegment] =
                 hKeySegment == 0
                 ? 0
                 // + 1 to account for the ordinal
-                : this.keyDepth[hKeySegment - 1] + 1 + hKey.segments().get(hKeySegment - 1).columns().size();
+                : this.keyDepth[hKeySegment - 1] + 1 + hKeyMetadata.segments().get(hKeySegment - 1).columns().size();
         }
     }
+
+    public int divergenceFrom(Key otherHKey)
+    {
+        return hKey.firstUniqueSegmentDepth(otherHKey);
+    }
+
 
     // Object state
 
     private final PersistitAdapter adapter;
-    private final com.akiban.ais.model.HKey hKey;
-    private Key persistitKey;
-    private int persistitKeySize;
+    private final com.akiban.ais.model.HKey hKeyMetadata;
+    private Key hKey;
+    private int hKeySize;
     // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
     private final int[] keyDepth;
 }
