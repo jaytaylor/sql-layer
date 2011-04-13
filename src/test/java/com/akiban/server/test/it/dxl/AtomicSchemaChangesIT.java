@@ -94,7 +94,6 @@ public class AtomicSchemaChangesIT extends ITBase
             Assert.fail("Expected table to be rejected");
         } catch (Exception e) {
             // expected
-            System.out.println(e.getMessage());
         }
         checkInitialSchema();
     }
@@ -112,7 +111,6 @@ public class AtomicSchemaChangesIT extends ITBase
             Assert.fail("Expected table to be rejected");
         } catch (Exception e) {
             // expected
-            System.out.println(e.getMessage());
         }
         checkInitialSchema();
     }
@@ -130,7 +128,6 @@ public class AtomicSchemaChangesIT extends ITBase
             Assert.fail("Expected table to be rejected");
         } catch (Exception e) {
             // expected
-            System.out.println(e.getMessage());
         }
         checkInitialSchema();
     }
@@ -150,7 +147,6 @@ public class AtomicSchemaChangesIT extends ITBase
             Assert.fail("Expected table to be rejected");
         } catch (Exception e) {
             // expected
-            System.out.println(e.getMessage());
         }
         checkInitialSchema();
     }

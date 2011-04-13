@@ -39,6 +39,7 @@ import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
@@ -61,7 +62,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createTable(Session session, String schema, String ddlText) throws ParseException, UnsupportedCharsetException, ProtectedTableDDLException, DuplicateTableNameException, GroupWithProtectedTableException, JoinToUnknownTableException, JoinToWrongColumnsException, JoinToMultipleParentsException, NoPrimaryKeyException, DuplicateColumnNameException, UnsupportedDataTypeException, UnsupportedIndexDataTypeException, GenericInvalidOperationException {
+    public void createTable(Session session, String schema, String ddlText) throws ParseException, UnsupportedCharsetException, ProtectedTableDDLException, DuplicateTableNameException, GroupWithProtectedTableException, JoinToUnknownTableException, JoinToWrongColumnsException, JoinToMultipleParentsException, NoPrimaryKeyException, DuplicateColumnNameException, UnsupportedDataTypeException, UnsupportedIndexDataTypeException, UnsupportedIndexSizeException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
@@ -81,6 +82,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throwIf(t, DuplicateColumnNameException.class);
             throwIf(t, UnsupportedDataTypeException.class);
             throwIf(t, UnsupportedIndexDataTypeException.class);
+            throwIf(t, UnsupportedIndexSizeException.class);
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {

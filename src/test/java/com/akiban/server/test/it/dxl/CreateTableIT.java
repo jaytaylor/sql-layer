@@ -29,6 +29,7 @@ import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -406,6 +407,11 @@ public final class CreateTableIT extends ITBase {
         createExpectException(DuplicateTableNameException.class, "test", "t", "c1 int key, c2 varchar(32)");
     }
 
+    @Test
+    public void pkeyTooLarge() throws InvalidOperationException {
+        // bug713387
+        createExpectException(UnsupportedIndexSizeException.class, "test", "t", "id varchar(2050) key");
+    }
 
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
