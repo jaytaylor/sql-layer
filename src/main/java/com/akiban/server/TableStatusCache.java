@@ -437,10 +437,6 @@ public class TableStatusCache extends TransactionalCache {
     public void setOrdinal(final int tableId, final int ordinal) {
         update(new AssignOrdinalUpdate(tableId, ordinal));
     }
-    
-    public synchronized void dropTableStatus(final int tableId) {
-        _tableStatusMap.remove(tableId);
-    }
 
     public synchronized TableStatus getTableStatus(final int tableId) {
         TableStatus ts = _tableStatusMap.get(Integer.valueOf(tableId));
