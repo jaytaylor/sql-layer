@@ -148,7 +148,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if ((scanFlags & SCAN_FLAGS_DEEP) == 0) {
             throw new IllegalArgumentException("SCAN_FLAGS_DEEP is required");
         }
-        if (start.getRowDefId() != end.getRowDefId()) {
+        if (start != null && end != null && start.getRowDefId() != end.getRowDefId()) {
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
         }

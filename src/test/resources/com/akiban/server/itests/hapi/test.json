@@ -1,107 +1,81 @@
 {
-"comment" : ["See spec file: ",
-    "https://spreadsheets.google.com/a/akiban.com/ccc?key=0AiGr_XWdHm0edFNSaFZwUXd5SnAtOHlDcTJyOEUzdXc",
-    "This test plan has a couple modifications from that spec:",
-    "   - no orphan rows",
-    "   - giving customer id=9 an address"
-],
 
 "setup" : {
-    "processors_default" : [ "scanrows" ],
-    "schema" : "coi",
+    "processors_default" : ["scanrows"],
+
     "tables" : [
-        [ "customer",
+        [ "p1",
+            "pid int key",
+            "status1 int",
+            "status2 int",
+            "KEY p1_multi (status1, status2)"
+        ],
+
+        [ "c1",
             "cid int key",
-            "name varchar(32)",
-            "address char(20)"
-        ],
-
-        [ "orders",
-            "oid int key",
-            "c_id int",
-            "when varchar(10)",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)",
-            "KEY (when)"
-        ],
-
-        [ "item",
-            "iid int key",
-            "o_id int",
-            "sku int",
-            "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (o_id) REFERENCES orders(oid)"
-        ],
-
-        [ "address",
-            "aid int key",
-            "c_id int",
-            "street varchar(32)",
-            "CONSTRAINT __akiban_a FOREIGN KEY __akiban_a (c_id) REFERENCES customer(cid)"
+            "pid int",
+            "firstname varchar(32)",
+            "midinitial varchar(1)",
+            "lastname varchar(32)",
+            "CONSTRAINT __akiban_fk_c1 FOREIGN KEY __akiban_fk_c1 (pid) REFERENCES p1(pid)",
+            "UNIQUE KEY name_by_last(lastname, firstname, midinitial)",
+            "UNIQUE KEY name_by_first(firstname, lastname, midinitial)"
         ]
     ],
+
     "write_rows" : {
-        "customer"  : [ [11, "Alpha", "Mrs"],
-                        [19, "Bravo", "Miss"],
-                        [18, "Charlie", "Mr"],
-                        [30, "Devo", "Akron"],
-                        [31, "Elvis", "Chelsea"],
-                        [32, "Floyd", "Wall"]
+        "p1"    : [ [1, 1, 2],
+                    [2, 1, 2],
+                    [3, 2, 3],
+                    [4, 2, 4]
         ],
-        "orders"    : [ [21, 11, "1/1/2001"],
-                        [22, 11, "2/2/2002"],
-                        [23, 18, "2/2/2002"],
-                        [300, 30, "3/3/2003"]
-        ],
-        "item"      : [ [31, 21, 1111],
-                        [32, 23, 2222],
-                        [3000, 300, 3333]
-        ],
-        "address"   : [ [41, 11, "500 Harrison"],
-                        [42, 19, "1 Akiban Way"],
-                        [300, 30, "Ohio"]
+        "c1"    : [ [1, 1, "John", "Q", "Public"],
+                    [2, 3, "John", "B", "Good"],
+                    [3, 1, "John", "A", "Public"]
         ]
     }
 },
 
 "tests" : {
-    "nonunique from predicate's parent" : {
-        "processors"    : ["scanrows"],
-
-        "get"           : "coi:customer:(orders)when='2%2F2%2F2002'",
+    "with_depth" : {
+        "get"           : "test:p1:(c1)firstname=John",
+        "expect index"  : {"group" : "c1$name_by_first"},
+        "comment"       : "should use index c1.name_by_first",
         "expect result" :
         {
-            "@customer" :
-            [
+            "@p1" : [
                 {
-                    "address" : "Mrs",
-                    "cid" : 11,
-                    "name" : "Alpha",
-                    "@orders" :
-                    [
+                    "pid"     : 3,
+                    "status1" : 2,
+                    "status2" : 3,
+                    "@c1" : [
                         {
-                            "oid" : 22,
-                            "c_id" : 11,
-                            "when" : "2/2/2002",
-                            "@item" : []
+                            "cid" : 2,
+                            "pid" : 3,
+                            "firstname" : "John",
+                            "midinitial": "B",
+                            "lastname"  : "Good"
                         }
                     ]
                 },
                 {
-                    "cid" : 18,
-                    "name" : "Charlie",
-                    "address" : "Mr",
-                    "@orders" :
-                    [
+                    "pid"     : 1,
+                    "status1" : 1,
+                    "status2" : 2,
+                    "@c1" : [
                         {
-                            "oid" : 23,
-                            "c_id" : 18,
-                            "when" : "2/2/2002",
-                            "@item" : [
-                                {
-                                    "iid" : 32,
-                                    "o_id" : 23,
-                                    "sku" : 2222
-                                }
-                            ]
+                            "cid" : 3,
+                            "pid" : 1,
+                            "firstname" : "John",
+                            "midinitial": "A",
+                            "lastname"  : "Public"
+                        },
+                        {
+                            "cid" : 1,
+                            "pid" : 1,
+                            "firstname" : "John",
+                            "midinitial": "Q",
+                            "lastname"  : "Public"
                         }
                     ]
                 }

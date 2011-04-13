@@ -92,11 +92,12 @@ class PersistitHKey implements HKey
         }
     }
 
-    public int divergenceFrom(Key otherHKey)
-    {
-        return hKey.firstUniqueSegmentDepth(otherHKey);
-    }
+    // For use by this package
 
+    Key key()
+    {
+        return hKey;
+    }
 
     // Object state
 

@@ -17,6 +17,8 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class IndexScan_Default extends PhysicalOperator
 {
@@ -36,6 +38,10 @@ class IndexScan_Default extends PhysicalOperator
     {
         this.index = index;
     }
+
+    // Class state
+
+    private static final Logger LOG = LoggerFactory.getLogger(IndexScan_Default.class);
 
     // Object state
 
@@ -69,6 +75,9 @@ class IndexScan_Default extends PhysicalOperator
                 outputRow(cursor.currentRow());
             } else {
                 close();
+            }
+            if (LOG.isInfoEnabled()) {
+                LOG.info("IndexScan: {}", next ? outputRow().managedRow() : null);
             }
             return next;
         }

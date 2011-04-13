@@ -28,6 +28,8 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * A PersistitGroupCursor can be used in three ways:
@@ -51,7 +53,6 @@ class PersistitGroupCursor implements GroupCursor
             groupScan =
                 hKeyRange == null && hKey == null ? new FullScan() :
                 hKeyRange == null ? new HKeyAndDescendentsScan(hKey) : new HKeyRangeAndDescendentsScan(hKeyRange);
-            lastHKey.clear();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -61,14 +62,17 @@ class PersistitGroupCursor implements GroupCursor
     public boolean next()
     {
         try {
-            boolean next = false;
-            if (exchange != null) {
-                PersistitGroupRow row = unsharedRow().managedRow();
-                row.copyFromExchange(exchange);
-                next = true;
+            boolean next = exchange != null;
+            if (next) {
                 groupScan.advance();
-                row.rowData().differsFromPredecessorAtKeySegment(row.hKey().divergenceFrom(lastHKey));
-                row.hKey().copyTo(lastHKey);
+                next = exchange != null;
+                if (next) {
+                    PersistitGroupRow row = unsharedRow().managedRow();
+                    row.copyFromExchange(exchange);
+                }
+            }
+            if (LOG.isInfoEnabled()) {
+                LOG.info("PersistitGroupCursor: {}", next ? row : null);
             }
             return next;
         } catch (PersistitException e) {
@@ -120,7 +124,6 @@ class PersistitGroupCursor implements GroupCursor
         this.groupTable = groupTable;
         this.row = new RowHolder<PersistitGroupRow>(adapter.newGroupRow());
         this.controllingHKey = new Key(adapter.persistit.getDb());
-        this.lastHKey = new Key(adapter.persistit.getDb());
     }
 
     // For use by this class
@@ -135,6 +138,7 @@ class PersistitGroupCursor implements GroupCursor
 
     // Class state
 
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupCursor.class);
     // Used by HKeyRangeAndDescendentsScan.
     // Should be zero, but Exchange.traverse doesn't update the key if we ask for 0 value bytes.
     private static final int VALUE_BYTES = 1;
@@ -163,7 +167,6 @@ class PersistitGroupCursor implements GroupCursor
     private final RowHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;
-    private Key lastHKey;
     private PersistitHKey hKey;
     private IndexKeyRange hKeyRange;
     private GroupScan groupScan;
@@ -193,9 +196,6 @@ class PersistitGroupCursor implements GroupCursor
         public FullScan() throws PersistitException
         {
             exchange.getKey().append(Key.BEFORE);
-            if (!exchange.traverse(Key.GT, true)) {
-                close();
-            }
         }
     }
 
@@ -204,9 +204,16 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (!exchange.traverse(Key.GT, true) ||
-                exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
+            if (first) {
+                if (!exchange.traverse(Key.GTEQ, true)) {
                     close();
+                }
+                first = false;
+            } else {
+                if (!exchange.traverse(Key.GT, true) ||
+                    exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
+                    close();
+                }
             }
         }
 
@@ -214,10 +221,9 @@ class PersistitGroupCursor implements GroupCursor
         {
             singleHKeyRestriction.copyTo(exchange.getKey());
             singleHKeyRestriction.copyTo(controllingHKey);
-            if (!exchange.traverse(Key.GTEQ, true)) {
-                close();
-            }
         }
+
+        private boolean first = true;
     }
 
     private class HKeyRangeAndDescendentsScan implements GroupScan
@@ -225,14 +231,25 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (!exchange.traverse(Key.GT, true)) {
-                close();
+            if (first) {
+                if (!exchange.traverse(Key.GTEQ, hKeyRangeFilter, VALUE_BYTES)) {
+                    close();
+                } else {
+                    exchange.getKey().copyTo(controllingHKey);
+                }
+                first = false;
             } else {
-                if (exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
-                    if (exchange.traverse(Key.GT, hKeyRangeFilter, 0)) {
-                        exchange.getKey().copyTo(controllingHKey);
-                    } else {
-                        close();
+                if (!exchange.traverse(Key.GT, true)) {
+                    close();
+                } else {
+                    if (exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
+                        // Current key is not a descendent of the controlling hkey
+                        if (hKeyRangeFilter.selected(exchange.getKey())) {
+                            // But it is still selected by hKeyRange
+                            exchange.getKey().copyTo(controllingHKey);
+                        } else {
+                            close();
+                        }
                     }
                 }
             }
@@ -240,16 +257,13 @@ class PersistitGroupCursor implements GroupCursor
 
         HKeyRangeAndDescendentsScan(IndexKeyRange hKeyRange) throws PersistitException
         {
-            UserTable table = (UserTable) hKeyRange.hi().indexKeyType().index().getTable();
+            UserTable table =
+                (UserTable) (hKeyRange.lo() == null ? hKeyRange.hi() : hKeyRange.lo()).indexKeyType().index().getTable();
             RowDef rowDef = (RowDef) table.rowDef();
             hKeyRangeFilter = adapter.filterFactory.computeHKeyFilter(exchange.getKey(), rowDef, hKeyRange);
-            if (!exchange.traverse(Key.GTEQ, hKeyRangeFilter, VALUE_BYTES)) {
-                close();
-            } else {
-                exchange.getKey().copyTo(controllingHKey);
-            }
         }
 
         private KeyFilter hKeyRangeFilter;
+        private boolean first = true;
     }
 }

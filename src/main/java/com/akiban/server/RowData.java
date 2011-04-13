@@ -23,6 +23,7 @@ import java.util.BitSet;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
+import com.persistit.Key;
 
 /**
  * Represent one or more rows of table data. The backing store is a byte array
@@ -101,6 +102,8 @@ public class RowData {
 
     private int rowStart;
     private int rowEnd;
+
+    private Key hKey;
 
     // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
     // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
@@ -369,6 +372,9 @@ public class RowData {
         RowData copy = new RowData(copyBytes);
         copy.prepareRow(0);
         copy.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
+        if (hKey != null) {
+            copy.hKey = new Key(hKey);
+        }
         return copy;
     }
 
@@ -617,14 +623,19 @@ public class RowData {
         this.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
     }
 
+    public Key hKey()
+    {
+        return hKey;
+    }
+
+    public void hKey(Key hKey)
+    {
+        this.hKey = hKey;
+    }
+
     public static int nullRowBufferSize(RowDef rowDef)
     {
         return MINIMUM_RECORD_LENGTH + // header and trailer
                (rowDef.getFieldCount() + 7) / 8; // null bitmap
-    }
-
-    public void copyBytesIn(byte[] source, int start, int end, int field)
-    {
-
     }
 }

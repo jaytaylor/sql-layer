@@ -53,7 +53,12 @@ public final class JsonOutputter implements HapiOutputter
             this.ais = request.akibanInformationSchema();
             queryRoot = queryRoot(request);
             genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
+            // For use with OperatorBasedRowCollector
+            this.input = new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(rows.iterator()),
+                                                          genealogist);
+/*          // For use with PersistitStoreRowCollector
             this.input = new UnOrphaningIterator<RowData>(rows.iterator(), genealogist);
+*/
             this.output = new PrintWriter(outputStream);
             this.appender = AkibanAppender.of(outputStream, this.output);
         }

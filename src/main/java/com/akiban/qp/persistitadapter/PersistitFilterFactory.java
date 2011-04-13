@@ -90,8 +90,8 @@ class PersistitFilterFactory
     // Returns a KeyFilter term if the specified field of either the start or end RowData is non-null, else null.
     private KeyFilter.Term computeKeyFilterTerm(Key key, RowDef rowDef, IndexKeyRange keyRange, int fieldIndex)
     {
-        RowData start = rowData(keyRange.lo());
-        RowData end = rowData(keyRange.hi());
+        RowData start = keyRange.lo() == null ? null : rowData(keyRange.lo());
+        RowData end = keyRange.hi() == null ? null : rowData(keyRange.hi());
         if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
             return KeyFilter.ALL;
         }

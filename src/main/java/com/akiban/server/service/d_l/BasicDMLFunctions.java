@@ -48,26 +48,7 @@ import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.LegacyUtils;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.*;
-import com.akiban.server.api.dml.scan.BufferFullException;
-import com.akiban.server.api.dml.scan.ColumnSet;
-import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
-import com.akiban.server.api.dml.scan.Cursor;
-import com.akiban.server.api.dml.scan.CursorId;
-import com.akiban.server.api.dml.scan.CursorIsFinishedException;
-import com.akiban.server.api.dml.scan.CursorIsUnknownException;
-import com.akiban.server.api.dml.scan.CursorState;
-import com.akiban.server.api.dml.scan.LegacyOutputConverter;
-import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
-import com.akiban.server.api.dml.scan.LegacyRowOutput;
-import com.akiban.server.api.dml.scan.LegacyRowWrapper;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.RowDataLegacyOutputRouter;
-import com.akiban.server.api.dml.scan.RowOutput;
-import com.akiban.server.api.dml.scan.RowOutputException;
-import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
@@ -573,7 +554,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     cursor.setFinished();
                 }
                 else {
-                    output.addRow(rowData);
+                    // Copy rowData because further query processing will reuse underlying buffer.
+                    output.addRow(rowData.copy());
                 }
             }
         }

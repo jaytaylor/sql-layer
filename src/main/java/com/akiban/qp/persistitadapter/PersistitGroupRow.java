@@ -82,6 +82,7 @@ public class PersistitGroupRow extends RowBase
                 row.setRowDef(rowData.getRowDefId());
                 row.setRowData(rowData);
                 persistitHKey().copyFrom(exchange.getKey());
+                rowData.hKey(persistitHKey().key());
             } catch (ArrayIndexOutOfBoundsException e) {
                 exception = e;
             } catch (EncodingException e) {

@@ -22,6 +22,8 @@ import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,6 +65,10 @@ class IndexLookup_Default extends PhysicalOperator
         }
     }
 
+    // Class state
+
+    private static final Logger LOG = LoggerFactory.getLogger(IndexLookup_Default.class);
+
     // Object state
 
     private final PhysicalOperator inputOperator;
@@ -100,6 +106,9 @@ class IndexLookup_Default extends PhysicalOperator
                 }
             }
             outputRow(groupRow.managedRow());
+            if (LOG.isInfoEnabled()) {
+                LOG.info("IndexLookup: {}", groupRow.isNull() ? null : groupRow.managedRow());
+            }
             return groupRow.isNotNull();
         }
 
@@ -131,11 +140,13 @@ class IndexLookup_Default extends PhysicalOperator
             HKey hKey = indexRow.hKey();
             int nSegments = hKey.segments();
             for (int i = 1; i < missingTypeDepth.length; i++) {
-                int depth = missingTypeDepth[i];
-                hKey.useSegments(depth);
-                readAncestorRow();
-                if (ancestorRow.isNotNull()) {
-                    pending.add(ancestorRow.managedRow());
+                if (missingTypeDepth[i] > 0) {
+                    int depth = missingTypeDepth[i];
+                    hKey.useSegments(depth);
+                    readAncestorRow();
+                    if (ancestorRow.isNotNull()) {
+                        pending.add(ancestorRow.managedRow());
+                    }
                 }
             }
             // Restore the hkey to its original state
