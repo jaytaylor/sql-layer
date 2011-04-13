@@ -529,9 +529,9 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void schemaIdIncrements() throws Exception {
-        int firstGen = ddl().getSchemaID().getGeneration();
+        int firstGen = ddl().getGeneration();
         createTable("sch", "c1", "id int key");
-        int secondGen = ddl().getSchemaID().getGeneration();
+        int secondGen = ddl().getGeneration();
         assertTrue(String.format("failed %d > %d", secondGen, firstGen), secondGen > firstGen);
     }
 

@@ -42,7 +42,6 @@ import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
-import com.akiban.server.store.SchemaId;
 
 import java.util.Collection;
 import java.util.List;
@@ -271,12 +270,12 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public SchemaId getSchemaID() throws InvalidOperationException {
+    public int getGeneration() throws InvalidOperationException {
         Session session = new SessionImpl();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_ID);
-            return delegate.getSchemaID();
+            return delegate.getGeneration();
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_ID, t);

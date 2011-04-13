@@ -53,7 +53,6 @@ import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaId;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
@@ -241,9 +240,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public SchemaId getSchemaID() throws InvalidOperationException {
-        logger.trace("getting schema ID");
-        return new SchemaId(schemaManager().getSchemaGeneration());
+    public int getGeneration() {
+        return schemaManager().getSchemaGeneration();
     }
 
     @Override
