@@ -444,4 +444,16 @@ public class SchemaDefToAisTest {
         final Index index = table.getIndex("a");
         assertNotNull("has index named `a``", index);
     }
+    
+    @Test
+    public void primaryKeyDescColumn() throws Exception {
+        // bug727418: desc in primary key column parse failure
+        final SchemaDef sd = SchemaDef.parseSchema("create table test.t(id int, primary key(id desc)) engine=akibandb");
+        final SchemaDef.UserTableDef userTableDef = sd.getCurrentTable();
+        assertNotNull(userTableDef);
+        final SchemaDef.IndexDef pkDef = userTableDef.getPrimaryKey();
+        assertNotNull(pkDef);
+        assertEquals(Arrays.asList("id"), pkDef.getColumnNames());
+        assertEquals(true, pkDef.getColumns().get(0).descending);
+    }
 }
