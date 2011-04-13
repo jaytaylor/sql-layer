@@ -179,7 +179,7 @@ table_element[SchemaDef schema]
 	: column_specification[$schema]
 	| key_constraint[$schema]? primary_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
 	| key_constraint[$schema]? foreign_key_specification[$schema] index_option[$schema]* { $schema.finishConstraint(SchemaDef.IndexQualifier.FOREIGN_KEY); }
-	| key_constraint[$schema]? unique__key_specification[$schema] index_option[$schema]*{ $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
+	| key_constraint[$schema]? unique_key_specification[$schema] index_option[$schema]*{ $schema.finishConstraint(SchemaDef.IndexQualifier.UNIQUE); }
 	| other_key_specification[$schema] index_option[$schema]*
 	;
 	
@@ -214,24 +214,19 @@ key_constraint[SchemaDef schema]
 
 primary_key_specification[SchemaDef schema]
 	: PRIMARY KEY index_type[$schema]? {$schema.startPrimaryKey();}
-	  LEFT_PAREN primary_key_column[$schema] (COMMA primary_key_column[$schema])*
-	  RIGHT_PAREN
-	;
-	
-primary_key_column[SchemaDef schema]
-	: qname {$schema.addPrimaryKeyColumn($qname.name); }
+	  index_column_list[$schema]
 	;
 	
 other_key_specification[SchemaDef schema]
 	: (FULLTEXT | SPATIAL)? (KEY | INDEX)? qname? {$schema.addIndex($qname.name);}
-	index_type[$schema]?
-	LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
+	  index_type[$schema]?
+	  index_column_list[$schema]
 	;
 
 foreign_key_specification[SchemaDef schema]
 	: FOREIGN KEY qn1=qname? {$schema.addIndex($qn1.name, SchemaDef.IndexQualifier.FOREIGN_KEY);} 
 		index_type[$schema]?
-	    LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
+	    index_column_list[$schema]
 		REFERENCES refTable=cname[$schema] {$schema.addIndexReference(refTable);}
 		LEFT_PAREN reference_column[$schema] (COMMA reference_column[$schema])* RIGHT_PAREN
 		fk_cascade_clause*
@@ -241,13 +236,20 @@ fk_cascade_clause
 	: ON (UPDATE | DELETE) reference_option
 	;
 
-unique__key_specification[SchemaDef schema]
-	: UNIQUE (KEY | INDEX)? qname? {$schema.addIndex($qname.name, SchemaDef.IndexQualifier.UNIQUE);}
-		index_type[$schema]?
-	  LEFT_PAREN index_key_column[$schema] (COMMA index_key_column[$schema])* RIGHT_PAREN
+unique_key_specification[SchemaDef schema]
+	: UNIQUE (KEY | INDEX)?
+	  qname? {$schema.addIndex($qname.name, SchemaDef.IndexQualifier.UNIQUE);}
+	  index_type[$schema]?
+	  index_column_list[$schema]
 	;
 	
-index_key_column[SchemaDef schema]
+index_column_list[SchemaDef schema]
+	: LEFT_PAREN
+	    index_column_def[$schema] (COMMA index_column_def[$schema])*
+	  RIGHT_PAREN
+	;
+
+index_column_def[SchemaDef schema]
 	: qname {$schema.addIndexColumn($qname.name); }
 	  (LEFT_PAREN NUMBER RIGHT_PAREN {$schema.setIndexedLength($NUMBER.text);} )?
 	  (ASC | DESC {$schema.setIndexColumnDesc();})?

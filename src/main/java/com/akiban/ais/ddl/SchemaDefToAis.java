@@ -302,16 +302,19 @@ public class SchemaDefToAis {
             }
 
             // pk index
-            if (utDef.primaryKey.size() > 0) {
-                String pkIndexName = "PRIMARY";
-                Index pkIndex = Index.create(ais, ut, pkIndexName,
-                        indexIdGenerator.allocateId(utDef.name), true, pkIndexName);
+            if (utDef.primaryKey != null) {
+                final String name = utDef.primaryKey.getName();
+                final int id = indexIdGenerator.allocateId(utDef.name);
+
+                assert name.equals(Index.PRIMARY_KEY_CONSTRAINT) : utDef.primaryKey;
+                final Index pkIndex = Index.create(ais, ut, name, id, true, name);
 
                 int columnIndex = 0;
-                for (String pkName : utDef.primaryKey) {
-                    Column pkColumn = ut.getColumn(pkName);
-                    pkIndex.addColumn(new IndexColumn(pkIndex, pkColumn,
-                            columnIndex++, true, null));
+                for (SchemaDef.IndexColumnDef indexColDef : utDef.primaryKey.columns) {
+                    final Column column = ut.getColumn(indexColDef.columnName);
+                    pkIndex.addColumn(new IndexColumn(pkIndex, column, columnIndex++,
+                                                      !indexColDef.descending,
+                                                      indexColDef.indexedLength));
                 }
             }
 
@@ -368,6 +371,7 @@ public class SchemaDefToAis {
                     fkIndex.addColumn(new IndexColumn(fkIndex, fkColumn,
                             columnIndex++, !indexColumnDef.descending,
                             indexColumnDef.indexedLength));
+                    
                 }
             }
         }

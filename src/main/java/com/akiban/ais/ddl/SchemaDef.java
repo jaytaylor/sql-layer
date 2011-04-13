@@ -213,12 +213,12 @@ public class SchemaDef {
     }
 
     void inlineColumnPK() {
-        if(currentTable.primaryKey.isEmpty()) {
-            addPrimaryKeyColumn(currentColumn.getName());
-        }
-        else {
-            assert currentTable.primaryKey.size() == 1 : currentTable.primaryKey;
-            if (!currentColumn.getName().equals(currentTable.primaryKey.get(0))) {
+        if (currentTable.primaryKey == null) {
+            startPrimaryKey();
+            addIndexColumn(currentColumn.getName());
+        } else {
+            final String existingColName = currentTable.primaryKey.columns.get(0).getColumnName();
+            if(!existingColName.equals(currentColumn.getName())) {
                 throw new SchemaDefException("only one column may be marked as [PRIMARY] KEY");
             }
         }
@@ -231,17 +231,10 @@ public class SchemaDef {
     }
 
     void startPrimaryKey() {
-        checkPkEmpty();
-    }
-
-    private void checkPkEmpty() {
-        if (!currentTable.primaryKey.isEmpty()) {
+        if (currentTable.primaryKey != null) {
             throw new SchemaDefException("too many primary keys");
         }
-    }
-
-    void addPrimaryKeyColumn(final String columnName) {
-        currentTable.primaryKey.add(columnName);
+        currentIndex = currentTable.primaryKey = new IndexDef("PRIMARY");
     }
 
     void setEngine(final String engine) {
@@ -503,11 +496,12 @@ public class SchemaDef {
     }
 
     void finishTable() {
-        if (currentTable.primaryKey.isEmpty()) {
+        if (currentTable.primaryKey == null) {
             // Add our own primary key
             addColumn(Column.AKIBAN_PK_NAME, "BIGINT", null, null);
             currentColumn.nullable = false;
-            addPrimaryKeyColumn(Column.AKIBAN_PK_NAME);
+            startPrimaryKey();
+            addIndexColumn(Column.AKIBAN_PK_NAME);
         }
         currentColumn = null;
     }
@@ -724,8 +718,8 @@ public class SchemaDef {
         CName groupName;
         CName name;
         CName likeName;
+        IndexDef primaryKey;
         List<ColumnDef> columns = new ArrayList<ColumnDef>();
-        List<String> primaryKey = new ArrayList<String>();
         List<String> childJoinColumns = new ArrayList<String>();
         List<String> parentJoinColumns = new ArrayList<String>();
         List<IndexDef> indexes = new ArrayList<IndexDef>();
@@ -779,8 +773,8 @@ public class SchemaDef {
             return autoIncrementColumn;
         }
 
-        public List<String> getPrimaryKey() {
-            return Collections.unmodifiableList(primaryKey);
+        public IndexDef getPrimaryKey() {
+            return primaryKey;
         }
 
         public List<ReferenceDef> getAkibanJoinRefs() {
@@ -912,6 +906,10 @@ public class SchemaDef {
             this.name = name;
         }
 
+        public List<IndexColumnDef> getColumns() {
+            return columns;
+        }
+
         public List<String> getColumnNames() {
             List<String> ret = new ArrayList<String>(columns.size());
             for (IndexColumnDef col : columns) {
@@ -1032,6 +1030,10 @@ public class SchemaDef {
             this.columnName = columnName;
         }
 
+        public String getColumnName() {
+            return columnName;
+        }
+        
         /**
          * Returns true if o is an IndexColumnDef that describes the same
          * column.
