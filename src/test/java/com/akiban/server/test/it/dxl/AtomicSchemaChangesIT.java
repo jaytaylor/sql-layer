@@ -21,6 +21,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -77,6 +78,22 @@ public class AtomicSchemaChangesIT extends ITBase
                         "key(xyz)");
             fail();
         } catch (Throwable e) {
+            // expected
+        }
+        checkInitialSchema();
+    }
+
+    @Test
+    public void trySecondaryKeyTooLarge() throws Exception {
+        createInitialSchema();
+        checkInitialSchema();
+        try {
+            createTable("s", "gonna_break",
+                        "id int key",
+                        "c1 varchar(2050)",
+                        "index(c1)");
+            Assert.fail("Expected table to be rejected");
+        } catch (Exception e) {
             // expected
         }
         checkInitialSchema();
