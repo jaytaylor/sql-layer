@@ -721,7 +721,20 @@ public abstract class Tap {
      */
     public static class PerThread extends Tap {
 
-        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>();
+        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>() {
+            @Override
+            protected Tap initialValue() {
+                Tap tap;
+                try {
+                    tap = clazz.getConstructor(String.class).newInstance(name);
+                } catch (Exception e) {
+                    tap = new Null(name);
+                    LOG.warn("Unable to create tap of class " + clazz.getSimpleName(), e);
+                }
+                threadMap.put(Thread.currentThread().getName(), tap);
+                return tap;
+            }
+        };
 
         private final Map<String, Tap> threadMap = new ConcurrentHashMap<String, Tap>();
 
@@ -818,13 +831,13 @@ public abstract class Tap {
 
         @Override
         public void in() {
-            final Tap tap = getTap(name, clazz);
+            final Tap tap = getTap();
             tap.in();
         }
 
         @Override
         public void out() {
-            final Tap tap = getTap(name, clazz);
+            final Tap tap = getTap();
             tap.out();
         }
 
@@ -840,23 +853,8 @@ public abstract class Tap {
             return "PerThread(" + clazz.getName() + ")";
         }
 
-        private Tap getTap(final String name, final Class<? extends Tap> clazz) {
-            Tap tap = threadLocal.get();
-            if (tap != null) {
-                return tap;
-            }
-            try {
-                final Constructor<? extends Tap> constructor = clazz
-                        .getConstructor(new Class[] { String.class });
-                tap = (Tap) constructor.newInstance(new Object[] { name });
-            } catch (Exception e) {
-                tap = new Null(name);
-                LOG.warn("Unable to create tap of class "
-                        + clazz.getSimpleName(), e);
-            }
-            threadLocal.set(tap);
-            threadMap.put(Thread.currentThread().getName(), tap);
-            return tap;
+        private Tap getTap() {
+            return threadLocal.get();
         }
     }
 
