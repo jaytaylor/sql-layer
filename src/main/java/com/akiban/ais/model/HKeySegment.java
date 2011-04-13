@@ -77,6 +77,14 @@ public class HKeySegment
         return hKeyColumn;
     }
 
+    public int getMaxStorageSize() {
+        int total = 0;
+        for(HKeyColumn col : columns) {
+            total += col.column().getMaxStorageSize();
+        }
+        return total;
+    }
+
     public HKeySegment()
     {}
 

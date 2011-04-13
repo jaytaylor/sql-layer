@@ -67,6 +67,14 @@ public class HKey
         return segment;
     }
 
+    public int getMaxStorageSize() {
+        int total = 0;
+        for(HKeySegment segment : segments) {
+            total += segment.getMaxStorageSize();
+        }
+        return total;
+    }
+
     public HKey()
     {}
 

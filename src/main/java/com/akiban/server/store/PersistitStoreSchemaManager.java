@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +106,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private AtomicLong updateTimestamp = new AtomicLong();
 
+    /**
+     * Maximum size that can can be stored in an index. See
+     * {@link Transaction#prepareTxnExchange(com.persistit.Tree, com.persistit.Key, char)}
+     * for details on upper bound.
+     */
+    static final int MAX_INDEX_STORAGE_SIZE = Key.MAX_KEY_LENGTH - 32;
+
+    
     /**
      * Create or update a table definition given a schema name, table name and a
      * CREATE TABLE statement supplied by the client. The CREATE TABLE
@@ -214,12 +224,26 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                             .append(tableName).append(tableId).store();
                 }
 
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
+                final UserTable newTable = newAIS.getUserTable(tableNameFull);
+                for(Index index : newTable.getIndexesIncludingInternal()) {
+                    int fullKeySize = index.hKey().getMaxStorageSize();
+                    for(IndexColumn col : index.getColumns()) {
+                        fullKeySize += col.getColumn().getMaxStorageSize();
+                    }
+                    if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
+                        throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                                    String.format("Table `%s`.`%s` index `%s` exceeds maximum key size",
+                                                  tableNameFull.getSchemaName(), tableNameFull.getTableName(),
+                                                  index.getIndexName().getName()));
+                    }
+                }
+
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -280,13 +304,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }, SCHEMA_TREE_NAME);
 
                 serviceManager.getTreeService().getTableStatusCache().drop(tableId);
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
 
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -356,12 +380,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             transaction.begin();
             try {
                 deleteTableDefinitionList(session, tables);
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -482,12 +506,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         treeService.releaseExchange(session, ex2);
                     }
                 }
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -913,14 +937,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return System.nanoTime() / 1000L;
     }
 
-    private void commitAIS(final AkibanInformationSchema ais,
+    private void commitAIS(final AkibanInformationSchema newAis,
             final long timestamp) {
         final RowDefCache rowDefCache = getRowDefCache();
         rowDefCache.clear();
-        rowDefCache.setAIS(ais);
+        rowDefCache.setAIS(newAis);
         rowDefCache.fixUpOrdinals();
         updateTimestamp.set(timestamp);
-        this.ais = ais;
+        this.ais = newAis;
     }
 
     private RowDefCache getRowDefCache() {
