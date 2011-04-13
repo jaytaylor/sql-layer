@@ -725,7 +725,7 @@ public abstract class Tap {
 
         private final Map<String, Tap> threadMap = new ConcurrentHashMap<String, Tap>();
 
-        private Class<? extends Tap> clazz = TimeAndCount.class;
+        private final Class<? extends Tap> clazz;
 
         /**
          * {@link TapReport} subclass that contains map of subordinate TapReport
@@ -765,7 +765,7 @@ public abstract class Tap {
          * @param name
          */
         public PerThread(final String name) {
-            super(name);
+            this(name, TimeAndCount.class);
         }
 
         /**
