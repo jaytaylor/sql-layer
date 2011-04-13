@@ -65,6 +65,10 @@ public final class Cursor {
         state = CursorState.CONCURRENT_MODIFICATION;
     }
 
+    public void setDDLModified() {
+        state = CursorState.DDL_MODIFICATION;
+    }
+
     public CursorState getState() {
         return state;
     }

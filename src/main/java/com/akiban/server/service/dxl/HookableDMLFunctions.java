@@ -39,6 +39,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
@@ -111,7 +112,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, BufferFullException, ConcurrentScanAndUpdateException, GenericInvalidOperationException {
+    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, BufferFullException, ConcurrentScanAndUpdateException, TableDefinitionChangedException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.SCAN_SOME);
@@ -124,6 +125,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throwIf(t, RowOutputException.class);
             throwIf(t, BufferFullException.class);
             throwIf(t, ConcurrentScanAndUpdateException.class);
+            throwIf(t, TableDefinitionChangedException.class);
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {
@@ -132,7 +134,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, RowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, NoSuchTableException, ConcurrentScanAndUpdateException, GenericInvalidOperationException {
+    public boolean scanSome(Session session, CursorId cursorId, RowOutput output) throws CursorIsFinishedException, CursorIsUnknownException, RowOutputException, NoSuchTableException, ConcurrentScanAndUpdateException, TableDefinitionChangedException, GenericInvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.SCAN_SOME);
@@ -145,6 +147,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throwIf(t, RowOutputException.class);
             throwIf(t, NoSuchTableException.class);
             throwIf(t, ConcurrentScanAndUpdateException.class);
+            throwIf(t, TableDefinitionChangedException.class);
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {

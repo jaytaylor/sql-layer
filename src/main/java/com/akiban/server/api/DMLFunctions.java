@@ -41,6 +41,7 @@ import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.service.session.Session;
 
 @SuppressWarnings("unused")
@@ -127,6 +128,7 @@ public interface DMLFunctions {
             RowOutputException,
             BufferFullException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException;
 
     /**
@@ -183,6 +185,7 @@ public interface DMLFunctions {
             RowOutputException,
             NoSuchTableException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException;
 
     /**

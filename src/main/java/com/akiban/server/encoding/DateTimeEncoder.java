@@ -15,123 +15,81 @@
 
 package com.akiban.server.encoding;
 
-import java.text.ParseException;
-import java.util.Date;
-
 import com.akiban.ais.model.Type;
-import com.akiban.server.FieldDef;
-import com.akiban.server.Quote;
-import com.akiban.server.RowData;
-import com.akiban.util.AkibanAppender;
-import com.persistit.Key;
 
-public class DateTimeEncoder extends EncodingBase<Date> {
+/**
+ * Encoder for working with dates and times when stored as an 8 byte int
+ * encoded as (YY*10000 MM*100 + DD)*1000000 + (HH*10000 + MM*100 + SS).
+ * This is how MySQL stores the SQL DATETIME type.
+ * See: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
+ */
+public final class DateTimeEncoder extends LongEncoderBase {
     DateTimeEncoder() {
     }
-
+    
     @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                          int offset) {
-        final long v;
-        if (value instanceof String) {
-            try {
-                final Date date = EncodingUtils.getDateFormat(SDF_DATETIME).parse(
-                        (String) value);
-                v = dateTimeAsLong(date);
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
+    public long encodeFromObject(Object obj) {
+        final long value;
+        if(obj == null) {
+            value = 0;
+        } else if(obj instanceof String) {
+            final String parts[] = ((String)obj).split(" ");
+            if(parts.length != 2) {
+                throw new IllegalArgumentException("Invalid DATETIME string");
             }
-        } else if (value instanceof Date) {
-            final Date date = (Date) value;
-            v = dateTimeAsLong(date);
-        } else if (value instanceof Long) {
-            v = ((Long) value).longValue();
+
+            final String dateParts[] = parts[0].split("-");
+            if(dateParts.length != 3) {
+                throw new IllegalArgumentException("Invalid DATE portion");
+            }
+
+            final String timeParts[] = parts[1].split(":");
+            if(timeParts.length != 3) {
+                throw new IllegalArgumentException("Invalid TIME portion");
+            }
+
+            value = Integer.parseInt(dateParts[0]) * YEAR_SCALE +
+                    Integer.parseInt(dateParts[1]) * MONTH_SCALE +
+                    Integer.parseInt(dateParts[2]) * DAY_SCALE +
+                    Integer.parseInt(timeParts[0]) * HOUR_SCALE +
+                    Integer.parseInt(timeParts[1]) * MIN_SCALE +
+                    Integer.parseInt(timeParts[2]) * SEC_SCALE;
+        } else if(obj instanceof Number) {
+            value = ((Number)obj).longValue();
         } else {
-            throw new IllegalArgumentException(
-                    "Requires a String or a Date");
+            throw new IllegalArgumentException("Requires String or Number");
         }
-        return EncodingUtils.putUInt(dest, offset, v, 8);
+        return value;
     }
 
     @Override
-    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-        final long location = fieldDef.getRowDef().fieldLocation(rowData,
-                fieldDef.getFieldIndex());
-        if (location == 0) {
-            key.append(null);
-        } else {
-            long v = rowData.getIntegerValue((int) location,
-                    (int) (location >>> 32));
-            key.append(v);
-        }
+    public String decodeToString(long v) {
+        final long year = (v / YEAR_SCALE);
+        final long month = (v / MONTH_SCALE) % 100;
+        final long day = (v / DAY_SCALE) % 100;
+        final long hour = (v /HOUR_SCALE) % 100;
+        final long minute = (v / MIN_SCALE) % 100;
+        final long second = (v / SEC_SCALE) % 100;
+        return String.format("%04d-%02d-%02d %02d:%02d:%02d",
+                             year, month, day, hour, minute, second);
     }
 
     @Override
-    public void toKey(FieldDef fieldDef, Object value, Key key) {
-        if (value == null) {
-            key.append(null);
-        } else {
-            key.append(dateTimeAsLong((Date) value));
-        }
-    }
-
-    @Override
-    public Date toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
-
-        final long v = rowData.getIntegerValue((int) location, 8);
-        // Note: reverse engineered; this does not match documentation
-        // at
-        // http://dev.mysql.com/doc/refman/5.5/en/storage-requirements.html
-        final int year = (int) (v / LONG_1_E10);
-        final int month = (int) ((v / LONG_1_E8) % 100);
-        final int day = (int) ((v / LONG_1_E6) % 100);
-        final int hour = (int) ((v / LONG_1_E4) % 100);
-        final int minute = (int) ((v / LONG_100) % 100);
-        final int second = (int) (v % LONG_100);
-        return new Date(year - 1900, month - 1, day, hour,
-                minute, second);
-    }
-
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, final Quote quote) {
-        try {
-            final Date date = toObject(fieldDef, rowData);
-            quote.append(sb, EncodingUtils.getDateFormat(SDF_DATETIME).format(date));
-        }
-        catch (EncodingException e) {
-            sb.append("null");
-        }
-    }
-
-    @Override
-    public int widthFromObject(final FieldDef fieldDef, final Object value) {
-        return fieldDef.getMaxStorageSize();
+    public boolean shouldQuoteString() {
+        return true;
     }
 
     @Override
     public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return type.fixedSize() && w == 8;
+        return type.fixedSize() && (type.maxSizeBytes() == 8);
     }
 
-    private long dateTimeAsLong(Date date) {
-        // This is NOT what the documentation says:
-        // http://dev.mysql.com/doc/refman/5.4/en/storage-requirements.html.
-        // This formula is based on Peter's reverse engineering of mysql
-        // packed data.
-        return ((date.getYear() + 1900) * LONG_1_E10)
-                + ((date.getMonth() + 1) * LONG_1_E8)
-                + (date.getDate() * LONG_1_E6)
-                + (date.getHours() * LONG_1_E4)
-                + (date.getMinutes() * LONG_100) + (date.getSeconds());
-    }
-
-    private static final long LONG_100 = 100;
-    private static final long LONG_1_E4 = LONG_100 * 100;
-    private static final long LONG_1_E6 = LONG_1_E4 * 100;
-    private static final long LONG_1_E8 = LONG_1_E6 * 100;
-    private static final long LONG_1_E10 = LONG_1_E8 * 100;
-
-    final static String SDF_DATETIME = "yyyy-MM-dd HH:mm:ss";
+    
+    static final long DATE_SCALE = 1000000L;
+    static final long YEAR_SCALE = 10000L * DATE_SCALE;
+    static final long MONTH_SCALE = 100L * DATE_SCALE;
+    static final long DAY_SCALE = 1L * DATE_SCALE;
+    static final long HOUR_SCALE = 10000L;
+    static final long MIN_SCALE = 100L;
+    static final long SEC_SCALE = 1L;
 }

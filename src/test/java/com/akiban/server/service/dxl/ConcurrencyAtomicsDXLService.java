@@ -29,7 +29,8 @@ import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
-import com.akiban.server.mttests.mtutil.Timing;
+import com.akiban.server.test.mt.mtutil.Timing;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.service.session.Session;
 
 import java.util.Collection;
@@ -85,8 +86,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
                 RowOutputException,
                 BufferFullException,
                 ConcurrentScanAndUpdateException,
-                GenericInvalidOperationException
-        {
+                TableDefinitionChangedException,
+                GenericInvalidOperationException {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
                 hooks = BasicDMLFunctions.NONE;
@@ -101,6 +102,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
                 RowOutputException,
                 ConcurrentScanAndUpdateException,
                 NoSuchTableException,
+                TableDefinitionChangedException,
                 GenericInvalidOperationException
         {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
@@ -119,6 +121,9 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
                 Timing.sleep(shouldDelay);
             }
             super.dropIndexes(session, tableName, indexNamesToDrop);
+            if (shouldDelay != null) {
+                Timing.sleep(shouldDelay);
+            }
         }
     }
 }

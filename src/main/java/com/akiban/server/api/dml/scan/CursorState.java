@@ -36,6 +36,10 @@ public enum CursorState {
      */
     CONCURRENT_MODIFICATION(false),
     /**
+     * Scanning cannot continue because of a DDL that may have affected this scan.
+     */
+    DDL_MODIFICATION(false),
+    /**
      * The requested cursor is unknown or has been removed.
      */
     UNKNOWN_CURSOR(false)

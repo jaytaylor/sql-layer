@@ -17,6 +17,7 @@ package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -48,12 +49,17 @@ import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
+import com.akiban.server.api.dml.scan.Cursor;
+import com.akiban.server.api.dml.scan.CursorId;
+import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaId;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanDataMap;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
@@ -71,7 +77,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
-            schemaManager().createTableDefinition(session, schema, ddlText, false);
+            TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText, false);
+            checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ParseException.class, ioe);
@@ -107,6 +114,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             DMLFunctions dml = new BasicDMLFunctions(this);
             dml.truncateTable(session, table.getTableId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+            checkCursorsForDDLModification(session, table);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -140,6 +148,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             final TableName tableName = table.getName();
             store().truncateGroup(session, rowDef.getRowDefId());
             schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
+            checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
         }
@@ -329,6 +338,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            checkCursorsForDDLModification(session, table);
 
             // Trigger build of new index trees
             store().buildIndexes(session, sb.toString());
@@ -392,8 +402,40 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            checkCursorsForDDLModification(session, table);
         } catch(Exception e) {
             throw new GenericInvalidOperationException(e);
+        }
+    }
+
+    private void checkCursorsForDDLModification(Session session, Table table) throws NoSuchTableException {
+        Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
+        if (cursorsMap == null) {
+            return;
+        }
+
+        final int tableId;
+        final int gTableId;
+        {
+            if (table.isUserTable()) {
+                tableId = table.getTableId();
+                gTableId = table.getGroup().getGroupTable().getTableId();
+            }
+            else {
+                tableId = gTableId = table.getTableId();
+            }
+        }
+
+        for (BasicDXLMiddleman.ScanData scanData : cursorsMap.values()) {
+            Cursor cursor = scanData.getCursor();
+            if (cursor.isClosed()) {
+                continue;
+            }
+            ScanRequest request = cursor.getScanRequest();
+            int scanTableId = request.getTableId();
+            if (scanTableId == tableId || scanTableId == gTableId) {
+                cursor.setDDLModified();
+            }
         }
     }
 }

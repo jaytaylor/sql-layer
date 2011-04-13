@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
 import com.persistit.exception.PersistitException;
 
@@ -56,7 +57,7 @@ public interface SchemaManager {
      * @param useOldId Whether or not to replace existing statement if it exists
      * @throws Exception
      */
-    void createTableDefinition(Session session, String schemaName,
+    TableName createTableDefinition(Session session, String schemaName,
             String statement, boolean useOldId) throws Exception;
 
     /**

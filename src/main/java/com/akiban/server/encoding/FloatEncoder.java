@@ -49,7 +49,7 @@ public final class FloatEncoder extends EncodingBase<Double> {
 
     @Override
     public Double toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
+        final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
 
         long v = rowData.getIntegerValue((int) location,
                 (int) (location >>> 32));
