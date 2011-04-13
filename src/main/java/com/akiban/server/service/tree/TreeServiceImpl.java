@@ -257,18 +257,20 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return Math.max(512, (int) (allocation / allocationPerBuffer));
     }
 
-    public synchronized void stop() throws Exception {
+    public void stop() throws Exception {
         Persistit db = getDb();
         if (db != null) {
             db.shutdownGUI();
             db.close();
             dbRef.set(null);
         }
-        schemaLinkMap.clear();
-        statusLinkMap.clear();
-        // TODO - remove this when sure we don't need it
-        --instanceCount;
-        assert instanceCount == 0 : instanceCount;
+        synchronized(this) {
+            schemaLinkMap.clear();
+            statusLinkMap.clear();
+            // TODO - remove this when sure we don't need it
+            --instanceCount;
+            assert instanceCount == 0 : instanceCount;
+        }
     }
 
     @Override
