@@ -41,7 +41,6 @@ import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaId;
 
 public interface DDLFunctions {
     /**
@@ -194,7 +193,7 @@ public interface DDLFunctions {
      */
     String getDDLs(Session session) throws InvalidOperationException;
 
-    SchemaId getSchemaID() throws InvalidOperationException;
+    int getGeneration() throws InvalidOperationException;
 
     /**
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
