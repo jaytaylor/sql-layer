@@ -42,6 +42,17 @@ public class TableStatusCache extends TransactionalCache {
         super(db);
         this.treeService = treeService;
     }
+    
+    private TableStatusCache(final TableStatusCache tsc) {
+        super(tsc);
+        treeService = tsc.treeService;
+        for (final Entry<Integer, TableStatus> entry : tsc._tableStatusMap
+                .entrySet()) {
+            _tableStatusMap.put(entry.getKey(),
+                    new TableStatus(entry.getValue()));
+        }
+
+    }
 
     private static final long serialVersionUID = 2823468378367226075L;
 
@@ -172,8 +183,7 @@ public class TableStatusCache extends TransactionalCache {
         @Override
         public void apply(final TransactionalCache tc) {
             TableStatusCache tsc = (TableStatusCache) tc;
-            final TableStatus ts = tsc.getTableStatus(_arg);
-            ts.drop();
+            tsc._tableStatusMap.remove(_arg);
         }
 
         @Override
@@ -315,15 +325,7 @@ public class TableStatusCache extends TransactionalCache {
 
     @Override
     public TableStatusCache copy() {
-        TableStatusCache ts = new TableStatusCache(_persistit, treeService);
-        ts._checkpoint = _checkpoint;
-        ts._previousVersion = _previousVersion;
-        for (final Entry<Integer, TableStatus> entry : _tableStatusMap
-                .entrySet()) {
-            ts._tableStatusMap.put(entry.getKey(),
-                    new TableStatus(entry.getValue()));
-        }
-        return ts;
+        return new TableStatusCache(this);
     }
 
     @Override
