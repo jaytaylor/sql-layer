@@ -139,9 +139,9 @@ public class MemcacheServiceImpl implements MemcacheService,
                 defaultHapi = HapiProcessorFactory.valueOf(defaultHapiName
                         .toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOG.warn("Default memcache outputter not found, using JSON: "
+                LOG.warn("Default memcache processor not found, using SCANROWS: "
                         + defaultHapiName);
-                defaultHapi = HapiProcessorFactory.FETCHROWS;
+                defaultHapi = HapiProcessorFactory.SCANROWS;
             }
         }
 
