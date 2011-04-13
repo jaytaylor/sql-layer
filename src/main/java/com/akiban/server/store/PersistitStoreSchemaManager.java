@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import org.slf4j.Logger;
@@ -225,19 +226,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }
 
                 final AkibanInformationSchema newAIS = constructAIS(session);
-                final UserTable newTable = newAIS.getUserTable(tableNameFull);
-                for(Index index : newTable.getIndexesIncludingInternal()) {
-                    int fullKeySize = index.hKey().getMaxStorageSize();
-                    for(IndexColumn col : index.getColumns()) {
-                        fullKeySize += col.getColumn().getMaxStorageSize();
-                    }
-                    if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
-                        throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
-                                    String.format("Table `%s`.`%s` index `%s` exceeds maximum key size",
-                                                  tableNameFull.getSchemaName(), tableNameFull.getTableName(),
-                                                  index.getIndexName().getName()));
-                    }
-                }
+                validateIndexSizes(newAIS.getUserTable(tableNameFull));
 
                 transaction.commit(new DefaultCommitListener() {
 
@@ -1133,4 +1122,31 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return canonical.substring(CREATE_TABLE.length());
     }
 
+    private void validateIndexSizes(final UserTable table) throws InvalidOperationException {
+        final String errorMessage = "Table `%s`.`%s` index `%s` exceeds maximum index size";
+        final Index pkIndex = table.getPrimaryKeyIncludingInternal().getIndex();
+
+        // Check primary first so the *real* problem is clear
+        if(pkIndex.hKey().getMaxStorageSize() > MAX_INDEX_STORAGE_SIZE) {
+            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                String.format(errorMessage, table.getName().getSchemaName(),
+                              table.getName().getTableName(), pkIndex.getIndexName().getName()));
+        }
+
+        for(Index index : table.getIndexesIncludingInternal()) {
+            if(index != pkIndex) {
+                int fullKeySize = index.hKey().getMaxStorageSize();
+                for(IndexColumn col : index.getColumns()) {
+                    if(!pkIndex.hKey().containsColumn(col.getColumn())) {
+                        fullKeySize += col.getColumn().getMaxStorageSize();
+                    }
+                }
+                if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                        String.format(errorMessage, table.getName().getSchemaName(),
+                                      table.getName().getTableName(), index.getIndexName().getName()));
+                }
+            }
+        }
+    }
 }
