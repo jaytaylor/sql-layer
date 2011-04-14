@@ -134,12 +134,12 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public Collection<Index> getIndexes()
     {
-        return indexMap.values();
+        return Collections.unmodifiableCollection(internalGetIndexMap().values());
     }
 
     public Index getIndex(String indexName)
     {
-        return indexMap.get(indexName.toLowerCase());
+        return internalGetIndexMap().get(indexName.toLowerCase());
     }
 
     public CharsetAndCollation getCharsetAndCollation()
@@ -177,7 +177,13 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     protected void addIndex(Index index)
     {
-        indexMap.put(index.getIndexName().getName().toLowerCase(), index);
+        Map<String, Index> old;
+        Map<String, Index> withNewIndex;
+        do {
+            old = internalGetIndexMap();
+            withNewIndex = new TreeMap<String, Index>(old);
+            withNewIndex.put(index.getIndexName().getName().toLowerCase(), index);
+        } while(internalIndexMapCAS(old, withNewIndex));
     }
 
     protected void dropColumns()
@@ -278,7 +284,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
                 }
             }
         }
-        for (Map.Entry<String, Index> entry : indexMap.entrySet()) {
+        for (Map.Entry<String, Index> entry : internalGetIndexMap().entrySet()) {
             String name = entry.getKey();
             Index index = entry.getValue();
             if (name == null) {
@@ -353,6 +359,26 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return declaredColumns;
     }
 
+    private Map<String, Index> internalGetIndexMap() {
+        synchronized (LOCK) {
+            if (indexMap == null) {
+                indexMap = new TreeMap<String, Index>();
+            }
+            return indexMap;
+        }
+    }
+
+    private boolean internalIndexMapCAS(Map<String, Index> expected, Map<String, Index> update) {
+        // GWT-friendly CAS
+        synchronized (LOCK) {
+            if (indexMap != expected) {
+                return false;
+            }
+            indexMap = update;
+            return true;
+        }
+    }
+
     // State
 
     protected AkibanInformationSchema ais;
@@ -361,11 +387,13 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private Integer tableId;
     private boolean columnsStale = true;
     private List<Column> columns = new ArrayList<Column>();
-    private Map<String, Index> indexMap = new TreeMap<String, Index>();
+    private Map<String, Index> indexMap;
     private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
+
+    private final Object LOCK = new Object();
     // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
     private transient /*RowDef*/ Object rowDef;
