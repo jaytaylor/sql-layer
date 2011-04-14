@@ -84,7 +84,7 @@ class Expected
         }
         // Generate json string
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(10000);
-        test.outputter.output(new DefaultProcessedRequest(test.request, test.testSession(), test.ddlFunctions()),
+        test.outputter.output(new DefaultProcessedRequest(test.request, test.ddlFunctions().getAIS(test.testSession())),
                          rowDatas,
                          outputStream);
         return new String(outputStream.toByteArray());
