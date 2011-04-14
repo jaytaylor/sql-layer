@@ -164,6 +164,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"name"}, false);
         ddl().createIndexes(session(), getAllIndexes(ais));
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -206,6 +207,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(oId);
         addIndexToAIS(ais, "coi", "o", "tag", new String[]{"tag"}, false);
         ddl().createIndexes(session(), getAllIndexes(ais));
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -240,6 +242,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "name", new String[]{"first","last"}, false);
         ddl().createIndexes(session(), getAllIndexes(ais));
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -266,6 +269,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         AkibanInformationSchema ais = createAISWithTable(tId);
         addIndexToAIS(ais, "test", "t", "state", new String[]{"state"}, true);
         ddl().createIndexes(session(), getAllIndexes(ais));
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -293,6 +297,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         addIndexToAIS(ais, "test", "t", "otherId", new String[]{"otherId"}, true);
         addIndexToAIS(ais, "test", "t", "price", new String[]{"price"}, false);
         ddl().createIndexes(session(), getAllIndexes(ais));
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();

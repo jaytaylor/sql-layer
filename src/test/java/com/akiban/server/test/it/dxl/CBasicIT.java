@@ -196,43 +196,56 @@ public final class CBasicIT extends ITBase {
         assertEquals("rows scanned", expectedRows, converted);
     }
     
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void dropTable() throws InvalidOperationException {
-        final int tableId1 = createTable("testSchema", "customer", "id int key");
-        ddl().dropTable(session(), tableName("testSchema", "customer"));
-
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
-        ddl().dropTable(session(), tableName("testSchema", "customer")); // should be a no-op; testing it doesn't fail
-
-        NoSuchTableException caught = null;
+        final int tableId1;
         try {
-            dml().openCursor(session(), aisGeneration(), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
-        } catch (NoSuchTableException e) {
-            caught = e;
+            tableId1 = createTable("testSchema", "customer", "id int key");
+            ddl().dropTable(session(), tableName("testSchema", "customer"));
+
+            AkibanInformationSchema ais = ddl().getAIS(session());
+            assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
+            ddl().dropTable(session(), tableName("testSchema", "customer")); // should be no-op; testing it doesn't fail
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
         }
-        assertNotNull("expected NoSuchTableException", caught);
+
+        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
     }
 
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void dropGroup() throws InvalidOperationException {
-        final int tid = createTable("test", "t", "id int key");
-        final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
-        ddl().dropGroup(session(), groupName);
-
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        assertNull("expected no table", ais.getUserTable("test", "t"));
-        assertNull("expected no group", ais.getGroup(groupName));
-
-        ddl().dropGroup(session(), groupName);
-
-        NoSuchTableException caught = null;
+        final int tid;
         try {
-            dml().openCursor(session(), aisGeneration(), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
-        } catch (NoSuchTableException e) {
-            caught = e;
+            tid = createTable("test", "t", "id int key");
+            final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
+            ddl().dropGroup(session(), groupName);
+
+            AkibanInformationSchema ais = ddl().getAIS(session());
+            assertNull("expected no table", ais.getUserTable("test", "t"));
+            assertNull("expected no group", ais.getGroup(groupName));
+
+            ddl().dropGroup(session(), groupName);
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
         }
-        assertNotNull("expected NoSuchTableException", caught);
+
+        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
+    }
+
+    @Test(expected=OldAISException.class)
+    public void cursorHasOldAIS() throws InvalidOperationException {
+        final int tid;
+        final int localAISGeneration;
+        try {
+            tid = createTable("test", "t", "id int key");
+            localAISGeneration = aisGeneration();
+            createTable("test", "t2", "id int key");
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
+        }
+
+        dml().openCursor(session(), localAISGeneration, scanAllRequest(tid));
     }
 
     /*

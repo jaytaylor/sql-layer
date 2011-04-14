@@ -117,6 +117,7 @@ public final class DropIndexesIT extends AlterTestBase {
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("name");
         ddl().dropIndexes(session(), tableName(tId), indexes);
+        updateAISGeneration();
 
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -160,6 +161,7 @@ public final class DropIndexesIT extends AlterTestBase {
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("tag");
         ddl().dropIndexes(session(), tableName(oId), indexes);
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -194,6 +196,7 @@ public final class DropIndexesIT extends AlterTestBase {
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("name");
         ddl().dropIndexes(session(), tableName(tId), indexes);
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -220,6 +223,7 @@ public final class DropIndexesIT extends AlterTestBase {
         ArrayList<String> indexes = new ArrayList<String>();
         indexes.add("state");
         ddl().dropIndexes(session(), tableName(tId), indexes);
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
@@ -247,6 +251,7 @@ public final class DropIndexesIT extends AlterTestBase {
         indexes.add("otherId");
         indexes.add("price");
         ddl().dropIndexes(session(), tableName(tId), indexes);
+        updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
         DDLGenerator gen = new DDLGenerator();
