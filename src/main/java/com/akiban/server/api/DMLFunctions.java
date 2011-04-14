@@ -109,8 +109,9 @@ public interface DMLFunctions {
      * <p>If the RowOutput throws an exception, it will be wrapped in a RowOutputException.</p>
      *
      * <p>If this method throws any exception, the cursor will be marked as finished.</p>
-     * @param cursorId the cursor to scan
+     *
      * @param session the context in which the cursor was opened
+     * @param cursorId the cursor to scan
      * @param output the RowOutput to collect the given rows
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
@@ -122,7 +123,7 @@ public interface DMLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      * @throws BufferFullException if the output buffer couldn't fit the rows
      */
-    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
+    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,

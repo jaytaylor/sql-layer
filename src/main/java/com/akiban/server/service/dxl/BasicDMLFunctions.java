@@ -26,7 +26,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -35,7 +34,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
@@ -272,7 +270,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
+    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
             throws CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -282,7 +280,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
 
     {
-        return scanSome(session, cursorId, output, NONE);
+        scanSome(session, cursorId, output, NONE);
     }
 
     boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks)
@@ -861,8 +859,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         InvalidOperationException thrown = null;
         try {
-            while (scanSome(session, cursorId, output)) {
-            }
+            scanSome(session, cursorId, output);
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
         } catch (BufferFullException e) {
