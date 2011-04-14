@@ -1167,6 +1167,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 if(!hkey.containsColumn(column)) {
                     fullKeySize += getMaxKeyStorageSize((column));
                 }
+
+                // Reject prefix indexes until supported (bug760202)
+                if(iColumn.getIndexedLength() != null) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                        String.format("Table `%s`.`%s` index `%s` has prefix size",
+                                       table.getName().getSchemaName(), table.getName().getTableName(),
+                                       index.getIndexName().getName()));
+
+                }
             }
             if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
                 throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
