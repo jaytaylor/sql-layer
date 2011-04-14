@@ -15,7 +15,6 @@
 
 package com.akiban.server.test.mt.mtatomics;
 
-import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.test.mt.mtutil.TimePoints;
 
 class DelayScanCallableBuilder {
@@ -27,6 +26,7 @@ class DelayScanCallableBuilder {
     private final int aisGeneration;
 
     private boolean markFinish = true;
+    private boolean markOpenCursor = false;
     private long initialDelay = 0;
     private DelayerFactory topOfLoopDelayer;
     private DelayerFactory beforeConversionDelayer;
@@ -76,6 +76,11 @@ class DelayScanCallableBuilder {
         return this;
     }
 
+    DelayScanCallableBuilder markOpenCursor(boolean markOpenCursor) {
+        this.markOpenCursor = markOpenCursor;
+        return this;
+    }
+
     DelayScanCallableBuilder beforeConversionDelayer(DelayerFactory delayer) {
         assert beforeConversionDelayer == null;
         beforeConversionDelayer = delayer;
@@ -87,7 +92,8 @@ class DelayScanCallableBuilder {
                 aisGeneration,
                 tableId, indexId,
                 topOfLoopDelayer, beforeConversionDelayer,
-                markFinish, initialDelay, DEFAULT_FINISH_DELAY
+                markFinish, initialDelay, DEFAULT_FINISH_DELAY,
+                markOpenCursor
         );
     }
 }

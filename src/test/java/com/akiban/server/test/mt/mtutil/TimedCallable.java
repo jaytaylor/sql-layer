@@ -19,14 +19,23 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class TimedCallable<T> implements Callable<TimedResult<T>> {
+    private final AtomicReference<TimePoints> timePointsReference = new AtomicReference<TimePoints>();
     protected abstract T doCall(TimePoints timePoints, Session session) throws Exception;
 
     @Override
     public final TimedResult<T> call() throws Exception {
         TimePoints timePoints = new TimePoints();
+        if (!timePointsReference.compareAndSet(null, timePoints)) {
+            throw new RuntimeException("TimePoints already set!");
+        }
         T result = doCall(timePoints, new SessionImpl());
         return new TimedResult<T>(result, timePoints);
+    }
+    
+    public TimePoints getTimePoints() {
+        return timePointsReference.get();
     }
 }

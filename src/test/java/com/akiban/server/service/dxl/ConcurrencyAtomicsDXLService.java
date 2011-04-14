@@ -21,6 +21,9 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.ddl.ForeignConstraintDDLException;
+import com.akiban.server.api.ddl.ProtectedTableDDLException;
+import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -39,6 +42,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     private final static Session.Key<Long> DELAY_ON_DROP_INDEX = Session.Key.named("DELAY_ON_DROP_INDEX");
     private final static Session.Key<ScanHooks> SCANHOOKS_KEY = Session.Key.named("SCANHOOKS");
+    private static final Session.Key<Long> DELAY_AFTER_DROP_TABLE = Session.Key.named("DELAY_AFTER_DROP_TABLE");
 
     public interface ScanHooks extends BasicDMLFunctions.ScanHooks {
         // not adding anything, just promoting visibility
@@ -72,6 +76,10 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     public static boolean isDropIndexDelayInstalled(Session session) {
         return session.get(DELAY_ON_DROP_INDEX) != null;
+    }
+
+    public static void delayAfterNextDropTable(Session session, long amount) {
+        session.put(DELAY_AFTER_DROP_TABLE, amount);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
@@ -121,6 +129,15 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
                 Timing.sleep(shouldDelay);
             }
             super.dropIndexes(session, tableName, indexNamesToDrop);
+            if (shouldDelay != null) {
+                Timing.sleep(shouldDelay);
+            }
+        }
+
+        @Override
+        public void dropTable(Session session, TableName tableName) throws ProtectedTableDDLException, ForeignConstraintDDLException, UnsupportedDropException, GenericInvalidOperationException {
+            super.dropTable(session, tableName);
+            Long shouldDelay = session.remove(DELAY_AFTER_DROP_TABLE);
             if (shouldDelay != null) {
                 Timing.sleep(shouldDelay);
             }
