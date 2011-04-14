@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
@@ -113,6 +114,19 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public List<String> getGrouping() {
         return getGrouping(usingSchema.get());
+    }
+
+    @Override
+    public String getGroupNameFromTableName(String schemaName, String tableName) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new SessionImpl());
+        Table table = ais.getTable(schemaName, tableName);
+        if(table != null) {
+            final com.akiban.ais.model.Group group = table.getGroup();
+            if(group != null) {
+                return group.getName();
+            }
+        }
+        return null;
     }
 
     public List<String> getGrouping(String schema) {
