@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.memcache.hprocessor;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -218,6 +219,7 @@ public class Scanrows implements HapiProcessor {
     {
         try {
             final int knownAIS = ddlFunctions().getGeneration();
+            AkibanInformationSchema ais = ddlFunctions().getAIS(session);
             validateRequest(session, request);
             RowDataStruct range = getScanRange(session, request);
 
@@ -239,7 +241,7 @@ public class Scanrows implements HapiProcessor {
             }
 
             outputter.output(
-                    new DefaultProcessedRequest(request, session, ddlFunctions()),
+                    new DefaultProcessedRequest(request, ais),
                     rows,
                     outputStream
             );
