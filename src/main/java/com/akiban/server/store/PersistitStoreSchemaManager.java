@@ -1170,9 +1170,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }
 
                 // Reject prefix indexes until supported (bug760202)
-                if(iColumn.getIndexedLength() != null) {
+                if(index.isUnique() && iColumn.getIndexedLength() != null) {
                     throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
-                        String.format("Table `%s`.`%s` index `%s` has prefix size",
+                        String.format("Table `%s`.`%s` unique index `%s` has prefix size",
                                        table.getName().getSchemaName(), table.getName().getTableName(),
                                        index.getIndexName().getName()));
 

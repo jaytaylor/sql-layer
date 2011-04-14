@@ -415,8 +415,12 @@ public final class CreateTableIT extends ITBase {
 
     @Test
     public void bug760202() throws InvalidOperationException {
-        // Prefixes not supported, expect rejection until they are
+        // Prefixes on unique not supported, expect rejection until they are
         createExpectException(UnsupportedIndexSizeException.class, "test", "t", "v varchar(10), unique index(v(3))");
+        // Allow non-unique as we will still be correct, just storing more than required
+        createTable("test", "t2", "v varchar(10), index(v(3))");
+        // But reject when what we'll be storing (the column) is too large
+        createExpectException(UnsupportedIndexSizeException.class, "test", "t3", "v varchar(2050), index(v(128))");
     }
 
     private void createExpectException(Class c, String schema, String table, String definition) {
