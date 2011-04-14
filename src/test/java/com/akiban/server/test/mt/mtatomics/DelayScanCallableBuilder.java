@@ -82,7 +82,7 @@ class DelayScanCallableBuilder {
         return this;
     }
 
-    DelayableScanCallable get(DDLFunctions ddl) {
+    DelayableScanCallable get() {
         return new DelayableScanCallable(
                 aisGeneration,
                 tableId, indexId,

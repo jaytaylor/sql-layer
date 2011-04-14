@@ -68,7 +68,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
-                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -107,7 +107,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
-                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
         TimedCallable<Void> updateCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -146,7 +146,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
-                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
 //        scanCallable = TransactionalTimedCallable.withRunnable( scanCallable, 10, 1000 );
 //        scanCallable = TransactionalTimedCallable.withoutRunnable(scanCallable);
 
@@ -192,7 +192,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
-                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                .topOfLoopDelayer(1, SCAN_WAIT, "SCAN: PAUSE").get();
 //        scanCallable = TransactionalTimedCallable.withRunnable( scanCallable, 10, 1000 );
 //        scanCallable = TransactionalTimedCallable.withoutRunnable(scanCallable);
 

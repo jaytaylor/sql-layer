@@ -86,7 +86,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
-                .topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                .topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -137,7 +137,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                                 .markAfter(1, "SCAN: CONVERTED");
                     }
                 });
-        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get(ddl());
+        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -209,7 +209,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, nameIndexId)
-                .topOfLoopDelayer(2, 5000, "SCAN: PAUSE").get(ddl());
+                .topOfLoopDelayer(2, 5000, "SCAN: PAUSE").get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -337,7 +337,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 .topOfLoopDelayer(1, 100, "SCAN: FIRST")
                 .initialDelay(2500)
                 .markFinish(false);
-        DelayableScanCallable scanCallable = callableBuilder.get(ddl());
+        DelayableScanCallable scanCallable = callableBuilder.get();
         TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -426,7 +426,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
-                .topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                .topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
