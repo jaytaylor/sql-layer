@@ -1158,7 +1158,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                               table.getName().getSchemaName(), table.getName().getTableName()));
         }
 
-        // Including internal (pk) as non-root tables get primary index 
+        // includingInternal so all indexes are checked, including (hidden) PRIMARY, since any non-hkey
+        // equivalent index will a) get an index tree and b) have column(s) contributing additional size
         for(Index index : table.getIndexesIncludingInternal()) {
             long fullKeySize = hkeySize;
             for(IndexColumn iColumn : index.getColumns()) {
