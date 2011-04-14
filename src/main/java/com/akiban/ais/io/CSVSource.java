@@ -45,6 +45,14 @@ public class CSVSource extends Source
         advance();
     }
 
+    @Override 
+    public int readVersion()
+    {
+        int modelVersion = Integer.parseInt(unquote(row[field]));
+        advance();
+        return modelVersion;
+    }
+    
     @Override
     protected final void read(String typename, Receiver receiver) throws Exception
     {

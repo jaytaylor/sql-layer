@@ -39,10 +39,14 @@ import org.xml.sax.SAXException;
 
 public class MetaModel
 {
-    public synchronized static MetaModel only() throws ParserConfigurationException, IOException, SAXException, XPathExpressionException
+    public synchronized static MetaModel only()
     {
         if (only == null) {
+            try {
             only = new MetaModel();
+            } catch (Exception ex) {
+                throw new MetaModelException (ex);
+            }
         }
         return only;
     }
@@ -50,6 +54,10 @@ public class MetaModel
     public ModelObject definition(String objectName)
     {
         return modelObjects.get(objectName);
+    }
+    public final int getModelVersion() 
+    {
+        return modelVersion;
     }
     
     public Collection<ModelObject> getModelObjects() {
@@ -59,9 +67,19 @@ public class MetaModel
     private MetaModel() throws ParserConfigurationException, IOException, SAXException, XPathExpressionException
     {
         document = readMetaModelSpecification();
+        getVersion();
         analyze();
     }
 
+    private void getVersion() throws XPathExpressionException
+    {
+        XPath xpath = XPathFactory.newInstance().newXPath();
+        XPathExpression expr = xpath.compile("//model");
+        Node modelNode = (Node) expr.evaluate(document, XPathConstants.NODE); 
+        modelVersion = Integer.valueOf(attributeValue(modelNode.getAttributes(), "version"));
+        //modelVersion =  ((Double)expr.evaluate(document, XPathConstants.NUMBER)).intValue();
+    }
+    
     private void analyze() throws XPathExpressionException
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
@@ -127,4 +145,5 @@ public class MetaModel
 
     private final Document document;
     private final Map<String, ModelObject> modelObjects = new HashMap<String, ModelObject>();
+    private int modelVersion;
 }

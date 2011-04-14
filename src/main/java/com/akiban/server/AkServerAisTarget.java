@@ -78,6 +78,11 @@ public class AkServerAisTarget extends Target {
     // For use by this class
 
     @Override
+    public void writeVersion(int modelVersion)
+    {
+        //no writing version for test classes. 
+    }
+    @Override
     protected final void write(String typename, Map<String, Object> map)
             throws Exception {
         ModelObject modelObject = MetaModel.only().definition(typename);

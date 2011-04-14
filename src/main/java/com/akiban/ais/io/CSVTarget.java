@@ -52,6 +52,12 @@ public class CSVTarget extends Target
     }
 
     // For use by this class
+    @Override
+    public void writeVersion(int modelVersion)
+    {
+        output.print(modelVersion);
+        output.println();
+    }
 
     @Override
     protected final void write(String typename, Map<String, Object> map) throws Exception

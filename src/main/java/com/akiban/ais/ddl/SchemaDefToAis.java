@@ -258,7 +258,9 @@ public class SchemaDefToAis {
         computeColumnMapAndPositions();
 
         AISBuilder builder = new AISBuilder();
-        builder.setTableIdOffset(0);
+        // Use 1 as default offset because the AAM uses tableID 0 as 
+        // a marker value. 
+        builder.setTableIdOffset(1);
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
 
