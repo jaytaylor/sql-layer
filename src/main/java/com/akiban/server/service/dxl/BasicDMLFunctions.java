@@ -293,7 +293,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
 
     @Override
-    public boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
+    public void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
             throws CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
@@ -303,7 +303,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
 
     {
-        return scanSome(session, cursorId, output, NONE);
+        scanSome(session, cursorId, output, NONE);
     }
 
     boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks)
@@ -883,8 +883,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         InvalidOperationException thrown = null;
         try {
-            while (scanSome(session, cursorId, output)) {
-            }
+            scanSome(session, cursorId, output);
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
         } catch (BufferFullException e) {
