@@ -413,6 +413,12 @@ public final class CreateTableIT extends ITBase {
         createExpectException(UnsupportedIndexSizeException.class, "test", "t", "id varchar(2050) key");
     }
 
+    @Test
+    public void bug760202() throws InvalidOperationException {
+        // Prefixes not supported, expect rejection until they are
+        createExpectException(UnsupportedIndexSizeException.class, "test", "t", "v varchar(10), unique index(v(3))");
+    }
+
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
             createTable(schema, table, definition);
