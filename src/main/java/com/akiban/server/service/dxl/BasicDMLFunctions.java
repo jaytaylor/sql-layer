@@ -162,7 +162,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
         final CursorId cursorId = newUniqueCursor(request.getTableId());
         reopen(session, cursorId, request, true);
-        checkAISGeneration(knownAIS);
+        checkAISGeneration(knownAIS); // really just an assert, since we should be under a the DDL r/w lock
         logger.trace("cursor for scan: {} -> {}", System.identityHashCode(request), cursorId);
         return cursorId;
     }
