@@ -162,9 +162,23 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
         final CursorId cursorId = newUniqueCursor(request.getTableId());
         reopen(session, cursorId, request, true);
-        checkAISGeneration(knownAIS); // really just an assert, since we should be under a the DDL r/w lock
+
+        // double check our AIS generation. This is a bit superfluous since we're supposed to be in a DDL-DML r/w lock.
+        checkAISGeneration(knownAIS, session, cursorId);
         logger.trace("cursor for scan: {} -> {}", System.identityHashCode(request), cursorId);
         return cursorId;
+    }
+
+    private void checkAISGeneration(int knownGeneration, Session session, CursorId cursorId) throws OldAISException {
+        try {
+            checkAISGeneration(knownGeneration);
+        } catch (OldAISException e) {
+            try {
+                closeCursor(session, cursorId);
+            } catch (CursorIsUnknownException e1) {
+                throw new RuntimeException("error closing cursor after AIS generation mismatch: " + e.getMessage(), e1);
+            }
+        }
     }
 
     private void checkAISGeneration(int knownGeneration) throws OldAISException {
