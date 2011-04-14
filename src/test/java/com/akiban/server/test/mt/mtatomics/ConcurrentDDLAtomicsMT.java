@@ -519,8 +519,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                         new Runnable() {
                             @Override
                             public void run() {
-                                Timing.sleep(DROP_PAUSE_LENGTH);
                                 timePoints.mark("DROP: OUT");
+                                Timing.sleep(DROP_PAUSE_LENGTH);
                             }
                         }
                 );
