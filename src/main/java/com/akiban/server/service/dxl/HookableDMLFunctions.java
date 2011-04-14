@@ -79,17 +79,18 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public CursorId openCursor(Session session, ScanRequest request) throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException {
+    public CursorId openCursor(Session session, int knownAIS, ScanRequest request) throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.OPEN_CURSOR);
-            return delegate.openCursor(session, request);
+            return delegate.openCursor(session, knownAIS, request);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.OPEN_CURSOR, t);
             throwIf(t, NoSuchTableException.class);
             throwIf(t, NoSuchColumnException.class);
             throwIf(t, NoSuchIndexException.class);
+            throwIf(t, OldAISException.class);
             throwIf(t, GenericInvalidOperationException.class);
             throw throwAlways(t);
         } finally {

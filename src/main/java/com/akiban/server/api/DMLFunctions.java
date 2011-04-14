@@ -75,7 +75,7 @@ public interface DMLFunctions {
      * @throws OldAISException if the given AIS generation is out of date
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    CursorId openCursor(Session session, ScanRequest request)
+    CursorId openCursor(Session session, int knownAIS, ScanRequest request)
             throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException;
 
     /**

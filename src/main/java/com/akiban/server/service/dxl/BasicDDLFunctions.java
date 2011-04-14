@@ -247,7 +247,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     @SuppressWarnings("unused")
     // meant to be used from JMX
-    public void forceGenerationUpdate() throws InvalidOperationException {
+    public void forceGenerationUpdate() {
         logger.trace("forcing schema generation update");
         schemaManager().forceNewTimestamp();
     }

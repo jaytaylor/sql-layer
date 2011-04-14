@@ -152,7 +152,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public CursorId openCursor(Session session, ScanRequest request)
+    public CursorId openCursor(Session session, int knownAIS, ScanRequest request)
             throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException
     {
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
@@ -797,6 +797,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             ForeignKeyConstraintDMLException, GenericInvalidOperationException
     {
         logger.trace("truncating tableId={}", tableId);
+        final int knownAIS = ddlFunctions.getGeneration();
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
@@ -852,7 +853,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         final CursorId cursorId;
         try {
             ScanRequest all = new ScanAllRequest(tableId, keyColumns);
-            cursorId = openCursor(session, all);
+            cursorId = openCursor(session, knownAIS, all);
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
         }
