@@ -22,8 +22,6 @@ import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyScanRequest;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -112,7 +110,6 @@ public class ScanFlagsIT extends ITBase
         for (int x : values) {
             dml().writeRow(session(), createNewRow(rowDefId, x));
         }
-        Session session = new SessionImpl();
         LegacyScanRequest request = new LegacyScanRequest(rowDefId,
                                                           bound(start),
                                                           bound(end),
@@ -121,8 +118,8 @@ public class ScanFlagsIT extends ITBase
                                                           flags,  // scan flags
                                                           ScanLimit.NONE);
         ListRowOutput output = new ListRowOutput();
-        CursorId cursorId = dml().openCursor(session, request);
-        boolean more = dml().scanSome(session, cursorId, output);
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
+        boolean more = dml().scanSome(session(), cursorId, output);
         assertTrue(!more);
         return output.getRows();
     }

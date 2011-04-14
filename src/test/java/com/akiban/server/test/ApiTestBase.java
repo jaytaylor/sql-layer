@@ -185,6 +185,7 @@ public class ApiTestBase {
 
     private ServiceManager sm;
     private Session session;
+    private int aisGeneration;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -262,12 +263,21 @@ public class ApiTestBase {
         return sm;
     }
 
+    protected final int aisGeneration() {
+        return aisGeneration;
+    }
+
+    protected final void updateAISGeneration() {
+        aisGeneration = ddl().getGeneration();
+    }
+
     protected Collection<Property> startupConfigProperties() {
         return null;
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         ddl().createTable(session(), schema, String.format("CREATE TABLE %s (%s)", table, definition));
+        updateAISGeneration();
         return ddl().getTableId(session(), new TableName(schema, table));
     }
 
@@ -300,7 +310,7 @@ public class ApiTestBase {
 
     protected final List<RowData> scanFull(ScanRequest request) {
         try {
-            return RowDataOutput.scanFull(session(), dml(), request);
+            return RowDataOutput.scanFull(session(), aisGeneration(), dml(), request);
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
@@ -309,7 +319,7 @@ public class ApiTestBase {
     protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
         Session session = new SessionImpl();
         ListRowOutput output = new ListRowOutput();
-        CursorId cursorId = dml().openCursor(session, request);
+        CursorId cursorId = dml().openCursor(session, aisGeneration(), request);
 
         while(dml().scanSome(session, cursorId, output))
         {}
@@ -369,7 +379,7 @@ public class ApiTestBase {
         ScanRequest request = new ScanAllRequest(tableId, allCols, indexId,
                 EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
         );
-        return dml().openCursor(session(), request);
+        return dml().openCursor(session(), aisGeneration(), request);
     }
 
     protected static <T> Set<T> set(T... items) {

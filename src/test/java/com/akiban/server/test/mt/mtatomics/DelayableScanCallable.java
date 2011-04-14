@@ -45,12 +45,15 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     private final boolean markFinish;
     private final long finishDelay;
     private final long initialDelay;
+    private final int aisGeneration;
     private volatile ApiTestBase.ListRowOutput output;
 
-    DelayableScanCallable(int tableId, int indexId,
+    DelayableScanCallable(int aisGeneration,
+                          int tableId, int indexId,
                           DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
                           boolean markFinish, long initialDelay, long finishDelay)
     {
+        this.aisGeneration = aisGeneration;
         this.tableId = tableId;
         this.indexId = indexId;
         this.topOfLoopDelayer = topOfLoopDelayer;
@@ -116,7 +119,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             final CursorId cursorId;
             DMLFunctions dml = ServiceManagerImpl.get().getDXL().dmlFunctions();
             try {
-                cursorId = dml.openCursor(session, request);
+                cursorId = dml.openCursor(session, aisGeneration, request);
             } catch (Exception e) {
                 ConcurrencyAtomicsDXLService.ScanHooks removed = ConcurrencyAtomicsDXLService.removeScanHook(session);
                 if (removed != scanHooks) {
