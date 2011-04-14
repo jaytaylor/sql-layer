@@ -48,6 +48,11 @@ public final class TimedResult<T> {
         this.timePoints = new TimeMarks(timePoints.getMarks());
     }
 
+    @SuppressWarnings("unused") // useful for debugging
+    public static TimedResult<Void> ofNull(TimePoints timePoints) {
+        return new TimedResult<Void>(null, timePoints);
+    }
+
     public T getItem() {
         return item;
     }

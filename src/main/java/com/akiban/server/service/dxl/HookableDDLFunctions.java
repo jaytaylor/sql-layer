@@ -270,7 +270,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public int getGeneration() throws InvalidOperationException {
+    public int getGeneration() {
         Session session = new SessionImpl();
         Throwable thrown = null;
         try {
@@ -279,7 +279,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_ID, t);
-            throwIf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_ID, thrown);
@@ -287,7 +286,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void forceGenerationUpdate() throws InvalidOperationException {
+    public void forceGenerationUpdate() {
         Session session = new SessionImpl();
         Throwable thrown = null;
         try {
@@ -296,7 +295,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.FORCE_GENERATION_UPDATE, t);
-            throwIf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.FORCE_GENERATION_UPDATE, thrown);

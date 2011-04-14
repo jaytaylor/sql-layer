@@ -19,10 +19,9 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
@@ -85,7 +84,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(indexName).getIndexId();
 
         TimedCallable<List<NewRow>> scanCallable
-                = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
+                .topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -126,7 +126,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final int tableId = tableWithTwoRows();
         final int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(index).getIndexId();
 
-        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(tableId, indexId)
+        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
                 .markFinish(false)
                 .beforeConversionDelayer(new DelayerFactory() {
                     @Override
@@ -136,7 +136,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                                 .markAfter(1, "SCAN: CONVERTED");
                     }
                 });
-        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get(ddl());
+        TimedCallable<List<NewRow>> scanCallable = callableBuilder.get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -207,7 +207,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final int nameIndexId = nameIndex.getIndexId();
 
         TimedCallable<List<NewRow>> scanCallable
-                = new DelayScanCallableBuilder(tableId, nameIndexId).topOfLoopDelayer(2, 5000, "SCAN: PAUSE").get(ddl());
+                = new DelayScanCallableBuilder(aisGeneration(), tableId, nameIndexId)
+                .topOfLoopDelayer(2, 5000, "SCAN: PAUSE").get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -331,17 +332,36 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final TableName tableName = new TableName(SCHEMA, TABLE);
         final int indexId = ddl().getUserTable(session(), tableName).getIndex(indexName).getIndexId();
 
-        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(tableId, indexId)
+        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
                 .topOfLoopDelayer(1, 100, "SCAN: FIRST")
                 .initialDelay(2500)
-                .markFinish(false);
-        DelayableScanCallable scanCallable = callableBuilder.get(ddl());
+                .markFinish(false)
+                .markOpenCursor(true);
+        DelayableScanCallable scanCallable = callableBuilder.get();
         TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                timePoints.mark("DROP: IN");
-                ddl().dropTable(session, tableName);
-                timePoints.mark("DROP: OUT");
+            protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
+                ConcurrencyAtomicsDXLService.hookNextDropTable(
+                        session,
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: IN");
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: OUT");
+                                Timing.sleep(50);
+                            }
+                        }
+                );
+                ddl().dropTable(session, tableName); // will take ~5 seconds
+                assertFalse(
+                       "drop table hook still installed",
+                       ConcurrencyAtomicsDXLService.isDropTableHookInstalled(session)
+               );
                 return null;
             }
         };
@@ -354,15 +374,17 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             scanFuture.get();
             fail("expected an exception!");
         } catch (ExecutionException e) {
-            if (!NoSuchTableException.class.equals(e.getCause().getClass())) {
-                throw new RuntimeException("Expected a NoSuchTableException!", e.getCause());
+            if (!OldAISException.class.equals(e.getCause().getClass())) {
+                throw new RuntimeException("Expected a OldAISException!", e.getCause());
             }
         }
         TimedResult<Void> updateResult = updateFuture.get();
 
-        new TimePointsComparison(updateResult).verify(
+        new TimePointsComparison(updateResult, TimedResult.ofNull(scanCallable.getTimePoints())).verify(
                 "DROP: IN",
-                "DROP: OUT"
+                "(SCAN: OPEN CURSOR)>",
+                "DROP: OUT",
+                "SCAN: exception OldAISException"
         );
 
         assertTrue("rows weren't empty!", scanCallable.getRows().isEmpty());
@@ -423,7 +445,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
 
         TimedCallable<List<NewRow>> scanCallable
-                = new DelayScanCallableBuilder(tableId, indexId).topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get(ddl());
+                = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
+                .topOfLoopDelayer(0, SCAN_WAIT, "SCAN: PAUSE").get();
 
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
@@ -475,24 +498,38 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             writeRows(createNewRow(initialTableId, i, i + 1));
         }
 
+
         final Index index = ddl().getUserTable(session(), tableName).getIndex("age");
         final Collection<String> indexNameCollection = Collections.singleton(index.getIndexName().getName());
         final int tableId = ddl().getTableId(session(), tableName);
 
-
         TimedCallable<Throwable> dropIndexCallable = new TimedExceptionCatcher() {
             @Override
-            protected void doOrThrow(TimePoints timePoints, Session session) throws Exception {
+            protected void doOrThrow(final TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(DROP_START_LENGTH);
                 timePoints.mark("DROP: PREPARING");
-                ConcurrencyAtomicsDXLService.delayNextDropIndex(session, DROP_PAUSE_LENGTH);
+                ConcurrencyAtomicsDXLService.hookNextDropIndex(session,
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: IN");
+                                Timing.sleep(DROP_PAUSE_LENGTH);
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: OUT");
+                                Timing.sleep(DROP_PAUSE_LENGTH);
+                            }
+                        }
+                );
 
-                timePoints.mark("DROP: IN");
                 ddl().dropIndexes(session, tableName, indexNameCollection);
-                assertFalse("drop hook not removed!", ConcurrencyAtomicsDXLService.isDropIndexDelayInstalled(session));
-                timePoints.mark("DROP: OUT");
+                assertFalse("drop hook not removed!", ConcurrencyAtomicsDXLService.isDropIndexHookInstalled(session));
             }
         };
+        final int localAISGeneration = aisGeneration();
         TimedCallable<Throwable> scanCallable = new TimedExceptionCatcher() {
             @Override
             protected void doOrThrow(TimePoints timePoints, Session session) throws Exception {
@@ -510,11 +547,11 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 Timing.sleep(SCAN_PAUSE_LENGTH);
                 timePoints.mark("<(SCAN: PAUSE)");
                 try {
-                    CursorId cursorId = dml().openCursor(session, request);
+                    CursorId cursorId = dml().openCursor(session, localAISGeneration, request);
                     timePoints.mark("SCAN: cursorID opened");
                     dml().closeCursor(session, cursorId);
-                } catch (NoSuchIndexException e) {
-                    timePoints.mark("SCAN: NoSuchIndexException");
+                } catch (OldAISException e) {
+                    timePoints.mark("SCAN: OldAISException");
                 }
             }
 
@@ -538,7 +575,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 "DROP: IN",
                 "<(SCAN: PAUSE)",
                 "DROP: OUT",
-                "SCAN: NoSuchIndexException"
+                "SCAN: OldAISException"
         );
 
         TimedExceptionCatcher.throwIfThrown(scanResult);

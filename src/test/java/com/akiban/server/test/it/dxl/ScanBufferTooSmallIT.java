@@ -65,7 +65,7 @@ public final class ScanBufferTooSmallIT extends ITBase {
     public void viaScanFull() throws InvalidOperationException, BufferFullException {
         int coiId = ddl().getAIS(session()).getTable("ts", "c").getGroup().getGroupTable().getTableId();
         ScanRequest request = new ScanAllRequest(coiId, new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, 5, 6)));
-        RowDataOutput.scanFull(session(), dml(), request);
+        RowDataOutput.scanFull(session(), aisGeneration(), dml(), request);
     }
 
     @Test(timeout=5000)

@@ -21,6 +21,9 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.GenericInvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.ddl.ForeignConstraintDDLException;
+import com.akiban.server.api.ddl.ProtectedTableDDLException;
+import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ConcurrentScanAndUpdateException;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -29,7 +32,6 @@ import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
-import com.akiban.server.test.mt.mtutil.Timing;
 import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.service.session.Session;
 
@@ -37,8 +39,31 @@ import java.util.Collection;
 
 public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
-    private final static Session.Key<Long> DELAY_ON_DROP_INDEX = Session.Key.named("DELAY_ON_DROP_INDEX");
+    private final static Session.Key<BeforeAndAfter> DELAY_ON_DROP_INDEX = Session.Key.named("DELAY_ON_DROP_INDEX");
     private final static Session.Key<ScanHooks> SCANHOOKS_KEY = Session.Key.named("SCANHOOKS");
+    private static final Session.Key<BeforeAndAfter> DELAY_ON_DROP_TABLE = Session.Key.named("DELAY_ON_DROP_TABLE");
+
+    private static class BeforeAndAfter {
+        private final Runnable before;
+        private final Runnable after;
+
+        private BeforeAndAfter(Runnable before, Runnable after) {
+            this.before = before;
+            this.after = after;
+        }
+
+        public void doBefore() {
+            if (before != null) {
+                before.run();
+            }
+        }
+
+        public void doAfter() {
+            if (after != null) {
+                after.run();
+            }
+        }
+    }
 
     public interface ScanHooks extends BasicDMLFunctions.ScanHooks {
         // not adding anything, just promoting visibility
@@ -66,12 +91,22 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         return session.get(SCANHOOKS_KEY) != null;
     }
 
-    public static void delayNextDropIndex(Session session, long amount) {
-        session.put(DELAY_ON_DROP_INDEX, amount);
+    public static void hookNextDropIndex(Session session, Runnable beforeRunnable, Runnable afterRunnable)
+    {
+        session.put(DELAY_ON_DROP_INDEX, new BeforeAndAfter(beforeRunnable, afterRunnable));
     }
 
-    public static boolean isDropIndexDelayInstalled(Session session) {
+    public static boolean isDropIndexHookInstalled(Session session) {
         return session.get(DELAY_ON_DROP_INDEX) != null;
+    }
+
+    public static void hookNextDropTable(Session session, Runnable beforeRunnable, Runnable afterRunnable)
+    {
+        session.put(DELAY_ON_DROP_TABLE, new BeforeAndAfter(beforeRunnable, afterRunnable));
+    }
+
+    public static boolean isDropTableHookInstalled(Session session) {
+        return session.get(DELAY_ON_DROP_TABLE) != null;
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
@@ -116,13 +151,25 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     private static class ConcurrencyAtomicsDDLFunctions extends BasicDDLFunctions {
         @Override
         public void dropIndexes(Session session, TableName tableName, Collection<String> indexNamesToDrop) throws InvalidOperationException {
-            Long shouldDelay = session.remove(DELAY_ON_DROP_INDEX);
-            if (shouldDelay != null) {
-                Timing.sleep(shouldDelay);
+            BeforeAndAfter hook = session.remove(DELAY_ON_DROP_INDEX);
+            if (hook != null) {
+                hook.doBefore();
             }
             super.dropIndexes(session, tableName, indexNamesToDrop);
-            if (shouldDelay != null) {
-                Timing.sleep(shouldDelay);
+            if (hook != null) {
+                hook.doAfter();
+            }
+        }
+
+        @Override
+        public void dropTable(Session session, TableName tableName) throws ProtectedTableDDLException, ForeignConstraintDDLException, UnsupportedDropException, GenericInvalidOperationException {
+            BeforeAndAfter hook = session.remove(DELAY_ON_DROP_TABLE);
+            if (hook != null) {
+                hook.doBefore();
+            }
+            super.dropTable(session, tableName);
+            if (hook != null) {
+                hook.doAfter();
             }
         }
     }

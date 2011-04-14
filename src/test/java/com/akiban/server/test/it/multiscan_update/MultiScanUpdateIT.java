@@ -186,7 +186,7 @@ public final class MultiScanUpdateIT extends ITBase {
         int scanIndexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(scanIndexName).getIndexId();
 
         ScanRequest request = new ScanAllRequest(tableId, set(0, 1, 2), scanIndexId, null, ScanLimit.NONE);
-        ScanIterator scanIterator = new ScanIterator(dml(), 1024, request, session());
+        ScanIterator scanIterator = new ScanIterator(dml(), aisGeneration(), 1024, request, session());
 
         try {
             while (scanIterator.hasNext()) {
@@ -227,7 +227,7 @@ public final class MultiScanUpdateIT extends ITBase {
         private final DMLFunctions dml;
         private int scanSomeCalls;
 
-        ScanIterator(DMLFunctions dml, int bufferSize, ScanRequest request, Session session)
+        ScanIterator(DMLFunctions dml, int aisGeneration, int bufferSize, ScanRequest request, Session session)
                 throws InvalidOperationException
         {
             this.scanSomeCalls = 0;
@@ -239,7 +239,7 @@ public final class MultiScanUpdateIT extends ITBase {
             converter.setColumnsToScan(new HashSet<Integer>(Arrays.asList(0, 1, 2)));
             router.addHandler(converter);
             hasMore = true;
-            cursorId = dml.openCursor(session(), request);
+            cursorId = dml.openCursor(session(), aisGeneration, request);
             outputIterator = Collections.<NewRow>emptyList().iterator();
             this.dml = dml;
             getNextBatch();

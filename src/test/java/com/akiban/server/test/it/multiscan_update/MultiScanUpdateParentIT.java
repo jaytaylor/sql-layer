@@ -71,7 +71,7 @@ public final class MultiScanUpdateParentIT extends ITBase {
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId;
         try {
-            cursorId = dml().openCursor(session(), scanAllRequest(iId));
+            cursorId = dml().openCursor(session(), aisGeneration(), scanAllRequest(iId));
             dml().updateRow(
                     session(),
                     createNewRow(oId, 2, 2),
@@ -94,7 +94,7 @@ public final class MultiScanUpdateParentIT extends ITBase {
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId;
         try {
-            cursorId = dml().openCursor(session(), scanAllRequest(iId));
+            cursorId = dml().openCursor(session(), aisGeneration(), scanAllRequest(iId));
             dml().updateRow(
                     session(),
                     createNewRow(cId, 3),

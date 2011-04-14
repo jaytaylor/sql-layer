@@ -26,7 +26,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -35,7 +34,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
@@ -63,6 +61,7 @@ import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.RowDataLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
@@ -153,18 +152,40 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public CursorId openCursor(Session session, ScanRequest request)
-            throws NoSuchTableException, NoSuchColumnException,
-            NoSuchIndexException, GenericInvalidOperationException
+    public CursorId openCursor(Session session, int knownAIS, ScanRequest request)
+            throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException
     {
+        checkAISGeneration(knownAIS);
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
         }
         final CursorId cursorId = newUniqueCursor(request.getTableId());
         reopen(session, cursorId, request, true);
+
+        // double check our AIS generation. This is a bit superfluous since we're supposed to be in a DDL-DML r/w lock.
+        checkAISGeneration(knownAIS, session, cursorId);
         logger.trace("cursor for scan: {} -> {}", System.identityHashCode(request), cursorId);
         return cursorId;
+    }
+
+    private void checkAISGeneration(int knownGeneration, Session session, CursorId cursorId) throws OldAISException {
+        try {
+            checkAISGeneration(knownGeneration);
+        } catch (OldAISException e) {
+            try {
+                closeCursor(session, cursorId);
+            } catch (CursorIsUnknownException e1) {
+                throw new RuntimeException("error closing cursor after AIS generation mismatch: " + e.getMessage(), e1);
+            }
+        }
+    }
+
+    private void checkAISGeneration(int knownGeneration) throws OldAISException {
+        int currentGeneration = ddlFunctions.getGeneration();
+        if (currentGeneration != knownGeneration) {
+            throw new OldAISException(knownGeneration, currentGeneration);
+        }
     }
 
     private Cursor reopen(Session session, CursorId cursorId, ScanRequest request, boolean mustBeFresh)
@@ -799,6 +820,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             ForeignKeyConstraintDMLException, GenericInvalidOperationException
     {
         logger.trace("truncating tableId={}", tableId);
+        final int knownAIS = ddlFunctions.getGeneration();
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
@@ -854,7 +876,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         final CursorId cursorId;
         try {
             ScanRequest all = new ScanAllRequest(tableId, keyColumns);
-            cursorId = openCursor(session, all);
+            cursorId = openCursor(session, knownAIS, all);
         } catch (InvalidOperationException e) {
             throw new RuntimeException("Internal error", e);
         }

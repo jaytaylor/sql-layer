@@ -193,14 +193,14 @@ public interface DDLFunctions {
      */
     String getDDLs(Session session) throws InvalidOperationException;
 
-    int getGeneration() throws InvalidOperationException;
+    int getGeneration();
 
     /**
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
      * @throws InvalidOperationException if an exception occurred
      */
     @SuppressWarnings("unused") // meant to be used from JMX
-    void forceGenerationUpdate() throws InvalidOperationException;
+    void forceGenerationUpdate();
     
     /**
      * Create new indexes on an existing table. All indexes must exist on the same table. Primary

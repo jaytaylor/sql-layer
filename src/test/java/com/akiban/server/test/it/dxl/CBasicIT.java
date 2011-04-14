@@ -24,8 +24,6 @@ import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
 import com.akiban.server.api.dml.scan.*;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -46,22 +44,21 @@ public final class CBasicIT extends ITBase {
         dml().writeRow(session(), createNewRow(tableId, 1, "foo bear") );
         expectRowCount(tableId, 2);
 
-        Session session = new SessionImpl();
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1), 0, null, new FixedCountLimit(1));
         ListRowOutput output = new ListRowOutput();
 
-        assertEquals("cursors", cursorSet(), dml().getCursors(session));
-        CursorId cursorId = dml().openCursor(session, request);
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
+        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
+        assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
 
-        boolean hasMore = dml().scanSome(session, cursorId, output);
+        boolean hasMore = dml().scanSome(session(), cursorId, output);
         assertFalse("more rows expected to be false", hasMore);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
+        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
 
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        dml().closeCursor(session, cursorId);
-        assertEquals("cursors", cursorSet(), dml().getCursors(session));
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
+        dml().closeCursor(session(), cursorId);
+        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
         expectedRows.add( createNewRow(tableId, 0L, "hello world") );
@@ -78,22 +75,21 @@ public final class CBasicIT extends ITBase {
         dml().writeRow(session(), createNewRow(tableId, 1, "foo bear") );
         expectRowCount(tableId, 2);
 
-        Session session = new SessionImpl();
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
         ListRowOutput output = new ListRowOutput();
 
-        assertEquals("cursors", cursorSet(), dml().getCursors(session));
-        CursorId cursorId = dml().openCursor(session, request);
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
+        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
+        assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
 
-        boolean hasMore = dml().scanSome(session, cursorId, output);
+        boolean hasMore = dml().scanSome(session(), cursorId, output);
         assertFalse("more rows found", hasMore);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
+        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
 
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        dml().closeCursor(session, cursorId);
-        assertEquals("cursors", cursorSet(), dml().getCursors(session));
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
+        dml().closeCursor(session(), cursorId);
+        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
         expectedRows.add( createNewRow(tableId, 0L, "hello world") );
@@ -182,15 +178,14 @@ public final class CBasicIT extends ITBase {
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
         expectRowCount(tableId, 1);
 
-        Session session = new SessionImpl();
         // request a partial scan
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0), 0, null, new FixedCountLimit(1));
         LegacyRowOutput output = new WrappingRowOutput(ByteBuffer.allocate(1024 * 1024));
-        CursorId cursorId = dml().openCursor(session, request);
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
 
-        dml().scanSome(session, cursorId, output);
+        dml().scanSome(session(), cursorId, output);
         assertEquals("rows read", 1, output.getRowsCount());
-        dml().closeCursor(session, cursorId);
+        dml().closeCursor(session(), cursorId);
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
         expectedRows.add( createNewRow(tableId, 0L, "hello world") ); // full scan expected
@@ -201,43 +196,56 @@ public final class CBasicIT extends ITBase {
         assertEquals("rows scanned", expectedRows, converted);
     }
     
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void dropTable() throws InvalidOperationException {
-        final int tableId1 = createTable("testSchema", "customer", "id int key");
-        ddl().dropTable(session(), tableName("testSchema", "customer"));
-
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
-        ddl().dropTable(session(), tableName("testSchema", "customer")); // should be a no-op; testing it doesn't fail
-
-        NoSuchTableException caught = null;
+        final int tableId1;
         try {
-            dml().openCursor(session(), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
-        } catch (NoSuchTableException e) {
-            caught = e;
+            tableId1 = createTable("testSchema", "customer", "id int key");
+            ddl().dropTable(session(), tableName("testSchema", "customer"));
+
+            AkibanInformationSchema ais = ddl().getAIS(session());
+            assertNull("expected no table", ais.getUserTable("testSchema", "customer"));
+            ddl().dropTable(session(), tableName("testSchema", "customer")); // should be no-op; testing it doesn't fail
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
         }
-        assertNotNull("expected NoSuchTableException", caught);
+
+        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
     }
 
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void dropGroup() throws InvalidOperationException {
-        final int tid = createTable("test", "t", "id int key");
-        final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
-        ddl().dropGroup(session(), groupName);
-
-        AkibanInformationSchema ais = ddl().getAIS(session());
-        assertNull("expected no table", ais.getUserTable("test", "t"));
-        assertNull("expected no group", ais.getGroup(groupName));
-
-        ddl().dropGroup(session(), groupName);
-
-        NoSuchTableException caught = null;
+        final int tid;
         try {
-            dml().openCursor(session(), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
-        } catch (NoSuchTableException e) {
-            caught = e;
+            tid = createTable("test", "t", "id int key");
+            final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
+            ddl().dropGroup(session(), groupName);
+
+            AkibanInformationSchema ais = ddl().getAIS(session());
+            assertNull("expected no table", ais.getUserTable("test", "t"));
+            assertNull("expected no group", ais.getGroup(groupName));
+
+            ddl().dropGroup(session(), groupName);
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
         }
-        assertNotNull("expected NoSuchTableException", caught);
+
+        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
+    }
+
+    @Test(expected=OldAISException.class)
+    public void cursorHasOldAIS() throws InvalidOperationException {
+        final int tid;
+        final int localAISGeneration;
+        try {
+            tid = createTable("test", "t", "id int key");
+            localAISGeneration = aisGeneration();
+            createTable("test", "t2", "id int key");
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
+        }
+
+        dml().openCursor(session(), localAISGeneration, scanAllRequest(tid));
     }
 
     /*
@@ -262,30 +270,29 @@ public final class CBasicIT extends ITBase {
     public void scanEmptyTable() throws InvalidOperationException {
         final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
 
-        Session session = new SessionImpl();
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1), 0, null, new FixedCountLimit(1));
         ListRowOutput output = new ListRowOutput();
 
-        assertEquals("cursors", cursorSet(), dml().getCursors(session));
-        CursorId cursorId = dml().openCursor(session, request);
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        assertEquals("state", CursorState.FRESH, dml().getCursorState(session, cursorId));
+        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
+        assertEquals("state", CursorState.FRESH, dml().getCursorState(session(), cursorId));
 
-        boolean hasMore = dml().scanSome(session, cursorId, output);
+        boolean hasMore = dml().scanSome(session(), cursorId, output);
         assertFalse("no more rows expected", hasMore);
-        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session, cursorId));
+        assertEquals("state", CursorState.FINISHED, dml().getCursorState(session(), cursorId));
 
         CursorIsFinishedException caught = null;
         try {
-            dml().scanSome(session, cursorId, output);
+            dml().scanSome(session(), cursorId, output);
         } catch (CursorIsFinishedException e) {
             caught = e;
         }
         assertNotNull("expected an exception", caught);
 
-        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session));
-        dml().closeCursor(session, cursorId);
-        assertEquals("cursors", cursorSet(), dml().getCursors(session));
+        assertEquals("cursors", cursorSet(cursorId), dml().getCursors(session()));
+        dml().closeCursor(session(), cursorId);
+        assertEquals("cursors", cursorSet(), dml().getCursors(session()));
 
         assertEquals("rows scanned", Collections.<NewRow>emptyList(), output.getRows());
     }
