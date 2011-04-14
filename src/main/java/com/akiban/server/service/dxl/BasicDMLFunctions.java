@@ -155,14 +155,23 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     public CursorId openCursor(Session session, int knownAIS, ScanRequest request)
             throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException
     {
+        checkAISGeneration(knownAIS);
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
         }
         final CursorId cursorId = newUniqueCursor(request.getTableId());
         reopen(session, cursorId, request, true);
+        checkAISGeneration(knownAIS);
         logger.trace("cursor for scan: {} -> {}", System.identityHashCode(request), cursorId);
         return cursorId;
+    }
+
+    private void checkAISGeneration(int knownGeneration) throws OldAISException {
+        int currentGeneration = ddlFunctions.getGeneration();
+        if (currentGeneration != knownGeneration) {
+            throw new OldAISException(knownGeneration, currentGeneration);
+        }
     }
 
     private Cursor reopen(Session session, CursorId cursorId, ScanRequest request, boolean mustBeFresh)

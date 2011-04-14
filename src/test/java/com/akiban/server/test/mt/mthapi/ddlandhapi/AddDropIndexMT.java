@@ -25,6 +25,7 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.test.mt.mthapi.base.HapiMTBase;
 import com.akiban.server.test.mt.mthapi.base.HapiReadThread;
@@ -34,6 +35,8 @@ import com.akiban.server.test.mt.mthapi.base.sais.SaisBuilder;
 import com.akiban.server.test.mt.mthapi.base.sais.SaisTable;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.ThreadlessRandom;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -60,6 +63,17 @@ public final class AddDropIndexMT extends HapiMTBase {
         builder.table("c1", "id", "pid").pk("id").joinTo("p").col("id", "pid");
         final SaisTable pTable = builder.getSoleRootTable();
         return new OptionallyWorkingReadThread(SCHEMA, pTable, chance, HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST) {
+
+            @Override
+            protected void validateErrorResponse(HapiGetRequest request, Throwable exception) throws UnexpectedException {
+                if (exception instanceof HapiRequestException) {
+                    Throwable cause = exception.getCause();
+                    if (cause != null && cause.getClass().equals(OldAISException.class)) {
+                        return; // expected
+                    }
+                }
+                super.validateErrorResponse(request, exception);
+            }
 
             @Override
             protected HapiRequestStruct pullRequest(ThreadlessRandom random) {

@@ -217,6 +217,7 @@ public class Scanrows implements HapiProcessor {
                                HapiOutputter outputter, OutputStream outputStream) throws HapiRequestException
     {
         try {
+            final int knownAIS = ddlFunctions().getGeneration();
             validateRequest(session, request);
             RowDataStruct range = getScanRange(session, request);
 
@@ -231,7 +232,7 @@ public class Scanrows implements HapiProcessor {
             List<RowData> rows = null;
             while(rows == null) {
                 try {
-                    rows = RowDataOutput.scanFull(session, dmlFunctions(), scanRequest);
+                    rows = RowDataOutput.scanFull(session, knownAIS, dmlFunctions(), scanRequest);
                 } catch (NoSuchIndexException e) {
                     throw new HapiRequestException("no index found for query: " + request, UNSUPPORTED_REQUEST);
                 }
