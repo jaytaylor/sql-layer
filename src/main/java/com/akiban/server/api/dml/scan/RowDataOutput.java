@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 public class RowDataOutput implements LegacyRowOutput {
     private final static Logger LOG = LoggerFactory.getLogger(RowDataOutput.class);

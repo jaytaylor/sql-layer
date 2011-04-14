@@ -36,6 +36,7 @@ import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.CursorState;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -78,7 +79,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public CursorId openCursor(Session session, ScanRequest request) throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException {
+    public CursorId openCursor(Session session, ScanRequest request) throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.OPEN_CURSOR);

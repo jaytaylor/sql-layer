@@ -26,7 +26,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
@@ -35,7 +34,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
@@ -63,6 +61,7 @@ import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.RowDataLegacyOutputRouter;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
@@ -154,8 +153,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     @Override
     public CursorId openCursor(Session session, ScanRequest request)
-            throws NoSuchTableException, NoSuchColumnException,
-            NoSuchIndexException, GenericInvalidOperationException
+            throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException
     {
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
         if (request.scanAllColumns()) {
