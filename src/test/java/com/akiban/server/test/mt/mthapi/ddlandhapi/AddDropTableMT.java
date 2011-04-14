@@ -22,6 +22,7 @@ import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.test.mt.mthapi.base.HapiMTBase;
 import com.akiban.server.test.mt.mthapi.base.HapiRequestStruct;
@@ -89,6 +90,23 @@ public final class AddDropTableMT extends HapiMTBase {
             super(SCHEMA, root, chance, false,
                     HapiRequestException.ReasonCode.UNKNOWN_IDENTIFIER,
                     HapiRequestException.ReasonCode.UNSUPPORTED_REQUEST);
+        }
+
+        @Override
+        protected void validateErrorResponse(HapiGetRequest request, Throwable exception) throws UnexpectedException {
+            if (!causeIsOldAIS(exception)) {
+                super.validateErrorResponse(request, exception);
+            }
+        }
+
+        protected static boolean causeIsOldAIS(Throwable exception) {
+            if (exception instanceof HapiRequestException) {
+                Throwable cause = exception.getCause();
+                if (cause != null && cause.getClass().equals(OldAISException.class)) {
+                    return true; // expected
+                }
+            }
+            return false;
         }
     }
 
