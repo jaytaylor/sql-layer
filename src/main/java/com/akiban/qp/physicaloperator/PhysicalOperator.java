@@ -34,7 +34,7 @@ public abstract class PhysicalOperator
     }
 
     // I'm not sure I like having this as part of the interface. On one hand, operators like Flatten create new
-    // RowTypes and its handy to get access to those new RowTypes. On the other hand, not all operators do this,
+    // RowTypes and it's handy to get access to those new RowTypes. On the other hand, not all operators do this,
     // and it's conceivable we'll have to invent an operator for which this doesn't make sense, e.g., it creates
     // multiple RowTypes.
     public RowType rowType()

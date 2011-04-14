@@ -51,10 +51,10 @@ public final class JsonOutputter implements HapiOutputter
             throws IOException
         {
             this.ais = request.akibanInformationSchema();
-            queryRoot = queryRoot(request);
+            queryRoot = rootTable(request);
             genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
             // For use with OperatorBasedRowCollector
-            this.input = new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(rows.iterator()),
+            this.input = new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(predicateTable(request), rows.iterator()),
                                                           genealogist);
 /*          // For use with PersistitStoreRowCollector
             this.input = new UnOrphaningIterator<RowData>(rows.iterator(), genealogist);
@@ -74,9 +74,14 @@ public final class JsonOutputter implements HapiOutputter
             output.flush();
         }
 
-        private UserTable queryRoot(HapiProcessedGetRequest request)
+        private UserTable rootTable(HapiProcessedGetRequest request)
         {
             return ais.getUserTable(request.getSchema(), request.getTable());
+        }
+
+        private UserTable predicateTable(HapiProcessedGetRequest request)
+        {
+            return ais.getUserTable(request.getUsingTable());
         }
 
         private Set<UserTable> projectedTables(HapiProcessedGetRequest request)

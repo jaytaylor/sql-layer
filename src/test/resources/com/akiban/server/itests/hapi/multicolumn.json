@@ -138,7 +138,14 @@
                             "firstname" : "John",
                             "midinitial": "A",
                             "lastname"  : "Public"
-                        },
+                        }
+                    ]
+                },
+                {
+                    "pid"     : 1,
+                    "status1" : 1,
+                    "status2" : 2,
+                    "@c1" : [
                         {
                             "cid" : 1,
                             "pid" : 1,
