@@ -19,6 +19,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -721,6 +722,12 @@ public abstract class Tap {
      */
     public static class PerThread extends Tap {
 
+        private static final Comparator<Thread> THREAD_COMPARATOR = new Comparator<Thread>() {
+            @Override
+            public int compare(Thread o1, Thread o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        };
         private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>() {
             @Override
             protected Tap initialValue() {
@@ -800,7 +807,8 @@ public abstract class Tap {
 
         @Override
         public void appendReport(StringBuilder sb) {
-            final Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(this.threadMap);
+            final Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(THREAD_COMPARATOR);
+            threadMap.putAll(this.threadMap);
             for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
                 sb.append(NEW_LINE);
                 sb.append("==");
