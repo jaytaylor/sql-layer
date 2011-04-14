@@ -19,7 +19,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.OldAISException;
@@ -341,11 +340,28 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         DelayableScanCallable scanCallable = callableBuilder.get();
         TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
             @Override
-            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                timePoints.mark("DROP: IN");
-                ConcurrencyAtomicsDXLService.delayAfterNextDropTable(session, 50);
+            protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
+                ConcurrencyAtomicsDXLService.hookNextDropTable(
+                        session,
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: IN");
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: OUT");
+                                Timing.sleep(50);
+                            }
+                        }
+                );
                 ddl().dropTable(session, tableName); // will take ~5 seconds
-                timePoints.mark("DROP: OUT");
+                assertFalse(
+                       "drop table hook still installed",
+                       ConcurrencyAtomicsDXLService.isDropTableHookInstalled(session)
+               );
                 return null;
             }
         };
@@ -482,22 +498,35 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             writeRows(createNewRow(initialTableId, i, i + 1));
         }
 
+
         final Index index = ddl().getUserTable(session(), tableName).getIndex("age");
         final Collection<String> indexNameCollection = Collections.singleton(index.getIndexName().getName());
         final int tableId = ddl().getTableId(session(), tableName);
 
-
         TimedCallable<Throwable> dropIndexCallable = new TimedExceptionCatcher() {
             @Override
-            protected void doOrThrow(TimePoints timePoints, Session session) throws Exception {
+            protected void doOrThrow(final TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(DROP_START_LENGTH);
                 timePoints.mark("DROP: PREPARING");
-                ConcurrencyAtomicsDXLService.delayNextDropIndex(session, DROP_PAUSE_LENGTH);
+                ConcurrencyAtomicsDXLService.hookNextDropIndex(session,
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: IN");
+                                Timing.sleep(DROP_PAUSE_LENGTH);
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                Timing.sleep(DROP_PAUSE_LENGTH);
+                                timePoints.mark("DROP: OUT");
+                            }
+                        }
+                );
 
-                timePoints.mark("DROP: IN");
                 ddl().dropIndexes(session, tableName, indexNameCollection);
-                assertFalse("drop hook not removed!", ConcurrencyAtomicsDXLService.isDropIndexDelayInstalled(session));
-                timePoints.mark("DROP: OUT");
+                assertFalse("drop hook not removed!", ConcurrencyAtomicsDXLService.isDropIndexHookInstalled(session));
             }
         };
         final int localAISGeneration = aisGeneration();
