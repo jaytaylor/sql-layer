@@ -37,8 +37,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Type;
+import com.akiban.server.encoding.EncoderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,6 +117,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * for details on upper bound.
      */
     static final int MAX_INDEX_STORAGE_SIZE = Key.MAX_KEY_LENGTH - 32;
+
+    /**
+     * Maximum size for an ordinal value as stored with the HKey. Note that the
+     * <b>must match</b> the EWIDTH_XXX definition from {@link Key}, where XXX
+     * is the return type of {@link RowDef#getOrdinal()}. Currently this is
+     * int and {@link Key#EWIDTH_INT}.
+     */
+    static final int MAX_ORDINAL_STORAGE_SIZE = 5;
 
     
     /**
@@ -1122,30 +1134,45 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return canonical.substring(CREATE_TABLE.length());
     }
 
-    private void validateIndexSizes(final UserTable table) throws InvalidOperationException {
-        final String errorMessage = "Table `%s`.`%s` index `%s` exceeds maximum index size";
-        final Index pkIndex = table.getPrimaryKeyIncludingInternal().getIndex();
+    private long getMaxKeyStorageSize(final Column column) {
+        final Type type = column.getType();
+        return EncoderFactory.valueOf(type.encoding(), type).getMaxKeyStorageSize(column);
+    }
 
-        // Check primary first so the *real* problem is clear
-        if(pkIndex.hKey().getMaxStorageSize() > MAX_INDEX_STORAGE_SIZE) {
-            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
-                String.format(errorMessage, table.getName().getSchemaName(),
-                              table.getName().getTableName(), pkIndex.getIndexName().getName()));
+    private void validateIndexSizes(final UserTable table) throws InvalidOperationException {
+        final HKey hkey = table.hKey();
+
+        long hkeySize = 0;
+        int ordinalSize = 0;
+        for(HKeySegment hkSeg : hkey.segments()) {
+            ordinalSize += MAX_ORDINAL_STORAGE_SIZE; // one per segment (i.e. table)
+            for(HKeyColumn hkCol : hkSeg.columns()) {
+                hkeySize += getMaxKeyStorageSize(hkCol.column());
+            }
         }
 
+        // HKey is too large due to pk being too big or group is too nested
+        if((hkeySize + ordinalSize) > MAX_INDEX_STORAGE_SIZE) {
+            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                String.format("Table `%s`.`%s` HKEY exceeds maximum key size",
+                              table.getName().getSchemaName(), table.getName().getTableName()));
+        }
+
+        // Including internal (pk) as non-root tables get primary index 
         for(Index index : table.getIndexesIncludingInternal()) {
-            if(index != pkIndex) {
-                int fullKeySize = index.hKey().getMaxStorageSize();
-                for(IndexColumn col : index.getColumns()) {
-                    if(!pkIndex.hKey().containsColumn(col.getColumn())) {
-                        fullKeySize += col.getColumn().getMaxStorageSize();
-                    }
+            long fullKeySize = hkeySize;
+            for(IndexColumn iColumn : index.getColumns()) {
+                final Column column = iColumn.getColumn();
+                // Only indexed columns not in hkey contribute new information
+                if(!hkey.containsColumn(column)) {
+                    fullKeySize += getMaxKeyStorageSize((column));
                 }
-                if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
-                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
-                        String.format(errorMessage, table.getName().getSchemaName(),
-                                      table.getName().getTableName(), index.getIndexName().getName()));
-                }
+            }
+            if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                    String.format("Table `%s`.`%s` index `%s` exceeds maximum key size",
+                                  table.getName().getSchemaName(), table.getName().getTableName(),
+                                  index.getIndexName().getName()));
             }
         }
     }

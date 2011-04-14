@@ -67,18 +67,10 @@ public class HKey
         return segment;
     }
 
-    public int getMaxStorageSize() {
-        int total = 0;
-        for(HKeySegment segment : segments) {
-            total += segment.getMaxStorageSize();
-        }
-        return total;
-    }
-
     public boolean containsColumn(Column column) {
-        for(HKeySegment segment : segments) {
-            for(HKeyColumn col : segment.columns()) {
-                if(col.column() == column) {
+        for(HKeySegment hkSeg : segments) {
+            for(HKeyColumn hkCol : hkSeg.columns()) {
+                if(hkCol.column() == column) {
                     return true;
                 }
             }

@@ -17,6 +17,7 @@ package com.akiban.server.encoding;
 
 import java.nio.ByteBuffer;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.FieldDef;
@@ -47,6 +48,11 @@ public final class VarBinaryEncoder extends EncodingBase<ByteBuffer>{
     @Override
     public void toKey(FieldDef fieldDef, Object value, Key key) {
         key.append(value);
+    }
+
+    @Override
+    public long getMaxKeyStorageSize(Column column) {
+        return column.getMaxStorageSize();
     }
 
     @Override
