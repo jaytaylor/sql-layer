@@ -15,24 +15,16 @@
 
 package com.akiban.util;
 
-import com.akiban.server.InvalidOperationException;
-
 public final class Exceptions {
     /**
-     * Throws the given InvalidOperationException, downcast, if it's of the
-     * appropriate type
+     * Throws the given throwable, downcast, if it's of the appropriate type
      *
-     * @param cls
-     *            the class to check for and cast to
-     * @param e
-     *            the exception to check
-     * @param <T>
-     *            an InvalidOperationException to throw as
-     * @throws T
-     *             the e instance, cast down
+     * @param cls  the class to check for and cast to
+     * @param e the exception to check
+     * @param <T> a Throwable to throw as
+     * @throws T the e instance, cast down
      */
-    public static <T extends InvalidOperationException> void throwIfInstanceOf(
-            Class<T> cls, InvalidOperationException e) throws T {
+    public static <T extends Throwable> void throwIfInstanceOf(Class<T> cls, Throwable e) throws T {
         if (cls.isInstance(e)) {
             throw cls.cast(e);
         }
