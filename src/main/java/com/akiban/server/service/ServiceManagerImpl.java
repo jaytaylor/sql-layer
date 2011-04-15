@@ -189,6 +189,10 @@ public class ServiceManagerImpl implements ServiceManager
         // I'd like to brainstorm a better approach. -- Peter
 
         setServiceManager(this);
+        startAndPutServices(jmxRegistry);
+    }
+
+    void startAndPutServices(JmxRegistryService jmxRegistry) throws Exception {
         startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
@@ -213,7 +217,7 @@ public class ServiceManagerImpl implements ServiceManager
         }
     }
 
-    private void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
+    void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
         LOG.debug("Starting up service {}", service.getClass().getName());
         service.start();
         Service<?> old = services.put(service.castClass(), service);
