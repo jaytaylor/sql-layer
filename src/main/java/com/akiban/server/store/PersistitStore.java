@@ -29,6 +29,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.persistit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1079,7 +1080,8 @@ public class PersistitStore implements Store {
                                request.getScanFlags(),
                                request.getStart(),
                                request.getEnd(),
-                               request.getColumnBitMap());
+                               request.getColumnBitMap(),
+                               null);
     }
 
     @Override
@@ -1089,7 +1091,8 @@ public class PersistitStore implements Store {
                                         int scanFlags,
                                         RowData start,
                                         RowData end,
-                                        byte[] columnBitMap)
+                                        byte[] columnBitMap,
+                                        ScanLimit scanLimit)
             throws InvalidOperationException, PersistitException
     {
         NEW_COLLECTOR_TAP.in();
@@ -1108,7 +1111,8 @@ public class PersistitStore implements Store {
                                                         scanFlags,
                                                         start,
                                                         end,
-                                                        columnBitMap);
+                                                        columnBitMap,
+                                                        scanLimit);
         } else {
             rc = new PersistitStoreRowCollector(session,
                                                 this,
@@ -1283,7 +1287,7 @@ public class PersistitStore implements Store {
 
         final RowCollector rc = newRowCollector(session,
                 groupRowDef.getRowDefId(), indexDef.getId(), flags, start, end,
-                bitMap);
+                bitMap, null);
         while (rc.hasMore()) {
             payload.clear();
             while (rc.collectNextRow(payload))
@@ -1524,7 +1528,7 @@ public class PersistitStore implements Store {
             try {
                 final PersistitStoreRowCollector rc = (PersistitStoreRowCollector) newRowCollector(
                         session, rowDef.getRowDefId(), 0, 0, rowData, rowData,
-                        columnBitMap);
+                        columnBitMap, null);
                 // final KeyFilter hFilter = rc.getHFilter();
                 final Exchange hEx = rc.getHExchange();
 

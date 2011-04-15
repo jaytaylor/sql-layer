@@ -1,89 +1,77 @@
 {
 
 "setup" : {
-    "processors_default" : ["scanrows"],
-
+    "processors_default" : [ "scanrows" ],
+    "schema" : "coi",
     "tables" : [
-        [ "p1",
-            "pid int key",
-            "status1 int",
-            "status2 int",
-            "KEY p1_multi (status1, status2)"
+        [ "customer",
+            "cid int key",
+            "name varchar(32)"
         ],
 
-        [ "c1",
-            "cid int key",
-            "pid int",
-            "firstname varchar(32)",
-            "midinitial varchar(1)",
-            "lastname varchar(32)",
-            "CONSTRAINT __akiban_fk_c1 FOREIGN KEY __akiban_fk_c1 (pid) REFERENCES p1(pid)",
-            "UNIQUE KEY name_by_last(lastname, firstname, midinitial)",
-            "UNIQUE KEY name_by_first(firstname, lastname, midinitial)"
+        [ "orders",
+            "oid int key",
+            "c_id int",
+            "when varchar(10)",
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
         ]
     ],
-
     "write_rows" : {
-        "p1"    : [ [1, 1, 2],
-                    [2, 1, 2],
-                    [3, 2, 3],
-                    [4, 2, 4]
+        "customer"  : [ [11, "Alpha"],
+                        [12, "Bravo"],
+                        [13, "Charlie"],
+                        [14, "Delta"],
+                        [15, "Echo"],
+                        [16, "Foxtrot"]
         ],
-        "c1"    : [ [1, 1, "John", "Q", "Public"],
-                    [2, 3, "John", "B", "Good"],
-                    [3, 1, "John", "A", "Public"]
+        "orders"    : [ [21, 11, "1/1/2001"],
+                        [22, 11, "2/2/2002"],
+                        [23, 12, "3/3/2003"],
+                        [24, 12, "3/3/2003"],
+                        [25, 12, "3/3/2003"],
+                        [26, 16, "4/4/2004"]
         ]
     }
 },
 
 "tests" : {
-    "with_depth" : {
-        "get"           : "test:p1:(c1)firstname=John",
-        "expect index"  : {"group" : "c1$name_by_first"},
-        "comment"       : "should use index c1.name_by_first",
+    "three orders" : {
+        "get"           : "coi:customer:(orders:LIMIT=3)oid>0",
         "expect result" :
         {
-            "@p1" : [
+            "@customer" : [
                 {
-                    "pid"     : 3,
-                    "status1" : 2,
-                    "status2" : 3,
-                    "@c1" : [
+                    "cid"   : 11,
+                    "name"  : "Alpha",
+                    "@orders" : [
                         {
-                            "cid" : 2,
-                            "pid" : 3,
-                            "firstname" : "John",
-                            "midinitial": "B",
-                            "lastname"  : "Good"
+                            "oid"  : 21,
+                            "c_id" : 11,
+                            "when" : "1/1/2001"
                         }
                     ]
                 },
                 {
-                    "pid"     : 1,
-                    "status1" : 1,
-                    "status2" : 2,
-                    "@c1" : [
+                    "cid"   : 11,
+                    "name"  : "Alpha",
+                    "@orders" : [
                         {
-                            "cid" : 3,
-                            "pid" : 1,
-                            "firstname" : "John",
-                            "midinitial": "A",
-                            "lastname"  : "Public"
+                            "oid"  : 22,
+                            "c_id" : 11,
+                            "when" : "2/2/2002"
                         }
                     ]
                 },
                 {
-                    "pid"     : 1,
-                    "status1" : 1,
-                    "status2" : 2,
-                    "@c1" : [
+                    "cid" : 12,
+                    "name" : "Bravo",
+                    "@orders" : [
                         {
-                            "cid" : 1,
-                            "pid" : 1,
-                            "firstname" : "John",
-                            "midinitial": "Q",
-                            "lastname"  : "Public"
+                            "oid"  : 23,
+                            "c_id" : 12,
+                            "when" : "3/3/2003"
                         }
+
                     ]
                 }
             ]

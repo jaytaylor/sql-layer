@@ -28,6 +28,12 @@ class PersistitHKey implements HKey
         return hKey.toString();
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        return this.hKey.equals(((PersistitHKey) o).hKey);
+    }
+
     // HKey interface
 
     public int segments()

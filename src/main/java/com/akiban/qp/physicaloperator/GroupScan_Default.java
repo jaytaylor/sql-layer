@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.ManagedRow;
 
 class GroupScan_Default extends PhysicalOperator
 {
@@ -31,16 +32,18 @@ class GroupScan_Default extends PhysicalOperator
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(StoreAdapter store, GroupTable groupTable)
+    public GroupScan_Default(StoreAdapter store, GroupTable groupTable, Limit limit)
     {
         this.store = store;
         this.groupTable = groupTable;
+        this.limit = limit;
     }
 
     // Object state
 
     private final StoreAdapter store;
     private final GroupTable groupTable;
+    private final Limit limit;
 
     // Inner classes
 
@@ -73,7 +76,11 @@ class GroupScan_Default extends PhysicalOperator
         {
             boolean next = cursor.next();
             if (next) {
-                outputRow(cursor.currentRow());
+                ManagedRow row = cursor.currentRow();
+                outputRow(row);
+                if (limit.limitReached(row)) {
+                    close();
+                }
             } else {
                 close();
             }

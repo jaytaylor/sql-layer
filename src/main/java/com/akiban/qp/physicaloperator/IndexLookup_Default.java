@@ -50,10 +50,14 @@ class IndexLookup_Default extends PhysicalOperator
 
     // IndexLookup_Default interface
 
-    public IndexLookup_Default(PhysicalOperator inputOperator, GroupTable groupTable, List<RowType> missingTypes)
+    public IndexLookup_Default(PhysicalOperator inputOperator,
+                               GroupTable groupTable,
+                               Limit limit,
+                               List<RowType> missingTypes)
     {
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
+        this.limit = limit;
         int maxTypeId = -1;
         for (RowType missingType : missingTypes) {
             maxTypeId = max(maxTypeId, missingType.typeId());
@@ -73,6 +77,7 @@ class IndexLookup_Default extends PhysicalOperator
 
     private final PhysicalOperator inputOperator;
     private final GroupTable groupTable;
+    private final Limit limit;
     private final int[] missingTypeDepth;
 
     // Inner classes
@@ -91,33 +96,36 @@ class IndexLookup_Default extends PhysicalOperator
         @Override
         public boolean next()
         {
-            groupRow.set(null);
             while (groupRow.isNull() && indexRow.isNotNull()) {
                 groupRow.set(pending.take());
                 if (groupRow.isNull()) {
                     if (groupCursor.next()) {
+                        // Get descendent of row selected by index
                         groupRow.set(groupCursor.currentRow());
-                        if (groupRow.isNotNull() && !indexRow.ancestorOf(groupRow.managedRow())) {
-                            groupRow.set(null);
-                        }
                     } else {
                         advanceIndex();
                     }
                 }
             }
             outputRow(groupRow.managedRow());
+            groupRow.set(null);
             if (LOG.isInfoEnabled()) {
                 LOG.info("IndexLookup: {}", groupRow.isNull() ? null : groupRow.managedRow());
             }
-            return groupRow.isNotNull();
+            return outputRow() != null;
         }
 
         @Override
         public void close()
         {
             outputRow(null);
-            ancestorRow.set(null);
             indexInput.close();
+            indexRow.set(null);
+            groupCursor.close();
+            groupRow.set(null);
+            ancestorCursor.close();
+            ancestorRow.set(null);
+            pending.clear();
         }
 
         // For use by this class
@@ -127,9 +135,18 @@ class IndexLookup_Default extends PhysicalOperator
             groupCursor.close();
             if (indexInput.next()) {
                 indexRow.set(indexInput.currentRow());
-                groupCursor.bind(indexRow.hKey());
+                groupCursor.bind(this.indexRow.hKey());
                 groupCursor.open();
-                findAncestors();
+                if (groupCursor.next()) {
+                    ManagedRow groupRow = groupCursor.currentRow();
+                    if (limit.limitReached(groupRow)) {
+                        close();
+                    } else {
+                        findAncestors();
+                        pending.add(groupRow);
+                    }
+                }
+                groupRow.set(pending.take());
             } else {
                 indexRow.set(null);
             }
@@ -137,6 +154,7 @@ class IndexLookup_Default extends PhysicalOperator
 
         private void findAncestors()
         {
+            assert pending.isEmpty();
             HKey hKey = indexRow.hKey();
             int nSegments = hKey.segments();
             for (int i = 1; i < missingTypeDepth.length; i++) {
@@ -161,7 +179,8 @@ class IndexLookup_Default extends PhysicalOperator
             this.indexInput = input;
             this.groupCursor = adapter.newGroupCursor(groupTable);
             this.ancestorCursor = adapter.newGroupCursor(groupTable);
-            this.pending = new PendingRows(missingTypeDepth.length);
+            // Why + 1: Because the group row (whose ancestors get discovered) also goes into pending.
+            this.pending = new PendingRows(missingTypeDepth.length + 1);
         }
 
         // For use by this class
@@ -172,7 +191,10 @@ class IndexLookup_Default extends PhysicalOperator
                 ancestorCursor.bind(indexRow.hKey());
                 ancestorCursor.open();
                 if (ancestorCursor.next()) {
-                    ancestorRow.set(ancestorCursor.currentRow());
+                    ManagedRow retrievedRow = ancestorCursor.currentRow();
+                    // Retrieved row might not actually what we were looking for -- not all ancestors are present,
+                    // (there are orphan rows).
+                    ancestorRow.set(indexRow.hKey().equals(retrievedRow.hKey()) ? retrievedRow : null);
                 }
             } finally {
                 ancestorCursor.close();

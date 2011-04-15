@@ -44,6 +44,13 @@ class PendingRows
         for (int i = 0; i <= capacity; i++) {
             row(i, null);
         }
+        start = 0;
+        end = 0;
+    }
+
+    public boolean isEmpty()
+    {
+        return start == end;
     }
 
     public PendingRows(int capacity)

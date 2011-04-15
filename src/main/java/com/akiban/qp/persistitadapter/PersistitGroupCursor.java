@@ -248,7 +248,10 @@ class PersistitGroupCursor implements GroupCursor
                             // But it is still selected by hKeyRange
                             exchange.getKey().copyTo(controllingHKey);
                         } else {
-                            close();
+                            // Not selected. Could be that we need to skip over some orphans.
+                            if (!exchange.traverse(Key.GT, hKeyRangeFilter, VALUE_BYTES)) {
+                                close();
+                            }
                         }
                     }
                 }

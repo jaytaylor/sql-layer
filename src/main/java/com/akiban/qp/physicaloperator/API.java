@@ -18,6 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
 import java.util.List;
@@ -41,14 +42,27 @@ public class API
 
     public static PhysicalOperator groupScan_Default(StoreAdapter store, GroupTable groupTable)
     {
-        return new GroupScan_Default(store, groupTable);
+        return groupScan_Default(store, groupTable, NO_LIMIT);
+    }
+
+    public static PhysicalOperator groupScan_Default(StoreAdapter store, GroupTable groupTable, Limit limit)
+    {
+        return new GroupScan_Default(store, groupTable, limit);
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
                                                        GroupTable groupTable,
                                                        List<RowType> missingTypes)
     {
-        return new IndexLookup_Default(inputOperator, groupTable, missingTypes);
+        return indexLookup_Default(inputOperator, groupTable, NO_LIMIT, missingTypes);
+    }
+
+    public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
+                                                       GroupTable groupTable,
+                                                       Limit limit,
+                                                       List<RowType> missingTypes)
+    {
+        return new IndexLookup_Default(inputOperator, groupTable, limit, missingTypes);
     }
 
     public static PhysicalOperator indexScan_Default(Index index)
@@ -62,4 +76,14 @@ public class API
     {
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
     }
+
+    private static final Limit NO_LIMIT = new Limit()
+    {
+
+        @Override
+        public boolean limitReached(Row row)
+        {
+            return false;
+        }
+    };
 }

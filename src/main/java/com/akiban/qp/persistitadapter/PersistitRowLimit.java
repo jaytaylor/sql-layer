@@ -13,28 +13,31 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.memcache.hprocessor;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.server.RowData;
+import com.akiban.qp.physicaloperator.Limit;
+import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.util.ArgumentValidation;
 
-public final class PredicateLimit implements ScanLimit {
-    private final int rowDefId;
-    private final int limit;
-    private int count = 0;
-
-    public PredicateLimit(int rowDefId, int limit) {
-        ArgumentValidation.isGTE("limit", limit, 0);
-        this.limit = limit;
-        this.rowDefId = rowDefId;
-    }
+public class PersistitRowLimit implements Limit
+{
+    // Limit interface
 
     @Override
-    public boolean limitReached(RowData candidateRow) {
-        if (candidateRow != null && candidateRow.getRowDefId() == rowDefId) {
-            ++count;
-        }
-        return limit == 0 || count > limit;
+    public boolean limitReached(Row row)
+    {
+        PersistitGroupRow persistitRow = (PersistitGroupRow) row;
+        return limit.limitReached(persistitRow.rowData());
     }
+
+    // PersistitRowLimit interface
+
+    public PersistitRowLimit(ScanLimit limit)
+    {
+        this.limit = limit;
+    }
+
+    // Object state
+
+    private final ScanLimit limit;
 }

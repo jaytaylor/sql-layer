@@ -258,13 +258,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throws NoSuchTableException, NoSuchColumnException,
             NoSuchIndexException, GenericInvalidOperationException {
         try {
-            return store().newRowCollector(session,
-                                           request.getTableId(),
-                                           request.getIndexId(),
-                                           request.getScanFlags(),
-                                           request.getStart(),
-                                           request.getEnd(),
-                                           request.getColumnBitMap());
+            RowCollector rowCollector = store().newRowCollector(session,
+                                                                request.getTableId(),
+                                                                request.getIndexId(),
+                                                                request.getScanFlags(),
+                                                                request.getStart(),
+                                                                request.getEnd(),
+                                                                request.getColumnBitMap(),
+                                                                request.getScanLimit());
+            return rowCollector;
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
@@ -550,7 +552,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             while (!cursor.isFinished()) {
                 scanHooks.loopStartHook();
                 RowData rowData = rc.collectNextRow();
-                if (rowData == null || limit.limitReached(rowData)) {
+                if (rowData == null || (!rc.checksLimit() && limit.limitReached(rowData))) {
                     cursor.setFinished();
                 }
                 else {

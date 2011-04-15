@@ -54,7 +54,8 @@ public final class JsonOutputter implements HapiOutputter
             queryRoot = rootTable(request);
             genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
             // For use with OperatorBasedRowCollector
-            this.input = new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(predicateTable(request), rows.iterator()),
+            this.input = new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(predicateTable(request),
+                                                                                        rows.iterator()),
                                                           genealogist);
 /*          // For use with PersistitStoreRowCollector
             this.input = new UnOrphaningIterator<RowData>(rows.iterator(), genealogist);

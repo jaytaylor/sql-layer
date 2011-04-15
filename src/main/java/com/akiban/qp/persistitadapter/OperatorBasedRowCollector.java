@@ -19,6 +19,7 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Executable;
+import com.akiban.qp.physicaloperator.Limit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
@@ -28,6 +29,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
@@ -56,12 +58,15 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!closed) {
             currentRow.set(cursor.currentRow());
             PersistitGroupRow row = (PersistitGroupRow) currentRow.managedRow();
-            assert row != null;
-            rowData = row.rowData();
-            rowCount++;
-            if (!cursor.next()) {
-                currentRow.set(null);
+            if (row == null) {
                 close();
+            } else {
+                rowData = row.rowData();
+                rowCount++;
+                if (!cursor.next()) {
+                    currentRow.set(null);
+                    close();
+                }
             }
         }
         return rowData;
@@ -130,6 +135,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         assert !outputToMessage;
     }
 
+    @Override
+    public boolean checksLimit()
+    {
+        return true;
+    }
+
     // OperatorBasedRowCollector interface
 
     public static OperatorBasedRowCollector newCollector(Session session,
@@ -139,7 +150,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                                          int scanFlags,
                                                          RowData start,
                                                          RowData end,
-                                                         byte[] columnBitMap)
+                                                         byte[] columnBitMap,
+                                                         ScanLimit scanLimit)
     {
         if ((scanFlags & (SCAN_FLAGS_PREFIX | SCAN_FLAGS_SINGLE_ROW | SCAN_FLAGS_DESCENDING)) != 0) {
             throw new IllegalArgumentException
@@ -158,7 +170,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             ? new OneTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end)
             // HAPI query root table != predicate table
             : new TwoTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end, columnBitMap);
-        rowCollector.createPlan();
+        rowCollector.createPlan(scanLimit);
         return rowCollector;
     }
     
@@ -170,18 +182,20 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
-    private void createPlan()
+    private void createPlan(ScanLimit scanLimit)
     {
         // Plan and query
         Executable query;
+        Limit limit = new PersistitRowLimit(scanLimit);
         boolean hKeyEquivalentIndex = ((IndexDef) predicateIndex.indexDef()).isHKeyEquivalent();
         if (hKeyEquivalentIndex) {
-            PhysicalOperator groupScan = groupScan_Default(adapter, queryRootTable.getGroup().getGroupTable());
+            PhysicalOperator groupScan = groupScan_Default(adapter, queryRootTable.getGroup().getGroupTable(), limit);
             query = new Executable(adapter, groupScan).bind(groupScan, indexKeyRange);
         } else {
             PhysicalOperator indexScan = indexScan_Default(predicateIndex);
             PhysicalOperator indexLookup = indexLookup_Default(indexScan,
                                                                predicateIndex.getTable().getGroup().getGroupTable(),
+                                                               limit,
                                                                ancestorTypes());
             query = new Executable(adapter, indexLookup).bind(indexScan, indexKeyRange);
         }

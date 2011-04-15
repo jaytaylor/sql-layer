@@ -119,7 +119,7 @@ public class MultiVolumeStoreTest extends AkServerTestCase {
         int scanCount = 0;
         result.clear();
         final RowCollector rc = store.newRowCollector(session, rowDefId,
-                indexId, scanFlags, start, end, columnBitMap);
+                indexId, scanFlags, start, end, columnBitMap, null);
 
         while (rc.hasMore()) {
             final ByteBuffer payload = ByteBufferFactory.allocate(65536);

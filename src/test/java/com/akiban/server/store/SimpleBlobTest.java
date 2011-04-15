@@ -56,7 +56,7 @@ public class SimpleBlobTest extends AkServerTestCase {
             store.writeRow(session, rowData);
         }
         
-        final RowCollector rc = store.newRowCollector(session, rowDef.getRowDefId(), 0, 0, null, null, new byte[]{7});
+        final RowCollector rc = store.newRowCollector(session, rowDef.getRowDefId(), 0, 0, null, null, new byte[]{7}, null);
         final ByteBuffer bb = ByteBuffer.allocate(5000000);
         for (int i = 1; i <= 6; i++) {
             assertTrue(rc.hasMore());

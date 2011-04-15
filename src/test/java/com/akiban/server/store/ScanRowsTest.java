@@ -375,7 +375,7 @@ public class ScanRowsTest extends AbstractScanBase {
         bitMap = bitsToRoot(userRowDef, rowDef);
 
         final RowCollector rc = store.newRowCollector(session, start.getRowDefId(), 0,
-                0, start, end, bitMap);
+                0, start, end, bitMap, null);
         final ByteBuffer payload = ByteBuffer.allocate(65536);
         // Since there are no aaaa rows, we should get no results
         assertTrue(rc.collectNextRow(payload) == false);

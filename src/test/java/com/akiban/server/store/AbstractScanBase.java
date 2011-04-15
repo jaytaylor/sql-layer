@@ -110,7 +110,7 @@ public abstract class AbstractScanBase extends AkServerTestSuite {
         int scanCount = 0;
         result.clear();
         final RowCollector rc = store.newRowCollector(session, rowDefId, indexId,
-                scanFlags, start, end, columnBitMap);
+                scanFlags, start, end, columnBitMap, null);
         if (VERBOSE) {
             System.out.println("Test " + test);
         }

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.model.*;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -854,6 +855,12 @@ public class PersistitStoreRowCollector implements RowCollector {
             store.releaseExchange(session, iEx);
             iEx = null;
         }
+    }
+
+    @Override
+    public boolean checksLimit()
+    {
+        return false;
     }
 
     public int getDeliveredRows() {

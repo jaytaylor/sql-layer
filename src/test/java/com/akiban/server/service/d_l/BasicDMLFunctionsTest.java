@@ -142,6 +142,12 @@ public final class BasicDMLFunctionsTest extends AkServerTestCase {
         {
             assert outputToMessage;
         }
+
+        @Override
+        public boolean checksLimit()
+        {
+            return false;
+        }
     }
 
     private static class StringRowOutput implements LegacyRowOutput {

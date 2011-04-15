@@ -230,7 +230,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
 
             final RowCollector rc = store.newRowCollector(session,
                     td.defI.getRowDefId(), indexId, 0, td.rowI, td.rowI,
-                    columnBitMap);
+                    columnBitMap, null);
             final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
             while (rc.hasMore()) {
@@ -264,7 +264,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
 
             final RowCollector rc = store.newRowCollector(session,
                     td.defI.getRowDefId(), indexId, 0, td.rowI, td.rowI,
-                    columnBitMap);
+                    columnBitMap, null);
             final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
             while (rc.hasMore()) {
@@ -309,7 +309,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
             int indexId = findIndexId(td.defCOI, td.defO, 0);
             final RowCollector rc = store.newRowCollector(session,
                     td.defCOI.getRowDefId(), indexId, 0, start, end,
-                    columnBitMap);
+                    columnBitMap, null);
             final ByteBuffer payload = ByteBufferFactory.allocate(256);
             //
             // Expect all the C, O and I rows for orders 1004 through 1007,
@@ -414,7 +414,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
 
         RowCollector rc;
         rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
-                .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
+                .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap, null);
         payload.clear();
         assertTrue(rc.collectNextRow(payload));
         payload.flip();
@@ -428,7 +428,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
         store.updateRow(session, oldRowData, newRowData, null);
 
         rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
-                .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap);
+                .getPKIndexDef().getId(), 0, td.rowX, td.rowX, columnBitMap, null);
         payload.clear();
         assertTrue(rc.collectNextRow(payload));
         payload.flip();
@@ -448,13 +448,13 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
 
         rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, updateRowData, updateRowData,
-                columnBitMap);
+                columnBitMap, null);
         payload.clear();
         assertTrue(!rc.collectNextRow(payload));
 
         rc = store.newRowCollector(session, td.defX.getRowDefId(), td.defX
                 .getPKIndexDef().getId(), 0, newRowData, newRowData,
-                columnBitMap);
+                columnBitMap, null);
 
         assertTrue(rc.collectNextRow(payload));
         payload.flip();
@@ -527,7 +527,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
         final byte[] columnBitMap = new byte[] { (byte) 0x1F };
         final RowCollector rc = store.newRowCollector(session,
                 td.defX.getRowDefId(), td.defX.getPKIndexDef().getId(), 0,
-                td.rowX, td.rowX, columnBitMap);
+                td.rowX, td.rowX, columnBitMap, null);
         final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
         while (rc.hasMore()) {
@@ -649,7 +649,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
         final byte[] columnBitMap = new byte[] { (byte) 0x1F };
         final RowCollector rc = store.newRowCollector(session,
                 td.defX.getRowDefId(), td.defX.getPKIndexDef().getId(), 0,
-                td.rowX, td.rowX, columnBitMap);
+                td.rowX, td.rowX, columnBitMap, null);
         final ByteBuffer payload = ByteBufferFactory.allocate(256);
 
         while (rc.hasMore()) {
