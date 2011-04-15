@@ -183,7 +183,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
             old = internalGetIndexMap();
             withNewIndex = new TreeMap<String, Index>(old);
             withNewIndex.put(index.getIndexName().getName().toLowerCase(), index);
-        } while(internalIndexMapCAS(old, withNewIndex));
+        } while(!internalIndexMapCAS(old, withNewIndex));
     }
 
     protected void dropColumns()
