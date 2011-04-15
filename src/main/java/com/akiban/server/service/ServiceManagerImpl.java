@@ -35,6 +35,7 @@ import com.akiban.server.service.stats.StatisticsServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.util.Exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +46,8 @@ public class ServiceManagerImpl implements ServiceManager
     private static final Logger LOG = LoggerFactory.getLogger(ServiceManagerImpl.class.getName());
     private final ServiceFactory factory;
     private Map<Class<?>, Service<?>> services; // for each key-val, the ?
-                                                // should be the same; (T.class
-                                                // -> Service<T>)
+    // should be the same; (T.class
+    // -> Service<T>)
 
     public static void setServiceManager(ServiceManager newInstance) {
         if (newInstance == null) {
@@ -59,7 +60,7 @@ public class ServiceManagerImpl implements ServiceManager
 
     /**
      * Construct ServiceManagerImpl with a given factory.
-     * 
+     *
      * @param factory
      *            the factory that creates the services this instance manages
      */
@@ -129,12 +130,12 @@ public class ServiceManagerImpl implements ServiceManager
      * implements Service<FooService>}, then passing {@code FooService.class} to
      * this method will get you that impl instance.
      * </p>
-     * 
+     *
      * <p>
      * If a there isn't a {@code Service<FooService>} defined and started, this
      * will throw a {@linkplain ServiceNotStartedException}
      * </p>
-     * 
+     *
      * @param serviceClass
      *            the service's class
      * @param <T>
@@ -148,7 +149,28 @@ public class ServiceManagerImpl implements ServiceManager
         return getService(serviceClass);
     }
 
-    public void startServices() throws Exception {
+    public void startServices() throws ServiceStartupException {
+        try {
+            tryStartServices();
+        } catch (Throwable t) {
+            List<Throwable> shutdownExceptions = tryStopServices();
+            if (shutdownExceptions.isEmpty()) {
+                throw new ServiceStartupException(t);
+            }
+            for (Throwable shutdownException : shutdownExceptions) {
+                shutdownException.printStackTrace();
+            }
+            StringBuilder err = new StringBuilder();
+            err.append(shutdownExceptions.size()).append(" exception");
+            if (1 != shutdownExceptions.size()) {
+                err.append('s');
+            }
+            err.append(" while shutting down after bad start");
+            throw new ServiceStartupException(err.toString(), t);
+        }
+    }
+
+    private void tryStartServices() throws Exception {
         LOG.info("Starting up services");
 
         Service<JmxRegistryService> jmxRegistryService = factory
@@ -167,6 +189,10 @@ public class ServiceManagerImpl implements ServiceManager
         // I'd like to brainstorm a better approach. -- Peter
 
         setServiceManager(this);
+        startAndPutServices(jmxRegistry);
+    }
+
+    void startAndPutServices(JmxRegistryService jmxRegistry) throws Exception {
         startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
@@ -191,7 +217,7 @@ public class ServiceManagerImpl implements ServiceManager
         }
     }
 
-    private void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
+    void startAndPut(Service service, JmxRegistryService jmxRegistry) throws Exception {
         LOG.debug("Starting up service {}", service.getClass().getName());
         service.start();
         Service<?> old = services.put(service.castClass(), service);
@@ -199,7 +225,7 @@ public class ServiceManagerImpl implements ServiceManager
             services.put(service.castClass(), old);
             throw new RuntimeException(String.format(
                     "Conflicting services: %s (%s) would bump %s (%s)", service
-                            .getClass(), service.castClass(), old.getClass(),
+                    .getClass(), service.castClass(), old.getClass(),
                     old.castClass()));
         }
         if (service instanceof JmxManageable) {
@@ -208,6 +234,19 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     public void stopServices() throws Exception {
+        List<Throwable> exceptions = tryStopServices();
+        if (!exceptions.isEmpty()) {
+            if (exceptions.size() == 1) {
+                throw Exceptions.throwAlways(exceptions.get(0));
+            }
+            for (Throwable t : exceptions) {
+                t.printStackTrace();
+            }
+            throw new Exception("Failure(s) while shutting down services: " + exceptions, exceptions.get(0));
+        }
+    }
+
+    private List<Throwable> tryStopServices() {
         setServiceManager(null);
         List<Service> stopServices = new ArrayList<Service>(services.size());
         for (Service service : services.values()) {
@@ -215,27 +254,25 @@ public class ServiceManagerImpl implements ServiceManager
         }
         ListIterator<Service> reverseIter = stopServices
                 .listIterator(stopServices.size());
-        List<Exception> exceptions = new ArrayList<Exception>();
+        List<Throwable> exceptions = new ArrayList<Throwable>();
         LOG.info("Shutting down services");
         while (reverseIter.hasPrevious()) {
             try {
                 Service service = reverseIter.previous();
                 LOG.debug("Shutting down service {}", service.getClass().getName());
                 service.stop();
-            } catch (Exception t) {
-                LOG.error("Error stopping service", t);
+            } catch (Throwable t) {
+                logServiceShutdownException(t);
                 exceptions.add(t);
             }
         }
-        if (!exceptions.isEmpty()) {
-            if (exceptions.size() == 1) {
-                throw exceptions.get(0);
-            }
-            throw new Exception("Failure(s) while shutting down services: "
-                    + exceptions, exceptions.get(0));
-        }
+        return exceptions;
     }
-    
+
+    void logServiceShutdownException(Throwable t) {
+        LOG.error("Error stopping service", t);
+    }
+
     /**
      * Crash all the services. The crash method abruptly stops the service without
      * performing its graceful shutdown processing. This method is intended for
@@ -313,7 +350,7 @@ public class ServiceManagerImpl implements ServiceManager
     /**
      * Quick-and-dirty testing tool. Creates a ServiceManager, starts its
      * services (including JMX), and then just sits around waiting to be killed.
-     * 
+     *
      * @param ignored
      *            ignored
      */

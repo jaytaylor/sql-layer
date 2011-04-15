@@ -28,7 +28,7 @@ import com.akiban.server.store.Store;
 
 public interface ServiceManager {
 
-    void startServices() throws Exception;
+    void startServices() throws ServiceStartupException;
 
     void stopServices() throws Exception;
     
