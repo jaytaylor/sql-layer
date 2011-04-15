@@ -15,6 +15,7 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
@@ -42,6 +43,11 @@ public class StringEncoder extends EncodingBase<String> {
     @Override
     public void toKey(FieldDef fieldDef, Object value, Key key) {
         key.append(value);
+    }
+
+    @Override
+    public long getMaxKeyStorageSize(Column column) {
+        return column.getMaxStorageSize();
     }
 
     @Override
@@ -80,5 +86,4 @@ public class StringEncoder extends EncodingBase<String> {
         long w = type.maxSizeBytes();
         return !type.fixedSize() && w < 65536 * 3;
     }
-
 }

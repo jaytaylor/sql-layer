@@ -21,6 +21,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -77,6 +78,74 @@ public class AtomicSchemaChangesIT extends ITBase
                         "key(xyz)");
             fail();
         } catch (Throwable e) {
+            // expected
+        }
+        checkInitialSchema();
+    }
+
+    @Test
+    public void tryRootPrimaryKeyTooLarge() throws Exception {
+        createInitialSchema();
+        checkInitialSchema();
+        try {
+            createTable("s", "t1",
+                        "id varchar(2050)",
+                        "primary key(id)");
+            Assert.fail("Expected table to be rejected");
+        } catch (Exception e) {
+            // expected
+        }
+        checkInitialSchema();
+    }
+
+    @Test
+    public void tryRootSecondaryKeyTooLarge() throws Exception {
+        createInitialSchema();
+        checkInitialSchema();
+        try {
+            createTable("s", "t1",
+                        "id int",
+                        "c1 varchar(2050)",
+                        "index(c1)",
+                        "primary key(id)");
+            Assert.fail("Expected table to be rejected");
+        } catch (Exception e) {
+            // expected
+        }
+        checkInitialSchema();
+    }
+
+    @Test
+    public void tryChildPrimaryKeyTooLarge() throws Exception {
+        createInitialSchema();
+        checkInitialSchema();
+        try {
+            createTable("s", "child2",
+                        "id varchar(2020)",
+                        "pid int",
+                        "primary key(id)",
+                        "constraint __akiban foreign key(pid) references parent(pid)");
+            Assert.fail("Expected table to be rejected");
+        } catch (Exception e) {
+            // expected
+        }
+        checkInitialSchema();
+    }
+
+    @Test
+    public void tryChildSecondaryKeyTooLarge() throws Exception {
+        createInitialSchema();
+        checkInitialSchema();
+        try {
+            createTable("s", "child2",
+                        "id int",
+                        "pid int",
+                        "filler varchar(2020)",
+                        "primary key(id)",
+                        "index(filler)",
+                        "constraint __akiban foreign key(pid) references parent(pid)");
+            Assert.fail("Expected table to be rejected");
+        } catch (Exception e) {
             // expected
         }
         checkInitialSchema();

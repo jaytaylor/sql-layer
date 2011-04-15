@@ -40,6 +40,7 @@ import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
 import com.akiban.server.service.session.Session;
 
 public interface DDLFunctions {
@@ -81,6 +82,7 @@ public interface DDLFunctions {
             UnsupportedDataTypeException,
             JoinToMultipleParentsException,
             UnsupportedIndexDataTypeException,
+            UnsupportedIndexSizeException,
             GenericInvalidOperationException;
 
     /**

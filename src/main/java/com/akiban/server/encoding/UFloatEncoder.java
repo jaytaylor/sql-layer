@@ -15,6 +15,7 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
@@ -46,6 +47,11 @@ public final class UFloatEncoder extends EncodingBase<Double> {
 
     @Override
     public void toKey(FieldDef fieldDef, Object value, Key key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long getMaxKeyStorageSize(Column column) {
         throw new UnsupportedOperationException();
     }
 

@@ -49,6 +49,7 @@ import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -73,7 +74,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             JoinToWrongColumnsException, JoinToMultipleParentsException,
             NoPrimaryKeyException, DuplicateColumnNameException,
             UnsupportedDataTypeException, UnsupportedIndexDataTypeException,
-            GenericInvalidOperationException
+            UnsupportedIndexSizeException, GenericInvalidOperationException
     {
         logger.trace("creating table: ({}) {}", schema, ddlText);
         try {
@@ -87,7 +88,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     JoinToWrongColumnsException.class,
                     JoinToMultipleParentsException.class,
                     DuplicateTableNameException.class,
-                    UnsupportedIndexDataTypeException.class
+                    UnsupportedIndexDataTypeException.class,
+                    UnsupportedIndexSizeException.class
             );
             throw new GenericInvalidOperationException(ioe);
         }

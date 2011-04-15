@@ -36,6 +36,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Type;
+import com.akiban.server.encoding.EncoderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +111,22 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private AtomicLong updateTimestamp = new AtomicLong();
 
+    /**
+     * Maximum size that can can be stored in an index. See
+     * {@link Transaction#prepareTxnExchange(com.persistit.Tree, com.persistit.Key, char)}
+     * for details on upper bound.
+     */
+    static final int MAX_INDEX_STORAGE_SIZE = Key.MAX_KEY_LENGTH - 32;
+
+    /**
+     * Maximum size for an ordinal value as stored with the HKey. Note that the
+     * <b>must match</b> the EWIDTH_XXX definition from {@link Key}, where XXX
+     * is the return type of {@link RowDef#getOrdinal()}. Currently this is
+     * int and {@link Key#EWIDTH_INT}.
+     */
+    static final int MAX_ORDINAL_STORAGE_SIZE = 5;
+
+    
     /**
      * Create or update a table definition given a schema name, table name and a
      * CREATE TABLE statement supplied by the client. The CREATE TABLE
@@ -214,12 +237,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                             .append(tableName).append(tableId).store();
                 }
 
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
+                validateIndexSizes(newAIS.getUserTable(tableNameFull));
+
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -280,13 +305,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }, SCHEMA_TREE_NAME);
 
                 serviceManager.getTreeService().getTableStatusCache().drop(tableId);
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
 
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -356,12 +381,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             transaction.begin();
             try {
                 deleteTableDefinitionList(session, tables);
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -482,12 +507,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         treeService.releaseExchange(session, ex2);
                     }
                 }
-                final AkibanInformationSchema ais = constructAIS(session);
+                final AkibanInformationSchema newAIS = constructAIS(session);
                 transaction.commit(new DefaultCommitListener() {
 
                     @Override
                     public void committed() {
-                        commitAIS(ais, transaction.getCommitTimestamp());
+                        commitAIS(newAIS, transaction.getCommitTimestamp());
                     }
 
                 }, forceToDisk);
@@ -913,14 +938,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return System.nanoTime() / 1000L;
     }
 
-    private void commitAIS(final AkibanInformationSchema ais,
+    private void commitAIS(final AkibanInformationSchema newAis,
             final long timestamp) {
         final RowDefCache rowDefCache = getRowDefCache();
         rowDefCache.clear();
-        rowDefCache.setAIS(ais);
+        rowDefCache.setAIS(newAis);
         rowDefCache.fixUpOrdinals();
         updateTimestamp.set(timestamp);
-        this.ais = ais;
+        this.ais = newAis;
     }
 
     private RowDefCache getRowDefCache() {
@@ -998,13 +1023,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
         }
 
-        for (String colName : tableDef.getPrimaryKey()) {
-            final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
+        for (SchemaDef.IndexColumnDef colDef : tableDef.getPrimaryKey().getColumns()) {
+            final SchemaDef.ColumnDef col = tableDef.getColumn(colDef.getColumnName());
             if (col != null) {
                 final String typeName = col.getType();
                 if (!ais.isTypeSupportedAsIndex(typeName)) {
                     complainAboutIndexDataType(schemaName, tableName,
-                            "PRIMARY", colName, typeName);
+                            "PRIMARY", colDef.getColumnName(), typeName);
                 }
             }
         }
@@ -1109,4 +1134,56 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return canonical.substring(CREATE_TABLE.length());
     }
 
+    private long getMaxKeyStorageSize(final Column column) {
+        final Type type = column.getType();
+        return EncoderFactory.valueOf(type.encoding(), type).getMaxKeyStorageSize(column);
+    }
+
+    private void validateIndexSizes(final UserTable table) throws InvalidOperationException {
+        final HKey hkey = table.hKey();
+
+        long hkeySize = 0;
+        int ordinalSize = 0;
+        for(HKeySegment hkSeg : hkey.segments()) {
+            ordinalSize += MAX_ORDINAL_STORAGE_SIZE; // one per segment (i.e. table)
+            for(HKeyColumn hkCol : hkSeg.columns()) {
+                hkeySize += getMaxKeyStorageSize(hkCol.column());
+            }
+        }
+
+        // HKey is too large due to pk being too big or group is too nested
+        if((hkeySize + ordinalSize) > MAX_INDEX_STORAGE_SIZE) {
+            throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                String.format("Table `%s`.`%s` HKEY exceeds maximum key size",
+                              table.getName().getSchemaName(), table.getName().getTableName()));
+        }
+
+        // includingInternal so all indexes are checked, including (hidden) PRIMARY, since any non-hkey
+        // equivalent index will a) get an index tree and b) have column(s) contributing additional size
+        for(Index index : table.getIndexesIncludingInternal()) {
+            long fullKeySize = hkeySize;
+            for(IndexColumn iColumn : index.getColumns()) {
+                final Column column = iColumn.getColumn();
+                // Only indexed columns not in hkey contribute new information
+                if(!hkey.containsColumn(column)) {
+                    fullKeySize += getMaxKeyStorageSize((column));
+                }
+
+                // Reject prefix indexes until supported (bug760202)
+                if(index.isUnique() && iColumn.getIndexedLength() != null) {
+                    throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                        String.format("Table `%s`.`%s` unique index `%s` has prefix size",
+                                       table.getName().getSchemaName(), table.getName().getTableName(),
+                                       index.getIndexName().getName()));
+
+                }
+            }
+            if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
+                throw new InvalidOperationException(ErrorCode.UNSUPPORTED_INDEX_SIZE,
+                    String.format("Table `%s`.`%s` index `%s` exceeds maximum key size",
+                                  table.getName().getSchemaName(), table.getName().getTableName(),
+                                  index.getIndexName().getName()));
+            }
+        }
+    }
 }

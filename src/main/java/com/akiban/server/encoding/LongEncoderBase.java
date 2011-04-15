@@ -15,6 +15,7 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.ais.model.Column;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
 import com.akiban.server.RowData;
@@ -137,5 +138,13 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
         } catch(EncodingException e) {
             sb.append("null");
         }
+    }
+
+    /**
+     * See {@link Key#EWIDTH_LONG}
+     */
+    @Override
+    public long getMaxKeyStorageSize(Column column) {
+        return 9;
     }
 }
