@@ -15,68 +15,134 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
+import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.BufferFullException;
+import com.akiban.server.api.dml.scan.CursorId;
+import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
+import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.dml.scan.WrappingRowOutput;
 import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.service.memcache.hprocessor.Scanrows;
 import com.akiban.server.service.memcache.outputter.DummyOutputter;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
+import sun.plugin2.gluegen.runtime.BufferFactory;
 
+import javax.naming.LimitExceededException;
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Set;
 
 public final class ScanBufferTooSmallIT extends ITBase {
 
-    private int cid;
-    private int oid;
-    private int iid;
-
     @Before
     public void createTables() throws InvalidOperationException {
-        cid = createTable("ts", "c",
-                "cid int key");
-        oid = createTable("ts", "o",
+        int cid = createTable("ts", "c",
+                "cid int key",
+                "name varchar(255)");
+        int oid = createTable("ts", "o",
                 "oid int key",
                 "cid int",
                 "CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (cid) REFERENCES c(cid)");
-        iid = createTable("ts", "i",
+        int iid = createTable("ts", "i",
                 "iid int key",
                 "oid int",
                 "CONSTRAINT __akiban_fk_o FOREIGN KEY __akiban_fk_o (oid) REFERENCES o(oid)");
 
         writeRows(
-                createNewRow(cid, 1),
+                createNewRow(cid, 1, "short name"),
                 createNewRow(oid, 1, 1),
                 createNewRow(iid, 1, 1),
-                createNewRow(iid, 2, 1)
+                createNewRow(iid, 2, 1),
+
+                createNewRow(cid, 2, "this name is much longer than the previous name, which was short")
         );
     }
 
-    @Test(timeout=5000,expected=BufferFullException.class)
-    @org.junit.Ignore("bug 724520")
-    public void viaScanFull() throws InvalidOperationException, BufferFullException {
-        int coiId = ddl().getAIS(session()).getTable("ts", "c").getGroup().getGroupTable().getTableId();
-        ScanRequest request = new ScanAllRequest(coiId, new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, 5, 6)));
-        RowDataOutput.scanFull(session(), aisGeneration(), dml(), request);
+    @Test(expected=BufferFullException.class)
+    public void onUserTable() throws InvalidOperationException, BufferFullException {
+        UserTable userTable = getUserTable("ts", "c");
+        doTest(userTable, userTable.getPrimaryKey().getIndex().getIndexId());
     }
 
-    @Test(timeout=5000)
-    @org.junit.Ignore("bug 724520")
-    public void viaHapi() throws HapiRequestException {
-        final HapiGetRequest request = DefaultHapiGetRequest.forTables("ts", "c", "c").where("cid").eq("1");
-        // TODO: Scanrows no longer has a variable-sized buffer, so some of the code below is disabled.
-        Scanrows scanrows = Scanrows.instance();
-        // scanrows.getMXBean().setBufferCapacity(10);
-        scanrows.processRequest(session(), request, DummyOutputter.instance(), new ByteArrayOutputStream(1));
-        // final int capacity = scanrows.getMXBean().getBufferCapacity();
-        // assertTrue("buffer capacity is " + capacity, capacity > 10);
+    @Test(expected=BufferFullException.class)
+    public void onGroupTable() throws InvalidOperationException, BufferFullException {
+        UserTable userTable = getUserTable("ts", "c");
+        Table groupTable = userTable.getGroup().getGroupTable();
+
+        int uTablePKID = userTable.getPrimaryKey().getIndex().getIndexId();
+        Index uTablePKOnGroup = null;
+        for (Index groupTableIndex : groupTable.getIndexes()) {
+            if (groupTableIndex.getIndexId() == uTablePKID) {
+                uTablePKOnGroup = groupTableIndex;
+                break;
+            }
+        }
+        if (uTablePKOnGroup == null) {
+            throw new NullPointerException();
+        }
+
+        doTest(groupTable, uTablePKOnGroup.getIndexId());
+    }
+
+    private void doTest(Table table, int indexId) throws InvalidOperationException, BufferFullException {
+        Set<Integer> columns = allColumns(table);
+        int size = sizeForOneRow(table.getTableId(), indexId, columns);
+        LegacyRowOutput tooSmallOutput = new WrappingRowOutput( ByteBuffer.allocate(size) );
+        tooSmallOutput.getOutputBuffer().mark();
+
+        ScanRequest request = new ScanAllRequest(
+                table.getTableId(), columns, indexId,
+                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+        );
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
+        try {
+            dml().scanSome(session(), cursorId, tooSmallOutput);
+        } finally {
+            dml().closeCursor(session(), cursorId);
+        }
+    }
+
+    private Set<Integer> allColumns(Table table) {
+        Set<Integer> cols = new HashSet<Integer>();
+        int colsCount = table.getColumns().size();
+        while (--colsCount >= 0) {
+            cols.add(colsCount);
+        }
+        return cols;
+    }
+
+    private int sizeForOneRow(int tableId, int indexId, Set<Integer> columns) throws InvalidOperationException {
+        LegacyRowOutput output = new WrappingRowOutput( ByteBuffer.allocate(1024) ); // plenty of space!
+        output.getOutputBuffer().mark();
+
+        ScanRequest request = new ScanAllRequest(
+                tableId, columns, indexId,
+                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
+                new FixedCountLimit(1)
+        );
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
+        try {
+            dml().scanSome(session(), cursorId, output);
+        } catch (BufferFullException e) {
+            throw new RuntimeException(e);
+        } finally {
+            dml().closeCursor(session(), cursorId);
+        }
+
+        return output.getOutputBuffer().position();
     }
 }
