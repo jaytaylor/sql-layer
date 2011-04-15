@@ -19,7 +19,6 @@ public final class Exceptions {
     /**
      * Throws the given throwable, downcast, if it's of the appropriate type
      *
-     *
      * @param t the exception to check
      * @param cls  the class to check for and cast to
      * @throws T the e instance, cast down
@@ -30,13 +29,23 @@ public final class Exceptions {
         }
     }
 
+    /**
+     * <p>Always throws something. If {@code t} is a RuntimeException, it simply gets thrown. If it's a checked
+     * exception, it gets wrapped in a RuntimeException. If it's an Error, it simply gets thrown. And if somehow
+     * it's something else, that thing is wrapped in an Error and thrown.</p>
+     *
+     * <p>The return value of Error is simply as a convenience for methods that return a non-void type; you can
+     * invoke {@code throw throwAlways(t);} to indicate to the compiler that the method's control will end there.</p>
+     * @param t the throwable to throw, possibly wrapped if needed
+     * @return nothing, since something is always thrown from this method.
+     */
     public static Error throwAlways(Throwable t) {
         throwIfInstanceOf(t,RuntimeException.class);
         if (t instanceof Exception) {
             throw new RuntimeException(t);
         }
         throwIfInstanceOf(t, Error.class);
-        return new Error("not a RuntimeException, checked exception or Error?!", t);
+        throw new Error("not a RuntimeException, checked exception or Error?!", t);
     }
 
     /*
