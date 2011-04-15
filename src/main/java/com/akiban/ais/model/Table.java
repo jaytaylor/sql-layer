@@ -187,8 +187,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     }
 
     void clearIndexes() {
-        Map<String, Index> blank = new TreeMap<String, Index>();
-        while (!internalIndexMapCAS(internalGetIndexMap(), blank)) {
+        while (!internalIndexMapCAS(internalGetIndexMap(), Collections.<String,Index>emptyMap())) {
             // try again
         }
     }
@@ -213,11 +212,10 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     public void removeIndexes(Collection<Index> indexesToDrop) {
         Map<String, Index> old;
-        Map<String, Index> remaining = new TreeMap<String, Index>();
+        Map<String, Index> remaining;
         do {
-            remaining.clear();
             old = internalGetIndexMap();
-            remaining.putAll( old );
+            remaining = new TreeMap<String, Index>( old );
             remaining.values().removeAll(indexesToDrop);
         } while (!internalIndexMapCAS(old, remaining));
     }
@@ -400,7 +398,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private Integer tableId;
     private boolean columnsStale = true;
     private List<Column> columns = new ArrayList<Column>();
-    private volatile Map<String, Index> indexMap = new TreeMap<String, Index>();
+    private volatile Map<String, Index> indexMap = Collections.emptyMap();
     private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
