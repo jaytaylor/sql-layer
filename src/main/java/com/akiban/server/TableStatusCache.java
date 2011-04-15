@@ -310,6 +310,8 @@ public class TableStatusCache extends TransactionalCache {
             return new AutoIncrementUpdate();
         case UNIQUEID:
             return new UniqueIdUpdate();
+        case DROP:
+            return new Drop();
         case ASSIGN_ORDINAL:
             return new AssignOrdinalUpdate();
 
