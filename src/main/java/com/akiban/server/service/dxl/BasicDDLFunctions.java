@@ -59,6 +59,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.akiban.server.service.dxl.BasicDXLMiddleman.getScanDataMap;
+import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
@@ -80,12 +81,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ParseException.class, ioe);
-            throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
-            throwIfInstanceOf(JoinToWrongColumnsException.class, ioe);
-            throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
-            throwIfInstanceOf(DuplicateTableNameException.class, ioe);
-            throwIfInstanceOf(UnsupportedIndexDataTypeException.class, ioe);
+            throwIfInstanceOf(ioe,
+                    ParseException.class,
+                    UnsupportedDataTypeException.class,
+                    JoinToWrongColumnsException.class,
+                    JoinToMultipleParentsException.class,
+                    DuplicateTableNameException.class,
+                    UnsupportedIndexDataTypeException.class
+            );
             throw new GenericInvalidOperationException(ioe);
         }
     }
