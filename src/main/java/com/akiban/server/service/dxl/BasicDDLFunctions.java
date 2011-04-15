@@ -383,12 +383,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         // Remove from existing AIS to generate new DDL
-        if(table.isUserTable()) {
-            ((UserTable)table).getIndexesIncludingInternal().removeAll(indexesToDrop);
-        }
-        else {
-            table.getIndexes().removeAll(indexesToDrop);
-        }
+        table.removeIndexes(indexesToDrop);
         
         try {
             // Generate new DDL statement from existing AIS/table

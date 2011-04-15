@@ -510,7 +510,7 @@ public class AISBuilder {
         if (groupTable != null) {
             UserTable root = groupTable.getRoot();
             if (root != null) {
-                groupTable.getIndexes().clear();
+                groupTable.clearIndexes();
                 generateGroupTableIndexes(groupTable, root);
             }
         }
