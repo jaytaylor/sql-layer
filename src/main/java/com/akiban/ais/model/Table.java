@@ -186,6 +186,13 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         } while(!internalIndexMapCAS(old, withNewIndex));
     }
 
+    void clearIndexes() {
+        Map<String, Index> blank = new TreeMap<String, Index>();
+        while (!internalIndexMapCAS(internalGetIndexMap(), blank)) {
+            // try again
+        }
+    }
+
     protected void dropColumns()
     {
         columnMap.clear();
@@ -202,6 +209,17 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     void setTableName(TableName tableName)
     {
         this.tableName = tableName;
+    }
+
+    public void removeIndexes(Collection<Index> indexesToDrop) {
+        Map<String, Index> old;
+        Map<String, Index> remaining = new TreeMap<String, Index>();
+        do {
+            remaining.clear();
+            old = internalGetIndexMap();
+            remaining.putAll( old );
+            remaining.values().removeAll(indexesToDrop);
+        } while (!internalIndexMapCAS(old, remaining));
     }
 
     /**
