@@ -76,6 +76,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Exceptions;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -146,7 +147,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return store().getTableStatistics(session, tableId);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchTableException.class, ioe);
+            Exceptions.throwIfInstanceOf(NoSuchTableException.class, ioe);
             throw new GenericInvalidOperationException(e);
         }
     }
@@ -273,7 +274,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchIndexException.class, ioe);
+            Exceptions.throwIfInstanceOf(NoSuchIndexException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }
@@ -663,7 +664,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return null;
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(DuplicateKeyException.class, ioe);
+            Exceptions.throwIfInstanceOf(DuplicateKeyException.class, ioe);
             throw new GenericInvalidOperationException(e);
         }
     }
@@ -680,7 +681,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             store().deleteRow(session, rowData);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchRowException.class, ioe);
+            Exceptions.throwIfInstanceOf(NoSuchRowException.class, ioe);
             throw new GenericInvalidOperationException(e);
         }
     }
@@ -718,8 +719,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             store().updateRow(session, oldData, newData, columnSelector);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchRowException.class, ioe);
-            throwIfInstanceOf(DuplicateKeyException.class, ioe);
+            Exceptions.throwIfInstanceOf(NoSuchRowException.class, ioe);
+            Exceptions.throwIfInstanceOf(DuplicateKeyException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }

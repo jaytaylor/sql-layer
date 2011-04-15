@@ -135,23 +135,4 @@ abstract class ClientAPIBase {
         return new GenericInvalidOperationException(e);
     }
 
-    /**
-     * Throws the given InvalidOperationException, downcast, if it's of the
-     * appropriate type
-     * 
-     * @param cls
-     *            the class to check for and cast to
-     * @param e
-     *            the exception to check
-     * @param <T>
-     *            an InvalidOperationException to throw as
-     * @throws T
-     *             the e instance, cast down
-     */
-    protected static <T extends InvalidOperationException> void throwIfInstanceOf(
-            Class<T> cls, InvalidOperationException e) throws T {
-        if (cls.isInstance(e)) {
-            throw cls.cast(e);
-        }
-    }
 }

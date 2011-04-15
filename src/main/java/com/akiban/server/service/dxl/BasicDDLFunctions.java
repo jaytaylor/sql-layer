@@ -55,6 +55,7 @@ import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.message.ErrorCode;
+import com.akiban.util.Exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,12 +81,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ParseException.class, ioe);
-            throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
-            throwIfInstanceOf(JoinToWrongColumnsException.class, ioe);
-            throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
-            throwIfInstanceOf(DuplicateTableNameException.class, ioe);
-            throwIfInstanceOf(UnsupportedIndexDataTypeException.class, ioe);
+            Exceptions.throwIfInstanceOf(ParseException.class, ioe);
+            Exceptions.throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
+            Exceptions.throwIfInstanceOf(JoinToWrongColumnsException.class, ioe);
+            Exceptions.throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
+            Exceptions.throwIfInstanceOf(DuplicateTableNameException.class, ioe);
+            Exceptions.throwIfInstanceOf(UnsupportedIndexDataTypeException.class, ioe);
             throw new GenericInvalidOperationException(ioe);
         }
     }
