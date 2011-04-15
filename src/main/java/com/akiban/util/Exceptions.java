@@ -20,13 +20,13 @@ public final class Exceptions {
      * Throws the given throwable, downcast, if it's of the appropriate type
      *
      *
-     * @param e the exception to check
+     * @param t the exception to check
      * @param cls  the class to check for and cast to
      * @throws T the e instance, cast down
      */
-    public static <T extends Throwable> void throwIfInstanceOf(Throwable e, Class<T> cls) throws T {
-        if (cls.isInstance(e)) {
-            throw cls.cast(e);
+    public static <T extends Throwable> void throwIfInstanceOf(Throwable t, Class<T> cls) throws T {
+        if (cls.isInstance(t)) {
+            throw cls.cast(t);
         }
     }
 }
