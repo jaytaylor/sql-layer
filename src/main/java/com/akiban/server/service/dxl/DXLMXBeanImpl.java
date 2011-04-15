@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
@@ -80,13 +81,16 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void dropGroupBySchema(String schemaName)
     {
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new SessionImpl());
-        for(TableName table : ais.getGroupTables().keySet())
-        {
-            String currentSchema = table.getSchemaName();
-            if (currentSchema.equals(schemaName)) {
-                String groupName = table.getTableName();
-                dropGroup(groupName);
+        final Session session = new SessionImpl();
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        for(com.akiban.ais.model.Group group: ais.getGroups().values()) {
+            final String groupTableSchema = group.getGroupTable().getName().getSchemaName();
+            if(groupTableSchema.equals(schemaName)) {
+                try {
+                    dxlService.ddlFunctions().dropGroup(session, group.getName());
+                } catch(InvalidOperationException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -110,6 +114,19 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public List<String> getGrouping() {
         return getGrouping(usingSchema.get());
+    }
+
+    @Override
+    public String getGroupNameFromTableName(String schemaName, String tableName) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new SessionImpl());
+        Table table = ais.getTable(schemaName, tableName);
+        if(table != null) {
+            final com.akiban.ais.model.Group group = table.getGroup();
+            if(group != null) {
+                return group.getName();
+            }
+        }
+        return null;
     }
 
     public List<String> getGrouping(String schema) {

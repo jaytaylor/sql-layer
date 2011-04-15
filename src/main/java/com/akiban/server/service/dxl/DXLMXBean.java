@@ -35,4 +35,6 @@ public interface DXLMXBean {
     void writeRow(String table, String fields);
 
     List<String> getGrouping();
+
+    String getGroupNameFromTableName(String schema, String table);
 }
