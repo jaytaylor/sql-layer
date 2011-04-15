@@ -719,8 +719,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             store().updateRow(session, oldData, newData, columnSelector);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(ioe, NoSuchRowException.class);
-            throwIfInstanceOf(ioe, DuplicateKeyException.class);
+            throwIfInstanceOf(ioe,
+                    NoSuchRowException.class,
+                    DuplicateKeyException.class
+            );
             throw new GenericInvalidOperationException(ioe);
         }
     }

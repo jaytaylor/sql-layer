@@ -30,6 +30,21 @@ public final class Exceptions {
         }
     }
 
+    /*
+    Python script for creating the following methods:
+    
+    def generate(n):
+        out = ""
+        out += '@SuppressWarnings("unused") public static\n<'
+        out += ', '.join(['E%d extends Throwable' % i for i in range(n)])
+        out += ">\nvoid throwIfInstanceOf(Throwable t, "
+        out += ', '.join(['Class<E%d> e%d' % (i, i) for i in range(n)])
+        out += ")\nthrows %s {\n" % ', '.join(['E%d' % i for i in range(n)])
+        out += "\n".join(["throwIfInstanceOf(t, e%d);" % i for i in range(n)])
+        out += "\n}\n"
+        print out
+     */
+
     @SuppressWarnings("unused")
     public static <E0 extends Throwable, E1 extends Throwable>
     void throwIfInstanceOf(Throwable t, Class<E0> e0, Class<E1> e1)
