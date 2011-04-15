@@ -139,6 +139,11 @@ public final class ServiceManagerImplTest {
             throw new CrashOnStartupException();
         }
 
+        @Override
+        void logServiceShutdownException(Throwable t) {
+            // shhhh!
+        }
+
         public List<String> getMessages() {
             return messages;
         }

@@ -262,11 +262,15 @@ public class ServiceManagerImpl implements ServiceManager
                 LOG.debug("Shutting down service {}", service.getClass().getName());
                 service.stop();
             } catch (Throwable t) {
-                LOG.error("Error stopping service", t);
+                logServiceShutdownException(t);
                 exceptions.add(t);
             }
         }
         return exceptions;
+    }
+
+    void logServiceShutdownException(Throwable t) {
+        LOG.error("Error stopping service", t);
     }
 
     /**
