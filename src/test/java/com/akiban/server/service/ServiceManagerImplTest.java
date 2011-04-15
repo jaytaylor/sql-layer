@@ -74,10 +74,13 @@ public final class ServiceManagerImplTest {
         List<String> expected = Arrays.asList(
                 "starting FirstService",
                 "starting SecondService",
+
                 "about to crash on startup",
+                
                 "stopping SecondService",
                 "SecondService about to crash on shutdown",
-                "stopping FirstService"
+                "stopping FirstService",
+                "FirstService about to crash on shutdown"
         );
         assertEquals("messages", expected, service.getMessages());
         assertNotNull("excpected ServiceStartupException", exception);
@@ -164,6 +167,8 @@ public final class ServiceManagerImplTest {
         @Override
         public void stop() throws Exception {
             say("stopping " + this.getClass().getSimpleName());
+            say(this.getClass().getSimpleName() + " about to crash on shutdown");
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -203,13 +208,6 @@ public final class ServiceManagerImplTest {
         @Override
         public SecondService cast() {
             return this;
-        }
-
-        @Override
-        public void stop() throws Exception {
-            super.stop();
-            say("SecondService about to crash on shutdown");
-            throw new UnsupportedOperationException();
         }
     }
 }
