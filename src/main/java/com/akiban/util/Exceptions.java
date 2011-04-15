@@ -176,4 +176,43 @@ public final class Exceptions {
         throwIfInstanceOf(t, e9);
         throwIfInstanceOf(t, e10);
     }
+
+    @SuppressWarnings("unused")
+    public static <E0 extends Throwable, E1 extends Throwable, E2 extends Throwable, E3 extends Throwable, E4 extends Throwable, E5 extends Throwable, E6 extends Throwable, E7 extends Throwable, E8 extends Throwable, E9 extends Throwable, E10 extends Throwable, E11 extends Throwable>
+    void throwIfInstanceOf(Throwable t, Class<E0> e0, Class<E1> e1, Class<E2> e2, Class<E3> e3, Class<E4> e4, Class<E5> e5, Class<E6> e6, Class<E7> e7, Class<E8> e8, Class<E9> e9, Class<E10> e10, Class<E11> e11)
+            throws E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11 {
+        throwIfInstanceOf(t, e0);
+        throwIfInstanceOf(t, e1);
+        throwIfInstanceOf(t, e2);
+        throwIfInstanceOf(t, e3);
+        throwIfInstanceOf(t, e4);
+        throwIfInstanceOf(t, e5);
+        throwIfInstanceOf(t, e6);
+        throwIfInstanceOf(t, e7);
+        throwIfInstanceOf(t, e8);
+        throwIfInstanceOf(t, e9);
+        throwIfInstanceOf(t, e10);
+        throwIfInstanceOf(t, e11);
+    }
+
+    @SuppressWarnings("unused")
+    public static <E0 extends Throwable, E1 extends Throwable, E2 extends Throwable, E3 extends Throwable, E4 extends Throwable, E5 extends Throwable, E6 extends Throwable, E7 extends Throwable, E8 extends Throwable, E9 extends Throwable, E10 extends Throwable, E11 extends Throwable, E12 extends Throwable>
+    void throwIfInstanceOf(Throwable t, Class<E0> e0, Class<E1> e1, Class<E2> e2, Class<E3> e3, Class<E4> e4, Class<E5> e5, Class<E6> e6, Class<E7> e7, Class<E8> e8, Class<E9> e9, Class<E10> e10, Class<E11> e11, Class<E12
+            > e12)
+            throws E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12 {
+        throwIfInstanceOf(t, e0);
+        throwIfInstanceOf(t, e1);
+        throwIfInstanceOf(t, e2);
+        throwIfInstanceOf(t, e3);
+        throwIfInstanceOf(t, e4);
+        throwIfInstanceOf(t, e5);
+        throwIfInstanceOf(t, e6);
+        throwIfInstanceOf(t, e7);
+        throwIfInstanceOf(t, e8);
+        throwIfInstanceOf(t, e9);
+        throwIfInstanceOf(t, e10);
+        throwIfInstanceOf(t, e11);
+        throwIfInstanceOf(t, e12);
+    }
+
 }
