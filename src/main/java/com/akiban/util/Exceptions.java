@@ -30,6 +30,15 @@ public final class Exceptions {
         }
     }
 
+    public static Error throwAlways(Throwable t) {
+        throwIfInstanceOf(t,RuntimeException.class);
+        if (t instanceof Exception) {
+            throw new RuntimeException(t);
+        }
+        throwIfInstanceOf(t, Error.class);
+        return new Error("not a RuntimeException, checked exception or Error?!", t);
+    }
+
     /*
     Python script for creating the following methods:
     
@@ -167,5 +176,4 @@ public final class Exceptions {
         throwIfInstanceOf(t, e9);
         throwIfInstanceOf(t, e10);
     }
-
 }

@@ -22,9 +22,4 @@ final class HookUtil {
         }
     }
 
-    static Error throwAlways(Throwable t) {
-        throwIf(t, RuntimeException.class);
-        throwIf(t, Error.class);
-        return new Error("not a RuntimeException, checked exception or Error?!", t);
-    }
 }

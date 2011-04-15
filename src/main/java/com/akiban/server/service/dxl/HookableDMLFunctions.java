@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.akiban.server.service.dxl.HookUtil.throwIf;
-import static com.akiban.server.service.dxl.HookUtil.throwAlways;
+import static com.akiban.util.Exceptions.throwAlways;
 
 public final class HookableDMLFunctions implements DMLFunctions {
 
