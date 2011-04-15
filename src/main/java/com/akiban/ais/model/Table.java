@@ -360,12 +360,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     }
 
     private Map<String, Index> internalGetIndexMap() {
-        synchronized (LOCK) {
-            if (indexMap == null) {
-                indexMap = new TreeMap<String, Index>();
-            }
-            return indexMap;
-        }
+        return indexMap;
     }
 
     private boolean internalIndexMapCAS(Map<String, Index> expected, Map<String, Index> update) {
@@ -387,7 +382,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private Integer tableId;
     private boolean columnsStale = true;
     private List<Column> columns = new ArrayList<Column>();
-    private Map<String, Index> indexMap;
+    private volatile Map<String, Index> indexMap = new TreeMap<String, Index>();
     private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
