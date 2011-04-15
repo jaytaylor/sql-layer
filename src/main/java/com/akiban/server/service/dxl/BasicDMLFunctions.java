@@ -147,7 +147,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return store().getTableStatistics(session, tableId);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchTableException.class, ioe);
+            throwIfInstanceOf(ioe, NoSuchTableException.class);
             throw new GenericInvalidOperationException(e);
         }
     }
@@ -274,7 +274,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchIndexException.class, ioe);
+            throwIfInstanceOf(ioe, NoSuchIndexException.class);
             throw new GenericInvalidOperationException(ioe);
         }
     }
@@ -664,7 +664,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return null;
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(DuplicateKeyException.class, ioe);
+            throwIfInstanceOf(ioe, DuplicateKeyException.class);
             throw new GenericInvalidOperationException(e);
         }
     }
@@ -681,7 +681,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             store().deleteRow(session, rowData);
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchRowException.class, ioe);
+            throwIfInstanceOf(ioe, NoSuchRowException.class);
             throw new GenericInvalidOperationException(e);
         }
     }
@@ -719,8 +719,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             store().updateRow(session, oldData, newData, columnSelector);
         } catch (Exception e) {
             final InvalidOperationException ioe = launder(e);
-            throwIfInstanceOf(NoSuchRowException.class, ioe);
-            throwIfInstanceOf(DuplicateKeyException.class, ioe);
+            throwIfInstanceOf(ioe, NoSuchRowException.class);
+            throwIfInstanceOf(ioe, DuplicateKeyException.class);
             throw new GenericInvalidOperationException(ioe);
         }
     }

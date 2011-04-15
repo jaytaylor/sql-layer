@@ -81,12 +81,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
         } catch (Exception e) {
             InvalidOperationException ioe = launder(e);
-            Exceptions.throwIfInstanceOf(ParseException.class, ioe);
-            Exceptions.throwIfInstanceOf(UnsupportedDataTypeException.class, ioe);
-            Exceptions.throwIfInstanceOf(JoinToWrongColumnsException.class, ioe);
-            Exceptions.throwIfInstanceOf(JoinToMultipleParentsException.class, ioe);
-            Exceptions.throwIfInstanceOf(DuplicateTableNameException.class, ioe);
-            Exceptions.throwIfInstanceOf(UnsupportedIndexDataTypeException.class, ioe);
+            Exceptions.throwIfInstanceOf(ioe, ParseException.class);
+            Exceptions.throwIfInstanceOf(ioe, UnsupportedDataTypeException.class);
+            Exceptions.throwIfInstanceOf(ioe, JoinToWrongColumnsException.class);
+            Exceptions.throwIfInstanceOf(ioe, JoinToMultipleParentsException.class);
+            Exceptions.throwIfInstanceOf(ioe, DuplicateTableNameException.class);
+            Exceptions.throwIfInstanceOf(ioe, UnsupportedIndexDataTypeException.class);
             throw new GenericInvalidOperationException(ioe);
         }
     }
