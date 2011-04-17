@@ -1252,31 +1252,13 @@ public class SchemaDef {
     }
 
     public static String canonicalStatement(final String s) {
-        final StringBuilder sb = new StringBuilder();
-        boolean sc = false;
-        boolean ws = false;
-        for (int i = 0; i < s.length(); i++) {
-            final char c = s.charAt(i);
-            if (c > ' ') {
-                if (ws) {
-                    if (sb.length() > 0) {
-                        sb.append(' ');
-                    }
-                    ws = false;
-                }
-                sb.append(c);
-                sc = c == ';';
-            } else {
-                ws = true;
-            }
+        // The most we can do without parsing the statement: strip whitespace and ensure semicolon
+        final String minimal = s.trim();
+        final int len = minimal.length();
+        if(len > 0 && minimal.charAt(len-1) != ';') {
+            return minimal + ";";
         }
-        if (!sc) {
-            sb.append(';');
-        }
-        strip(sb, CREATE_TABLE);
-        strip(sb, IF_NOT_EXISTS);
-        sb.insert(0, CREATE_TABLE);
-        return sb.toString();
+        return minimal;
     }
 
     private static void strip(StringBuilder sb, final String s) {
