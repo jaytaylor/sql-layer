@@ -1251,9 +1251,22 @@ public class SchemaDef {
         return schemaDef;
     }
 
+    /**
+     * Transform a given statement into a minimal known state:
+     * <ul>
+     *     <li>Remove preceding and trailing whitespace</li>
+     *     <li>Ensure that it starts with, exactly, 'create table '</li>
+     *     <li>Ensure that it does not contain 'if not exists'</li>
+     *     <li>Ensure that it ends with ';'</li>
+     * </ul>
+     * @param s Statement to 'canonicalize'
+     * @return The statement modified to appear as described.
+     */
     public static String canonicalStatement(final String s) {
-        // The most we can do without parsing the statement: strip whitespace and ensure semicolon
-        final String minimal = s.trim();
+        String minimal = s.trim();
+        minimal = strip(minimal, CREATE_TABLE);
+        minimal = strip(minimal, IF_NOT_EXISTS).trim();
+        minimal = CREATE_TABLE + minimal;
         final int len = minimal.length();
         if(len > 0 && minimal.charAt(len-1) != ';') {
             return minimal + ";";
@@ -1261,10 +1274,11 @@ public class SchemaDef {
         return minimal;
     }
 
-    private static void strip(StringBuilder sb, final String s) {
-        final int sLen = s.length();
-        if (sb.length() >= sLen && sb.substring(0, sLen).equalsIgnoreCase(s)) {
-            sb.delete(0, sLen);
+    private static String strip(final String s1, final String s2) {
+        final int sLen = s2.length();
+        if (s1.length() >= sLen && s1.substring(0, sLen).equalsIgnoreCase(s2)) {
+            return s1.substring(sLen);
         }
+        return s1;
     }
 }

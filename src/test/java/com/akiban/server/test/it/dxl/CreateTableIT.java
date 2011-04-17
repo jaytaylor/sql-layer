@@ -287,6 +287,12 @@ public final class CreateTableIT extends ITBase {
     }
 
     @Test
+    public void createIfNotExists() throws InvalidOperationException {
+        ddl().createTable(session(), "test", "create table if not exists `node`(id int key) engine=akibandb");
+        assertNotNull(getUserTable("test", "node"));
+    }
+
+    @Test
     public void boolTypeAliases() throws InvalidOperationException {
         createCheckColumnDrop("c1 bool", Types.TINYINT, null, null);
         createCheckColumnDrop("c1 boolean", Types.TINYINT, null, null);

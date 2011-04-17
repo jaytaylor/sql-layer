@@ -182,12 +182,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         String schemaName = tableDef.getCName().getSchema();
         if (schemaName == null) {
-            final StringBuilder sb = new StringBuilder(CREATE_TABLE);
             schemaName = defaultSchemaName;
-            TableName.escape(schemaName, sb);
-            sb.append(".");
-            sb.append(naked(canonical));
-            canonical = sb.toString();
+            final String withoutCreate = canonical.substring(CREATE_TABLE.length());
+            canonical = String.format("%s`%s`.%s", CREATE_TABLE, schemaName, withoutCreate);
         }
         final String tableName = tableDef.getCName().getName();
 
@@ -1119,10 +1116,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         parentPKColumn.getName(), parentType);
             }
         }
-    }
-
-    private static String naked(final String canonical) {
-        return canonical.substring(CREATE_TABLE.length());
     }
 
     private long getMaxKeyStorageSize(final Column column) {

@@ -414,7 +414,7 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
         final List<String> actual = new ArrayList<String>();
         actual.addAll(AIS_CREATE_STATEMENTS);
         for(String s : statements) {
-            actual.add(SchemaDef.canonicalStatement(s));
+            actual.add(s + ';');
         }
         final List<String> expected = manager.schemaStrings(session, false);
         assertEquals("DDLs", expected, actual);
