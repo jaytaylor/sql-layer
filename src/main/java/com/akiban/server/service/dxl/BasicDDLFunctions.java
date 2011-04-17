@@ -17,6 +17,7 @@ package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -229,15 +230,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public String getDDLs(final Session session) throws InvalidOperationException {
+    public List<String> getDDLs(final Session session) throws InvalidOperationException {
         logger.trace("getting DDLs");
         try {
-            // TODO - note: the boolean value determines whether the text
-            // of CREATE TABLE statements for group tables will be generated.
-            // Since Halo won't be used for queries, I'm setting this to false
-            // for now. -- Peter
-            return schemaManager().schemaString(
-                    session, false);
+            return schemaManager().schemaStrings(session, false);
         } catch (Exception e) {
             throw new InvalidOperationException(ErrorCode.UNEXPECTED_EXCEPTION,
                     "Unexpected exception", e);
