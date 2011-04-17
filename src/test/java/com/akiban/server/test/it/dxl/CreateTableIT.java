@@ -18,6 +18,7 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.util.DDLGenerator;
@@ -268,18 +269,21 @@ public final class CreateTableIT extends ITBase {
         ddl().createTable(session(), "test", "create table t1(id int key /*pkey*/, name varchar(32) /* fname \n with two line comment*/) engine=akibandb");
         assertEquals(2, getUserTable(tableId("test","t1")).getColumns().size());
 
-        //TODO: FIX! Disabled since newlines MUST be stripped from DDL due to refresh/schemectomy interface
-        /*
         // Line comments (only with trailing newlines, parses cleanly)
-        ddl().createTable(session, "test", "create table t2(id int key, -- pkey \nname varchar(32)\n) engine=akibandb -- after comment\n");
+        ddl().createTable(session(), "test", "create table t2(id int key, -- pkey \nname varchar(32)\n) engine=akibandb -- after comment\n;");
         assertEquals(2, getUserTable(tableId("test","t2")).getColumns().size());
 
         // Line comment (no traling newline, parse warning due to no EOL but should still succeed)
-        ddl().createTable(session, "test", "create table t3(id int key) engine=akibandb -- eolcomment");
+        ddl().createTable(session(), "test", "create table t3(id int key) engine=akibandb -- eolcomment\n;");
         assertEquals(1, getUserTable(tableId("test","t3")).getColumns().size());
-        */
+
+        // Table with space in name
+        ddl().createTable(session(), "test", "create table `t 4`(id int key) engine=akibandb;");
+        assertNull(ddl().getAIS(session()).getUserTable("test", "t4"));
+        assertNotNull(getUserTable("test", "t 4"));
+
         // Confirm all still there
-        assertEquals(3, getUserTables().size());
+        assertEquals(6, getUserTables().size());
     }
 
     @Test
