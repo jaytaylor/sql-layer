@@ -264,7 +264,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public String getDDLs(final Session session) throws InvalidOperationException {
+    public List<String> getDDLs(final Session session) throws InvalidOperationException {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_DDLS);

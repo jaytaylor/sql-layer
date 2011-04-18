@@ -23,8 +23,10 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,7 +52,7 @@ import com.akiban.util.MySqlStatementSplitter;
 
 public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
 
-    private final static String AIS_CREATE_STATEMENTS = readAisSchema();
+    private final static List<String> AIS_CREATE_STATEMENTS = readAisSchema();
     private final static String SCHEMA = "my_schema";
     private final static Pattern REGEX = Pattern.compile("create table `(\\w+)`\\.(\\w+)");
 
@@ -409,27 +411,25 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
     }
 
     private void assertDDLS(String... statements) throws Exception{
-        StringBuilder sb = new StringBuilder(AIS_CREATE_STATEMENTS);
-        for (final String s : statements) {
-            sb.append(s).append(";").append(AkServerUtil.NEW_LINE);
+        final List<String> actual = new ArrayList<String>();
+        actual.addAll(AIS_CREATE_STATEMENTS);
+        for(String s : statements) {
+            actual.add(s + ';');
         }
-        final String expected = sb.toString();
-        final String actual = manager.schemaString(session, false);
+        final List<String> expected = manager.schemaStrings(session, false);
         assertEquals("DDLs", expected, actual);
     }
     
-    private static String readAisSchema() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("create schema if not exists `akiban_information_schema`;");
-            sb.append(AkServerUtil.NEW_LINE);
+    private static List<String> readAisSchema() {
+        final List<String> ddlList = new ArrayList<String>();
+        ddlList.add("create schema if not exists `akiban_information_schema`;");
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader()
                         .getResourceAsStream(PersistitStoreSchemaManager.AIS_DDL_NAME)));
         for (String statement : (new MySqlStatementSplitter(reader))) {
             final String canonical = SchemaDef.canonicalStatement(statement);
-            sb.append(canonical);
-            sb.append(AkServerUtil.NEW_LINE);
+            ddlList.add(canonical);
         }
-        return sb.toString();
+        return ddlList;
     }
 }

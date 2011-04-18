@@ -16,6 +16,7 @@
 package com.akiban.server.api;
 
 import java.util.Collection;
+import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -185,15 +186,14 @@ public interface DDLFunctions {
     RowDef getRowDef(int tableId) throws NoSuchTableException;
 
     /**
-     * Retrieves the "CREATE" DDLs for all Akiban tables, including group tables and tables in the
-     * <tt>akiban_information_schema</tt> schema. The DDLs will be arranged such that it should be safe to call them
-     * in order, but they will not contain any DROP commands; it is up to the caller to drop all conflicting
-     * tables. Schemas will be created with <tt>IF EXISTS</tt>, so the caller does not need to drop conflicting
-     * schemas.
+     * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>akiban_information_schema</tt>
+     * schema. The DDLs will be arranged such that it should be safe to call them in order, but they will not contain
+     * any DROP commands; it is up to the caller to drop all conflicting tables. Schemas will be created with
+     * <tt>IF NOT EXISTS</tt>, so the caller does not need to drop conflicting schemas.
      * @throws InvalidOperationException if an exception occurred
-     * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to the chunkserver's known tables
+     * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to known tables
      */
-    String getDDLs(Session session) throws InvalidOperationException;
+    List<String> getDDLs(Session session) throws InvalidOperationException;
 
     int getGeneration();
 

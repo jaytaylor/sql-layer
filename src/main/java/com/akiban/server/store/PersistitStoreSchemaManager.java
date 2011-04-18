@@ -182,12 +182,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         String schemaName = tableDef.getCName().getSchema();
         if (schemaName == null) {
-            final StringBuilder sb = new StringBuilder(CREATE_TABLE);
             schemaName = defaultSchemaName;
-            TableName.escape(schemaName, sb);
-            sb.append(".");
-            sb.append(naked(canonical));
-            canonical = sb.toString();
+            final String withoutCreate = canonical.substring(CREATE_TABLE.length());
+            canonical = String.format("%s`%s`.%s", CREATE_TABLE, schemaName, withoutCreate);
         }
         final String tableName = tableDef.getCName().getName();
 
@@ -671,10 +668,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final Session session) throws Exception {
         AkibanInformationSchema newAis;
         final StringBuilder sb = new StringBuilder();
-        final Map<TableName, Integer> idMap = assembleSchema(session, sb, true,
-                false, false);
-        final String schemaText = sb.toString();
-        final SchemaDef schemaDef = SchemaDef.parseSchema(schemaText);
+        final List<String> ddlList = new ArrayList<String>();
+        final Map<TableName, Integer> idMap = assembleSchema(session, ddlList, true,
+                                                             false, false);
+        final SchemaDef schemaDef = new SchemaDef();
+        for(String ddl : ddlList) {
+            schemaDef.parseCreateTable(ddl);
+        }
         newAis = new SchemaDefToAis(schemaDef, true).getAis();
         // Reassign the table ID values.
         for (final Map.Entry<TableName, Integer> entry : idMap.entrySet()) {
@@ -709,24 +709,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return ais;
     }
 
-    /**
-     * Generates a string version of the entire schema database suitable for the
-     * Akiban "schemectomy" operation. The intention is for the returned string
-     * to replace all existing akibandb table definitions.
-     * 
-     * @param session
-     * @param withGroupTables
-     *            if <code>true</code> this method will define synthetic group
-     *            tables to accompany the user table actually defined in the
-     *            schema database. The group tables enable Akiban query rewrite
-     *            to create queries with fewer joins.
-     */
     @Override
-    public String schemaString(final Session session,
-            final boolean withGroupTables) throws Exception {
-        final StringBuilder sb = new StringBuilder();
-        assembleSchema(session, sb, true, withGroupTables, true);
-        return sb.toString();
+    public List<String> schemaStrings(final Session session,
+                                final boolean withGroupTables) throws Exception {
+        final List<String> ddlList = new ArrayList<String>();
+        assembleSchema(session, ddlList, true, withGroupTables, true);
+        return ddlList;
     }
 
     /**
@@ -734,8 +722,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * method provides various forms of output for different purposes.
      * 
      * @param session
-     * @param sb
-     *            The StringBuilder to which statements are written
+     *            The Session to use
+     * @param ddlList
+     *            The List to which statemesn are written
      * @param withAisTables
      *            <code>true</code> if the akiban_information_schema tables
      *            should be included
@@ -748,7 +737,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @throws Exception
      */
     private Map<TableName, Integer> assembleSchema(final Session session,
-            final StringBuilder sb, final boolean withAisTables,
+            final List<String> ddlList, final boolean withAisTables,
             final boolean withGroupTables,
             final boolean withCreateSchemaStatements) throws Exception {
 
@@ -757,14 +746,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // append the AIS table definitions
         if (withAisTables) {
             if (withCreateSchemaStatements) {
-                sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
-                TableName.escape(AKIBAN_INFORMATION_SCHEMA, sb);
-                sb.append(SEMI_COLON).append(AkServerUtil.NEW_LINE);
+                ddlList.add(String.format("%s`%s`;",
+                                          CREATE_SCHEMA_IF_NOT_EXISTS,
+                                          AKIBAN_INFORMATION_SCHEMA));
             }
             for (final TableDefinition td : aisSchema) {
-                sb.append(td.getDDL()).append(AkServerUtil.NEW_LINE);
+                ddlList.add(td.getDDL());
                 idMap.put(new TableName(td.getSchemaName(), td.getTableName()),
-                        td.getTableId());
+                          td.getTableId());
             }
         }
 
@@ -782,17 +771,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                             SCHEMA_TREE_NAME);
                     if (treeService.isContainer(ex, link)) {
                         if (withCreateSchemaStatements) {
-                            sb.append(CREATE_SCHEMA_IF_NOT_EXISTS);
-                            TableName.escape(schemaName, sb);
-                            sb.append(SEMI_COLON).append(AkServerUtil.NEW_LINE);
+                            ddlList.add(String.format("%s`%s`;",
+                                                      CREATE_SCHEMA_IF_NOT_EXISTS,
+                                                      schemaName));
                         }
                         while (ex.next()) {
                             final String tableName = ex.getKey().indexTo(-1)
                                     .decodeString();
                             final TableDefinition td = getTableDefinition(
                                     session, schemaName, tableName);
-                            sb.append(td.getDDL())
-                                    .append(AkServerUtil.NEW_LINE);
+                            ddlList.add(td.getDDL());
                             int tableId = treeService.storeToAis(link,
                                     td.getTableId());
                             idMap.put(
@@ -812,7 +800,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     .createAllGroupTables(ais);
             for (final String statement : statements) {
                 if (!statement.contains(AKIBAN_INFORMATION_SCHEMA)) {
-                    sb.append(statement).append(AkServerUtil.NEW_LINE);
+                    ddlList.add(statement);
                 }
             }
         }
@@ -1128,10 +1116,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         parentPKColumn.getName(), parentType);
             }
         }
-    }
-
-    private static String naked(final String canonical) {
-        return canonical.substring(CREATE_TABLE.length());
     }
 
     private long getMaxKeyStorageSize(final Column column) {

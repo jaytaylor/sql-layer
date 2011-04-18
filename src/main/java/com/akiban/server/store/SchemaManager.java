@@ -139,15 +139,17 @@ public interface SchemaManager {
     AkibanInformationSchema getAis(Session session);
 
     /**
-     * Construct and return as a single String the entire set of create table
-     * statements to be executed on the MySQL head in response to a
-     * SchemaRequest. In addition, the returned string contains definitions of
-     * the group tables implied by the table definitions.
-     * 
-     * @return
-     * @throws Exception
+     * Generates a list containing DDL statements for every schema, user
+     * table, and, optionally, group tables in the database.
+     *
+     * @param session
+     * The Session to use;
+     * @param withGroupTables
+     * If <code>true</code> this method will define synthetic group
+     * tables to accompany the user table actually defined in the
+     * schema database.
      */
-    String schemaString(Session session, boolean withGroupTables)
+    List<String> schemaStrings(Session session, boolean withGroupTables)
             throws Exception;
 
     /**
