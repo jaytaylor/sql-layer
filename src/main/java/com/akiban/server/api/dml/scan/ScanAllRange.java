@@ -19,6 +19,7 @@ import java.util.Set;
 
 import com.akiban.server.RowData;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.ColumnSelector;
 
 public class ScanAllRange implements ScanRange {
 
@@ -36,7 +37,17 @@ public class ScanAllRange implements ScanRange {
     }
 
     @Override
+    public ColumnSelector getStartColumns() {
+        return null;
+    }
+
+    @Override
     public RowData getEnd() {
+        return null;
+    }
+
+    @Override
+    public ColumnSelector getEndColumns() {
         return null;
     }
 

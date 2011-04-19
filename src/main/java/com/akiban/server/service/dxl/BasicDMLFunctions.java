@@ -225,9 +225,19 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
+            public ColumnSelector getStartColumns() {
+                return null;
+            }
+
+            @Override
             public RowData getEnd()
                     throws NoSuchTableException {
                 return request.getEnd();
+            }
+
+            @Override
+            public ColumnSelector getEndColumns() {
+                return null;
             }
 
             @Override
@@ -258,12 +268,14 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             NoSuchIndexException, GenericInvalidOperationException {
         try {
             return store().newRowCollector(session,
+                                           request.getScanFlags(),
                                            request.getTableId(),
                                            request.getIndexId(),
-                                           request.getScanFlags(),
+                                           request.getColumnBitMap(),
                                            request.getStart(),
+                                           request.getStartColumns(),
                                            request.getEnd(),
-                                           request.getColumnBitMap());
+                                           request.getEndColumns());
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);
         } catch (Exception e) {

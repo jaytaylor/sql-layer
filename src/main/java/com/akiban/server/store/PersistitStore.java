@@ -68,7 +68,6 @@ import com.persistit.exception.TransactionFailedException;
 public class PersistitStore implements Store {
 
     private static final Session.MapKey<Integer, List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
-    private static final ColumnSelector NO_COLUMN_SELECTOR = new ConstantColumnSelector(false);
     final static int INITIAL_BUFFER_SIZE = 1024;
 
     private static final Logger LOG = LoggerFactory
@@ -992,9 +991,7 @@ public class PersistitStore implements Store {
     }
 
     private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {
-        if(rowData == null) {
-            return NO_COLUMN_SELECTOR;
-        }
+        assert rowData != null;
         return new ColumnSelector() {
             @Override
             public boolean includesColumn(int columnPosition) {
@@ -1009,10 +1006,8 @@ public class PersistitStore implements Store {
             byte[] columnBitMap) throws InvalidOperationException,
             PersistitException
     {
-        final ColumnSelector startColumns = createNonNullFieldSelector(start);
-        final ColumnSelector endColumns = createNonNullFieldSelector(end);
         return newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap,
-                               start, startColumns, end, endColumns);
+                               start, null, end, null);
     }
 
     @Override
@@ -1023,6 +1018,12 @@ public class PersistitStore implements Store {
             PersistitException
     {
         NEW_COLLECTOR_TAP.in();
+        if(start != null && startColumns == null) {
+            startColumns = createNonNullFieldSelector(start);
+        }
+        if(end != null && endColumns == null) {
+            endColumns = createNonNullFieldSelector(end);
+        }
         RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
         RowCollector rc = new PersistitStoreRowCollector(session, this, scanFlags,
             rowDef, indexId, columnBitMap, start, startColumns, end, endColumns);

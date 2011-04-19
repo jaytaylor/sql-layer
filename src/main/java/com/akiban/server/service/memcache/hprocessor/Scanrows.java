@@ -240,7 +240,9 @@ public class Scanrows implements HapiProcessor {
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     range.selectTable().getTableId(),
                     range.start(),
+                    null,
                     range.end(),
+                    null,
                     range.columnBitmap(),
                     range.indexId(),
                     range.scanFlagsInt(),

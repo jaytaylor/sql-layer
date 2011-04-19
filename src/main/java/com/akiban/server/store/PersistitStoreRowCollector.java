@@ -402,8 +402,8 @@ public class PersistitStoreRowCollector implements RowCollector {
         if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
             return KeyFilter.ALL;
         }
-        final boolean hasStartVal = startColumns.includesColumn(fieldIndex);
-        final boolean hasEndVal = endColumns.includesColumn(fieldIndex);
+        final boolean hasStartVal = (start != null) && startColumns.includesColumn(fieldIndex);
+        final boolean hasEndVal = (end != null) && endColumns.includesColumn(fieldIndex);
         if (!hasStartVal && !hasEndVal) {
             return KeyFilter.ALL;
         }
