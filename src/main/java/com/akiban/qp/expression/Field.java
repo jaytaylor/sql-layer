@@ -27,6 +27,12 @@ class Field implements Expression
         return row.field(position);
     }
 
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + "(" + position + ")";
+    }
+
     // Field interface
 
     Field(int position)

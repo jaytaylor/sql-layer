@@ -85,5 +85,12 @@ public class API
         {
             return false;
         }
+
+        @Override
+        public String toString()
+        {
+            return "NO LIMIT";
+        }
+
     };
 }

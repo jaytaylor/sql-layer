@@ -44,6 +44,12 @@ class Compare implements Expression
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return left + " " + comparison + " " + right;
+    }
+
     // Compare predicate
 
     Compare(Expression left, Comparison comparison, Expression right)

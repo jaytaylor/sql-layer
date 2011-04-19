@@ -17,6 +17,8 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.rowtype.RowType;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class PhysicalOperator
@@ -40,6 +42,10 @@ public abstract class PhysicalOperator
     public RowType rowType()
     {
         throw new UnsupportedOperationException();
+    }
+
+    public List<PhysicalOperator> getInputOperators() {
+        return Collections.emptyList();
     }
 
     public abstract OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops);

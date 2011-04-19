@@ -20,6 +20,8 @@ import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class Select_HKeyOrdered extends PhysicalOperator
@@ -39,6 +41,21 @@ class Select_HKeyOrdered extends PhysicalOperator
         inputOperator.assignOperatorIds(idGenerator);
         super.assignOperatorIds(idGenerator);
     }
+
+    @Override
+    public List<PhysicalOperator> getInputOperators() 
+    {
+        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
+        result.add(inputOperator);
+        return result;
+    }
+
+    @Override
+    public String toString() 
+    {
+        return getClass().getSimpleName() + "(" + predicateRowType + ", " + predicate + ")";
+    }
+
     // GroupScan_Default interface
 
     public Select_HKeyOrdered(PhysicalOperator inputOperator, RowType predicateRowType, Expression predicate)

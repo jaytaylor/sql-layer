@@ -30,6 +30,13 @@ class GroupScan_Default extends PhysicalOperator
         return ops[operatorId];
     }
 
+    @Override
+    public String toString() 
+    {
+        return getClass().getSimpleName() + "(" + groupTable + " " + limit + ")";
+    }
+
+
     // GroupScan_Default interface
 
     public GroupScan_Default(StoreAdapter store, GroupTable groupTable, Limit limit)

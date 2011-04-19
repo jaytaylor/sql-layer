@@ -27,6 +27,14 @@ class Literal implements Expression
         return value;
     }
 
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + "(" +
+            ((value == null) ? "NULL" : value.toString()) +
+            ")";
+    }
+
     // Literal interface
 
     Literal(Object value)

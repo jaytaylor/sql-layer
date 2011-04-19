@@ -21,6 +21,8 @@ import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class Flatten_HKeyOrdered extends PhysicalOperator
@@ -43,6 +45,37 @@ class Flatten_HKeyOrdered extends PhysicalOperator
     public FlattenedRowType rowType()
     {
         return flattenType;
+    }
+
+    @Override
+    public List<PhysicalOperator> getInputOperators() 
+    {
+        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
+        result.add(inputOperator);
+        return result;
+    }
+
+    @Override
+    public String toString() 
+    {
+        StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(");
+        str.append(parentType);
+        if (keepParent)
+          str.append(" KEEP");
+        if (leftJoin && rightJoin)
+          str.append(" FULL ");
+        else if (leftJoin)
+          str.append(" LEFT ");
+        else if (rightJoin)
+          str.append(" RIGHT ");
+        else
+          str.append(" INNER ");
+        str.append(childType);
+        if (keepChild)
+          str.append(" KEEP");
+        str.append(")");
+        return str.toString();
     }
 
     // Flatten_HKeyOrdered interface
