@@ -64,29 +64,32 @@ public interface Store extends Service<Store> {
                    final ColumnSelector columnSelector) throws Exception;
 
     /**
-     * @param scanRowsRequest
-     * @return The RowCollector that will generated the requested rows
-     */
-    RowCollector newRowCollector(final Session session,
-            ScanRowsRequest scanRowsRequest) throws Exception;
-
-    /**
-     * Version of newRowCollector used in tests and a couple of sites local to
-     * akserver. Eliminates having to serialize a ScanRowsRequestt to convey
-     * these parameters.
-     * 
-     * @param rowDefId
-     * @param indexId
-     * @param scanFlags
-     * @param start
-     * @param end
-     * @param columnBitMap
-     * @return
-     * @throws Exception
+     * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector)}
+     * for parameter descriptions.
+     *
+     * @deprecated This constructor is ambiguous and may not return the expected rows. Fields from <code>start</code>
+     * and <code>end</code> that are <code>NULL</code> are considered to be <b>unset</b>.
      */
     RowCollector newRowCollector(final Session session, final int rowDefId,
             final int indexId, final int scanFlags, final RowData start,
             final RowData end, final byte[] columnBitMap) throws Exception;
+
+    /**
+     * Create a new RowCollector.
+     * 
+     * @param session Session to use.
+     * @param scanFlags Flags specifying collection parameters (see flags in {@link RowCollector})
+     * @param rowDefId ID specifying the type of row to that will be collected.
+     * @param indexId The indexId from the given rowDef to collect on or 0 for table scan
+     * @param columnBitMap
+     * @param start RowData containing values to begin the scan from.
+     * @param startColumns ColumnSelector indicating which fields are set in <code>start</code>
+     * @param end RowData containing values to stop the scan at.
+     * @param endColumns ColumnSelector indicating which fields are set in <code>end</code>
+     */
+    RowCollector newRowCollector(Session session, int scanFlags, final int rowDefId,
+            int indexId, byte[] columnBitMap, RowData start, ColumnSelector startColumns,
+            RowData end, ColumnSelector endColumns) throws Exception;
 
     /**
      * Get the previously saved RowCollector for the specified tableId. Used in

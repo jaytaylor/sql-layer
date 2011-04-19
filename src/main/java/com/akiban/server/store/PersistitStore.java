@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.message.ScanRowsRequest;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
@@ -68,6 +68,7 @@ import com.persistit.exception.TransactionFailedException;
 public class PersistitStore implements Store {
 
     private static final Session.MapKey<Integer, List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
+    private static final ColumnSelector NO_COLUMN_SELECTOR = new ConstantColumnSelector(false);
     final static int INITIAL_BUFFER_SIZE = 1024;
 
     private static final Logger LOG = LoggerFactory
@@ -965,43 +966,66 @@ public class PersistitStore implements Store {
         return list;
     }
 
-    private final RowDef checkRequest(final Session session, int rowDefId,
-            RowData start, RowData end, int indexId, int scanFlags)
-            throws InvalidOperationException, PersistitException {
-        if (start != null && start.getRowDefId() != rowDefId) {
-            throw new IllegalArgumentException(
-                    "Start and end RowData must specify the same rowDefId");
+    private RowDef checkRequest(int rowDefId,RowData start, ColumnSelector startColumns,
+            RowData end, ColumnSelector endColumns) throws IllegalArgumentException {
+        if (start != null) {
+            if (startColumns == null) {
+                throw new IllegalArgumentException("non-null start row requires non-null ColumnSelector");
+            }
+            if( start.getRowDefId() != rowDefId) {
+                throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
+            }
         }
-
-        if (end != null && end.getRowDefId() != rowDefId) {
-            throw new IllegalArgumentException(
-                    "Start and end RowData must specify the same rowDefId");
+        if (end != null) {
+            if (endColumns == null) {
+                throw new IllegalArgumentException("non-null end row requires non-null ColumnSelector");
+            }
+            if (end.getRowDefId() != rowDefId) {
+                throw new IllegalArgumentException("Start and end RowData must specify the same rowDefId");
+            }
         }
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         if (rowDef == null) {
-            throw new IllegalArgumentException("No RowDef for rowDefId "
-                    + rowDefId);
+            throw new IllegalArgumentException("No RowDef for rowDefId " + rowDefId);
         }
         return rowDef;
     }
 
-    public RowCollector newRowCollector(Session session, ScanRowsRequest request)
-            throws InvalidOperationException, PersistitException {
-        return newRowCollector(session, request.getTableId(),
-                request.getIndexId(), request.getScanFlags(),
-                request.getStart(), request.getEnd(), request.getColumnBitMap());
+    private static ColumnSelector createNonNullFieldSelector(final RowData rowData) {
+        if(rowData == null) {
+            return NO_COLUMN_SELECTOR;
+        }
+        return new ColumnSelector() {
+            @Override
+            public boolean includesColumn(int columnPosition) {
+                return !rowData.isNull(columnPosition);
+            }
+        };
     }
 
     @Override
     public RowCollector newRowCollector(Session session, int rowDefId,
             int indexId, int scanFlags, RowData start, RowData end,
             byte[] columnBitMap) throws InvalidOperationException,
-            PersistitException {
+            PersistitException
+    {
+        final ColumnSelector startColumns = createNonNullFieldSelector(start);
+        final ColumnSelector endColumns = createNonNullFieldSelector(end);
+        return newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap,
+                               start, startColumns, end, endColumns);
+    }
+
+    @Override
+    public RowCollector newRowCollector(Session session, int scanFlags,
+            int rowDefId, int indexId, byte[] columnBitMap,
+            RowData start, ColumnSelector startColumns,
+            RowData end, ColumnSelector endColumns) throws InvalidOperationException,
+            PersistitException
+    {
         NEW_COLLECTOR_TAP.in();
-        RowDef rowDef = checkRequest(session, rowDefId, start, end, indexId,
-                scanFlags);
-        RowCollector rc = new PersistitStoreRowCollector(session, this,
-                scanFlags, start, end, columnBitMap, rowDef, indexId);
+        RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
+        RowCollector rc = new PersistitStoreRowCollector(session, this, scanFlags,
+                                 start, end, columnBitMap, rowDef, indexId);
         NEW_COLLECTOR_TAP.out();
         return rc;
     }
