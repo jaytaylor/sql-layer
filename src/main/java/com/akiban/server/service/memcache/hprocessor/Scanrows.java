@@ -34,6 +34,7 @@ import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -119,8 +120,16 @@ public class Scanrows implements HapiProcessor {
             return start.getFields().isEmpty() ? null : start.toRowData();
         }
 
+        public ColumnSelector startColumns() {
+            return start.getActiveColumns();
+        }
+
         RowData end() {
             return end.getFields().isEmpty() ? null : end.toRowData();
+        }
+
+        public ColumnSelector endColumns() {
+            return end.getActiveColumns();
         }
 
         Table selectTable() {
@@ -240,9 +249,9 @@ public class Scanrows implements HapiProcessor {
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     range.selectTable().getTableId(),
                     range.start(),
-                    null,
+                    range.startColumns(),
                     range.end(),
-                    null,
+                    range.endColumns(),
                     range.columnBitmap(),
                     range.indexId(),
                     range.scanFlagsInt(),
