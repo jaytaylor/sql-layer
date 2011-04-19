@@ -1025,7 +1025,7 @@ public class PersistitStore implements Store {
         NEW_COLLECTOR_TAP.in();
         RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
         RowCollector rc = new PersistitStoreRowCollector(session, this, scanFlags,
-                                 start, end, columnBitMap, rowDef, indexId);
+            rowDef, indexId, columnBitMap, start, startColumns, end, endColumns);
         NEW_COLLECTOR_TAP.out();
         return rc;
     }
