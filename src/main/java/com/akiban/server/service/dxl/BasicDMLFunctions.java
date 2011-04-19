@@ -90,13 +90,7 @@ import static com.akiban.util.Exceptions.throwIfInstanceOf;
 
 class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
-    private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ColumnSelector() {
-        @Override
-        public boolean includesColumn(int columnPosition) {
-            return true;
-        }
-    };
-
+    private static final ColumnSelector ALL_COLUMNS_SELECTOR = new ConstantColumnSelector(true);
     private static final AtomicLong cursorsCount = new AtomicLong();
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
