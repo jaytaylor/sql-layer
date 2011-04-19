@@ -17,7 +17,7 @@ package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.api.dml.EasyUseColumnSelector;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
@@ -232,7 +232,7 @@ public final class BasicKeyUpdateIT extends ITBase {
         writeRows( initialRows.toArray(new NewRow[initialRows.size()]) );
         expectRows(byNameScan(tableId), initialRowsByName.toArray(new NewRow[initialRowsByName.size()]));
 
-        dml().updateRow(session(), rowToUpdate, updatedValue, new EasyUseColumnSelector(fieldsToUpdate));
+        dml().updateRow(session(), rowToUpdate, updatedValue, new SetColumnSelector(fieldsToUpdate));
 
         expectFullRows(
                 tableId,

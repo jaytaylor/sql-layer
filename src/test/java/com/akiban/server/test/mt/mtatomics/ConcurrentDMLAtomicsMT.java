@@ -19,7 +19,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.FixedCountLimit;
-import com.akiban.server.api.dml.EasyUseColumnSelector;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.BufferedLegacyOutputRouter;
@@ -76,7 +76,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 NewRow updated = createNewRow(tableId, 2L, "icebox");
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(1));
+                dml().updateRow(new SessionImpl(), old, updated, new SetColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }
@@ -115,7 +115,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 NewRow updated = createNewRow(tableId, 5L);
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), old, updated, new EasyUseColumnSelector(0));
+                dml().updateRow(new SessionImpl(), old, updated, new SetColumnSelector(0));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }
@@ -160,8 +160,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
 
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(1));
-                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(1));
+                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new SetColumnSelector(1));
+                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new SetColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }
@@ -206,8 +206,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
 
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(0, 1));
-                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(1));
+                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new SetColumnSelector(0, 1));
+                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new SetColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }
@@ -254,8 +254,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
 
                 Timing.sleep(2000);
                 timePoints.mark("UPDATE: IN");
-                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new EasyUseColumnSelector(0, 1));
-                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new EasyUseColumnSelector(1));
+                dml().updateRow(new SessionImpl(), oldSnowman, updatedSnowman, new SetColumnSelector(0, 1));
+                dml().updateRow(new SessionImpl(), oldMr, updatedMr, new SetColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
                 return null;
             }

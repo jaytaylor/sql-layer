@@ -18,15 +18,15 @@ package com.akiban.server.api.dml;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class EasyUseColumnSelector implements ColumnSelector {
+public final class SetColumnSelector implements ColumnSelector {
 
     private final Set<Integer> set;
 
-    public EasyUseColumnSelector(Set<Integer> set) {
+    public SetColumnSelector(Set<Integer> set) {
         this.set = new HashSet<Integer>(set);
     }
 
-    public EasyUseColumnSelector(int... selectedPositions) {
+    public SetColumnSelector(int... selectedPositions) {
         set = new HashSet<Integer>();
         for (int i : selectedPositions) {
             set.add(i);

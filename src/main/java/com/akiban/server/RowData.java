@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
@@ -101,6 +102,8 @@ public class RowData {
 
     private int rowStart;
     private int rowEnd;
+
+    private ColumnSelector columnSelector;
 
     // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
     // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
@@ -615,6 +618,23 @@ public class RowData {
     public void differsFromPredecessorAtKeySegment(int differsFromPredecessorAtKeySegment)
     {
         this.differsFromPredecessorAtKeySegment = differsFromPredecessorAtKeySegment;
+    }
+
+    /**
+     * Get the stored ColumnSelector. Will be <code>null</code> unless one has been set using
+     * {@link #setColumnSelector(ColumnSelector)}.
+     * @return The ColumnSelector
+     */
+    public ColumnSelector getColumnSelector() {
+        return columnSelector;
+    }
+
+    /**
+     * Store a ColumnSelector. This can later be retrieved, unmodified, by {@link #getColumnSelector()}.
+     * @param selector The ColumnSelector to store.
+     */
+    public void setColumnSelector(ColumnSelector selector) {
+        columnSelector = selector;
     }
 
     public static int nullRowBufferSize(RowDef rowDef)
