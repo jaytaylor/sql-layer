@@ -16,10 +16,10 @@
 package com.akiban.ais.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -98,7 +98,7 @@ public class Index implements Serializable, ModelNames, Traversable
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
-        columns = new LinkedList<IndexColumn>();
+        columns = new ArrayList<IndexColumn>();
     }
 
     @Override
@@ -121,8 +121,18 @@ public class Index implements Serializable, ModelNames, Traversable
 
     public void addColumn(IndexColumn indexColumn)
     {
+        if (columnsFrozen) {
+            throw new IllegalStateException("can't add column because columns list is frozen");
+        }
         columns.add(indexColumn);
         columnsStale = true;
+    }
+
+    public void freezeColumns() {
+        if (!columnsFrozen) {
+            sortColumnsIfNeeded();
+            columnsFrozen = true;
+        }
     }
 
     public boolean isUnique()
@@ -157,19 +167,21 @@ public class Index implements Serializable, ModelNames, Traversable
 
     public List<IndexColumn> getColumns()
     {
+        sortColumnsIfNeeded();
+        return columns;
+    }
+
+    private void sortColumnsIfNeeded() {
         if (columnsStale) {
             Collections.sort(columns,
-                             new Comparator<IndexColumn>()
-                             {
-                                 @Override
-                                 public int compare(IndexColumn x, IndexColumn y)
-                                 {
-                                     return x.getPosition() - y.getPosition();
-                                 }
-                             });
+                    new Comparator<IndexColumn>() {
+                        @Override
+                        public int compare(IndexColumn x, IndexColumn y) {
+                            return x.getPosition() - y.getPosition();
+                        }
+                    });
             columnsStale = false;
         }
-        return columns;
     }
 
 
@@ -206,5 +218,6 @@ public class Index implements Serializable, ModelNames, Traversable
     private String constraint;
     private boolean columnsStale = true;
     private List<IndexColumn> columns;
+    private boolean columnsFrozen = false;
     private transient HKey hKey;
 }

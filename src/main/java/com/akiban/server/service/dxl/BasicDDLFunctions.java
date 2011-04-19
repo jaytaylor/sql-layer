@@ -322,6 +322,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         idxCol.isAscending(), idxCol.getIndexedLength());
                 newIndex.addColumn(indexCol);
             }
+            newIndex.freezeColumns();
             
             // Track new index names to build only new indexes
             sb.append("index=(");
