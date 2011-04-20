@@ -349,7 +349,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final String indexString = sb.toString();
         try {
             // Trigger build of new index trees
-            store().buildIndexes(session, indexString);
+            store().buildIndexes(session, indexString, false);
         } catch(Exception e) {
             try {
                 // Delete whatever was inserted, roll back table change

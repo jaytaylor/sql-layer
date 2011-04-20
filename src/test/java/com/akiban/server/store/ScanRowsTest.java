@@ -34,6 +34,7 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 
 public class ScanRowsTest extends AbstractScanBase {
+    private static final boolean BUILD_INDEXES_DEFERRED = true;
 
     @Test
     public void testScanRows() throws Exception {
@@ -191,7 +192,7 @@ public class ScanRowsTest extends AbstractScanBase {
                             bitMap, indexId));
         }
 
-        store.buildIndexes(session, "");
+        store.buildIndexes(session, "", BUILD_INDEXES_DEFERRED);
 
         {
             final RowDef userRowDef = rowDef("aaaa");

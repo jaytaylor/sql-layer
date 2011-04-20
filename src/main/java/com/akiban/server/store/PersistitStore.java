@@ -1066,7 +1066,7 @@ public class PersistitStore implements Store {
     }
 
     void insertIntoIndex(final Session session, final IndexDef indexDef,
-            final RowData rowData, final Key hkey, boolean deferIndexes)
+            final RowData rowData, final Key hkey, final boolean deferIndexes)
             throws InvalidOperationException, PersistitException {
         final Exchange iEx = getExchange(session, indexDef.getRowDef(),
                 indexDef);
@@ -1078,14 +1078,12 @@ public class PersistitStore implements Store {
             key.setDepth(indexDef.getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
                 complainAboutDuplicateKey(indexDef.getName(), key);
-            }
+            }   
             ks.copyTo(key);
-            // TODO: Deferred indexing does not handle uniqueness checking
-            // (See block below, cannot properly check for duplicates in the keySet
-            deferIndexes = false;
         }
         iEx.getValue().clear();
         if (deferIndexes) {
+            // TODO: bug767737, deferred indexing does not handle uniqueness
             synchronized (deferredIndexKeys) {
                 SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx
                         .getTree());
@@ -1232,7 +1230,7 @@ public class PersistitStore implements Store {
         rowData.prepareRow(0);
     }
 
-    public void buildIndexes(final Session session, final String ddl) throws Exception {
+    public void buildIndexes(final Session session, final String ddl, final boolean defer) throws Exception {
         flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
@@ -1287,7 +1285,7 @@ public class PersistitStore implements Store {
                                 .getIndexDefs()) {
                             if (isIndexSelected(indexDef, ddl)) {
                                 insertIntoIndex(session, indexDef, rowData,
-                                        hEx.getKey(), true);
+                                        hEx.getKey(), defer);
                                 indexKeyCount++;
                             }
                         }

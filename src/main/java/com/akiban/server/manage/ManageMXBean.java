@@ -32,7 +32,7 @@ public interface ManageMXBean {
 
     void setDeferIndexes(final boolean defer);
 
-    void buildIndexes(final String arg);
+    void buildIndexes(final String arg, final boolean deferIndexes);
 
     void deleteIndexes(final String arg);
 
