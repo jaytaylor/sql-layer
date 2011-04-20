@@ -35,6 +35,7 @@ public class KeyUpdateIT extends ITBase
     public void before() throws Exception
     {
         testStore = new TestStore(persistitStore());
+        rowDefsToCounts = new TreeMap<Integer, Integer>();
         createSchema();
         populateTables();
     }
@@ -312,6 +313,7 @@ public class KeyUpdateIT extends ITBase
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
         testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
         assertEquals(testVisitor.records(), realVisitor.records());
+        assertEquals("records count", countAllRows(), testVisitor.records().size());
         // Check indexes
         RecordCollectingIndexRecordVisistor indexVisitor;
         // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
@@ -319,14 +321,17 @@ public class KeyUpdateIT extends ITBase
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
         // Item PK index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
         // Order timestamp index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
         assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
     }
 
     private IndexDef indexDef(RowDef rowDef, String indexName) {
@@ -546,6 +551,9 @@ public class KeyUpdateIT extends ITBase
     private void dbInsert(TestRow row) throws Exception
     {
         testStore.writeRow(session(), row);
+        Integer oldCount = rowDefsToCounts.get(row.getTableId());
+        oldCount = (oldCount == null) ? 1 : oldCount+1;
+        rowDefsToCounts.put(row.getTableId(), oldCount);
     }
 
     private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
@@ -556,6 +564,21 @@ public class KeyUpdateIT extends ITBase
     private void dbDelete(TestRow row) throws Exception
     {
         testStore.deleteRow(session(), row);
+        Integer oldCount = rowDefsToCounts.get(row.getTableId());
+        assertNotNull(oldCount);
+        rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+    }
+
+    private int countAllRows() {
+        int total = 0;
+        for (Integer count : rowDefsToCounts.values()) {
+            total += count;
+        }
+        return total;
+    }
+
+    private int countRows(RowDef rowDef) {
+        return rowDefsToCounts.get(rowDef.getRowDefId());
     }
 
     private HKey hKey(TestRow row)
@@ -610,4 +633,5 @@ public class KeyUpdateIT extends ITBase
     }
 
     private TestStore testStore;
+    private Map<Integer,Integer> rowDefsToCounts;
 }
