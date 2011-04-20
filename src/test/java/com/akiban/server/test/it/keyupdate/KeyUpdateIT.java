@@ -208,6 +208,77 @@ public class KeyUpdateIT extends ITBase
     }
 
     @Test
+    public void testOrderPriorityUpdate() throws Exception
+    {
+        // Set customer.priority = 80 for order 33
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_priority, 80L, null);
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+    @Test
+    public void testOrderPriorityUpdateCreatingDuplicate() throws Exception
+    {
+        // Set customer.priority = 81 for order 33. Duplicates are fine.
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_priority, 81L, null);
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+
+    @Test
+    public void testOrderWhenUpdate() throws Exception
+    {
+        // Set customer.when = 9000 for order 33
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_when, 9000L, null);
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+    @Test
+    public void testOrderWhenUpdateCreatingDuplicate() throws Exception
+    {
+        // Set customer.when = 9000 for order 33
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        Long oldWhen = (Long) newOrderRow.put(o_when, 9001L);
+        assertEquals("old order.when", Long.valueOf(9009L), oldWhen);
+        updateRow(newOrderRow, o_when, 9001L, null);
+        try {
+            dbUpdate(oldOrderRow, newOrderRow);
+
+            // Make sure such a row actually exists!
+            TestRow shouldHaveConflicted = testStore.find(new HKey(customerRowDef, 1L, orderRowDef, 11L));
+            assertNotNull("shouldHaveConflicted not found", shouldHaveConflicted);
+            assertEquals(9001L, shouldHaveConflicted.getFields().get(o_when));
+            
+            fail("update should have failed with duplicate key");
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
+        TestRow confirmOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        assertSameFields(oldOrderRow, confirmOrderRow);
+        checkDB();
+    }
+
+    private void assertSameFields(TestRow expected, TestRow actual) {
+        Map<Integer,Object> expectedFields = expected.getFields();
+        Map<Integer,Object> actualFields = actual.getFields();
+        if (!expectedFields.equals(actualFields)) {
+            TreeMap<Integer,Object> expectedSorted = new TreeMap<Integer, Object>(expectedFields);
+            TreeMap<Integer,Object> actualSorted = new TreeMap<Integer, Object>(actualFields);
+            assertEquals(expectedSorted, actualSorted);
+            fail("if they're not equal, we shouldn't have gotten here!");
+        }
+    }
+
+    @Test
     public void testItemDelete() throws Exception
     {
         TestRow itemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
