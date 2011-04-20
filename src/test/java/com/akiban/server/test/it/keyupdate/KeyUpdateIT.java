@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -34,6 +35,7 @@ public class KeyUpdateIT extends ITBase
     public void before() throws Exception
     {
         testStore = new TestStore(persistitStore());
+        rowDefsToCounts = new TreeMap<Integer, Integer>();
         createSchema();
         populateTables();
     }
@@ -206,6 +208,86 @@ public class KeyUpdateIT extends ITBase
     }
 
     @Test
+    public void testOrderPriorityUpdate() throws Exception
+    {
+        // Set customer.priority = 80 for order 33
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_priority, 80L, null);
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+    @Test
+    public void testOrderPriorityUpdateCreatingDuplicate() throws Exception
+    {
+        // Set customer.priority = 81 for order 33. Duplicates are fine.
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_priority, 81L, null);
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+
+    @Test
+    public void testOrderWhenUpdate() throws Exception
+    {
+        // Set customer.when = 9000 for order 33
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        updateRow(newOrderRow, o_when, 9000L, null);
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+    @Test @org.junit.Ignore("767731")
+    public void testOrderWhenUpdateCreatingDuplicate() throws Exception
+    {
+        // Set customer.when = 9000 for order 33
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        Long oldWhen = (Long) newOrderRow.put(o_when, 9001L);
+        assertEquals("old order.when", Long.valueOf(9009L), oldWhen);
+        try {
+            dbUpdate(oldOrderRow, newOrderRow);
+
+            // Make sure such a row actually exists!
+            TestRow shouldHaveConflicted = testStore.find(new HKey(customerRowDef, 1L, orderRowDef, 11L));
+            assertNotNull("shouldHaveConflicted not found", shouldHaveConflicted);
+            assertEquals(9001L, shouldHaveConflicted.getFields().get(o_when));
+            
+            fail("update should have failed with duplicate key");
+        } catch (InvalidOperationException e) {
+            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+        }
+        TestRow confirmOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        assertSameFields(oldOrderRow, confirmOrderRow);
+        checkDB();
+    }
+
+    @Test
+    public void testOrderUpdateIsNoOp() throws Exception
+    {
+        // Update a row to its same values
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        dbUpdate(oldOrderRow, newOrderRow);
+        checkDB();
+    }
+
+    private void assertSameFields(TestRow expected, TestRow actual) {
+        Map<Integer,Object> expectedFields = expected.getFields();
+        Map<Integer,Object> actualFields = actual.getFields();
+        if (!expectedFields.equals(actualFields)) {
+            TreeMap<Integer,Object> expectedSorted = new TreeMap<Integer, Object>(expectedFields);
+            TreeMap<Integer,Object> actualSorted = new TreeMap<Integer, Object>(actualFields);
+            assertEquals(expectedSorted, actualSorted);
+            fail("if they're not equal, we shouldn't have gotten here!");
+        }
+    }
+
+    @Test
     public void testItemDelete() throws Exception
     {
         TestRow itemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
@@ -269,10 +351,16 @@ public class KeyUpdateIT extends ITBase
                               "oid int not null key",
                               "cid int",
                               "ox int",
+                              "priority int",
+                              "when int",
+                              "key(priority)",
+                              "unique(when)",
                               "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)");
         o_oid = 0;
         o_cid = 1;
         o_ox = 2;
+        o_priority = 3;
+        o_when = 4;
         // item
         itemId = createTable("coi", "item",
                              "iid int not null key",
@@ -305,6 +393,7 @@ public class KeyUpdateIT extends ITBase
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
         testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
         assertEquals(testVisitor.records(), realVisitor.records());
+        assertEquals("records count", countAllRows(), testVisitor.records().size());
         // Check indexes
         RecordCollectingIndexRecordVisistor indexVisitor;
         // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
@@ -312,10 +401,31 @@ public class KeyUpdateIT extends ITBase
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
         // Item PK index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
+        // Order priority index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
+        assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+        // Order timestamp index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), indexDef(orderRowDef, "when"), indexVisitor);
+        assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+    }
+
+    private IndexDef indexDef(RowDef rowDef, String indexName) {
+        for (IndexDef indexDef : rowDef.getIndexDefs()) {
+            if (indexName.equals(indexDef.getName())) {
+                return indexDef;
+            }
+        }
+        throw new NoSuchElementException(indexName);
     }
 
     private void checkInitialState() throws Exception
@@ -420,48 +530,107 @@ public class KeyUpdateIT extends ITBase
         return indexEntries;
     }
 
+    private List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry = Arrays.asList(
+                        record.row().get(o_priority),
+                        record.row().get(o_cid),
+                        record.row().get(o_oid)
+                );
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>()
+                {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y)
+                    {
+                        // compare priorities
+                        Long px = (Long) x.get(0);
+                        Long py = (Long) y.get(0);
+                        return px.compareTo(py);
+                    }
+                });
+        return indexEntries;
+    }
+
+    private List<List<Object>> orderWhenIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry = Arrays.asList(
+                        record.row().get(o_when),
+                        record.row().get(o_cid),
+                        record.row().get(o_oid)
+                );
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>()
+                {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y)
+                    {
+                        // compare priorities
+                        Long px = (Long) x.get(0);
+                        Long py = (Long) y.get(0);
+                        return px.compareTo(py);
+                    }
+                });
+        return indexEntries;
+    }
+
     private void populateTables() throws Exception
     {
         TestRow order;
-        dbInsert(row(customerRowDef, 1, 100));
-        dbInsert(order = row(orderRowDef, 11, 1, 1100));
-        dbInsert(row(order, itemRowDef, 111, 11, 11100));
-        dbInsert(row(order, itemRowDef, 112, 11, 11200));
-        dbInsert(row(order, itemRowDef, 113, 11, 11300));
-        dbInsert(order = row(orderRowDef, 12, 1, 1200));
-        dbInsert(row(order, itemRowDef, 121, 12, 12100));
-        dbInsert(row(order, itemRowDef, 122, 12, 12200));
-        dbInsert(row(order, itemRowDef, 123, 12, 12300));
-        dbInsert(order = row(orderRowDef, 13, 1, 1300));
-        dbInsert(row(order, itemRowDef, 131, 13, 13100));
-        dbInsert(row(order, itemRowDef, 132, 13, 13200));
-        dbInsert(row(order, itemRowDef, 133, 13, 13300));
-        dbInsert(row(customerRowDef, 2, 200));
-        dbInsert(order = row(orderRowDef, 21, 2, 2100));
-        dbInsert(row(order, itemRowDef, 211, 21, 21100));
-        dbInsert(row(order, itemRowDef, 212, 21, 21200));
-        dbInsert(row(order, itemRowDef, 213, 21, 21300));
-        dbInsert(order = row(orderRowDef, 22, 2, 2200));
-        dbInsert(row(order, itemRowDef, 221, 22, 22100));
-        dbInsert(row(order, itemRowDef, 222, 22, 22200));
-        dbInsert(row(order, itemRowDef, 223, 22, 22300));
-        dbInsert(order = row(orderRowDef, 23, 2, 2300));
-        dbInsert(row(order, itemRowDef, 231, 23, 23100));
-        dbInsert(row(order, itemRowDef, 232, 23, 23200));
-        dbInsert(row(order, itemRowDef, 233, 23, 23300));
-        dbInsert(row(customerRowDef, 3, 300));
-        dbInsert(order = row(orderRowDef, 31, 3, 3100));
-        dbInsert(row(order, itemRowDef, 311, 31, 31100));
-        dbInsert(row(order, itemRowDef, 312, 31, 31200));
-        dbInsert(row(order, itemRowDef, 313, 31, 31300));
-        dbInsert(order = row(orderRowDef, 32, 3, 3200));
-        dbInsert(row(order, itemRowDef, 321, 32, 32100));
-        dbInsert(row(order, itemRowDef, 322, 32, 32200));
-        dbInsert(row(order, itemRowDef, 323, 32, 32300));
-        dbInsert(order = row(orderRowDef, 33, 3, 3300));
-        dbInsert(row(order, itemRowDef, 331, 33, 33100));
-        dbInsert(row(order, itemRowDef, 332, 33, 33200));
-        dbInsert(row(order, itemRowDef, 333, 33, 33300));
+        //                               HKey reversed, value
+        dbInsert(     row(customerRowDef,          1,   100));
+        dbInsert(order = row(orderRowDef,      11, 1,   1100,   81, 9001));
+        dbInsert(  row(order, itemRowDef, 111, 11,      11100));
+        dbInsert(  row(order, itemRowDef, 112, 11,      11200));
+        dbInsert(  row(order, itemRowDef, 113, 11,      11300));
+        dbInsert(order = row(orderRowDef,      12, 1,   1200,   83, 9002));
+        dbInsert(  row(order, itemRowDef, 121, 12,      12100));
+        dbInsert(  row(order, itemRowDef, 122, 12,      12200));
+        dbInsert(  row(order, itemRowDef, 123, 12,      12300));
+        dbInsert(order = row(orderRowDef,      13, 1,   1300,   81, 9003));
+        dbInsert(  row(order, itemRowDef, 131, 13,      13100));
+        dbInsert(  row(order, itemRowDef, 132, 13,      13200));
+        dbInsert(  row(order, itemRowDef, 133, 13,      13300));
+
+        dbInsert(row(customerRowDef,               2,   200));
+        dbInsert(order = row(orderRowDef,      21, 2,   2100,   83, 9004));
+        dbInsert(  row(order, itemRowDef, 211, 21,      21100));
+        dbInsert(  row(order, itemRowDef, 212, 21,      21200));
+        dbInsert(  row(order, itemRowDef, 213, 21,      21300));
+        dbInsert(order = row(orderRowDef,      22, 2,   2200,   81, 9005));
+        dbInsert(  row(order, itemRowDef, 221, 22,      22100));
+        dbInsert(  row(order, itemRowDef, 222, 22,      22200));
+        dbInsert(  row(order, itemRowDef, 223, 22,      22300));
+        dbInsert(order = row(orderRowDef,      23, 2,   2300,   82, 9006));
+        dbInsert(  row(order, itemRowDef, 231, 23,      23100));
+        dbInsert(  row(order, itemRowDef, 232, 23,      23200));
+        dbInsert(  row(order, itemRowDef, 233, 23,      23300));
+
+        dbInsert(row(customerRowDef,               3,   300));
+        dbInsert(order = row(orderRowDef,      31, 3,   3100,   81, 9007));
+        dbInsert(  row(order, itemRowDef, 311, 31,      31100));
+        dbInsert(  row(order, itemRowDef, 312, 31,      31200));
+        dbInsert(  row(order, itemRowDef, 313, 31,      31300));
+        dbInsert(order = row(orderRowDef,      32, 3,   3200,   82, 9008));
+        dbInsert(  row(order, itemRowDef, 321, 32,      32100));
+        dbInsert(  row(order, itemRowDef, 322, 32,      32200));
+        dbInsert(  row(order, itemRowDef, 323, 32,      32300));
+        dbInsert(order = row(orderRowDef,      33, 3,   3300,   83, 9009));
+        dbInsert(  row(order, itemRowDef, 331, 33,      33100));
+        dbInsert(  row(order, itemRowDef, 332, 33,      33200));
+        dbInsert(  row(order, itemRowDef, 333, 33,      33300));
     }
 
     private TestRow row(RowDef table, Object... values)
@@ -495,6 +664,9 @@ public class KeyUpdateIT extends ITBase
     private void dbInsert(TestRow row) throws Exception
     {
         testStore.writeRow(session(), row);
+        Integer oldCount = rowDefsToCounts.get(row.getTableId());
+        oldCount = (oldCount == null) ? 1 : oldCount+1;
+        rowDefsToCounts.put(row.getTableId(), oldCount);
     }
 
     private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
@@ -505,6 +677,21 @@ public class KeyUpdateIT extends ITBase
     private void dbDelete(TestRow row) throws Exception
     {
         testStore.deleteRow(session(), row);
+        Integer oldCount = rowDefsToCounts.get(row.getTableId());
+        assertNotNull(oldCount);
+        rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+    }
+
+    private int countAllRows() {
+        int total = 0;
+        for (Integer count : rowDefsToCounts.values()) {
+            total += count;
+        }
+        return total;
+    }
+
+    private int countRows(RowDef rowDef) {
+        return rowDefsToCounts.get(rowDef.getRowDefId());
     }
 
     private HKey hKey(TestRow row)
@@ -559,4 +746,5 @@ public class KeyUpdateIT extends ITBase
     }
 
     private TestStore testStore;
+    private Map<Integer,Integer> rowDefsToCounts;
 }
