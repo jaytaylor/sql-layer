@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -23,23 +24,33 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.TreeMap;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 // Like KeyUpdateIT, but with cascading keys
 
+@org.junit.Ignore("blocked by bug 767785, which prevents us from doing PK checks")
 public class KeyUpdateCascadingKeysIT extends ITBase
 {
     @Before
     public void before() throws Exception
     {
         testStore = new TestStore(persistitStore());
+        rowDefsToCounts = new TreeMap<Integer, Integer>();
         createSchema();
         populateTables();
     }
@@ -312,11 +323,41 @@ public class KeyUpdateCascadingKeysIT extends ITBase
         RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
         testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
         assertEquals(testVisitor.records(), realVisitor.records());
-        // For a schema with cascading keys, all PK indexes are hkey equivalent, so there's nothing else
-        // to check.
-        // TODO: Secondary indexes
+        assertEquals("records count", countAllRows(), testVisitor.records().size());
+        // Check indexes
+        RecordCollectingIndexRecordVisistor indexVisitor;
+        // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
+        // Order PK index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
+        assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+        // Item PK index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
+        assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
+        // Order priority index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
+        assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+        // Order timestamp index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), indexDef(orderRowDef, "when"), indexVisitor);
+        assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
     }
 
+    private IndexDef indexDef(RowDef rowDef, String indexName) {
+        for (IndexDef indexDef : rowDef.getIndexDefs()) {
+            if (indexName.equals(indexDef.getName())) {
+                return indexDef;
+            }
+        }
+        throw new NoSuchElementException(indexName);
+    }
+    
     private void checkInitialState() throws Exception
     {
         RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
@@ -365,6 +406,113 @@ public class KeyUpdateCascadingKeysIT extends ITBase
         } else {
             fail();
         }
+    }
+
+    private List<List<Object>> orderPKIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry =
+                        Arrays.asList(record.row().get(o_oid),
+                                record.row().get(o_cid));
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>() {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y) {
+                        // compare oids
+                        Long lx = (Long) x.get(0);
+                        Long ly = (Long) y.get(0);
+                        return lx < ly ? -1 : lx > ly ? 1 : 0;
+                    }
+                });
+        return indexEntries;
+    }
+
+    private List<List<Object>> itemPKIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == itemRowDef) {
+                List<Object> indexEntry =
+                        Arrays.asList(record.row().get(i_iid), // iid
+                                record.hKey().objectArray()[1], // cid
+                                record.row().get(i_oid)); // oid
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>()
+                {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y)
+                    {
+                        // compare iids
+                        Long lx = (Long) x.get(0);
+                        Long ly = (Long) y.get(0);
+                        return lx < ly ? -1 : lx > ly ? 1 : 0;
+                    }
+                });
+        return indexEntries;
+    }
+
+    private List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry = Arrays.asList(
+                        record.row().get(o_priority),
+                        record.row().get(o_cid),
+                        record.row().get(o_oid)
+                );
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>()
+                {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y)
+                    {
+                        // compare priorities
+                        Long px = (Long) x.get(0);
+                        Long py = (Long) y.get(0);
+                        return px.compareTo(py);
+                    }
+                });
+        return indexEntries;
+    }
+
+    private List<List<Object>> orderWhenIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry = Arrays.asList(
+                        record.row().get(o_when),
+                        record.row().get(o_cid),
+                        record.row().get(o_oid)
+                );
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>()
+                {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y)
+                    {
+                        // compare priorities
+                        Long px = (Long) x.get(0);
+                        Long py = (Long) y.get(0);
+                        return px.compareTo(py);
+                    }
+                });
+        return indexEntries;
     }
 
     private void populateTables() throws Exception
@@ -429,6 +577,9 @@ public class KeyUpdateCascadingKeysIT extends ITBase
     private void dbInsert(TestRow row) throws Exception
     {
         testStore.writeRow(session(), row);
+        Integer oldCount = rowDefsToCounts.get(row.getTableId());
+        oldCount = (oldCount == null) ? 1 : oldCount+1;
+        rowDefsToCounts.put(row.getTableId(), oldCount);
     }
 
     private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
@@ -439,6 +590,21 @@ public class KeyUpdateCascadingKeysIT extends ITBase
     private void dbDelete(TestRow row) throws Exception
     {
         testStore.deleteRow(session(), row);
+        Integer oldCount = rowDefsToCounts.get(row.getTableId());
+        assertNotNull(oldCount);
+        rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+    }
+
+    private int countAllRows() {
+        int total = 0;
+        for (Integer count : rowDefsToCounts.values()) {
+            total += count;
+        }
+        return total;
+    }
+
+    private int countRows(RowDef rowDef) {
+        return rowDefsToCounts.get(rowDef.getRowDefId());
     }
 
     private HKey hKey(TestRow row)
@@ -472,4 +638,5 @@ public class KeyUpdateCascadingKeysIT extends ITBase
     }
 
     private TestStore testStore;
+    private Map<Integer,Integer> rowDefsToCounts;
 }
