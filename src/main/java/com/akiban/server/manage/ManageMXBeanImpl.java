@@ -74,7 +74,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
     public void buildIndexes(final String arg) {
         try {
             getStore().buildIndexes(new SessionImpl(), arg);
-        } catch(Throwable t) {
+        } catch(Exception t) {
             throw new RuntimeException(t);
         }
     }
