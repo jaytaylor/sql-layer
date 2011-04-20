@@ -304,14 +304,15 @@ public final class CreateIndexesIT extends AlterTestBase {
         } catch(DuplicateKeyException e) {
             // Expected
         }
+        updateAISGeneration();
 
         // Make sure index is not in AIS
         Table table = getUserTable(tId);
         assertNull("state index exists", table.getIndex("state"));
-        assertEquals(1, table.getIndexes().size()); // just pk
+        assertNotNull("pk index doesn't exist", table.getIndex("PRIMARY"));
+        assertEquals("Index count", 1, table.getIndexes().size());
 
         // Check that we can still get old rows
-        updateAISGeneration();
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 4, rows.size());
     }
@@ -342,5 +343,40 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 3, rows.size());
+    }
+
+    @Test
+    public void createMultipleIndexesWithFailure() throws InvalidOperationException {
+        int tId = createTable("test", "t", "id int primary key, i1 int, i2 int, price decimal(10,2), index(i1)");
+
+        dml().writeRow(session(), createNewRow(tId, 1, 10, 1337, "10.50"));
+        dml().writeRow(session(), createNewRow(tId, 2, 20, 5000, "10.50"));
+        dml().writeRow(session(), createNewRow(tId, 3, 30, 47000, "9.99"));
+        dml().writeRow(session(), createNewRow(tId, 4, 40, 47000, "9.99"));
+
+        // Create unique index on an int, non-unique index on decimal
+        AkibanInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "otherId", new String[]{"i2"}, true);
+        addIndexToAIS(ais, "test", "t", "price", new String[]{"price"}, false);
+
+        try {
+            ddl().createIndexes(session(), getAllIndexes(ais));
+            Assert.fail("DuplicateKeyExcpetion expected!");
+        } catch(DuplicateKeyException e) {
+            // Expected
+        }
+        updateAISGeneration();
+
+        // Make sure index is not in AIS
+        Table table = getUserTable(tId);
+        assertNull("i2 index exists", table.getIndex("i2"));
+        assertNull("price index exists", table.getIndex("price"));
+        assertNotNull("pk index doesn't exist", table.getIndex("PRIMARY"));
+        assertNotNull("i1 index doesn't exist", table.getIndex("i1"));
+        assertEquals("Index count", 2, table.getIndexes().size());
+
+        // Check that we can still get old rows
+        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
+        assertEquals("Rows scanned", 4, rows.size());
     }
 }
