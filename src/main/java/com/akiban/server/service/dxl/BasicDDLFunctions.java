@@ -355,9 +355,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 // Delete whatever was inserted, roll back table change
                 store().deleteIndexes(session, indexString);
                 schemaManager().createTableDefinition(session, schemaName, originalDDL, true);
-                checkCursorsForDDLModification(session, table);
             } catch(Exception e2) {
-                e = e2;
+                logger.error("Exception while rolling back failed createIndex {}: {}",
+                             indexString, e2);
             }
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
