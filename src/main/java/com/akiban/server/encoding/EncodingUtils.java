@@ -217,9 +217,14 @@ abstract class EncodingUtils {
                 fieldDef.getFieldIndex());
         final int offset = (int) location;
         final int length = (int) (location >>> 32);
-        final byte[] bytes = new byte[length - fieldDef.getPrefixSize()];
-        System.arraycopy(rowData.getBytes(), offset + fieldDef.getPrefixSize(),
-                bytes, 0, bytes.length);
+        final byte[] bytes;
+        if(offset == 0) {
+            bytes = null;
+        } else {
+            bytes = new byte[length - fieldDef.getPrefixSize()];
+            System.arraycopy(rowData.getBytes(), offset + fieldDef.getPrefixSize(),
+                             bytes, 0, bytes.length);
+        }
         key.append(bytes);
     }
 
