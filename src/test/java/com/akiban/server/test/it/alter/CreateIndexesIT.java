@@ -30,12 +30,15 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.IndexAlterException;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 
 public final class CreateIndexesIT extends AlterTestBase {
@@ -280,6 +283,36 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 3, rows.size());
+    }
+
+    @Test
+    public void createIndexUniqueWithDuplicate() throws InvalidOperationException {
+        int tId = createTable("test", "t", "id int primary key, state char(2)");
+
+        dml().writeRow(session(), createNewRow(tId, 1, "IA"));
+        dml().writeRow(session(), createNewRow(tId, 2, "WA"));
+        dml().writeRow(session(), createNewRow(tId, 3, "MA"));
+        dml().writeRow(session(), createNewRow(tId, 4, "IA"));
+
+        // Create unique index on a char(2) with a duplicate
+        AkibanInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "state", new String[]{"state"}, true);
+
+        try {
+            ddl().createIndexes(session(), getAllIndexes(ais));
+            Assert.fail("DuplicateKeyExcpetion expected!");
+        } catch(DuplicateKeyException e) {
+            // Expected
+        }
+
+        // Make sure index is not in AIS
+        Table table = getUserTable(tId);
+        assertNull(table.getIndex("state"));
+
+        // Check that we can still get old rows
+        updateAISGeneration();
+        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
+        assertEquals("Rows scanned", 4, rows.size());
     }
     
     @Test
