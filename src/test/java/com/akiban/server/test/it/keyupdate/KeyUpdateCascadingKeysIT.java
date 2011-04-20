@@ -44,7 +44,7 @@ import static junit.framework.Assert.fail;
 // Like KeyUpdateIT, but with cascading keys
 
 @org.junit.Ignore("blocked by bug 767785, which prevents us from doing PK checks")
-public class KeyUpdateCascadingKeysIT extends ITBase
+public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
 {
     @Before
     public void before() throws Exception

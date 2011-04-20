@@ -29,7 +29,7 @@ import java.util.*;
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
 
-public class KeyUpdateIT extends ITBase
+public class KeyUpdateIT extends KeyUpdateBase
 {
     @Before
     public void before() throws Exception
