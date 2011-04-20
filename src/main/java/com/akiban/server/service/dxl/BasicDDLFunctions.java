@@ -277,6 +277,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "TableId mismatch");
         }
         
+        // Save in case of error
+        final DDLGenerator gen = new DDLGenerator();
+        final String originalDDL = gen.createTable(table);
+
         // Input validation: same table, not a primary key, not a duplicate index name, and 
         // referenced columns are valid
         for (Index idx : indexesToAdd) {
@@ -331,14 +335,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             sb.append(")");
         }
 
+        final String schemaName = table.getName().getSchemaName();
+
         try {
             // Generate new DDL statement from existing AIS/table
-            final DDLGenerator gen = new DDLGenerator();
-            final TableName tableName = table.getName();
             final String newDDL = gen.createTable(table);
-            
-            // Store new DDL statement and recreate AIS
-            schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            schemaManager().createTableDefinition(session, schemaName, newDDL, true);
             checkCursorsForDDLModification(session, table);
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
@@ -349,6 +351,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // Trigger build of new index trees
             store().buildIndexes(session, indexString);
         } catch(Exception e) {
+            try {
+                // Delete whatever was inserted, roll back table change
+                store().deleteIndexes(session, indexString);
+                schemaManager().createTableDefinition(session, schemaName, originalDDL, true);
+                checkCursorsForDDLModification(session, table);
+            } catch(Exception e2) {
+                e = e2;
+            }
             InvalidOperationException ioe = launder(e);
             throwIfInstanceOf(ioe, DuplicateKeyException.class);
             throw new GenericInvalidOperationException(ioe);

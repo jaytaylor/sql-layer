@@ -308,6 +308,7 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Make sure index is not in AIS
         Table table = getUserTable(tId);
         assertNull("state index exists", table.getIndex("state"));
+        assertEquals(1, table.getIndexes().size()); // just pk
 
         // Check that we can still get old rows
         updateAISGeneration();
