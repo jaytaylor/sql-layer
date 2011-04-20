@@ -241,7 +241,7 @@ public class KeyUpdateIT extends ITBase
         checkDB();
     }
 
-    @Test
+    @Test @org.junit.Ignore("767731")
     public void testOrderWhenUpdateCreatingDuplicate() throws Exception
     {
         // Set customer.when = 9000 for order 33
@@ -249,7 +249,6 @@ public class KeyUpdateIT extends ITBase
         TestRow newOrderRow = copyRow(oldOrderRow);
         Long oldWhen = (Long) newOrderRow.put(o_when, 9001L);
         assertEquals("old order.when", Long.valueOf(9009L), oldWhen);
-        updateRow(newOrderRow, o_when, 9001L, null);
         try {
             dbUpdate(oldOrderRow, newOrderRow);
 
@@ -264,6 +263,16 @@ public class KeyUpdateIT extends ITBase
         }
         TestRow confirmOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
         assertSameFields(oldOrderRow, confirmOrderRow);
+        checkDB();
+    }
+
+    @Test
+    public void testOrderUpdateIsNoOp() throws Exception
+    {
+        // Update a row to its same values
+        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow newOrderRow = copyRow(oldOrderRow);
+        dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
     }
 
