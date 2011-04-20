@@ -423,45 +423,48 @@ public class KeyUpdateIT extends ITBase
     private void populateTables() throws Exception
     {
         TestRow order;
-        dbInsert(row(customerRowDef, 1, 100));
-        dbInsert(order = row(orderRowDef, 11, 1, 1100));
-        dbInsert(row(order, itemRowDef, 111, 11, 11100));
-        dbInsert(row(order, itemRowDef, 112, 11, 11200));
-        dbInsert(row(order, itemRowDef, 113, 11, 11300));
-        dbInsert(order = row(orderRowDef, 12, 1, 1200));
-        dbInsert(row(order, itemRowDef, 121, 12, 12100));
-        dbInsert(row(order, itemRowDef, 122, 12, 12200));
-        dbInsert(row(order, itemRowDef, 123, 12, 12300));
-        dbInsert(order = row(orderRowDef, 13, 1, 1300));
-        dbInsert(row(order, itemRowDef, 131, 13, 13100));
-        dbInsert(row(order, itemRowDef, 132, 13, 13200));
-        dbInsert(row(order, itemRowDef, 133, 13, 13300));
-        dbInsert(row(customerRowDef, 2, 200));
-        dbInsert(order = row(orderRowDef, 21, 2, 2100));
-        dbInsert(row(order, itemRowDef, 211, 21, 21100));
-        dbInsert(row(order, itemRowDef, 212, 21, 21200));
-        dbInsert(row(order, itemRowDef, 213, 21, 21300));
-        dbInsert(order = row(orderRowDef, 22, 2, 2200));
-        dbInsert(row(order, itemRowDef, 221, 22, 22100));
-        dbInsert(row(order, itemRowDef, 222, 22, 22200));
-        dbInsert(row(order, itemRowDef, 223, 22, 22300));
-        dbInsert(order = row(orderRowDef, 23, 2, 2300));
-        dbInsert(row(order, itemRowDef, 231, 23, 23100));
-        dbInsert(row(order, itemRowDef, 232, 23, 23200));
-        dbInsert(row(order, itemRowDef, 233, 23, 23300));
-        dbInsert(row(customerRowDef, 3, 300));
-        dbInsert(order = row(orderRowDef, 31, 3, 3100));
-        dbInsert(row(order, itemRowDef, 311, 31, 31100));
-        dbInsert(row(order, itemRowDef, 312, 31, 31200));
-        dbInsert(row(order, itemRowDef, 313, 31, 31300));
-        dbInsert(order = row(orderRowDef, 32, 3, 3200));
-        dbInsert(row(order, itemRowDef, 321, 32, 32100));
-        dbInsert(row(order, itemRowDef, 322, 32, 32200));
-        dbInsert(row(order, itemRowDef, 323, 32, 32300));
-        dbInsert(order = row(orderRowDef, 33, 3, 3300));
-        dbInsert(row(order, itemRowDef, 331, 33, 33100));
-        dbInsert(row(order, itemRowDef, 332, 33, 33200));
-        dbInsert(row(order, itemRowDef, 333, 33, 33300));
+        //                               HKey reversed, value
+        dbInsert(     row(customerRowDef,          1,   100));
+        dbInsert(order = row(orderRowDef,      11, 1,   1100));
+        dbInsert(  row(order, itemRowDef, 111, 11,      11100));
+        dbInsert(  row(order, itemRowDef, 112, 11,      11200));
+        dbInsert(  row(order, itemRowDef, 113, 11,      11300));
+        dbInsert(order = row(orderRowDef,      12, 1,   1200));
+        dbInsert(  row(order, itemRowDef, 121, 12,      12100));
+        dbInsert(  row(order, itemRowDef, 122, 12,      12200));
+        dbInsert(  row(order, itemRowDef, 123, 12,      12300));
+        dbInsert(order = row(orderRowDef,      13, 1,   1300));
+        dbInsert(  row(order, itemRowDef, 131, 13,      13100));
+        dbInsert(  row(order, itemRowDef, 132, 13,      13200));
+        dbInsert(  row(order, itemRowDef, 133, 13,      13300));
+
+        dbInsert(row(customerRowDef,               2,   200));
+        dbInsert(order = row(orderRowDef,      21, 2,   2100));
+        dbInsert(  row(order, itemRowDef, 211, 21,      21100));
+        dbInsert(  row(order, itemRowDef, 212, 21,      21200));
+        dbInsert(  row(order, itemRowDef, 213, 21,      21300));
+        dbInsert(order = row(orderRowDef,      22, 2,   2200));
+        dbInsert(  row(order, itemRowDef, 221, 22,      22100));
+        dbInsert(  row(order, itemRowDef, 222, 22,      22200));
+        dbInsert(  row(order, itemRowDef, 223, 22,      22300));
+        dbInsert(order = row(orderRowDef,      23, 2,   2300));
+        dbInsert(  row(order, itemRowDef, 231, 23,      23100));
+        dbInsert(  row(order, itemRowDef, 232, 23,      23200));
+        dbInsert(  row(order, itemRowDef, 233, 23,      23300));
+
+        dbInsert(row(customerRowDef,               3,   300));
+        dbInsert(order = row(orderRowDef,      31, 3,   3100));
+        dbInsert(  row(order, itemRowDef, 311, 31,      31100));
+        dbInsert(  row(order, itemRowDef, 312, 31,      31200));
+        dbInsert(  row(order, itemRowDef, 313, 31,      31300));
+        dbInsert(order = row(orderRowDef,      32, 3,   3200));
+        dbInsert(  row(order, itemRowDef, 321, 32,      32100));
+        dbInsert(  row(order, itemRowDef, 322, 32,      32200));
+        dbInsert(  row(order, itemRowDef, 323, 32,      32300));
+        dbInsert(order = row(orderRowDef,      33, 3,   3300));
+        dbInsert(  row(order, itemRowDef, 331, 33,      33100));
+        dbInsert(  row(order, itemRowDef, 332, 33,      33200));
+        dbInsert(  row(order, itemRowDef, 333, 33,      33300));
     }
 
     private TestRow row(RowDef table, Object... values)
