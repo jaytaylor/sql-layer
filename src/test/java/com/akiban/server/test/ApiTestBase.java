@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import junit.framework.Assert;
 
@@ -116,12 +117,7 @@ public class ApiTestBase {
         }
     }
 
-    public final static ColumnSelector ALL_COLUMNS = new ColumnSelector() {
-        @Override
-        public boolean includesColumn(int columnPosition) {
-            return true;
-        }
-    };
+    public final static ColumnSelector ALL_COLUMNS = new ConstantColumnSelector(true);
 
     protected static class TestServiceServiceFactory extends UnitTestServiceFactory {
 

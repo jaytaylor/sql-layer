@@ -20,6 +20,7 @@ import java.util.Map;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.DMLError;
 import com.akiban.server.service.ServiceManagerImpl;
 
@@ -101,6 +102,13 @@ public abstract class NewRow {
      * @throws NullPointerException if rowDef is required but null
      */
     public abstract RowData toRowData();
+
+    /**
+     * Returns a ColumnSelector where {@linkplain ColumnSelector#includesColumn(int)} returns true for fields
+     * that have been set, as opposed to testing for NULL.
+     * @return the ColumnSelector
+     */
+    public abstract ColumnSelector getActiveColumns();
 
     /**
      * <p>Compares the specified object with this NewRow. Returns <tt>true</tt> if the given object is also a

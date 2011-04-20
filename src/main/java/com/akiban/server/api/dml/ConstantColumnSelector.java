@@ -15,26 +15,15 @@
 
 package com.akiban.server.api.dml;
 
-import java.util.HashSet;
-import java.util.Set;
+public final class ConstantColumnSelector implements ColumnSelector {
+    private final boolean value;
 
-public final class EasyUseColumnSelector implements ColumnSelector {
-
-    private final Set<Integer> set;
-
-    public EasyUseColumnSelector(Set<Integer> set) {
-        this.set = new HashSet<Integer>(set);
-    }
-
-    public EasyUseColumnSelector(int... selectedPositions) {
-        set = new HashSet<Integer>();
-        for (int i : selectedPositions) {
-            set.add(i);
-        }
+    public ConstantColumnSelector(boolean value) {
+        this.value = value;
     }
 
     @Override
     public boolean includesColumn(int columnPosition) {
-        return set.contains(columnPosition);
+        return value;
     }
 }

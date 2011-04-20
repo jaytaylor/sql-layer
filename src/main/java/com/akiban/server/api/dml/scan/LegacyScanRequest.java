@@ -16,6 +16,7 @@
 package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.RowData;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.TableDefinitionMismatchException;
 
 import java.util.Arrays;
@@ -37,14 +38,16 @@ public class LegacyScanRequest extends LegacyScanRange implements ScanRequest {
 
     public LegacyScanRequest(int tableId,
                              RowData start,
+                             ColumnSelector startColumns,
                              RowData end,
+                             ColumnSelector endColumns,
                              byte[] columnBitMap,
                              int indexId,
                              int scanFlags,
                              ScanLimit limit)
     throws TableDefinitionMismatchException
     {
-        super(tableId, start, end, columnBitMap);
+        super(tableId, start, startColumns, end, endColumns, columnBitMap);
         this.indexId = indexId;
         this.scanFlags = scanFlags;
         this.limit = limit;

@@ -112,9 +112,11 @@ public class ScanFlagsIT extends ITBase
         }
         LegacyScanRequest request = new LegacyScanRequest(rowDefId,
                                                           bound(start),
+                                                          null,
                                                           bound(end),
+                                                          null,
                                                           new byte[]{1},
-                                                          0, // index id
+                                                          0, // index id, 0 = table scan
                                                           flags,  // scan flags
                                                           ScanLimit.NONE);
         ListRowOutput output = new ListRowOutput();
