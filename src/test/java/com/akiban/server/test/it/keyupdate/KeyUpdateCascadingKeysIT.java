@@ -269,7 +269,11 @@ public class KeyUpdateCascadingKeysIT extends ITBase
                               "cid int not null",
                               "oid int not null",
                               "ox int",
+                              "priority int",
+                              "when int",
                               "primary key(cid, oid)",
+                              "key(priority)",
+                              "unique(when)",
                               "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)");
         o_cid = 0;
         o_oid = 1;
@@ -366,44 +370,46 @@ public class KeyUpdateCascadingKeysIT extends ITBase
     private void populateTables() throws Exception
     {
         dbInsert(row(customerRowDef, 1, 100));
-        dbInsert(row(orderRowDef, 1, 11, 1100));
-        dbInsert(row(itemRowDef, 1, 11, 111, 11100));
-        dbInsert(row(itemRowDef, 1, 11, 112, 11200));
-        dbInsert(row(itemRowDef, 1, 11, 113, 11300));
-        dbInsert(row(orderRowDef, 1, 12, 1200));
-        dbInsert(row(itemRowDef, 1, 12, 121, 12100));
-        dbInsert(row(itemRowDef, 1, 12, 122, 12200));
-        dbInsert(row(itemRowDef, 1, 12, 123, 12300));
-        dbInsert(row(orderRowDef, 1, 13, 1300));
-        dbInsert(row(itemRowDef, 1, 13, 131, 13100));
-        dbInsert(row(itemRowDef, 1, 13, 132, 13200));
-        dbInsert(row(itemRowDef, 1, 13, 133, 13300));
+        dbInsert(row(orderRowDef,    1, 11, 1100, 81, 9001));
+        dbInsert(row(itemRowDef,     1, 11, 111, 11100));
+        dbInsert(row(itemRowDef,     1, 11, 112, 11200));
+        dbInsert(row(itemRowDef,     1, 11, 113, 11300));
+        dbInsert(row(orderRowDef,    1, 12, 1200, 83, 9002));
+        dbInsert(row(itemRowDef,     1, 12, 121, 12100));
+        dbInsert(row(itemRowDef,     1, 12, 122, 12200));
+        dbInsert(row(itemRowDef,     1, 12, 123, 12300));
+        dbInsert(row(orderRowDef,    1, 13, 1300, 81, 9003));
+        dbInsert(row(itemRowDef,     1, 13, 131, 13100));
+        dbInsert(row(itemRowDef,     1, 13, 132, 13200));
+        dbInsert(row(itemRowDef,     1, 13, 133, 13300));
+
         dbInsert(row(customerRowDef, 2, 200));
-        dbInsert(row(orderRowDef, 2, 21, 2100));
-        dbInsert(row(itemRowDef, 2, 21, 211, 21100));
-        dbInsert(row(itemRowDef, 2, 21, 212, 21200));
-        dbInsert(row(itemRowDef, 2, 21, 213, 21300));
-        dbInsert(row(orderRowDef, 2, 22, 2200));
-        dbInsert(row(itemRowDef, 2, 22, 221, 22100));
-        dbInsert(row(itemRowDef, 2, 22, 222, 22200));
-        dbInsert(row(itemRowDef, 2, 22, 223, 22300));
-        dbInsert(row(orderRowDef, 2, 23, 2300));
-        dbInsert(row(itemRowDef, 2, 23, 231, 23100));
-        dbInsert(row(itemRowDef, 2, 23, 232, 23200));
-        dbInsert(row(itemRowDef, 2, 23, 233, 23300));
+        dbInsert(row(orderRowDef,    2, 21, 2100, 83, 9004));
+        dbInsert(row(itemRowDef,     2, 21, 211, 21100));
+        dbInsert(row(itemRowDef,     2, 21, 212, 21200));
+        dbInsert(row(itemRowDef,     2, 21, 213, 21300));
+        dbInsert(row(orderRowDef,    2, 22, 2200, 81, 9005));
+        dbInsert(row(itemRowDef,     2, 22, 221, 22100));
+        dbInsert(row(itemRowDef,     2, 22, 222, 22200));
+        dbInsert(row(itemRowDef,     2, 22, 223, 22300));
+        dbInsert(row(orderRowDef,    2, 23, 2300, 82, 9006));
+        dbInsert(row(itemRowDef,     2, 23, 231, 23100));
+        dbInsert(row(itemRowDef,     2, 23, 232, 23200));
+        dbInsert(row(itemRowDef,     2, 23, 233, 23300));
+
         dbInsert(row(customerRowDef, 3, 300));
-        dbInsert(row(orderRowDef, 3, 31, 3100));
-        dbInsert(row(itemRowDef, 3, 31, 311, 31100));
-        dbInsert(row(itemRowDef, 3, 31, 312, 31200));
-        dbInsert(row(itemRowDef, 3, 31, 313, 31300));
-        dbInsert(row(orderRowDef, 3, 32, 3200));
-        dbInsert(row(itemRowDef, 3, 32, 321, 32100));
-        dbInsert(row(itemRowDef, 3, 32, 322, 32200));
-        dbInsert(row(itemRowDef, 3, 32, 323, 32300));
-        dbInsert(row(orderRowDef, 3, 33, 3300));
-        dbInsert(row(itemRowDef, 3, 33, 331, 33100));
-        dbInsert(row(itemRowDef, 3, 33, 332, 33200));
-        dbInsert(row(itemRowDef, 3, 33, 333, 33300));
+        dbInsert(row(orderRowDef,    3, 31, 3100, 81, 9007));
+        dbInsert(row(itemRowDef,     3, 31, 311, 31100));
+        dbInsert(row(itemRowDef,     3, 31, 312, 31200));
+        dbInsert(row(itemRowDef,     3, 31, 313, 31300));
+        dbInsert(row(orderRowDef,    3, 32, 3200, 82, 9008));
+        dbInsert(row(itemRowDef,     3, 32, 321, 32100));
+        dbInsert(row(itemRowDef,     3, 32, 322, 32200));
+        dbInsert(row(itemRowDef,     3, 32, 323, 32300));
+        dbInsert(row(orderRowDef,    3, 33, 3300, 83, 9009));
+        dbInsert(row(itemRowDef,     3, 33, 331, 33100));
+        dbInsert(row(itemRowDef,     3, 33, 332, 33200));
+        dbInsert(row(itemRowDef,     3, 33, 333, 33300));
     }
 
     private TestRow row(RowDef table, Object... values)
