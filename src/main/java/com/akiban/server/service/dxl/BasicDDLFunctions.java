@@ -51,6 +51,7 @@ import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -339,11 +340,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             // Store new DDL statement and recreate AIS
             schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
             checkCursorsForDDLModification(session, table);
-
-            // Trigger build of new index trees
-            store().buildIndexes(session, sb.toString());
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
+        }
+
+        final String indexString = sb.toString();
+        try {
+            // Trigger build of new index trees
+            store().buildIndexes(session, indexString);
+        } catch(Exception e) {
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(ioe, DuplicateKeyException.class);
+            throw new GenericInvalidOperationException(ioe);
         }
     }
 

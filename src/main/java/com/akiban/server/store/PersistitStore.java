@@ -1066,7 +1066,7 @@ public class PersistitStore implements Store {
     }
 
     void insertIntoIndex(final Session session, final IndexDef indexDef,
-            final RowData rowData, final Key hkey, final boolean deferIndexes)
+            final RowData rowData, final Key hkey, boolean deferIndexes)
             throws InvalidOperationException, PersistitException {
         final Exchange iEx = getExchange(session, indexDef.getRowDef(),
                 indexDef);
@@ -1080,6 +1080,9 @@ public class PersistitStore implements Store {
                 complainAboutDuplicateKey(indexDef.getName(), key);
             }
             ks.copyTo(key);
+            // TODO: Deferred indexing does not handle uniqueness checking
+            // (See block below, cannot properly check for duplicates in the keySet
+            deferIndexes = false;
         }
         iEx.getValue().clear();
         if (deferIndexes) {
@@ -1229,7 +1232,7 @@ public class PersistitStore implements Store {
         rowData.prepareRow(0);
     }
 
-    public void buildIndexes(final Session session, final String ddl) {
+    public void buildIndexes(final Session session, final String ddl) throws Exception {
         flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
@@ -1294,20 +1297,11 @@ public class PersistitStore implements Store {
                     }
                 }
             } catch (Exception e) {
-                LOG.error("Exception while trying to index group table "
-                        + rowDef.getSchemaName() + "." + rowDef.getTableName(),
-                        e);
+                LOG.error("Exception while inserting index into {}: {}", rowDef.table().getName(), e);
+                throw e;
             }
             flushIndexes(session);
-            if (LOG.isInfoEnabled()) {
-                LOG.debug(
-                        "Inserted {} index keys into group {}.{}", new Object[] {
-                        indexKeyCount,
-                        rowDef.getSchemaName(),
-                        rowDef.getTableName()
-                        }
-                );
-            }
+            LOG.debug("Inserted {} index keys into {}", indexKeyCount, rowDef.table().getName());
         }
     }
 

@@ -72,7 +72,11 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public void buildIndexes(final String arg) {
-        getStore().buildIndexes(new SessionImpl(), arg);
+        try {
+            getStore().buildIndexes(new SessionImpl(), arg);
+        } catch(Throwable t) {
+            throw new RuntimeException(t);
+        }
     }
 
     @Override
