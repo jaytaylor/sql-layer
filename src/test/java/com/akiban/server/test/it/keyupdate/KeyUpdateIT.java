@@ -327,10 +327,15 @@ public class KeyUpdateIT extends ITBase
         testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
         assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
-        // Order timestamp index
+        // Order priority index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
         assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
+        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+        // Order timestamp index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), indexDef(orderRowDef, "when"), indexVisitor);
+        assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
         assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
     }
 
@@ -452,6 +457,34 @@ public class KeyUpdateIT extends ITBase
             if (record.row().getRowDef() == orderRowDef) {
                 List<Object> indexEntry = Arrays.asList(
                         record.row().get(o_priority),
+                        record.row().get(o_cid),
+                        record.row().get(o_oid)
+                );
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>()
+                {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y)
+                    {
+                        // compare priorities
+                        Long px = (Long) x.get(0);
+                        Long py = (Long) y.get(0);
+                        return px.compareTo(py);
+                    }
+                });
+        return indexEntries;
+    }
+
+    private List<List<Object>> orderWhenIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry = Arrays.asList(
+                        record.row().get(o_when),
                         record.row().get(o_cid),
                         record.row().get(o_oid)
                 );
