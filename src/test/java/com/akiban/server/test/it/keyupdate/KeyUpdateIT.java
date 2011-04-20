@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -269,10 +270,16 @@ public class KeyUpdateIT extends ITBase
                               "oid int not null key",
                               "cid int",
                               "ox int",
+                              "priority int",
+                              "when int",
+                              "key(priority)",
+                              "unique(when)",
                               "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)");
         o_oid = 0;
         o_cid = 1;
         o_ox = 2;
+        o_priority = 3;
+        o_when = 4;
         // item
         itemId = createTable("coi", "item",
                              "iid int not null key",
@@ -316,6 +323,19 @@ public class KeyUpdateIT extends ITBase
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
         assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+        // Order timestamp index
+        indexVisitor = new RecordCollectingIndexRecordVisistor();
+        testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
+        assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
+    }
+
+    private IndexDef indexDef(RowDef rowDef, String indexName) {
+        for (IndexDef indexDef : rowDef.getIndexDefs()) {
+            if (indexName.equals(indexDef.getName())) {
+                return indexDef;
+            }
+        }
+        throw new NoSuchElementException(indexName);
     }
 
     private void checkInitialState() throws Exception
@@ -420,48 +440,76 @@ public class KeyUpdateIT extends ITBase
         return indexEntries;
     }
 
+    private List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
+    {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == orderRowDef) {
+                List<Object> indexEntry = Arrays.asList(
+                        record.row().get(o_priority),
+                        record.row().get(o_cid),
+                        record.row().get(o_oid)
+                );
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>()
+                {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y)
+                    {
+                        // compare priorities
+                        Long px = (Long) x.get(0);
+                        Long py = (Long) y.get(0);
+                        return px.compareTo(py);
+                    }
+                });
+        return indexEntries;
+    }
+
     private void populateTables() throws Exception
     {
         TestRow order;
         //                               HKey reversed, value
         dbInsert(     row(customerRowDef,          1,   100));
-        dbInsert(order = row(orderRowDef,      11, 1,   1100));
+        dbInsert(order = row(orderRowDef,      11, 1,   1100,   81, 9001));
         dbInsert(  row(order, itemRowDef, 111, 11,      11100));
         dbInsert(  row(order, itemRowDef, 112, 11,      11200));
         dbInsert(  row(order, itemRowDef, 113, 11,      11300));
-        dbInsert(order = row(orderRowDef,      12, 1,   1200));
+        dbInsert(order = row(orderRowDef,      12, 1,   1200,   83, 9002));
         dbInsert(  row(order, itemRowDef, 121, 12,      12100));
         dbInsert(  row(order, itemRowDef, 122, 12,      12200));
         dbInsert(  row(order, itemRowDef, 123, 12,      12300));
-        dbInsert(order = row(orderRowDef,      13, 1,   1300));
+        dbInsert(order = row(orderRowDef,      13, 1,   1300,   81, 9003));
         dbInsert(  row(order, itemRowDef, 131, 13,      13100));
         dbInsert(  row(order, itemRowDef, 132, 13,      13200));
         dbInsert(  row(order, itemRowDef, 133, 13,      13300));
 
         dbInsert(row(customerRowDef,               2,   200));
-        dbInsert(order = row(orderRowDef,      21, 2,   2100));
+        dbInsert(order = row(orderRowDef,      21, 2,   2100,   83, 9004));
         dbInsert(  row(order, itemRowDef, 211, 21,      21100));
         dbInsert(  row(order, itemRowDef, 212, 21,      21200));
         dbInsert(  row(order, itemRowDef, 213, 21,      21300));
-        dbInsert(order = row(orderRowDef,      22, 2,   2200));
+        dbInsert(order = row(orderRowDef,      22, 2,   2200,   81, 9005));
         dbInsert(  row(order, itemRowDef, 221, 22,      22100));
         dbInsert(  row(order, itemRowDef, 222, 22,      22200));
         dbInsert(  row(order, itemRowDef, 223, 22,      22300));
-        dbInsert(order = row(orderRowDef,      23, 2,   2300));
+        dbInsert(order = row(orderRowDef,      23, 2,   2300,   82, 9006));
         dbInsert(  row(order, itemRowDef, 231, 23,      23100));
         dbInsert(  row(order, itemRowDef, 232, 23,      23200));
         dbInsert(  row(order, itemRowDef, 233, 23,      23300));
 
         dbInsert(row(customerRowDef,               3,   300));
-        dbInsert(order = row(orderRowDef,      31, 3,   3100));
+        dbInsert(order = row(orderRowDef,      31, 3,   3100,   81, 9007));
         dbInsert(  row(order, itemRowDef, 311, 31,      31100));
         dbInsert(  row(order, itemRowDef, 312, 31,      31200));
         dbInsert(  row(order, itemRowDef, 313, 31,      31300));
-        dbInsert(order = row(orderRowDef,      32, 3,   3200));
+        dbInsert(order = row(orderRowDef,      32, 3,   3200,   82, 9008));
         dbInsert(  row(order, itemRowDef, 321, 32,      32100));
         dbInsert(  row(order, itemRowDef, 322, 32,      32200));
         dbInsert(  row(order, itemRowDef, 323, 32,      32300));
-        dbInsert(order = row(orderRowDef,      33, 3,   3300));
+        dbInsert(order = row(orderRowDef,      33, 3,   3300,   83, 9009));
         dbInsert(  row(order, itemRowDef, 331, 33,      33100));
         dbInsert(  row(order, itemRowDef, 332, 33,      33200));
         dbInsert(  row(order, itemRowDef, 333, 33,      33300));

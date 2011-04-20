@@ -33,6 +33,8 @@ public class Schema
     static Integer o_oid;
     static Integer o_cid;
     static Integer o_ox;
+    static Integer o_priority;
+    static Integer o_when;
     static Integer i_cid;
     static Integer i_oid;
     static Integer i_iid;
