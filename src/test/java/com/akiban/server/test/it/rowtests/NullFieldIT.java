@@ -37,15 +37,13 @@ public class NullFieldIT extends ITBase
     
     @Test
     public void floatEncoder() throws InvalidOperationException {
-        // TODO: Add back index(c2) when allowed
-        final int tid = createTable("test", "t", "id int key, c2 float");
+        final int tid = createTable("test", "t", "id int key, c2 float, index(c2)");
         writeRows(createNewRow(tid, 1, 1.142), createNewRow(tid, 2, null));
     }
 
     @Test
     public void ufloatEncoder() throws InvalidOperationException {
-        // TODO: Add back index(c2) when allowed
-        final int tid = createTable("test", "t", "id int key, c2 float unsigned");
+        final int tid = createTable("test", "t", "id int key, c2 float unsigned, index(c2)");
         writeRows(createNewRow(tid, 1, 1.42), createNewRow(tid, 2, null));
     }
 
@@ -53,6 +51,18 @@ public class NullFieldIT extends ITBase
     public void decimalEncoder() throws InvalidOperationException {
         final int tid = createTable("test", "t", "id int key, c2 decimal(10,2), index(c2)");
         writeRows(createNewRow(tid, 1, BigDecimal.valueOf(110, 2)), createNewRow(tid, 2, null));
+    }
+
+    @Test
+    public void doubleEncoder() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "id int key, c2 double, index(c2)");
+        writeRows(createNewRow(tid, 1, 1.142), createNewRow(tid, 2, null));
+    }
+
+    @Test
+    public void udoubleEncoder() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "id int key, c2 double unsigned, index(c2)");
+        writeRows(createNewRow(tid, 1, 1.42), createNewRow(tid, 2, null));
     }
 
     @Test

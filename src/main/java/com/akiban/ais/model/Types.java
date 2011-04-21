@@ -205,8 +205,6 @@ public class Types {
 
     private static Set<Type> setOfUnsupportedIndexTypes() {
         Set<Type> unsupported = new HashSet<Type>();
-        unsupported.add(DOUBLE);
-        unsupported.add(U_DOUBLE);
         unsupported.add(TINYBLOB);
         unsupported.add(BLOB);
         unsupported.add(MEDIUMBLOB);
