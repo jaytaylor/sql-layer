@@ -15,53 +15,23 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.message.ErrorCode;
-import com.akiban.server.test.it.ITBase;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.TreeMap;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 // Like KeyUpdateIT, but with cascading keys
 
 @org.junit.Ignore("blocked by bug 767785, which prevents us from doing PK checks")
-public class KeyUpdateCascadingKeysIT extends ITBase
+public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
 {
-    @Before
-    public void before() throws Exception
-    {
-        testStore = new TestStore(persistitStore());
-        rowDefsToCounts = new TreeMap<Integer, Integer>();
-        createSchema();
-        populateTables();
-    }
-
-    @Test
-    public void testInitialState() throws Exception
-    {
-        checkDB();
-        checkInitialState();
-    }
-
     @Test
     public void testItemFKUpdate() throws Exception
     {
@@ -266,7 +236,8 @@ public class KeyUpdateCascadingKeysIT extends ITBase
         checkInitialState();
     }
 
-    private void createSchema() throws InvalidOperationException
+    @Override
+    protected void createSchema() throws InvalidOperationException
     {
         // customer
         customerId = createTable("coi", "customer",
@@ -315,207 +286,32 @@ public class KeyUpdateCascadingKeysIT extends ITBase
         row.hKey(hKey(row));
     }
 
-    private void checkDB()
-        throws Exception
+    @Override
+    protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
-        // Records
-        RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
-        RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
-        assertEquals(testVisitor.records(), realVisitor.records());
-        assertEquals("records count", countAllRows(), testVisitor.records().size());
-        // Check indexes
-        RecordCollectingIndexRecordVisistor indexVisitor;
-        // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
-        // Order PK index
-        indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
-        assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
-        // Item PK index
-        indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
-        assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
-        // Order priority index
-        indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
-        assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
-        // Order timestamp index
-        indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), indexDef(orderRowDef, "when"), indexVisitor);
-        assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+        return indexFromRecords(records, orderRowDef, o_oid, o_cid);
     }
 
-    private IndexDef indexDef(RowDef rowDef, String indexName) {
-        for (IndexDef indexDef : rowDef.getIndexDefs()) {
-            if (indexName.equals(indexDef.getName())) {
-                return indexDef;
-            }
-        }
-        throw new NoSuchElementException(indexName);
-    }
-    
-    private void checkInitialState() throws Exception
+    @Override
+    protected List<List<Object>> itemPKIndex(List<TreeRecord> records)
     {
-        RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
-        RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
-        Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
-        Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
-        Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
-        expectedCounts.put(customerRowDef.getRowDefId(), 0);
-        expectedCounts.put(orderRowDef.getRowDefId(), 0);
-        expectedCounts.put(itemRowDef.getRowDefId(), 0);
-        Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
-        actualCounts.put(customerRowDef.getRowDefId(), 0);
-        actualCounts.put(orderRowDef.getRowDefId(), 0);
-        actualCounts.put(itemRowDef.getRowDefId(), 0);
-        while (expectedIterator.hasNext() && actualIterator.hasNext()) {
-            TreeRecord expected = expectedIterator.next();
-            TreeRecord actual = actualIterator.next();
-            assertEquals(expected, actual);
-            assertEquals(hKey((TestRow) expected.row()), actual.hKey());
-            checkInitialState(actual.row());
-            expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
-            actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
-        }
-        assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
-        assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
-        assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
-        assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
-        assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
-        assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
-        assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
+        return indexFromRecords(records, itemRowDef, i_iid, HKeyElement.from(1), i_oid);
     }
 
-    private void checkInitialState(NewRow row)
+    @Override
+    protected List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
     {
-        RowDef rowDef = row.getRowDef();
-        if (rowDef == customerRowDef) {
-            assertEquals(row.get(c_cx), ((Long)row.get(c_cid)) * 100);
-        } else if (rowDef == orderRowDef) {
-            assertEquals(row.get(o_cid), ((Long)row.get(o_oid)) / 10);
-            assertEquals(row.get(o_ox), ((Long)row.get(o_oid)) * 100);
-        } else if (rowDef == itemRowDef) {
-            assertEquals(row.get(i_cid), ((Long)row.get(i_iid)) / 100);
-            assertEquals(row.get(i_oid), ((Long)row.get(i_iid)) / 10);
-            assertEquals(row.get(i_ix), ((Long)row.get(i_iid)) * 100);
-        } else {
-            fail();
-        }
+        return indexFromRecords(records, orderRowDef, o_priority, o_cid, o_oid);
     }
 
-    private List<List<Object>> orderPKIndex(List<TreeRecord> records)
+    @Override
+    protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == orderRowDef) {
-                List<Object> indexEntry =
-                        Arrays.asList(record.row().get(o_oid),
-                                record.row().get(o_cid));
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                new Comparator<List<Object>>() {
-                    @Override
-                    public int compare(List<Object> x, List<Object> y) {
-                        // compare oids
-                        Long lx = (Long) x.get(0);
-                        Long ly = (Long) y.get(0);
-                        return lx < ly ? -1 : lx > ly ? 1 : 0;
-                    }
-                });
-        return indexEntries;
+        return indexFromRecords(records, orderRowDef, o_when, o_cid, o_oid);
     }
 
-    private List<List<Object>> itemPKIndex(List<TreeRecord> records)
-    {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == itemRowDef) {
-                List<Object> indexEntry =
-                        Arrays.asList(record.row().get(i_iid), // iid
-                                record.hKey().objectArray()[1], // cid
-                                record.row().get(i_oid)); // oid
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                new Comparator<List<Object>>()
-                {
-                    @Override
-                    public int compare(List<Object> x, List<Object> y)
-                    {
-                        // compare iids
-                        Long lx = (Long) x.get(0);
-                        Long ly = (Long) y.get(0);
-                        return lx < ly ? -1 : lx > ly ? 1 : 0;
-                    }
-                });
-        return indexEntries;
-    }
-
-    private List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
-    {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == orderRowDef) {
-                List<Object> indexEntry = Arrays.asList(
-                        record.row().get(o_priority),
-                        record.row().get(o_cid),
-                        record.row().get(o_oid)
-                );
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                new Comparator<List<Object>>()
-                {
-                    @Override
-                    public int compare(List<Object> x, List<Object> y)
-                    {
-                        // compare priorities
-                        Long px = (Long) x.get(0);
-                        Long py = (Long) y.get(0);
-                        return px.compareTo(py);
-                    }
-                });
-        return indexEntries;
-    }
-
-    private List<List<Object>> orderWhenIndex(List<TreeRecord> records)
-    {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == orderRowDef) {
-                List<Object> indexEntry = Arrays.asList(
-                        record.row().get(o_when),
-                        record.row().get(o_cid),
-                        record.row().get(o_oid)
-                );
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                new Comparator<List<Object>>()
-                {
-                    @Override
-                    public int compare(List<Object> x, List<Object> y)
-                    {
-                        // compare priorities
-                        Long px = (Long) x.get(0);
-                        Long py = (Long) y.get(0);
-                        return px.compareTo(py);
-                    }
-                });
-        return indexEntries;
-    }
-
-    private void populateTables() throws Exception
+    @Override
+    protected void populateTables() throws Exception
     {
         dbInsert(row(customerRowDef, 1, 100));
         dbInsert(row(orderRowDef,    1, 11, 1100, 81, 9001));
@@ -560,54 +356,8 @@ public class KeyUpdateCascadingKeysIT extends ITBase
         dbInsert(row(itemRowDef,     3, 33, 333, 33300));
     }
 
-    private TestRow row(RowDef table, Object... values)
-    {
-        TestRow row = new TestRow(table.getRowDefId());
-        int column = 0;
-        for (Object value : values) {
-            if (value instanceof Integer) {
-                value = ((Integer) value).longValue();
-            }
-            row.put(column++, value);
-        }
-        row.hKey(hKey(row));
-        return row;
-    }
-
-    private void dbInsert(TestRow row) throws Exception
-    {
-        testStore.writeRow(session(), row);
-        Integer oldCount = rowDefsToCounts.get(row.getTableId());
-        oldCount = (oldCount == null) ? 1 : oldCount+1;
-        rowDefsToCounts.put(row.getTableId(), oldCount);
-    }
-
-    private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
-    {
-        testStore.updateRow(session(), oldRow, newRow, null);
-    }
-
-    private void dbDelete(TestRow row) throws Exception
-    {
-        testStore.deleteRow(session(), row);
-        Integer oldCount = rowDefsToCounts.get(row.getTableId());
-        assertNotNull(oldCount);
-        rowDefsToCounts.put(row.getTableId(), oldCount - 1);
-    }
-
-    private int countAllRows() {
-        int total = 0;
-        for (Integer count : rowDefsToCounts.values()) {
-            total += count;
-        }
-        return total;
-    }
-
-    private int countRows(RowDef rowDef) {
-        return rowDefsToCounts.get(rowDef.getRowDefId());
-    }
-
-    private HKey hKey(TestRow row)
+    @Override
+    protected HKey hKey(TestRow row)
     {
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();
@@ -636,7 +386,4 @@ public class KeyUpdateCascadingKeysIT extends ITBase
         copy.hKey(hKey(row));
         return copy;
     }
-
-    private TestStore testStore;
-    private Map<Integer,Integer> rowDefsToCounts;
 }
