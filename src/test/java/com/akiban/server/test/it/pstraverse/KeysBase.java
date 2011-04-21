@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.dxl;
+package com.akiban.server.test.it.pstraverse;
 
 import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
@@ -26,12 +26,15 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-public final class CascadingKeysBasicIT extends ITBase {
+public abstract class KeysBase extends ITBase {
     private int customers;
     private int orders;
     private int items;
+
+    protected abstract String ordersPK();
+    protected abstract String itemsPK();
 
     @Before
     public void setUp() throws Exception {
@@ -40,56 +43,68 @@ public final class CascadingKeysBasicIT extends ITBase {
         orders = createTable(schema, "orders",
                 "cid int",
                 "oid int",
-                "PRIMARY KEY(cid,oid)",
+                "PRIMARY KEY("+ordersPK()+")",
                 "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(cid) REFERENCES customers(cid)"
         );
         items = createTable(schema, "items",
                 "cid int",
                 "oid int",
                 "iid int",
-                "PRIMARY KEY (cid,oid,iid)",
-                "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i(cid,oid) REFERENCES orders(cid,oid)"
+                "PRIMARY KEY("+itemsPK()+")",
+                "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i("+ordersPK()+") REFERENCES orders("+ordersPK()+")"
         );
 
         writeRows(
-                createNewRow(customers, 1),
-                createNewRow(orders, 1, 1),
-                createNewRow(items, 1, 1, 1),
-                createNewRow(items, 1, 1, 2),
-                createNewRow(orders, 2, 2),
-                createNewRow(items, 2, 2, 1)
+                createNewRow(customers, 71),
+                createNewRow(orders, 71, 81),
+                createNewRow(items, 71, 81, 91),
+                createNewRow(items, 71, 81, 92),
+                createNewRow(orders, 72, 82),
+                createNewRow(items, 72, 82, 93)
 
         );
     }
 
-    @Test
+    protected int customers() {
+        return customers;
+    }
+
+    protected int orders() {
+        return orders;
+    }
+
+    protected int items() {
+        return items;
+    }
+
+    @Test(expected=IllegalArgumentException.class) @SuppressWarnings("unused") // junit will invoke
     public void traverseCustomersPK() throws Exception {
         traversePK(
-                customers,
-                Arrays.asList(1L)
+                customers(),
+                Arrays.asList(71L)
         );
     }
 
-    @Test
+    @Test @SuppressWarnings("unused") // junit will invoke
     public void traverseOrdersPK() throws Exception {
         traversePK(
-                orders,
-                Arrays.asList(1L, 1L),
-                Arrays.asList(2L, 2L)
+                orders(),
+                Arrays.asList(81L, 71L),
+                Arrays.asList(82L, 72L)
         );
     }
 
-    @Test
+    @Test @SuppressWarnings("unused") // junit will invoke
     public void traverseItemsPK() throws Exception {
         traversePK(
-                items,
-                Arrays.asList(1L, 1L, 1L),
-                Arrays.asList(1L, 1L, 2L),
-                Arrays.asList(2L, 2L, 2L)
+                items(),
+                Arrays.asList(91L, 71L, 81L),
+                Arrays.asList(92L, 71L, 81L),
+                Arrays.asList(93L, 72L, 82L)
         );
     }
 
-    private void traversePK(int rowDefId, List<? extends Long>... expectedIndexes) throws Exception {
+    private void traversePK(int rowDefId, List<? super Long>... expectedIndexes) throws Exception {
         IndexDef pkIndexDef = rowDefCache().rowDef(rowDefId).getPKIndexDef();
 
         RecordCollectingIndexRecordVisistor visitor = new RecordCollectingIndexRecordVisistor();
@@ -98,34 +113,34 @@ public final class CascadingKeysBasicIT extends ITBase {
         assertEquals("traversed indexes", Arrays.asList(expectedIndexes), visitor.records());
     }
 
-    @Test
+    @Test @SuppressWarnings("unused") // invoked via JMX
     public void scanCustomers() throws InvalidOperationException {
 
         List<NewRow> actual = scanAll(scanAllRequest(customers));
         List<NewRow> expected = Arrays.asList(
-                createNewRow(customers, 1L)
+                createNewRow(customers, 71L)
         );
         assertEquals("rows scanned", expected, actual);
     }
 
-    @Test
+    @Test @SuppressWarnings("unused") // invoked via JMX
     public void scanOrders() throws InvalidOperationException {
 
         List<NewRow> actual = scanAll(scanAllRequest(orders));
         List<NewRow> expected = Arrays.asList(
-                createNewRow(orders, 1L, 1L),
-                createNewRow(orders, 2L, 2L)
+                createNewRow(orders, 71L, 81L),
+                createNewRow(orders, 72L, 82L)
         );
         assertEquals("rows scanned", expected, actual);
     }
 
-    @Test
+    @Test @SuppressWarnings("unused") // invoked via JMX
     public void scanItems() throws InvalidOperationException {
         List<NewRow> actual = scanAll(scanAllRequest(items));
         List<NewRow> expected = Arrays.asList(
-                createNewRow(items, 1L, 1L, 1L),
-                createNewRow(items, 1L, 1L, 2L),
-                createNewRow(items, 2L, 2L, 1L)
+                createNewRow(items, 71L, 81L, 91L),
+                createNewRow(items, 71L, 81L, 92L),
+                createNewRow(items, 72L, 82L, 93L)
         );
         assertEquals("rows scanned", expected, actual);
     }

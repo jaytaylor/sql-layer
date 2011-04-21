@@ -1423,9 +1423,13 @@ public class PersistitStore implements Store {
 
     public void traverse(Session session, IndexDef indexDef,
             IndexRecordVisitor visitor) throws PersistitException,
-            InvalidOperationException {
-        Exchange exchange = getExchange(session, null, indexDef).append(
-                Key.BEFORE);
+            InvalidOperationException
+    {
+        if (indexDef.isHKeyEquivalent()) {
+            throw new IllegalArgumentException("HKeyEquivalent not allowed: " + indexDef);
+        }
+        Exchange exchange = getExchange(session, null, indexDef).append(Key.BEFORE);
+
         try {
             visitor.initialize(exchange);
             while (exchange.next(true)) {
