@@ -369,114 +369,25 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == orderRowDef) {
-                List<Object> indexEntry =
-                    Arrays.asList(record.row().get(o_oid),
-                                  record.row().get(o_cid));
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                         new Comparator<List<Object>>()
-                         {
-                             @Override
-                             public int compare(List<Object> x, List<Object> y)
-                             {
-                                 // compare oids
-                                 Long lx = (Long) x.get(0);
-                                 Long ly = (Long) y.get(0);
-                                 return lx < ly ? -1 : lx > ly ? 1 : 0;
-                             }
-                         });
-        return indexEntries;
+        return indexFromRecords(records, orderRowDef, o_oid, o_cid);
     }
 
     @Override
     protected List<List<Object>> itemPKIndex(List<TreeRecord> records)
     {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == itemRowDef) {
-                List<Object> indexEntry =
-                    Arrays.asList(record.row().get(i_iid), // iid
-                                  record.hKey().objectArray()[1], // cid
-                                  record.row().get(i_oid)); // oid
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                         new Comparator<List<Object>>()
-                         {
-                             @Override
-                             public int compare(List<Object> x, List<Object> y)
-                             {
-                                 // compare iids
-                                 Long lx = (Long) x.get(0);
-                                 Long ly = (Long) y.get(0);
-                                 return lx < ly ? -1 : lx > ly ? 1 : 0;
-                             }
-                         });
-        return indexEntries;
+        return indexFromRecords(records, itemRowDef, i_iid, HKeyElement.from(1), i_oid);
     }
 
     @Override
     protected List<List<Object>> orderPriorityIndex(List<TreeRecord> records)
     {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == orderRowDef) {
-                List<Object> indexEntry = Arrays.asList(
-                        record.row().get(o_priority),
-                        record.row().get(o_cid),
-                        record.row().get(o_oid)
-                );
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                new Comparator<List<Object>>()
-                {
-                    @Override
-                    public int compare(List<Object> x, List<Object> y)
-                    {
-                        // compare priorities
-                        Long px = (Long) x.get(0);
-                        Long py = (Long) y.get(0);
-                        return px.compareTo(py);
-                    }
-                });
-        return indexEntries;
+        return indexFromRecords(records, orderRowDef, o_priority, o_cid, o_oid);
     }
 
     @Override
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
-        for (TreeRecord record : records) {
-            if (record.row().getRowDef() == orderRowDef) {
-                List<Object> indexEntry = Arrays.asList(
-                        record.row().get(o_when),
-                        record.row().get(o_cid),
-                        record.row().get(o_oid)
-                );
-                indexEntries.add(indexEntry);
-            }
-        }
-        Collections.sort(indexEntries,
-                new Comparator<List<Object>>()
-                {
-                    @Override
-                    public int compare(List<Object> x, List<Object> y)
-                    {
-                        // compare priorities
-                        Long px = (Long) x.get(0);
-                        Long py = (Long) y.get(0);
-                        return px.compareTo(py);
-                    }
-                });
-        return indexEntries;
+        return indexFromRecords(records, orderRowDef, o_when, o_cid, o_oid);
     }
 
     @Override

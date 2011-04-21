@@ -22,6 +22,9 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -186,6 +189,65 @@ public abstract class KeyUpdateBase extends ITBase {
             assertEquals(row.get(i_ix), ((Long)row.get(i_iid)) * 100);
         } else {
             fail();
+        }
+    }
+
+    /**
+     * Given a list of records, a RowDef and a list of columns, extracts the index entries.
+     * @param records the records to take entries from
+     * @param rowDef the rowdef of records to look at
+     * @param columns a union of either Integer (the column ID) or HKeyElement.
+     * Any other types will throw a RuntimeException
+     * @return a list representing indexes of these records
+     */
+    protected final List<List<Object>> indexFromRecords(List<TreeRecord> records, RowDef rowDef, Object... columns) {
+        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        for (TreeRecord record : records) {
+            if (record.row().getRowDef() == rowDef) {
+                List<Object> indexEntry = new ArrayList<Object>(columns.length);
+                for (Object column : columns) {
+                    final Object indexEntryElement;
+                    if (column instanceof Integer) {
+                        indexEntryElement = record.row().get( (Integer)column );
+                    }
+                    else if (column instanceof HKeyElement) {
+                        indexEntryElement = record.hKey().objectArray()[ ((HKeyElement) column).getIndex() ];
+                    }
+                    else {
+                        throw new RuntimeException(column == null ? "null" : column.getClass().getName());
+                    }
+                    indexEntry.add(indexEntryElement);
+                }
+                indexEntries.add(indexEntry);
+            }
+        }
+        Collections.sort(indexEntries,
+                new Comparator<List<Object>>() {
+                    @Override
+                    public int compare(List<Object> x, List<Object> y) {
+                        // compare priorities
+                        Long px = (Long) x.get(0);
+                        Long py = (Long) y.get(0);
+                        return px.compareTo(py);
+                    }
+                }
+        );
+        return indexEntries;
+    }
+
+    protected static final class HKeyElement {
+        private final int index;
+
+        public static HKeyElement from(int index) {
+            return new HKeyElement(index);
+        }
+
+        public HKeyElement(int index) {
+            this.index = index;
+        }
+
+        public int getIndex() {
+            return index;
         }
     }
 
