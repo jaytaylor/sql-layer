@@ -116,9 +116,13 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
 
     @Override
     public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
-        final long value = fromRowData(rowData, offsetAndWidth);
-        sb.append(value);
+        if(rowData.isNull(fieldDef.getFieldIndex())) {
+            sb.append("null");
+        } else {
+            final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
+            final long value = fromRowData(rowData, offsetAndWidth);
+            sb.append(value);
+        }
     }
 
     /**
@@ -133,9 +137,13 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
      * Purely a helper for the date and time subclasses. Should go away when refactoring encoders.
      */
     protected void toStringQuoted(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
-        final long value = fromRowData(rowData, offsetAndWidth);
-        final String string = decodeToString(value);
-        quote.append(sb, string);
+        if(rowData.isNull(fieldDef.getFieldIndex())) {
+            sb.append("null");
+        } else {
+            final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
+            final long value = fromRowData(rowData, offsetAndWidth);
+            final String string = decodeToString(value);
+            quote.append(sb, string);
+        }
     }
 }
