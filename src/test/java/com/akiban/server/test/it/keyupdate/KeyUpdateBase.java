@@ -235,6 +235,20 @@ public abstract class KeyUpdateBase extends ITBase {
         return indexEntries;
     }
 
+    protected final TestRow row(RowDef table, Object... values)
+    {
+        TestRow row = new TestRow(table.getRowDefId());
+        int column = 0;
+        for (Object value : values) {
+            if (value instanceof Integer) {
+                value = ((Integer) value).longValue();
+            }
+            row.put(column++, value);
+        }
+        row.hKey(hKey(row));
+        return row;
+    }
+
     protected static final class HKeyElement {
         private final int index;
 

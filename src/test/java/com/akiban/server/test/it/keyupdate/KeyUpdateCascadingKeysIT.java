@@ -356,20 +356,6 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         dbInsert(row(itemRowDef,     3, 33, 333, 33300));
     }
 
-    private TestRow row(RowDef table, Object... values)
-    {
-        TestRow row = new TestRow(table.getRowDefId());
-        int column = 0;
-        for (Object value : values) {
-            if (value instanceof Integer) {
-                value = ((Integer) value).longValue();
-            }
-            row.put(column++, value);
-        }
-        row.hKey(hKey(row));
-        return row;
-    }
-
     @Override
     protected HKey hKey(TestRow row)
     {
