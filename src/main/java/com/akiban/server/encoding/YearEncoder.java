@@ -16,7 +16,10 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
+import com.akiban.server.FieldDef;
+import com.akiban.server.Quote;
 import com.akiban.server.RowData;
+import com.akiban.util.AkibanAppender;
 
 /**
  * Encoder for working with years when stored as a 1 byte int in the
@@ -50,11 +53,6 @@ public final class YearEncoder extends LongEncoderBase {
     }
 
     @Override
-    public boolean shouldQuoteString() {
-        return true;
-    }
-
-    @Override
     public boolean validate(Type type) {
         return type.fixedSize() && (type.maxSizeBytes() == 1);
     }
@@ -63,5 +61,10 @@ public final class YearEncoder extends LongEncoderBase {
     protected long fromRowData(RowData rowData, long offsetAndWidth) {
         // Something wrong about how 1 byte values are stored/retrieved. Work around for now.
         return super.fromRowData(rowData, offsetAndWidth) & 0xFF;
+    }
+
+    @Override
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
+        toStringQuoted(fieldDef, rowData, sb, quote);
     }
 }
