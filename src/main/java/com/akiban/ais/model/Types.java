@@ -68,8 +68,8 @@ public class Types {
 	//
 	public static Type BIGINT =       new Type("bigint", 0, true, 8L, "INT");
 	public static Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_INT");
-	public static Type DOUBLE =       new Type("double", 0, true, 8L, "FLOAT");
-	public static Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_FLOAT");
+	public static Type DOUBLE =       new Type("double", 0, true, 8L, "DOUBLE");
+	public static Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE");
 	public static Type FLOAT =        new Type("float", 0, true, 4L, "FLOAT");
 	public static Type U_FLOAT =      new Type("float unsigned", 0, true, 4L, "U_FLOAT");
 	public static Type INT =          new Type("int", 0, true, 4L, "INT");
@@ -205,8 +205,6 @@ public class Types {
 
     private static Set<Type> setOfUnsupportedIndexTypes() {
         Set<Type> unsupported = new HashSet<Type>();
-        unsupported.add(FLOAT);
-        unsupported.add(U_FLOAT);
         unsupported.add(DOUBLE);
         unsupported.add(U_DOUBLE);
         unsupported.add(TINYBLOB);

@@ -21,35 +21,32 @@ import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 import com.persistit.Key;
 
-public class FloatEncoder extends EncodingBase<Float> {
-    FloatEncoder() {
+public class DoubleEncoder extends EncodingBase<Double> {
+    DoubleEncoder() {
     }
 
-    public static float encodeFromObject(Object obj) {
-        final float f;
+    public static double encodeFromObject(Object obj) {
+        final double d;
         if(obj == null) {
-            f = 0f;
+            d = 0d;
         } else if(obj instanceof Number) {
-            f = ((Number)obj).floatValue();
+            d = ((Number)obj).doubleValue();
         } else if (obj instanceof String) {
-            f = Float.parseFloat((String)obj);
+            d = Double.parseDouble((String)obj);
         } else {
             throw new IllegalArgumentException("Requires Number or String");
         }
-        return f;
+        return d;
     }
 
-    public static int fromRowData(RowData rowData, long offsetAndWidth) {
+    public static long fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        long value = rowData.getIntegerValue(offset, width);
-        value <<= 32;
-        value >>= 32;
-        return (int)value;
+        return rowData.getIntegerValue(offset, width);
     }
 
-    public static int floatToIntBits(float f) {
-        return Float.floatToRawIntBits(f);
+    public static long doubleToLong(double d) {
+        return Double.doubleToRawLongBits(d);
     }
     
 
@@ -59,17 +56,17 @@ public class FloatEncoder extends EncodingBase<Float> {
     }
 
     @Override
-    public Float toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
+    public Double toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
         final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
-        final int value = fromRowData(rowData, offsetAndWidth);
-        return Float.intBitsToFloat(value);
+        final long value = fromRowData(rowData, offsetAndWidth);
+        return Double.longBitsToDouble(value);
     }
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final float f = encodeFromObject(value);
-        final int intBits = floatToIntBits(f);
-        return EncodingUtils.putInt(dest, offset, intBits, STORAGE_SIZE);
+        final double d = encodeFromObject(value);
+        final long longBits = doubleToLong(d);
+        return EncodingUtils.putInt(dest, offset, longBits, STORAGE_SIZE);
     }
 
     @Override
@@ -83,7 +80,7 @@ public class FloatEncoder extends EncodingBase<Float> {
             key.append(null);
         } else {
             final long offsetAndWidth = getOffsetAndWidth(fieldDef, rowData);
-            final int v = fromRowData(rowData, offsetAndWidth);
+            final long v = fromRowData(rowData, offsetAndWidth);
             key.append(v);
         }
     }
@@ -93,20 +90,20 @@ public class FloatEncoder extends EncodingBase<Float> {
         if(value == null) {
             key.append(null);
         } else {
-            final float f = encodeFromObject(value);
-            final int intBits = floatToIntBits(f);
-            key.append(intBits);
+            final double d = encodeFromObject(value);
+            final long longBits = doubleToLong(d);
+            key.append(longBits);
         }
     }
 
     /**
-     * See {@link Key#EWIDTH_INT}
+     * See {@link Key#EWIDTH_LONG}
      */
     @Override
     public long getMaxKeyStorageSize(Column column) {
-        return 5;
+        return 9;
     }
 
     
-    protected static final int STORAGE_SIZE = 4;
+    protected static final int STORAGE_SIZE = 8;
 }

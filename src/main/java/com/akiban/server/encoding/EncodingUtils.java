@@ -116,24 +116,6 @@ abstract class EncodingUtils {
         return putByteArray(stringBytes(s), bytes, offset, fieldDef);
     }
 
-
-    static int objectToFloat(final byte[] bytes, final int offset, final Object obj, final boolean unsigned) {
-        float f;
-        if (obj instanceof Number) {
-            f = ((Number) obj).floatValue();
-        } else if (obj instanceof String) {
-            f = Float.parseFloat((String) obj);
-        } else if (obj == null) {
-            f = 0f;
-        } else
-            throw new IllegalArgumentException(obj
-                    + " must be a Number or a String");
-        if (unsigned) {
-            f = Math.max(0f, f);
-        }
-        return putInt(bytes, offset, Float.floatToIntBits(f), 4);
-    }
-
     static int objectToDouble(final byte[] bytes, final int offset, final Object obj, final boolean unsigned) {
         double d;
         if (obj instanceof Number) {
