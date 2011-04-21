@@ -25,6 +25,8 @@ import com.persistit.exception.PersistitException;
 
 public class PersistitLoader
 {
+    private final static boolean BUILD_INDEXES_DEFERRED = true;
+    
     public PersistitLoader(PersistitStore store, DB db, Tracker tracker)
             throws Exception
     {
@@ -52,7 +54,7 @@ public class PersistitLoader
                 load(task, connection);
             }
             
-            store.buildIndexes(new SessionImpl(), "");
+            store.buildIndexes(new SessionImpl(), "", BUILD_INDEXES_DEFERRED);
             // transaction.commit();
         } catch (PersistitException e) {
             tracker.error("Caught exception while loading persistit", e);

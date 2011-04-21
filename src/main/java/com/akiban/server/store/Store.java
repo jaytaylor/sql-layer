@@ -150,7 +150,7 @@ public interface Store extends Service<Store> {
 
     void deleteIndexes(Session session, String string);
 
-    void buildIndexes(Session session, String string);
+    void buildIndexes(Session session, String string, boolean deferIndexes) throws Exception;
     
     void flushIndexes(Session session);
 

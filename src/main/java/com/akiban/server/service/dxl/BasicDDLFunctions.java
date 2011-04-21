@@ -51,6 +51,7 @@ import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -276,6 +277,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             throw new IndexAlterException(ErrorCode.NO_SUCH_TABLE, "TableId mismatch");
         }
         
+        // Save in case of error
+        final DDLGenerator gen = new DDLGenerator();
+        final String originalDDL = gen.createTable(table);
+
         // Input validation: same table, not a primary key, not a duplicate index name, and 
         // referenced columns are valid
         for (Index idx : indexesToAdd) {
@@ -330,20 +335,32 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             sb.append(")");
         }
 
+        final String schemaName = table.getName().getSchemaName();
+
         try {
             // Generate new DDL statement from existing AIS/table
-            final DDLGenerator gen = new DDLGenerator();
-            final TableName tableName = table.getName();
             final String newDDL = gen.createTable(table);
-            
-            // Store new DDL statement and recreate AIS
-            schemaManager().createTableDefinition(session, tableName.getSchemaName(), newDDL, true);
+            schemaManager().createTableDefinition(session, schemaName, newDDL, true);
             checkCursorsForDDLModification(session, table);
-
-            // Trigger build of new index trees
-            store().buildIndexes(session, sb.toString());
         } catch (Exception e) {
             throw new GenericInvalidOperationException(e);
+        }
+
+        final String indexString = sb.toString();
+        try {
+            // Trigger build of new index trees
+            store().buildIndexes(session, indexString, false);
+        } catch(Exception e) {
+            try {
+                // Delete whatever was inserted, roll back table change
+                store().deleteIndexes(session, indexString);
+                schemaManager().createTableDefinition(session, schemaName, originalDDL, true);
+            } catch(Exception e2) {
+                logger.error("Exception while rolling back failed createIndex : " + indexString, e2);
+            }
+            InvalidOperationException ioe = launder(e);
+            throwIfInstanceOf(ioe, DuplicateKeyException.class);
+            throw new GenericInvalidOperationException(ioe);
         }
     }
 

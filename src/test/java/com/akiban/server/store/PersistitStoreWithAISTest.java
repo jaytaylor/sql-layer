@@ -50,6 +50,8 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
 
     private final static String SCHEMA = "data_dictionary_test";
 
+    private final static boolean BUILD_INDEXES_DEFERRED = true;
+
     private interface RowVisitor {
         void visit(final int depth) throws Exception;
     }
@@ -568,7 +570,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
         dumpIndexes(new PrintWriter(b = new StringWriter()));
         store.deleteIndexes(new SessionImpl(), "");
         dumpIndexes(new PrintWriter(c = new StringWriter()));
-        store.buildIndexes(session, "");
+        store.buildIndexes(session, "", BUILD_INDEXES_DEFERRED);
         dumpIndexes(new PrintWriter(d = new StringWriter()));
         assertTrue(!a.toString().equals(b.toString()));
         assertEquals(a.toString(), c.toString());
@@ -583,7 +585,7 @@ public class PersistitStoreWithAISTest extends AkServerTestCase {
         dumpIndexes(new PrintWriter(a = new StringWriter()));
         store.deleteIndexes(new SessionImpl(), "");
         dumpIndexes(new PrintWriter(b = new StringWriter()));
-        store.buildIndexes(session, "");
+        store.buildIndexes(session, "", BUILD_INDEXES_DEFERRED);
         dumpIndexes(new PrintWriter(c = new StringWriter()));
         assertTrue(!a.toString().equals(b.toString()));
         assertEquals(a.toString(), c.toString());

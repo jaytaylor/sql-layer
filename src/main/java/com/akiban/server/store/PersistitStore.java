@@ -1103,11 +1103,12 @@ public class PersistitStore implements Store {
             key.setDepth(indexDef.getIndexKeySegmentCount());
             if (iEx.hasChildren()) {
                 complainAboutDuplicateKey(indexDef.getName(), key);
-            }
+            }   
             ks.copyTo(key);
         }
         iEx.getValue().clear();
         if (deferIndexes) {
+            // TODO: bug767737, deferred indexing does not handle uniqueness
             synchronized (deferredIndexKeys) {
                 SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx
                         .getTree());
@@ -1254,7 +1255,7 @@ public class PersistitStore implements Store {
         rowData.prepareRow(0);
     }
 
-    public void buildIndexes(final Session session, final String ddl) {
+    public void buildIndexes(final Session session, final String ddl, final boolean defer) throws Exception {
         flushIndexes(session);
 
         final Set<RowDef> userRowDefs = new HashSet<RowDef>();
@@ -1309,7 +1310,7 @@ public class PersistitStore implements Store {
                                 .getIndexDefs()) {
                             if (isIndexSelected(indexDef, ddl)) {
                                 insertIntoIndex(session, indexDef, rowData,
-                                        hEx.getKey(), true);
+                                        hEx.getKey(), defer);
                                 indexKeyCount++;
                             }
                         }
@@ -1319,20 +1320,11 @@ public class PersistitStore implements Store {
                     }
                 }
             } catch (Exception e) {
-                LOG.error("Exception while trying to index group table "
-                        + rowDef.getSchemaName() + "." + rowDef.getTableName(),
-                        e);
+                LOG.error("Exception while inserting index into {}: {}", rowDef.table().getName(), e);
+                throw e;
             }
             flushIndexes(session);
-            if (LOG.isInfoEnabled()) {
-                LOG.debug(
-                        "Inserted {} index keys into group {}.{}", new Object[] {
-                        indexKeyCount,
-                        rowDef.getSchemaName(),
-                        rowDef.getTableName()
-                        }
-                );
-            }
+            LOG.debug("Inserted {} index keys into {}", indexKeyCount, rowDef.table().getName());
         }
     }
 

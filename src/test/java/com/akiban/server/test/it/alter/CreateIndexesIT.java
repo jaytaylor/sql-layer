@@ -30,12 +30,15 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.IndexAlterException;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 
 public final class CreateIndexesIT extends AlterTestBase {
@@ -281,6 +284,38 @@ public final class CreateIndexesIT extends AlterTestBase {
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 3, rows.size());
     }
+
+    @Test
+    public void createIndexUniqueWithDuplicate() throws InvalidOperationException {
+        int tId = createTable("test", "t", "id int primary key, state char(2)");
+
+        dml().writeRow(session(), createNewRow(tId, 1, "IA"));
+        dml().writeRow(session(), createNewRow(tId, 2, "WA"));
+        dml().writeRow(session(), createNewRow(tId, 3, "MA"));
+        dml().writeRow(session(), createNewRow(tId, 4, "IA"));
+
+        // Create unique index on a char(2) with a duplicate
+        AkibanInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "state", new String[]{"state"}, true);
+
+        try {
+            ddl().createIndexes(session(), getAllIndexes(ais));
+            Assert.fail("DuplicateKeyExcpetion expected!");
+        } catch(DuplicateKeyException e) {
+            // Expected
+        }
+        updateAISGeneration();
+
+        // Make sure index is not in AIS
+        Table table = getUserTable(tId);
+        assertNull("state index exists", table.getIndex("state"));
+        assertNotNull("pk index doesn't exist", table.getIndex("PRIMARY"));
+        assertEquals("Index count", 1, table.getIndexes().size());
+
+        // Check that we can still get old rows
+        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
+        assertEquals("Rows scanned", 4, rows.size());
+    }
     
     @Test
     public void createMultipleIndexes() throws InvalidOperationException {
@@ -308,5 +343,40 @@ public final class CreateIndexesIT extends AlterTestBase {
         // Check that we can still get the rows
         List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
         assertEquals("Rows scanned", 3, rows.size());
+    }
+
+    @Test
+    public void createMultipleIndexesWithFailure() throws InvalidOperationException {
+        int tId = createTable("test", "t", "id int primary key, i1 int, i2 int, price decimal(10,2), index(i1)");
+
+        dml().writeRow(session(), createNewRow(tId, 1, 10, 1337, "10.50"));
+        dml().writeRow(session(), createNewRow(tId, 2, 20, 5000, "10.50"));
+        dml().writeRow(session(), createNewRow(tId, 3, 30, 47000, "9.99"));
+        dml().writeRow(session(), createNewRow(tId, 4, 40, 47000, "9.99"));
+
+        // Create unique index on an int, non-unique index on decimal
+        AkibanInformationSchema ais = createAISWithTable(tId);
+        addIndexToAIS(ais, "test", "t", "otherId", new String[]{"i2"}, true);
+        addIndexToAIS(ais, "test", "t", "price", new String[]{"price"}, false);
+
+        try {
+            ddl().createIndexes(session(), getAllIndexes(ais));
+            Assert.fail("DuplicateKeyExcpetion expected!");
+        } catch(DuplicateKeyException e) {
+            // Expected
+        }
+        updateAISGeneration();
+
+        // Make sure index is not in AIS
+        Table table = getUserTable(tId);
+        assertNull("i2 index exists", table.getIndex("i2"));
+        assertNull("price index exists", table.getIndex("price"));
+        assertNotNull("pk index doesn't exist", table.getIndex("PRIMARY"));
+        assertNotNull("i1 index doesn't exist", table.getIndex("i1"));
+        assertEquals("Index count", 2, table.getIndexes().size());
+
+        // Check that we can still get old rows
+        List<NewRow> rows = scanAll(new ScanAllRequest(tId, null));
+        assertEquals("Rows scanned", 4, rows.size());
     }
 }
