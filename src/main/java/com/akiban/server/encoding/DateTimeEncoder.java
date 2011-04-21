@@ -16,6 +16,10 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
+import com.akiban.server.FieldDef;
+import com.akiban.server.Quote;
+import com.akiban.server.RowData;
+import com.akiban.util.AkibanAppender;
 
 /**
  * Encoder for working with dates and times when stored as an 8 byte int
@@ -75,13 +79,13 @@ public final class DateTimeEncoder extends LongEncoderBase {
     }
 
     @Override
-    public boolean shouldQuoteString() {
-        return true;
+    public boolean validate(Type type) {
+        return type.fixedSize() && (type.maxSizeBytes() == 8);
     }
 
     @Override
-    public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == 8);
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
+        toStringQuoted(fieldDef, rowData, sb, quote);
     }
 
     

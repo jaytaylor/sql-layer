@@ -58,15 +58,6 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
     }
 
     /**
-     * Whether or not the value returned from decodeToString() should be
-     * quoted in {@link LongEncoderBase#toString(FieldDef, RowData, AkibanAppender, Quote)}.
-     * @return true if string needs quoted, false otherwise
-     */
-    public boolean shouldQuoteString() {
-        return false;
-    }
-
-    /**
      * Retrieve stored value from an existing RowData.
      * @param rowData RowData to take value from
      * @param offsetAndWidth value containing both offset and width of the field,
@@ -123,28 +114,25 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
         }
     }
 
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        try {
-            final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
-            final long value = fromRowData(rowData, offsetAndWidth);
-            final String string = decodeToString(value);
-            if(shouldQuoteString()) {
-                quote.append(sb, string);
-            }
-            else {
-                sb.append(string);
-            }
-        } catch(EncodingException e) {
-            sb.append("null");
-        }
-    }
-
     /**
      * See {@link Key#EWIDTH_LONG}
      */
     @Override
     public long getMaxKeyStorageSize(Column column) {
         return 9;
+    }
+
+    /**
+     * Purely a helper for the date and time subclasses. Should go away when refactoring encoders.
+     */
+    protected void toStringQuoted(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
+        if(rowData.isNull(fieldDef.getFieldIndex())) {
+            sb.append("null");
+        } else {
+            final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
+            final long value = fromRowData(rowData, offsetAndWidth);
+            final String string = decodeToString(value);
+            quote.append(sb, string);
+        }
     }
 }

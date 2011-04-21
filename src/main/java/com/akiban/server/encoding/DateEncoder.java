@@ -16,6 +16,10 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
+import com.akiban.server.FieldDef;
+import com.akiban.server.Quote;
+import com.akiban.server.RowData;
+import com.akiban.util.AkibanAppender;
 
 /**
  * Encoder for working with dates when stored as a 3 byte int using
@@ -61,12 +65,12 @@ public final class DateEncoder extends LongEncoderBase {
     }
 
     @Override
-    public boolean shouldQuoteString() {
-        return true;
+    public boolean validate(Type type) {
+        return type.fixedSize() && (type.maxSizeBytes() == 3);
     }
 
     @Override
-    public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == 3);
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
+        toStringQuoted(fieldDef, rowData, sb, quote);
     }
 }

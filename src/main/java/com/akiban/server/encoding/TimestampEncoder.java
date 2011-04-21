@@ -16,6 +16,10 @@
 package com.akiban.server.encoding;
 
 import com.akiban.ais.model.Type;
+import com.akiban.server.FieldDef;
+import com.akiban.server.Quote;
+import com.akiban.server.RowData;
+import com.akiban.util.AkibanAppender;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -63,12 +67,12 @@ public final class TimestampEncoder extends LongEncoderBase {
     }
 
     @Override
-    public boolean shouldQuoteString() {
-        return true;
+    public boolean validate(Type type) {
+        return type.fixedSize() && (type.maxSizeBytes() == 4);
     }
 
     @Override
-    public boolean validate(Type type) {
-        return type.fixedSize() && (type.maxSizeBytes() == 4);
+    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
+        toStringQuoted(fieldDef, rowData, sb, quote);
     }
 }
