@@ -114,17 +114,6 @@ abstract class LongEncoderBase extends EncodingBase<Long> {
         }
     }
 
-    @Override
-    public void toString(FieldDef fieldDef, RowData rowData, AkibanAppender sb, Quote quote) {
-        if(rowData.isNull(fieldDef.getFieldIndex())) {
-            sb.append("null");
-        } else {
-            final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
-            final long value = fromRowData(rowData, offsetAndWidth);
-            sb.append(value);
-        }
-    }
-
     /**
      * See {@link Key#EWIDTH_LONG}
      */
