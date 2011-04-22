@@ -381,15 +381,4 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     protected boolean checkChildPKs() {
         return false;
     }
-
-    private TestRow copyRow(TestRow row)
-    {
-        TestRow copy = new TestRow(row.getTableId());
-        for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
-            copy.put(entry.getKey(), entry.getValue());
-        }
-        copy.parent(row.parent());
-        copy.hKey(hKey(row));
-        return copy;
-    }
 }
