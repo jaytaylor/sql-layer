@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.akiban.server.api.dml.ConstantColumnSelector;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -304,11 +304,16 @@ public class PersistitStore implements Store {
      * @param rowData
      * @param indexDef
      */
-    void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
+    int constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
             Key hKey) throws PersistitException {
         IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
         iKey.clear();
+        int hkeyAt = -1;
         for (int index = 0; index < fassoc.length; index++) {
+            if (hkeyAt < 0 && index == indexDef.getFields().length) {
+                hkeyAt = iKey.getEncodedSize();
+                assert hkeyAt >= 0 : hkeyAt;
+            }
             IndexDef.H2I assoc = fassoc[index];
             if (assoc.fieldIndex() >= 0) {
                 int fieldIndex = assoc.fieldIndex();
@@ -320,6 +325,7 @@ public class PersistitStore implements Store {
                 throw new IllegalStateException("Invalid FA");
             }
         }
+        return hkeyAt;
     }
 
     /**
@@ -1142,13 +1148,28 @@ public class PersistitStore implements Store {
 
     void updateIndex(final Session session, final IndexDef indexDef,
             final RowDef rowDef, final RowData oldRowData,
-            final RowData newRowData, final Key hkey) throws PersistitException {
+            final RowData newRowData, final Key hkey) throws PersistitException, DuplicateKeyException {
 
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
             final Exchange oldExchange = getExchange(session, rowDef, indexDef);
             constructIndexKey(oldExchange.getKey(), oldRowData, indexDef, hkey);
             final Exchange newExchange = getExchange(session, rowDef, indexDef);
-            constructIndexKey(newExchange.getKey(), newRowData, indexDef, hkey);
+            int hKeyAt = constructIndexKey(newExchange.getKey(), newRowData, indexDef, hkey);
+
+            if(newExchange.getKey().equals(oldExchange.getKey())) {
+                // updating a key to itself is a no-op
+                return;
+            }
+
+            if (indexDef.isUnique()) {
+                final Key newKey = newExchange.getKey();
+                final int oldEncodedSize = newKey.getEncodedSize();
+                newKey.setEncodedSize(hKeyAt);
+                if(newExchange.isValueDefined() || newExchange.hasChildren()) {
+                    throw new DuplicateKeyException("key already exists");
+                }
+                newKey.setEncodedSize(oldEncodedSize);
+            }
 
             oldExchange.getValue().clear();
             newExchange.getValue().clear();

@@ -15,9 +15,14 @@
 
 package com.akiban.server.api.dml;
 
+import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
 public final class DuplicateKeyException extends DMLException {
+    public DuplicateKeyException(String message) {
+        super(ErrorCode.DUPLICATE_KEY, message);
+    }
+
     public DuplicateKeyException(InvalidOperationException e) {
     super(e);
     }
