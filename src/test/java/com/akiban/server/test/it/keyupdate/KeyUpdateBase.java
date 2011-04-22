@@ -385,14 +385,11 @@ public abstract class KeyUpdateBase extends ITBase {
         }
     }
 
-    protected HKey hKey(TestRow row, TestRow newParent) {
-        return hKey(row);
-    }
-
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;
     abstract protected boolean checkChildPKs();
     abstract protected HKey hKey(TestRow row);
+    abstract protected HKey hKey(TestRow row, TestRow newParent);
     abstract protected List<List<Object>> orderPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> itemPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> orderPriorityIndex(List<TreeRecord> records);

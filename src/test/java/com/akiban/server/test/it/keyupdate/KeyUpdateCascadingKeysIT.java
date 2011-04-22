@@ -21,7 +21,6 @@ import com.akiban.message.ErrorCode;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.assertEquals;
@@ -375,6 +374,11 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             fail();
         }
         return hKey;
+    }
+
+    @Override
+    protected HKey hKey(TestRow row, TestRow ignored) {
+        return hKey(row);
     }
 
     @Override
