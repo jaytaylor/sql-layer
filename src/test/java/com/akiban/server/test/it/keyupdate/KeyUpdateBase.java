@@ -22,7 +22,6 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.util.ArgumentValidation;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -137,7 +136,7 @@ public abstract class KeyUpdateBase extends ITBase {
         checkDB();
     }
 
-    @Test @org.junit.Ignore("767731")
+    @Test
     @SuppressWarnings("unused") // JUnit will invoke this
     public void testOrderWhenUpdateCreatingDuplicate() throws Exception
     {
