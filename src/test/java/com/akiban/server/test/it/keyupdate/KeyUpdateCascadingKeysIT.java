@@ -29,7 +29,6 @@ import static junit.framework.Assert.fail;
 
 // Like KeyUpdateIT, but with cascading keys
 
-@org.junit.Ignore("blocked by bug 767785, which prevents us from doing PK checks")
 public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
 {
     @Test
@@ -260,6 +259,8 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         o_cid = 0;
         o_oid = 1;
         o_ox = 2;
+        o_priority = 2;
+        o_when = 3;
         // item
         itemId = createTable("coi", "item",
                              "cid int not null",
@@ -374,6 +375,11 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             fail();
         }
         return hKey;
+    }
+
+    @Override
+    protected boolean checkChildPKs() {
+        return false;
     }
 
     private TestRow copyRow(TestRow row)

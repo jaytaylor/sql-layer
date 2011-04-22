@@ -472,6 +472,11 @@ public class KeyUpdateIT extends KeyUpdateBase
         }
         return hKey;
     }
+    
+    @Override
+    protected boolean checkChildPKs() {
+        return true;
+    }
 
     private HKey hKey(TestRow row, TestRow parent)
     {

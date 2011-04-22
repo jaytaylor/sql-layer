@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -107,17 +108,19 @@ public abstract class KeyUpdateBase extends ITBase {
         assertEquals("records count", countAllRows(), testVisitor.records().size());
         // Check indexes
         RecordCollectingIndexRecordVisistor indexVisitor;
-        // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
-        // Order PK index
-        indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
-        assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
-        // Item PK index
-        indexVisitor = new RecordCollectingIndexRecordVisistor();
-        testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
-        assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
+        if (checkChildPKs()) {
+            // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
+            // Order PK index
+            indexVisitor = new RecordCollectingIndexRecordVisistor();
+            testStore.traverse(session(), orderRowDef.getPKIndexDef(), indexVisitor);
+            assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
+            assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+            // Item PK index
+            indexVisitor = new RecordCollectingIndexRecordVisistor();
+            testStore.traverse(session(), itemRowDef.getPKIndexDef(), indexVisitor);
+            assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+            assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
+        }
         // Order priority index
         indexVisitor = new RecordCollectingIndexRecordVisistor();
         testStore.traverse(session(), indexDef(orderRowDef, "priority"), indexVisitor);
@@ -214,7 +217,12 @@ public abstract class KeyUpdateBase extends ITBase {
                         indexEntryElement = record.hKey().objectArray()[ ((HKeyElement) column).getIndex() ];
                     }
                     else {
-                        throw new RuntimeException(column == null ? "null" : column.getClass().getName());
+                        String msg = String.format(
+                                "column must be an Integer or HKeyElement: %s in %s:",
+                                column == null ? "null" : column.getClass().getName(),
+                                Arrays.toString(columns)
+                        );
+                        throw new RuntimeException(msg);
                     }
                     indexEntry.add(indexEntryElement);
                 }
@@ -267,6 +275,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;
+    abstract protected boolean checkChildPKs();
     abstract protected HKey hKey(TestRow row);
     abstract protected List<List<Object>> orderPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> itemPKIndex(List<TreeRecord> records);
