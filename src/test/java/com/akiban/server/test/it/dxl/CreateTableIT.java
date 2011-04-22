@@ -399,9 +399,6 @@ public final class CreateTableIT extends ITBase {
 
     @Test
     public void unsupportedIndexTypes() throws InvalidOperationException {
-        // bug716126/716126
-        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 float key");
-        createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 double key");
         // bug737692
         createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 blob, key(c1(100)))");
         createExpectException(UnsupportedIndexDataTypeException.class, "test", "t", "c1 text, key(c1(100)))");
