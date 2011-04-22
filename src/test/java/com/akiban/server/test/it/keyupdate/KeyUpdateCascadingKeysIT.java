@@ -21,7 +21,6 @@ import com.akiban.message.ErrorCode;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.assertEquals;
@@ -29,7 +28,6 @@ import static junit.framework.Assert.fail;
 
 // Like KeyUpdateIT, but with cascading keys
 
-@org.junit.Ignore("blocked by bug 767785, which prevents us from doing PK checks")
 public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
 {
     @Test
@@ -260,6 +258,8 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         o_cid = 0;
         o_oid = 1;
         o_ox = 2;
+        o_priority = 3;
+        o_when = 4;
         // item
         itemId = createTable("coi", "item",
                              "cid int not null",
@@ -289,13 +289,13 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRowDef, o_oid, o_cid);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     protected List<List<Object>> itemPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, itemRowDef, i_iid, HKeyElement.from(1), i_oid);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -376,14 +376,13 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         return hKey;
     }
 
-    private TestRow copyRow(TestRow row)
-    {
-        TestRow copy = new TestRow(row.getTableId());
-        for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
-            copy.put(entry.getKey(), entry.getValue());
-        }
-        copy.parent(row.parent());
-        copy.hKey(hKey(row));
-        return copy;
+    @Override
+    protected HKey hKey(TestRow row, TestRow ignored) {
+        return hKey(row);
+    }
+
+    @Override
+    protected boolean checkChildPKs() {
+        return false;
     }
 }
