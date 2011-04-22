@@ -16,7 +16,6 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -172,12 +171,25 @@ public final class UniqueKeyUpdateIT extends ITBase {
         final String tableName = "t1";
         final String schemaName = "s1";
         final int tableId;
+        final ScanRequest scanByU1;
         try {
             tableId = createTable(schemaName, tableName, "cid int key", "u1 int", "u2 int", "UNIQUE(u1,u2)");
+            scanByU1 = new ScanAllRequest(
+                    tableId,
+                    set(0, 1, 2),
+                    indexId(schemaName, tableName, "u1"),
+                    EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+            );
             writeRows(
                     createNewRow(tableId, 11L, 21L, 31L),
                     createNewRow(tableId, 12L, 22L, 32L),
                     createNewRow(tableId, 13L, 20L, 33L)
+            );
+            expectRows(
+                    scanByU1,
+                    createNewRow(tableId, 13L, 20L, 33L),
+                    createNewRow(tableId, 11L, 21L, 31L),
+                    createNewRow(tableId, 12L, 22L, 32L)
             );
 
             // update such that there's a similarity in u1
@@ -193,6 +205,12 @@ public final class UniqueKeyUpdateIT extends ITBase {
                     createNewRow(tableId, 12L, 21L, 32L),
                     createNewRow(tableId, 13L, 20L, 33L)
             );
+            expectRows(
+                    scanByU1,
+                    createNewRow(tableId, 13L, 20L, 33L),
+                    createNewRow(tableId, 11L, 21L, 31L),
+                    createNewRow(tableId, 12L, 21L, 32L)
+            );
 
             // update such that there's a similarity in u2
             dml().updateRow(
@@ -206,6 +224,12 @@ public final class UniqueKeyUpdateIT extends ITBase {
                     createNewRow(tableId, 11L, 21L, 31L),
                     createNewRow(tableId, 12L, 21L, 33L),
                     createNewRow(tableId, 13L, 20L, 33L)
+            );
+            expectRows(
+                    scanByU1,
+                    createNewRow(tableId, 13L, 20L, 33L),
+                    createNewRow(tableId, 11L, 21L, 31L),
+                    createNewRow(tableId, 12L, 21L, 33L)
             );
         } catch (InvalidOperationException e) {
             throw new TestException(e);
@@ -228,12 +252,6 @@ public final class UniqueKeyUpdateIT extends ITBase {
                 createNewRow(tableId, 11L, 21L, 31L),
                 createNewRow(tableId, 12L, 21L, 33L),
                 createNewRow(tableId, 13L, 20L, 33L)
-        );
-        ScanRequest scanByU1 = new ScanAllRequest(
-                tableId,
-                set(0, 1, 2),
-                indexId(schemaName, tableName, "u1"),
-                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
         );
         expectRows(
                 scanByU1,

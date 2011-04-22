@@ -1156,19 +1156,14 @@ public class PersistitStore implements Store {
             final Exchange newExchange = getExchange(session, rowDef, indexDef);
             int hKeyAt = constructIndexKey(newExchange.getKey(), newRowData, indexDef, hkey);
 
-            if(newExchange.getKey().equals(oldExchange.getKey())) {
-                // updating a key to itself is a no-op
-                return;
-            }
-
             if (indexDef.isUnique()) {
                 final Key newKey = newExchange.getKey();
-                final int oldEncodedSize = newKey.getEncodedSize();
+                final KeyState newKeySaved = new KeyState(newKey);
                 newKey.setEncodedSize(hKeyAt);
                 if(newExchange.isValueDefined() || newExchange.hasChildren()) {
                     throw new DuplicateKeyException("key already exists");
                 }
-                newKey.setEncodedSize(oldEncodedSize);
+                newKeySaved.copyTo(newKey);
             }
 
             oldExchange.getValue().clear();
