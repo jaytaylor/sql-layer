@@ -13,25 +13,16 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.keyupdate;
+package com.akiban.server.test.it.pstraverse;
 
-import com.akiban.server.store.IndexRecordVisitor;
-
-import java.util.ArrayList;
-import java.util.List;
-
-public class RecordCollectingIndexRecordVisistor extends IndexRecordVisitor
-{
+public final class StandardKeysTraversalIT extends KeysBase {
     @Override
-    public void visit(List<Object> key)
-    {
-        records.add(key);
+    protected String ordersPK() {
+        return "oid";
     }
 
-    public List<List<Object>> records()
-    {
-        return records;
+    @Override
+    protected String itemsPK() {
+        return "iid";
     }
-
-    private final List<List<Object>> records = new ArrayList<List<Object>>();
 }
