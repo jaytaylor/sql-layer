@@ -15,7 +15,7 @@
 
 package com.akiban.server.test.it.pstraverse;
 
-public final class StandardKeysBasicIT extends KeysBase {
+public final class StandardKeysTraversalIT extends KeysBase {
     @Override
     protected String ordersPK() {
         return "oid";

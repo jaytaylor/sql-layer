@@ -17,7 +17,7 @@ package com.akiban.server.test.it.pstraverse;
 
 import org.junit.Test;
 
-public final class CascadingKeysBasicIT extends KeysBase {
+public final class CascadingKeysTraversalIT extends KeysBase {
     @Override
     protected String ordersPK() {
         return "cid,oid";
