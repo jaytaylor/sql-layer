@@ -25,7 +25,7 @@ public class FloatEncoder extends EncodingBase<Float> {
     FloatEncoder() {
     }
 
-    public static float encodeFromObject(Object obj) {
+    public static int encodeFromObject(Object obj) {
         final float f;
         if(obj == null) {
             f = 0f;
@@ -36,20 +36,20 @@ public class FloatEncoder extends EncodingBase<Float> {
         } else {
             throw new IllegalArgumentException("Requires Number or String");
         }
-        return f;
+        return Float.floatToIntBits(f);
     }
 
-    public static int fromRowData(RowData rowData, long offsetAndWidth) {
+    public static float decodeFromBits(int bits) {
+        return Float.intBitsToFloat(bits);
+    }
+
+    private static int fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
         long value = rowData.getIntegerValue(offset, width);
         value <<= 32;
         value >>= 32;
         return (int)value;
-    }
-
-    public static int floatToIntBits(float f) {
-        return Float.floatToIntBits(f);
     }
     
 
@@ -62,13 +62,12 @@ public class FloatEncoder extends EncodingBase<Float> {
     public Float toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
         final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
         final int value = fromRowData(rowData, offsetAndWidth);
-        return Float.intBitsToFloat(value);
+        return decodeFromBits(value);
     }
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final float f = encodeFromObject(value);
-        final int intBits = floatToIntBits(f);
+        final int intBits = encodeFromObject(value);
         return EncodingUtils.putInt(dest, offset, intBits, STORAGE_SIZE);
     }
 
@@ -92,7 +91,8 @@ public class FloatEncoder extends EncodingBase<Float> {
         if(value == null) {
             key.append(null);
         } else {
-            final float f = encodeFromObject(value);
+            final int bits = encodeFromObject(value);
+            final float f = decodeFromBits(bits);
             key.append(f);
         }
     }

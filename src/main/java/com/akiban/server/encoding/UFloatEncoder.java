@@ -23,8 +23,7 @@ public class UFloatEncoder extends FloatEncoder {
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final float f = Math.max(encodeFromObject(value), 0f);
-        final int intBits = floatToIntBits(f);
+        final int intBits = Math.max(encodeFromObject(value), 0);
         return EncodingUtils.putInt(dest, offset, intBits, STORAGE_SIZE);
     }
 }
