@@ -280,13 +280,6 @@ public class KeyUpdateIT extends KeyUpdateBase
     }
 
     @Override
-    protected void updateRow(TestRow row, int column, Object newValue, TestRow newParent)
-    {
-        super.updateRow(row, column, newValue, newParent);
-        row.hKey(hKey(row, newParent));
-    }
-
-    @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
         return indexFromRecords(records, orderRowDef, o_oid, o_cid);
@@ -398,7 +391,8 @@ public class KeyUpdateIT extends KeyUpdateBase
         return true;
     }
 
-    private HKey hKey(TestRow row, TestRow parent)
+    @Override
+    protected HKey hKey(TestRow row, TestRow parent)
     {
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();
@@ -416,12 +410,5 @@ public class KeyUpdateIT extends KeyUpdateBase
         }
         row.parent(parent);
         return hKey;
-    }
-
-    @Override
-    protected TestRow copyRow(TestRow row) {
-        TestRow copy= super.copyRow(row);
-        copy.hKey(hKey(row, row.parent()));
-        return copy;
     }
 }

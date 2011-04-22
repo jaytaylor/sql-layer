@@ -344,7 +344,7 @@ public abstract class KeyUpdateBase extends ITBase {
             copy.put(entry.getKey(), entry.getValue());
         }
         copy.parent(row.parent());
-        copy.hKey(hKey(row));
+        copy.hKey(hKey(row, row.parent()));
         return copy;
     }
 
@@ -352,7 +352,7 @@ public abstract class KeyUpdateBase extends ITBase {
     {
         row.put(column, newValue);
         row.parent(newParent);
-        row.hKey(hKey(row));
+        row.hKey(hKey(row, newParent));
     }
 
     protected final TestRow row(RowDef table, Object... values)
@@ -383,6 +383,10 @@ public abstract class KeyUpdateBase extends ITBase {
         public int getIndex() {
             return index;
         }
+    }
+
+    protected HKey hKey(TestRow row, TestRow newParent) {
+        return hKey(row);
     }
 
     abstract protected void createSchema() throws Exception;
