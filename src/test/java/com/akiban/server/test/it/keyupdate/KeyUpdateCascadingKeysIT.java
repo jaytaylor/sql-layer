@@ -259,8 +259,8 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         o_cid = 0;
         o_oid = 1;
         o_ox = 2;
-        o_priority = 2;
-        o_when = 3;
+        o_priority = 3;
+        o_when = 4;
         // item
         itemId = createTable("coi", "item",
                              "cid int not null",
@@ -290,13 +290,13 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRowDef, o_oid, o_cid);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     protected List<List<Object>> itemPKIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, itemRowDef, i_iid, HKeyElement.from(1), i_oid);
+        throw new UnsupportedOperationException();
     }
 
     @Override

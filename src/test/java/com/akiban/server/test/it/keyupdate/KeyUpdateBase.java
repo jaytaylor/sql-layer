@@ -19,6 +19,7 @@ import com.akiban.server.IndexDef;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.ArgumentValidation;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,6 +45,8 @@ import static com.akiban.server.test.it.keyupdate.Schema.itemRowDef;
 import static com.akiban.server.test.it.keyupdate.Schema.o_cid;
 import static com.akiban.server.test.it.keyupdate.Schema.o_oid;
 import static com.akiban.server.test.it.keyupdate.Schema.o_ox;
+import static com.akiban.server.test.it.keyupdate.Schema.o_priority;
+import static com.akiban.server.test.it.keyupdate.Schema.o_when;
 import static com.akiban.server.test.it.keyupdate.Schema.orderRowDef;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -57,7 +60,12 @@ public abstract class KeyUpdateBase extends ITBase {
         testStore = new TestStore(persistitStore());
         rowDefsToCounts = new TreeMap<Integer, Integer>();
         createSchema();
+        confirmColumns();
         populateTables();
+    }
+
+    private void confirmColumns() {
+        // TODO
     }
 
     @Test
