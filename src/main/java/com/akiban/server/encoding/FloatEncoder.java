@@ -49,7 +49,7 @@ public class FloatEncoder extends EncodingBase<Float> {
     }
 
     public static int floatToIntBits(float f) {
-        return Float.floatToRawIntBits(f);
+        return Float.floatToIntBits(f);
     }
     
 
@@ -82,9 +82,8 @@ public class FloatEncoder extends EncodingBase<Float> {
         if(rowData.isNull(fieldDef.getFieldIndex())) {
             key.append(null);
         } else {
-            final long offsetAndWidth = getOffsetAndWidth(fieldDef, rowData);
-            final int v = fromRowData(rowData, offsetAndWidth);
-            key.append(v);
+            final float f = toObject(fieldDef, rowData);
+            key.append(f);
         }
     }
 
@@ -94,8 +93,7 @@ public class FloatEncoder extends EncodingBase<Float> {
             key.append(null);
         } else {
             final float f = encodeFromObject(value);
-            final int intBits = floatToIntBits(f);
-            key.append(intBits);
+            key.append(f);
         }
     }
 

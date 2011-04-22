@@ -46,7 +46,7 @@ public class DoubleEncoder extends EncodingBase<Double> {
     }
 
     public static long doubleToLong(double d) {
-        return Double.doubleToRawLongBits(d);
+        return Double.doubleToLongBits(d);
     }
     
 
@@ -79,9 +79,8 @@ public class DoubleEncoder extends EncodingBase<Double> {
         if(rowData.isNull(fieldDef.getFieldIndex())) {
             key.append(null);
         } else {
-            final long offsetAndWidth = getOffsetAndWidth(fieldDef, rowData);
-            final long v = fromRowData(rowData, offsetAndWidth);
-            key.append(v);
+            final double d = toObject(fieldDef, rowData);
+            key.append(d);
         }
     }
 
@@ -91,8 +90,7 @@ public class DoubleEncoder extends EncodingBase<Double> {
             key.append(null);
         } else {
             final double d = encodeFromObject(value);
-            final long longBits = doubleToLong(d);
-            key.append(longBits);
+            key.append(d);
         }
     }
 
