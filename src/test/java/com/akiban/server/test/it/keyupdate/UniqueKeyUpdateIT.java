@@ -54,8 +54,8 @@ public final class UniqueKeyUpdateIT extends ITBase {
 
         expectFullRows(
                 tableId,
-                createNewRow(tableId, 11, 21),
-                createNewRow(tableId, 12, 22)
+                createNewRow(tableId, 11L, 21L),
+                createNewRow(tableId, 12L, 22L)
         );
         ScanRequest scanByU1 = new ScanAllRequest(
                 tableId,
@@ -65,8 +65,8 @@ public final class UniqueKeyUpdateIT extends ITBase {
         );
         expectRows(
                 scanByU1,
-                createNewRow(tableId, 11, 21),
-                createNewRow(tableId, 12, 22)
+                createNewRow(tableId, 11L, 21L),
+                createNewRow(tableId, 12L, 22L)
         );
     }
 }
