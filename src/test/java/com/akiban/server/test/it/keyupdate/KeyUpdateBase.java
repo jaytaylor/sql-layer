@@ -16,11 +16,13 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.message.ErrorCode;
+import com.akiban.server.FieldDef;
 import com.akiban.server.IndexDef;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.ArgumentValidation;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -66,8 +68,29 @@ public abstract class KeyUpdateBase extends ITBase {
     }
 
     private void confirmColumns() {
-        // TODO
+        confirmColumn(customerRowDef, c_cid, "cid");
+        confirmColumn(customerRowDef, c_cx, "cx");
+
+        confirmColumn(orderRowDef, o_oid, "oid");
+        confirmColumn(orderRowDef, o_cid, "cid");
+        confirmColumn(orderRowDef, o_ox, "ox");
+        confirmColumn(orderRowDef, o_priority, "priority");
+        confirmColumn(orderRowDef, o_when, "when");
+
+        confirmColumn(itemRowDef, i_iid, "iid");
+        confirmColumn(itemRowDef, i_oid, "oid");
+        confirmColumn(itemRowDef, i_ix, "ix");
     }
+
+    private void confirmColumn(RowDef rowDef, Integer expectedId, String columnName) {
+        assert columnName != null;
+        assert rowDef != null;
+        assertNotNull("column ID for " + columnName, expectedId);
+        FieldDef fieldDef = rowDef.getFieldDef(expectedId);
+        assertNotNull("no fieldDef with id="+expectedId + ", name="+columnName, fieldDef);
+        assertEquals("fieldDef name", columnName, fieldDef.getName());
+    }
+
 
     @Test
     @SuppressWarnings("unused") // JUnit will invoke this
