@@ -25,7 +25,7 @@ public class DoubleEncoder extends EncodingBase<Double> {
     DoubleEncoder() {
     }
 
-    public static double encodeFromObject(Object obj) {
+    public static long encodeFromObject(Object obj) {
         final double d;
         if(obj == null) {
             d = 0d;
@@ -36,17 +36,17 @@ public class DoubleEncoder extends EncodingBase<Double> {
         } else {
             throw new IllegalArgumentException("Requires Number or String");
         }
-        return d;
+        return Double.doubleToLongBits(d);
     }
 
-    public static long fromRowData(RowData rowData, long offsetAndWidth) {
+    public static double decodeFromBits(long bits) {
+        return Double.longBitsToDouble(bits);
+    }
+
+    private static long fromRowData(RowData rowData, long offsetAndWidth) {
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
         return rowData.getIntegerValue(offset, width);
-    }
-
-    public static long doubleToLong(double d) {
-        return Double.doubleToLongBits(d);
     }
     
 
@@ -64,8 +64,7 @@ public class DoubleEncoder extends EncodingBase<Double> {
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final double d = encodeFromObject(value);
-        final long longBits = doubleToLong(d);
+        final long longBits = encodeFromObject(value);
         return EncodingUtils.putInt(dest, offset, longBits, STORAGE_SIZE);
     }
 
@@ -89,7 +88,8 @@ public class DoubleEncoder extends EncodingBase<Double> {
         if(value == null) {
             key.append(null);
         } else {
-            final double d = encodeFromObject(value);
+            final long longBits = encodeFromObject(value);
+            final double d = decodeFromBits(longBits);
             key.append(d);
         }
     }

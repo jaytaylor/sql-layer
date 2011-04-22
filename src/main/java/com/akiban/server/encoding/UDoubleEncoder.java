@@ -23,8 +23,7 @@ public final class UDoubleEncoder extends DoubleEncoder {
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final double d = Math.max(encodeFromObject(value), 0d);
-        final long longBits = doubleToLong(d);
+        final long longBits = Math.max(encodeFromObject(value), 0);
         return EncodingUtils.putInt(dest, offset, longBits, STORAGE_SIZE);
     }
 }
