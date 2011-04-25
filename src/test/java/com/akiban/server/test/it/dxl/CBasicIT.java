@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
+import com.akiban.server.TableStatistics;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.common.NoSuchTableException;
 import com.akiban.server.api.dml.NoSuchRowException;
@@ -609,5 +610,13 @@ public final class CBasicIT extends ITBase {
         assertEquals("pk", 1, pTable.getIndexes().size());
         assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
         assertEquals(pTable.getGroup(), cTable.getGroup());
+    }
+
+    @Test
+    public void testAutoIncrement() throws InvalidOperationException {
+        ddl().createTable(session(), "sc1", "CREATE TABLE t1(c1 TINYINT AUTO_INCREMENT NULL KEY) AUTO_INCREMENT=10");
+        final int tid = tableId("sc1", "t1");
+        final TableStatistics tableStats = dml().getTableStatistics(session(), tid, false);
+        assertEquals("autoinc value", 9L, tableStats.getAutoIncrementValue());
     }
 }
