@@ -260,4 +260,40 @@ public final class UniqueKeyUpdateIT extends ITBase {
                 createNewRow(tableId, 12L, 21L, 33L)
         );
     }
+
+    @Test
+    public void nullsAreNotDuplicates() throws InvalidOperationException {
+        final String tableName = "t1";
+        final String schemaName = "s1";
+        final int tableId;
+        try {
+            tableId = createTable(schemaName, tableName, "cid int key", "u1 int NULL", "UNIQUE(u1)");
+            writeRows(
+                    createNewRow(tableId, 11, null),
+                    createNewRow(tableId, 12, 22)
+            );
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
+        }
+        NewRow original = createNewRow(tableId, 12L, 22L);
+        NewRow updated = createNewRow(tableId, 12L, null);
+        dml().updateRow(session(), original, updated, ALL_COLUMNS);
+
+        expectFullRows(
+                tableId,
+                createNewRow(tableId, 11L, null),
+                createNewRow(tableId, 12L, null)
+        );
+        ScanRequest scanByU1 = new ScanAllRequest(
+                tableId,
+                set(0, 1),
+                indexId(schemaName, tableName, "u1"),
+                EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END)
+        );
+        expectRows(
+                scanByU1,
+                createNewRow(tableId, 11L, null),
+                createNewRow(tableId, 12L, null)
+        );
+    }
 }
