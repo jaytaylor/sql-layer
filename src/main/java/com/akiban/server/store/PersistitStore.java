@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.akiban.server.api.dml.ConstantColumnSelector;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -578,9 +578,8 @@ public class PersistitStore implements Store {
     }
 
     private void complainAboutDuplicateKey(String indexName, Key hkey)
-            throws InvalidOperationException {
-        throw new InvalidOperationException(ErrorCode.DUPLICATE_KEY,
-                "Non-unique key for index %s: %s", indexName, hkey);
+            throws DuplicateKeyException {
+        throw new DuplicateKeyException(String.format("Non-unique key for index %s: %s", indexName, hkey));
     }
 
     @Override
@@ -1096,16 +1095,9 @@ public class PersistitStore implements Store {
         final Exchange iEx = getExchange(session, indexDef.getRowDef(),
                 indexDef);
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
-        final Key key = iEx.getKey();
 
-        if (indexDef.isUnique() && !hasNullIndexSegments(rowData, indexDef)) {
-            KeyState ks = new KeyState(key);
-            key.setDepth(indexDef.getIndexKeySegmentCount());
-            if (iEx.hasChildren()) {
-                complainAboutDuplicateKey(indexDef.getName(), key);
-            }   
-            ks.copyTo(key);
-        }
+        checkUniqueness(indexDef, rowData, iEx);
+
         iEx.getValue().clear();
         if (deferIndexes) {
             // TODO: bug767737, deferred indexing does not handle uniqueness
@@ -1126,6 +1118,20 @@ public class PersistitStore implements Store {
         releaseExchange(session, iEx);
     }
 
+    private void checkUniqueness(IndexDef indexDef, RowData rowData, Exchange iEx)
+            throws PersistitException, DuplicateKeyException
+    {
+        if (indexDef.isUnique() && !hasNullIndexSegments(rowData, indexDef)) {
+            final Key key = iEx.getKey();
+            KeyState ks = new KeyState(key);
+            key.setDepth(indexDef.getIndexKeySegmentCount());
+            if (iEx.hasChildren()) {
+                complainAboutDuplicateKey(indexDef.getName(), key);
+            }
+            ks.copyTo(key);
+        }
+    }
+
     void putAllDeferredIndexKeys(final Session session)
             throws PersistitException {
         synchronized (deferredIndexKeys) {
@@ -1142,13 +1148,15 @@ public class PersistitStore implements Store {
 
     void updateIndex(final Session session, final IndexDef indexDef,
             final RowDef rowDef, final RowData oldRowData,
-            final RowData newRowData, final Key hkey) throws PersistitException {
+            final RowData newRowData, final Key hkey) throws PersistitException, DuplicateKeyException {
 
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
             final Exchange oldExchange = getExchange(session, rowDef, indexDef);
             constructIndexKey(oldExchange.getKey(), oldRowData, indexDef, hkey);
             final Exchange newExchange = getExchange(session, rowDef, indexDef);
             constructIndexKey(newExchange.getKey(), newRowData, indexDef, hkey);
+
+            checkUniqueness(indexDef, newRowData, newExchange);
 
             oldExchange.getValue().clear();
             newExchange.getValue().clear();
