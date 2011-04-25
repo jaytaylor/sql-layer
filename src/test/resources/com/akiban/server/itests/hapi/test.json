@@ -2,76 +2,46 @@
 
 "setup" : {
     "processors_default" : [ "scanrows" ],
-    "schema" : "coi",
+    "schema" : "@schema",
     "tables" : [
-        [ "customer",
-            "cid int key",
-            "name varchar(32)"
+        [ ":customers",
+            "`@id` int key",
+            "`:name` varchar(32)",
+            "KEY (`:name`)"
         ],
 
-        [ "orders",
-            "oid int key",
-            "c_id int",
-            "when varchar(10)",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
+        [ "@orders",
+            "id int key",
+            "cid int",
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES `:customers`(`@id`)"
         ]
     ],
+
     "write_rows" : {
-        "customer"  : [ [11, "Alpha"],
-                        [12, "Bravo"],
-                        [13, "Charlie"],
-                        [14, "Delta"],
-                        [15, "Echo"],
-                        [16, "Foxtrot"]
+        ":customers"    : [ [11, "customer1"],
+                            [12, "customer2"]
         ],
-        "orders"    : [ [21, 11, "1/1/2001"],
-                        [22, 11, "2/2/2002"],
-                        [23, 12, "3/3/2003"],
-                        [24, 12, "3/3/2003"],
-                        [25, 12, "3/3/2003"],
-                        [26, 16, "4/4/2004"]
+        "@orders"       : [ [21, 11]
         ]
     }
 },
 
 "tests" : {
-    "three orders" : {
-        "get"           : "coi:customer:(orders:LIMIT=3)oid>0",
+    "child names" : {
+        "get"           : "'%40schema':'%3Acustomers':'%40id'=11",
         "expect result" :
         {
-            "@customer" : [
+            "@:customers" :
+            [
                 {
-                    "cid"   : 11,
-                    "name"  : "Alpha",
-                    "@orders" : [
+                    ":@id" : 11,
+                    "::name" : "customer1",
+                    "@@orders" :
+                    [
                         {
-                            "oid"  : 21,
-                            "c_id" : 11,
-                            "when" : "1/1/2001"
+                            "id" : 21,
+                            "cid" : 11
                         }
-                    ]
-                },
-                {
-                    "cid"   : 11,
-                    "name"  : "Alpha",
-                    "@orders" : [
-                        {
-                            "oid"  : 22,
-                            "c_id" : 11,
-                            "when" : "2/2/2002"
-                        }
-                    ]
-                },
-                {
-                    "cid" : 12,
-                    "name" : "Bravo",
-                    "@orders" : [
-                        {
-                            "oid"  : 23,
-                            "c_id" : 12,
-                            "when" : "3/3/2003"
-                        }
-
                     ]
                 }
             ]

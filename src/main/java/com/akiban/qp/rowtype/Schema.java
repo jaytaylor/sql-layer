@@ -20,7 +20,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.Math.max;
 
@@ -34,17 +35,15 @@ public class Schema
         this.typeIdCounter = -1;
         // User tables: use ordinal as typeId
         for (UserTable userTable : ais.getUserTables().values()) {
-            RowDef rowDef = (RowDef) userTable.rowDef();
-            int ordinal = rowDef.getOrdinal();
             UserTableRowType userTableRowType = new UserTableRowType(this, userTable);
-            setRowType(ordinal, userTableRowType);
-            this.typeIdCounter = max(this.typeIdCounter, ordinal);
+            rowTypes.put(userTable.getTableId(), userTableRowType);
+            this.typeIdCounter = max(this.typeIdCounter, userTable.getTableId());
             // Indexes
             this.typeIdCounter++;
             for (Index index : userTable.getIndexesIncludingInternal()) {
                 IndexRowType indexRowType = new IndexRowType(this, index);
                 userTableRowType.addIndexRowType(indexRowType);
-                setRowType(indexRowType.typeId(), indexRowType);
+                rowTypes.put(indexRowType.typeId(), indexRowType);
             }
         }
         this.typeIdCounter++;
@@ -57,8 +56,7 @@ public class Schema
 
     public synchronized UserTableRowType userTableRowType(UserTable table)
     {
-        RowDef rowDef = (RowDef) table.rowDef();
-        return (UserTableRowType) rowTypes.get(rowDef.getOrdinal());
+        return (UserTableRowType) rowTypes.get(table.getTableId());
     }
 
     public synchronized IndexRowType indexRowType(Index index)
@@ -84,21 +82,10 @@ public class Schema
         return typeIdCounter++;
     }
 
-    // For use by this class
-
-    private void setRowType(int typeId, RowType rowType)
-    {
-        int requiredEntries = typeId + 1;
-        while (rowTypes.size() < requiredEntries) {
-            rowTypes.add(null);
-        }
-        rowTypes.set(typeId, rowType);
-    }
-
     // Object state
 
     private final AkibanInformationSchema ais;
     // Type of rowTypes is ArrayList, not List, to make it clear that null values are permitted.
-    private final ArrayList<RowType> rowTypes = new ArrayList<RowType>();
+    private final Map<Integer, RowType> rowTypes = new HashMap<Integer, RowType>();
     private volatile int typeIdCounter;
 }
