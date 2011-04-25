@@ -610,4 +610,33 @@ public final class CBasicIT extends ITBase {
         assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
         assertEquals(pTable.getGroup(), cTable.getGroup());
     }
+
+    @Test
+    public void bug754986() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "id int key", "i int", "index(i)");
+
+        writeRows(createNewRow(tid, 1, -5),
+                  createNewRow(tid, 2, -1),
+                  createNewRow(tid, 3,  0),
+                  createNewRow(tid, 4,  1),
+                  createNewRow(tid, 5,  2));
+        expectRowCount(tid, 5);
+
+        final int indexId = getUserTable(tid).getIndex("i").getIndexId();
+        EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_RANGE_EXCLUSIVE);
+        final byte[] columnBitmap = {3};
+
+        final NewRow endRow = createNewRow(tid, null, 0);
+
+        LegacyScanRequest request = new LegacyScanRequest(tid,
+                                                          null, null,
+                                                          endRow.toRowData(), endRow.getActiveColumns(),
+                                                          columnBitmap,
+                                                          indexId,
+                                                          ScanFlag.toRowDataFormat(scanFlags),
+                                                          ScanLimit.NONE);
+
+        expectRows(request,
+                   createNewRow(tid, 1, -5), createNewRow(tid, 2, -1));
+    }
 }
