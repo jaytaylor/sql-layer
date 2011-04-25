@@ -304,16 +304,11 @@ public class PersistitStore implements Store {
      * @param rowData
      * @param indexDef
      */
-    int constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
+    void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
             Key hKey) throws PersistitException {
         IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
         iKey.clear();
-        int hkeyAt = -1;
         for (int index = 0; index < fassoc.length; index++) {
-            if (hkeyAt < 0 && index == indexDef.getFields().length) {
-                hkeyAt = iKey.getEncodedSize();
-                assert hkeyAt >= 0 : hkeyAt;
-            }
             IndexDef.H2I assoc = fassoc[index];
             if (assoc.fieldIndex() >= 0) {
                 int fieldIndex = assoc.fieldIndex();
@@ -325,7 +320,6 @@ public class PersistitStore implements Store {
                 throw new IllegalStateException("Invalid FA");
             }
         }
-        return hkeyAt;
     }
 
     /**
@@ -584,9 +578,8 @@ public class PersistitStore implements Store {
     }
 
     private void complainAboutDuplicateKey(String indexName, Key hkey)
-            throws InvalidOperationException {
-        throw new InvalidOperationException(ErrorCode.DUPLICATE_KEY,
-                "Non-unique key for index %s: %s", indexName, hkey);
+            throws DuplicateKeyException {
+        throw new DuplicateKeyException(String.format("Non-unique key for index %s: %s", indexName, hkey));
     }
 
     @Override
@@ -1102,16 +1095,9 @@ public class PersistitStore implements Store {
         final Exchange iEx = getExchange(session, indexDef.getRowDef(),
                 indexDef);
         constructIndexKey(iEx.getKey(), rowData, indexDef, hkey);
-        final Key key = iEx.getKey();
 
-        if (indexDef.isUnique() && !hasNullIndexSegments(rowData, indexDef)) {
-            KeyState ks = new KeyState(key);
-            key.setDepth(indexDef.getIndexKeySegmentCount());
-            if (iEx.hasChildren()) {
-                complainAboutDuplicateKey(indexDef.getName(), key);
-            }   
-            ks.copyTo(key);
-        }
+        checkUniqueness(indexDef, rowData, iEx);
+
         iEx.getValue().clear();
         if (deferIndexes) {
             // TODO: bug767737, deferred indexing does not handle uniqueness
@@ -1130,6 +1116,20 @@ public class PersistitStore implements Store {
             iEx.store();
         }
         releaseExchange(session, iEx);
+    }
+
+    private void checkUniqueness(IndexDef indexDef, RowData rowData, Exchange iEx)
+            throws PersistitException, DuplicateKeyException
+    {
+        if (indexDef.isUnique() && !hasNullIndexSegments(rowData, indexDef)) {
+            final Key key = iEx.getKey();
+            KeyState ks = new KeyState(key);
+            key.setDepth(indexDef.getIndexKeySegmentCount());
+            if (iEx.hasChildren()) {
+                complainAboutDuplicateKey(indexDef.getName(), key);
+            }
+            ks.copyTo(key);
+        }
     }
 
     void putAllDeferredIndexKeys(final Session session)
@@ -1154,17 +1154,9 @@ public class PersistitStore implements Store {
             final Exchange oldExchange = getExchange(session, rowDef, indexDef);
             constructIndexKey(oldExchange.getKey(), oldRowData, indexDef, hkey);
             final Exchange newExchange = getExchange(session, rowDef, indexDef);
-            int hKeyAt = constructIndexKey(newExchange.getKey(), newRowData, indexDef, hkey);
+            constructIndexKey(newExchange.getKey(), newRowData, indexDef, hkey);
 
-            if (indexDef.isUnique()) {
-                final Key newKey = newExchange.getKey();
-                final KeyState newKeySaved = new KeyState(newKey);
-                newKey.setEncodedSize(hKeyAt);
-                if(newExchange.isValueDefined() || newExchange.hasChildren()) {
-                    throw new DuplicateKeyException("key already exists");
-                }
-                newKeySaved.copyTo(newKey);
-            }
+            checkUniqueness(indexDef, newRowData, newExchange);
 
             oldExchange.getValue().clear();
             newExchange.getValue().clear();
