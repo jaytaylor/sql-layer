@@ -17,13 +17,13 @@ package com.akiban.server.encoding;
 
 import com.akiban.server.FieldDef;
 
-public class UFloatEncoder extends FloatEncoder {
-    UFloatEncoder() {
+public final class UDoubleEncoder extends DoubleEncoder {
+    UDoubleEncoder() {
     }
 
     @Override
     public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
-        final int intBits = Math.max(encodeFromObject(value), 0);
-        return EncodingUtils.putInt(dest, offset, intBits, STORAGE_SIZE);
+        final long longBits = Math.max(encodeFromObject(value), 0);
+        return EncodingUtils.putInt(dest, offset, longBits, STORAGE_SIZE);
     }
 }
