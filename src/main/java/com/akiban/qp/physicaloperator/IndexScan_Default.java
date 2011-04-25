@@ -32,6 +32,12 @@ class IndexScan_Default extends PhysicalOperator
         return ops[operatorId];
     }
 
+    @Override
+    public String toString() 
+    {
+        return getClass().getSimpleName() + "(" + index + ")";
+    }
+
     // IndexScan_Default interface
 
     public IndexScan_Default(Index index)

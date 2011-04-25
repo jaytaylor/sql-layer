@@ -1103,7 +1103,16 @@ public class PersistitStore implements Store {
                                      indexId,
                                      scanFlags);
         RowCollector rc;
-        if (Boolean.getBoolean("operators")) {
+        if (Boolean.getBoolean("oldRowCollector")) {
+            rc = new PersistitStoreRowCollector(session,
+                                                this,
+                                                scanFlags,
+                                                start,
+                                                end,
+                                                columnBitMap,
+                                                rowDef,
+                                                indexId);
+        } else {
             rc = OperatorBasedRowCollector.newCollector(session,
                                                         this,
                                                         rowDef,
@@ -1113,15 +1122,6 @@ public class PersistitStore implements Store {
                                                         end,
                                                         columnBitMap,
                                                         scanLimit);
-        } else {
-            rc = new PersistitStoreRowCollector(session,
-                                                this,
-                                                scanFlags,
-                                                start,
-                                                end,
-                                                columnBitMap,
-                                                rowDef,
-                                                indexId);
         }
         NEW_COLLECTOR_TAP.out();
         return rc;

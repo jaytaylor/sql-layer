@@ -25,6 +25,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,6 +47,20 @@ class IndexLookup_Default extends PhysicalOperator
     {
         inputOperator.assignOperatorIds(idGenerator);
         super.assignOperatorIds(idGenerator);
+    }
+
+    @Override
+    public List<PhysicalOperator> getInputOperators() 
+    {
+        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
+        result.add(inputOperator);
+        return result;
+    }
+
+    @Override
+    public String toString() 
+    {
+        return getClass().getSimpleName() + "(" + groupTable + " " + limit + ")";
     }
 
     // IndexLookup_Default interface
