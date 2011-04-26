@@ -16,10 +16,13 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
+import com.akiban.qp.rowtype.IndexKeyType;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -29,11 +32,14 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.persistit.exception.PersistitException;
 
+import java.util.Collection;
+
 public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor implements ModifiableCursor {
 
     public PropagatingPersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable) throws PersistitException {
         super(adapter, groupTable);
     }
+    
     @Override
     public void updateCurrentRow(Row newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
@@ -63,11 +69,29 @@ public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor 
     }
 
     private void updateGroupTable(Row newRow) {
-        throw new UnsupportedOperationException(); // TODO
+        RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
+        RowDef rowDef = currentRow.managedRow().rowDef();
+        RowData rowData = adapter().rowData(rowDef, newRow);
+        try {
+            PersistitStore.packRowData(exchange(), rowDef, rowData, ServiceManagerImpl.get().getTreeService());
+        } catch (PersistitException e) {
+            throw new CursorUpdateException(e);
+        }
+        currentRow.set(PersistitGroupRow.newPersistitGroupRow(adapter(), rowData));
     }
 
-    private boolean updateIndexes(Row newRow) {
-        throw new UnsupportedOperationException(); // TODO
+    private void updateIndexes(Row newRow) {
+        for(NonPropogatingPersistitIndexCursor indexCursor : indexCursors) {
+            IndexBound singleRowBound = new IndexBound(PLACEHOLDER(IndexKeyType.class), newRow);
+            IndexKeyRange range = new IndexKeyRange(singleRowBound, true, singleRowBound, true);
+            indexCursor.bind(range);
+            indexCursor.open();
+            boolean indexNext = indexCursor.next();
+            assert indexNext;
+            indexCursor.updateCurrentRow(newRow);
+            assert ! indexCursor.next();
+            indexCursor.close();
+        }
     }
 
     @Override
@@ -96,5 +120,11 @@ public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor 
         return all;
     }
 
+    @Deprecated
+    private <T> T PLACEHOLDER(Class<T> cls) {
+        return null;
+    }
+
     private final Session session = new SessionImpl();
+    private final Collection<NonPropogatingPersistitIndexCursor> indexCursors = null;
 }
