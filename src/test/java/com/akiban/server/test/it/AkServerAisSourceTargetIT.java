@@ -13,12 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.test.it;
+
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 
-import org.junit.After;
+import com.akiban.server.AkServerAisSource;
+import com.akiban.server.AkServerAisTarget;
+import com.akiban.server.test.it.store.DataDictionaryDDL;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,63 +32,46 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
 
-public class AkServerAisSourceTest extends AkServerTestCase {
-
-    private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
-
-    private AkibanInformationSchema ais;
-
+public class AkServerAisSourceTargetIT extends ITBase {
     @Before
     public void setUp() throws Exception {
-        baseSetUp();
-        ais = setUpAisForTests(DDL_FILE_NAME);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        baseTearDown();
+        DataDictionaryDDL.createTables(session(), ddl());
     }
 
     @Test
-    public void testAkSserverAis() throws Exception {
-        // Store AIS data in Chunk Server
-        final Target target = new AkServerAisTarget(store);
+    public void testAkServerAis() throws Exception {
+        final AkibanInformationSchema ais = ddl().getAIS(session());
+        
+        // Store AIS data
+        final Target target = new AkServerAisTarget(store());
         new Writer(target).save(ais);
 
-        // Retrieve AIS data from Chunk Server
-        final Source source = new AkServerAisSource(store);
+        // Retrieve AIS data
+        final Source source = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy = new Reader(source).load();
-
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais1.txt")))).save(ais);
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais2.txt")))).save(aisCopy);
-
+        
         assertTrue(equals(ais, aisCopy));
     }
 
     @Test
     public void testReloadAIS() throws Exception {
-        // Store AIS data in Chunk Server
-        final Target target = new AkServerAisTarget(store);
+        final AkibanInformationSchema ais = ddl().getAIS(session());
+        
+        // Store AIS data
+        final Target target = new AkServerAisTarget(store());
         new Writer(target).save(ais);
 
-        // Retrieve AIS data from Chunk Server
-        final Source source1 = new AkServerAisSource(store);
+        // Retrieve AIS data
+        final Source source1 = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy1 = new Reader(source1).load();
         new Writer(target).save(aisCopy1);
 
-        final Source source2 = new AkServerAisSource(store);
+        final Source source2 = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
-
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais1.txt")))).save(ais);
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais2.txt")))).save(aisCopy2);
 
         assertTrue(equals(ais, aisCopy2));
 
-        final Source source3 = new AkServerAisSource(store);
+        final Source source3 = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy3 = new Reader(source3).load();
         assertTrue(equals(ais, aisCopy3));
     }
@@ -95,8 +81,8 @@ public class AkServerAisSourceTest extends AkServerTestCase {
         final ByteBuffer bb1 = ByteBuffer.allocate(100000);
         final ByteBuffer bb2 = ByteBuffer.allocate(100000);
 
-        new Writer(new MessageTarget(bb1)).save((AkibanInformationSchema) ais1);
-        new Writer(new MessageTarget(bb2)).save((AkibanInformationSchema) ais2);
+        new Writer(new MessageTarget(bb1)).save(ais1);
+        new Writer(new MessageTarget(bb2)).save(ais2);
         bb1.flip();
         bb2.flip();
         if (bb1.limit() != bb2.limit()) {
@@ -109,5 +95,4 @@ public class AkServerAisSourceTest extends AkServerTestCase {
         }
         return true;
     }
-
 }
