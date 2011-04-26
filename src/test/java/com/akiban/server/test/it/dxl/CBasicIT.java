@@ -615,28 +615,24 @@ public final class CBasicIT extends ITBase {
     public void bug754986() throws InvalidOperationException {
         final int tid = createTable("test", "t", "id int key", "i int", "index(i)");
 
-        writeRows(createNewRow(tid, 1, -5),
-                  createNewRow(tid, 2, -1),
-                  createNewRow(tid, 3,  0),
-                  createNewRow(tid, 4,  1),
-                  createNewRow(tid, 5,  2));
+        writeRows(createNewRow(tid, 1L, -5L),
+                  createNewRow(tid, 2L, -1L),
+                  createNewRow(tid, 3L,  0L),
+                  createNewRow(tid, 4L,  1L),
+                  createNewRow(tid, 5L,  2L));
         expectRowCount(tid, 5);
 
-        final int indexId = getUserTable(tid).getIndex("i").getIndexId();
-        EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_RANGE_EXCLUSIVE);
         final byte[] columnBitmap = {3};
+        final NewRow endRow = createNewRow(tid, null, 0L);
+        final int indexId = getUserTable(tid).getIndex("i").getIndexId();
+        final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_RANGE_EXCLUSIVE);
 
-        final NewRow endRow = createNewRow(tid, null, 0);
-
-        LegacyScanRequest request = new LegacyScanRequest(tid,
-                                                          null, null,
+        LegacyScanRequest request = new LegacyScanRequest(tid, null, null,
                                                           endRow.toRowData(), endRow.getActiveColumns(),
-                                                          columnBitmap,
-                                                          indexId,
-                                                          ScanFlag.toRowDataFormat(scanFlags),
+                                                          columnBitmap, indexId,
+                                                          ScanFlag.toRowDataFormat(scanFlags), 
                                                           ScanLimit.NONE);
 
-        expectRows(request,
-                   createNewRow(tid, 1, -5), createNewRow(tid, 2, -1));
+        expectRows(request, createNewRow(tid, 1L, -5L), createNewRow(tid, 2L, -1L));
     }
 }
