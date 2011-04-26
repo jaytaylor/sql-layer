@@ -49,7 +49,12 @@ public class AkServerAisSourceTargetIT extends ITBase {
         // Retrieve AIS data
         final Source source = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy = new Reader(source).load();
-        
+
+        // new Writer(new SqlTextTarget(new PrintWriter(new
+        // FileWriter("/tmp/ais1.txt")))).save(ais);
+        // new Writer(new SqlTextTarget(new PrintWriter(new
+        // FileWriter("/tmp/ais2.txt")))).save(aisCopy);
+
         assertTrue(equals(ais, aisCopy));
     }
 
@@ -69,6 +74,11 @@ public class AkServerAisSourceTargetIT extends ITBase {
         final Source source2 = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
 
+        // new Writer(new SqlTextTarget(new PrintWriter(new
+        // FileWriter("/tmp/ais1.txt")))).save(ais);
+        // new Writer(new SqlTextTarget(new PrintWriter(new
+        // FileWriter("/tmp/ais2.txt")))).save(aisCopy2);
+
         assertTrue(equals(ais, aisCopy2));
 
         final Source source3 = new AkServerAisSource(store());
@@ -81,8 +91,8 @@ public class AkServerAisSourceTargetIT extends ITBase {
         final ByteBuffer bb1 = ByteBuffer.allocate(100000);
         final ByteBuffer bb2 = ByteBuffer.allocate(100000);
 
-        new Writer(new MessageTarget(bb1)).save(ais1);
-        new Writer(new MessageTarget(bb2)).save(ais2);
+        new Writer(new MessageTarget(bb1)).save((AkibanInformationSchema) ais1);
+        new Writer(new MessageTarget(bb2)).save((AkibanInformationSchema) ais2);
         bb1.flip();
         bb2.flip();
         if (bb1.limit() != bb2.limit()) {
@@ -95,4 +105,5 @@ public class AkServerAisSourceTargetIT extends ITBase {
         }
         return true;
     }
+
 }

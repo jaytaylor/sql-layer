@@ -106,4 +106,23 @@ public class AnalyzeIndexIT extends AbstractScanBase {
             fail("Bug 253 strikes again!");
         }
     }
+    
+// This test breaks the build - need to populate and then drop a different table.
+//    @Test
+//    public void testDropTable() throws Exception {
+//        final RowDef rowDef = groupRowDef("_akiban_srt");
+//        store.analyzeTable(rowDef.getRowDefId());
+//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
+//            store.analyzeTable(userRowDef.getRowDefId());
+//        }
+//        final TableStatistics ts1 = new TableStatistics(rowDef.getRowDefId());
+//        store.getIndexManager().populateTableStatistics(ts1);
+//        assertTrue(!ts1.getHistogramList().isEmpty());
+//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
+//            store.dropTable(userRowDef.getRowDefId());
+//        }
+//        final TableStatistics ts2 = new TableStatistics(rowDef.getRowDefId());
+//        store.getIndexManager().populateTableStatistics(ts2);
+//        assertTrue(ts2.getHistogramList().isEmpty());
+//    }
 }
