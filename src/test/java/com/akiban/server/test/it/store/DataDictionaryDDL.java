@@ -77,10 +77,14 @@ public class DataDictionaryDDL {
 
 
     public static void createTables(Session session, DDLFunctions ddl) throws InvalidOperationException {
-        ddl.createTable(session, SCHEMA, CUSTOMER_DDL);
-        ddl.createTable(session, SCHEMA, ADDRESS_DDL);
-        ddl.createTable(session, SCHEMA, ORDER_DDL);
-        ddl.createTable(session, SCHEMA, ITEM_DDL);
-        ddl.createTable(session, SCHEMA, COMPONENT_DDL);
+        createTables(session, ddl, SCHEMA);
+    }
+
+    public static void createTables(Session session, DDLFunctions ddl, String schema) throws InvalidOperationException {
+        ddl.createTable(session, schema, CUSTOMER_DDL);
+        ddl.createTable(session, schema, ADDRESS_DDL);
+        ddl.createTable(session, schema, ORDER_DDL);
+        ddl.createTable(session, schema, ITEM_DDL);
+        ddl.createTable(session, schema, COMPONENT_DDL);
     }
 }
