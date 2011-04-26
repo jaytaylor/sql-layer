@@ -95,6 +95,11 @@ public final class Property implements Comparable<Property> {
         this.value = value;
     }
 
+    public Property(String keyStr, String value) {
+        this.key = parseKey(keyStr);
+        this.value = value;
+    }
+
     Property(String module, String name, String value) {
         this.key = new Key(module, name);
         this.value = value;

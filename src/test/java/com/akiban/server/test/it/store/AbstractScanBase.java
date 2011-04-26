@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.store;
+package com.akiban.server.test.it.store;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -22,7 +22,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.AkServerTestSuite;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -31,40 +30,39 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.store.RowCollector;
+import com.akiban.server.test.it.ITSuiteBase;
 import com.akiban.util.ByteBufferFactory;
 
-public abstract class AbstractScanBase extends AkServerTestSuite {
+public abstract class AbstractScanBase extends ITSuiteBase {
 
     protected final static String DDL_FILE_NAME = "scan_rows_test.ddl";
 
     protected final static String SCHEMA = "scan_rows_test";
 
-
     protected final static boolean VERBOSE = false;
     
-
     protected static SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
 
     protected List<RowData> result = new ArrayList<RowData>();
 
     @BeforeClass
     public static void baseSetUpSuite() throws Exception {
-        AkServerTestSuite.setUpSuite();
-        
-        //rowDefCache.setAIS(ais0);
-        final AkibanInformationSchema ais = setUpAisForTests(DDL_FILE_NAME);
+        loadDDLFromResource(SCHEMA, DDL_FILE_NAME);
+
+        final AkibanInformationSchema ais = serviceManager.getDXL().ddlFunctions().getAIS(session);
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getName().getTableName().startsWith("a")) {
                 tableMap.put(table.getName().getSchemaName() + "."
                         + table.getName().getTableName(), table);
             }
         }
+        
         populateTables();
     }
 
     @AfterClass
     public static void baseTearDownSuite() throws Exception {
-        AkServerTestSuite.tearDownSuite();
         tableMap.clear();
     }
 

@@ -13,12 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.test.it;
+
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 
-import org.junit.After;
+import com.akiban.server.AkServerAisSource;
+import com.akiban.server.AkServerAisTarget;
+import com.akiban.server.test.it.store.DataDictionaryDDL;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,31 +32,22 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Source;
 import com.akiban.ais.model.Target;
 
-public class AkServerAisSourceTest extends AkServerTestCase {
-
-    private final static String DDL_FILE_NAME = "data_dictionary_test.ddl";
-
-    private AkibanInformationSchema ais;
-
+public class AkServerAisSourceTargetIT extends ITBase {
     @Before
     public void setUp() throws Exception {
-        baseSetUp();
-        ais = setUpAisForTests(DDL_FILE_NAME);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        baseTearDown();
+        DataDictionaryDDL.createTables(session(), ddl());
     }
 
     @Test
-    public void testAkSserverAis() throws Exception {
-        // Store AIS data in Chunk Server
-        final Target target = new AkServerAisTarget(store);
+    public void testAkServerAis() throws Exception {
+        final AkibanInformationSchema ais = ddl().getAIS(session());
+        
+        // Store AIS data
+        final Target target = new AkServerAisTarget(store());
         new Writer(target).save(ais);
 
-        // Retrieve AIS data from Chunk Server
-        final Source source = new AkServerAisSource(store);
+        // Retrieve AIS data
+        final Source source = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy = new Reader(source).load();
 
         // new Writer(new SqlTextTarget(new PrintWriter(new
@@ -66,16 +60,18 @@ public class AkServerAisSourceTest extends AkServerTestCase {
 
     @Test
     public void testReloadAIS() throws Exception {
-        // Store AIS data in Chunk Server
-        final Target target = new AkServerAisTarget(store);
+        final AkibanInformationSchema ais = ddl().getAIS(session());
+        
+        // Store AIS data
+        final Target target = new AkServerAisTarget(store());
         new Writer(target).save(ais);
 
-        // Retrieve AIS data from Chunk Server
-        final Source source1 = new AkServerAisSource(store);
+        // Retrieve AIS data
+        final Source source1 = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy1 = new Reader(source1).load();
         new Writer(target).save(aisCopy1);
 
-        final Source source2 = new AkServerAisSource(store);
+        final Source source2 = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
 
         // new Writer(new SqlTextTarget(new PrintWriter(new
@@ -85,7 +81,7 @@ public class AkServerAisSourceTest extends AkServerTestCase {
 
         assertTrue(equals(ais, aisCopy2));
 
-        final Source source3 = new AkServerAisSource(store);
+        final Source source3 = new AkServerAisSource(store());
         final AkibanInformationSchema aisCopy3 = new Reader(source3).load();
         assertTrue(equals(ais, aisCopy3));
     }

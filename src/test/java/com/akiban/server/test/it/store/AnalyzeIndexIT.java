@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.store;
+package com.akiban.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -26,7 +26,7 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 
-public class AnalyzeIndexTest extends AbstractScanBase {
+public class AnalyzeIndexIT extends AbstractScanBase {
     
     @Test
     public void testAnalyzeAllIndexes() throws Exception {

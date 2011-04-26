@@ -692,23 +692,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return newAis;
     }
 
-    public AkibanInformationSchema getAisForTests(final String schema)
-            throws Exception {
-        final StringBuilder sb = new StringBuilder();
-        final BufferedReader reader = new BufferedReader(new InputStreamReader(
-                AkServer.class.getClassLoader().getResourceAsStream(schema)));
-        for (String statement : (new MySqlStatementSplitter(reader))) {
-            sb.append(statement).append(AkServerUtil.NEW_LINE);
-        }
-        for (final TableDefinition tableStruct : aisSchema) {
-            sb.append(tableStruct.getDDL()).append(AkServerUtil.NEW_LINE);
-        }
-        final SchemaDef schemaDef = SchemaDef.parseSchema(sb.toString());
-        ais = new SchemaDefToAis(schemaDef, true).getAis();
-        forceNewTimestamp();
-        return ais;
-    }
-
     @Override
     public List<String> schemaStrings(final Session session,
                                 final boolean withGroupTables) throws Exception {

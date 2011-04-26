@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.store;
+package com.akiban.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +31,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.ddl.SchemaDef;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.TableDefinition;
+import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,35 +47,37 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.AkServer;
-import com.akiban.server.AkServerTestCase;
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.service.config.Property;
 import com.akiban.util.MySqlStatementSplitter;
 
-public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
+public final class PersistitStoreSchemaManagerIT extends ITBase {
 
     private final static List<String> AIS_CREATE_STATEMENTS = readAisSchema();
     private final static String SCHEMA = "my_schema";
     private final static Pattern REGEX = Pattern.compile("create table `(\\w+)`\\.(\\w+)");
 
     private int base;
-    
-    SchemaManager manager;
- 
+    private SchemaManager manager;
+    private Session session;
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
+        final Collection<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("akserver.treespace.a",
+                                    "drupal*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+        properties.add(new Property("akserver.treespace",
+                                    "liveops*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+        return properties;
+    }
+
     @Before
     public void setUp() throws Exception {
-        // Set up multi-volume treespace policy so we can be sure schema is
-        // properly distributed.
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(property("akserver.treespace.a",
-                "drupal*:${datapath}/${schema}.v0,create,pageSize:8K,"
-                        + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(property("akserver.treespace",
-                "liveops*:${datapath}/${schema}.v0,create,pageSize:8K,"
-                        + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        baseSetUp();
-        manager = getSchemaManager();
+        manager = serviceManager().getSchemaManager();
+        session = session();
         base = manager.getAis(session).getUserTables().size();
         assertTables("user tables");
         assertDDLS();
@@ -80,13 +85,9 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
 
     @After
     public void tearDown() throws Exception {
-        try {
-            assertEquals("user tables in AIS", base, manager.getAis(session).getUserTables().size());
-            assertTables("user tables");
-            assertDDLS();
-        } finally {
-            baseTearDown();
-        }
+        assertEquals("user tables in AIS", base, manager.getAis(session).getUserTables().size());
+        assertTables("user tables");
+        assertDDLS();
     }
 
     private void createTable(ErrorCode expectedCode, String schema, String ddl) throws Exception {
@@ -391,7 +392,7 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
 
 
     private void assertTables(String message, String... expecteds) throws Exception {
-        Collection<TableDefinition> definitions = schemaManager.getTableDefinitions(session, SCHEMA).values();
+        Collection<TableDefinition> definitions = manager.getTableDefinitions(session, SCHEMA).values();
         Map<TableName,String>  actual = new HashMap<TableName, String>();
         for (TableDefinition td : definitions) {
             TableName tn = new TableName(td.getSchemaName(), td.getTableName());
@@ -425,7 +426,7 @@ public final class PersistitStoreSchemaManagerTest extends AkServerTestCase {
         ddlList.add("create schema if not exists `akiban_information_schema`;");
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader()
-                        .getResourceAsStream(PersistitStoreSchemaManager.AIS_DDL_NAME)));
+                        .getResourceAsStream("akiban_information_schema.ddl")));
         for (String statement : (new MySqlStatementSplitter(reader))) {
             final String canonical = SchemaDef.canonicalStatement(statement);
             ddlList.add(canonical);
