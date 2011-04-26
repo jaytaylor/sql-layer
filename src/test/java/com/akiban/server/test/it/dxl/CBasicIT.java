@@ -610,4 +610,30 @@ public final class CBasicIT extends ITBase {
         assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
         assertEquals(pTable.getGroup(), cTable.getGroup());
     }
+
+    // test for bug 754986
+    @Test
+    public void selectZeroFencePost() throws InvalidOperationException {
+        final int tid = createTable("test", "t", "id int key", "i int", "index(i)");
+
+        writeRows(createNewRow(tid, 1L, -5L),
+                  createNewRow(tid, 2L, -1L),
+                  createNewRow(tid, 3L,  0L),
+                  createNewRow(tid, 4L,  1L),
+                  createNewRow(tid, 5L,  2L));
+        expectRowCount(tid, 5);
+
+        final byte[] columnBitmap = {3};
+        final NewRow endRow = createNewRow(tid, null, 0L);
+        final int indexId = getUserTable(tid).getIndex("i").getIndexId();
+        final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_RANGE_EXCLUSIVE);
+
+        LegacyScanRequest request = new LegacyScanRequest(tid, null, null,
+                                                          endRow.toRowData(), endRow.getActiveColumns(),
+                                                          columnBitmap, indexId,
+                                                          ScanFlag.toRowDataFormat(scanFlags), 
+                                                          ScanLimit.NONE);
+
+        expectRows(request, createNewRow(tid, 1L, -5L), createNewRow(tid, 2L, -1L));
+    }
 }
