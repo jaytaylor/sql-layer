@@ -22,6 +22,9 @@ final class UpdateCursor implements Cursor {
     private final ModifiableCursor inputs;
     private final UpdateLambda updateLambda;
 
+    private boolean currentRowIsMine = false;
+    private ManagedRow currentRow;
+
     UpdateCursor(ModifiableCursor inputs, UpdateLambda updateLambda) {
         this.inputs = inputs;
         this.updateLambda = updateLambda;
@@ -34,6 +37,18 @@ final class UpdateCursor implements Cursor {
 
     @Override
     public boolean next() {
+        if (inputs.next()) {
+            ManagedRow input = inputs.currentRow();
+            if (!updateLambda.rowIsApplicable(input)) {
+                currentRowIsMine = false;
+                return true;
+            }
+            currentRowIsMine = true;
+            currentRow = updateLambda.applyUpdate(input);
+            input.release();
+            inputs.updateCurrentRow(currentRow);
+            return true;
+        }
         return inputs.next();
     }
 
@@ -44,13 +59,6 @@ final class UpdateCursor implements Cursor {
 
     @Override
     public ManagedRow currentRow() {
-        ManagedRow input = inputs.currentRow();
-        if (!updateLambda.rowIsApplicable(input)) {
-            return input;
-        }
-        ManagedRow updated = updateLambda.applyUpdate(input);
-        input.release();
-        inputs.updateCurrentRow(updated);
-        return updated;
+        return currentRowIsMine ? currentRow : inputs.currentRow();
     }
 }
