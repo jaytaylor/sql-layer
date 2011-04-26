@@ -39,7 +39,8 @@ final class NonPropogatingPersistitIndexCursor extends PersistitIndexCursor impl
 
     @Override
     public void updateCurrentRow(Row newRow) {
-        throw new UnsupportedOperationException(); // TODO
+        removeCurrentRow();
+        addRow(newRow);
     }
 
     @Override

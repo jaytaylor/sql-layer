@@ -99,6 +99,10 @@ class PersistitIndexCursor implements IndexCursor
         this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
     }
 
+    IndexRowType indexRowType() {
+        return indexRowType;
+    }
+
     // For use by this class
 
     private RowHolder<PersistitIndexRow> unsharedRow() throws PersistitException
@@ -112,6 +116,10 @@ class PersistitIndexCursor implements IndexCursor
     private IndexDef indexDef()
     {
         return (IndexDef) indexRowType.index().indexDef();
+    }
+
+    PersistitAdapter adapter() {
+        return adapter;
     }
 
     Exchange exchange() {

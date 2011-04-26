@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
@@ -23,6 +24,7 @@ import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexKeyType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -81,8 +83,12 @@ public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor 
     }
 
     private void updateIndexes(Row newRow) {
+        Row current = currentRow();
+        Schema schema = current.rowType().schema();
+
         for(NonPropogatingPersistitIndexCursor indexCursor : indexCursors) {
-            IndexBound singleRowBound = new IndexBound(PLACEHOLDER(IndexKeyType.class), newRow);
+            Index index = indexCursor.indexRowType().index();
+            IndexBound singleRowBound = new IndexBound(new IndexKeyType(schema, index), newRow);
             IndexKeyRange range = new IndexKeyRange(singleRowBound, true, singleRowBound, true);
             indexCursor.bind(range);
             indexCursor.open();
