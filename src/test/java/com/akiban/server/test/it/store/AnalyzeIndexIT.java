@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.store;
+package com.akiban.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -26,7 +26,7 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.TableStatistics;
 
-public class AnalyzeIndexTest extends AbstractScanBase {
+public class AnalyzeIndexIT extends AbstractScanBase {
     
     @Test
     public void testAnalyzeAllIndexes() throws Exception {
@@ -106,23 +106,4 @@ public class AnalyzeIndexTest extends AbstractScanBase {
             fail("Bug 253 strikes again!");
         }
     }
-    
-// This test breaks the build - need to populate and then drop a different table.
-//    @Test
-//    public void testDropTable() throws Exception {
-//        final RowDef rowDef = groupRowDef("_akiban_srt");
-//        store.analyzeTable(rowDef.getRowDefId());
-//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
-//            store.analyzeTable(userRowDef.getRowDefId());
-//        }
-//        final TableStatistics ts1 = new TableStatistics(rowDef.getRowDefId());
-//        store.getIndexManager().populateTableStatistics(ts1);
-//        assertTrue(!ts1.getHistogramList().isEmpty());
-//        for (final RowDef userRowDef : rowDef.getUserTableRowDefs()) {
-//            store.dropTable(userRowDef.getRowDefId());
-//        }
-//        final TableStatistics ts2 = new TableStatistics(rowDef.getRowDefId());
-//        store.getIndexManager().populateTableStatistics(ts2);
-//        assertTrue(ts2.getHistogramList().isEmpty());
-//    }
 }

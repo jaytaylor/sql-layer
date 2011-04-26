@@ -13,33 +13,33 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server;
+package com.akiban.server.test.it;
 
-/**
- * Base class for a number of unit tests that need a 
- * PersistitService, PersistitStore, and Session.  These
- * are configured by UnitTestServiceManagerFactory
- * to use a temporary directory that will be cleaned up when
- * the test ends.
- * 
- * 
- * This class differs from AkSserverTestCase: this base
- * class is intended for tests that start the services, load
- * a fairly large amount of data, and then perform numerous
- * tests on the same environment. AkSserverTestCase is
- * intended for tests that start and stop all the
- * services once for each test.  
- */
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.AkServer;
+import com.akiban.server.RowDefCache;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.UnitTestServiceFactory;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionImpl;
-import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.util.MySqlStatementSplitter;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
-public abstract class AkServerTestSuite {
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+/**
+ * This class differs from ITBase: this base
+ * class is intended for tests that start the services, load
+ * a fairly large amount of data, and then perform numerous
+ * tests on the same environment. ITBase is
+ * intended for tests that start and stop all the
+ * services once for each test.
+ */
+public abstract class ITSuiteBase {
 
     protected static Store store;
     protected static SchemaManager schemaManager;
@@ -47,7 +47,8 @@ public abstract class AkServerTestSuite {
     protected static RowDefCache rowDefCache;
     protected final static Session session = new SessionImpl();
 
-    public final static void setUpSuite() throws Exception {
+    @BeforeClass
+    public static void setUpSuite() throws Exception {
         serviceManager = UnitTestServiceFactory.createServiceManager();
         serviceManager.startServices();
         store = serviceManager.getStore();
@@ -55,20 +56,22 @@ public abstract class AkServerTestSuite {
         rowDefCache = store.getRowDefCache();
     }
 
-    public final static void tearDownSuite() throws Exception {
+    @AfterClass
+    public static void tearDownSuite() throws Exception {
         serviceManager.stopServices();
         store = null;
         rowDefCache = null;
     }
 
-    protected static AkibanInformationSchema setUpAisForTests(
-            final String resourceName) throws Exception {
-        final AkibanInformationSchema ais = ((PersistitStoreSchemaManager) schemaManager)
-                .getAisForTests(resourceName);
-        rowDefCache.clear();
-        rowDefCache.setAIS(ais);
-        rowDefCache.fixUpOrdinalsForTest();
-        return ais;
-    }
+    protected static void loadDDLFromResource(final String schema, final String resourceName) throws Exception {
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(
+                AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
 
+        DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
+        for (String statement : new MySqlStatementSplitter(reader)) {
+            if (statement.startsWith("create")) {
+                ddl.createTable(session, schema, statement);
+            }
+        }
+    }
 }
