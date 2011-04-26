@@ -20,7 +20,9 @@ import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 
+import java.util.Collection;
 import java.util.List;
 
 public class API
@@ -40,14 +42,14 @@ public class API
         return new Flatten_HKeyOrdered(inputOperator, parentType, childType, flags);
     }
 
-    public static PhysicalOperator groupScan_Default(StoreAdapter store, GroupTable groupTable)
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable)
     {
-        return groupScan_Default(store, groupTable, NO_LIMIT);
+        return groupScan_Default(groupTable, NO_LIMIT);
     }
 
-    public static PhysicalOperator groupScan_Default(StoreAdapter store, GroupTable groupTable, Limit limit)
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable, Limit limit)
     {
-        return new GroupScan_Default(store, groupTable, limit);
+        return new GroupScan_Default(groupTable, limit);
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
@@ -75,6 +77,20 @@ public class API
                                                       Expression predicate)
     {
         return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
+    }
+
+    public static PhysicalOperator cut_Default(Schema schema,
+                                               PhysicalOperator inputOperator,
+                                               Collection<RowType> cutTypes)
+    {
+        return new Cut_Default(schema, inputOperator, cutTypes);
+    }
+
+    public static PhysicalOperator extract_Default(Schema schema,
+                                                   PhysicalOperator inputOperator,
+                                                   Collection<RowType> extractTypes)
+    {
+        return new Extract_Default(schema, inputOperator, extractTypes);
     }
 
     private static final Limit NO_LIMIT = new Limit()

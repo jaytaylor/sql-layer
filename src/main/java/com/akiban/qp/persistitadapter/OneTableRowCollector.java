@@ -43,6 +43,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         super(store, session);
         // rootmostQueryTable
         queryRootTable = rowDef.userTable();
+        queryRootType = schema.userTableRowType(queryRootTable);
         // predicateIndex and predicateType
         predicateIndex = null;
         for (Index userTableIndex : queryRootTable.getIndexesIncludingInternal()) {
@@ -50,23 +51,24 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                 predicateIndex = userTableIndex;
             }
         }
-        assert predicateIndex != null : String.format("table %s, index %s", queryRootTable, indexId);
-        predicateType = schema.userTableRowType((UserTable) predicateIndex.getTable());
-        // Index bounds
-        assert start == null || start.getRowDefId() == queryRootTable.getTableId();
-        assert end == null || end.getRowDefId() == queryRootTable.getTableId();
-        IndexKeyType indexKeyType = predicateType.indexRowType(predicateIndex).keyType();
-        IndexBound lo =
-            start == null
-            ? null
-            : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, start));
-        IndexBound hi =
-            end == null
-            ? null
-            : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, end));
-        indexKeyRange = new IndexKeyRange(lo,
-                                          (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
-                                          hi,
-                                          (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+        if (predicateIndex != null) {
+            predicateType = schema.userTableRowType((UserTable) predicateIndex.getTable());
+            // Index bounds
+            assert start == null || start.getRowDefId() == queryRootTable.getTableId();
+            assert end == null || end.getRowDefId() == queryRootTable.getTableId();
+            IndexKeyType indexKeyType = predicateType.indexRowType(predicateIndex).keyType();
+            IndexBound lo =
+                start == null
+                ? null
+                : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, start));
+            IndexBound hi =
+                end == null
+                ? null
+                : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, end));
+            indexKeyRange = new IndexKeyRange(lo,
+                                              (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
+                                              hi,
+                                              (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+        }
     }
 }

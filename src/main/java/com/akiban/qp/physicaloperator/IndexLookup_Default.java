@@ -60,7 +60,7 @@ class IndexLookup_Default extends PhysicalOperator
     @Override
     public String toString() 
     {
-        return getClass().getSimpleName() + "(" + groupTable + " " + limit + ")";
+        return String.format("%s(%s limit %s", getClass().getSimpleName(), groupTable, limit);
     }
 
     // IndexLookup_Default interface

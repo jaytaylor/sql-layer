@@ -33,22 +33,20 @@ class GroupScan_Default extends PhysicalOperator
     @Override
     public String toString() 
     {
-        return getClass().getSimpleName() + "(" + groupTable + " " + limit + ")";
+        return String.format("%s(%s limit %s)", getClass().getSimpleName(), groupTable, limit);
     }
 
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(StoreAdapter store, GroupTable groupTable, Limit limit)
+    public GroupScan_Default(GroupTable groupTable, Limit limit)
     {
-        this.store = store;
         this.groupTable = groupTable;
         this.limit = limit;
     }
 
     // Object state
 
-    private final StoreAdapter store;
     private final GroupTable groupTable;
     private final Limit limit;
 
@@ -106,7 +104,7 @@ class GroupScan_Default extends PhysicalOperator
         Execution(StoreAdapter adapter)
         {
             super(adapter);
-            this.cursor = store.newGroupCursor(groupTable);
+            this.cursor = adapter.newGroupCursor(groupTable);
         }
 
         // Object state

@@ -39,6 +39,12 @@ public interface RowCollector {
 
     public final int SCAN_FLAGS_DEEP = 1 << 7;
 
+    /**
+     * Place the next row into payload if there is another row, and if there is room in payload.
+     * @param payload
+     * @return true if a row was placed into payload, false otherwise
+     * @throws Exception
+     */
     public boolean collectNextRow(ByteBuffer payload) throws Exception;
 
     public RowData collectNextRow() throws Exception;
@@ -50,8 +56,6 @@ public interface RowCollector {
     public int getDeliveredRows();
 
     public int getDeliveredBuffers();
-    
-    public int getRepeatedRows();
     
     public long getDeliveredBytes();
     

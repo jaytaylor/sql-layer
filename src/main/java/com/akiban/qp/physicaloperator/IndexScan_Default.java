@@ -35,7 +35,7 @@ class IndexScan_Default extends PhysicalOperator
     @Override
     public String toString() 
     {
-        return getClass().getSimpleName() + "(" + index + ")";
+        return String.format("%s(%s)", getClass().getSimpleName(), index);
     }
 
     // IndexScan_Default interface

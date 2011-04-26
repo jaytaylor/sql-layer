@@ -113,11 +113,6 @@ public final class BasicDMLFunctionsTest extends AkServerTestCase {
         }
 
         @Override
-        public int getRepeatedRows() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public long getDeliveredBytes() {
             throw new UnsupportedOperationException();
         }

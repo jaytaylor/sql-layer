@@ -106,7 +106,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     @Test
     public void testGroupScan() throws Exception
     {
-        PhysicalOperator groupScan = groupScan_Default(adapter, coi);
+        PhysicalOperator groupScan = groupScan_Default(coi);
         Executable executable = new Executable(adapter, groupScan);
         Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 11L, 1L, "ori"),
@@ -129,7 +129,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     @Test
     public void testSelect()
     {
-        PhysicalOperator groupScan = groupScan_Default(adapter, coi);
+        PhysicalOperator groupScan = groupScan_Default(coi);
         Expression cidEq2 = compare(field(0), EQ, literal(2L));
         PhysicalOperator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
         Row[] expected = new Row[]{row(customerRowType, 2L, "abc"),
@@ -145,7 +145,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     @Test
     public void testFlatten()
     {
-        PhysicalOperator groupScan = groupScan_Default(adapter, coi);
+        PhysicalOperator groupScan = groupScan_Default(coi);
         PhysicalOperator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
         RowType flattenType = flatten.rowType();
         Row[] expected = new Row[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
@@ -166,7 +166,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     @Test
     public void testTwoFlattens()
     {
-        PhysicalOperator groupScan = groupScan_Default(adapter, coi);
+        PhysicalOperator groupScan = groupScan_Default(coi);
         PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
         PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType);
         RowType flattenCOIType = flattenCOI.rowType();

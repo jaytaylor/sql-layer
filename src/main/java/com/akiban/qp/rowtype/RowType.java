@@ -19,6 +19,26 @@ package com.akiban.qp.rowtype;
 
 public abstract class RowType
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("RowType(%s)", typeId);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return typeId * 9987001;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return o != null && o instanceof RowType && this.typeId == ((RowType)o).typeId;
+    }
+
     // RowType interface
 
     public final Schema schema()

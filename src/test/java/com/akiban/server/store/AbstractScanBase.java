@@ -22,6 +22,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.server.AkServerTestSuite;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -40,7 +41,7 @@ public abstract class AbstractScanBase extends AkServerTestSuite {
     protected final static String SCHEMA = "scan_rows_test";
 
 
-    protected final static boolean VERBOSE = false;
+    protected final static boolean VERBOSE = true;
     
 
     protected static SortedMap<String, UserTable> tableMap = new TreeMap<String, UserTable>();
@@ -136,7 +137,7 @@ public abstract class AbstractScanBase extends AkServerTestSuite {
         if (VERBOSE) {
             System.out.println();
         }
-        return scanCount - (int) rc.getRepeatedRows();
+        return scanCount;
     }
 
     protected int findIndexId(final RowDef groupRowDef,
@@ -193,9 +194,13 @@ public abstract class AbstractScanBase extends AkServerTestSuite {
                     break;
                 }
             }
-            int column = groupRowDef.getUserTableRowDefs()[level]
-                    .getColumnOffset();
-            bits[column / 8] |= 1 << (column % 8);
+            // Set the bits for all columns of the user table selected by level
+            RowDef userTableRowDef = groupRowDef.getUserTableRowDefs()[level];
+            UserTable userTable = userTableRowDef.userTable();
+            for (Column column : userTable.getColumns()) {
+                int groupColumnPosition = userTableRowDef.getColumnOffset() + column.getPosition();
+                bits[groupColumnPosition / 8] |= 1 << (groupColumnPosition % 8);
+            }
             if (rd.getParentRowDefId() == 0) {
                 break;
             } else {

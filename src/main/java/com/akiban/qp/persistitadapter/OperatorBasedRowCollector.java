@@ -34,9 +34,9 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.akiban.qp.physicaloperator.API.*;
@@ -48,7 +48,27 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public boolean collectNextRow(ByteBuffer payload) throws Exception
     {
-        throw new UnsupportedOperationException();
+        boolean wroteToPayload = false;
+        if (!closed) {
+            currentRow.set(cursor.currentRow());
+            PersistitGroupRow row = (PersistitGroupRow) currentRow.managedRow();
+            if (row == null) {
+                close();
+            } else {
+                RowData rowData = row.rowData();
+                try {
+                    payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+                    wroteToPayload = true;
+                    rowCount++;
+                    if (!cursor.next()) {
+                        close();
+                    }
+                } catch (BufferOverflowException e) {
+                    assert !wroteToPayload;
+                }
+            }
+        }
+        return wroteToPayload;
     }
 
     @Override
@@ -64,7 +84,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                 rowData = row.rowData();
                 rowCount++;
                 if (!cursor.next()) {
-                    currentRow.set(null);
                     close();
                 }
             }
@@ -82,6 +101,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     public void close()
     {
         if (!closed) {
+            currentRow.set(null);
             cursor.close();
             closed = true;
         }
@@ -95,12 +115,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     @Override
     public int getDeliveredBuffers()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int getRepeatedRows()
     {
         throw new UnsupportedOperationException();
     }
@@ -157,9 +171,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             throw new IllegalArgumentException
                 ("SCAN_FLAGS_PREFIX, SCAN_FLAGS_SINGLE_ROW and SCAN_FLAGS_DESCENDING are unsupported");
         }
-        if ((scanFlags & SCAN_FLAGS_DEEP) == 0) {
-            throw new IllegalArgumentException("SCAN_FLAGS_DEEP is required");
-        }
         if (start != null && end != null && start.getRowDefId() != end.getRowDefId()) {
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
@@ -170,7 +181,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             ? new OneTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end)
             // HAPI query root table != predicate table
             : new TwoTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end, columnBitMap);
-        rowCollector.createPlan(scanLimit);
+        boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
+        rowCollector.createPlan(scanLimit == null ? ScanLimit.NONE : scanLimit, deep);
         return rowCollector;
     }
     
@@ -182,23 +194,39 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
-    private void createPlan(ScanLimit scanLimit)
+    private void createPlan(ScanLimit scanLimit, boolean deep)
     {
         // Plan and query
         Executable query;
         Limit limit = new PersistitRowLimit(scanLimit);
-        boolean hKeyEquivalentIndex = ((IndexDef) predicateIndex.indexDef()).isHKeyEquivalent();
-        if (hKeyEquivalentIndex) {
-            PhysicalOperator groupScan = groupScan_Default(adapter, queryRootTable.getGroup().getGroupTable(), limit);
-            query = new Executable(adapter, groupScan).bind(groupScan, indexKeyRange);
-        } else {
+        boolean useIndex =
+            predicateIndex != null && !((IndexDef) predicateIndex.indexDef()).isHKeyEquivalent();
+        PhysicalOperator rootOperator;
+        PhysicalOperator restrictionOperator;
+        if (useIndex) {
             PhysicalOperator indexScan = indexScan_Default(predicateIndex);
             PhysicalOperator indexLookup = indexLookup_Default(indexScan,
                                                                predicateIndex.getTable().getGroup().getGroupTable(),
                                                                limit,
                                                                ancestorTypes());
-            query = new Executable(adapter, indexLookup).bind(indexScan, indexKeyRange);
+            rootOperator = indexLookup;
+            restrictionOperator = indexScan;
+        } else {
+            PhysicalOperator groupScan = groupScan_Default(queryRootTable.getGroup().getGroupTable(), limit);
+            rootOperator = groupScan;
+            restrictionOperator = groupScan;
         }
+        // Get rid of everything above query root table.
+        rootOperator = extract_Default(schema, rootOperator, Arrays.<RowType>asList(queryRootType));
+        // If deep flag isn't set, then get rid of everything below query root table.
+        if (!deep) {
+            Set<RowType> rootTableChildren = new HashSet<RowType>();
+            for (Join join : queryRootTable.getChildJoins()) {
+                rootTableChildren.add(schema.userTableRowType(join.getChild()));
+            }
+            rootOperator = cut_Default(schema, rootOperator, rootTableChildren);
+        }
+        query = new Executable(adapter, rootOperator).bind(restrictionOperator, indexKeyRange);
         // Executable stuff
         cursor = query.cursor();
         cursor.open();
@@ -229,6 +257,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected PersistitAdapter adapter;
     protected Schema schema;
     protected UserTable queryRootTable;
+    protected UserTableRowType queryRootType;
     protected Index predicateIndex;
     protected UserTableRowType predicateType;
     protected IndexKeyRange indexKeyRange;

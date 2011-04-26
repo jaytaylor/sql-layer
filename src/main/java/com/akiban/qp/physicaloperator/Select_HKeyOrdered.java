@@ -53,7 +53,7 @@ class Select_HKeyOrdered extends PhysicalOperator
     @Override
     public String toString() 
     {
-        return getClass().getSimpleName() + "(" + predicateRowType + ", " + predicate + ")";
+        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, predicate);
     }
 
     // GroupScan_Default interface

@@ -875,10 +875,6 @@ public class PersistitStoreRowCollector implements RowCollector {
         return deliveredBytes;
     }
 
-    public int getRepeatedRows() {
-        return repeatedRows;
-    }
-    
     public int getTableId() {
         return rowDefId;
     }

@@ -137,6 +137,6 @@ public class MultiVolumeStoreTest extends AkServerTestCase {
         }
         rc.close();
 
-        return scanCount - (int) rc.getRepeatedRows();
+        return scanCount;
     }
 }

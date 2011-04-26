@@ -58,24 +58,27 @@ class Flatten_HKeyOrdered extends PhysicalOperator
     @Override
     public String toString() 
     {
-        StringBuilder str = new StringBuilder(getClass().getSimpleName());
-        str.append("(");
-        str.append(parentType);
-        if (keepParent)
-          str.append(" KEEP");
-        if (leftJoin && rightJoin)
-          str.append(" FULL ");
-        else if (leftJoin)
-          str.append(" LEFT ");
-        else if (rightJoin)
-          str.append(" RIGHT ");
-        else
-          str.append(" INNER ");
-        str.append(childType);
-        if (keepChild)
-          str.append(" KEEP");
-        str.append(")");
-        return str.toString();
+        StringBuilder buffer = new StringBuilder(getClass().getSimpleName());
+        buffer.append("(");
+        buffer.append(parentType);
+        if (keepParent) {
+            buffer.append(" KEEP");
+        }
+        if (leftJoin && rightJoin) {
+            buffer.append(" FULL ");
+        } else if (leftJoin) {
+            buffer.append(" LEFT ");
+        } else if (rightJoin) {
+            buffer.append(" RIGHT ");
+        } else {
+            buffer.append(" INNER ");
+        }
+        buffer.append(childType);
+        if (keepChild) {
+            buffer.append(" KEEP");
+        }
+        buffer.append(")");
+        return buffer.toString();
     }
 
     // Flatten_HKeyOrdered interface

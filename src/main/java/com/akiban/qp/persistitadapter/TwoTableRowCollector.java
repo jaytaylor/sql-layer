@@ -83,6 +83,8 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
             }
             columnPosition++;
         }
+        assert queryRootTable != null;
+        queryRootType = schema.userTableRowType(queryRootTable);
         assert predicateTable != null : String.format("start: %s, end: %s", start, end);
         // predicateIndex and predicateType
         predicateIndex = null;
