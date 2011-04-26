@@ -32,7 +32,6 @@ import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.akiban.server.AkServerTestCase;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.Cursor;
 import com.akiban.server.api.dml.scan.CursorId;
@@ -40,7 +39,7 @@ import com.akiban.server.api.dml.scan.CursorIsFinishedException;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.store.RowCollector;
 
-public final class BasicDMLFunctionsTest extends AkServerTestCase {
+public final class BasicDMLFunctionsTest {
     
     private static class DummyScanner extends BasicDMLFunctions.Scanner {
         @Override
