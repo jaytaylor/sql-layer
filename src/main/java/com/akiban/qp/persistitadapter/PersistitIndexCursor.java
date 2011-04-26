@@ -114,6 +114,10 @@ class PersistitIndexCursor implements IndexCursor
         return (IndexDef) indexRowType.index().indexDef();
     }
 
+    Exchange exchange() {
+        return exchange;
+    }
+
     // Object state
 
     private final PersistitAdapter adapter;

@@ -1395,7 +1395,7 @@ public class PersistitStore implements Store {
         releaseExchange(session, iEx);
     }
 
-    boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
+    static boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
             final byte[] b, final int boffset, final int bsize) {
         if (asize != bsize) {
             return false;
@@ -1408,7 +1408,7 @@ public class PersistitStore implements Store {
         return true;
     }
 
-    boolean fieldsEqual(final RowDef rowDef, final RowData a, final RowData b,
+    public static boolean fieldsEqual(final RowDef rowDef, final RowData a, final RowData b,
             final int[] fieldIndexes) {
         for (int index = 0; index < fieldIndexes.length; index++) {
             final int fieldIndex = fieldIndexes[index];

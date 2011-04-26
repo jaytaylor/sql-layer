@@ -21,10 +21,14 @@ import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.IndexDef;
+import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
@@ -75,6 +79,15 @@ public class PersistitAdapter extends StoreAdapter
     {
         // TODO: Pool rows?
         return new PersistitIndexRow(this, indexRowType);
+    }
+
+    public RowData rowData(RowDef rowDef, Row row) {
+        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+
+        for(int i=0; i < row.rowType().nFields(); ++i) {
+            niceRow.put(i, row.field(i));
+        }
+        return niceRow.toRowData();
     }
 
     public Exchange takeExchange(GroupTable table) throws PersistitException

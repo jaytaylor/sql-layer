@@ -20,6 +20,7 @@ import com.akiban.qp.row.Row;
 public interface ModifiableCursor extends Cursor {
     /**
      * Removes from the backing structure whatever row would be returned by {@link Cursor#currentRow()}
+     * @throws CursorUpdateException if the current row couldn't be removed due to an underlying exception
      */
     void removeCurrentRow();
 
@@ -27,12 +28,15 @@ public interface ModifiableCursor extends Cursor {
      * Updates in the backing structure whatever row would be returned by {@link Cursor#currentRow()}
      * @param newRow the new row's value
      * @throws IncompatibleRowException if the given row is incompatible with the current row
+     * @throws CursorUpdateException if the current row couldn't be updated due to an underlying exception
      */
     void updateCurrentRow(Row newRow);
 
     /**
      * Adds a row to the backing structure, in some unspecified location. The location is up to the implemenation,
      * and this is <em>not</em> an insert, in that this Cursor's next row may or may not be this one.
+     * @param newRow the row to be added
+     * @throws CursorUpdateException if the given row couldn't be added due to an underlying exception
      */
     void addRow(Row newRow);
 }
