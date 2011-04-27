@@ -50,7 +50,8 @@ final class NonPropagatingPersistitIndexCursor extends PersistitIndexCursor impl
     @Override
     public void removeCurrentRow() {
         try {
-            exchange().remove();
+            boolean removed = exchange().remove();
+            assert removed : "key not removed; probably wasn't there: " + exchange().getKey();
         } catch (PersistitException e) {
             throw new CursorUpdateException(e);
         }
@@ -69,12 +70,11 @@ final class NonPropagatingPersistitIndexCursor extends PersistitIndexCursor impl
         RowDef rowDef = (RowDef) indexRowType().index().getTable().rowDef();
         RowData rowData = adapter().rowData(rowDef, newRow);
         IndexDef indexDef = (IndexDef) indexRowType().index().indexDef();
-        final Key iKey;
         try {
             persistitStore.constructHKey(session(), exchange(), rowDef, rowData, false);
             Key hKey = new Key(exchange().getKey());
-            iKey = exchange().getKey().clear();
-            PersistitStore.constructIndexKey(iKey, rowData, indexDef, hKey);
+            PersistitStore.constructIndexKey(exchange().getKey().clear(), rowData, indexDef, hKey);
+            exchange().store();
         } catch (Exception e) {
             throw new CursorUpdateException(e);
         }

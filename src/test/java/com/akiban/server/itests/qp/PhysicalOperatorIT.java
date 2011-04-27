@@ -25,9 +25,15 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.persistitadapter.PropagatingPersistitGroupCursor;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Executable;
+import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
+import com.akiban.qp.physicaloperator.UpdateCursor;
+import com.akiban.qp.physicaloperator.UpdateLambda;
+import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.OverlayingManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -101,6 +107,54 @@ public class PhysicalOperatorIT extends ApiTestBase
                           createNewRow(item, 222L, 22L)};
         writeRows(db);
         adapter = new PersistitAdapter(schema, (PersistitStore) store(), session());
+    }
+
+    @Test
+    public void basicUpdate() throws Exception {
+        adapter.setTransactional(false);
+        ModifiableCursor groupCursor = new PropagatingPersistitGroupCursor(adapter, coi);
+        Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
+            @Override
+            public boolean rowIsApplicable(ManagedRow row) {
+                return row.rowType().equals(customerRowType);
+            }
+
+            @Override
+            public ManagedRow applyUpdate(ManagedRow original) {
+                String name = (String) original.field(1);
+                name = name.toUpperCase();
+                name = name + name;
+                return OverlayingManagedRow.buildFrom(original).overlay(1, name).done();
+            }
+        });
+        int nexts = 0;
+        updateCursor.open();
+        while (updateCursor.next()) {
+            ++nexts;
+        }
+        updateCursor.close();
+        adapter.commitAllTransactions();
+        assertEquals("invocations of next()", db.length, nexts);
+
+        PhysicalOperator groupScan = groupScan_Default(adapter, coi);
+        Executable executable = new Executable(adapter, groupScan);
+        Row[] expected = new Row[]{
+                row(customerRowType, 1L, "XYZXYZ"),
+                row(orderRowType, 11L, 1L, "ori"),
+                row(itemRowType, 111L, 11L),
+                row(itemRowType, 112L, 11L),
+                row(orderRowType, 12L, 1L, "david"),
+                row(itemRowType, 121L, 12L),
+                row(itemRowType, 122L, 12L),
+                row(customerRowType, 2L, "ABCABC"),
+                row(orderRowType, 21L, 2L, "tom"),
+                row(itemRowType, 211L, 21L),
+                row(itemRowType, 212L, 21L),
+                row(orderRowType, 22L, 2L, "jack"),
+                row(itemRowType, 221L, 22L),
+                row(itemRowType, 222L, 22L)
+        };
+        compareRows(expected, executable);
     }
 
     @Test
@@ -388,7 +442,7 @@ public class PhysicalOperatorIT extends ApiTestBase
 
     private Row row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(order);
+        NiceRow niceRow = new NiceRow(tableId);
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];
@@ -408,7 +462,13 @@ public class PhysicalOperatorIT extends ApiTestBase
             List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
             while (cursor.next()) {
                 Row actualRow = cursor.currentRow();
-                assertTrue(equal(expected[count], actualRow));
+                if(!equal(expected[count], actualRow)) {
+                    String expectedString = expected[count] == null ? "null" : expected[count].toString();
+                    String actualString = actualRow == null ? "null" : actualRow.toString();
+                    assertEquals("row", expectedString, actualString);
+                    // just in case the strings are equal...
+                    fail(String.format("%s != %s", expectedString, actualString));
+                }
                 count++;
                 actualRows.add(actualRow);
             }

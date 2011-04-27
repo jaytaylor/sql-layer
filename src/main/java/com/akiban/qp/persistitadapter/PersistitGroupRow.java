@@ -73,7 +73,12 @@ public class PersistitGroupRow extends RowBase
     // For use by this package
 
     RowDef rowDef() {
-        return row.getRowDef();
+        if (row != null)
+            return row.getRowDef();
+        if (rowData != null) {
+            return adapter.rowDef(rowData.getRowDefId());
+        }
+        throw new IllegalStateException("no active row");
     }
 
     void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException

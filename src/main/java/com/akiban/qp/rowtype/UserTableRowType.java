@@ -21,6 +21,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public class UserTableRowType extends RowType
 {
@@ -73,6 +75,10 @@ public class UserTableRowType extends RowType
             indexRowTypes.add(null);
         }
         indexRowTypes.set(index.getIndexId(), indexRowType);
+    }
+
+    public Collection<IndexRowType> indexRowTypes() {
+        return Collections.unmodifiableCollection(indexRowTypes);
     }
 
     public UserTableRowType(Schema schema, UserTable table)

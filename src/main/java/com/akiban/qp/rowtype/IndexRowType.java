@@ -33,7 +33,8 @@ public class IndexRowType extends RowType
     @Override
     public int nFields()
     {
-        return ((IndexDef)index.indexDef()).indexKeyFields().length;
+        return index.getColumns().size();
+//        return ((IndexDef)index.indexDef()).indexKeyFields().length;
     }
 
     @Override

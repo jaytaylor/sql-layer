@@ -36,6 +36,7 @@ class PersistitIndexCursor implements IndexCursor
     {
         assert exchange == null;
         try {
+            row.set(adapter.newIndexRow(indexRowType));
             exchange = adapter.takeExchange(indexRowType.index()).clear().append(Key.BEFORE);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
@@ -96,7 +97,7 @@ class PersistitIndexCursor implements IndexCursor
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        this.row = new RowHolder<PersistitIndexRow>(null);
     }
 
     IndexRowType indexRowType() {

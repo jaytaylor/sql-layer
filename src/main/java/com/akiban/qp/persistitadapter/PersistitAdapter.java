@@ -32,7 +32,15 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
+import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PersistitAdapter extends StoreAdapter
 {
@@ -60,6 +68,10 @@ public class PersistitAdapter extends StoreAdapter
             throw new StoreAdapterRuntimeException(e);
         }
         return cursor;
+    }
+
+    public void setTransactional(boolean transactional) {
+        this.transactional.set(transactional);
     }
 
     // PersistitAdapter interface
@@ -92,12 +104,44 @@ public class PersistitAdapter extends StoreAdapter
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
-        return persistit.getExchange(session, (RowDef) table.rowDef(), null);
+        return transact(persistit.getExchange(session, (RowDef) table.rowDef(), null));
     }
 
     public Exchange takeExchange(Index index) throws PersistitException
     {
-        return persistit.getExchange(session, null, (IndexDef) index.indexDef());
+        return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
+    }
+
+    private Exchange transact(Exchange exchange) {
+        if (transactional.get()) {
+            synchronized (transactionsMap) {
+                if (!transactionsMap.containsKey(exchange)) {
+                    Transaction transaction = exchange.getTransaction();
+                    try {
+                        transaction.begin();
+                    } catch (PersistitException e) {
+                        throw new RuntimeException(e);
+                    }
+                    transactionsMap.put(exchange, transaction);
+                }
+            }
+        }
+        return exchange;
+    }
+
+    public void commitAllTransactions() throws PersistitException {
+        Collection<Transaction> transactions = new ArrayList<Transaction>();
+        synchronized (transactionsMap) {
+            Iterator<Transaction> transactionsIter = transactionsMap.values().iterator();
+            while (transactionsIter.hasNext()) {
+                transactions.add(transactionsIter.next());
+                transactionsIter.remove();
+            }
+        }
+        for (Transaction transaction : transactions) {
+            transaction.commit();
+            transaction.end();
+        }
     }
 
     public void returnExchange(Exchange exchange)
@@ -115,7 +159,9 @@ public class PersistitAdapter extends StoreAdapter
 
     // Object state
 
+    private final AtomicBoolean transactional = new AtomicBoolean(false);
+    private final Map<Exchange,Transaction> transactionsMap = new HashMap<Exchange, Transaction>();
     final PersistitStore persistit;
-    final Session session; // TODO should this be ThreadLocal ?
+    final Session session; // TODO
     final PersistitFilterFactory filterFactory;
 }
