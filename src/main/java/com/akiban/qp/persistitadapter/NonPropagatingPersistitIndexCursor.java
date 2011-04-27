@@ -30,9 +30,9 @@ import com.akiban.server.store.Store;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-final class NonPropogatingPersistitIndexCursor extends PersistitIndexCursor implements ModifiableCursor {
+final class NonPropagatingPersistitIndexCursor extends PersistitIndexCursor implements ModifiableCursor {
 
-    NonPropogatingPersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType) throws PersistitException {
+    NonPropagatingPersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType) throws PersistitException {
         super(adapter, indexRowType);
 
         Store store = ServiceManagerImpl.get().getStore();
