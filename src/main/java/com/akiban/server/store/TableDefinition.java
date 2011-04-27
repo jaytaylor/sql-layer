@@ -18,7 +18,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.TableName;
 
 public class TableDefinition {
-    private int tableId;
+    private final int tableId;
     private final String schemaName;
     private final String tableName;
     private final String ddl;
@@ -45,10 +45,6 @@ public class TableDefinition {
 
     public int getTableId() {
         return tableId;
-    }
-    
-    public void setTableId(int tableId) {
-        this.tableId = tableId;
     }
 
     @Override
