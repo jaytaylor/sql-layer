@@ -15,17 +15,36 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.IndexDef;
+import com.akiban.server.RowData;
+import com.akiban.server.RowDef;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
+import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
 final class NonPropogatingPersistitIndexCursor extends PersistitIndexCursor implements ModifiableCursor {
 
     NonPropogatingPersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType) throws PersistitException {
         super(adapter, indexRowType);
+
+        Store store = ServiceManagerImpl.get().getStore();
+        try {
+            persistitStore = (PersistitStore) store;
+        } catch (ClassCastException e) {
+            throw new RuntimeException(
+                    "ServiceManagerImpl's store must be PersistitStore; is "
+                            + (store == null ? "null" : store.getClass())
+            );
+        }
+        session = new SessionImpl();
     }
 
     @Override
@@ -45,6 +64,25 @@ final class NonPropogatingPersistitIndexCursor extends PersistitIndexCursor impl
 
     @Override
     public void addRow(Row newRow) {
-        throw new UnsupportedOperationException(); // TODO
+        RowDef rowDef = (RowDef) indexRowType().index().getTable().rowDef();
+        RowData rowData = adapter().rowData(rowDef, newRow);
+        IndexDef indexDef = (IndexDef) indexRowType().index().indexDef();
+        final Key iKey;
+        try {
+            persistitStore.constructHKey(session(), exchange(), rowDef, rowData, false);
+            Key hKey = new Key(exchange().getKey());
+            iKey = exchange().getKey().clear();
+            PersistitStore.constructIndexKey(iKey, rowData, indexDef, hKey);
+        } catch (Exception e) {
+            throw new CursorUpdateException(e);
+        }
+        // TODO uniqueness check needs to be merged in from trunk
     }
+
+    private Session session() {
+        return session;
+    }
+
+    private final PersistitStore persistitStore;
+    private final Session session;
 }

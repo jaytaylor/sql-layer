@@ -116,6 +116,6 @@ public class PersistitAdapter extends StoreAdapter
     // Object state
 
     final PersistitStore persistit;
-    final Session session;
+    final Session session; // TODO should this be ThreadLocal ?
     final PersistitFilterFactory filterFactory;
 }

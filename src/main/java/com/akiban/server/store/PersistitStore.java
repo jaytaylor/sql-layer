@@ -286,7 +286,7 @@ public class PersistitStore implements Store {
      * @param rowData
      * @param indexDef
      */
-    void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
+    public static void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
             Key hKey) throws PersistitException {
         IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
         iKey.clear();
@@ -396,12 +396,12 @@ public class PersistitStore implements Store {
         }
     }
 
-    void appendKeyField(final Key key, final FieldDef fieldDef,
+    static void appendKeyField(final Key key, final FieldDef fieldDef,
             final RowData rowData) {
         fieldDef.getEncoding().toKey(fieldDef, rowData, key);
     }
 
-    private void appendKeyFieldFromKey(final Key fromKey, final Key toKey,
+    static private void appendKeyFieldFromKey(final Key fromKey, final Key toKey,
             final int depth) {
         fromKey.indexTo(depth);
         int from = fromKey.getIndex();
