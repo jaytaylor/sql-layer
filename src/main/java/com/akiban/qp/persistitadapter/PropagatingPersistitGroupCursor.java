@@ -86,7 +86,7 @@ public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor 
         Row current = currentRow();
         Schema schema = current.rowType().schema();
 
-        for(NonPropogatingPersistitIndexCursor indexCursor : indexCursors) {
+        for(NonPropagatingPersistitIndexCursor indexCursor : indexCursors) {
             Index index = indexCursor.indexRowType().index();
             IndexBound singleRowBound = new IndexBound(new IndexKeyType(schema, index), newRow);
             IndexKeyRange range = new IndexKeyRange(singleRowBound, true, singleRowBound, true);
@@ -132,5 +132,5 @@ public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor 
     }
 
     private final Session session = new SessionImpl();
-    private final Collection<NonPropogatingPersistitIndexCursor> indexCursors = null;
+    private final Collection<NonPropagatingPersistitIndexCursor> indexCursors = null;
 }
