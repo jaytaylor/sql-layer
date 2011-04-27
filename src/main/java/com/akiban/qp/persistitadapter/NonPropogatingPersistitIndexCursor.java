@@ -64,6 +64,8 @@ final class NonPropogatingPersistitIndexCursor extends PersistitIndexCursor impl
 
     @Override
     public void addRow(Row newRow) {
+        // TODO need some way of validating that the newRow is of the same type as the index's main group type
+        
         RowDef rowDef = (RowDef) indexRowType().index().getTable().rowDef();
         RowData rowData = adapter().rowData(rowDef, newRow);
         IndexDef indexDef = (IndexDef) indexRowType().index().indexDef();
