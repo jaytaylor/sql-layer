@@ -17,14 +17,19 @@ package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -129,13 +134,56 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void dropSchema(Session session, String schemaName)
             throws ProtectedTableDDLException, ForeignConstraintDDLException,
-            GenericInvalidOperationException
+            UnsupportedDropException, GenericInvalidOperationException
     {
         logger.trace("dropping schema {}", schemaName);
-        try {
-            schemaManager().deleteSchemaDefinition(session, schemaName);
-        } catch (Exception e) {
-            throw new GenericInvalidOperationException(e);
+
+        // Find all groups and tables in the schema
+        Set<Group> groupsToDrop = new HashSet<Group>();
+        List<UserTable> tablesToDrop = new ArrayList<UserTable>();
+
+        final AkibanInformationSchema ais = getAIS(session);
+        for(UserTable table : ais.getUserTables().values()) {
+            final TableName tableName = table.getName();
+            if(tableName.getSchemaName().equals(schemaName)) {
+                groupsToDrop.add(table.getGroup());
+                // Cannot drop entire group of parent is not in the same schema
+                final Join parentJoin = table.getParentJoin();
+                if(parentJoin != null) {
+                    final UserTable parentTable = parentJoin.getParent();
+                    if(!parentTable.getName().getSchemaName().equals(schemaName)) {
+                        tablesToDrop.add(table);
+                    }
+                }
+                // All children must be in the same schema
+                for(Join childJoin : table.getChildJoins()) {
+                    final TableName childName = childJoin.getChild().getName();
+                    if(!childName.getSchemaName().equals(schemaName)) {
+                        throw new ForeignConstraintDDLException(String.format(
+                                "Cannot drop schema [%s], table [%s] has child table [%s]",
+                                schemaName, tableName, childName));
+                    }
+                }
+            }
+        }
+        // Remove groups that contain tables in multiple schemas
+        for(UserTable table : tablesToDrop) {
+            groupsToDrop.remove(table.getGroup());
+        }
+        // Sort table IDs so higher (i.e. children) are first
+        Collections.sort(tablesToDrop, new Comparator<UserTable>() {
+            @Override
+            public int compare(UserTable o1, UserTable o2) {
+
+                return o2.getTableId().compareTo(o1.getTableId());
+            }
+        });
+        // Do the actual dropping
+        for(UserTable table : tablesToDrop) {
+            dropTable(session, table.getName());
+        }
+        for(Group group : groupsToDrop) {
+            dropGroup(session, group.getName());
         }
     }
 
