@@ -72,21 +72,6 @@ public class SchemaDefToAis {
         return ais;
     }
 
-    private void computeColumnMapAndPositions() {
-        for (final CName groupName : schemaDef.getGroupMap().keySet()) {
-            int gposition = 0;
-            final List<CName> tableList = depthFirstSortedUserTables(groupName);
-            for (final CName tableName : tableList) {
-                final UserTableDef utdef = schemaDef.getUserTableMap().get(
-                        tableName);
-                List<ColumnDef> columns = utdef.columns;
-                for (final ColumnDef def : columns) {
-                    def.gposition = gposition++;
-                }
-            }
-        }
-    }
-
     /**
      * Return List of names of user tables in a specified group sorted by
      * depth-first traversal of the parent-child relationships between those
@@ -131,57 +116,41 @@ public class SchemaDefToAis {
     }
 
     /**
-     * Hack to convert annotated FK constraints into group relationships. For
-     * now this "supplements" the group syntax in DDLSource.
+     * Converted Akiban FKs into group relationships.
      */
     private void addImpliedGroups() {
         final Set<CName> tablesInGroups = new HashSet<CName>();
-        for (final Map.Entry<CName, SortedSet<CName>> entry : schemaDef
-                .getGroupMap().entrySet()) {
-            tablesInGroups.addAll(entry.getValue());
+        for (SortedSet<CName> tables : schemaDef.getGroupMap().values()) {
+            tablesInGroups.addAll(tables);
         }
-
         for (final CName userTableName : schemaDef.getUserTableMap().keySet()) {
-
-            final UserTableDef utDef = addImpliedGroupTable(tablesInGroups,
-                    userTableName);
+            final UserTableDef utDef = addImpliedGroupTable(tablesInGroups, userTableName);
             if (utDef == null) {
-                LOG.warn("No Group for table " + userTableName);
+                LOG.warn("No Group for table {}", userTableName);
             }
         }
     }
 
-    private UserTableDef addImpliedGroupTable(final Set<CName> tablesInGroups,
-            final CName userTableName) {
+    private UserTableDef addImpliedGroupTable(final Set<CName> tablesInGroups, final CName userTableName) {
         final UserTableDef utDef = schemaDef.getUserTableMap().get(userTableName);
-        if (utDef != null && utDef.isAkibanTable()
-                && !tablesInGroups.contains(userTableName)) {
+        if (utDef != null && utDef.isAkibanTable() && !tablesInGroups.contains(userTableName)) {
+            tablesInGroups.add(userTableName);
             List<ReferenceDef> joinRefs = utDef.getAkibanJoinRefs();
             if (joinRefs.isEmpty()) {
-                // No FK: this is a new root table so create a new Group
-                // By default the group has the same name is its root
-                // user table.
-                final CName groupName = userTableName;
+                // No joins, new root table. Create a new Group named as the table.
+                utDef.groupName = userTableName;
                 final SortedSet<CName> members = new TreeSet<CName>();
-                schemaDef.getGroupMap().put(groupName, members);
-                utDef.groupName = groupName;
                 members.add(userTableName);
+                schemaDef.getGroupMap().put(utDef.groupName, members);
             } else {
                 for (ReferenceDef refDef : joinRefs) {
                     utDef.parent = addImpliedGroupTable(tablesInGroups, refDef.table);
                     if (utDef.parent != null) {
                         utDef.groupName = utDef.parent.groupName;
-                        for (SchemaDef.IndexColumnDef childColumn : refDef.index.columns) {
-                            utDef.childJoinColumns.add(childColumn.columnName);
-                        }
-                        utDef.parentJoinColumns.addAll(refDef.columns);
-                        final SortedSet<CName> members = schemaDef.getGroupMap()
-                                .get(utDef.groupName);
-                        members.add(userTableName);
+                        schemaDef.getGroupMap().get(utDef.groupName).add(userTableName);
                     }
                 }
             }
-            tablesInGroups.add(userTableName);
         }
         return utDef;
     }
@@ -251,11 +220,9 @@ public class SchemaDefToAis {
         }
     }
 
-    private AkibanInformationSchema buildAISFromBuilder(final boolean akibandbOnly)
-            throws Exception {
+    private AkibanInformationSchema buildAISFromBuilder(final boolean akibandbOnly) throws Exception {
         removeNonAkibanForeignKeys();
         addImpliedGroups();
-        computeColumnMapAndPositions();
 
         AISBuilder builder = new AISBuilder();
         // Use 1 as default offset because the AAM uses tableID 0 as 
@@ -281,19 +248,10 @@ public class SchemaDefToAis {
             ut.setCharset(utDef.charset);
             ut.setCollation(utDef.collate);
 
-            // auto-increment
-            if (utDef.getAutoIncrementColumn() != null
-                    && utDef.getAutoIncrementColumn().defaultAutoIncrement() != null) {
-                ut.setInitialAutoIncrementValue(utDef.getAutoIncrementColumn()
-                        .defaultAutoIncrement());
-            }
-
             // columns
-            List<ColumnDef> columns = utDef.columns;
-            for (ColumnDef def : columns) {
+            for (ColumnDef def : utDef.columns) {
                 Type type = ais.getType(def.typeName);
-                Column column = Column
-                        .create(ut, def.name, def.uposition, type);
+                Column column = Column.create(ut, def.name, def.uposition, type);
                 column.setNullable(def.nullable);
                 column.setAutoIncrement(def.autoincrement != null);
                 column.setTypeParameter1(longValue(def.typeParam1));
@@ -407,8 +365,9 @@ public class SchemaDefToAis {
                 }
             }
         }
-        if (!schemaDef.getGroupMap().isEmpty())
+        if (!schemaDef.getGroupMap().isEmpty()) {
             builder.groupingIsComplete();
+        }
 
         return builder.akibanInformationSchema();
     }
