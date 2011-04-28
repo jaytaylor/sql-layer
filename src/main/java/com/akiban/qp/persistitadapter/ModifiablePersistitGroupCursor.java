@@ -90,6 +90,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
 
     private void updateGroupTable(Row newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
+        currentRow.managedRow().share();
         RowDef rowDef = currentRow.managedRow().rowDef();
         RowData rowData = adapter().rowData(rowDef, newRow);
         try {
