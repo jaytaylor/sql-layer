@@ -39,9 +39,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor implements ModifiableCursor {
+public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor implements ModifiableCursor {
 
-    public PropagatingPersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable) throws PersistitException {
+    public ModifiablePersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable) throws PersistitException {
         super(adapter, groupTable);
     }
 

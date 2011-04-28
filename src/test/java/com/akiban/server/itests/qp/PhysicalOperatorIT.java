@@ -22,10 +22,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.qp.persistitadapter.ModifiablePersistitGroupCursor;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
-import com.akiban.qp.persistitadapter.PropagatingPersistitGroupCursor;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Executable;
 import com.akiban.qp.physicaloperator.ModifiableCursor;
@@ -39,15 +38,11 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.RowCollector;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -112,7 +107,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     @Test
     public void basicUpdate() throws Exception {
         adapter.setTransactional(false);
-        ModifiableCursor groupCursor = new PropagatingPersistitGroupCursor(adapter, coi);
+        ModifiableCursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi);
         Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
             @Override
             public boolean rowIsApplicable(ManagedRow row) {
