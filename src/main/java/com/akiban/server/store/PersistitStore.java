@@ -1365,7 +1365,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    void updateIndex(final Session session, final IndexDef indexDef,
+    public void updateIndex(final Session session, final IndexDef indexDef,
             final RowDef rowDef, final RowData oldRowData,
             final RowData newRowData, final Key hkey) throws PersistitException {
 

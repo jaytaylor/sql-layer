@@ -16,18 +16,12 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.qp.expression.API;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
-import com.akiban.qp.rowtype.IndexKeyType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
@@ -38,6 +32,7 @@ import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.persistit.exception.PersistitException;
+import com.persistit.Key;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -93,64 +88,53 @@ public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor 
 
     private void updateIndexes(Row newRow) {
         Row current = currentRow();
-        Schema schema = current.rowType().schema();
+        final UserTableRowType rowType = userTableRowType(current);
+
+        RowDef rowDef = (RowDef) rowType.userTable().rowDef();
+        exchange().clear();
 
         try {
-            for(NonPropagatingPersistitIndexCursor indexCursor : indexCursors(current.rowType())) {
-                Index index = indexCursor.indexRowType().index();
-                if (((IndexDef)index.indexDef()).isHKeyEquivalent()) {
-                    continue;
-                }
-                IndexBound singleRowBound = singleRowBound(schema, index, current);
-                IndexKeyRange range = new IndexKeyRange(singleRowBound, true, singleRowBound, true);
-                indexCursor.bind(range);
-                indexCursor.open();
-                boolean indexNext = indexCursor.next();
-                assert indexNext;
-                indexCursor.updateCurrentRow(newRow);
-                assert ! indexCursor.next();
-                indexCursor.close();
+            adapter().constructHKey(exchange(), rowDef, adapter().rowData(rowDef, current));
+        } catch (Exception e) {
+            throw new CursorUpdateException(e);
+        }
+        Key hKey = exchange().getKey();
+
+        try {
+            for(IndexUpdater indexUpdater : indexCursors(rowType)) {
+                indexUpdater.update(current, hKey, newRow);
             }
         } catch (PersistitException e) {
             throw new CursorUpdateException(e);
         }
     }
 
-    private IndexBound singleRowBound(Schema schema, Index index, Row groupRow)
-    {
-        return API.indexBound(new IndexKeyType(schema, index), groupRow);
-//        IndexRowType indexRowType = schema.indexRowType(index);
-//        List<Object> indexFields = new ArrayList<Object>();
-//        for (IndexColumn indexColumn : index.getColumns()) {
-//            int groupRowField = indexColumn.getColumn().getPosition();
-//            Object field = groupRow.field(groupRowField);
-//            indexFields.add(field);
-//        }
-//        Row indexRow = new AdHocRow(indexRowType, indexFields);
-//        return new IndexBound(new IndexKeyType(schema, index), indexRow);
-    }
-
-    private Collection<NonPropagatingPersistitIndexCursor> indexCursors(RowType rowType) throws PersistitException {
-        Collection<NonPropagatingPersistitIndexCursor> ret = indexCursorsMap.get(rowType);
-        if (ret != null) {
-            return ret;
-        }
-
-        final UserTableRowType utRowType;
+    private UserTableRowType userTableRowType(Row row) {
+        RowType rowType = row.rowType();
         try {
-            utRowType = (UserTableRowType) rowType;
+            return (UserTableRowType) rowType;
         } catch (ClassCastException e) {
             Object type = rowType == null ? "null" : rowType.getClass();
             throw new UnsupportedOperationException("require UserTableRowType; found " + type);
         }
-        ret = new ArrayList<NonPropagatingPersistitIndexCursor>();
+    }
+
+    private Collection<IndexUpdater> indexCursors(UserTableRowType utRowType) throws PersistitException {
+        Collection<IndexUpdater> ret = indexCursorsMap.get(utRowType);
+        if (ret != null) {
+            return ret;
+        }
+        ret = new ArrayList<IndexUpdater>();
         for (IndexRowType indexRowType : utRowType.indexRowTypes()) {
             if (indexRowType == null) {
                 continue;
             }
-            ret.add(new NonPropagatingPersistitIndexCursor(adapter(), indexRowType));
+            if (((IndexDef)indexRowType.index().indexDef()).isHKeyEquivalent()) {
+                continue;
+            }
+            ret.add(new IndexUpdater(adapter(), indexRowType));
         }
-        indexCursorsMap.put(rowType, ret);
+        indexCursorsMap.put(utRowType, ret);
         return ret;
     }
 
@@ -181,5 +165,23 @@ public final class PropagatingPersistitGroupCursor extends PersistitGroupCursor 
     }
 
     private final Session session = new SessionImpl();
-    private final Map<RowType,Collection<NonPropagatingPersistitIndexCursor>> indexCursorsMap = new HashMap<RowType, Collection<NonPropagatingPersistitIndexCursor>>();
+    private final Map<UserTableRowType,Collection<IndexUpdater>> indexCursorsMap = new HashMap<UserTableRowType, Collection<IndexUpdater>>();
+
+    private static class IndexUpdater {
+        private final PersistitAdapter adapter;
+        private final IndexDef indexDef;
+
+        public IndexUpdater(PersistitAdapter adapter, IndexRowType indexRowType) {
+            this.adapter = adapter;
+            this.indexDef = (IndexDef) indexRowType.index().indexDef();
+        }
+
+        public void update(Row oldRow, Key hKey, Row newRow) {
+            try {
+                adapter.updateIndex(indexDef, oldRow, newRow, hKey);
+            } catch (PersistitException e) {
+                throw new CursorUpdateException(e);
+            }
+        }
+    }
 }

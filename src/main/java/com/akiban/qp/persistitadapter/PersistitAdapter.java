@@ -25,6 +25,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.IndexDef;
+import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -32,6 +33,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
+import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
@@ -111,6 +113,22 @@ public class PersistitAdapter extends StoreAdapter
     {
         return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
     }
+
+    public void constructHKey(Exchange hEx, RowDef rowDef, RowData rowData) throws InvalidOperationException, PersistitException {
+        persistit.constructHKey(session, hEx, rowDef, rowData, false);
+    }
+
+    public void updateIndex(IndexDef indexDef, Row oldRow, Row newRow, Key hKey) throws PersistitException {
+        RowDef rowDef = indexDef.getRowDef();
+        RowData oldRowData = rowData(rowDef, oldRow);
+        RowData newRowData = rowData(rowDef, newRow);
+        persistit.updateIndex(session, indexDef, rowDef, oldRowData, newRowData, hKey);
+    }
+    /*
+    (final Session session, final IndexDef indexDef,
+            final RowDef rowDef, final RowData oldRowData,
+            final RowData newRowData, final Key hkey)
+     */
 
     private Exchange transact(Exchange exchange) {
         if (transactional.get()) {
