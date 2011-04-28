@@ -86,16 +86,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
 
-    static final String BY_ID = "byId";
-
     static final String BY_NAME = "byName";
 
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStoreSchemaManager.class.getName());
 
     private final static String CREATE_SCHEMA_IF_NOT_EXISTS = "create schema if not exists ";
-
-    private final static String SEMI_COLON = ";";
 
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
 
@@ -209,33 +205,25 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
             transaction.begin();
             try {
-                if (ex.clear().append(BY_NAME).append(schemaName)
-                        .append(tableName).append(Key.AFTER).previous()) {
-                    final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                    ex.clear().append(BY_ID).append(tableId).fetch();
-                    final String previousValue = ex.getValue().getString();
-                    if (canonical.equals(previousValue)) {
-                        return tableNameFull;
-                    } else if (useOldId == true) {
-                        ex.getValue().put(canonical);
-                        ex.clear().append(BY_ID).append(tableId).store();
-                    }
-                } else {
-                    final int tableId;
-                    if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
-                        tableId = ex.getKey().indexTo(1).decodeInt() + 1;
-                    } else {
-                        tableId = 1;
-                    }
-                    ex.getValue().put(canonical);
-                    ex.clear().append(BY_ID).append(tableId).store();
-                    ex.getValue().putNull();
-                    ex.clear().append(BY_NAME).append(schemaName)
-                            .append(tableName).append(tableId).store();
+                ex.clear();
+                ex.getKey().append("ID_COUNTER");
+                int tableId = 1;
+                if(ex.isValueDefined()) {
+                    tableId = ex.fetch().getValue().getInt();
                 }
+                ex.getValue().put(tableId + 1);
+                ex.store();
+
+                ex.clear();
+                ex.getKey().append(BY_NAME).append(schemaName).append(tableName);
+                assert !ex.hasChildren() : tableNameFull + "exists";
+                ex.append(tableId);
+                ex.getValue().put(canonical);
+                ex.store();
 
                 final AkibanInformationSchema newAIS = constructAIS(session);
-                validateIndexSizes(newAIS.getUserTable(tableNameFull));
+                final UserTable newTable = newAIS.getUserTable(tableNameFull);
+                validateIndexSizes(newTable);
 
                 transaction.commit(new DefaultCommitListener() {
 
@@ -332,52 +320,40 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private void deleteTableDefinitionList(final Session session,
-            final List<TableName> tables) throws Exception {
+    private void deleteTableDefinitionList(final Session session, final List<TableName> tables) throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
 
         for (final TableName tn : tables) {
             final String schemaName = tn.getSchemaName();
             final String tableName = tn.getTableName();
-            Exchange ex1 = null;
-            Exchange ex2 = null;
-            Exchange ex3 = null;
+            Exchange schemaExchange = null;
+            Exchange statusExchange = null;
             try {
-                ex1 = treeService.getExchange(session,
-                        treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-                ex2 = treeService.getExchange(session,
-                        treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-                ex3 = treeService.getExchange(session,
-                        treeService.treeLink(schemaName, STATUS_TREE_NAME));
-                ex1.clear().append(BY_NAME).append(schemaName)
-                        .append(tableName);
-                final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
+                schemaExchange = treeService.getExchange(session, treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
+                statusExchange = treeService.getExchange(session, treeService.treeLink(schemaName, STATUS_TREE_NAME));
+                schemaExchange.clear().append(BY_NAME).append(schemaName).append(tableName);
+                final KeyFilter keyFilter = new KeyFilter(schemaExchange.getKey(), 4, 4);
 
-                ex1.clear();
-                while (ex1.next(keyFilter)) {
-                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
-                    ex2.clear().append(BY_ID).append(tableId).remove();
+                schemaExchange.clear();
+                while (schemaExchange.next(keyFilter)) {
+                    final int tableId = schemaExchange.getKey().indexTo(-1).decodeInt();
                     final RowDef rowDef = getRowDefCache().rowDef(tableId);
                     if (rowDef != null) {
                         rowDef.setDeleted(true);
                     }
-                    ex1.remove();
-                    ex3.clear().append(tableId).remove();
+                    schemaExchange.remove();
+                    statusExchange.clear().append(tableId).remove();
                     serviceManager.getTreeService().getTableStatusCache().drop(tableId);
                 }
             } catch (PersistitException e) {
-                LOG.error("Failed to delete table " + schemaName + "."
-                        + tableName, e);
+                LOG.error("Failed to delete table " + schemaName + "." + tableName, e);
                 throw e;
             } finally {
-                if (ex1 != null) {
-                    treeService.releaseExchange(session, ex1);
+                if (schemaExchange != null) {
+                    treeService.releaseExchange(session, schemaExchange);
                 }
-                if (ex2 != null) {
-                    treeService.releaseExchange(session, ex2);
-                }
-                if (ex3 != null) {
-                    treeService.releaseExchange(session, ex3);
+                if (statusExchange != null) {
+                    treeService.releaseExchange(session, statusExchange);
                 }
             }
         }
@@ -410,7 +386,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
                 final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                ex.clear().append(BY_ID).append(tableId).fetch();
                 return new TableDefinition(tableId, schemaName, tableName, ex
                         .getValue().getString());
             } else {
@@ -441,26 +416,22 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             return result;
         }
         final TreeService treeService = serviceManager.getTreeService();
-        final Exchange ex1 = treeService.getExchange(session,
-                treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-        final Exchange ex2 = treeService.getExchange(session,
-                treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-        ex1.clear().append(BY_NAME).append(schemaName).append(Key.BEFORE);
+        final Exchange ex = treeService.getExchange(session,
+                                                    treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
+        ex.clear().append(BY_NAME).append(schemaName).append(Key.BEFORE);
         try {
-            while (ex1.next()) {
-                final String tableName = ex1.getKey().indexTo(-1)
-                        .decodeString();
-                if (ex1.append(Key.AFTER).previous()) {
-                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
-                    ex2.clear().append(BY_ID).append(tableId).fetch();
-                    result.put(tableName, new TableDefinition(tableId,
-                            schemaName, tableName, ex2.getValue().getString()));
+            while (ex.next()) {
+                final String tableName = ex.getKey().indexTo(-1).decodeString();
+                if (ex.append(Key.AFTER).previous()) {
+                    final int tableId = ex.getKey().indexTo(-1).decodeInt();
+                    final String ddl = ex.fetch().getValue().getString();
+                    result.put(tableName, new TableDefinition(tableId, schemaName, tableName, ddl));
                 }
-                ex1.cut();
+                ex.cut();
             }
             return result;
         } finally {
-            treeService.releaseExchange(session, ex1);
+            treeService.releaseExchange(session, ex);
         }
     }
 
