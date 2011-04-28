@@ -107,11 +107,13 @@ public interface DDLFunctions {
      * @throws NullPointerException if schemaName is null
      * @throws ProtectedTableDDLException if the given schema contains protected tables
      * @throws ForeignConstraintDDLException if dropping this schema would create a foreign key violation
+     * @throws UnsupportedDropException if dropping a table the schema is unsupported for any other reason
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void dropSchema(Session session, String schemaName)
             throws ProtectedTableDDLException,
             ForeignConstraintDDLException,
+            UnsupportedDropException,
             GenericInvalidOperationException;
 
      /**
