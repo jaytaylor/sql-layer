@@ -461,7 +461,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private synchronized AkibanInformationSchema constructAIS(
             final Session session) throws Exception {
         AkibanInformationSchema newAis;
-        final StringBuilder sb = new StringBuilder();
         final List<String> ddlList = new ArrayList<String>();
         final Map<TableName, Integer> idMap = assembleSchema(session, ddlList, true,
                                                              false, false);
@@ -699,10 +698,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    static long now() {
-        return System.nanoTime() / 1000L;
-    }
-
     private void commitAIS(final AkibanInformationSchema newAis,
             final long timestamp) {
         final RowDefCache rowDefCache = getRowDefCache();
@@ -730,19 +725,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     String.format("[%s] %s: %s", defaultSchemaName,
                             e1.getMessage(), canonical), e1);
         }
-    }
-
-    private SchemaDef.CName cname(final String canonical)
-            throws InvalidOperationException {
-        final SchemaDef.UserTableDef def = parseTableStatement(null, canonical);
-        final SchemaDef.CName cname = def.getCName();
-        if (cname == null || cname.getSchema() == null
-                || cname.getName() == null) {
-            throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
-                    "[%s] %s: %s", cname.getSchema(),
-                    "Null schema or table name", canonical);
-        }
-        return cname;
     }
 
     private void complainAboutIndexDataType(String schema, String table,
