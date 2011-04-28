@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursor;
+import com.akiban.qp.physicaloperator.ModifiableCursorBackingStore;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -41,6 +42,20 @@ import java.util.Map;
 
 public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor implements ModifiableCursor {
 
+    private final ModifiableCursorBackingStore backingStore = new ModifiableCursorBackingStore() {
+        @Override
+        public void addRow(Row newRow) {
+            // for now, use PS
+            RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
+            Store store = ServiceManagerImpl.get().getStore();
+            try {
+                store.writeRow(session, currentRow.managedRow().rowData());
+            } catch (Exception e) {
+                throw new CursorUpdateException(e);
+            }
+        }
+    };
+
     public ModifiablePersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable) throws PersistitException {
         super(adapter, groupTable);
     }
@@ -54,7 +69,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
 
         if (updateWouldChangeHKey(rowDef, currentRowData, newRowData)) {
             removeCurrentRow();
-            addRow(newRow);
+            backingStore().addRow(newRow);
         } else {
             updateIndexes(newRow);
             updateGroupTable(newRow);
@@ -139,15 +154,8 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
     }
 
     @Override
-    public void addRow(Row newRow) {
-        // for now, use PS
-        RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
-        Store store = ServiceManagerImpl.get().getStore();
-        try {
-            store.writeRow(session, currentRow.managedRow().rowData());
-        } catch (Exception e) {
-            throw new CursorUpdateException(e);
-        }
+    public ModifiableCursorBackingStore backingStore() {
+        return backingStore;
     }
 
     private boolean updateWouldChangeHKey(RowDef rowDef, RowData oldRow, RowData newRow) {

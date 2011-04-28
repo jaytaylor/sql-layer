@@ -32,11 +32,10 @@ public interface ModifiableCursor extends Cursor {
      */
     void updateCurrentRow(Row newRow);
 
+
     /**
-     * Adds a row to the backing structure, in some unspecified location. The location is up to the implemenation,
-     * and this is <em>not</em> an insert, in that this Cursor's next row may or may not be this one.
-     * @param newRow the row to be added
-     * @throws CursorUpdateException if the given row couldn't be added due to an underlying exception
+     * Gets the store that backs this modifiable cursor.
+     * @return the cursor's backing store
      */
-    void addRow(Row newRow);
+    ModifiableCursorBackingStore backingStore();
 }
