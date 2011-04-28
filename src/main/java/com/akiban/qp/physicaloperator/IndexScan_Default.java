@@ -40,9 +40,10 @@ class IndexScan_Default extends PhysicalOperator
 
     // IndexScan_Default interface
 
-    public IndexScan_Default(Index index)
+    public IndexScan_Default(Index index, boolean reverse)
     {
         this.index = index;
+        this.reverse = reverse;
     }
 
     // Class state
@@ -52,6 +53,7 @@ class IndexScan_Default extends PhysicalOperator
     // Object state
 
     private final Index index;
+    private final boolean reverse;
 
     // Inner classes
 
@@ -100,7 +102,7 @@ class IndexScan_Default extends PhysicalOperator
         Execution(StoreAdapter adapter)
         {
             super(adapter);
-            this.cursor = adapter.newIndexCursor(index);
+            this.cursor = adapter.newIndexCursor(index, reverse);
         }
 
         // Object state

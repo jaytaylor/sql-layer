@@ -16,6 +16,7 @@
 package com.akiban.server.service.memcache.outputter.jsonoutputter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowData;
 
@@ -40,16 +41,37 @@ public class AncestorDiscoveryIterator implements Iterator<RowData>
             // for the predicate, with each row of the predicate type followed by hkey ordered descendents.
             // The divergence position is only relevant for the hkey-ordered runs of the input. So for rows
             // shallower than the predicate table, set divergence position to 0.
-            int divergencePosition =
-                ais.getUserTable(current.getRowDefId()).getDepth() < predicateTableDepth || previous == null
-                ? 0
-                : current.hKey().firstUniqueSegmentDepth(previous.hKey());
-            current.differsFromPredecessorAtKeySegment(divergencePosition);
+            if (current.differsFromPredecessorAtKeySegment() == -1) {
+                int divergencePosition;
+                if (previous == null) {
+                    divergencePosition = 0;
+                } else {
+                    UserTable table = ais.getUserTable(current.getRowDefId());
+                    if (!hKeyOrdered && table.getDepth() < predicateTableDepth) {
+                        if (table.isRoot()) {
+                            divergencePosition = 0;
+                        } else {
+                            HKey hKey = table.parentTable().hKey();
+                            divergencePosition = hKey.nColumns() + hKey.segments().size();
+                        }
+                    } else {
+                        divergencePosition = current.hKey().firstUniqueSegmentDepth(previous.hKey());
+                    }
+                }
+                current.differsFromPredecessorAtKeySegment(divergencePosition);
+            } // else: differsFromPredecessorAtKeySegment has already been set, presumably as part of a test.
             previous = current;
             current = input.hasNext() ? input.next() : null;
         } else {
             previous = null;
         }
+/*
+        if (previous == null) {
+            System.out.println("ADI: null");
+        } else {
+            System.out.println(String.format("ADI: %s: %s", previous.differsFromPredecessorAtKeySegment(), previous));
+        }
+*/
         return previous;
     }
 
@@ -61,10 +83,11 @@ public class AncestorDiscoveryIterator implements Iterator<RowData>
 
     // AncestorDiscoveryIterator interface
 
-    AncestorDiscoveryIterator(UserTable predicateTable, Iterator<RowData> input)
+    AncestorDiscoveryIterator(UserTable predicateTable, boolean hKeyOrdered, Iterator<RowData> input)
     {
         this.ais = predicateTable.getAIS();
         this.predicateTableDepth = predicateTable.getDepth();
+        this.hKeyOrdered = hKeyOrdered;
         this.input = input;
         if (input.hasNext()) {
             this.current = input.next();
@@ -75,6 +98,7 @@ public class AncestorDiscoveryIterator implements Iterator<RowData>
 
     private final AkibanInformationSchema ais;
     private final int predicateTableDepth;
+    private final boolean hKeyOrdered;
     private final Iterator<RowData> input;
     private RowData previous;
     private RowData current;

@@ -15,6 +15,7 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexKeyType;
 
@@ -30,9 +31,9 @@ public class API
         return new Field(position);
     }
 
-    public static IndexBound indexBound(IndexKeyType indexKeyType, Row row)
+    public static IndexBound indexBound(UserTable table, Row row)
     {
-        return new IndexBound(indexKeyType, row);
+        return new IndexBound(table, row);
     }
 
     public static IndexKeyRange indexKeyRange(IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)

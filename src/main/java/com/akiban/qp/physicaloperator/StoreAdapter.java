@@ -21,9 +21,19 @@ import com.akiban.qp.rowtype.Schema;
 
 public abstract class StoreAdapter
 {
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable);
+    public final GroupCursor newGroupCursor(GroupTable groupTable)
+    {
+        return newGroupCursor(groupTable, false);
+    }
 
-    public abstract IndexCursor newIndexCursor(Index index);
+    public abstract GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse);
+
+    public final IndexCursor newIndexCursor(Index index)
+    {
+        return newIndexCursor(index, false);
+    }
+
+    public abstract IndexCursor newIndexCursor(Index index, boolean reverse);
 
     public final Schema schema()
     {

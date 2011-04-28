@@ -44,12 +44,12 @@ public class API
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable)
     {
-        return groupScan_Default(groupTable, NO_LIMIT);
+        return groupScan_Default(groupTable, false, NO_LIMIT);
     }
 
-    public static PhysicalOperator groupScan_Default(GroupTable groupTable, Limit limit)
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
     {
-        return new GroupScan_Default(groupTable, limit);
+        return new GroupScan_Default(groupTable, reverse, limit);
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
@@ -69,7 +69,12 @@ public class API
 
     public static PhysicalOperator indexScan_Default(Index index)
     {
-        return new IndexScan_Default(index);
+        return indexScan_Default(index, false);
+    }
+
+    public static PhysicalOperator indexScan_Default(Index index, boolean reverse)
+    {
+        return new IndexScan_Default(index, reverse);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,

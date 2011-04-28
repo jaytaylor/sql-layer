@@ -67,7 +67,7 @@ public final class AkibanCommandHandlerTest {
             assertEquals("predicate value", expectedValue, predicate.getValue());
 
             try {
-                outputter.output(null, null, outputStream);
+                outputter.output(null, true, null, outputStream);
             } catch (IOException e) {
                 throw new RuntimeException("unexpected", e);
             }
@@ -90,7 +90,9 @@ public final class AkibanCommandHandlerTest {
         }
 
         @Override
-        public void output(HapiProcessedGetRequest request, Iterable<RowData> rows,
+        public void output(HapiProcessedGetRequest request,
+                           boolean hKeyOrdered,
+                           Iterable<RowData> rows,
                            OutputStream outputStream) throws IOException
         {
             outputStream.write( string.getBytes(charset) );

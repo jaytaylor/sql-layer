@@ -18,10 +18,8 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.RowDef;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.Math.max;
 
@@ -73,6 +71,17 @@ public class Schema
     public int maxTypeId()
     {
         return rowTypes.size() - 1;
+    }
+
+    public Set<RowType> userTableRowTypes()
+    {
+        Set<RowType> userTableRowTypes = new HashSet<RowType>();
+        for (RowType rowType : rowTypes.values()) {
+            if (rowType instanceof UserTableRowType) {
+                userTableRowTypes.add(rowType);
+            }
+        }
+        return userTableRowTypes;
     }
 
     // For use by this package

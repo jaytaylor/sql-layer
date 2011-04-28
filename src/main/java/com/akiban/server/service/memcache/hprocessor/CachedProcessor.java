@@ -121,7 +121,10 @@ public class CachedProcessor implements HapiProcessor, JmxManageable {
         private HapiProcessedGetRequest cachedRequest;
 
         @Override
-        public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream ignored) {
+        public void output(HapiProcessedGetRequest request,
+                           boolean hKeyOrdered,
+                           Iterable<RowData> rows,
+                           OutputStream ignored) {
             synchronized (MONITOR) {
                 assert this.cachedRequest == null : "already have a cached request";
                 assert this.cachedRows == null : "already have cached rows: " + this.cachedRows.size();
@@ -154,7 +157,7 @@ public class CachedProcessor implements HapiProcessor, JmxManageable {
                 rows = this.cachedRows;
                 request = this.cachedRequest;
             }
-            toOutput.output(request, rows, outputStream);
+            toOutput.output(request, true, rows, outputStream);
         }
     }
 }

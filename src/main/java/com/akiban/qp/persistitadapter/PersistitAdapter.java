@@ -35,11 +35,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable)
+    public GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse)
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable);
+            cursor = new PersistitGroupCursor(this, groupTable, reverse);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -47,11 +47,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public IndexCursor newIndexCursor(Index index)
+    public IndexCursor newIndexCursor(Index index, boolean reverse)
     {
         IndexCursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, schema.indexRowType(index));
+            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }

@@ -116,7 +116,7 @@ public class Fetchrows implements HapiProcessor, JmxManageable {
         }
 
         try {
-            outputter.output(new DefaultProcessedRequest(request, session), list, outputStream);
+            outputter.output(new DefaultProcessedRequest(request, session), true, list, outputStream);
         } catch (IOException e) {
             throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
         }

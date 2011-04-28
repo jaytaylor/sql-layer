@@ -248,6 +248,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             }
 
             @Override
+            public void dropScanLimit() {
+            }
+
+            @Override
             public boolean scanAllColumns() {
                 return true;
             }
@@ -266,6 +270,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                                                                 request.getEnd(),
                                                                 request.getColumnBitMap(),
                                                                 request.getScanLimit());
+            if (rowCollector.checksLimit()) {
+                request.dropScanLimit();
+            }
             return rowCollector;
         } catch (RowDefNotFoundException e) {
             throw new NoSuchTableException(request.getTableId(), e);

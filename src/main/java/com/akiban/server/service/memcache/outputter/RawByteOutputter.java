@@ -32,7 +32,10 @@ public final class RawByteOutputter implements HapiOutputter {
     private RawByteOutputter() {}
 
     @Override
-    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream) throws IOException {
+    public void output(HapiProcessedGetRequest request,
+                       boolean hKeyOrdered,
+                       Iterable<RowData> rows,
+                       OutputStream outputStream) throws IOException {
         for(RowData data : rows) {
             outputStream.write(data.getBytes(), data.getRowStart(), data.getRowSize());
         }

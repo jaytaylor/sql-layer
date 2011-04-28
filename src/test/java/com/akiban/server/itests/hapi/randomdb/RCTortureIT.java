@@ -39,9 +39,11 @@ public class RCTortureIT extends ApiTestBase
     @Test
     public void testRepeatedly() throws Exception
     {
-        for (trial= 0; trial < TRIALS; trial++) {
-            test();
-            dropAllTables();
+        for (trial = 0; trial < TRIALS; trial++) {
+            if (DEBUG_TRIAL < 0 || trial == DEBUG_TRIAL) {
+                test();
+                dropAllTables();
+            }
         }
     }
 
@@ -119,30 +121,30 @@ public class RCTortureIT extends ApiTestBase
 
     private void runQueries() throws Exception
     {
-        if (false) { // trial == DEBUG_TRIAL) {
-            runQuery(customerTable, itemTable, Column.I_CID,  HapiPredicate.Operator.GTE, 0);
+        if (DEBUG_TRIAL >= 0) {
+            runQuery(orderTable, orderTable, Column.O_CID, HapiPredicate.Operator.EQ, 1, false);
         } else {
             for (HapiPredicate.Operator comparison : HapiPredicate.Operator.values()) {
                 if (comparison != HapiPredicate.Operator.NE) {
                     for (int cid = 0; cid < MAX_CUSTOMERS; cid++) {
                         // One-table queries, e.g. schema:customer:cid>4
-                        runQuery(customerTable, customerTable, Column.C_CID, comparison, cid);
-                        runQuery(customerTable, customerTable, Column.C_CID_COPY, comparison, cid);
-                        runQuery(orderTable, orderTable, Column.O_CID, comparison, cid);
-                        runQuery(orderTable, orderTable, Column.O_CID_COPY, comparison, cid);
-                        runQuery(itemTable, itemTable, Column.I_CID, comparison, cid);
-                        runQuery(itemTable, itemTable, Column.I_CID_COPY, comparison, cid);
-                        runQuery(addressTable, addressTable, Column.A_CID, comparison, cid);
-                        runQuery(addressTable, addressTable, Column.A_CID_COPY, comparison, cid);
+                        runQuery(customerTable, customerTable, Column.C_CID, comparison, cid, false);
+                        runQuery(customerTable, customerTable, Column.C_CID_COPY, comparison, cid, true);
+                        runQuery(orderTable, orderTable, Column.O_CID, comparison, cid, false);
+                        runQuery(orderTable, orderTable, Column.O_CID_COPY, comparison, cid, true);
+                        runQuery(itemTable, itemTable, Column.I_CID, comparison, cid, false);
+                        runQuery(itemTable, itemTable, Column.I_CID_COPY, comparison, cid, true);
+                        runQuery(addressTable, addressTable, Column.A_CID, comparison, cid, false);
+                        runQuery(addressTable, addressTable, Column.A_CID_COPY, comparison, cid, true);
                         // Two-table queries, e.g. schema:customer:(order)oid=3
-                        runQuery(customerTable, orderTable, Column.O_CID, comparison, cid);
-                        runQuery(customerTable, orderTable, Column.O_CID_COPY, comparison, cid);
-                        runQuery(customerTable, itemTable, Column.I_CID, comparison, cid);
-                        runQuery(customerTable, itemTable, Column.I_CID_COPY, comparison, cid);
-                        runQuery(orderTable, itemTable, Column.I_CID, comparison, cid);
-                        runQuery(orderTable, itemTable, Column.I_CID_COPY, comparison, cid);
-                        runQuery(customerTable, addressTable, Column.A_CID, comparison, cid);
-                        runQuery(customerTable, addressTable, Column.A_CID_COPY, comparison, cid);
+                        runQuery(customerTable, orderTable, Column.O_CID, comparison, cid, false);
+                        runQuery(customerTable, orderTable, Column.O_CID_COPY, comparison, cid, true);
+                        runQuery(customerTable, itemTable, Column.I_CID, comparison, cid, false);
+                        runQuery(customerTable, itemTable, Column.I_CID_COPY, comparison, cid, true);
+                        runQuery(orderTable, itemTable, Column.I_CID, comparison, cid, false);
+                        runQuery(orderTable, itemTable, Column.I_CID_COPY, comparison, cid, true);
+                        runQuery(customerTable, addressTable, Column.A_CID, comparison, cid, false);
+                        runQuery(customerTable, addressTable, Column.A_CID_COPY, comparison, cid, true);
                     }
                 }
             }
@@ -154,12 +156,13 @@ public class RCTortureIT extends ApiTestBase
                           int predicateTable,
                           Column predicateColumn,
                           HapiPredicate.Operator comparison,
-                          int literal) throws Exception
+                          int literal,
+                          boolean indexOrdered) throws Exception
     {
         String actualQueryResult =
             actual.queryResult(rootTable, predicateTable, predicateColumn, comparison, literal);
         String expectedQueryResult =
-            expected.queryResult(rootTable, predicateTable, predicateColumn, comparison, literal);
+            expected.queryResult(rootTable, predicateTable, predicateColumn, comparison, literal, indexOrdered);
         if (trial == DEBUG_TRIAL) {
             if (!actualQueryResult.equals(expectedQueryResult)) {
                 print("expected:\n%s", formatJSON(expectedQueryResult));

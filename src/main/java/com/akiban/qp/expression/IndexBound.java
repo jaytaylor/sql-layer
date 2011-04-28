@@ -15,6 +15,7 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexKeyType;
 
@@ -22,12 +23,12 @@ public class IndexBound
 {
     public String toString()
     {
-        return String.format("%s=%s", indexKeyType, row);
+        return String.format("%s=%s", table, row);
     }
 
-    public IndexKeyType indexKeyType()
+    public UserTable table()
     {
-        return indexKeyType;
+        return table;
     }
 
     public Row row()
@@ -35,14 +36,14 @@ public class IndexBound
         return row;
     }
 
-    public IndexBound(IndexKeyType indexKeyType, Row row)
+    public IndexBound(UserTable table, Row row)
     {
-        this.indexKeyType = indexKeyType;
+        this.table = table;
         this.row = row;
     }
 
     // Object state
 
-    private final IndexKeyType indexKeyType;
+    private final UserTable table;
     private final Row row;
 }

@@ -15,20 +15,19 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexKeyType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {
@@ -44,6 +43,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         // rootmostQueryTable
         queryRootTable = rowDef.userTable();
         queryRootType = schema.userTableRowType(queryRootTable);
+        requiredUserTables.add(queryRootTable);
         // predicateIndex and predicateType
         predicateIndex = null;
         for (Index userTableIndex : queryRootTable.getIndexesIncludingInternal()) {
@@ -51,24 +51,22 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                 predicateIndex = userTableIndex;
             }
         }
-        if (predicateIndex != null) {
-            predicateType = schema.userTableRowType((UserTable) predicateIndex.getTable());
-            // Index bounds
-            assert start == null || start.getRowDefId() == queryRootTable.getTableId();
-            assert end == null || end.getRowDefId() == queryRootTable.getTableId();
-            IndexKeyType indexKeyType = predicateType.indexRowType(predicateIndex).keyType();
-            IndexBound lo =
-                start == null
-                ? null
-                : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, start));
-            IndexBound hi =
-                end == null
-                ? null
-                : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, end));
-            indexKeyRange = new IndexKeyRange(lo,
-                                              (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
-                                              hi,
-                                              (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
-        }
+        predicateType = queryRootType;
+        // Index bounds
+        assert start == null || start.getRowDefId() == queryRootTable.getTableId();
+        assert end == null || end.getRowDefId() == queryRootTable.getTableId();
+        IndexBound lo =
+            start == null
+            ? null
+            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, start));
+        IndexBound hi =
+            end == null
+            ? null
+            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, end));
+        indexKeyRange = new IndexKeyRange
+            (lo,
+             lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
+             hi,
+             hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
     }
 }

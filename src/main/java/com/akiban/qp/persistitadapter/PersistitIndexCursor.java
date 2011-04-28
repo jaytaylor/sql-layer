@@ -36,7 +36,7 @@ class PersistitIndexCursor implements IndexCursor
     {
         assert exchange == null;
         try {
-            exchange = adapter.takeExchange(indexRowType.index()).clear().append(Key.BEFORE);
+            exchange = adapter.takeExchange(indexRowType.index()).clear().append(boundary);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -51,8 +51,8 @@ class PersistitIndexCursor implements IndexCursor
         try {
             if (exchange != null &&
                 (indexFilter == null
-                 ? exchange.traverse(Key.GT, true)
-                 : exchange.traverse(Key.GT, indexFilter, 0))) {
+                 ? exchange.traverse(direction, true)
+                 : exchange.traverse(direction, indexFilter, 0))) {
                 unsharedRow().managedRow().copyFromExchange(exchange);
             } else {
                 close();
@@ -91,12 +91,19 @@ class PersistitIndexCursor implements IndexCursor
 
     // For use by this package
 
-    PersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType)
+    PersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType, boolean reverse)
         throws PersistitException
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        if (reverse) {
+            boundary = Key.AFTER;
+            direction = Key.LT;
+        } else {
+            boundary = Key.BEFORE;
+            direction = Key.GT;
+        }
     }
 
     // For use by this class
@@ -119,6 +126,8 @@ class PersistitIndexCursor implements IndexCursor
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
     private final RowHolder<PersistitIndexRow> row;
+    private final Key.EdgeValue boundary;
+    private final Key.Direction direction;
     private IndexKeyRange keyRange;
     private Exchange exchange;
     private KeyFilter indexFilter;

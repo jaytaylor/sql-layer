@@ -2,49 +2,44 @@
 
 "setup" : {
     "processors_default" : [ "scanrows" ],
-    "schema" : "@schema",
+    "schema" : "coi",
     "tables" : [
-        [ ":customers",
-            "`@id` int key",
-            "`:name` varchar(32)",
-            "KEY (`:name`)"
+        [ "customer",
+            "cid int key",
+            "name varchar(32)"
         ],
 
-        [ "@orders",
-            "id int key",
-            "cid int",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES `:customers`(`@id`)"
+        [ "orders",
+            "oid int key",
+            "c_id int",
+            "when varchar(10)",
+            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
         ]
     ],
-
     "write_rows" : {
-        ":customers"    : [ [11, "customer1"],
-                            [12, "customer2"]
+        "customer"  : [ [11, "Alpha"],
+                        [12, "Bravo"],
+                        [13, "Charlie"],
+                        [14, "Delta"],
+                        [15, "Echo"],
+                        [16, "Foxtrot"]
         ],
-        "@orders"       : [ [21, 11]
+        "orders"    : [ [21, 11, "1/1/2001"],
+                        [22, 11, "2/2/2002"],
+                        [23, 12, "3/3/2003"],
+                        [24, 12, "3/3/2003"],
+                        [25, 12, "3/3/2003"],
+                        [26, 16, "4/4/2004"]
         ]
     }
 },
 
 "tests" : {
-    "child names" : {
-        "get"           : "'%40schema':'%3Acustomers':'%40id'=11",
+    "no customers" : {
+        "get"           : "coi:customer:(:LIMIT=0)cid>0",
         "expect result" :
         {
-            "@:customers" :
-            [
-                {
-                    ":@id" : 11,
-                    "::name" : "customer1",
-                    "@@orders" :
-                    [
-                        {
-                            "id" : 21,
-                            "cid" : 11
-                        }
-                    ]
-                }
-            ]
+            "@customer" : []
         }
     }
 }

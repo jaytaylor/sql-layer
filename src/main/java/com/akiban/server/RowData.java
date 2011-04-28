@@ -111,7 +111,7 @@ public class RowData {
     // hkey segment number at which this RowData's hkey differed from that of the previous RowData.
     // This field is declared transient to indicate that this value is not copied into a message carrying a
     // RowData.
-    private transient int differsFromPredecessorAtKeySegment;
+    private transient int differsFromPredecessorAtKeySegment = -1;
 
     public RowData() {
 

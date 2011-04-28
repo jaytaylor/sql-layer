@@ -291,8 +291,8 @@ public class PhysicalOperatorIT extends ApiTestBase
     public void testRestrictedIndexScan()
     {
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
-        IndexBound lo = indexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "jack"));
-        IndexBound hi = indexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "tom"));
+        IndexBound lo = indexBound(userTable(order), row(order, 2, "jack"));
+        IndexBound hi = indexBound(userTable(order), row(order, 2, "tom"));
         IndexKeyRange range = indexKeyRange(lo, true, hi, false);
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
@@ -304,7 +304,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     public void testRestrictedIndexLookup()
     {
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
-        IndexBound tom = indexBound(orderSalesmanIndexRowType.keyType(), row(order, 2, "tom"));
+        IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexLookup = indexLookup_Default(indexScan,
                                                            coi,

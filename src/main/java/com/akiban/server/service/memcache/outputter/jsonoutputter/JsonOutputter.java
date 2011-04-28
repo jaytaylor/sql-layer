@@ -36,10 +36,13 @@ public final class JsonOutputter implements HapiOutputter
     }
 
     @Override
-    public void output(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream)
+    public void output(HapiProcessedGetRequest request,
+                       boolean hKeyOrdered,
+                       Iterable<RowData> rows,
+                       OutputStream outputStream)
         throws IOException
     {
-        new Request(request, rows, outputStream).run();
+        new Request(request, hKeyOrdered, rows, outputStream).run();
     }
 
     private static final JsonOutputter INSTANCE = new JsonOutputter();
@@ -47,7 +50,10 @@ public final class JsonOutputter implements HapiOutputter
 
     private static class Request
     {
-        public Request(HapiProcessedGetRequest request, Iterable<RowData> rows, OutputStream outputStream)
+        public Request(HapiProcessedGetRequest request,
+                       boolean hKeyOrdered,
+                       Iterable<RowData> rows,
+                       OutputStream outputStream)
             throws IOException
         {
             this.ais = request.akibanInformationSchema();
@@ -57,8 +63,9 @@ public final class JsonOutputter implements HapiOutputter
                 Boolean.getBoolean("oldRowCollector")
                 ? new UnOrphaningIterator<RowData>(rows.iterator(), genealogist)
                 : new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(predicateTable(request),
-                                                                                        rows.iterator()),
-                                                          genealogist);
+                                                                                 hKeyOrdered,
+                                                                                 rows.iterator()),
+                                                   genealogist);
             this.output = new PrintWriter(outputStream);
             this.appender = AkibanAppender.of(outputStream, this.output);
         }

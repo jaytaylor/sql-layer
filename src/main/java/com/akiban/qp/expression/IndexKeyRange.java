@@ -54,6 +54,11 @@ public class IndexKeyRange
         return hiInclusive;
     }
 
+    public boolean unbounded()
+    {
+        return lo == null && hi == null;
+    }
+
     /**
      * Describes a range of keys between lo and hi. The bounds are inclusive or not depending on
      * loInclusive and hiInclusive. If lo is null, then the lower bound is less than all values, and

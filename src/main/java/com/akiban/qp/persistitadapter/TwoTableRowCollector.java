@@ -55,6 +55,7 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                 Column groupColumn = groupTable.getColumnsIncludingInternal().get(columnPosition);
                 Column userColumn = groupColumn.getUserColumn();
                 UserTable userTable = userColumn.getUserTable();
+                requiredUserTables.add(userTable);
                 // rootmostQueryTable
                 if (queryRootTable == null) {
                     queryRootTable = userTable;
@@ -85,29 +86,32 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
         }
         assert queryRootTable != null;
         queryRootType = schema.userTableRowType(queryRootTable);
-        assert predicateTable != null : String.format("start: %s, end: %s", start, end);
-        // predicateIndex and predicateType
-        predicateIndex = null;
-        for (Index userTableIndex : predicateTable.getIndexesIncludingInternal()) {
-            if (userTableIndex.getIndexId() == indexId) {
-                predicateIndex = userTableIndex;
+        if (predicateTable != null) {
+            // predicateIndex and predicateType
+            predicateIndex = null;
+            for (Index userTableIndex : predicateTable.getIndexesIncludingInternal()) {
+                if (userTableIndex.getIndexId() == indexId) {
+                    predicateIndex = userTableIndex;
+                }
             }
+            assert predicateIndex != null : String.format("table %s, index %s", predicateTable, indexId);
+            predicateType = schema.userTableRowType((UserTable) predicateIndex.getTable());
+            // Index bounds
+            IndexBound lo =
+                userTableStart == null
+                ? null
+                : new IndexBound(predicateTable,
+                                 PersistitGroupRow.newPersistitGroupRow(adapter, userTableStart.toRowData()));
+            IndexBound hi =
+                userTableEnd == null
+                ? null
+                : new IndexBound(predicateTable,
+                                 PersistitGroupRow.newPersistitGroupRow(adapter, userTableEnd.toRowData()));
+            indexKeyRange = new IndexKeyRange
+                (lo,
+                 lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
+                 hi,
+                 hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
         }
-        assert predicateIndex != null : String.format("table %s, index %s", predicateTable, indexId);
-        predicateType = schema.userTableRowType((UserTable) predicateIndex.getTable());
-        // Index bounds
-        IndexKeyType indexKeyType = predicateType.indexRowType(predicateIndex).keyType();
-        IndexBound lo =
-            userTableStart == null
-            ? null
-            : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, userTableStart.toRowData()));
-        IndexBound hi =
-            userTableEnd == null
-            ? null
-            : new IndexBound(indexKeyType, PersistitGroupRow.newPersistitGroupRow(adapter, userTableEnd.toRowData()));
-        indexKeyRange = new IndexKeyRange(lo,
-                                          (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
-                                          hi,
-                                          (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
     }
 }

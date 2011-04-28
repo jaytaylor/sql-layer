@@ -52,7 +52,8 @@ class PersistitGroupCursor implements GroupCursor
             exchange = adapter.takeExchange(groupTable).clear();
             groupScan =
                 hKeyRange == null && hKey == null ? new FullScan() :
-                hKeyRange == null ? new HKeyAndDescendentsScan(hKey) : new HKeyRangeAndDescendentsScan(hKeyRange);
+                hKeyRange == null ? new HKeyAndDescendentsScan(hKey) :
+                hKeyRange.unbounded() ? new FullScan() : new HKeyRangeAndDescendentsScan(hKeyRange);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -118,10 +119,11 @@ class PersistitGroupCursor implements GroupCursor
 
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable) throws PersistitException
+    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse) throws PersistitException
     {
         this.adapter = adapter;
         this.groupTable = groupTable;
+        this.reverse = reverse;
         this.row = new RowHolder<PersistitGroupRow>(adapter.newGroupRow());
         this.controllingHKey = new Key(adapter.persistit.getDb());
     }
@@ -164,6 +166,7 @@ class PersistitGroupCursor implements GroupCursor
 
     private final PersistitAdapter adapter;
     private final GroupTable groupTable;
+    private final boolean reverse;
     private final RowHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;
@@ -177,6 +180,7 @@ class PersistitGroupCursor implements GroupCursor
     {
         /**
          * Advance the exchange. Close if this causes the exchange to run out of selected rows.
+         *
          * @throws PersistitException
          * @throws InvalidOperationException
          */
@@ -188,15 +192,23 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (!exchange.traverse(Key.GT, true)) {
+            if (!exchange.traverse(direction, true)) {
                 close();
             }
         }
 
         public FullScan() throws PersistitException
         {
-            exchange.getKey().append(Key.BEFORE);
+            if (reverse) {
+                exchange.getKey().append(Key.AFTER);
+                direction = Key.LT;
+            } else {
+                exchange.getKey().append(Key.BEFORE);
+                direction = Key.GT;
+            }
         }
+
+        private final Key.Direction direction;
     }
 
     private class HKeyAndDescendentsScan implements GroupScan
@@ -205,12 +217,12 @@ class PersistitGroupCursor implements GroupCursor
         public void advance() throws PersistitException, InvalidOperationException
         {
             if (first) {
-                if (!exchange.traverse(Key.GTEQ, true)) {
+                if (!exchange.traverse(firstDirection, true)) {
                     close();
                 }
                 first = false;
             } else {
-                if (!exchange.traverse(Key.GT, true) ||
+                if (!exchange.traverse(subsequentDirection, true) ||
                     exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
                     close();
                 }
@@ -221,8 +233,17 @@ class PersistitGroupCursor implements GroupCursor
         {
             singleHKeyRestriction.copyTo(exchange.getKey());
             singleHKeyRestriction.copyTo(controllingHKey);
+            if (reverse) {
+                firstDirection = Key.LTEQ;
+                subsequentDirection = Key.LT;
+            } else {
+                firstDirection = Key.GTEQ;
+                subsequentDirection = Key.GT;
+            }
         }
 
+        private final Key.Direction firstDirection;
+        private final Key.Direction subsequentDirection;
         private boolean first = true;
     }
 
@@ -232,14 +253,14 @@ class PersistitGroupCursor implements GroupCursor
         public void advance() throws PersistitException, InvalidOperationException
         {
             if (first) {
-                if (!exchange.traverse(Key.GTEQ, hKeyRangeFilter, VALUE_BYTES)) {
+                if (!exchange.traverse(firstDirection, hKeyRangeFilter, VALUE_BYTES)) {
                     close();
                 } else {
                     exchange.getKey().copyTo(controllingHKey);
                 }
                 first = false;
             } else {
-                if (!exchange.traverse(Key.GT, true)) {
+                if (!exchange.traverse(subsequentDirection, true)) {
                     close();
                 } else {
                     if (exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
@@ -249,7 +270,7 @@ class PersistitGroupCursor implements GroupCursor
                             exchange.getKey().copyTo(controllingHKey);
                         } else {
                             // Not selected. Could be that we need to skip over some orphans.
-                            if (!exchange.traverse(Key.GT, hKeyRangeFilter, VALUE_BYTES)) {
+                            if (!exchange.traverse(subsequentDirection, hKeyRangeFilter, VALUE_BYTES)) {
                                 close();
                             }
                         }
@@ -260,13 +281,21 @@ class PersistitGroupCursor implements GroupCursor
 
         HKeyRangeAndDescendentsScan(IndexKeyRange hKeyRange) throws PersistitException
         {
-            UserTable table =
-                (UserTable) (hKeyRange.lo() == null ? hKeyRange.hi() : hKeyRange.lo()).indexKeyType().index().getTable();
+            UserTable table = (hKeyRange.lo() == null ? hKeyRange.hi() : hKeyRange.lo()).table();
             RowDef rowDef = (RowDef) table.rowDef();
             hKeyRangeFilter = adapter.filterFactory.computeHKeyFilter(exchange.getKey(), rowDef, hKeyRange);
+            if (reverse) {
+                firstDirection = Key.LTEQ;
+                subsequentDirection = Key.LT;
+            } else {
+                firstDirection = Key.GTEQ;
+                subsequentDirection = Key.GT;
+            }
         }
 
-        private KeyFilter hKeyRangeFilter;
+        private final KeyFilter hKeyRangeFilter;
+        private final Key.Direction firstDirection;
+        private final Key.Direction subsequentDirection;
         private boolean first = true;
     }
 }

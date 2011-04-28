@@ -146,7 +146,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public void outputToMessage(boolean outputToMessage)
     {
-        assert !outputToMessage;
     }
 
     @Override
@@ -167,9 +166,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                                          byte[] columnBitMap,
                                                          ScanLimit scanLimit)
     {
-        if ((scanFlags & (SCAN_FLAGS_PREFIX | SCAN_FLAGS_SINGLE_ROW | SCAN_FLAGS_DESCENDING)) != 0) {
+        if ((scanFlags & (SCAN_FLAGS_PREFIX | SCAN_FLAGS_SINGLE_ROW)) != 0) {
             throw new IllegalArgumentException
-                ("SCAN_FLAGS_PREFIX, SCAN_FLAGS_SINGLE_ROW and SCAN_FLAGS_DESCENDING are unsupported");
+                ("SCAN_FLAGS_PREFIX and SCAN_FLAGS_SINGLE_ROW are unsupported");
         }
         if (start != null && end != null && start.getRowDefId() != end.getRowDefId()) {
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
@@ -181,8 +180,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             ? new OneTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end)
             // HAPI query root table != predicate table
             : new TwoTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end, columnBitMap);
+        boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
         boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
-        rowCollector.createPlan(scanLimit == null ? ScanLimit.NONE : scanLimit, deep);
+        rowCollector.createPlan(scanLimit == null ? ScanLimit.NONE : scanLimit, descending, deep);
         return rowCollector;
     }
     
@@ -194,7 +194,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
-    private void createPlan(ScanLimit scanLimit, boolean deep)
+    private void createPlan(ScanLimit scanLimit, boolean descending, boolean deep)
     {
         // Plan and query
         Executable query;
@@ -204,7 +204,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         PhysicalOperator rootOperator;
         PhysicalOperator restrictionOperator;
         if (useIndex) {
-            PhysicalOperator indexScan = indexScan_Default(predicateIndex);
+            PhysicalOperator indexScan = indexScan_Default(predicateIndex, descending);
             PhysicalOperator indexLookup = indexLookup_Default(indexScan,
                                                                predicateIndex.getTable().getGroup().getGroupTable(),
                                                                limit,
@@ -212,19 +212,17 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             rootOperator = indexLookup;
             restrictionOperator = indexScan;
         } else {
-            PhysicalOperator groupScan = groupScan_Default(queryRootTable.getGroup().getGroupTable(), limit);
+            PhysicalOperator groupScan =
+                groupScan_Default(queryRootTable.getGroup().getGroupTable(), descending, limit);
             rootOperator = groupScan;
             restrictionOperator = groupScan;
         }
         // Get rid of everything above query root table.
         rootOperator = extract_Default(schema, rootOperator, Arrays.<RowType>asList(queryRootType));
-        // If deep flag isn't set, then get rid of everything below query root table.
-        if (!deep) {
-            Set<RowType> rootTableChildren = new HashSet<RowType>();
-            for (Join join : queryRootTable.getChildJoins()) {
-                rootTableChildren.add(schema.userTableRowType(join.getChild()));
-            }
-            rootOperator = cut_Default(schema, rootOperator, rootTableChildren);
+        // Get rid of selected types below query root table.
+        Set<RowType> cutTypes = cutTypes(deep);
+        if (!cutTypes.isEmpty()) {
+            rootOperator = cut_Default(schema, rootOperator, cutTypes);
         }
         query = new Executable(adapter, rootOperator).bind(restrictionOperator, indexKeyRange);
         // Executable stuff
@@ -247,6 +245,91 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return ancestorTypes;
     }
 
+    private Set<RowType> cutTypes(boolean deep)
+    {
+        Set<RowType> cutTypes = new HashSet<RowType>();
+        if (!deep) {
+            // Find the leafmost tables in requiredUserTables and cut everything below those. It is possible
+            // that a column bit map includes, for example, customer and item but not order. This case is NOT
+            // handled -- we'll just include (i.e. not cut) customer, order and item.
+            Set<UserTable> leafmostRequiredUserTables = new HashSet<UserTable>(requiredUserTables);
+            for (UserTable requiredUserTable : requiredUserTables) {
+                UserTable ancestor = requiredUserTable.parentTable();
+                while (ancestor != null) {
+                    leafmostRequiredUserTables.remove(ancestor);
+                    ancestor = ancestor.parentTable();
+                }
+            }
+            // Cut below each leafmost required table
+            for (UserTable leafmostRequiredUserTable : leafmostRequiredUserTables) {
+                for (Join join : leafmostRequiredUserTable.getChildJoins()) {
+                    cutTypes.add(schema.userTableRowType(join.getChild()));
+                }
+            }
+        }
+        UserTable predicateTable = predicateType.userTable();
+        if (predicateTable != queryRootTable) {
+            // Cut tables not on the path from the predicate table up to query table
+            UserTable table = predicateTable;
+            UserTable childOnPath;
+            while (table != queryRootTable) {
+                childOnPath = table;
+                table = table.parentTable();
+                for (Join join : table.getChildJoins()) {
+                    UserTable child = join.getChild();
+                    if (child != childOnPath) {
+                        cutTypes.add(schema.userTableRowType(child));
+                    }
+                }
+            }
+        }
+        return cutTypes;
+    }
+
+/*
+    private Set<RowType> cutTypes(boolean deep)
+    {
+        Set<RowType> cutTypes;
+        Set<RowType> keepTypes = new HashSet<RowType>();
+        UserTable predicateTable = predicateType.userTable();
+        if (deep) {
+            // Keep predicateTable and everything below it.
+            findDescendentTypes(predicateTable, keepTypes);
+        } else {
+            // Find the leafmost tables in requiredUserTables and keep everything between each such table (inclusive)
+            // and predicate table (exclusive). It is possible that a column bit map includes, for example, customer and
+            // item but not order. This case is NOT handled -- we'll just include (i.e. not cut) customer, order
+            // and item.
+            for (UserTable requiredUserTable : requiredUserTables) {
+                UserTable ancestor = requiredUserTable;
+                while (ancestor != predicateTable) {
+                    keepTypes.add(schema.userTableRowType(ancestor));
+                    ancestor = ancestor.parentTable();
+                }
+            }
+        }
+        // Keep everything between the predicate table and the query root, inclusive
+        UserTable table = predicateTable;
+        while (table != queryRootTable) {
+            keepTypes.add(schema.userTableRowType(table));
+            table = table.parentTable();
+        }
+        keepTypes.add(queryRootType);
+        // Cut everything that isn't kept
+        cutTypes = schema.userTableRowTypes();
+        cutTypes.removeAll(keepTypes);
+        return cutTypes;
+    }
+
+    private void findDescendentTypes(UserTable table, Collection<RowType> types)
+    {
+        types.add(schema.userTableRowType(table));
+        for (Join join : table.getChildJoins()) {
+            findDescendentTypes(join.getChild(), types);
+        }
+    }
+*/
+
     // Class state
 
     private static final AtomicLong idCounter = new AtomicLong(0);
@@ -260,6 +343,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     protected UserTableRowType queryRootType;
     protected Index predicateIndex;
     protected UserTableRowType predicateType;
+    // If we're querying a user table, then requiredUserTables contains just queryRootTable
+    // If we're querying a group table, it contains those user tables containing columns in the
+    // columnBitMap.
+    protected final Set<UserTable> requiredUserTables = new HashSet<UserTable>();
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
     private boolean closed;

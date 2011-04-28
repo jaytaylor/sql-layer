@@ -39,15 +39,17 @@ class GroupScan_Default extends PhysicalOperator
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(GroupTable groupTable, Limit limit)
+    public GroupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
     {
         this.groupTable = groupTable;
+        this.reverse = reverse;
         this.limit = limit;
     }
 
     // Object state
 
     private final GroupTable groupTable;
+    private final boolean reverse;
     private final Limit limit;
 
     // Inner classes
@@ -85,9 +87,11 @@ class GroupScan_Default extends PhysicalOperator
                 outputRow(row);
                 if (limit.limitReached(row)) {
                     close();
+                    next = false;
                 }
             } else {
                 close();
+                next = false;
             }
             return next;
         }
@@ -104,7 +108,7 @@ class GroupScan_Default extends PhysicalOperator
         Execution(StoreAdapter adapter)
         {
             super(adapter);
-            this.cursor = adapter.newGroupCursor(groupTable);
+            this.cursor = adapter.newGroupCursor(groupTable, reverse);
         }
 
         // Object state
