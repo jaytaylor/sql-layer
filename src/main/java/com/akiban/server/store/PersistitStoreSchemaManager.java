@@ -205,18 +205,23 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
             transaction.begin();
             try {
-                ex.clear();
-                ex.getKey().append("ID_COUNTER");
                 int tableId = 1;
-                if(ex.isValueDefined()) {
-                    tableId = ex.fetch().getValue().getInt();
+                if(useOldId) {
+                    tableId = getAis(session).getTable(tableNameFull).getTableId();
                 }
-                ex.getValue().put(tableId + 1);
-                ex.store();
+                else {
+                    ex.clear();
+                    ex.getKey().append("ID_COUNTER");
+                    if(ex.isValueDefined()) {
+                        tableId = ex.fetch().getValue().getInt();
+                    }
+                    ex.getValue().put(tableId + 1);
+                    ex.store();
+                }
 
                 ex.clear();
                 ex.getKey().append(BY_NAME).append(schemaName).append(tableName);
-                assert !ex.hasChildren() : tableNameFull + "exists";
+                assert ex.hasChildren() == useOldId : tableNameFull + " exists";
                 ex.append(tableId);
                 ex.getValue().put(canonical);
                 ex.store();
