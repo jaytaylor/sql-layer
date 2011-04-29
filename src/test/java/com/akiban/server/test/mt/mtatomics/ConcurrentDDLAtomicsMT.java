@@ -25,6 +25,7 @@ import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.test.mt.mtutil.TimePoints;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
@@ -453,7 +454,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 TableName table = new TableName(SCHEMA, TABLE);
                 Timing.sleep(2000);
                 timePoints.mark("INDEX: DROP>");
-                ddl().dropIndexes(new Session(), table, Collections.singleton("name"));
+                ddl().dropIndexes(ServiceManagerImpl.newSession(), table, Collections.singleton("name"));
                 timePoints.mark("INDEX: <DROP");
                 return null;
             }

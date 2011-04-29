@@ -20,6 +20,7 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mthapi.common.HapiValidationError;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
@@ -82,7 +83,7 @@ public class HapiMTBase extends MTBase {
         public Void call() throws InvalidOperationException, InterruptedException {
             DDLFunctions ddl = ddl();
             DMLFunctions dml = dml();
-            Session session = new Session();
+            Session session = ServiceManagerImpl.newSession();
             try {
                 writeThread.setupWrites(ddl, dml, session);
                 setupSucceeded = true;
@@ -93,7 +94,7 @@ public class HapiMTBase extends MTBase {
             boolean exceptionsNotFatal = true;
             while (exceptionsNotFatal && keepGoing.get()) {
                 try {
-                    writeThread.ongoingWrites(ddl(), dml(), new Session(), keepGoing);
+                    writeThread.ongoingWrites(ddl(), dml(), ServiceManagerImpl.newSession(), keepGoing);
                 } catch (Throwable t) {
                     addError(t, errors);
                     exceptionsNotFatal = writeThread.continueThroughException(t);
@@ -118,7 +119,7 @@ public class HapiMTBase extends MTBase {
     private final class HapiThreadCallable implements Callable<Void> {
         private final HapiReadThread hapiReadThread;
         private final ByteArrayOutputStream outputStream;
-        private final Session session = new Session();
+        private final Session session = ServiceManagerImpl.newSession();
         private final String id;
 
         private HapiThreadCallable(HapiReadThread hapiReadThread, String id)

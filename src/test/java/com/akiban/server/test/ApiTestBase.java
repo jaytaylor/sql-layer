@@ -184,9 +184,9 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
-        session = new Session();
         sm = createServiceManager( createServiceFactory(startupConfigProperties()) );
         sm.startServices();
+        session = ServiceManagerImpl.newSession();
     }
 
     protected TestServiceManager createServiceManager(TestServiceServiceFactory serviceFactory) {
@@ -211,7 +211,7 @@ public class ApiTestBase {
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
-        session = new Session();
+        session = ServiceManagerImpl.newSession();
         sm = createServiceManager( createServiceFactory(properties) );
         sm.startServices();
     }
@@ -312,7 +312,7 @@ public class ApiTestBase {
     }
 
     protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, aisGeneration(), request);
 

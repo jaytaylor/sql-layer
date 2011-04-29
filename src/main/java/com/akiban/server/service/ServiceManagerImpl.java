@@ -29,6 +29,7 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.stats.StatisticsServiceImpl;
@@ -71,6 +72,14 @@ public class ServiceManagerImpl implements ServiceManager
 
     public static ServiceManager get() {
         return instance.get();
+    }
+
+    /**
+     * Convenience for {@code ServiceManagerImpl.get().getSessionService().createSession()}
+     * @return a new Session
+     */
+    public static Session newSession() {
+        return get().getSessionService().createSession();
     }
 
     @Override

@@ -24,6 +24,7 @@ import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.thimbleware.jmemcached.CacheElement;
 import org.junit.Test;
@@ -98,7 +99,7 @@ public final class AkibanCommandHandlerTest {
 
     @Test
     public void testTwice() throws HapiRequestException {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         testWriteBytes(session, "first test");
         testWriteBytes(session, "second test");
     }
@@ -111,7 +112,7 @@ public final class AkibanCommandHandlerTest {
 
         CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("schema:table:column=value", ""),
-                new Session(), processor, outputter);
+                ServiceManagerImpl.newSession(), processor, outputter);
 
         final byte[] expectedBytes = testString.getBytes(CHARSET);
         assertArrayEquals("bytes", expectedBytes, result[0].getData());
@@ -126,7 +127,7 @@ public final class AkibanCommandHandlerTest {
 
         CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("schema:table:column=value"),
-                new Session(), processor, outputter);
+                ServiceManagerImpl.newSession(), processor, outputter);
 
         final byte[] expectedBytes = testString.getBytes(CHARSET);
         assertArrayEquals("bytes", expectedBytes, result[0].getData());
@@ -141,7 +142,7 @@ public final class AkibanCommandHandlerTest {
 
         CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("", "schema:table:column=value"),
-                new Session(), processor, outputter);
+                ServiceManagerImpl.newSession(), processor, outputter);
 
         final byte[] expectedBytes = testString.getBytes(CHARSET);
         assertArrayEquals("bytes", expectedBytes, result[0].getData());

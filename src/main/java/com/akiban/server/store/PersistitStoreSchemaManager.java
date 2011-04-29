@@ -819,7 +819,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public synchronized void forceNewTimestamp() {
         final TreeService treeService = serviceManager.getTreeService();
-        updateTimestamp.set(treeService.getTimestamp(new Session()));
+        updateTimestamp.set(treeService.getTimestamp(ServiceManagerImpl.newSession()));
     }
 
     private static List<TableDefinition> readAisSchema() {
@@ -882,7 +882,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void afterStart() throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
-        final Session session = new Session();
+        final Session session = ServiceManagerImpl.newSession();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {

@@ -40,6 +40,7 @@ import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 
@@ -247,7 +248,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public RowDef getRowDef(int tableId) throws NoSuchTableException {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_ROWDEF);
@@ -280,7 +281,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public int getGeneration() {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_ID);
@@ -296,7 +297,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public void forceGenerationUpdate() {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.FORCE_GENERATION_UPDATE);

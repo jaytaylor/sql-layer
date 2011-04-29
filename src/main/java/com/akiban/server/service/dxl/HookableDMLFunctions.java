@@ -41,6 +41,7 @@ import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 
@@ -197,7 +198,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public RowData convertNewRow(NewRow row) throws NoSuchTableException {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW);
@@ -214,7 +215,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATA);
@@ -231,7 +232,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
-        Session session = new Session();
+        Session session = ServiceManagerImpl.newSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATAS);

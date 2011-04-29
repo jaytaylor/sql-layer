@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.dxl;
 
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.MultipleCauseException;
 import com.akiban.util.Strings;
@@ -35,7 +36,7 @@ public final class CompositeHookTest {
     @Before
     public void setUp() {
         output = new ArrayList<String>();
-        session = new Session();
+        session = ServiceManagerImpl.newSession();
     }
 
     @Test
