@@ -15,7 +15,7 @@
 
 package com.akiban.util;
 
-public final class SafeAction<T> {
+public final class SafeAction {
     public interface Get<T> {
         T get();
     }
