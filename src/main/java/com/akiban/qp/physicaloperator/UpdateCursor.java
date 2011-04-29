@@ -19,26 +19,26 @@ import com.akiban.qp.row.ManagedRow;
 
 public final class UpdateCursor implements Cursor {
 
-    private final ModifiableCursor inputs;
+    private final ModifiableCursor input;
     private final UpdateLambda updateLambda;
 
     private boolean currentRowIsMine = false;
     private ManagedRow currentRow;
 
-    public UpdateCursor(ModifiableCursor inputs, UpdateLambda updateLambda) {
-        this.inputs = inputs;
+    public UpdateCursor(ModifiableCursor input, UpdateLambda updateLambda) {
+        this.input = input;
         this.updateLambda = updateLambda;
     }
 
     @Override
     public void open() {
-        inputs.open();
+        input.open();
     }
 
     @Override
     public boolean next() {
-        if (inputs.next()) {
-            ManagedRow input = inputs.currentRow();
+        if (input.next()) {
+            ManagedRow input = this.input.currentRow();
             if (!updateLambda.rowIsApplicable(input)) {
                 currentRowIsMine = false;
                 return true;
@@ -46,7 +46,7 @@ public final class UpdateCursor implements Cursor {
             currentRowIsMine = true;
             currentRow = updateLambda.applyUpdate(input);
             input.release();
-            inputs.updateCurrentRow(currentRow);
+            this.input.updateCurrentRow(currentRow);
             return true;
         }
         return false;
@@ -54,11 +54,11 @@ public final class UpdateCursor implements Cursor {
 
     @Override
     public void close() {
-        inputs.close();
+        input.close();
     }
 
     @Override
     public ManagedRow currentRow() {
-        return currentRowIsMine ? currentRow : inputs.currentRow();
+        return currentRowIsMine ? currentRow : input.currentRow();
     }
 }
