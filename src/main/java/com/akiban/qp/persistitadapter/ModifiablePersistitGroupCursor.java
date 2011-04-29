@@ -27,11 +27,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
 import com.persistit.exception.PersistitException;
 import com.persistit.Key;
 
@@ -45,11 +41,9 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
     private final ModifiableCursorBackingStore backingStore = new ModifiableCursorBackingStore() {
         @Override
         public void addRow(Row newRow) {
-            // for now, use PS
             RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
-            Store store = ServiceManagerImpl.get().getStore();
             try {
-                store.writeRow(session, currentRow.managedRow().rowData());
+                adapter().persistit.writeRow(adapter().session, currentRow.managedRow().rowData());
             } catch (Exception e) {
                 throw new CursorUpdateException(e);
             }
@@ -72,7 +66,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
             backingStore().addRow(newRow);
         } else {
             updateIndexes(newRow);
-            updateGroupTable(newRow);
+            updateGroup(newRow);
         }
     }
 
@@ -80,21 +74,20 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
     public void removeCurrentRow() {
         // for now, use PS
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
-        Store store = ServiceManagerImpl.get().getStore();
         try {
-            store.deleteRow(session, currentRow.managedRow().rowData());
+            adapter().persistit.deleteRow(adapter().session, currentRow.managedRow().rowData());
         } catch (Exception e) {
             throw new CursorUpdateException(e);
         }
     }
 
-    private void updateGroupTable(Row newRow) {
+    private void updateGroup(Row newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         currentRow.managedRow().share();
         RowDef rowDef = currentRow.managedRow().rowDef();
         RowData rowData = adapter().rowData(rowDef, newRow);
         try {
-            PersistitStore.packRowData(exchange(), rowDef, rowData, ServiceManagerImpl.get().getTreeService());
+            adapter().persistit.packRowData(exchange(), rowDef, rowData);
             exchange().store();
         } catch (PersistitException e) {
             throw new CursorUpdateException(e);
@@ -110,7 +103,12 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         exchange().clear();
 
         try {
-            adapter().constructHKey(exchange(), rowDef, adapter().rowData(rowDef, current));
+            adapter().persistit.constructHKey(
+                    adapter().session, exchange(),
+                    rowDef,
+                    adapter().rowData(rowDef, current),
+                    false
+            );
         } catch (Exception e) {
             throw new CursorUpdateException(e);
         }
@@ -173,7 +171,6 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         return all;
     }
 
-    private final Session session = new SessionImpl();
     private final Map<UserTableRowType,Collection<IndexUpdater>> indexCursorsMap = new HashMap<UserTableRowType, Collection<IndexUpdater>>();
 
     private static class IndexUpdater {

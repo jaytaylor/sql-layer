@@ -1423,13 +1423,7 @@ public class PersistitStore implements Store {
     }
 
     public void packRowData(final Exchange hEx, final RowDef rowDef,
-            final RowData rowData) throws PersistitException
-    {
-        packRowData(hEx, rowDef, rowData, treeService);
-    }
-
-    public static void packRowData(final Exchange hEx, final RowDef rowDef,
-                            final RowData rowData, TreeService treeService) throws PersistitException {
+            final RowData rowData) throws PersistitException {
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
         hEx.getValue().ensureFit(size);

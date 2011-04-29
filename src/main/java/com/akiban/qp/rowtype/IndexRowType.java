@@ -34,7 +34,6 @@ public class IndexRowType extends RowType
     public int nFields()
     {
         return index.getColumns().size();
-//        return ((IndexDef)index.indexDef()).indexKeyFields().length;
     }
 
     @Override

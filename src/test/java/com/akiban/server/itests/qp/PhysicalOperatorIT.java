@@ -53,7 +53,6 @@ import java.util.List;
 
 import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.*;
-import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -119,7 +118,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                 String name = (String) original.field(1);
                 name = name.toUpperCase();
                 name = name + name;
-                return OverlayingManagedRow.buildFrom(original).overlay(1, name).done();
+                return new OverlayingManagedRow(original).overlay(1, name);
             }
         });
         int nexts = 0;
