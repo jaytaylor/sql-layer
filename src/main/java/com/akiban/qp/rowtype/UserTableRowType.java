@@ -19,10 +19,10 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
+import com.akiban.util.FilteringIterator;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Iterator;
 
 public class UserTableRowType extends RowType
 {
@@ -77,8 +77,18 @@ public class UserTableRowType extends RowType
         indexRowTypes.set(index.getIndexId(), indexRowType);
     }
 
-    public Collection<IndexRowType> indexRowTypes() {
-        return Collections.unmodifiableCollection(indexRowTypes);
+    public Iterable<IndexRowType> indexRowTypes() {
+        return new Iterable<IndexRowType>() {
+            @Override
+            public Iterator<IndexRowType> iterator() {
+                return new FilteringIterator<IndexRowType>(indexRowTypes.iterator(), false) {
+                    @Override
+                    protected boolean allow(IndexRowType item) {
+                        return item != null;
+                    }
+                };
+            }
+        };
     }
 
     public UserTableRowType(Schema schema, UserTable table)

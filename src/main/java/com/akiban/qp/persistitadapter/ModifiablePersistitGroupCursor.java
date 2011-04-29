@@ -140,9 +140,6 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         }
         ret = new ArrayList<IndexUpdater>();
         for (IndexRowType indexRowType : utRowType.indexRowTypes()) {
-            if (indexRowType == null) {
-                continue;
-            }
             if (((IndexDef)indexRowType.index().indexDef()).isHKeyEquivalent()) {
                 continue;
             }
