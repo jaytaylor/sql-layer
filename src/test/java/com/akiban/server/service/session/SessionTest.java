@@ -15,7 +15,6 @@
 
 package com.akiban.server.service.session;
 
-import com.akiban.server.service.ServiceManagerImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +27,7 @@ public final class SessionTest {
 
     @Before
     public void setUp() {
-        session = ServiceManagerImpl.newSession();
+        session = new Session();
     }
 
     @After

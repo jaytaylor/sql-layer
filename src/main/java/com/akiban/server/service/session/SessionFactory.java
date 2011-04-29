@@ -15,5 +15,6 @@
 
 package com.akiban.server.service.session;
 
-public interface SessionService extends SessionFactory {
+public interface SessionFactory {
+    Session createSession();
 }

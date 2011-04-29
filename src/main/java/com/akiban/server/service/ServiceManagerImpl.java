@@ -79,7 +79,11 @@ public class ServiceManagerImpl implements ServiceManager
      * @return a new Session
      */
     public static Session newSession() {
-        return get().getSessionService().createSession();
+        ServiceManager serviceManager = get();
+        if (serviceManager == null) {
+            throw new ServiceNotStartedException("ServiceManagerImpl.get() hasn't been given an instance");
+        }
+        return serviceManager.getSessionService().createSession();
     }
 
     @Override
