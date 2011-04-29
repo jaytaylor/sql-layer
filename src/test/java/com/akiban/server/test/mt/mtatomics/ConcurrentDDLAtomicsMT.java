@@ -33,7 +33,6 @@ import com.akiban.server.test.mt.mtutil.Timing;
 import com.akiban.server.test.mt.mtutil.TimedResult;
 import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -454,7 +453,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 TableName table = new TableName(SCHEMA, TABLE);
                 Timing.sleep(2000);
                 timePoints.mark("INDEX: DROP>");
-                ddl().dropIndexes(new SessionImpl(), table, Collections.singleton("name"));
+                ddl().dropIndexes(new Session(), table, Collections.singleton("name"));
                 timePoints.mark("INDEX: <DROP");
                 return null;
             }

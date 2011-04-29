@@ -26,7 +26,6 @@ import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -54,7 +53,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     public void createTable(String schema, String ddl) {
         try {
-            dxlService.ddlFunctions().createTable(new SessionImpl(), schema, ddl);
+            dxlService.ddlFunctions().createTable(new Session(), schema, ddl);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
@@ -67,7 +66,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     public void dropTable(String schema, String tableName) {
         try {
-            dxlService.ddlFunctions().dropTable(new SessionImpl(), new TableName(schema, tableName));
+            dxlService.ddlFunctions().dropTable(new Session(), new TableName(schema, tableName));
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
@@ -81,7 +80,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void dropGroupBySchema(String schemaName)
     {
-        final Session session = new SessionImpl();
+        final Session session = new Session();
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         for(com.akiban.ais.model.Group group: ais.getGroups().values()) {
             final String groupTableSchema = group.getGroupTable().getName().getSchemaName();
@@ -98,7 +97,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void dropGroup(String groupName) {
         try {
-            dxlService.ddlFunctions().dropGroup(new SessionImpl(), groupName);
+            dxlService.ddlFunctions().dropGroup(new Session(), groupName);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
         }
@@ -106,7 +105,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public void dropAllGroups() {
-        for(String groupName : dxlService.ddlFunctions().getAIS(new SessionImpl()).getGroups().keySet()) {
+        for(String groupName : dxlService.ddlFunctions().getAIS(new Session()).getGroups().keySet()) {
             dropGroup(groupName);
         }
     }
@@ -118,7 +117,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String getGroupNameFromTableName(String schemaName, String tableName) {
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new SessionImpl());
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new Session());
         Table table = ais.getTable(schemaName, tableName);
         if(table != null) {
             final com.akiban.ais.model.Group group = table.getGroup();
@@ -130,7 +129,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public List<String> getGrouping(String schema) {
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new SessionImpl());
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(new Session());
         Grouping grouping = GroupsBuilder.fromAis(ais, schema);
 
         stripAISFromGrouping(grouping);
@@ -141,7 +140,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     public void writeRow(String schema, String table, String fields) {
         try {
-            final Session session = new SessionImpl();
+            final Session session = new Session();
             int tableId = dxlService.ddlFunctions().getTableId(session, new TableName(schema, table));
             NewRow row = new NiceRow(tableId);
             String[] fieldsArray = fields.split(",\\s*");

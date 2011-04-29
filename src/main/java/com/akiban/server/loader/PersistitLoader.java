@@ -19,7 +19,7 @@ import java.sql.ResultSet;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.exception.PersistitException;
 
@@ -54,7 +54,7 @@ public class PersistitLoader
                 load(task, connection);
             }
             
-            store.buildIndexes(new SessionImpl(), "", BUILD_INDEXES_DEFERRED);
+            store.buildIndexes(new Session(), "", BUILD_INDEXES_DEFERRED);
             // transaction.commit();
         } catch (PersistitException e) {
             tracker.error("Caught exception while loading persistit", e);

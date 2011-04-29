@@ -21,7 +21,6 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.UnitTestServiceFactory;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.util.MySqlStatementSplitter;
@@ -45,7 +44,7 @@ public abstract class ITSuiteBase {
     protected static SchemaManager schemaManager;
     protected static ServiceManager serviceManager;
     protected static RowDefCache rowDefCache;
-    protected final static Session session = new SessionImpl();
+    protected final static Session session = new Session();
 
     @BeforeClass
     public static void setUpSuite() throws Exception {

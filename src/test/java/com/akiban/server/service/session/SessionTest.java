@@ -21,13 +21,13 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public final class SessionImplTest {
+public final class SessionTest {
 
     private Session session;
 
     @Before
     public void setUp() {
-        session = new SessionImpl();
+        session = new Session();
     }
 
     @After
@@ -37,7 +37,7 @@ public final class SessionImplTest {
 
     @Test
     public void keyOwner() {
-        assertEquals("owner", SessionImplTest.class, Session.Key.<Object>named("whatever").getOwner());
+        assertEquals("owner", SessionTest.class, Session.Key.<Object>named("whatever").getOwner());
     }
 
     @Test
@@ -59,7 +59,7 @@ public final class SessionImplTest {
 
     @Test
     public void keyMapOwner() {
-        assertEquals("owner", SessionImplTest.class, Session.MapKey.<Object,Object>mapNamed("whatever").getOwner());
+        assertEquals("owner", SessionTest.class, Session.MapKey.<Object,Object>mapNamed("whatever").getOwner());
     }
 
     @Test

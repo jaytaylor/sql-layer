@@ -43,7 +43,6 @@ import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 
 import java.util.List;
 import java.util.Set;
@@ -198,7 +197,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public RowData convertNewRow(NewRow row) throws NoSuchTableException {
-        Session session = new SessionImpl();
+        Session session = new Session();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW);
@@ -215,7 +214,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public NewRow convertRowData(RowData rowData) throws NoSuchTableException {
-        Session session = new SessionImpl();
+        Session session = new Session();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATA);
@@ -232,7 +231,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public List<NewRow> convertRowDatas(List<RowData> rowDatas) throws NoSuchTableException {
-        Session session = new SessionImpl();
+        Session session = new Session();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATAS);

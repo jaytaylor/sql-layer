@@ -24,7 +24,6 @@ import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Source;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.Store;
 
@@ -32,7 +31,7 @@ public class AkServerAisSource extends Source {
 
     private final Store store;
 
-    private final Session session = new SessionImpl();
+    private final Session session = new Session();
     
     public AkServerAisSource(final Store store) throws Exception {
         this.store = store;

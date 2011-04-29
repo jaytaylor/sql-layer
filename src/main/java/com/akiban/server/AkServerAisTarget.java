@@ -22,7 +22,6 @@ import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.Store;
 
 /**
@@ -37,7 +36,7 @@ public class AkServerAisTarget extends Target {
 
     private final Store store;
     
-    private final Session session = new SessionImpl();
+    private final Session session = new Session();
 
     // Target interface
 
