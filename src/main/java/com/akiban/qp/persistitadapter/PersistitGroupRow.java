@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
@@ -42,7 +43,7 @@ public class PersistitGroupRow extends RowBase
     @Override
     public RowType rowType()
     {
-        return adapter.schema().userTableRowType(row.getRowDef().userTable());
+        return adapter.schema().userTableRowType(rowDef().userTable());
     }
 
     @Override
@@ -70,6 +71,15 @@ public class PersistitGroupRow extends RowBase
     }
 
     // For use by this package
+
+    RowDef rowDef() {
+        if (row != null)
+            return row.getRowDef();
+        if (rowData != null) {
+            return adapter.rowDef(rowData.getRowDefId());
+        }
+        throw new IllegalStateException("no active row");
+    }
 
     void copyFromExchange(Exchange exchange) throws InvalidOperationException, PersistitException
     {

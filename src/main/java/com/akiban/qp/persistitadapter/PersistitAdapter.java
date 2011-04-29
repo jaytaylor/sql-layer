@@ -21,14 +21,27 @@ import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.IndexDef;
+import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PersistitAdapter extends StoreAdapter
 {
@@ -58,6 +71,10 @@ public class PersistitAdapter extends StoreAdapter
         return cursor;
     }
 
+    public void setTransactional(boolean transactional) {
+        this.transactional.set(transactional);
+    }
+
     // PersistitAdapter interface
 
     public RowDef rowDef(int tableId)
@@ -77,14 +94,66 @@ public class PersistitAdapter extends StoreAdapter
         return new PersistitIndexRow(this, indexRowType);
     }
 
+    public RowData rowData(RowDef rowDef, Row row) {
+        if (row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow)row).rowData();
+        }
+        
+        NewRow niceRow = new NiceRow(rowDef.getRowDefId(), rowDef);
+
+        for(int i=0; i < row.rowType().nFields(); ++i) {
+            niceRow.put(i, row.field(i));
+        }
+        return niceRow.toRowData();
+    }
+
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
-        return persistit.getExchange(session, (RowDef) table.rowDef(), null);
+        return transact(persistit.getExchange(session, (RowDef) table.rowDef(), null));
     }
 
     public Exchange takeExchange(Index index) throws PersistitException
     {
-        return persistit.getExchange(session, null, (IndexDef) index.indexDef());
+        return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
+    }
+
+    public void updateIndex(IndexDef indexDef, Row oldRow, Row newRow, Key hKey) throws PersistitException {
+        RowDef rowDef = indexDef.getRowDef();
+        RowData oldRowData = rowData(rowDef, oldRow);
+        RowData newRowData = rowData(rowDef, newRow);
+        persistit.updateIndex(session, indexDef, rowDef, oldRowData, newRowData, hKey);
+    }
+
+    private Exchange transact(Exchange exchange) {
+        if (transactional.get()) {
+            synchronized (transactionsMap) {
+                if (!transactionsMap.containsKey(exchange)) {
+                    Transaction transaction = exchange.getTransaction();
+                    try {
+                        transaction.begin();
+                    } catch (PersistitException e) {
+                        throw new RuntimeException(e);
+                    }
+                    transactionsMap.put(exchange, transaction);
+                }
+            }
+        }
+        return exchange;
+    }
+
+    public void commitAllTransactions() throws PersistitException {
+        Collection<Transaction> transactions = new ArrayList<Transaction>();
+        synchronized (transactionsMap) {
+            Iterator<Transaction> transactionsIter = transactionsMap.values().iterator();
+            while (transactionsIter.hasNext()) {
+                transactions.add(transactionsIter.next());
+                transactionsIter.remove();
+            }
+        }
+        for (Transaction transaction : transactions) {
+            transaction.commit();
+            transaction.end();
+        }
     }
 
     public void returnExchange(Exchange exchange)
@@ -102,6 +171,8 @@ public class PersistitAdapter extends StoreAdapter
 
     // Object state
 
+    private final AtomicBoolean transactional = new AtomicBoolean(false);
+    private final Map<Exchange,Transaction> transactionsMap = new HashMap<Exchange, Transaction>();
     final PersistitStore persistit;
     final Session session;
     final PersistitFilterFactory filterFactory;
