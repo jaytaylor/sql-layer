@@ -26,8 +26,6 @@ import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.memcache.MemcacheServiceImpl;
 import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.network.NetworkServiceImpl;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeServiceImpl;
 import com.akiban.server.store.PersistitStore;
@@ -38,7 +36,6 @@ import com.akiban.server.store.Store;
 public class DefaultServiceFactory implements ServiceFactory {
 
     private Service<JmxRegistryService> jmxRegistryService;
-    private Service<SessionService> sessionService;
     private Service<ConfigurationService> configurationService;
     private Service<NetworkService> networkService;
     private Service<AkServer> chunkserverService;
@@ -81,14 +78,6 @@ public class DefaultServiceFactory implements ServiceFactory {
             jmxRegistryService = new JmxRegistryServiceImpl();
         }
         return jmxRegistryService;
-    }
-
-    @Override
-    public Service<SessionService> sessionService() {
-        if (sessionService == null) {
-            sessionService = new SessionServiceImpl();
-        }
-        return sessionService;
     }
 
     @Override
