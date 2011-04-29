@@ -27,8 +27,21 @@ import java.util.NoSuchElementException;
 public abstract class FilteringIterator<T> implements Iterator<T> {
 
     private static enum State {
-        NEEDS_NEXT,
-        NEXT_KNOWN,
+        /**
+         * This iterator is freshly created. It hasn't asked its delegate anything.
+         */
+        FRESH,
+        /**
+         * An item has been requested of the delegate, and it's pending to be delivered to this iterator's user.
+         */
+        NEXT_PENDING,
+        /**
+         * An item has been requested of the delegate, but it's already been delivered to this iterator's user.
+         */
+        NEXT_RETRIEVED,
+        /**
+         * There are no items left to deliver.
+         */
         DONE
     }
 
@@ -40,7 +53,7 @@ public abstract class FilteringIterator<T> implements Iterator<T> {
     public FilteringIterator(Iterator<T> delegate, boolean isMutable) {
         this.delegate = delegate;
         this.isMutable = isMutable;
-        this.state = State.NEEDS_NEXT;
+        this.state = State.FRESH;
 
     }
 
@@ -49,12 +62,13 @@ public abstract class FilteringIterator<T> implements Iterator<T> {
     @Override
     public boolean hasNext() {
         switch (state) {
-            case NEXT_KNOWN:
+            case NEXT_PENDING:
                 return true;
-            case NEEDS_NEXT:
+            case FRESH:
+            case NEXT_RETRIEVED:
                 advance();
-                assert (state == State.NEXT_KNOWN) || (state == State.DONE) : state;
-                return state == State.NEXT_KNOWN;
+                assert (state == State.NEXT_PENDING) || (state == State.DONE) : state;
+                return state == State.NEXT_PENDING;
             case DONE:
                 return false;
             default:
@@ -64,14 +78,14 @@ public abstract class FilteringIterator<T> implements Iterator<T> {
 
     @Override
     public T next() {
-        if (state == State.NEEDS_NEXT) {
+        if (state == State.FRESH || state == State.NEXT_RETRIEVED) {
             advance();
         }
         if (state == State.DONE) {
             throw new NoSuchElementException();
         }
-        assert state == State.NEXT_KNOWN : state;
-        state = State.NEEDS_NEXT;
+        assert state == State.NEXT_PENDING : state;
+        state = State.NEXT_RETRIEVED;
         return next;
     }
 
@@ -80,29 +94,33 @@ public abstract class FilteringIterator<T> implements Iterator<T> {
         if (!isMutable) {
             throw new UnsupportedOperationException();
         }
-        if (state != State.NEXT_KNOWN) {
+        if (state != State.NEXT_RETRIEVED) {
             throw new IllegalStateException(state.name());
         }
         delegate.remove();
-        state = State.NEEDS_NEXT;
     }
 
     /**
      * Advances the delegate until we get an element which passes the filter,
+     *
+     * Coming into this method, this iterator's state must be FRESH or NEXT_RETRIEVED. When this method completes
+     * successfully, the state will be DONE or NEXT_PENDING.
+     *
      * At the end of this method, this FilteringIterator's state will be either DONE or NEXT_KNOWN. This method
      * should only be invoked when the state is NEEDS_NEXT. If the state of this iterator is NEXT_KNOWN on return,
      * the "next" field will point to the correct item.
      */
     private void advance() {
-        assert state == State.NEEDS_NEXT : state;
-        while (state == State.NEEDS_NEXT) {
+        assert (state == State.FRESH) || (state == State.NEXT_RETRIEVED) : state;
+        while (state != State.NEXT_PENDING) {
             if (!delegate.hasNext()) {
                 state = State.DONE;
+                return;
             } else {
                 T item = delegate.next();
                 if (allow(item)) {
                     next = item;
-                    state = State.NEXT_KNOWN;
+                    state = State.NEXT_PENDING;
                 }
             }
         }
