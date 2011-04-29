@@ -34,6 +34,14 @@ public final class FilteringIteratorTest {
         assertEquals("filtered list", list(2, 4, 6), filtered);
     }
 
+    // have to filter out more than one in a row
+    @Test
+    public void correctUsageBasicSparse() {
+        ArrayList<Integer> list = list(1, 27, 31, 11, 2, 3, 4, 5, 6);
+        List<Integer> filtered = dump( onlyEvens(list) );
+        assertEquals("filtered list", list(2, 4, 6), filtered);
+    }
+
     @Test
     public void correctUsageEmptyList() {
         List<Integer> filtered = dump( onlyEvens() );
