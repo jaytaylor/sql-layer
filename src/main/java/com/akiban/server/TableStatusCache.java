@@ -46,9 +46,9 @@ public class TableStatusCache extends TransactionalCache {
     private TableStatusCache(final TableStatusCache tsc) {
         super(tsc);
         treeService = tsc.treeService;
-        for (final Entry<Integer, TableStatus> entry : tsc._tableStatusMap
+        for (final Entry<Integer, TableStatus> entry : tsc.tableStatusMap
                 .entrySet()) {
-            _tableStatusMap.put(entry.getKey(),
+            tableStatusMap.put(entry.getKey(),
                     new TableStatus(entry.getValue()));
         }
 
@@ -64,7 +64,7 @@ public class TableStatusCache extends TransactionalCache {
     private final static byte DROP = 6;
     private final static byte ASSIGN_ORDINAL = 100;
 
-    private final Map<Integer, TableStatus> _tableStatusMap = new HashMap<Integer, TableStatus>(
+    private final Map<Integer, TableStatus> tableStatusMap = new HashMap<Integer, TableStatus>(
             INITIAL_MAP_SIZE);
 
     static class IncrementRowCount extends UpdateInt {
@@ -183,7 +183,7 @@ public class TableStatusCache extends TransactionalCache {
         @Override
         public void apply(final TransactionalCache tc) {
             TableStatusCache tsc = (TableStatusCache) tc;
-            tsc._tableStatusMap.remove(_arg);
+            tsc.tableStatusMap.remove(_arg);
         }
 
         @Override
@@ -334,7 +334,7 @@ public class TableStatusCache extends TransactionalCache {
     public void save() throws PersistitException {
         final Session session = new SessionImpl();
         removeAll(session);
-        for (final TableStatus ts : _tableStatusMap.values()) {
+        for (final TableStatus ts : tableStatusMap.values()) {
             final RowDef rowDef = ts.getRowDef();
             if (rowDef != null) {
                 final TreeLink link = treeService.treeLink(
@@ -380,14 +380,14 @@ public class TableStatusCache extends TransactionalCache {
             int tableId = treeService.storeToAis(exchange.getVolume(),
                     storedTableId);
             if (exchange.getValue().isDefined()) {
-                TableStatus ts = _tableStatusMap.get(tableId);
+                TableStatus ts = tableStatusMap.get(tableId);
                 if (ts != null && ts.getCreationTime() != 0) {
                     throw new IllegalStateException("TableID " + tableId
                             + " already loaded");
                 }
                 ts = new TableStatus(tableId);
                 ts.get(exchange.getValue());
-                _tableStatusMap.put(tableId, ts);
+                tableStatusMap.put(tableId, ts);
             }
         }
     }
@@ -441,17 +441,27 @@ public class TableStatusCache extends TransactionalCache {
     }
 
     public synchronized TableStatus getTableStatus(final int tableId) {
-        TableStatus ts = _tableStatusMap.get(Integer.valueOf(tableId));
+        TableStatus ts = tableStatusMap.get(Integer.valueOf(tableId));
         if (ts == null) {
             ts = new TableStatus(tableId);
-            _tableStatusMap.put(Integer.valueOf(tableId), ts);
+            tableStatusMap.put(Integer.valueOf(tableId), ts);
         }
         return ts;
+    }
+    
+    public synchronized void detachAIS() {
+        TableStatusCache tsc = this;
+        while (tsc != null) {
+            for (final TableStatus ts : tsc.tableStatusMap.values()) {
+                ts.setRowDef(null);
+            }
+            tsc = (TableStatusCache)tsc._previousVersion;
+        }
     }
 
     @Override
     public String toString() {
-        return String.format("TableStatusCache %s", _tableStatusMap);
+        return String.format("TableStatusCache %s", tableStatusMap);
     }
 
 }

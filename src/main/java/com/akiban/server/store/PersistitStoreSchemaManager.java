@@ -913,6 +913,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final long timestamp) {
         final RowDefCache rowDefCache = getRowDefCache();
         rowDefCache.clear();
+        serviceManager.getTreeService().getTableStatusCache().detachAIS();
         rowDefCache.setAIS(newAis);
         rowDefCache.fixUpOrdinals();
         updateTimestamp.set(timestamp);
