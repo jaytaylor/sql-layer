@@ -205,11 +205,14 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         PhysicalOperator restrictionOperator;
         if (useIndex) {
             PhysicalOperator indexScan = indexScan_Default(predicateIndex, descending);
+/*
             PhysicalOperator indexLookup = indexLookup_Default(indexScan,
                                                                predicateIndex.getTable().getGroup().getGroupTable(),
                                                                limit,
                                                                ancestorTypes());
             rootOperator = indexLookup;
+*/
+            assert false; rootOperator = null;
             restrictionOperator = indexScan;
         } else {
             PhysicalOperator groupScan =

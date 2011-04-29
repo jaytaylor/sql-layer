@@ -22,7 +22,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.Cursor;
@@ -33,15 +32,11 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.InvalidOperationException;
-import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.itests.ApiTestBase;
-import com.akiban.server.service.memcache.SimpleHapiPredicate;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.RowCollector;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,7 +49,6 @@ import static com.akiban.qp.expression.API.*;
 import static com.akiban.qp.physicaloperator.API.*;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class PhysicalOperatorIT extends ApiTestBase
 {
@@ -210,8 +204,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     {
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
         PhysicalOperator indexLookup = indexLookup_Default(indexScan,
-                                                           coi,
-                                                           Collections.<RowType>emptyList());
+                                                           coi);
         Row[] expected = new Row[]{row(orderRowType, 12L, 1L, "david"),
                                    row(itemRowType, 121L, 12L),
                                    row(itemRowType, 122L, 12L),
@@ -231,9 +224,8 @@ public class PhysicalOperatorIT extends ApiTestBase
     public void testIndexLookupWithOneAncestor()
     {
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
-        PhysicalOperator indexLookup = indexLookup_Default(indexScan,
-                                                           coi,
-                                                           Arrays.asList(customerRowType));
+        PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
+        PhysicalOperator exhume = exhume_Default(indexLookup, coi, orderRowType, Arrays.asList(customerRowType));
         Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 12L, 1L, "david"),
                                    row(itemRowType, 121L, 12L),
@@ -250,16 +242,18 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compareRows(expected, new Executable(adapter, indexLookup));
+        compareRows(expected, new Executable(adapter, exhume));
     }
 
     @Test
     public void testIndexLookupWithTwoAncestors()
     {
         PhysicalOperator indexScan = indexScan_Default(index(item, "oid"));
-        PhysicalOperator indexLookup = indexLookup_Default(indexScan,
-                                                           coi,
-                                                           Arrays.asList(customerRowType, orderRowType));
+        PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
+        PhysicalOperator exhume = exhume_Default(indexLookup,
+                                                 coi,
+                                                 itemRowType,
+                                                 Arrays.asList(customerRowType, orderRowType));
         Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 11L, 1L, "ori"),
                                    row(itemRowType, 111L, 11L),
@@ -284,7 +278,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                    row(customerRowType, 2L, "abc"),
                                    row(orderRowType, 22L, 2L, "jack"),
                                    row(itemRowType, 222L, 22L)};
-        compareRows(expected, new Executable(adapter, indexLookup));
+        compareRows(expected, new Executable(adapter, exhume));
     }
 
     @Test
@@ -306,9 +300,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
-        PhysicalOperator indexLookup = indexLookup_Default(indexScan,
-                                                           coi,
-                                                           Collections.<RowType>emptyList());
+        PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
         Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};

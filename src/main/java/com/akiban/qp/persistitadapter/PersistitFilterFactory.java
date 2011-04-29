@@ -77,7 +77,7 @@ class PersistitFilterFactory
             }
         }
         key.clear();
-        return new KeyFilter(terms, 0, terms.length);
+        return new KeyFilter(terms, terms.length, terms.length);
     }
 
     public PersistitFilterFactory(PersistitAdapter adapter)

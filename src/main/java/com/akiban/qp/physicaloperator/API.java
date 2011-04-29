@@ -53,18 +53,24 @@ public class API
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
-                                                       GroupTable groupTable,
-                                                       List<RowType> missingTypes)
+                                                       GroupTable groupTable)
     {
-        return indexLookup_Default(inputOperator, groupTable, NO_LIMIT, missingTypes);
+        return indexLookup_Default(inputOperator, groupTable, NO_LIMIT);
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
                                                        GroupTable groupTable,
-                                                       Limit limit,
-                                                       List<RowType> missingTypes)
+                                                       Limit limit)
     {
-        return new IndexLookup_Default(inputOperator, groupTable, limit, missingTypes);
+        return new IndexLookup_Default(inputOperator, groupTable, limit);
+    }
+
+    public static PhysicalOperator exhume_Default(PhysicalOperator inputOperator,
+                                                  GroupTable groupTable,
+                                                  RowType rowType,
+                                                  List<RowType> ancestorTypes)
+    {
+        return new Exhume_Default(inputOperator, groupTable, rowType, ancestorTypes);
     }
 
     public static PhysicalOperator indexScan_Default(Index index)
