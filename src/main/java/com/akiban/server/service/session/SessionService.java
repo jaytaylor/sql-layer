@@ -16,4 +16,6 @@
 package com.akiban.server.service.session;
 
 public interface SessionService extends SessionFactory {
+    // for now, this only supports the SessionFactory behavior. In the future, it will support stats, and possibly
+    // methods for transferring a session from one thread to another.
 }
