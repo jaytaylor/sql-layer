@@ -211,9 +211,9 @@ public class ApiTestBase {
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
-        session = ServiceManagerImpl.newSession();
         sm = createServiceManager( createServiceFactory(properties) );
         sm.startServices();
+        session = ServiceManagerImpl.newSession();
     }
 
     protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
