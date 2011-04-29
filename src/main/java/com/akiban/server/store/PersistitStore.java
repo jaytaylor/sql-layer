@@ -286,7 +286,7 @@ public class PersistitStore implements Store {
      * @param rowData
      * @param indexDef
      */
-    void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
+    public static void constructIndexKey(Key iKey, RowData rowData, IndexDef indexDef,
             Key hKey) throws PersistitException {
         IndexDef.H2I[] fassoc = indexDef.indexKeyFields();
         iKey.clear();
@@ -396,12 +396,12 @@ public class PersistitStore implements Store {
         }
     }
 
-    void appendKeyField(final Key key, final FieldDef fieldDef,
+    static void appendKeyField(final Key key, final FieldDef fieldDef,
             final RowData rowData) {
         fieldDef.getEncoding().toKey(fieldDef, rowData, key);
     }
 
-    private void appendKeyFieldFromKey(final Key fromKey, final Key toKey,
+    static private void appendKeyFieldFromKey(final Key fromKey, final Key toKey,
             final int depth) {
         fromKey.indexTo(depth);
         int from = fromKey.getIndex();
@@ -1365,7 +1365,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    void updateIndex(final Session session, final IndexDef indexDef,
+    public void updateIndex(final Session session, final IndexDef indexDef,
             final RowDef rowDef, final RowData oldRowData,
             final RowData newRowData, final Key hkey) throws PersistitException {
 
@@ -1395,7 +1395,7 @@ public class PersistitStore implements Store {
         releaseExchange(session, iEx);
     }
 
-    boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
+    static boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
             final byte[] b, final int boffset, final int bsize) {
         if (asize != bsize) {
             return false;
@@ -1408,7 +1408,7 @@ public class PersistitStore implements Store {
         return true;
     }
 
-    boolean fieldsEqual(final RowDef rowDef, final RowData a, final RowData b,
+    public static boolean fieldsEqual(final RowDef rowDef, final RowData a, final RowData b,
             final int[] fieldIndexes) {
         for (int index = 0; index < fieldIndexes.length; index++) {
             final int fieldIndex = fieldIndexes[index];
@@ -1430,8 +1430,8 @@ public class PersistitStore implements Store {
         System.arraycopy(rowData.getBytes(), start, hEx.getValue().getEncodedBytes(), 0, size);
         int storedTableId = treeService.aisToStore(rowDef, rowData.getRowDefId());
         AkServerUtil.putInt(hEx.getValue().getEncodedBytes(),
-                            RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
-                            storedTableId);
+                RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
+                storedTableId);
         hEx.getValue().setEncodedSize(size);
     }
 
