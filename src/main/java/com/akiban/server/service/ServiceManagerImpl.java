@@ -29,6 +29,7 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.stats.StatisticsServiceImpl;
 import com.akiban.server.service.tree.TreeService;
@@ -117,6 +118,11 @@ public class ServiceManagerImpl implements ServiceManager
         return getService(DXLService.class);
     }
 
+    @Override
+    public SessionService getSessionService() {
+        return getService(SessionService.class);
+    }
+
     /**
      * <p>
      * Returns a service by its registered class. For instance, if you have a
@@ -187,6 +193,7 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     void startAndPutServices(JmxRegistryService jmxRegistry) throws Exception {
+        startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
