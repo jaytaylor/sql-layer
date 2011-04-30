@@ -76,6 +76,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.util.RowDefNotFoundException;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Tap;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -98,6 +99,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private final Scanner scanner;
     private static final int SCAN_RETRY_COUNT = 10;
 
+    private static Tap SCAN_RETRY_COUNT_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan retries"));
+
     BasicDMLFunctions(DDLFunctions ddlFunctions) {
         this.ddlFunctions = ddlFunctions;
         this.scanner = new Scanner();
@@ -110,7 +113,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         void scanSomeFinishedWellHook();
     }
 
-    static final ScanHooks NONE = new ScanHooks() {
+    static final ScanHooks DEFAULT_SCAN_HOOK = new ScanHooks() {
         @Override
         public void loopStartHook() {
         }
@@ -121,6 +124,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         @Override
         public void retryHook() {
+            SCAN_RETRY_COUNT_TAP.in();
+            SCAN_RETRY_COUNT_TAP.out();
         }
 
         @Override
@@ -310,7 +315,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             GenericInvalidOperationException
 
     {
-        scanSome(session, cursorId, output, NONE);
+        scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
     }
 
     boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output, ScanHooks scanHooks)
@@ -437,7 +442,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             TableDefinitionChangedException,
             GenericInvalidOperationException
     {
-        return scanSome(session, cursorId, output, NONE);
+        return scanSome(session, cursorId, output, DEFAULT_SCAN_HOOK);
     }
 
     public boolean scanSome(Session session, CursorId cursorId, RowOutput output, ScanHooks scanHooks)

@@ -125,7 +125,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
                 GenericInvalidOperationException {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
-                hooks = BasicDMLFunctions.NONE;
+                hooks = BasicDMLFunctions.DEFAULT_SCAN_HOOK;
             }
             super.scanSome(session, cursorId, output, hooks);
         }
@@ -142,7 +142,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         {
             ScanHooks hooks = session.remove(SCANHOOKS_KEY);
             if (hooks == null) {
-                hooks = BasicDMLFunctions.NONE;
+                hooks = BasicDMLFunctions.DEFAULT_SCAN_HOOK;
             }
             return super.scanSome(session, cursorId, output, hooks);
         }
