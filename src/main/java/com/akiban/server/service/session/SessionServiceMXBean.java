@@ -19,4 +19,5 @@ package com.akiban.server.service.session;
 public interface SessionServiceMXBean {
     long getCreated();
     long getGCed();
+    long getClosed();
 }

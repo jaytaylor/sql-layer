@@ -26,20 +26,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class SessionServiceImpl implements SessionService, Service<SessionService>, JmxManageable {
+public final class SessionServiceImpl implements SessionService, Service<SessionService>, SessionEventListener, JmxManageable {
     private static Logger LOG = LoggerFactory.getLogger(SessionServiceImpl.class);
 
     private final Object LOCK = new Object();
     private final AtomicLong sessionsCreated = new AtomicLong();
     private final AtomicLong sessionsGCed = new AtomicLong();
+    private final AtomicLong sessionsClosed = new AtomicLong();
     private final List<WeakReference<Session>> weakSessionsList = new ArrayList<WeakReference<Session>>();
 
     @Override
     public Session createSession() {
-        Session session = new Session();
+        Session session = new Session(this);
         WeakReference<Session> sessionRef = new WeakReference<Session>(session);
+        sessionsCreated.incrementAndGet();
         synchronized (LOCK) {
-            sessionsCreated.incrementAndGet();
             weakSessionsList.add(sessionRef);
         }
         return session;
@@ -53,6 +54,16 @@ public final class SessionServiceImpl implements SessionService, Service<Session
     @Override
     public long countSessionsGCed() {
         return sessionsGCed.addAndGet( removeGCedReferences() );
+    }
+
+    @Override
+    public void sessionClosing() {
+        sessionsClosed.incrementAndGet();
+    }
+
+    @Override
+    public long countSessionsClosed() {
+        return sessionsClosed.get();
     }
 
     private int removeGCedReferences() {
@@ -86,6 +97,11 @@ public final class SessionServiceImpl implements SessionService, Service<Session
             @Override
             public long getGCed() {
                 return countSessionsGCed();
+            }
+
+            @Override
+            public long getClosed() {
+                return countSessionsClosed();
             }
         }, SessionServiceMXBean.class);
     }
