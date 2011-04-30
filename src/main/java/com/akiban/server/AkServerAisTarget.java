@@ -21,6 +21,7 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
@@ -36,7 +37,7 @@ public class AkServerAisTarget extends Target {
 
     private final Store store;
     
-    private final Session session = new Session();
+    private final Session session = ServiceManagerImpl.newSession();
 
     // Target interface
 

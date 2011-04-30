@@ -23,6 +23,7 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Source;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.Store;
@@ -31,7 +32,7 @@ public class AkServerAisSource extends Source {
 
     private final Store store;
 
-    private final Session session = new Session();
+    private final Session session = ServiceManagerImpl.newSession();
     
     public AkServerAisSource(final Store store) throws Exception {
         this.store = store;

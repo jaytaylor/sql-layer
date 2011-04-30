@@ -15,6 +15,9 @@
 
 package com.akiban.server.service.session;
 
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManagerImpl;
+
 public final class TestSessionFactory implements SessionFactory {
 
     private static final TestSessionFactory INSTANCE = new TestSessionFactory();
@@ -29,6 +32,10 @@ public final class TestSessionFactory implements SessionFactory {
 
     @Override
     public Session createSession() {
-        return new Session();
+        ServiceManager serviceManager = ServiceManagerImpl.get();
+        if (serviceManager != null) {
+            throw new RuntimeException("you should only use this is there is no ServiceManagerImpl available");
+        }
+        return new Session(null);
     }
 }

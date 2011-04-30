@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import com.akiban.server.service.ServiceManagerImpl;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -136,7 +137,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
         @Override
         protected Session initialValue() {
-            return new Session();
+            return ServiceManagerImpl.newSession();
         }
     };
     /**
