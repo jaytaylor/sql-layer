@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class SessionServiceImpl implements SessionService, Service<SessionService>, SessionEventListener, JmxManageable {
     private static Logger LOG = LoggerFactory.getLogger(SessionServiceImpl.class);
+    private static final int WEAK_SESSIONS_LIST_TOO_BIG = 2000;
 
     private final Object LOCK = new Object();
     private final AtomicBoolean statsGatheringOn = new AtomicBoolean(false);
@@ -45,6 +46,10 @@ public final class SessionServiceImpl implements SessionService, Service<Session
             WeakReference<Session> sessionRef = new WeakReference<Session>(session);
             sessionsCreated.incrementAndGet();
             synchronized (LOCK) {
+                // our list is pretty big, so try and clear out as much as possible
+                if (weakSessionsList.size() > WEAK_SESSIONS_LIST_TOO_BIG) {
+                    countSessionsGCed();
+                }
                 weakSessionsList.add(sessionRef);
             }
         }
