@@ -103,6 +103,11 @@ public final class SessionServiceImpl implements SessionService, Service<Session
             public long getClosed() {
                 return countSessionsClosed();
             }
+
+            @Override
+            public long getOpenedEstimate() {
+                return getCreated() - (getGCed() - getClosed());
+            }
         }, SessionServiceMXBean.class);
     }
 

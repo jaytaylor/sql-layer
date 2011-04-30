@@ -20,4 +20,12 @@ public interface SessionServiceMXBean {
     long getCreated();
     long getGCed();
     long getClosed();
+
+    /**
+     * Gets a rough sense of how many sessions are opened. This method is very rough; it makes no synchronization
+     * guarantees. For instance an implementation that invokes {@code getCreated() - (getGCed() - getClosed())}, with no
+     * atomicity between each of those methods, would be acceptable.
+     * @return roughly the number of open sessions
+     */
+    long getOpenedEstimate();
 }
