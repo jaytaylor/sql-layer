@@ -411,7 +411,7 @@ public class MemcacheServiceImpl implements MemcacheService,
             try {
                 HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
                 Index index = processAs.get().whichItem.getHapiProcessor()
-                        .findHapiRequestIndex(new Session(), getRequest);
+                        .findHapiRequestIndex(ServiceManagerImpl.newSession(), getRequest);
                 return index == null ? "null" : index.toString();
             } catch (HapiRequestException e) {
                 throw new RuntimeException(e.getMessage());

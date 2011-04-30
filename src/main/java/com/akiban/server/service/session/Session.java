@@ -25,6 +25,10 @@ public final class Session
     private static final Object NULL_OBJ = new Object();
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
 
+    Session() {
+        // package-private ctor
+    }
+
     public <T> T get(Session.Key<T> key) {
         return launder(key, map.get(key));
     }
