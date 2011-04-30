@@ -24,12 +24,14 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class SessionServiceImpl implements SessionService, Service<SessionService>, SessionEventListener, JmxManageable {
     private static Logger LOG = LoggerFactory.getLogger(SessionServiceImpl.class);
 
     private final Object LOCK = new Object();
+    private final AtomicBoolean statsGatheringOn = new AtomicBoolean(false);
     private final AtomicLong sessionsCreated = new AtomicLong();
     private final AtomicLong sessionsGCed = new AtomicLong();
     private final AtomicLong sessionsClosed = new AtomicLong();
@@ -37,11 +39,14 @@ public final class SessionServiceImpl implements SessionService, Service<Session
 
     @Override
     public Session createSession() {
-        Session session = new Session(this);
-        WeakReference<Session> sessionRef = new WeakReference<Session>(session);
-        sessionsCreated.incrementAndGet();
-        synchronized (LOCK) {
-            weakSessionsList.add(sessionRef);
+        boolean gatherStats = statsGatheringOn.get();
+        Session session = new Session(gatherStats ? this : null);
+        if (gatherStats) {
+            WeakReference<Session> sessionRef = new WeakReference<Session>(session);
+            sessionsCreated.incrementAndGet();
+            synchronized (LOCK) {
+                weakSessionsList.add(sessionRef);
+            }
         }
         return session;
     }
@@ -107,6 +112,16 @@ public final class SessionServiceImpl implements SessionService, Service<Session
             @Override
             public long getOpenedEstimate() {
                 return getCreated() - (getGCed() - getClosed());
+            }
+
+            @Override
+            public boolean isStatsGatheringOn() {
+                return statsGatheringOn.get();
+            }
+
+            @Override
+            public void setStatsGatheringOn(boolean turnOn) {
+                statsGatheringOn.set(turnOn);
             }
         }, SessionServiceMXBean.class);
     }
