@@ -100,6 +100,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private static final int SCAN_RETRY_COUNT = 10;
 
     private static Tap SCAN_RETRY_COUNT_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan retries"));
+    private static Tap SCAN_RETRY_ABANDON_TAP = Tap.add(new Tap.Count("BasicDMLFunctions: scan abandons"));
 
     BasicDMLFunctions(DDLFunctions ddlFunctions) {
         this.ddlFunctions = ddlFunctions;
@@ -362,6 +363,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     scanHooks.retryHook();
                     output.rewind();
                     if (--retriesLeft <= 0) {
+                        SCAN_RETRY_ABANDON_TAP.in();
+                        SCAN_RETRY_ABANDON_TAP.out();
                         throw new GenericInvalidOperationException(e);
                     }
                     try {
