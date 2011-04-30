@@ -95,7 +95,9 @@ public final class Session
 
     public void close()
     {
-        listener.sessionClosing();
+        if (listener != null) {
+            listener.sessionClosing();
+        }
         // For now do nothing to any cached resources.
         // Later, we'll close any "resource" that is added to the session.
         //
