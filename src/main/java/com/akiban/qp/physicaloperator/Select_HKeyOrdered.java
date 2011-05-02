@@ -94,11 +94,11 @@ class Select_HKeyOrdered extends PhysicalOperator
                     // New row of predicateRowType
                     if ((Boolean) predicate.evaluate(inputRow)) {
                         selectedRow.set(inputRow);
-                        outputRow(selectedRow);
+                        outputRow(selectedRow.managedRow());
                     }
                 } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                     // Row's type is a descendent of predicateRowType.
-                    if (selectedRow.isNotNull() && selectedRow.ancestorOf(inputRow)) {
+                    if (selectedRow.isNotNull() && selectedRow.managedRow().ancestorOf(inputRow)) {
                         outputRow(inputRow);
                     } else {
                         selectedRow.set(null);

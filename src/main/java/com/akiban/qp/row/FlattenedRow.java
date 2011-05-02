@@ -41,9 +41,9 @@ public class FlattenedRow extends RowBase
     {
         Object field;
         if (i < nParentFields) {
-            field = parent.field(i);
+            field = parent.managedRow().field(i);
         } else {
-            field = child.field(i - nParentFields);
+            field = child.managedRow().field(i - nParentFields);
         }
         return field;
     }
@@ -51,7 +51,7 @@ public class FlattenedRow extends RowBase
     @Override
     public HKey hKey()
     {
-        return child.hKey();
+        return child.managedRow().hKey();
     }
 
 // FlattenedRow interface

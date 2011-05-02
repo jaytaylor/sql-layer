@@ -159,7 +159,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         if (keepChild) {
                             addToPending();
                         }
-                        if (parent.isNotNull() && parent.ancestorOf(inputRow)) {
+                        if (parent.isNotNull() && parent.managedRow().ancestorOf(inputRow)) {
                             // child is not an orphan
                             generateInnerJoinRow(parent.managedRow(), inputRow);
                         } else {
@@ -170,7 +170,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     } else {
                         addToPending();
                         if (parentType.ancestorOf(inputRowType)) {
-                            if (parent.isNotNull() && !parent.ancestorOf(inputRow)) {
+                            if (parent.isNotNull() && !parent.managedRow().ancestorOf(inputRow)) {
                                 // We're past all descendents of the current parent
                                 parent.set(null);
                             }

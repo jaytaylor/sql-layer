@@ -128,7 +128,7 @@ class IndexLookup_Default extends PhysicalOperator
             groupCursor.close();
             if (indexInput.next()) {
                 indexRow.set(indexInput.currentRow());
-                groupCursor.bind(this.indexRow.hKey());
+                groupCursor.bind(this.indexRow.managedRow().hKey());
                 groupCursor.open();
                 if (groupCursor.next()) {
                     ManagedRow currentRow = groupCursor.currentRow();
