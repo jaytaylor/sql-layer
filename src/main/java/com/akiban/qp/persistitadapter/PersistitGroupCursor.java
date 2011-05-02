@@ -164,6 +164,18 @@ class PersistitGroupCursor implements GroupCursor
      *  - exchange == null iff this cursor is open
      */
 
+    Exchange exchange() {
+        return exchange;
+    }
+
+    RowHolder<PersistitGroupRow> currentHeldRow() {
+        return row;
+    }
+
+    PersistitAdapter adapter() {
+        return adapter;
+    }
+
     private final PersistitAdapter adapter;
     private final GroupTable groupTable;
     private final boolean reverse;

@@ -128,7 +128,11 @@ class PersistitFilterFactory
 
     private RowData rowData(IndexBound bound)
     {
-        return ((PersistitGroupRow)bound.row()).rowData();
+        if (bound.row() instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow)bound.row()).rowData();
+        }
+        RowDef rowDef = (RowDef) bound.table().rowDef();
+        return adapter.rowData(rowDef, bound.row());
     }
 
     // Object state

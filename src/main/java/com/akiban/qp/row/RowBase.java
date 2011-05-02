@@ -63,9 +63,23 @@ public abstract class RowBase implements ManagedRow
     @Override
     public final void release()
     {
-        assert references >= 1 : this;
         references--;
         // System.out.println(String.format("%s: release %s", references, this));
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(this.getClass().getSimpleName()).append('[');
+        final int fieldsCount = rowType().nFields();
+        for (int i=0; i < fieldsCount; ++i) {
+            builder.append(field(i));
+            if(i+1 < fieldsCount) {
+                builder.append(',').append(' ');
+            }
+        }
+        builder.append(']');
+        return builder.toString();
     }
 
     // Object state
