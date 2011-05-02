@@ -84,7 +84,9 @@ class Expected
                     assert row.getTableId() == predicateTable : row;
                     int depth = depth(row.getTableId());
                     for (int i = depth(rootTable); i < depth; i++) {
-                        extendedQueryResult.add(ancestors[i]);
+                        if (ancestors[i] != null && ancestorOf(ancestors[i], row)) {
+                            extendedQueryResult.add(ancestors[i]);
+                        }
                     }
                     extendedQueryResult.add(row);
                 }

@@ -284,6 +284,8 @@ class PersistitGroupCursor implements GroupCursor
                             // Not selected. Could be that we need to skip over some orphans.
                             if (!exchange.traverse(subsequentDirection, hKeyRangeFilter, VALUE_BYTES)) {
                                 close();
+                            } else {
+                                exchange.getKey().copyTo(controllingHKey);
                             }
                         }
                     }
