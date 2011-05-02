@@ -200,6 +200,7 @@ public class ApiTestBase {
     @After
     public final void stopTestServices() throws Exception {
         sm.stopServices();
+        assertTrue("session wasn't closed", session.isClosed());
         sm = null;
         session = null;
     }

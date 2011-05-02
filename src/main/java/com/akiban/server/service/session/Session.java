@@ -25,9 +25,11 @@ public final class Session
     private static final Object NULL_OBJ = new Object();
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
     private final SessionEventListener listener;
+    private boolean closed;
 
     Session(SessionEventListener listener) {
         this.listener = listener;
+        this.closed = false;
     }
 
     public <T> T get(Session.Key<T> key) {
@@ -102,6 +104,14 @@ public final class Session
         // Later, we'll close any "resource" that is added to the session.
         //
         map.clear();
+    }
+
+    public boolean isClosed() {
+        return closed;
+    }
+
+    public void setClosed(boolean closed) {
+        this.closed = closed;
     }
 
     @SuppressWarnings("unused") // for <T> parameter; it's only useful for compile-time checking
