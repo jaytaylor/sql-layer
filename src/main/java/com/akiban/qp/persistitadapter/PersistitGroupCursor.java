@@ -68,7 +68,7 @@ class PersistitGroupCursor implements GroupCursor
                 groupScan.advance();
                 next = exchange != null;
                 if (next) {
-                    PersistitGroupRow row = unsharedRow().managedRow();
+                    PersistitGroupRow row = unsharedRow().get();
                     row.copyFromExchange(exchange);
                 }
             }
@@ -98,7 +98,7 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public ManagedRow currentRow()
     {
-        return row.managedRow();
+        return row.get();
     }
 
     // GroupCursor interface
@@ -132,7 +132,7 @@ class PersistitGroupCursor implements GroupCursor
 
     private RowHolder<PersistitGroupRow> unsharedRow()
     {
-        if (row.managedRow().isShared()) {
+        if (row.get().isShared()) {
             row.set(adapter.newGroupRow());
         }
         return row;

@@ -48,7 +48,7 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
     @Override
     public final ManagedRow currentRow()
     {
-        return row.managedRow();
+        return row.get();
     }
 
     // OperatorExecution interface
@@ -69,7 +69,7 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
 
     protected ManagedRow outputRow()
     {
-        return row.managedRow();
+        return row.get();
     }
 
     protected void outputRow(Row newRow)

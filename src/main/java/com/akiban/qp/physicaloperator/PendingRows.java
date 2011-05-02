@@ -68,7 +68,7 @@ class PendingRows
 
     private ManagedRow row(int i)
     {
-        return ((RowHolder<ManagedRow>) queue[i]).managedRow();
+        return ((RowHolder<ManagedRow>) queue[i]).get();
     }
 
     private void row(int i, ManagedRow row)

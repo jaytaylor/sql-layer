@@ -103,9 +103,9 @@ class IndexLookup_Default extends PhysicalOperator
                     advanceIndex();
                 }
             }
-            outputRow(groupRow.managedRow());
+            outputRow(groupRow.get());
             if (LOG.isInfoEnabled()) {
-                LOG.info("IndexLookup: {}", groupRow.isNull() ? null : groupRow.managedRow());
+                LOG.info("IndexLookup: {}", groupRow.isNull() ? null : groupRow.get());
             }
             return groupRow.isNotNull();
         }
@@ -128,7 +128,7 @@ class IndexLookup_Default extends PhysicalOperator
             groupCursor.close();
             if (indexInput.next()) {
                 indexRow.set(indexInput.currentRow());
-                groupCursor.bind(this.indexRow.hKey());
+                groupCursor.bind(this.indexRow.get().hKey());
                 groupCursor.open();
                 if (groupCursor.next()) {
                     ManagedRow currentRow = groupCursor.currentRow();
