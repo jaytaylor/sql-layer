@@ -24,9 +24,10 @@ public final class Session
 {
     private static final Object NULL_OBJ = new Object();
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
+    private final SessionEventListener listener;
 
-    Session() {
-        // package-private ctor
+    public Session(SessionEventListener listener) {
+        this.listener = listener;
     }
 
     public <T> T get(Session.Key<T> key) {
@@ -94,6 +95,9 @@ public final class Session
 
     public void close()
     {
+        if (listener != null) {
+            listener.sessionClosing();
+        }
         // For now do nothing to any cached resources.
         // Later, we'll close any "resource" that is added to the session.
         //

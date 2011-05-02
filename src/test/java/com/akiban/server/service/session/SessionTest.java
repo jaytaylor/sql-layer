@@ -27,7 +27,7 @@ public final class SessionTest {
 
     @Before
     public void setUp() {
-        session = new Session();
+        session = new Session(null);
     }
 
     @After

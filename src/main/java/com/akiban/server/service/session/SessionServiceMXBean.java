@@ -15,7 +15,8 @@
 
 package com.akiban.server.service.session;
 
-public interface SessionService extends SessionFactory {
-    long countSessionsCreated();
-    long countSessionsClosed();
+@SuppressWarnings("unused") // jmx
+public interface SessionServiceMXBean {
+    long getCreated();
+    long getClosed();
 }
