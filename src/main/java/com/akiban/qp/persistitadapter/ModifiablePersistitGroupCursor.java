@@ -41,9 +41,9 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
     private final ModifiableCursorBackingStore backingStore = new ModifiableCursorBackingStore() {
         @Override
         public void addRow(RowBase newRow) {
-            RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
             try {
-                adapter().persistit.writeRow(adapter().session, currentRow.get().rowData());
+                RowDef rowDef = null; // let's hope this is a PersistitGroupRow, so that we don't get a NPE!
+                adapter().persistit.writeRow(adapter().session, adapter().rowData(rowDef, newRow));
             } catch (Exception e) {
                 throw new CursorUpdateException(e);
             }
@@ -75,7 +75,9 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         // for now, use PS
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         try {
-            adapter().persistit.deleteRow(adapter().session, currentRow.get().rowData());
+            PersistitGroupRow row = currentHeldRow().get();
+            adapter().persistit.deleteRow(adapter().session, row.rowData());
+            currentRow.set(null);
         } catch (Exception e) {
             throw new CursorUpdateException(e);
         }
@@ -83,7 +85,6 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
 
     private void updateGroup(RowBase newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
-        currentRow.get().share();
         RowDef rowDef = currentRow.get().rowDef();
         RowData rowData = adapter().rowData(rowDef, newRow);
         try {
