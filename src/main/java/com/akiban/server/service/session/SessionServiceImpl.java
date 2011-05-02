@@ -24,6 +24,8 @@ public final class SessionServiceImpl implements SessionService, Service<Session
     private final AtomicLong sessionsCreated = new AtomicLong();
     private final AtomicLong sessionsClosed = new AtomicLong();
 
+    // SessionService interface
+
     @Override
     public Session createSession() {
         Session session = new Session(this);
@@ -37,14 +39,18 @@ public final class SessionServiceImpl implements SessionService, Service<Session
     }
 
     @Override
+    public long countSessionsClosed() {
+        return sessionsClosed.get();
+    }
+
+    // SessionEventListener interface
+
+    @Override
     public void sessionClosing() {
         sessionsClosed.incrementAndGet();
     }
 
-    @Override
-    public long countSessionsClosed() {
-        return sessionsClosed.get();
-    }
+    // JmxManageable interface
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -60,6 +66,8 @@ public final class SessionServiceImpl implements SessionService, Service<Session
             }
         }, SessionServiceMXBean.class);
     }
+
+    // Service<SessionService> interface
 
     @Override
     public SessionService cast() {
