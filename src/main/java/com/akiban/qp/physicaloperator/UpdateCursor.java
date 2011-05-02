@@ -38,14 +38,13 @@ public final class UpdateCursor implements Cursor {
     @Override
     public boolean next() {
         if (input.next()) {
-            Row input = this.input.currentRow();
-            if (!updateLambda.rowIsApplicable(input)) {
+            Row row = this.input.currentRow();
+            if (!updateLambda.rowIsApplicable(row)) {
                 currentRowIsMine = false;
                 return true;
             }
             currentRowIsMine = true;
-            currentRow = updateLambda.applyUpdate(input);
-            input.release();
+            currentRow = updateLambda.applyUpdate(row);
             this.input.updateCurrentRow(currentRow);
             return true;
         }
