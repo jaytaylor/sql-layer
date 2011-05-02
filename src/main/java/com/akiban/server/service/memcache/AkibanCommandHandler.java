@@ -177,6 +177,8 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void channelClosed(ChannelHandlerContext context,
             ChannelStateEvent event) throws Exception {
+        session.get().close();
+        session.remove();
         callback.connectionClosed();
         channelGroup.remove(context.getChannel());
     }

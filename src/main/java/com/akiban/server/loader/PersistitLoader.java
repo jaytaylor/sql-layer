@@ -47,7 +47,8 @@ public class PersistitLoader
         } catch (Exception e) {
         	tracker.error("Caught exception while sorting finalTasks", e);
         }
-        
+
+        Session session = ServiceManagerImpl.newSession();
         try {
             // TODO: Merge inputs from final tasks by hkey. This would require a
             // TODO: connection per table.
@@ -55,7 +56,7 @@ public class PersistitLoader
                 load(task, connection);
             }
             
-            store.buildIndexes(ServiceManagerImpl.newSession(), "", BUILD_INDEXES_DEFERRED);
+            store.buildIndexes(session, "", BUILD_INDEXES_DEFERRED);
             // transaction.commit();
         } catch (PersistitException e) {
             tracker.error("Caught exception while loading persistit", e);
@@ -68,6 +69,7 @@ public class PersistitLoader
             throw e;
 */
         } finally {
+            session.close();
             // transaction.end();
         }
     }

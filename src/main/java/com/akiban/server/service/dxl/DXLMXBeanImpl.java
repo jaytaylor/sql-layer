@@ -53,10 +53,13 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public void createTable(String schema, String ddl) {
+        Session session = ServiceManagerImpl.newSession();
         try {
-            dxlService.ddlFunctions().createTable(ServiceManagerImpl.newSession(), schema, ddl);
+            dxlService.ddlFunctions().createTable(session, schema, ddl);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
+        } finally {
+            session.close();
         }
     }
 
@@ -66,10 +69,13 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public void dropTable(String schema, String tableName) {
+        Session session = ServiceManagerImpl.newSession();
         try {
-            dxlService.ddlFunctions().dropTable(ServiceManagerImpl.newSession(), new TableName(schema, tableName));
+            dxlService.ddlFunctions().dropTable(session, new TableName(schema, tableName));
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
+        } finally {
+            session.close();
         }
     }
 
@@ -82,32 +88,44 @@ class DXLMXBeanImpl implements DXLMXBean {
     public void dropGroupBySchema(String schemaName)
     {
         final Session session = ServiceManagerImpl.newSession();
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        for(com.akiban.ais.model.Group group: ais.getGroups().values()) {
-            final String groupTableSchema = group.getGroupTable().getName().getSchemaName();
-            if(groupTableSchema.equals(schemaName)) {
-                try {
-                    dxlService.ddlFunctions().dropGroup(session, group.getName());
-                } catch(InvalidOperationException e) {
-                    throw new RuntimeException(e);
+        try {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            for(com.akiban.ais.model.Group group: ais.getGroups().values()) {
+                final String groupTableSchema = group.getGroupTable().getName().getSchemaName();
+                if(groupTableSchema.equals(schemaName)) {
+                    try {
+                        dxlService.ddlFunctions().dropGroup(session, group.getName());
+                    } catch(InvalidOperationException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
+        } finally {
+            session.close();
         }
     }
 
     @Override
     public void dropGroup(String groupName) {
+        Session session = ServiceManagerImpl.newSession();
         try {
-            dxlService.ddlFunctions().dropGroup(ServiceManagerImpl.newSession(), groupName);
+            dxlService.ddlFunctions().dropGroup(session, groupName);
         } catch (InvalidOperationException e) {
             throw new RuntimeException(e);
+        } finally {
+            session.close();
         }
     }
 
     @Override
     public void dropAllGroups() {
-        for(String groupName : dxlService.ddlFunctions().getAIS(ServiceManagerImpl.newSession()).getGroups().keySet()) {
-            dropGroup(groupName);
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            for(String groupName : dxlService.ddlFunctions().getAIS(session).getGroups().keySet()) {
+                dropGroup(groupName);
+            }
+        } finally {
+            session.close();
         }
     }
 
@@ -118,7 +136,13 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String getGroupNameFromTableName(String schemaName, String tableName) {
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(ServiceManagerImpl.newSession());
+        Session session = ServiceManagerImpl.newSession();
+        final AkibanInformationSchema ais;
+        try {
+            ais = dxlService.ddlFunctions().getAIS(session);
+        } finally {
+            session.close();
+        }
         Table table = ais.getTable(schemaName, tableName);
         if(table != null) {
             final com.akiban.ais.model.Group group = table.getGroup();
@@ -130,18 +154,23 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public List<String> getGrouping(String schema) {
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(ServiceManagerImpl.newSession());
-        Grouping grouping = GroupsBuilder.fromAis(ais, schema);
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            Grouping grouping = GroupsBuilder.fromAis(ais, schema);
 
-        stripAISFromGrouping(grouping);
+            stripAISFromGrouping(grouping);
 
-        String groupingString = grouping.toString();
-        return Arrays.asList(groupingString.split("\\n"));
+            String groupingString = grouping.toString();
+            return Arrays.asList(groupingString.split("\\n"));
+        } finally {
+            session.close();
+        }
     }
 
     public void writeRow(String schema, String table, String fields) {
+        final Session session = ServiceManagerImpl.newSession();
         try {
-            final Session session = ServiceManagerImpl.newSession();
             int tableId = dxlService.ddlFunctions().getTableId(session, new TableName(schema, table));
             NewRow row = new NiceRow(tableId);
             String[] fieldsArray = fields.split(",\\s*");
@@ -154,6 +183,8 @@ class DXLMXBeanImpl implements DXLMXBean {
             throw new RuntimeException(e.getMessage());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e.getMessage());
+        } finally {
+            session.close();
         }
     }
 

@@ -105,6 +105,8 @@ public class PersistitAdapter
         store.flushIndexes(session);
         store.updateTableStats(session, leafRowDef, rowCount);
         store.releaseExchange(session, exchange);
+        session.close();
+        session = null;
     }
 
     // parentColumns are columns that may be present in

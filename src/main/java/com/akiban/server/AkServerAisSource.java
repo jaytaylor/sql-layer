@@ -40,6 +40,7 @@ public class AkServerAisSource extends Source {
 
     @Override
     public void close() throws SQLException {
+        session.close();
     }
 
     @Override

@@ -199,6 +199,7 @@ public class ApiTestBase {
 
     @After
     public final void stopTestServices() throws Exception {
+        session.close();
         sm.stopServices();
         sm = null;
         session = null;

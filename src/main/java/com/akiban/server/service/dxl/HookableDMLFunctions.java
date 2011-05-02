@@ -209,7 +209,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throwIfInstanceOf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW, thrown);
+            try {
+                hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW, thrown);
+            } finally {
+                session.close();
+            }
         }
     }
 
@@ -226,7 +230,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throwIfInstanceOf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, thrown);
+            try {
+                hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, thrown);
+            } finally {
+                session.close();
+            }
         }
     }
 
@@ -243,7 +251,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throwIfInstanceOf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunction.CONVERT_ROW_DATAS, thrown);
+            try {
+                hook.hookFunctionFinally(session, DXLFunction.CONVERT_ROW_DATAS, thrown);
+            } finally {
+                session.close();
+            }
         }
     }
 
