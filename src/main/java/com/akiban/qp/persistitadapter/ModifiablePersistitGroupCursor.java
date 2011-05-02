@@ -19,7 +19,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.ModifiableCursorBackingStore;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -40,7 +40,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
 
     private final ModifiableCursorBackingStore backingStore = new ModifiableCursorBackingStore() {
         @Override
-        public void addRow(Row newRow) {
+        public void addRow(RowBase newRow) {
             RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
             try {
                 adapter().persistit.writeRow(adapter().session, currentRow.get().rowData());
@@ -55,7 +55,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
     }
 
     @Override
-    public void updateCurrentRow(Row newRow) {
+    public void updateCurrentRow(RowBase newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         RowData currentRowData = currentRow.get().rowData();
         RowDef rowDef = currentRow.get().rowDef();
@@ -81,7 +81,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         }
     }
 
-    private void updateGroup(Row newRow) {
+    private void updateGroup(RowBase newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         currentRow.get().share();
         RowDef rowDef = currentRow.get().rowDef();
@@ -95,8 +95,8 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         currentRow.set(PersistitGroupRow.newPersistitGroupRow(adapter(), rowData));
     }
 
-    private void updateIndexes(Row newRow) {
-        Row current = currentRow();
+    private void updateIndexes(RowBase newRow) {
+        RowBase current = currentRow();
         final UserTableRowType rowType = userTableRowType(current);
 
         RowDef rowDef = (RowDef) rowType.userTable().rowDef();
@@ -123,7 +123,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         }
     }
 
-    private UserTableRowType userTableRowType(Row row) {
+    private UserTableRowType userTableRowType(RowBase row) {
         RowType rowType = row.rowType();
         try {
             return (UserTableRowType) rowType;
@@ -179,7 +179,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
             this.indexDef = (IndexDef) indexRowType.index().indexDef();
         }
 
-        public void update(Row oldRow, Key hKey, Row newRow) {
+        public void update(RowBase oldRow, Key hKey, RowBase newRow) {
             try {
                 adapter.updateIndex(indexDef, oldRow, newRow, hKey);
             } catch (PersistitException e) {

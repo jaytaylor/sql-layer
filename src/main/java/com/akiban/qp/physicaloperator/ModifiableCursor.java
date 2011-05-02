@@ -15,7 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 
 public interface ModifiableCursor extends Cursor {
     /**
@@ -30,7 +30,7 @@ public interface ModifiableCursor extends Cursor {
      * @throws IncompatibleRowException if the given row is incompatible with the current row
      * @throws CursorUpdateException if the current row couldn't be updated due to an underlying exception
      */
-    void updateCurrentRow(Row newRow);
+    void updateCurrentRow(RowBase newRow);
 
 
     /**

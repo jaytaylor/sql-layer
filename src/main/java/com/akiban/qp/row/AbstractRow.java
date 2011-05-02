@@ -31,7 +31,7 @@ public abstract class AbstractRow implements ManagedRow
     public abstract HKey hKey();
 
     @Override
-    public final boolean ancestorOf(Row that)
+    public final boolean ancestorOf(RowBase that)
     {
         return this.hKey().prefixOf(that.hKey());
     }

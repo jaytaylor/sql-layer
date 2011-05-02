@@ -18,7 +18,6 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.ManagedRow;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
 abstract class SingleRowCachingCursor extends OperatorExecution implements IndexCursor, GroupCursor

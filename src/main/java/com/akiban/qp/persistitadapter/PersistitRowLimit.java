@@ -16,7 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.physicaloperator.Limit;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.ScanLimit;
 
 public class PersistitRowLimit implements Limit
@@ -24,7 +24,7 @@ public class PersistitRowLimit implements Limit
     // Limit interface
 
     @Override
-    public boolean limitReached(Row row)
+    public boolean limitReached(RowBase row)
     {
         PersistitGroupRow persistitRow = (PersistitGroupRow) row;
         return limit.limitReached(persistitRow.rowData());

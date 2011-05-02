@@ -17,10 +17,10 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
 
-public interface Row
+public interface RowBase
 {
     RowType rowType();
     Object field(int i);
     HKey hKey();
-    boolean ancestorOf(Row that);
+    boolean ancestorOf(RowBase that);
 }

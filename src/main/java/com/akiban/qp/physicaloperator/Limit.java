@@ -15,9 +15,9 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 
 public interface Limit
 {
-    boolean limitReached(Row row);
+    boolean limitReached(RowBase row);
 }
