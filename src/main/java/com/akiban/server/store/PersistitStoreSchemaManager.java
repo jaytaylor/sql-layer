@@ -43,6 +43,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Type;
 import com.akiban.server.encoding.EncoderFactory;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -819,7 +820,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public synchronized void forceNewTimestamp() {
         final TreeService treeService = serviceManager.getTreeService();
-        updateTimestamp.set(treeService.getTimestamp(ServiceManagerImpl.newSession()));
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            updateTimestamp.set(treeService.getTimestamp(session));
+        } finally {
+            session.close();
+        }
     }
 
     private static List<TableDefinition> readAisSchema() {
@@ -885,21 +891,25 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final Session session = ServiceManagerImpl.newSession();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
-        for (;;) {
-            try {
-                transaction.begin();
-                final AkibanInformationSchema ais = constructAIS(session);
-                forceNewTimestamp();
-                commitAIS(ais, updateTimestamp.get());
-                transaction.commit();
-                break;
-            } catch (RollbackException e) {
-                if (--retries < 0) {
-                    throw new TransactionFailedException();
+        try {
+            for (;;) {
+                try {
+                    transaction.begin();
+                    final AkibanInformationSchema ais = constructAIS(session);
+                    forceNewTimestamp();
+                    commitAIS(ais, updateTimestamp.get());
+                    transaction.commit();
+                    break;
+                } catch (RollbackException e) {
+                    if (--retries < 0) {
+                        throw new TransactionFailedException();
+                    }
+                } finally {
+                    transaction.end();
                 }
-            } finally {
-                transaction.end();
             }
+        } finally {
+            session.close();
         }
     }
 

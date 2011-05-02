@@ -333,24 +333,28 @@ public class TableStatusCache extends TransactionalCache {
     @Override
     public void save() throws PersistitException {
         final Session session = ServiceManagerImpl.newSession();
-        removeAll(session);
-        for (final TableStatus ts : tableStatusMap.values()) {
-            final RowDef rowDef = ts.getRowDef();
-            if (rowDef != null) {
-                final TreeLink link = treeService.treeLink(
-                        rowDef.getSchemaName(), STATUS_TREE_NAME);
-                final Exchange exchange = treeService
-                        .getExchange(session, link);
-                try {
-                    final int tableId = treeService.aisToStore(link,
-                            rowDef.getRowDefId());
-                    exchange.clear().append(tableId);
-                    ts.put(exchange.getValue());
-                    exchange.store();
-                } finally {
-                    treeService.releaseExchange(session, exchange);
+        try {
+            removeAll(session);
+            for (final TableStatus ts : tableStatusMap.values()) {
+                final RowDef rowDef = ts.getRowDef();
+                if (rowDef != null) {
+                    final TreeLink link = treeService.treeLink(
+                            rowDef.getSchemaName(), STATUS_TREE_NAME);
+                    final Exchange exchange = treeService
+                            .getExchange(session, link);
+                    try {
+                        final int tableId = treeService.aisToStore(link,
+                                rowDef.getRowDefId());
+                        exchange.clear().append(tableId);
+                        ts.put(exchange.getValue());
+                        exchange.store();
+                    } finally {
+                        treeService.releaseExchange(session, exchange);
+                    }
                 }
             }
+        } finally {
+             session.close();
         }
     }
 
@@ -370,6 +374,8 @@ public class TableStatusCache extends TransactionalCache {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            session.close();
         }
     }
 

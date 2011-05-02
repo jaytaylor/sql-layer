@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.akiban.server.AkServer;
 import com.akiban.server.CustomQuery;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean {
@@ -71,21 +72,34 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public void buildIndexes(final String arg, final boolean deferIndexes) {
+        Session session = ServiceManagerImpl.newSession();
         try {
-            getStore().buildIndexes(ServiceManagerImpl.newSession(), arg, deferIndexes);
+            getStore().buildIndexes(session, arg, deferIndexes);
         } catch(Exception t) {
             throw new RuntimeException(t);
+        } finally {
+            session.close();
         }
     }
 
     @Override
     public void deleteIndexes(final String arg) {
-        getStore().deleteIndexes(ServiceManagerImpl.newSession(), arg);
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            getStore().deleteIndexes(session, arg);
+        } finally {
+            session.close();
+        }
     }
 
     @Override
     public void flushIndexes() {
-        getStore().flushIndexes(ServiceManagerImpl.newSession());
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            getStore().flushIndexes(session);
+        } finally {
+            session.close();
+        }
     }
 
     @Override

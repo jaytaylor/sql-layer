@@ -68,6 +68,7 @@ public class AkServerAisTarget extends Target {
     }
 
     public void close() throws SQLException {
+        session.close();
     }
 
     public AkServerAisTarget(final Store store) {

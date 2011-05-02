@@ -259,7 +259,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throwIfInstanceOf(t, NoSuchTableException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunction.GET_ROWDEF, thrown);
+            try {
+                hook.hookFunctionFinally(session, DXLFunction.GET_ROWDEF, thrown);
+            } finally {
+                session.close();
+            }
         }
     }
 
@@ -291,7 +295,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
             hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_ID, t);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_ID, thrown);
+            try {
+                hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_ID, thrown);
+            } finally {
+                session.close();
+            }
         }
     }
 
@@ -307,7 +315,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
             hook.hookFunctionCatch(session, DXLFunction.FORCE_GENERATION_UPDATE, t);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.FORCE_GENERATION_UPDATE, thrown);
+            try {
+                hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.FORCE_GENERATION_UPDATE, thrown);
+            } finally {
+                session.close();
+            }
         }
     }
 

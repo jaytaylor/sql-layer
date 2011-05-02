@@ -408,13 +408,16 @@ public class MemcacheServiceImpl implements MemcacheService,
 
         @Override
         public String chooseIndex(String request) {
+            Session session = ServiceManagerImpl.newSession();
             try {
                 HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
                 Index index = processAs.get().whichItem.getHapiProcessor()
-                        .findHapiRequestIndex(ServiceManagerImpl.newSession(), getRequest);
+                        .findHapiRequestIndex(session, getRequest);
                 return index == null ? "null" : index.toString();
             } catch (HapiRequestException e) {
                 throw new RuntimeException(e.getMessage());
+            } finally {
+                session.close();
             }
         }
     }
