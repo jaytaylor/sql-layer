@@ -201,24 +201,21 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         Limit limit = new PersistitRowLimit(scanLimit);
         boolean useIndex =
             predicateIndex != null && !((IndexDef) predicateIndex.indexDef()).isHKeyEquivalent();
+        GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         PhysicalOperator rootOperator;
         PhysicalOperator restrictionOperator;
         if (useIndex) {
             PhysicalOperator indexScan = indexScan_Default(predicateIndex, descending);
-/*
-            PhysicalOperator indexLookup = indexLookup_Default(indexScan,
-                                                               predicateIndex.getTable().getGroup().getGroupTable(),
-                                                               limit,
-                                                               ancestorTypes());
-            rootOperator = indexLookup;
-*/
-            assert false; rootOperator = null;
+            rootOperator = indexLookup_Default(indexScan, groupTable, limit);
             restrictionOperator = indexScan;
         } else {
-            PhysicalOperator groupScan =
-                groupScan_Default(queryRootTable.getGroup().getGroupTable(), descending, limit);
+            PhysicalOperator groupScan = groupScan_Default(groupTable, descending, limit);
             rootOperator = groupScan;
             restrictionOperator = groupScan;
+        }
+        // Fill in ancestors above predicate
+        if (queryRootType != predicateType) {
+            rootOperator = ancestorLookup_Default(rootOperator, groupTable, predicateType, ancestorTypes());
         }
         // Get rid of everything above query root table.
         rootOperator = extract_Default(schema, rootOperator, Arrays.<RowType>asList(queryRootType));

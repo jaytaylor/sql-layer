@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.max;
 
-class Exhume_Default extends PhysicalOperator
+class AncestorLookup_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
@@ -63,12 +63,12 @@ class Exhume_Default extends PhysicalOperator
         return String.format("%s(%s -> %s", getClass().getSimpleName(), rowType, ancestorTypes);
     }
 
-    // Exhume_Default interface
+    // AncestorLookup_Default interface
 
-    public Exhume_Default(PhysicalOperator inputOperator,
-                          GroupTable groupTable,
-                          RowType rowType,
-                          List<RowType> ancestorTypes)
+    public AncestorLookup_Default(PhysicalOperator inputOperator,
+                                  GroupTable groupTable,
+                                  RowType rowType,
+                                  List<RowType> ancestorTypes)
     {
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
@@ -87,7 +87,7 @@ class Exhume_Default extends PhysicalOperator
 
     // Class state
 
-    private static final Logger LOG = LoggerFactory.getLogger(Exhume_Default.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Default.class);
 
     // Object state
 

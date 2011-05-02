@@ -65,12 +65,12 @@ public class API
         return new IndexLookup_Default(inputOperator, groupTable, limit);
     }
 
-    public static PhysicalOperator exhume_Default(PhysicalOperator inputOperator,
-                                                  GroupTable groupTable,
-                                                  RowType rowType,
-                                                  List<RowType> ancestorTypes)
+    public static PhysicalOperator ancestorLookup_Default(PhysicalOperator inputOperator,
+                                                          GroupTable groupTable,
+                                                          RowType rowType,
+                                                          List<RowType> ancestorTypes)
     {
-        return new Exhume_Default(inputOperator, groupTable, rowType, ancestorTypes);
+        return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes);
     }
 
     public static PhysicalOperator indexScan_Default(Index index)

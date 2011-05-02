@@ -131,8 +131,7 @@ class Select_HKeyOrdered extends PhysicalOperator
         // Object state
 
         private final Cursor input;
-        // row is the last input row with type = predicateRowType. For that row, rowSelected records the result
-        // of predicate.evaluate(row).
+        // selectedRow is the last input row with type = predicateRowType.
         private final RowHolder<ManagedRow> selectedRow = new RowHolder<ManagedRow>();
     }
 }

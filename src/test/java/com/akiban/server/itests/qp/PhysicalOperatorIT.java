@@ -42,7 +42,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.qp.expression.API.*;
@@ -225,7 +224,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     {
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
         PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
-        PhysicalOperator exhume = exhume_Default(indexLookup, coi, orderRowType, Arrays.asList(customerRowType));
+        PhysicalOperator exhume = ancestorLookup_Default(indexLookup, coi, orderRowType, Arrays.asList(customerRowType));
         Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 12L, 1L, "david"),
                                    row(itemRowType, 121L, 12L),
@@ -250,10 +249,10 @@ public class PhysicalOperatorIT extends ApiTestBase
     {
         PhysicalOperator indexScan = indexScan_Default(index(item, "oid"));
         PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
-        PhysicalOperator exhume = exhume_Default(indexLookup,
-                                                 coi,
-                                                 itemRowType,
-                                                 Arrays.asList(customerRowType, orderRowType));
+        PhysicalOperator exhume = ancestorLookup_Default(indexLookup,
+                                                         coi,
+                                                         itemRowType,
+                                                         Arrays.asList(customerRowType, orderRowType));
         Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 11L, 1L, "ori"),
                                    row(itemRowType, 111L, 11L),

@@ -122,7 +122,7 @@ public class RCTortureIT extends ApiTestBase
     private void runQueries() throws Exception
     {
         if (DEBUG_TRIAL >= 0) {
-            runQuery(customerTable, orderTable, Column.O_CID, HapiPredicate.Operator.EQ, 0, false);
+            runQuery(customerTable, itemTable, Column.I_CID, HapiPredicate.Operator.EQ, 1, false);
         } else {
             for (HapiPredicate.Operator comparison : HapiPredicate.Operator.values()) {
                 if (comparison != HapiPredicate.Operator.NE) {

@@ -69,9 +69,9 @@ class Expected
         queryResult.addAll(relatives);
         // Sort
         test.sort(queryResult);
-        // If index ordered, then ancestors of rows in predicate table have to be repeated for each
+        // If predicate table != root table, then ancestors of rows in predicate table have to be repeated for each
         // row of predicate table
-        if (indexOrdered) {
+        if (predicateTable != rootTable) {
             List<NewRow> extendedQueryResult = new ArrayList<NewRow>();
             NewRow[] ancestors = new NewRow[2];
             for (NewRow row : queryResult) {
@@ -97,10 +97,12 @@ class Expected
         for (NewRow row : queryResult) {
             int differSegment = 0;
             if (previousRow != null) {
-                differSegment =
-                    indexOrdered && row.getTableId() == rootTable
-                    ? 0
-                    : test.hKey(previousRow).differSegment(test.hKey(row));
+                int rowTableDepth = depth(row.getTableId());
+                if (rowTableDepth < depth(predicateTable)) {
+                    differSegment = rowTableDepth == 0 ? 0 : hKeyDepth(row.getTableId());
+                } else {
+                    differSegment = test.hKey(previousRow).differSegment(test.hKey(row));
+                }
             }
             RowData rowData = row.toRowData();
             rowData.differsFromPredecessorAtKeySegment(differSegment);
@@ -203,6 +205,15 @@ class Expected
             type == test.orderTable ? 1 :
             type == test.itemTable ? 2 :
             type == test.addressTable ? 1 : -1;
+    }
+
+    private int hKeyDepth(int type)
+    {
+        return
+            type == test.customerTable ? 0 :
+            type == test.orderTable ? 2 :
+            type == test.itemTable ? 4 :
+            type == test.addressTable ? 2 : -1;
     }
 
     private RCTortureIT test;

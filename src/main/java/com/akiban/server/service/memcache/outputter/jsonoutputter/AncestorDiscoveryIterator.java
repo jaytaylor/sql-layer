@@ -47,7 +47,7 @@ public class AncestorDiscoveryIterator implements Iterator<RowData>
                     divergencePosition = 0;
                 } else {
                     UserTable table = ais.getUserTable(current.getRowDefId());
-                    if (!hKeyOrdered && table.getDepth() < predicateTableDepth) {
+                    if (table.getDepth() < predicateTableDepth) {
                         if (table.isRoot()) {
                             divergencePosition = 0;
                         } else {
