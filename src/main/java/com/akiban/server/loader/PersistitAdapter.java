@@ -30,8 +30,8 @@ import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -173,5 +173,5 @@ public class PersistitAdapter
     private final Exchange exchange;
     private final Tracker tracker;
     private long rowCount = 0;
-    private Session session = new SessionImpl();
+    private Session session = ServiceManagerImpl.newSession();
 }

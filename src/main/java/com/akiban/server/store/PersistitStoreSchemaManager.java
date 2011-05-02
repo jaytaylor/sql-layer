@@ -58,7 +58,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.message.ErrorCode;
 import com.akiban.server.AkServer;
-import com.akiban.server.AkServerUtil;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
 import com.akiban.server.RowDefCache;
@@ -67,7 +66,6 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
@@ -821,7 +819,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public synchronized void forceNewTimestamp() {
         final TreeService treeService = serviceManager.getTreeService();
-        updateTimestamp.set(treeService.getTimestamp(new SessionImpl()));
+        updateTimestamp.set(treeService.getTimestamp(ServiceManagerImpl.newSession()));
     }
 
     private static List<TableDefinition> readAisSchema() {
@@ -884,7 +882,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void afterStart() throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
-        final Session session = new SessionImpl();
+        final Session session = ServiceManagerImpl.newSession();
         final Transaction transaction = treeService.getTransaction(session);
         int retries = MAX_TRANSACTION_RETRY_COUNT;
         for (;;) {

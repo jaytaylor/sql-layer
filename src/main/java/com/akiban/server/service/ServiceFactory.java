@@ -21,6 +21,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.network.NetworkService;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -44,4 +45,6 @@ public interface ServiceFactory
     Service<MemcacheService> memcacheService();
 
     Service<DXLService> dxlService();
+
+    Service<SessionService> sessionService();
 }

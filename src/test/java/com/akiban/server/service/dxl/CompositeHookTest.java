@@ -16,7 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.service.session.TestSessionFactory;
 import com.akiban.util.MultipleCauseException;
 import com.akiban.util.Strings;
 import org.junit.Before;
@@ -36,7 +36,7 @@ public final class CompositeHookTest {
     @Before
     public void setUp() {
         output = new ArrayList<String>();
-        session = new SessionImpl();
+        session = TestSessionFactory.get().createSession();
     }
 
     @Test

@@ -79,7 +79,6 @@ import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.UnitTestServiceFactory;
 import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -185,9 +184,9 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
-        session = new SessionImpl();
         sm = createServiceManager( createServiceFactory(startupConfigProperties()) );
         sm.startServices();
+        session = ServiceManagerImpl.newSession();
     }
 
     protected TestServiceManager createServiceManager(TestServiceServiceFactory serviceFactory) {
@@ -212,9 +211,9 @@ public class ApiTestBase {
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
-        session = new SessionImpl();
         sm = createServiceManager( createServiceFactory(properties) );
         sm.startServices();
+        session = ServiceManagerImpl.newSession();
     }
 
     protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
@@ -313,7 +312,7 @@ public class ApiTestBase {
     }
 
     protected final List<NewRow> scanAll(ScanRequest request) throws InvalidOperationException {
-        Session session = new SessionImpl();
+        Session session = ServiceManagerImpl.newSession();
         ListRowOutput output = new ListRowOutput();
         CursorId cursorId = dml().openCursor(session, aisGeneration(), request);
 

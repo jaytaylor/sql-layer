@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import com.akiban.server.service.ServiceManagerImpl;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -37,7 +38,6 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.util.Tap;
 
 import com.thimbleware.jmemcached.CacheElement;
@@ -137,7 +137,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
         @Override
         protected Session initialValue() {
-            return new SessionImpl();
+            return ServiceManagerImpl.newSession();
         }
     };
     /**

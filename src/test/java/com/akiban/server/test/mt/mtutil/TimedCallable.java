@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.mt.mtutil;
 
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +31,7 @@ public abstract class TimedCallable<T> implements Callable<TimedResult<T>> {
         if (!timePointsReference.compareAndSet(null, timePoints)) {
             throw new RuntimeException("TimePoints already set!");
         }
-        T result = doCall(timePoints, new SessionImpl());
+        T result = doCall(timePoints, ServiceManagerImpl.newSession());
         return new TimedResult<T>(result, timePoints);
     }
     

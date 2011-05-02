@@ -26,6 +26,8 @@ import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.memcache.MemcacheServiceImpl;
 import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.service.network.NetworkServiceImpl;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeServiceImpl;
 import com.akiban.server.store.PersistitStore;
@@ -45,6 +47,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<SchemaManager> schemaService;
     private Service<MemcacheService> memcacheService;
     private Service<DXLService> dxlService;
+    private Service<SessionService> sessionService;
     
     @Override
     public Service<ConfigurationService> configurationService() {
@@ -120,5 +123,13 @@ public class DefaultServiceFactory implements ServiceFactory {
             dxlService = new DXLServiceImpl();
         }
         return dxlService;
+    }
+
+    @Override
+    public Service<SessionService> sessionService() {
+        if (sessionService == null) {
+            sessionService = new SessionServiceImpl();
+        }
+        return sessionService;
     }
 }

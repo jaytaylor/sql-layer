@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
@@ -332,7 +332,7 @@ public class TableStatusCache extends TransactionalCache {
 
     @Override
     public void save() throws PersistitException {
-        final Session session = new SessionImpl();
+        final Session session = ServiceManagerImpl.newSession();
         removeAll(session);
         for (final TableStatus ts : tableStatusMap.values()) {
             final RowDef rowDef = ts.getRowDef();
@@ -356,7 +356,7 @@ public class TableStatusCache extends TransactionalCache {
 
     @Override
     public void load() throws PersistitException {
-        final Session session = new SessionImpl();
+        final Session session = ServiceManagerImpl.newSession();
         try {
             treeService.visitStorage(session, new TreeVisitor() {
 

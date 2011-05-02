@@ -52,8 +52,6 @@ import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
-import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.store.Store;
 import com.akiban.util.Tap;
 
@@ -413,7 +411,7 @@ public class MemcacheServiceImpl implements MemcacheService,
             try {
                 HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
                 Index index = processAs.get().whichItem.getHapiProcessor()
-                        .findHapiRequestIndex(new SessionImpl(), getRequest);
+                        .findHapiRequestIndex(ServiceManagerImpl.newSession(), getRequest);
                 return index == null ? "null" : index.toString();
             } catch (HapiRequestException e) {
                 throw new RuntimeException(e.getMessage());

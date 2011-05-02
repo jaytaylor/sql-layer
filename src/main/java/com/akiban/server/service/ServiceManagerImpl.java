@@ -29,6 +29,8 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.stats.StatisticsServiceImpl;
 import com.akiban.server.service.tree.TreeService;
@@ -70,6 +72,18 @@ public class ServiceManagerImpl implements ServiceManager
 
     public static ServiceManager get() {
         return instance.get();
+    }
+
+    /**
+     * Convenience for {@code ServiceManagerImpl.get().getSessionService().createSession()}
+     * @return a new Session
+     */
+    public static Session newSession() {
+        ServiceManager serviceManager = get();
+        if (serviceManager == null) {
+            throw new ServiceNotStartedException("ServiceManagerImpl.get() hasn't been given an instance");
+        }
+        return serviceManager.getSessionService().createSession();
     }
 
     @Override
@@ -115,6 +129,11 @@ public class ServiceManagerImpl implements ServiceManager
     @Override
     public DXLService getDXL() {
         return getService(DXLService.class);
+    }
+
+    @Override
+    public SessionService getSessionService() {
+        return getService(SessionService.class);
     }
 
     /**
@@ -187,6 +206,7 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     void startAndPutServices(JmxRegistryService jmxRegistry) throws Exception {
+        startAndPut(factory.sessionService(), jmxRegistry);
         startAndPut(factory.treeService(), jmxRegistry);
         startAndPut(factory.schemaManager(), jmxRegistry);
         startAndPut(factory.storeService(), jmxRegistry);
