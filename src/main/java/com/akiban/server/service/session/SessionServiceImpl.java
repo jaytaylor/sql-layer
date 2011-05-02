@@ -17,53 +17,23 @@ package com.akiban.server.service.session;
 
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class SessionServiceImpl implements SessionService, Service<SessionService>, SessionEventListener, JmxManageable {
-    private static Logger LOG = LoggerFactory.getLogger(SessionServiceImpl.class);
-    private static final int WEAK_SESSIONS_LIST_TOO_BIG = 2000;
 
-    private final Object LOCK = new Object();
-    private final AtomicBoolean statsGatheringOn = new AtomicBoolean(false);
     private final AtomicLong sessionsCreated = new AtomicLong();
-    private final AtomicLong sessionsGCed = new AtomicLong();
     private final AtomicLong sessionsClosed = new AtomicLong();
-    private final List<WeakReference<Session>> weakSessionsList = new ArrayList<WeakReference<Session>>();
 
     @Override
     public Session createSession() {
-        boolean gatherStats = statsGatheringOn.get();
-        Session session = new Session(gatherStats ? this : null);
-        if (gatherStats) {
-            WeakReference<Session> sessionRef = new WeakReference<Session>(session);
-            sessionsCreated.incrementAndGet();
-            synchronized (LOCK) {
-                // our list is pretty big, so try and clear out as much as possible
-                if (weakSessionsList.size() > WEAK_SESSIONS_LIST_TOO_BIG) {
-                    countSessionsGCed();
-                }
-                weakSessionsList.add(sessionRef);
-            }
-        }
+        Session session = new Session(this);
+        sessionsCreated.incrementAndGet();
         return session;
     }
 
     @Override
     public long countSessionsCreated() {
         return sessionsCreated.get();
-    }
-
-    @Override
-    public long countSessionsGCed() {
-        return sessionsGCed.addAndGet( removeGCedReferences() );
     }
 
     @Override
@@ -76,26 +46,6 @@ public final class SessionServiceImpl implements SessionService, Service<Session
         return sessionsClosed.get();
     }
 
-    private int removeGCedReferences() {
-        final int size;
-        int removed = 0;
-        synchronized (LOCK) {
-            size = weakSessionsList.size();
-            Iterator<WeakReference<Session>> iterator = weakSessionsList.iterator();
-            while (iterator.hasNext()) {
-                WeakReference<Session> weakReference = iterator.next();
-                if (weakReference.get() == null) {
-                    iterator.remove();
-                    ++removed;
-                }
-            }
-        }
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Removed " + removed + " of " + size + " session" + (size == 1 ? "s." : "."));
-        }
-        return removed;
-    }
-
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("Sessions", new SessionServiceMXBean() {
@@ -105,28 +55,8 @@ public final class SessionServiceImpl implements SessionService, Service<Session
             }
 
             @Override
-            public long getGCed() {
-                return countSessionsGCed();
-            }
-
-            @Override
             public long getClosed() {
                 return countSessionsClosed();
-            }
-
-            @Override
-            public long getOpenedEstimate() {
-                return getCreated() - (getGCed() - getClosed());
-            }
-
-            @Override
-            public boolean isStatsGatheringOn() {
-                return statsGatheringOn.get();
-            }
-
-            @Override
-            public void setStatsGatheringOn(boolean turnOn) {
-                statsGatheringOn.set(turnOn);
             }
         }, SessionServiceMXBean.class);
     }
