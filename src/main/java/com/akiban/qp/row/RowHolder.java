@@ -29,7 +29,7 @@ public class RowHolder<MR extends ManagedRow>
 
     // RowHolder interface
 
-    public MR managedRow()
+    public MR get()
     {
         return row;
     }

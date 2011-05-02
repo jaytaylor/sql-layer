@@ -43,7 +43,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         public void addRow(Row newRow) {
             RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
             try {
-                adapter().persistit.writeRow(adapter().session, currentRow.managedRow().rowData());
+                adapter().persistit.writeRow(adapter().session, currentRow.get().rowData());
             } catch (Exception e) {
                 throw new CursorUpdateException(e);
             }
@@ -57,8 +57,8 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
     @Override
     public void updateCurrentRow(Row newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
-        RowData currentRowData = currentRow.managedRow().rowData();
-        RowDef rowDef = currentRow.managedRow().rowDef();
+        RowData currentRowData = currentRow.get().rowData();
+        RowDef rowDef = currentRow.get().rowDef();
         RowData newRowData = adapter().rowData(rowDef, newRow);
 
         if (updateWouldChangeHKey(rowDef, currentRowData, newRowData)) {
@@ -75,7 +75,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         // for now, use PS
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         try {
-            adapter().persistit.deleteRow(adapter().session, currentRow.managedRow().rowData());
+            adapter().persistit.deleteRow(adapter().session, currentRow.get().rowData());
         } catch (Exception e) {
             throw new CursorUpdateException(e);
         }
@@ -83,8 +83,8 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
 
     private void updateGroup(Row newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
-        currentRow.managedRow().share();
-        RowDef rowDef = currentRow.managedRow().rowDef();
+        currentRow.get().share();
+        RowDef rowDef = currentRow.get().rowDef();
         RowData rowData = adapter().rowData(rowDef, newRow);
         try {
             adapter().persistit.packRowData(exchange(), rowDef, rowData);

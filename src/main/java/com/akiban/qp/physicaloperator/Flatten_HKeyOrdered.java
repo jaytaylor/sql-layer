@@ -141,7 +141,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     // a row of type other than parent or child, or end of stream. If we get
                     // here, then input is exhausted, and the only possibly remaining row would
                     // be due to a childless parent waiting to be processed.
-                    generateLeftJoinRow(parent.managedRow());
+                    generateLeftJoinRow(parent.get());
                     parent.set(null);
                 } else {
                     ManagedRow inputRow = input.currentRow();
@@ -152,16 +152,16 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         }
                         if (parent.isNotNull()) {
                             // current parent row is childless, so it is left-join fodder.
-                            generateLeftJoinRow(parent.managedRow());
+                            generateLeftJoinRow(parent.get());
                         }
                         parent.set(inputRow);
                     } else if (inputRowType == childType) {
                         if (keepChild) {
                             addToPending();
                         }
-                        if (parent.isNotNull() && parent.managedRow().ancestorOf(inputRow)) {
+                        if (parent.isNotNull() && parent.get().ancestorOf(inputRow)) {
                             // child is not an orphan
-                            generateInnerJoinRow(parent.managedRow(), inputRow);
+                            generateInnerJoinRow(parent.get(), inputRow);
                         } else {
                             // child is an orphan
                             parent.set(null);
@@ -170,7 +170,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     } else {
                         addToPending();
                         if (parentType.ancestorOf(inputRowType)) {
-                            if (parent.isNotNull() && !parent.managedRow().ancestorOf(inputRow)) {
+                            if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
                                 // We're past all descendents of the current parent
                                 parent.set(null);
                             }

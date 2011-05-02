@@ -51,7 +51,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         boolean wroteToPayload = false;
         if (!closed) {
             currentRow.set(cursor.currentRow());
-            PersistitGroupRow row = (PersistitGroupRow) currentRow.managedRow();
+            PersistitGroupRow row = (PersistitGroupRow) currentRow.get();
             if (row == null) {
                 close();
             } else {
@@ -77,7 +77,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         RowData rowData = null;
         if (!closed) {
             currentRow.set(cursor.currentRow());
-            PersistitGroupRow row = (PersistitGroupRow) currentRow.managedRow();
+            PersistitGroupRow row = (PersistitGroupRow) currentRow.get();
             if (row == null) {
                 close();
             } else {

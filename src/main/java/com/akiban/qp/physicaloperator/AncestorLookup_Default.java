@@ -157,7 +157,7 @@ class AncestorLookup_Default extends PhysicalOperator
                     hKey.useSegments(depth);
                     readAncestorRow(hKey);
                     if (ancestorRow.isNotNull()) {
-                        pending.add(ancestorRow.managedRow());
+                        pending.add(ancestorRow.get());
                     }
                 }
             }
