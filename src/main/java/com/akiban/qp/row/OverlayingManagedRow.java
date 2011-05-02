@@ -17,7 +17,7 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
 
-public final class OverlayingManagedRow extends RowBase {
+public final class OverlayingManagedRow extends AbstractRow {
 
     private static final Object UNDEF = new Object() {
         @Override

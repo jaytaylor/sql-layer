@@ -17,7 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.IndexDef;
@@ -25,7 +25,7 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-public class PersistitIndexRow extends RowBase
+public class PersistitIndexRow extends AbstractRow
 {
     // Object interface
 

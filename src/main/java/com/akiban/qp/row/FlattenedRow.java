@@ -18,7 +18,7 @@ package com.akiban.qp.row;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 
-public class FlattenedRow extends RowBase
+public class FlattenedRow extends AbstractRow
 {
     // Object interface
 
