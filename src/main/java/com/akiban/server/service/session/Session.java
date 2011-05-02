@@ -26,7 +26,7 @@ public final class Session
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
     private final SessionEventListener listener;
 
-    public Session(SessionEventListener listener) {
+    Session(SessionEventListener listener) {
         this.listener = listener;
     }
 
