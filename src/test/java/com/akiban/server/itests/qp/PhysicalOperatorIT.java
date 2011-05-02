@@ -31,8 +31,8 @@ import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UpdateCursor;
 import com.akiban.qp.physicaloperator.UpdateLambda;
-import com.akiban.qp.row.ManagedRow;
-import com.akiban.qp.row.OverlayingManagedRow;
+import com.akiban.qp.row.OverlayingRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -108,16 +108,16 @@ public class PhysicalOperatorIT extends ApiTestBase
         ModifiableCursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false);
         Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
             @Override
-            public boolean rowIsApplicable(ManagedRow row) {
+            public boolean rowIsApplicable(Row row) {
                 return row.rowType().equals(customerRowType);
             }
 
             @Override
-            public ManagedRow applyUpdate(ManagedRow original) {
+            public Row applyUpdate(Row original) {
                 String name = (String) original.field(1);
                 name = name.toUpperCase();
                 name = name + name;
-                return new OverlayingManagedRow(original).overlay(1, name);
+                return new OverlayingRow(original).overlay(1, name);
             }
         });
         int nexts = 0;

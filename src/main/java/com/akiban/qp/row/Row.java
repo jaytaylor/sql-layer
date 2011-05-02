@@ -29,7 +29,7 @@ package com.akiban.qp.row;
 // before it is assigned to another RowHolder in the SingleRowCachingCursor. As long as we're in one thread,
 // the cursor can't be writing new data into the row while this is happening.
 
-public interface ManagedRow extends RowBase
+public interface Row extends RowBase
 {
     void share();
     boolean isShared();

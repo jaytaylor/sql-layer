@@ -17,7 +17,7 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
 
-public abstract class AbstractRow implements ManagedRow
+public abstract class AbstractRow implements Row
 {
     // Row interface
 

@@ -56,7 +56,7 @@ public class FlattenedRow extends AbstractRow
 
 // FlattenedRow interface
 
-    public FlattenedRow(FlattenedRowType rowType, ManagedRow parent, ManagedRow child)
+    public FlattenedRow(FlattenedRowType rowType, Row parent, Row child)
     {
         this.rowType = rowType;
         this.parent.set(parent);
@@ -67,7 +67,7 @@ public class FlattenedRow extends AbstractRow
     // Object state
 
     private final FlattenedRowType rowType;
-    private final RowHolder<ManagedRow> parent = new RowHolder<ManagedRow>();
-    private final RowHolder<ManagedRow> child = new RowHolder<ManagedRow>();
+    private final RowHolder<Row> parent = new RowHolder<Row>();
+    private final RowHolder<Row> child = new RowHolder<Row>();
     private final int nParentFields;
 }

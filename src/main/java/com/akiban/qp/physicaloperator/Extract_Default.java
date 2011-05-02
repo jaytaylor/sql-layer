@@ -17,7 +17,7 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -96,7 +96,7 @@ class Extract_Default extends PhysicalOperator
         @Override
         public boolean next()
         {
-            ManagedRow row = null;
+            Row row = null;
             while (next && row == null) {
                 row = input.currentRow();
                 if (!extractTypes.contains(row.rowType())) {
