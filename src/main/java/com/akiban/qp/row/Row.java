@@ -23,5 +23,4 @@ public interface Row
     Object field(int i);
     HKey hKey();
     boolean ancestorOf(Row that);
-    ManagedRow managedRow();
 }

@@ -72,14 +72,9 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
         return row.get();
     }
 
-    protected void outputRow(Row newRow)
-    {
-        row.set(newRow == null ? null : newRow.managedRow());
-    }
-
     protected void outputRow(ManagedRow newRow)
     {
-        row.set(newRow);
+        row.set(newRow == null ? null : newRow);
     }
 
     protected SingleRowCachingCursor(StoreAdapter adapter)

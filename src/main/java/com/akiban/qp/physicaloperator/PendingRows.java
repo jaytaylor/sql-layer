@@ -16,15 +16,14 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.ManagedRow;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
 class PendingRows
 {
-    public void add(Row row)
+    public void add(ManagedRow row)
     {
         assert !full();
-        row(end, row.managedRow());
+        row(end, row);
         end = next(end);
     }
 

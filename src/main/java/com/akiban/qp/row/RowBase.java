@@ -36,12 +36,6 @@ public abstract class RowBase implements ManagedRow
         return this.hKey().prefixOf(that.hKey());
     }
 
-    @Override
-    public final ManagedRow managedRow()
-    {
-        return this;
-    }
-
     // ManagedRow interface
 
     @Override
