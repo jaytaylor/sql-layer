@@ -15,13 +15,23 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.rowtype.RowType;
+// ManagedRow and RowHolder implement a reference-counting scheme for Rows. Operators should hold onto
+// ManagedRows using a RowHolder. Assignments to RowHolder (using RowHolder.set) cause reference counting
+// to be done, via ManagedRow.share() and release(). isShared() is used by data sources (a btree cursor)
+// when the row filled in by the cursor is about to be changed. If isShared() is true, then the cursor
+// allocates a new row and writes into it, otherwise the existing row is used. (isShared() is true iff the reference
+// count is > 1. If the reference count is = 1, then presumably the reference is from the btree cursor itself.)
+//
+// This implementation is NOT threadsafe. It assumes that all access to a ManagedRow is within one thread.
+// When a row is passed from one operator to another, there are times when the reference count drops temporarily.
+// For example, when Flatten_HKeyOrdered removes a pending row and passes it to
+// SingleRowCachingCursor.outputRow(ManagedRow), the ManagedRow is removed from a RowHolder in the pending queue
+// before it is assigned to another RowHolder in the SingleRowCachingCursor. As long as we're in one thread,
+// the cursor can't be writing new data into the row while this is happening.
 
-public interface Row
+public interface Row extends RowBase
 {
-    RowType rowType();
-    Object field(int i);
-    HKey hKey();
-    boolean ancestorOf(Row that);
-    ManagedRow managedRow();
+    void share();
+    boolean isShared();
+    void release();
 }

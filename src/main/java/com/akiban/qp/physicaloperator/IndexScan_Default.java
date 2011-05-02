@@ -85,7 +85,7 @@ class IndexScan_Default extends PhysicalOperator
                 close();
             }
             if (LOG.isInfoEnabled()) {
-                LOG.info("IndexScan: {}", next ? outputRow().managedRow() : null);
+                LOG.info("IndexScan: {}", next ? outputRow() : null);
             }
             return next;
         }

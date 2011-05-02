@@ -15,14 +15,14 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 
 class Compare implements Expression
 {
     // Predicate interface
 
     @Override
-    public Object evaluate(Row row)
+    public Object evaluate(RowBase row)
     {
         int c = ((Comparable) left.evaluate(row)).compareTo(right.evaluate(row));
         switch (comparison) {

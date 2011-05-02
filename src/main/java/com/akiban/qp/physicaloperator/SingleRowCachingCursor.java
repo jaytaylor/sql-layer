@@ -17,7 +17,6 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
@@ -46,7 +45,7 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
     public abstract void close();
 
     @Override
-    public final ManagedRow currentRow()
+    public final Row currentRow()
     {
         return row.get();
     }
@@ -67,19 +66,14 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
 
     // SingleRowCachingCursor interface
 
-    protected ManagedRow outputRow()
+    protected Row outputRow()
     {
         return row.get();
     }
 
     protected void outputRow(Row newRow)
     {
-        row.set(newRow == null ? null : newRow.managedRow());
-    }
-
-    protected void outputRow(ManagedRow newRow)
-    {
-        row.set(newRow);
+        row.set(newRow == null ? null : newRow);
     }
 
     protected SingleRowCachingCursor(StoreAdapter adapter)
@@ -89,5 +83,5 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
 
     // Object state
 
-    private final RowHolder<ManagedRow> row = new RowHolder<ManagedRow>();
+    private final RowHolder<Row> row = new RowHolder<Row>();
 }

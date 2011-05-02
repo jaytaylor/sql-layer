@@ -15,7 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.ManagedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
@@ -24,13 +23,13 @@ class PendingRows
     public void add(Row row)
     {
         assert !full();
-        row(end, row.managedRow());
+        row(end, row);
         end = next(end);
     }
 
-    public ManagedRow take()
+    public Row take()
     {
-        ManagedRow row = null;
+        Row row = null;
         if (!empty()) {
             row = row(start);
             row(start, null);
@@ -58,7 +57,7 @@ class PendingRows
         this.capacity = capacity;
         queue = new Object[capacity + 1];
         for (int i = 0; i <= capacity; i++) {
-            this.queue[i] = new RowHolder<ManagedRow>();
+            this.queue[i] = new RowHolder<Row>();
         }
         this.start = 0;
         this.end = 0;
@@ -66,14 +65,14 @@ class PendingRows
 
     // For use by this class
 
-    private ManagedRow row(int i)
+    private Row row(int i)
     {
-        return ((RowHolder<ManagedRow>) queue[i]).get();
+        return ((RowHolder<Row>) queue[i]).get();
     }
 
-    private void row(int i, ManagedRow row)
+    private void row(int i, Row row)
     {
-        ((RowHolder<ManagedRow>) queue[i]).set(row);
+        ((RowHolder<Row>) queue[i]).set(row);
     }
 
     private boolean empty()

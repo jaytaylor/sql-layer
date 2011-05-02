@@ -15,9 +15,9 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 
 public interface Expression
 {
-    Object evaluate(Row row);
+    Object evaluate(RowBase row);
 }

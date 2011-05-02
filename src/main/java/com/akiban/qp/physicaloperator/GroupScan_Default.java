@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 
 class GroupScan_Default extends PhysicalOperator
 {
@@ -83,7 +83,7 @@ class GroupScan_Default extends PhysicalOperator
         {
             boolean next = cursor.next();
             if (next) {
-                ManagedRow row = cursor.currentRow();
+                Row row = cursor.currentRow();
                 outputRow(row);
                 if (limit.limitReached(row)) {
                     close();

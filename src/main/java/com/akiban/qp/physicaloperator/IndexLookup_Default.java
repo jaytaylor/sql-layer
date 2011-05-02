@@ -16,7 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +131,7 @@ class IndexLookup_Default extends PhysicalOperator
                 groupCursor.bind(this.indexRow.get().hKey());
                 groupCursor.open();
                 if (groupCursor.next()) {
-                    ManagedRow currentRow = groupCursor.currentRow();
+                    Row currentRow = groupCursor.currentRow();
                     if (limit.limitReached(currentRow)) {
                         close();
                     } else {
@@ -155,9 +155,9 @@ class IndexLookup_Default extends PhysicalOperator
         // Object state
 
         private final Cursor indexInput;
-        private final RowHolder<ManagedRow> indexRow = new RowHolder<ManagedRow>();
+        private final RowHolder<Row> indexRow = new RowHolder<Row>();
         private final GroupCursor groupCursor;
-        private final RowHolder<ManagedRow> groupRow = new RowHolder<ManagedRow>();
+        private final RowHolder<Row> groupRow = new RowHolder<Row>();
         private boolean first = true;
     }
 }

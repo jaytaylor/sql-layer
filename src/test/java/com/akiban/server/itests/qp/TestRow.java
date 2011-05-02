@@ -16,11 +16,11 @@
 package com.akiban.server.itests.qp;
 
 import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 
-public class TestRow extends RowBase
+public class TestRow extends AbstractRow
 {
     // RowBase interface
 

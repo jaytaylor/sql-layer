@@ -15,9 +15,7 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.rowtype.RowType;
-
-public class RowHolder<MR extends ManagedRow>
+public class RowHolder<MR extends Row>
 {
     // Object interface
 
