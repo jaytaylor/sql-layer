@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -115,7 +115,7 @@ class AncestorLookup_Default extends PhysicalOperator
             if (pending.isEmpty()) {
                 advance();
             }
-            ManagedRow row = pending.take();
+            Row row = pending.take();
             outputRow(row);
             if (LOG.isInfoEnabled()) {
                 LOG.info("Exhume: {}", row == null ? null : row);
@@ -138,7 +138,7 @@ class AncestorLookup_Default extends PhysicalOperator
         private void advance()
         {
             if (input.next()) {
-                ManagedRow currentRow = input.currentRow();
+                Row currentRow = input.currentRow();
                 if (currentRow.rowType() == rowType) {
                     findAncestors(currentRow);
                 }
@@ -146,7 +146,7 @@ class AncestorLookup_Default extends PhysicalOperator
             }
         }
 
-        private void findAncestors(ManagedRow row)
+        private void findAncestors(Row row)
         {
             assert pending.isEmpty();
             HKey hKey = row.hKey();
@@ -157,7 +157,7 @@ class AncestorLookup_Default extends PhysicalOperator
                     hKey.useSegments(depth);
                     readAncestorRow(hKey);
                     if (ancestorRow.isNotNull()) {
-                        pending.add(ancestorRow.managedRow());
+                        pending.add(ancestorRow.get());
                     }
                 }
             }
@@ -184,7 +184,7 @@ class AncestorLookup_Default extends PhysicalOperator
                 ancestorCursor.bind(hKey);
                 ancestorCursor.open();
                 if (ancestorCursor.next()) {
-                    ManagedRow retrievedRow = ancestorCursor.currentRow();
+                    Row retrievedRow = ancestorCursor.currentRow();
                     // Retrieved row might not actually what we were looking for -- not all ancestors are present,
                     // (there are orphan rows).
                     ancestorRow.set(hKey.equals(retrievedRow.hKey()) ? retrievedRow : null);
@@ -198,7 +198,7 @@ class AncestorLookup_Default extends PhysicalOperator
 
         private final Cursor input;
         private final GroupCursor ancestorCursor;
-        private final RowHolder<ManagedRow> ancestorRow = new RowHolder<ManagedRow>();
+        private final RowHolder<Row> ancestorRow = new RowHolder<Row>();
         private final PendingRows pending;
     }
 }

@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 
@@ -108,7 +108,7 @@ public class API
     {
 
         @Override
-        public boolean limitReached(Row row)
+        public boolean limitReached(RowBase row)
         {
             return false;
         }

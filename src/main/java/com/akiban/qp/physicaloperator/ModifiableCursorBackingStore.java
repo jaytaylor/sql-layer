@@ -15,7 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 
 public interface ModifiableCursorBackingStore {
     /**
@@ -23,5 +23,5 @@ public interface ModifiableCursorBackingStore {
      * @param newRow the row to be added
      * @throws CursorUpdateException if the given row couldn't be added due to an underlying exception
      */
-    void addRow(Row newRow);
+    void addRow(RowBase newRow);
 }

@@ -15,9 +15,7 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.rowtype.RowType;
-
-public class RowHolder<MR extends ManagedRow> implements Row
+public class RowHolder<MR extends Row>
 {
     // Object interface
 
@@ -27,39 +25,12 @@ public class RowHolder<MR extends ManagedRow> implements Row
         return row.toString();
     }
 
-    // Row interface
+    // RowHolder interface
 
-    @Override
-    public RowType rowType()
-    {
-        return row.rowType();
-    }
-
-    @Override
-    public Object field(int i)
-    {
-        return row.field(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return row.hKey();
-    }
-
-    @Override
-    public boolean ancestorOf(Row that)
-    {
-        return row.ancestorOf(that);
-    }
-
-    @Override
-    public MR managedRow()
+    public MR get()
     {
         return row;
     }
-
-    // RowHolder interface
 
     public void set(MR newRow)
     {

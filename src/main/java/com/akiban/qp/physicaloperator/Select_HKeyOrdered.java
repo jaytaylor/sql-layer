@@ -16,7 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.expression.Expression;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 
@@ -89,16 +89,16 @@ class Select_HKeyOrdered extends PhysicalOperator
             outputRow(null);
             boolean moreInput = input.next();
             while (outputRow() == null && moreInput) {
-                ManagedRow inputRow = input.currentRow();
+                Row inputRow = input.currentRow();
                 if (inputRow.rowType() == predicateRowType) {
                     // New row of predicateRowType
                     if ((Boolean) predicate.evaluate(inputRow)) {
                         selectedRow.set(inputRow);
-                        outputRow(selectedRow);
+                        outputRow(selectedRow.get());
                     }
                 } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                     // Row's type is a descendent of predicateRowType.
-                    if (selectedRow.isNotNull() && selectedRow.ancestorOf(inputRow)) {
+                    if (selectedRow.isNotNull() && selectedRow.get().ancestorOf(inputRow)) {
                         outputRow(inputRow);
                     } else {
                         selectedRow.set(null);
@@ -132,6 +132,6 @@ class Select_HKeyOrdered extends PhysicalOperator
 
         private final Cursor input;
         // selectedRow is the last input row with type = predicateRowType.
-        private final RowHolder<ManagedRow> selectedRow = new RowHolder<ManagedRow>();
+        private final RowHolder<Row> selectedRow = new RowHolder<Row>();
     }
 }

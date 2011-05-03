@@ -18,7 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.IndexDef;
@@ -53,7 +53,7 @@ class PersistitIndexCursor implements IndexCursor
                 (indexFilter == null
                  ? exchange.traverse(direction, true)
                  : exchange.traverse(direction, indexFilter, 0))) {
-                unsharedRow().managedRow().copyFromExchange(exchange);
+                unsharedRow().get().copyFromExchange(exchange);
             } else {
                 close();
             }
@@ -76,9 +76,9 @@ class PersistitIndexCursor implements IndexCursor
     }
 
     @Override
-    public ManagedRow currentRow()
+    public Row currentRow()
     {
-        return row.managedRow();
+        return row.get();
     }
 
     // IndexCursor interface
@@ -115,7 +115,7 @@ class PersistitIndexCursor implements IndexCursor
 
     private RowHolder<PersistitIndexRow> unsharedRow() throws PersistitException
     {
-        if (row.managedRow().isShared()) {
+        if (row.get().isShared()) {
             row.set(adapter.newIndexRow(indexRowType));
         }
         return row;

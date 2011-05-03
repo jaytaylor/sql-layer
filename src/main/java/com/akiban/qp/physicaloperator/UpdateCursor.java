@@ -15,7 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 
 public final class UpdateCursor implements Cursor {
 
@@ -23,7 +23,7 @@ public final class UpdateCursor implements Cursor {
     private final UpdateLambda updateLambda;
 
     private boolean currentRowIsMine = false;
-    private ManagedRow currentRow;
+    private Row currentRow;
 
     public UpdateCursor(ModifiableCursor input, UpdateLambda updateLambda) {
         this.input = input;
@@ -38,14 +38,13 @@ public final class UpdateCursor implements Cursor {
     @Override
     public boolean next() {
         if (input.next()) {
-            ManagedRow input = this.input.currentRow();
-            if (!updateLambda.rowIsApplicable(input)) {
+            Row row = this.input.currentRow();
+            if (!updateLambda.rowIsApplicable(row)) {
                 currentRowIsMine = false;
                 return true;
             }
             currentRowIsMine = true;
-            currentRow = updateLambda.applyUpdate(input);
-            input.release();
+            currentRow = updateLambda.applyUpdate(row);
             this.input.updateCurrentRow(currentRow);
             return true;
         }
@@ -58,7 +57,7 @@ public final class UpdateCursor implements Cursor {
     }
 
     @Override
-    public ManagedRow currentRow() {
+    public Row currentRow() {
         return currentRowIsMine ? currentRow : input.currentRow();
     }
 }

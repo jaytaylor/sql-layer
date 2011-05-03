@@ -31,9 +31,9 @@ import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UpdateCursor;
 import com.akiban.qp.physicaloperator.UpdateLambda;
-import com.akiban.qp.row.ManagedRow;
-import com.akiban.qp.row.OverlayingManagedRow;
+import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -108,16 +108,16 @@ public class PhysicalOperatorIT extends ApiTestBase
         ModifiableCursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false);
         Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
             @Override
-            public boolean rowIsApplicable(ManagedRow row) {
+            public boolean rowIsApplicable(Row row) {
                 return row.rowType().equals(customerRowType);
             }
 
             @Override
-            public ManagedRow applyUpdate(ManagedRow original) {
+            public Row applyUpdate(Row original) {
                 String name = (String) original.field(1);
                 name = name.toUpperCase();
                 name = name + name;
-                return new OverlayingManagedRow(original).overlay(1, name);
+                return new OverlayingRow(original).overlay(1, name);
             }
         });
         int nexts = 0;
@@ -131,7 +131,7 @@ public class PhysicalOperatorIT extends ApiTestBase
 
         PhysicalOperator groupScan = groupScan_Default(coi);
         Executable executable = new Executable(adapter, groupScan);
-        Row[] expected = new Row[]{
+        RowBase[] expected = new RowBase[]{
                 row(customerRowType, 1L, "XYZXYZ"),
                 row(orderRowType, 11L, 1L, "ori"),
                 row(itemRowType, 111L, 11L),
@@ -155,7 +155,7 @@ public class PhysicalOperatorIT extends ApiTestBase
     {
         PhysicalOperator groupScan = groupScan_Default(coi);
         Executable executable = new Executable(adapter, groupScan);
-        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 11L, 1L, "ori"),
                                    row(itemRowType, 111L, 11L),
                                    row(itemRowType, 112L, 11L),
@@ -179,7 +179,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         PhysicalOperator groupScan = groupScan_Default(coi);
         Expression cidEq2 = compare(field(0), EQ, literal(2L));
         PhysicalOperator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
-        Row[] expected = new Row[]{row(customerRowType, 2L, "abc"),
+        RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc"),
                                    row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L),
@@ -195,7 +195,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         PhysicalOperator groupScan = groupScan_Default(coi);
         PhysicalOperator flatten = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
         RowType flattenType = flatten.rowType();
-        Row[] expected = new Row[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
+        RowBase[] expected = new RowBase[]{row(flattenType, 1L, "xyz", 11L, 1L, "ori"),
                                    row(itemRowType, 111L, 11L),
                                    row(itemRowType, 112L, 11L),
                                    row(flattenType, 1L, "xyz", 12L, 1L, "david"),
@@ -217,7 +217,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         PhysicalOperator flattenCO = flatten_HKeyOrdered(groupScan, customerRowType, orderRowType);
         PhysicalOperator flattenCOI = flatten_HKeyOrdered(flattenCO, flattenCO.rowType(), itemRowType);
         RowType flattenCOIType = flattenCOI.rowType();
-        Row[] expected = new Row[]{row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 111L, 11L),
+        RowBase[] expected = new RowBase[]{row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 111L, 11L),
                                    row(flattenCOIType, 1L, "xyz", 11L, 1L, "ori", 112L, 11L),
                                    row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 121L, 12L),
                                    row(flattenCOIType, 1L, "xyz", 12L, 1L, "david", 122L, 12L),
@@ -258,7 +258,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
         PhysicalOperator indexLookup = indexLookup_Default(indexScan,
                                                            coi);
-        Row[] expected = new Row[]{row(orderRowType, 12L, 1L, "david"),
+        RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
                                    row(itemRowType, 121L, 12L),
                                    row(itemRowType, 122L, 12L),
                                    row(orderRowType, 22L, 2L, "jack"),
@@ -279,7 +279,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         PhysicalOperator indexScan = indexScan_Default(index(order, "salesman"));
         PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
         PhysicalOperator exhume = ancestorLookup_Default(indexLookup, coi, orderRowType, Arrays.asList(customerRowType));
-        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 12L, 1L, "david"),
                                    row(itemRowType, 121L, 12L),
                                    row(itemRowType, 122L, 12L),
@@ -307,7 +307,7 @@ public class PhysicalOperatorIT extends ApiTestBase
                                                          coi,
                                                          itemRowType,
                                                          Arrays.asList(customerRowType, orderRowType));
-        Row[] expected = new Row[]{row(customerRowType, 1L, "xyz"),
+        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                    row(orderRowType, 11L, 1L, "ori"),
                                    row(itemRowType, 111L, 11L),
                                    row(customerRowType, 1L, "xyz"),
@@ -354,7 +354,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         IndexBound tom = indexBound(userTable(order), row(order, 2, "tom"));
         IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
         PhysicalOperator indexLookup = indexLookup_Default(indexScan, coi);
-        Row[] expected = new Row[]{row(orderRowType, 21L, 2L, "tom"),
+        RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
         compareRows(expected, new Executable(adapter, indexLookup).bind(indexScan, matchTom));
@@ -426,12 +426,12 @@ public class PhysicalOperatorIT extends ApiTestBase
         return null;
     }
 
-    private Row row(RowType rowType, Object... fields)
+    private RowBase row(RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields);
     }
 
-    private Row row(int tableId, Object... values /* alternating field position and value */)
+    private RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
         NiceRow niceRow = new NiceRow(tableId);
         int i = 0;
@@ -443,16 +443,16 @@ public class PhysicalOperatorIT extends ApiTestBase
         return PersistitGroupRow.newPersistitGroupRow(adapter, niceRow.toRowData());
     }
 
-    private void compareRows(Row[] expected, Executable query)
+    private void compareRows(RowBase[] expected, Executable query)
     {
         Cursor cursor = query.cursor();
         int count;
         try {
             cursor.open();
             count = 0;
-            List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
+            List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             while (cursor.next()) {
-                Row actualRow = cursor.currentRow();
+                RowBase actualRow = cursor.currentRow();
                 if(!equal(expected[count], actualRow)) {
                     String expectedString = expected[count] == null ? "null" : expected[count].toString();
                     String actualString = actualRow == null ? "null" : actualRow.toString();
@@ -476,9 +476,9 @@ public class PhysicalOperatorIT extends ApiTestBase
         try {
             cursor.open();
             count = 0;
-            List<Row> actualRows = new ArrayList<Row>(); // So that result is viewable in debugger
+            List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             while (cursor.next()) {
-                Row actualRow = cursor.currentRow();
+                RowBase actualRow = cursor.currentRow();
                 assertEquals(expected[count], actualRow.hKey().toString());
                 count++;
                 actualRows.add(actualRow);
@@ -489,7 +489,7 @@ public class PhysicalOperatorIT extends ApiTestBase
         assertEquals(expected.length, count);
     }
 
-    private boolean equal(Row expected, Row actual)
+    private boolean equal(RowBase expected, RowBase actual)
     {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {

@@ -16,7 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.FlattenedRow;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -141,10 +141,10 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     // a row of type other than parent or child, or end of stream. If we get
                     // here, then input is exhausted, and the only possibly remaining row would
                     // be due to a childless parent waiting to be processed.
-                    generateLeftJoinRow(parent.managedRow());
+                    generateLeftJoinRow(parent.get());
                     parent.set(null);
                 } else {
-                    ManagedRow inputRow = input.currentRow();
+                    Row inputRow = input.currentRow();
                     RowType inputRowType = inputRow.rowType();
                     if (inputRowType == parentType) {
                         if (keepParent) {
@@ -152,16 +152,16 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                         }
                         if (parent.isNotNull()) {
                             // current parent row is childless, so it is left-join fodder.
-                            generateLeftJoinRow(parent.managedRow());
+                            generateLeftJoinRow(parent.get());
                         }
                         parent.set(inputRow);
                     } else if (inputRowType == childType) {
                         if (keepChild) {
                             addToPending();
                         }
-                        if (parent.isNotNull() && parent.ancestorOf(inputRow)) {
+                        if (parent.isNotNull() && parent.get().ancestorOf(inputRow)) {
                             // child is not an orphan
-                            generateInnerJoinRow(parent.managedRow(), inputRow);
+                            generateInnerJoinRow(parent.get(), inputRow);
                         } else {
                             // child is an orphan
                             parent.set(null);
@@ -170,7 +170,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
                     } else {
                         addToPending();
                         if (parentType.ancestorOf(inputRowType)) {
-                            if (parent.isNotNull() && !parent.ancestorOf(inputRow)) {
+                            if (parent.isNotNull() && !parent.get().ancestorOf(inputRow)) {
                                 // We're past all descendents of the current parent
                                 parent.set(null);
                             }
@@ -200,14 +200,14 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         // For use by this class
 
-        private void generateInnerJoinRow(ManagedRow parent, ManagedRow child)
+        private void generateInnerJoinRow(Row parent, Row child)
         {
             assert parent != null;
             assert child != null;
             pending.add(new FlattenedRow(flattenType, parent, child));
         }
 
-        private void generateLeftJoinRow(ManagedRow parent)
+        private void generateLeftJoinRow(Row parent)
         {
             assert parent != null;
             if (leftJoin) {
@@ -215,7 +215,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
             }
         }
 
-        private void generateRightJoinRow(ManagedRow child)
+        private void generateRightJoinRow(Row child)
         {
             assert child != null;
             if (rightJoin) {
@@ -231,7 +231,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         // Object state
 
         private final GroupCursor input;
-        private final RowHolder<ManagedRow> parent = new RowHolder<ManagedRow>();
+        private final RowHolder<Row> parent = new RowHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
     }
 }

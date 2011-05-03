@@ -21,7 +21,7 @@ import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.IndexDef;
@@ -94,7 +94,7 @@ public class PersistitAdapter extends StoreAdapter
         return new PersistitIndexRow(this, indexRowType);
     }
 
-    public RowData rowData(RowDef rowDef, Row row) {
+    public RowData rowData(RowDef rowDef, RowBase row) {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow)row).rowData();
         }
@@ -117,7 +117,7 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
     }
 
-    public void updateIndex(IndexDef indexDef, Row oldRow, Row newRow, Key hKey) throws PersistitException {
+    public void updateIndex(IndexDef indexDef, RowBase oldRow, RowBase newRow, Key hKey) throws PersistitException {
         RowDef rowDef = indexDef.getRowDef();
         RowData oldRowData = rowData(rowDef, oldRow);
         RowData newRowData = rowData(rowDef, newRow);

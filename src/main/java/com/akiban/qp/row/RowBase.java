@@ -17,72 +17,10 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
 
-public abstract class RowBase implements ManagedRow
+public interface RowBase
 {
-    // Row interface
-
-    @Override
-    public abstract RowType rowType();
-
-    @Override
-    public abstract Object field(int i);
-
-    @Override
-    public abstract HKey hKey();
-
-    @Override
-    public final boolean ancestorOf(Row that)
-    {
-        return this.hKey().prefixOf(that.hKey());
-    }
-
-    @Override
-    public final ManagedRow managedRow()
-    {
-        return this;
-    }
-
-    // ManagedRow interface
-
-    @Override
-    public final void share()
-    {
-        assert references >= 0 : this;
-        references++;
-        // System.out.println(String.format("%s: share %s", references, this));
-    }
-
-    @Override
-    public final boolean isShared()
-    {
-        assert references >= 1 : this;
-        // System.out.println(String.format("%s: isShared %s", references, this));
-        return references > 1;
-    }
-
-    @Override
-    public final void release()
-    {
-        references--;
-        // System.out.println(String.format("%s: release %s", references, this));
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(this.getClass().getSimpleName()).append('[');
-        final int fieldsCount = rowType().nFields();
-        for (int i=0; i < fieldsCount; ++i) {
-            builder.append(field(i));
-            if(i+1 < fieldsCount) {
-                builder.append(',').append(' ');
-            }
-        }
-        builder.append(']');
-        return builder.toString();
-    }
-
-    // Object state
-
-    private int references = 0;
+    RowType rowType();
+    Object field(int i);
+    HKey hKey();
+    boolean ancestorOf(RowBase that);
 }

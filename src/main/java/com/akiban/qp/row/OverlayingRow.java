@@ -17,7 +17,7 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
 
-public final class OverlayingManagedRow extends RowBase {
+public final class OverlayingRow extends AbstractRow {
 
     private static final Object UNDEF = new Object() {
         @Override
@@ -25,17 +25,17 @@ public final class OverlayingManagedRow extends RowBase {
             return "UNDEF";
         }
     };
-    private final ManagedRow underlying;
+    private final Row underlying;
     private final Object[] overlays;
 
-    public OverlayingManagedRow(ManagedRow underlying) {
+    public OverlayingRow(Row underlying) {
         this.underlying = underlying;
         this.overlays = new Object[underlying.rowType().nFields()];
         for (int i=0; i < overlays.length; ++i) {
             overlays[i] = UNDEF;
         }
     }
-    public OverlayingManagedRow overlay(int index, Object object) {
+    public OverlayingRow overlay(int index, Object object) {
         overlays[index] = object;
         return this;
     }

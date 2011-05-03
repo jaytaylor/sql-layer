@@ -15,8 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
@@ -24,11 +23,10 @@ import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
 import com.persistit.Exchange;
-import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
 // public for access by PhysicalOperatorIT
-public class PersistitGroupRow extends RowBase
+public class PersistitGroupRow extends AbstractRow
 {
     // Object interface
 

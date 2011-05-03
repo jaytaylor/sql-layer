@@ -20,7 +20,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowDef;
@@ -68,7 +68,7 @@ class PersistitGroupCursor implements GroupCursor
                 groupScan.advance();
                 next = exchange != null;
                 if (next) {
-                    PersistitGroupRow row = unsharedRow().managedRow();
+                    PersistitGroupRow row = unsharedRow().get();
                     row.copyFromExchange(exchange);
                 }
             }
@@ -96,9 +96,9 @@ class PersistitGroupCursor implements GroupCursor
     }
 
     @Override
-    public ManagedRow currentRow()
+    public Row currentRow()
     {
-        return row.managedRow();
+        return row.get();
     }
 
     // GroupCursor interface
@@ -132,7 +132,7 @@ class PersistitGroupCursor implements GroupCursor
 
     private RowHolder<PersistitGroupRow> unsharedRow()
     {
-        if (row.managedRow().isShared()) {
+        if (row.get().isShared()) {
             row.set(adapter.newGroupRow());
         }
         return row;

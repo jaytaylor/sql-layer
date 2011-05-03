@@ -21,7 +21,7 @@ import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Executable;
 import com.akiban.qp.physicaloperator.Limit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -51,7 +51,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         boolean wroteToPayload = false;
         if (!closed) {
             currentRow.set(cursor.currentRow());
-            PersistitGroupRow row = (PersistitGroupRow) currentRow.managedRow();
+            PersistitGroupRow row = (PersistitGroupRow) currentRow.get();
             if (row == null) {
                 close();
             } else {
@@ -77,7 +77,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         RowData rowData = null;
         if (!closed) {
             currentRow.set(cursor.currentRow());
-            PersistitGroupRow row = (PersistitGroupRow) currentRow.managedRow();
+            PersistitGroupRow row = (PersistitGroupRow) currentRow.get();
             if (row == null) {
                 close();
             } else {
@@ -353,5 +353,5 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private Cursor cursor;
     private boolean closed;
     private int rowCount = 0;
-    private RowHolder<ManagedRow> currentRow = new RowHolder<ManagedRow>();
+    private RowHolder<Row> currentRow = new RowHolder<Row>();
 }

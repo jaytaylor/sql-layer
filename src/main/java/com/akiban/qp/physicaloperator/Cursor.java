@@ -15,7 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.ManagedRow;
+import com.akiban.qp.row.Row;
 
 public interface Cursor
 {
@@ -41,5 +41,5 @@ public interface Cursor
      *
      * @return The current row of the underlying table or index, or null if the scan has ended.
      */
-    ManagedRow currentRow();
+    Row currentRow();
 }
