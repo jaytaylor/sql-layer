@@ -26,7 +26,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,30 +45,33 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 
 /**
- * This class converts the SchemaDef object created by parsing DDL statements
- * into an AIS instance. The caller can choose whether to include tables for all
- * storage engine types, or just those marked "engine=akibandb". The latter
- * choice is used by the server component since it does not care about
- * non-akibandb tables. However, the studio component needs to review tables for
- * other engines.
- * 
- * @author peter
- * 
+ * This class converts a SchemaDef object into an AIS. It currently uses the
+ * AISBuilder class internally to do this.
  */
 public class SchemaDefToAis {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SchemaDefToAis.class
-            .getName());
-
+    private static final Logger LOG = LoggerFactory.getLogger(SchemaDefToAis.class.getName());
     private final SchemaDef schemaDef;
     private final AISBuilder builder;
 
+    /**
+     * Convert a SchemaDef into a brand new AIS instance.
+     * @param schemaDef SchemaDef to convert into an AIS
+     * @param akibandbOnly When <code>true</code>, only tables with the AKIBANDB engine are converted.
+     * @throws Exception For any error encountered.
+     */
     public SchemaDefToAis(SchemaDef schemaDef, boolean akibandbOnly) throws Exception {
         this.schemaDef = schemaDef;
         this.builder = new AISBuilder();
         buildAISFromBuilder(akibandbOnly);
     }
 
+    /**
+     * Convert and add the contents of a SchemaDef into an existing AIS instance.
+     * @param schemaDef SchemaDef to convert into an AIS
+     * @param ais The AkibanInformationSchema to add to.
+     * @param akibandbOnly When <code>true</code>, only tables with the AKIBANDB engine are converted.
+     * @throws Exception For any error encountered.
+     */
     public SchemaDefToAis(SchemaDef schemaDef, AkibanInformationSchema ais, boolean akibandbOnly) throws Exception {
         this.schemaDef = schemaDef;
         this.builder = new AISBuilder(ais);
