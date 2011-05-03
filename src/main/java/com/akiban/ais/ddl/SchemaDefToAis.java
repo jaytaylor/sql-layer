@@ -220,22 +220,32 @@ public class SchemaDefToAis {
 
     private List<CName> depthFirstSortedUserTables(final CName groupName) {
         final LinkedList<CName> tableList = new LinkedList<CName>();
-        for (CName tableName : schemaDef.getGroupMap().get(groupName)) {
-            final UserTableDef utdef = schemaDef.getUserTableMap().get(tableName);
-            assert utdef != null : tableName;
-            if (utdef.parentName == null) {
-                tableList.add(0, tableName); // root table, beginning
-            }
-            else {
-                int insertIndex = tableList.indexOf(utdef.parentName);
-                if(insertIndex < 0) {
-                    tableList.add(tableName); // parent not found, end
+        final SortedSet<CName> groupMapCopy = new TreeSet<CName>();
+        groupMapCopy.addAll(schemaDef.getGroupMap().get(groupName));
+        while (!groupMapCopy.isEmpty()) {
+            int startSize = tableList.size();
+            Iterator<CName> it = groupMapCopy.iterator();
+            while (it.hasNext()) {
+                CName tableName = it.next();
+                final UserTableDef utdef = schemaDef.getUserTableMap().get(tableName);
+                assert utdef != null : tableName;
+                if (utdef.parentName == null) {
+                    tableList.add(0, tableName); // root table, beginning
+                    it.remove();
                 }
                 else {
-                    tableList.add(insertIndex + 1, tableName); // after parent
+                    int insertIndex = tableList.indexOf(utdef.parentName);
+                    if(insertIndex >= 0) {
+                        tableList.add(insertIndex + 1, tableName); // after parent
+                        it.remove();
+                    }
                 }
             }
-
+            if (tableList.size() == startSize) {
+                // No tables were added to the sorted list, assume parent(s) are in AIS
+                tableList.addAll(groupMapCopy);
+                groupMapCopy.clear();
+            }
         }
         return tableList;
     }
