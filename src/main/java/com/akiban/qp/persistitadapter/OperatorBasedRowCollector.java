@@ -235,7 +235,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     {
         UserTableRowType queryRootType = schema.userTableRowType(queryRootTable);
         List<RowType> ancestorTypes = new ArrayList<RowType>();
-        if (queryRootType != predicateType) {
+        if (predicateType != null && queryRootType != predicateType) {
             UserTable ancestor = predicateType.userTable();
             do {
                 ancestor = ancestor.parentTable();
@@ -267,18 +267,20 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                 }
             }
         }
-        UserTable predicateTable = predicateType.userTable();
-        if (predicateTable != queryRootTable) {
-            // Cut tables not on the path from the predicate table up to query table
-            UserTable table = predicateTable;
-            UserTable childOnPath;
-            while (table != queryRootTable) {
-                childOnPath = table;
-                table = table.parentTable();
-                for (Join join : table.getChildJoins()) {
-                    UserTable child = join.getChild();
-                    if (child != childOnPath) {
-                        cutTypes.add(schema.userTableRowType(child));
+        if (predicateType != null) {
+            UserTable predicateTable = predicateType.userTable();
+            if (predicateTable != queryRootTable) {
+                // Cut tables not on the path from the predicate table up to query table
+                UserTable table = predicateTable;
+                UserTable childOnPath;
+                while (table != queryRootTable) {
+                    childOnPath = table;
+                    table = table.parentTable();
+                    for (Join join : table.getChildJoins()) {
+                        UserTable child = join.getChild();
+                        if (child != childOnPath) {
+                            cutTypes.add(schema.userTableRowType(child));
+                        }
                     }
                 }
             }
