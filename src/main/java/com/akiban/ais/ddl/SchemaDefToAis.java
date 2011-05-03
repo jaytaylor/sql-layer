@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -178,6 +179,27 @@ public class SchemaDefToAis {
         }
     }
 
+    private List<CName> depthFirstSortedUserTables(final CName groupName) {
+        final LinkedList<CName> tableList = new LinkedList<CName>();
+        for (CName tableName : schemaDef.getGroupMap().get(groupName)) {
+            final UserTableDef utdef = schemaDef.getUserTableMap().get(tableName);
+            if (utdef.parentName == null) {
+                tableList.add(0, tableName); // root table, beginning
+            }
+            else {
+                int insertIndex = tableList.indexOf(utdef.parentName);
+                if(insertIndex < 0) {
+                    tableList.add(tableName); // parent not found, end
+                }
+                else {
+                    tableList.add(insertIndex + 1, tableName); // after parent
+                }
+            }
+
+        }
+        return tableList;
+    }
+
     private AkibanInformationSchema buildAISFromBuilder(final boolean akibandbOnly) throws Exception {
         removeNonAkibanForeignKeys();
         addImpliedGroups();
@@ -298,13 +320,11 @@ public class SchemaDefToAis {
         // Add existing group names
         GroupNamer namer = new GroupNamer();
         // loop through group tables and add to AIS
-        for (Map.Entry<CName, SortedSet<CName>> entry : schemaDef.getGroupMap().entrySet()) {
-            final CName group = entry.getKey();
+        for (CName group : schemaDef.getGroupMap().keySet()) {
             final String groupName = namer.name(group);
             LOG.debug("Group = {}" + groupName);
-
-            List<UserTableDef> otherTables = new ArrayList<UserTableDef>();
-            for (CName table : entry.getValue()) {
+            List<CName> tablesInGroup = depthFirstSortedUserTables(group);
+            for (CName table : tablesInGroup) {
                 UserTableDef tableDef = schemaDef.getUserTableMap().get(table);
                 List<ReferenceDef> joinDefs = tableDef.getAkibanJoinRefs();
                 if (joinDefs.isEmpty()) {
@@ -313,16 +333,11 @@ public class SchemaDefToAis {
                     builder.addTableToGroup(groupName, table.getSchema(), table.getName());
                 }
                 else {
-                    otherTables.add(tableDef);
-                }
-            }
-
-            for (UserTableDef tableDef : otherTables) {
-                List<ReferenceDef> joinDefs = tableDef.getAkibanJoinRefs();
-                for (ReferenceDef refDef : joinDefs) {
-                    LOG.debug("Group Child Table = {}", tableDef.name.getName());
-                    String joinName = constructFKJoinName(tableDef, refDef);
-                    builder.addJoinToGroup(groupName, joinName, 0);
+                    for (ReferenceDef refDef : joinDefs) {
+                        LOG.debug("Group Child Table = {}", tableDef.name.getName());
+                        String joinName = constructFKJoinName(tableDef, refDef);
+                        builder.addJoinToGroup(groupName, joinName, 0);
+                    }
                 }
             }
         }

@@ -673,6 +673,7 @@ public class AISBuilder {
     }
 
     private void checkCycle(UserTable table, Group group) {
+
         if (table.getGroup() == group) {
             String exception = table + " is already in " + group
                     + ". Group must be acyclic";
