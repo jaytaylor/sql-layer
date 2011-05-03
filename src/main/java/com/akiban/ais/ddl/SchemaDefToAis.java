@@ -86,7 +86,7 @@ public class SchemaDefToAis {
         final List<CName> tableList = new ArrayList<CName>();
         for (final CName tableName : schemaDef.getGroupMap().get(groupName)) {
             final UserTableDef utdef = schemaDef.getUserTableMap().get(tableName);
-            CName parent = utdef.parent == null ? root : utdef.parent.name;
+            final CName parent = utdef.parentName == null ? root : utdef.parentName;
             SortedSet<CName> children = hierarchy.get(parent);
             if (children == null) {
                 children = new TreeSet<CName>();
@@ -124,14 +124,14 @@ public class SchemaDefToAis {
             tablesInGroups.addAll(tables);
         }
         for (final CName userTableName : schemaDef.getUserTableMap().keySet()) {
-            final UserTableDef utDef = addImpliedGroupTable(tablesInGroups, userTableName);
-            if (utDef == null) {
+            final CName name = addImpliedGroupTable(tablesInGroups, userTableName);
+            if (name == null) {
                 LOG.warn("No Group for table {}", userTableName);
             }
         }
     }
 
-    private UserTableDef addImpliedGroupTable(final Set<CName> tablesInGroups, final CName userTableName) {
+    private CName addImpliedGroupTable(final Set<CName> tablesInGroups, final CName userTableName) {
         final UserTableDef utDef = schemaDef.getUserTableMap().get(userTableName);
         if (utDef != null && utDef.isAkibanTable() && !tablesInGroups.contains(userTableName)) {
             tablesInGroups.add(userTableName);
@@ -144,15 +144,16 @@ public class SchemaDefToAis {
                 schemaDef.getGroupMap().put(utDef.groupName, members);
             } else {
                 for (ReferenceDef refDef : joinRefs) {
-                    utDef.parent = addImpliedGroupTable(tablesInGroups, refDef.table);
-                    if (utDef.parent != null) {
-                        utDef.groupName = utDef.parent.groupName;
+                    utDef.parentName = addImpliedGroupTable(tablesInGroups, refDef.table);
+                    if (utDef.parentName != null) {
+                        UserTableDef parent = schemaDef.getUserTableMap().get(utDef.parentName);
+                        utDef.groupName = parent.groupName;
                         schemaDef.getGroupMap().get(utDef.groupName).add(userTableName);
                     }
                 }
             }
         }
-        return utDef;
+        return utDef != null ? utDef.name : null;
     }
 
     private void removeNonAkibanForeignKeys() {

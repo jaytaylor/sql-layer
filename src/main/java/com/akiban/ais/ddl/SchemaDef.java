@@ -720,7 +720,7 @@ public class SchemaDef {
         IndexDef primaryKey;
         List<ColumnDef> columns = new ArrayList<ColumnDef>();
         List<IndexDef> indexes = new ArrayList<IndexDef>();
-        UserTableDef parent;
+        CName parentName;
         String engine = AKIBANDB_ENGINE_NAME;
         String charset;
         String collate;
