@@ -260,7 +260,6 @@ public class ServiceManagerImpl implements ServiceManager
     }
 
     private List<Throwable> tryStopServices() {
-        setServiceManager(null);
         List<Service> stopServices = new ArrayList<Service>(services.size());
         for (Service service : services.values()) {
             stopServices.add(service);
@@ -279,6 +278,7 @@ public class ServiceManagerImpl implements ServiceManager
                 exceptions.add(t);
             }
         }
+        setServiceManager(null);
         return exceptions;
     }
 
