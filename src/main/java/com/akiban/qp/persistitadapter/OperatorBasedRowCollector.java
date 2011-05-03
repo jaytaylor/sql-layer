@@ -31,6 +31,7 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
@@ -200,9 +201,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        end,
                                        endColumns,
                                        columnBitMap);
+        boolean singleRow = (scanFlags & SCAN_FLAGS_SINGLE_ROW) != 0;
         boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
         boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
-        rowCollector.createPlan(scanLimit == null ? ScanLimit.NONE : scanLimit, descending, deep);
+        rowCollector.createPlan(scanLimit, singleRow, descending, deep);
         return rowCollector;
     }
     
@@ -214,11 +216,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
-    private void createPlan(ScanLimit scanLimit, boolean descending, boolean deep)
+    private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
     {
         // Plan and query
         Executable query;
-        Limit limit = new PersistitRowLimit(scanLimit);
+        Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
         boolean useIndex =
             predicateIndex != null && !((IndexDef) predicateIndex.indexDef()).isHKeyEquivalent();
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
@@ -308,49 +310,18 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return cutTypes;
     }
 
-/*
-    private Set<RowType> cutTypes(boolean deep)
+    private ScanLimit scanLimit(ScanLimit requestLimit, boolean singleRow)
     {
-        Set<RowType> cutTypes;
-        Set<RowType> keepTypes = new HashSet<RowType>();
-        UserTable predicateTable = predicateType.userTable();
-        if (deep) {
-            // Keep predicateTable and everything below it.
-            findDescendentTypes(predicateTable, keepTypes);
-        } else {
-            // Find the leafmost tables in requiredUserTables and keep everything between each such table (inclusive)
-            // and predicate table (exclusive). It is possible that a column bit map includes, for example, customer and
-            // item but not order. This case is NOT handled -- we'll just include (i.e. not cut) customer, order
-            // and item.
-            for (UserTable requiredUserTable : requiredUserTables) {
-                UserTable ancestor = requiredUserTable;
-                while (ancestor != predicateTable) {
-                    keepTypes.add(schema.userTableRowType(ancestor));
-                    ancestor = ancestor.parentTable();
-                }
-            }
+        ScanLimit limit = requestLimit == null ? ScanLimit.NONE : requestLimit;
+        if (limit != ScanLimit.NONE && singleRow) {
+            throw new IllegalArgumentException
+                ("Cannot specify limit along with SCAN_FLAGS_SINGLE_ROW");
         }
-        // Keep everything between the predicate table and the query root, inclusive
-        UserTable table = predicateTable;
-        while (table != queryRootTable) {
-            keepTypes.add(schema.userTableRowType(table));
-            table = table.parentTable();
+        if (singleRow) {
+            limit = new PredicateLimit(predicateType.userTable().getTableId(), 1);
         }
-        keepTypes.add(queryRootType);
-        // Cut everything that isn't kept
-        cutTypes = schema.userTableRowTypes();
-        cutTypes.removeAll(keepTypes);
-        return cutTypes;
+        return limit;
     }
-
-    private void findDescendentTypes(UserTable table, Collection<RowType> types)
-    {
-        types.add(schema.userTableRowType(table));
-        for (Join join : table.getChildJoins()) {
-            findDescendentTypes(join.getChild(), types);
-        }
-    }
-*/
 
     // Class state
 
