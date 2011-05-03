@@ -15,7 +15,6 @@
 
 package com.akiban.ais.ddl;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,6 +26,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.TableName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,22 +62,40 @@ public class SchemaDefToAis {
             .getName());
 
     private final SchemaDef schemaDef;
-    private final AkibanInformationSchema ais;
+    private final AISBuilder builder;
 
-    public SchemaDefToAis(final SchemaDef schemaDef, final boolean akibandbOnly)
-            throws Exception {
+    public SchemaDefToAis(SchemaDef schemaDef, boolean akibandbOnly) throws Exception {
         this.schemaDef = schemaDef;
-        this.ais = buildAISFromBuilder(akibandbOnly);
+        this.builder = new AISBuilder();
+        buildAISFromBuilder(akibandbOnly);
+    }
+
+    public SchemaDefToAis(SchemaDef schemaDef, AkibanInformationSchema ais, boolean akibandbOnly) throws Exception {
+        this.schemaDef = schemaDef;
+        this.builder = new AISBuilder(ais);
+        buildAISFromBuilder(akibandbOnly);
     }
 
     public AkibanInformationSchema getAis() {
-        return ais;
+        return builder.akibanInformationSchema();
     }
 
     /**
      * Converted Akiban FKs into group relationships.
      */
     private void addImpliedGroups() {
+        final Map<CName, SortedSet<CName>> groupMap = schemaDef.getGroupMap();
+        groupMap.clear();
+        // Already existing in AIS
+        for (UserTable table : builder.akibanInformationSchema().getUserTables().values()) {
+            // Add sets for existing groups but not any of the existing tables
+            if (table.getParentJoin() == null) {
+                final SortedSet<CName> members = new TreeSet<CName>();
+                final TableName parentName = table.getName();
+                groupMap.put(new CName(parentName.getSchemaName(), parentName.getTableName()), members);
+            }
+        }
+        // Already existing in schemaDef
         final Set<CName> tablesInGroups = new HashSet<CName>();
         for (SortedSet<CName> tables : schemaDef.getGroupMap().values()) {
             tablesInGroups.addAll(tables);
@@ -95,8 +114,8 @@ public class SchemaDefToAis {
             tablesInGroups.add(userTableName);
             List<ReferenceDef> joinRefs = utDef.getAkibanJoinRefs();
             if (joinRefs.isEmpty()) {
-                // No joins, new root table. Create a new Group named as the table.
-                utDef.groupName = userTableName;
+                // No joins, new root table. Default groupName is the root table name
+                utDef.groupName = utDef.name;
                 final SortedSet<CName> members = new TreeSet<CName>();
                 members.add(userTableName);
                 schemaDef.getGroupMap().put(utDef.groupName, members);
@@ -106,6 +125,15 @@ public class SchemaDefToAis {
                     if (utDef.parentName != null) {
                         UserTableDef parent = schemaDef.getUserTableMap().get(utDef.parentName);
                         utDef.groupName = parent.groupName;
+                    }
+                    else {
+                        AkibanInformationSchema ais = builder.akibanInformationSchema();
+                        UserTable parent = ais.getUserTable(refDef.table.getSchema(), refDef.table.getName());
+                        if (parent != null) {
+                            utDef.groupName = utDef.parentName = refDef.table;
+                        }
+                    }
+                    if (utDef.groupName != null) {
                         schemaDef.getGroupMap().get(utDef.groupName).add(userTableName);
                     }
                 }
@@ -179,10 +207,20 @@ public class SchemaDefToAis {
         }
     }
 
+    private int computeTableIdOffset(AkibanInformationSchema ais) {
+        // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
+        int offset = 1;
+        for(UserTable table : ais.getUserTables().values()) {
+            offset = Math.max(offset, table.getTableId() + 1);
+        }
+        return offset;
+    }
+
     private List<CName> depthFirstSortedUserTables(final CName groupName) {
         final LinkedList<CName> tableList = new LinkedList<CName>();
         for (CName tableName : schemaDef.getGroupMap().get(groupName)) {
             final UserTableDef utdef = schemaDef.getUserTableMap().get(tableName);
+            assert utdef != null : tableName;
             if (utdef.parentName == null) {
                 tableList.add(0, tableName); // root table, beginning
             }
@@ -200,15 +238,12 @@ public class SchemaDefToAis {
         return tableList;
     }
 
-    private AkibanInformationSchema buildAISFromBuilder(final boolean akibandbOnly) throws Exception {
+    private void buildAISFromBuilder(final boolean akibandbOnly) throws Exception {
         removeNonAkibanForeignKeys();
         addImpliedGroups();
 
-        AISBuilder builder = new AISBuilder();
-        // Use 1 as default offset because the AAM uses tableID 0 as 
-        // a marker value. 
-        builder.setTableIdOffset(1);
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        final AkibanInformationSchema ais = builder.akibanInformationSchema();
+        builder.setTableIdOffset(computeTableIdOffset(ais));
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
 
         // loop through user tables and add to AIS
@@ -317,22 +352,33 @@ public class SchemaDefToAis {
         }
         builder.basicSchemaIsComplete();
 
-        // Add existing group names
         GroupNamer namer = new GroupNamer();
+        // Add existing group names
+        for (String groupName : builder.akibanInformationSchema().getGroups().keySet()) {
+            namer.name(groupName);
+        }
         // loop through group tables and add to AIS
         for (CName group : schemaDef.getGroupMap().keySet()) {
-            final String groupName = namer.name(group);
-            LOG.debug("Group = {}" + groupName);
+            String groupName = null;
             List<CName> tablesInGroup = depthFirstSortedUserTables(group);
             for (CName table : tablesInGroup) {
                 UserTableDef tableDef = schemaDef.getUserTableMap().get(table);
                 List<ReferenceDef> joinDefs = tableDef.getAkibanJoinRefs();
                 if (joinDefs.isEmpty()) {
-                    LOG.debug("Group Root Table = {} ", table.getName());
-                    builder.createGroup(groupName, group.getSchema(), groupTableName(group));
-                    builder.addTableToGroup(groupName, table.getSchema(), table.getName());
+                        // New root table
+                        LOG.debug("Group Root Table = ", table.getName());
+                        groupName = namer.name(group);
+                        builder.createGroup(groupName, group.getSchema(), groupTableName(group));
+                        builder.addTableToGroup(groupName, table.getSchema(), table.getName());
                 }
                 else {
+                    if (groupName == null) {
+                        // Not in tableList = wasn't in schemaDef, must be in AIS
+                        final CName parentName = tableDef.parentName;
+                        final UserTable parent = ais.getUserTable(parentName.getSchema(), parentName.getName());
+                        groupName = parent.getGroup().getName();
+                    }
+                    LOG.debug("Group = {}" + groupName);
                     for (ReferenceDef refDef : joinDefs) {
                         LOG.debug("Group Child Table = {}", tableDef.name.getName());
                         String joinName = constructFKJoinName(tableDef, refDef);
@@ -344,8 +390,6 @@ public class SchemaDefToAis {
         if (!schemaDef.getGroupMap().isEmpty()) {
             builder.groupingIsComplete();
         }
-
-        return builder.akibanInformationSchema();
     }
 
     private String constructFKJoinName(UserTableDef childTable, ReferenceDef refDef) {
