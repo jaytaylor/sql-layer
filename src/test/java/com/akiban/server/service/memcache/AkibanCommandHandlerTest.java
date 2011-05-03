@@ -25,7 +25,7 @@ import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.service.session.TestSessionFactory;
 import com.thimbleware.jmemcached.CacheElement;
 import org.junit.Test;
 
@@ -101,7 +101,7 @@ public final class AkibanCommandHandlerTest {
 
     @Test
     public void testTwice() throws HapiRequestException {
-        Session session = new SessionImpl();
+        Session session = session();
         testWriteBytes(session, "first test");
         testWriteBytes(session, "second test");
     }
@@ -114,7 +114,7 @@ public final class AkibanCommandHandlerTest {
 
         CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("schema:table:column=value", ""),
-                new SessionImpl(), processor, outputter);
+                session(), processor, outputter);
 
         final byte[] expectedBytes = testString.getBytes(CHARSET);
         assertArrayEquals("bytes", expectedBytes, result[0].getData());
@@ -129,7 +129,7 @@ public final class AkibanCommandHandlerTest {
 
         CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("schema:table:column=value"),
-                new SessionImpl(), processor, outputter);
+                session(), processor, outputter);
 
         final byte[] expectedBytes = testString.getBytes(CHARSET);
         assertArrayEquals("bytes", expectedBytes, result[0].getData());
@@ -144,7 +144,7 @@ public final class AkibanCommandHandlerTest {
 
         CacheElement[] result = AkibanCommandHandler.handleGetKeys(
                 Arrays.asList("", "schema:table:column=value"),
-                new SessionImpl(), processor, outputter);
+                session(), processor, outputter);
 
         final byte[] expectedBytes = testString.getBytes(CHARSET);
         assertArrayEquals("bytes", expectedBytes, result[0].getData());
@@ -163,5 +163,9 @@ public final class AkibanCommandHandlerTest {
         );
 
         assertArrayEquals("bytes", expectedBytes, actualBytes);
+    }
+
+    private static Session session() {
+        return TestSessionFactory.get().createSession();
     }
 }

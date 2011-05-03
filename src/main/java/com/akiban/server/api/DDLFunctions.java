@@ -16,6 +16,7 @@
 package com.akiban.server.api;
 
 import java.util.Collection;
+import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -40,8 +41,8 @@ import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedDropException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
+import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaId;
 
 public interface DDLFunctions {
     /**
@@ -82,6 +83,7 @@ public interface DDLFunctions {
             UnsupportedDataTypeException,
             JoinToMultipleParentsException,
             UnsupportedIndexDataTypeException,
+            UnsupportedIndexSizeException,
             GenericInvalidOperationException;
 
     /**
@@ -105,11 +107,13 @@ public interface DDLFunctions {
      * @throws NullPointerException if schemaName is null
      * @throws ProtectedTableDDLException if the given schema contains protected tables
      * @throws ForeignConstraintDDLException if dropping this schema would create a foreign key violation
+     * @throws UnsupportedDropException if dropping a table the schema is unsupported for any other reason
      * @throws GenericInvalidOperationException if some other exception occurred
      */
     void dropSchema(Session session, String schemaName)
             throws ProtectedTableDDLException,
             ForeignConstraintDDLException,
+            UnsupportedDropException,
             GenericInvalidOperationException;
 
      /**
@@ -184,24 +188,23 @@ public interface DDLFunctions {
     RowDef getRowDef(int tableId) throws NoSuchTableException;
 
     /**
-     * Retrieves the "CREATE" DDLs for all Akiban tables, including group tables and tables in the
-     * <tt>akiban_information_schema</tt> schema. The DDLs will be arranged such that it should be safe to call them
-     * in order, but they will not contain any DROP commands; it is up to the caller to drop all conflicting
-     * tables. Schemas will be created with <tt>IF EXISTS</tt>, so the caller does not need to drop conflicting
-     * schemas.
+     * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>akiban_information_schema</tt>
+     * schema. The DDLs will be arranged such that it should be safe to call them in order, but they will not contain
+     * any DROP commands; it is up to the caller to drop all conflicting tables. Schemas will be created with
+     * <tt>IF NOT EXISTS</tt>, so the caller does not need to drop conflicting schemas.
      * @throws InvalidOperationException if an exception occurred
-     * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to the chunkserver's known tables
+     * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to known tables
      */
-    String getDDLs(Session session) throws InvalidOperationException;
+    List<String> getDDLs(Session session) throws InvalidOperationException;
 
-    SchemaId getSchemaID() throws InvalidOperationException;
+    int getGeneration();
 
     /**
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
      * @throws InvalidOperationException if an exception occurred
      */
     @SuppressWarnings("unused") // meant to be used from JMX
-    void forceGenerationUpdate() throws InvalidOperationException;
+    void forceGenerationUpdate();
     
     /**
      * Create new indexes on an existing table. All indexes must exist on the same table. Primary

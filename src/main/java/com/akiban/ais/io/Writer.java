@@ -39,6 +39,11 @@ public class Writer implements ModelNames
     {
         this.target = target;
     }
+    
+    private void saveVersion (AkibanInformationSchema ais) throws Exception
+    {
+        target.writeVersion(ais.getModelVersion());
+    }
 
     private void saveTypes(AkibanInformationSchema ais) throws Exception
     {
@@ -156,6 +161,7 @@ public class Writer implements ModelNames
     {
         try {
             target.deleteAll();
+            saveVersion(ais);
             saveTypes(ais);
             saveGroups(ais);
             saveTables(ais);

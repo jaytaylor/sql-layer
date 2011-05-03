@@ -67,6 +67,17 @@ public class HKey
         return segment;
     }
 
+    public boolean containsColumn(Column column) {
+        for(HKeySegment hkSeg : segments) {
+            for(HKeyColumn hkCol : hkSeg.columns()) {
+                if(hkCol.column() == column) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public HKey()
     {}
 

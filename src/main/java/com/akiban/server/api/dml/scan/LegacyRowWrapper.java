@@ -17,6 +17,7 @@ package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.DMLError;
 
 import java.util.Map;
@@ -110,6 +111,11 @@ public final class LegacyRowWrapper extends NewRow
             niceRow = null;
         }
         return rowData;
+    }
+
+    @Override
+    public ColumnSelector getActiveColumns() {
+        return niceRow().getActiveColumns();
     }
 
     @Override

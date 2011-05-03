@@ -23,7 +23,8 @@ public abstract class Target implements ModelNames
 
     public abstract void writeCount(int count) throws Exception;
 
-
+    public abstract void writeVersion(int modelVersion); 
+    
     public void writeType(Map<String, Object> map) throws Exception
     {
         write(type, map);

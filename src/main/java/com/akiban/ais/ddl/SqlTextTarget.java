@@ -62,7 +62,15 @@ public class SqlTextTarget extends Target {
 
 
 	// For use by this class
-
+    @Override 
+    public void writeVersion(int modelVersion)
+    {
+        final StringBuffer sb = new StringBuffer();
+        sb.append("/* produced using AIS model version: ");
+        sb.append(modelVersion);
+        sb.append (" */");
+        writer.println(sb);
+    }
 	@Override
 	protected void write(String typename, Map<String, Object> map)
 			throws Exception {

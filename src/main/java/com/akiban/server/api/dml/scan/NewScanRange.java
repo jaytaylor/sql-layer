@@ -19,6 +19,7 @@ import java.util.Set;
 
 import com.akiban.server.RowData;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.ColumnSelector;
 
 public class NewScanRange implements ScanRange {
     protected final int tableId;
@@ -45,8 +46,18 @@ public class NewScanRange implements ScanRange {
     }
 
     @Override
+    public ColumnSelector getStartColumns() {
+        return null;
+    }
+
+    @Override
     public RowData getEnd() throws NoSuchTableException {
         return convert(predicate.getEndRow());
+    }
+
+    @Override
+    public ColumnSelector getEndColumns() {
+        return null;
     }
 
     private RowData convert(NewRow row) throws NoSuchTableException {

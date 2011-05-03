@@ -17,6 +17,7 @@ package com.akiban.server.service;
 
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.network.NetworkService;
@@ -30,8 +31,6 @@ public interface ServiceFactory
     Service<JmxRegistryService> jmxRegistryService();
 
     Service<ConfigurationService> configurationService();
-    
-    Service<SessionService> sessionService();
 
     Service<NetworkService> networkService();
 
@@ -44,4 +43,8 @@ public interface ServiceFactory
     Service<Store> storeService();
 
     Service<MemcacheService> memcacheService();
+
+    Service<DXLService> dxlService();
+
+    Service<SessionService> sessionService();
 }

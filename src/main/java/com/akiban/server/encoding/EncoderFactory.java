@@ -32,6 +32,8 @@ public final class EncoderFactory {
     public static final UIntEncoder U_INT = new UIntEncoder();
     public static final FloatEncoder FLOAT = new FloatEncoder();
     public static final UFloatEncoder U_FLOAT = new UFloatEncoder();
+    public static final DoubleEncoder DOUBLE = new DoubleEncoder();
+    public static final UDoubleEncoder U_DOUBLE = new UDoubleEncoder();
     public static final DecimalEncoder DECIMAL = new DecimalEncoder();
     public static final DecimalEncoder U_DECIMAL = new DecimalEncoder();
     public static final StringEncoder VARCHAR = new StringEncoder();
@@ -43,7 +45,6 @@ public final class EncoderFactory {
     public static final DateTimeEncoder DATETIME = new DateTimeEncoder();
     public static final TimestampEncoder TIMESTAMP = new TimestampEncoder();
     public static final YearEncoder YEAR = new YearEncoder();
-    public static final UnsupportedTypeEncoder BIT = new UnsupportedTypeEncoder("BIT");
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
     private static Map<String,Encoding<?>> encodingMap = null;

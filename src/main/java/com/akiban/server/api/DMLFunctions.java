@@ -37,10 +37,11 @@ import com.akiban.server.api.dml.scan.CursorIsUnknownException;
 import com.akiban.server.api.dml.scan.CursorState;
 import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.OldAISException;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.RowOutputException;
-import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.dml.scan.ScanRequest;
+import com.akiban.server.api.dml.scan.TableDefinitionChangedException;
 import com.akiban.server.service.session.Session;
 
 @SuppressWarnings("unused")
@@ -63,20 +64,19 @@ public interface DMLFunctions {
      * Opens a new cursor for scanning a table. This cursor will be stored in the current session, and a handle
      * to it will be returned for use in subsequent cursor-related methods. When you're finished with the cursor,
      * make sure to close it.
-     * @param request the request specifications
+     *
      * @param session the context in which this cursor is opened
+     * @param request the request specifications
      * @return a handle to the newly created cursor.
      * @throws NullPointerException if the request is null
      * @throws com.akiban.server.api.common.NoSuchTableException if the request is for an unknown table
      * @throws NoSuchColumnException if the request includes a column that isn't defined for the requested table
      * @throws NoSuchIndexException if the request is on an index that isn't defined for the requested table
+     * @throws OldAISException if the given AIS generation is out of date
      * @throws GenericInvalidOperationException if some other exception occurred
      */
-    CursorId openCursor(Session session, ScanRequest request)
-    throws  NoSuchTableException,
-            NoSuchColumnException,
-            NoSuchIndexException,
-            GenericInvalidOperationException;
+    CursorId openCursor(Session session, int knownAIS, ScanRequest request)
+            throws NoSuchTableException, NoSuchColumnException, NoSuchIndexException, GenericInvalidOperationException, OldAISException;
 
     /**
      * <p>Performs a scan using the given cursor. This scan optionally limits the number of rows scanned, and passes
@@ -108,8 +108,9 @@ public interface DMLFunctions {
      * <p>If the RowOutput throws an exception, it will be wrapped in a RowOutputException.</p>
      *
      * <p>If this method throws any exception, the cursor will be marked as finished.</p>
-     * @param cursorId the cursor to scan
+     *
      * @param session the context in which the cursor was opened
+     * @param cursorId the cursor to scan
      * @param output the RowOutput to collect the given rows
      * @return whether more rows remain to be scanned
      * @throws NullPointerException if cursorId or output are null
@@ -121,12 +122,13 @@ public interface DMLFunctions {
      * @throws GenericInvalidOperationException if some other exception occurred
      * @throws BufferFullException if the output buffer couldn't fit the rows
      */
-    boolean scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
+    void scanSome(Session session, CursorId cursorId, LegacyRowOutput output)
     throws  CursorIsFinishedException,
             CursorIsUnknownException,
             RowOutputException,
             BufferFullException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException;
 
     /**
@@ -183,6 +185,7 @@ public interface DMLFunctions {
             RowOutputException,
             NoSuchTableException,
             ConcurrentScanAndUpdateException,
+            TableDefinitionChangedException,
             GenericInvalidOperationException;
 
     /**

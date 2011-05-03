@@ -97,7 +97,7 @@ public class SchemaDefToAisTest {
         assertEquals("columns", Arrays.asList("id", "whatever"),
                 tableDef.getColumnNames());
         assertEquals("PK columns", Arrays.asList("id"),
-                tableDef.getPrimaryKey());
+                tableDef.getPrimaryKey().getColumnNames());
         assertEquals("other indexes", 0, tableDef.indexes.size());
     }
 
@@ -107,7 +107,7 @@ public class SchemaDefToAisTest {
         assertEquals("columns", Arrays.asList("id", "whatever"),
                 tableDef.getColumnNames());
         assertEquals("PK columns", Arrays.asList("id"),
-                tableDef.getPrimaryKey());
+                tableDef.getPrimaryKey().getColumnNames());
         assertEquals("other indexes", 0, tableDef.indexes.size());
     }
 
@@ -145,8 +145,8 @@ public class SchemaDefToAisTest {
         assertEquals("column[0]", "id", tableDef.getColumns().get(0).getName());
         assertEquals("column[1]", "oid", tableDef.getColumns().get(1).getName());
 
-        assertEquals("PK columns", 1, tableDef.primaryKey.size());
-        assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
+        assertNotNull("PK columns", tableDef.primaryKey != null);
+        assertEquals("PK[0]", "id", tableDef.primaryKey.getColumnNames().get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
         assertEquals("index[0] name", "__akiban_fk",
@@ -208,8 +208,8 @@ public class SchemaDefToAisTest {
         assertEquals("column[0]", "id", tableDef.getColumns().get(0).getName());
         assertEquals("column[1]", "oid", tableDef.getColumns().get(1).getName());
 
-        assertEquals("PK columns", 1, tableDef.primaryKey.size());
-        assertEquals("PK[0]", "id", tableDef.primaryKey.get(0));
+        assertNotNull("PK columns", tableDef.primaryKey);
+        assertEquals("PK[0]", "id", tableDef.primaryKey.getColumnNames().get(0));
 
         assertEquals("indexes", 1, tableDef.indexes.size());
         assertEquals("index[0] name", "__akiban_fk",
@@ -443,5 +443,17 @@ public class SchemaDefToAisTest {
         assertEquals(1, table.getIndexes().size());
         final Index index = table.getIndex("a");
         assertNotNull("has index named `a``", index);
+    }
+    
+    @Test
+    public void primaryKeyDescColumn() throws Exception {
+        // bug727418: desc in primary key column parse failure
+        final SchemaDef sd = SchemaDef.parseSchema("create table test.t(id int, primary key(id desc)) engine=akibandb");
+        final SchemaDef.UserTableDef userTableDef = sd.getCurrentTable();
+        assertNotNull(userTableDef);
+        final SchemaDef.IndexDef pkDef = userTableDef.getPrimaryKey();
+        assertNotNull(pkDef);
+        assertEquals(Arrays.asList("id"), pkDef.getColumnNames());
+        assertEquals(true, pkDef.getColumns().get(0).descending);
     }
 }

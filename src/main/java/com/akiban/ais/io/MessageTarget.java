@@ -51,6 +51,12 @@ public class MessageTarget extends Target
 
     // For use by this class
 
+    @Override 
+    public void writeVersion(int modelVersion)
+    {
+        writeInt(modelVersion);
+    }
+
     @Override
     protected final void write(String typename, Map<String, Object> map) throws Exception
     {

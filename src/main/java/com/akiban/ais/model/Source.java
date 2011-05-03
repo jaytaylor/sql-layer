@@ -59,6 +59,8 @@ public abstract class Source implements ModelNames
         read(indexColumn, indexColumnReceiver);
     }
 
+    public abstract int readVersion ();
+    
     protected abstract void read(final String typename, Receiver receiver) throws Exception;
 
     public abstract void close() throws Exception;

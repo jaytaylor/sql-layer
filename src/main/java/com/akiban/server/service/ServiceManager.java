@@ -16,9 +16,8 @@
 package com.akiban.server.service;
 
 import com.akiban.server.AkServer;
-import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.d_l.DStarLService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
@@ -29,17 +28,17 @@ import com.akiban.server.store.Store;
 
 public interface ServiceManager {
 
-    void startServices() throws Exception;
+    void startServices() throws ServiceStartupException;
 
     void stopServices() throws Exception;
+    
+    void crashServices() throws Exception;
 
     ConfigurationService getConfigurationService();
     
     AkServer getAkSserver();
 
     Store getStore();
-    
-    SessionService getSessionService();
     
     TreeService getTreeService();
 
@@ -51,7 +50,9 @@ public interface ServiceManager {
     
     StatisticsService getStatisticsService();
 
+    SessionService getSessionService();
+
     <T> T getServiceByClass(Class<T> serviceClass);
 
-    DStarLService getDStarL();
+    DXLService getDXL();
 }

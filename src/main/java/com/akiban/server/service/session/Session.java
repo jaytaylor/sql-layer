@@ -15,53 +15,116 @@
 
 package com.akiban.server.service.session;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.Map;
 
-public interface Session
+public final class Session
 {
-    <T> T get(Key<T> key);
-    <T> T put(Key<T> key, T item);
-    <T> T remove(Key<T> key);
+    private static final Object NULL_OBJ = new Object();
+    private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
+    private final SessionEventListener listener;
 
-    <K,V> V get(MapKey<K,V> mapKey, K key);
-    <K,V> V put(MapKey<K,V> mapKey, K key, V value);
-    <K,V> V remove(MapKey<K,V> mapKey, K key);
+    Session(SessionEventListener listener) {
+        this.listener = listener;
+    }
 
-    /**
-     * Closes all the resources managed by this session.
-     */
-    void close();
+    public <T> T get(Session.Key<T> key) {
+        return launder(key, map.get(key));
+    }
 
+    public <T> T put(Session.Key<T> key, T item) {
+        return launder(key, map.put(key, item == null ? NULL_OBJ : item));
+    }
+
+    public <T> T remove(Key<T> key) {
+        return launder(key, map.remove(key));
+    }
+
+    public <K,V> V get(MapKey<K,V> mapKey, K key) {
+        Map<K,V> map = get( mapKey.asKey() );
+        if (map == null) {
+            return null;
+        }
+        return map.get(key);
+    }
+
+    public <K,V> V put(MapKey<K,V> mapKey, K key, V value) {
+        Map<K,V> map = get( mapKey.asKey() );
+        if (map == null) {
+            map = new HashMap<K, V>();
+            put(mapKey.asKey(), map);
+        }
+        return map.put(key, value);
+    }
+
+    public <K,V> V remove(MapKey<K,V> mapKey, K key) {
+        Map<K,V> map = get( mapKey.asKey() );
+        if (map == null) {
+            return null;
+        }
+        return map.remove(key);
+    }
+
+    public <T> void push(StackKey<T> key, T item) {
+        Deque<T> deque = get( key.asKey() );
+        if (deque == null) {
+            deque = new ArrayDeque<T>();
+            put(key.asKey(), deque);
+        }
+        deque.offerLast(item);
+    }
+
+    public <T> T pop(StackKey<T> key) {
+        Deque<T> deque = get( key.asKey() );
+        if (deque == null) {
+            return null;
+        }
+        return deque.pollLast();
+    }
+
+    @SuppressWarnings("unused") // "key" is used only for generic type inference
+    private static <T> T launder(Key<T> key, Object o) {
+        @SuppressWarnings("unchecked") T t = (T) o;
+        if (t == null) {
+            return null;
+        }
+        return t == NULL_OBJ ? null : t;
+    }
+
+    public void close()
+    {
+        if (listener != null) {
+            listener.sessionClosing();
+        }
+        // For now do nothing to any cached resources.
+        // Later, we'll close any "resource" that is added to the session.
+        //
+        map.clear();
+    }
+
+    @SuppressWarnings("unused") // for <T> parameter; it's only useful for compile-time checking
     public static class Key<T> {
         private final Class<?> owner;
         private final String name;
-        private final T defaultValue;
 
-        public static <T> Key<T> of(String name) {
-            return new Key<T>(name, null, 1);
+        public static <T> Key<T> named(String name) {
+            return new Key<T>(name, 1);
         }
 
-        public static <T> Key<T> of(String name, T defaultValue) {
-            return new Key<T>(name, defaultValue, 1);
-        }
-
-        private Key(String name, T defaultValue, int stackFramesToOwner) {
+        private Key(String name, int stackFramesToOwner) {
             try {
                 owner = Class.forName(Thread.currentThread().getStackTrace()[stackFramesToOwner + 2].getClassName());
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
             this.name = String.format("%s<%s>", owner.getSimpleName(), name);
-            this.defaultValue = defaultValue;
         }
 
         @Override
         public String toString() {
             return name;
-        }
-
-        public T getDefaultValue() {
-            return defaultValue;
         }
 
         Class<?> getOwner() {
@@ -71,15 +134,30 @@ public interface Session
 
     public static final class MapKey<K,V> extends Key<Map<K,V>> {
 
-        public static <K,V> MapKey<K,V> ofMap(String name) {
+        public static <K,V> MapKey<K,V> mapNamed(String name) {
             return new MapKey<K,V>(name);
         }
 
         private MapKey(String name) {
-            super(name, null, 3);
+            super(name, 3);
         }
 
         Key<Map<K,V>> asKey() {
+            return this;
+        }
+    }
+
+    public static final class StackKey<T> extends Key<Deque<T>> {
+
+        public static <K> StackKey<K> stackNamed(String name) {
+            return new StackKey<K>(name);
+        }
+
+        private StackKey(String name) {
+            super(name, 3);
+        }
+
+        public Key<Deque<T>> asKey() {
             return this;
         }
     }

@@ -17,10 +17,13 @@ package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.RowData;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.ColumnSelector;
 
 public interface ScanRange {
     RowData getStart() throws NoSuchTableException;
+    ColumnSelector getStartColumns();
     RowData getEnd() throws NoSuchTableException;
+    ColumnSelector getEndColumns();
     byte[] getColumnBitMap();
     int getTableId() throws NoSuchTableException;
 

@@ -27,6 +27,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
@@ -117,11 +118,19 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, null, (IndexDef) index.indexDef()));
     }
 
-    public void updateIndex(IndexDef indexDef, RowBase oldRow, RowBase newRow, Key hKey) throws PersistitException {
+    public void updateIndex(IndexDef indexDef, RowBase oldRow, RowBase newRow, Key hKey)
+        throws PersistitAdapterException
+    {
         RowDef rowDef = indexDef.getRowDef();
         RowData oldRowData = rowData(rowDef, oldRow);
         RowData newRowData = rowData(rowDef, newRow);
-        persistit.updateIndex(session, indexDef, rowDef, oldRowData, newRowData, hKey);
+        try {
+            persistit.updateIndex(session, indexDef, rowDef, oldRowData, newRowData, hKey);
+        } catch (PersistitException e) {
+            throw new PersistitAdapterException(e);
+        } catch (DuplicateKeyException e) {
+            throw new PersistitAdapterException(e);
+        }
     }
 
     private Exchange transact(Exchange exchange) {

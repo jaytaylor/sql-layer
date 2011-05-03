@@ -15,6 +15,7 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
@@ -45,8 +46,13 @@ public class StringEncoder extends EncodingBase<String> {
     }
 
     @Override
+    public long getMaxKeyStorageSize(Column column) {
+        return column.getMaxStorageSize();
+    }
+
+    @Override
     public String toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
+        final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
         return rowData.getStringValue((int) location, (int) (location >>> 32), fieldDef);
     }
 
@@ -54,7 +60,7 @@ public class StringEncoder extends EncodingBase<String> {
     public void toString(FieldDef fieldDef, RowData rowData,
                          AkibanAppender sb, final Quote quote) {
         try {
-            final long location = getLocation(fieldDef, rowData);
+            final long location = getCheckedOffsetAndWidth(fieldDef, rowData);
             if (sb.canAppendBytes()) {
                 ByteBuffer buff = rowData.byteBufferForStringValue((int) location, (int) (location >>> 32), fieldDef);
                 quote.append(sb, buff, fieldDef.column().getCharsetAndCollation().charset());
@@ -80,5 +86,4 @@ public class StringEncoder extends EncodingBase<String> {
         long w = type.maxSizeBytes();
         return !type.fixedSize() && w < 65536 * 3;
     }
-
 }

@@ -15,10 +15,15 @@
 
 package com.akiban.server.api.ddl;
 
+import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
 public final class ForeignConstraintDDLException extends DDLException {
     public ForeignConstraintDDLException(InvalidOperationException e) {
         super(e);
+    }
+
+    public ForeignConstraintDDLException(String message) {
+        super(ErrorCode.FK_CONSTRAINT_VIOLATION, message);
     }
 }

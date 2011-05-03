@@ -23,6 +23,8 @@ import java.util.TreeMap;
 import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.encoding.Encoding;
 import com.akiban.util.ArgumentValidation;
 
@@ -116,6 +118,11 @@ public class NiceRow extends NewRow {
         retval.createRow(rowDef, objects, true);
 
         return retval;
+    }
+
+    @Override
+    public ColumnSelector getActiveColumns() {
+        return new SetColumnSelector(fields.keySet());
     }
 
     @Override

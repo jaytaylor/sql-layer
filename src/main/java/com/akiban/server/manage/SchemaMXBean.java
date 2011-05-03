@@ -20,7 +20,6 @@ import java.util.Map;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaId;
 
 @SuppressWarnings("unused")
 public interface SchemaMXBean {
@@ -32,7 +31,7 @@ public interface SchemaMXBean {
      * 
      * @return the current schema revision's ID
      */
-    SchemaId getSchemaID() throws Exception;
+    int getSchemaGeneration() throws Exception;
 
     void forceSchemaGenerationUpdate() throws Exception;
 

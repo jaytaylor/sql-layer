@@ -15,8 +15,24 @@
 
 package com.akiban.ais.model;
 
+import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathExpressionException;
+
+import org.xml.sax.SAXException;
+
+import com.akiban.ais.metamodel.MetaModel;
+
 
 public class AkibanInformationSchema implements Serializable, Traversable
 {
@@ -26,6 +42,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
             addType(type);
         }
         charsetAndCollation = CharsetAndCollation.intern(DEFAULT_CHARSET, DEFAULT_COLLATION);
+        modelVersion = MetaModel.only().getModelVersion();
     }
 
     public AkibanInformationSchema(AkibanInformationSchema ais)
@@ -177,6 +194,11 @@ public class AkibanInformationSchema implements Serializable, Traversable
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
+    }
+
+    public final int getModelVersion() 
+    {
+        return modelVersion;
     }
 
     @Override
@@ -462,4 +484,5 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();
     private CharsetAndCollation charsetAndCollation;
+    private int modelVersion;
 }

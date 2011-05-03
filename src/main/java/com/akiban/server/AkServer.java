@@ -67,6 +67,11 @@ public class AkServer implements Service<AkServer>, JmxManageable {
         LOG.info("Stopping AkServer {}", AKSERVER_NAME);
         Tap.unregisterMXBean();
     }
+    
+    @Override
+    public void crash() throws Exception {
+        stop();
+    }
 
     public ServiceManager getServiceManager()
     {

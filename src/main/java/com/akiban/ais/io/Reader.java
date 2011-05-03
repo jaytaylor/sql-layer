@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Map;
 
+import com.akiban.ais.metamodel.MetaModelVersionMismatchException;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -184,6 +185,16 @@ public class Reader
             }
         });
     }
+    
+    private void loadVersion() throws Exception
+    {
+        int sourceVersion = source.readVersion();
+        if (sourceVersion != ais.getModelVersion()) {
+            throw new MetaModelVersionMismatchException ("Model version mismatch: AIS model version:" + 
+                    Integer.toString(ais.getModelVersion()) + 
+                    " vs. source model version: " + Integer.toString(sourceVersion));
+        }
+    }
 
     protected void close() throws Exception
     {
@@ -207,6 +218,7 @@ public class Reader
     {
     	this.ais = ais;
         try {
+            loadVersion();
             loadTypes();
             loadGroups();
             loadTables();

@@ -40,6 +40,12 @@ public class MessageSource extends Source
     }
 
     @Override
+    public int readVersion ()
+    {
+        return readInt();
+    }
+    
+    @Override
     protected final void read(String typename, Receiver receiver) throws Exception
     {
         ModelObject modelObject = MetaModel.only().definition(typename);

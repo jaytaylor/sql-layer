@@ -27,6 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.model.*;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.NoSuchIndexException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,15 +152,11 @@ public class PersistitStoreRowCollector implements RowCollector {
         }
     }
 
-    PersistitStoreRowCollector(Session session,
-                               PersistitStore store,
-                               int scanFlags,
-                               RowData start,
-                               RowData end,
-                               byte[] columnBitMap,
-                               RowDef rowDef,
-                               int indexId)
-        throws PersistitException
+    PersistitStoreRowCollector(Session session, PersistitStore store, int scanFlags,
+                               RowDef rowDef, int indexId, byte[] columnBitMap,
+                               RowData start, ColumnSelector startColumns,
+                               RowData end, ColumnSelector endColumns)
+        throws PersistitException, NoSuchIndexException
     {
         this.id = counter.incrementAndGet();
         this.store = store;
@@ -181,11 +180,14 @@ public class PersistitStoreRowCollector implements RowCollector {
         } else {
             this.pendingRowData = new RowData[this.projectedRowDefs.length];
             this.hEx = store.getExchange(session, rowDef, null);
-            this.hFilter = computeHFilter(rowDef, start, end);
+            this.hFilter = computeHFilter(rowDef, start, startColumns, end, endColumns);
             this.lastKey = new Key(hEx.getKey());
 
             if (indexId != 0) {
                 final IndexDef def = rowDef.getIndexDef(indexId);
+                if (def == null) {
+                    throw new NoSuchIndexException("no such index: " + indexId);
+                }
                 // Don't use the primary key index for ROOT tables - the
                 // index tree is not populated because it is redundant
                 // with the h-tree itself.
@@ -195,7 +197,7 @@ public class PersistitStoreRowCollector implements RowCollector {
                         prefixModeIndexField = rowDef.getColumnOffset() + def.getFields()[def.getFields().length - 1];
                     }
                     this.iEx = store.getExchange(session, rowDef, indexDef).append(Key.BEFORE);
-                    this.iFilter = computeIFilter(indexDef, rowDef, start, end);
+                    this.iFilter = computeIFilter(indexDef, rowDef, start, startColumns, end, endColumns);
 /* TODO: disabled due to bugs 687212, 687213
                     coveringFields = computeCoveringIndexFields(rowDef, def,
                             columnBitMap);
@@ -316,7 +318,9 @@ public class PersistitStoreRowCollector implements RowCollector {
      * @return
      * @throws Exception
      */
-    KeyFilter computeHFilter(final RowDef rowDef, final RowData start, final RowData end)
+    KeyFilter computeHFilter(final RowDef rowDef,
+                             final RowData start, final ColumnSelector startColumns,
+                             final RowData end, final ColumnSelector endColumns)
     {
         RowDef leafRowDef = projectedRowDefs[projectedRowDefs.length - 1];
         KeyFilter.Term[] terms = new KeyFilter.Term[leafRowDef.getHKeyDepth()];
@@ -347,7 +351,8 @@ public class PersistitStoreRowCollector implements RowCollector {
                 List<Column> matchingColumns = segmentColumn.equivalentColumns();
                 for (int m = 0; filterTerm == KeyFilter.ALL && m < matchingColumns.size(); m++) {
                     Column column = matchingColumns.get(m);
-                    filterTerm = computeKeyFilterTerm(key, rowDef, start, end, column.getPosition());
+                    filterTerm = computeKeyFilterTerm(key, rowDef, column.getPosition(),
+                                                      start, startColumns, end, endColumns);
                 }
                 terms[t++] = filterTerm;
             }
@@ -366,13 +371,15 @@ public class PersistitStoreRowCollector implements RowCollector {
      * @return
      */
     KeyFilter computeIFilter(final IndexDef indexDef, final RowDef rowDef,
-            final RowData start, final RowData end) {
+                             final RowData start, final ColumnSelector startColumns,
+                             final RowData end, final ColumnSelector endColumns)
+    {
         final Key key = iEx.getKey();
         final int[] fields = indexDef.getFields();
         final KeyFilter.Term[] terms = new KeyFilter.Term[fields.length];
         for (int index = 0; index < fields.length; index++) {
-            terms[index] = computeKeyFilterTerm(key, rowDef, start, end,
-                    fields[index]);
+            terms[index] = computeKeyFilterTerm(key, rowDef, fields[index],
+                                                start, startColumns, end, endColumns);
         }
         key.clear();
         return new KeyFilter(terms, terms.length, Integer.MAX_VALUE);
@@ -389,41 +396,41 @@ public class PersistitStoreRowCollector implements RowCollector {
      * @param fieldIndex
      * @return
      */
-    private KeyFilter.Term computeKeyFilterTerm(final Key key,
-            final RowDef rowDef, final RowData start, final RowData end,
-            final int fieldIndex) {
+    private KeyFilter.Term computeKeyFilterTerm(final Key key, final RowDef rowDef, final int fieldIndex,
+                                                final RowData start, ColumnSelector startColumns,
+                                                final RowData end, ColumnSelector endColumns)
+    {
         if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
             return KeyFilter.ALL;
         }
-        final long lowLoc = start == null ? 0 : rowDef.fieldLocation(start,
-                fieldIndex);
-        final long highLoc = end == null ? 0 : rowDef.fieldLocation(end,
-                fieldIndex);
-        if (lowLoc != 0 || highLoc != 0) {
-            key.clear();
-            key.reset();
-            if (lowLoc != 0) {
-                store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), start);
-            } else {
-                key.append(Key.BEFORE);
-                key.setEncodedSize(key.getEncodedSize() + 1);
-            }
-            if (highLoc != 0) {
-                store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), end);
-                if (fieldIndex + rowDef.getColumnOffset() == prefixModeIndexField) {
-                    advanceKeyForPrefixMode(key);
-                }
-            } else {
-                key.append(Key.AFTER);
-            }
-            //
-            // Tricky: termFromKeySegments reads successive key segments when
-            // called this way.
-            //
-            return KeyFilter.termFromKeySegments(key, key, isLeftInclusive(), isRightInclusive());
-        } else {
+        final boolean hasStartVal = (start != null) && startColumns.includesColumn(fieldIndex);
+        final boolean hasEndVal = (end != null) && endColumns.includesColumn(fieldIndex);
+        if (!hasStartVal && !hasEndVal) {
             return KeyFilter.ALL;
         }
+
+        key.clear();
+        key.reset();
+
+        if (hasStartVal) {
+            store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), start);
+        } else {
+            key.append(Key.BEFORE);
+            key.setEncodedSize(key.getEncodedSize() + 1);
+        }
+        if (hasEndVal) {
+            store.appendKeyField(key, rowDef.getFieldDef(fieldIndex), end);
+            if (fieldIndex + rowDef.getColumnOffset() == prefixModeIndexField) {
+                advanceKeyForPrefixMode(key);
+            }
+        } else {
+            key.append(Key.AFTER);
+        }
+        //
+        // Tricky: termFromKeySegments reads successive key segments when
+        // called this way.
+        //
+        return KeyFilter.termFromKeySegments(key, key, isLeftInclusive(), isRightInclusive());
     }
 
     void advanceKeyForPrefixMode(final Key key) {

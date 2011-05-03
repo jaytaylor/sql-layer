@@ -21,8 +21,8 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.server.store.Store;
 
 /**
@@ -37,7 +37,7 @@ public class AkServerAisTarget extends Target {
 
     private final Store store;
     
-    private final Session session = new SessionImpl();
+    private final Session session = ServiceManagerImpl.newSession();
 
     // Target interface
 
@@ -68,6 +68,7 @@ public class AkServerAisTarget extends Target {
     }
 
     public void close() throws SQLException {
+        session.close();
     }
 
     public AkServerAisTarget(final Store store) {
@@ -77,6 +78,11 @@ public class AkServerAisTarget extends Target {
 
     // For use by this class
 
+    @Override
+    public void writeVersion(int modelVersion)
+    {
+        //no writing version for test classes. 
+    }
     @Override
     protected final void write(String typename, Map<String, Object> map)
             throws Exception {

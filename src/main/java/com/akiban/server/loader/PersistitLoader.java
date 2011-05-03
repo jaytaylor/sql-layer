@@ -19,12 +19,15 @@ import java.sql.ResultSet;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.server.service.session.SessionImpl;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.exception.PersistitException;
 
 public class PersistitLoader
 {
+    private final static boolean BUILD_INDEXES_DEFERRED = true;
+    
     public PersistitLoader(PersistitStore store, DB db, Tracker tracker)
             throws Exception
     {
@@ -44,7 +47,8 @@ public class PersistitLoader
         } catch (Exception e) {
         	tracker.error("Caught exception while sorting finalTasks", e);
         }
-        
+
+        Session session = ServiceManagerImpl.newSession();
         try {
             // TODO: Merge inputs from final tasks by hkey. This would require a
             // TODO: connection per table.
@@ -52,7 +56,7 @@ public class PersistitLoader
                 load(task, connection);
             }
             
-            store.buildIndexes(new SessionImpl(), "");
+            store.buildIndexes(session, "", BUILD_INDEXES_DEFERRED);
             // transaction.commit();
         } catch (PersistitException e) {
             tracker.error("Caught exception while loading persistit", e);
@@ -65,6 +69,7 @@ public class PersistitLoader
             throw e;
 */
         } finally {
+            session.close();
             // transaction.end();
         }
     }

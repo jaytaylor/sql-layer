@@ -30,6 +30,12 @@ public class ArraySource extends Source
     {
     }
 
+    @Override 
+    public int readVersion ()
+    {
+        return 0;
+    }
+    
     @Override
     protected final void read(String typename, Receiver receiver) throws Exception
     {

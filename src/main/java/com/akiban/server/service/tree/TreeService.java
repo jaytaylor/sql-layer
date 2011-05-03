@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.tree;
 
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.*;
@@ -70,4 +71,12 @@ public interface TreeService extends Service<TreeService> {
 
     int storeToAis(final Volume volume, final int storedTableId)
             throws PersistitException;
+    
+    void checkpoint();
+
+    TableStatusCache getTableStatusCache();
+    
+
+    TreeLink treeLink(final String schemaName, final String treeName);
+    
 }

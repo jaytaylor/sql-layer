@@ -23,6 +23,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexKeyType;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
@@ -37,7 +38,9 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                          int indexId,
                          int scanFlags,
                          RowData start,
-                         RowData end)
+                         ColumnSelector startColumns,
+                         RowData end,
+                         ColumnSelector endColumns)
     {
         super(store, session);
         // rootmostQueryTable
@@ -58,11 +61,11 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         IndexBound lo =
             start == null
             ? null
-            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, start));
+            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, start), startColumns);
         IndexBound hi =
             end == null
             ? null
-            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, end));
+            : new IndexBound(queryRootTable, PersistitGroupRow.newPersistitGroupRow(adapter, end), endColumns);
         indexKeyRange = new IndexKeyRange
             (lo,
              lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,

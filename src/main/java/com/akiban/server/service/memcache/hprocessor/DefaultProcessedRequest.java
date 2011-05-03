@@ -20,12 +20,8 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.RowDef;
-import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.HapiGetRequest;
 import com.akiban.server.api.HapiRequestException;
-import com.akiban.server.api.common.NoSuchTableException;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -33,33 +29,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
-    private final DDLFunctions ddlFunctions;
+    private final AkibanInformationSchema ais;
     private final Set<String> projectedTables;
-    private final Session session;
 
-    DefaultProcessedRequest(HapiGetRequest request, Session session) throws HapiRequestException {
-        this(request, session, ServiceManagerImpl.get().getDStarL().ddlFunctions());
-    }
-
-    public DefaultProcessedRequest(HapiGetRequest request, Session session, DDLFunctions ddlFunctions)
+    public DefaultProcessedRequest(HapiGetRequest request, AkibanInformationSchema ais)
             throws HapiRequestException
     {
         super(request);
-        this.session = session;
-        this.ddlFunctions = ddlFunctions;
+        this.ais = ais;
 
-        final UserTable resultRoot;
-        try {
-            resultRoot = ddlFunctions.getUserTable(session, new TableName(request.getSchema(), request.getTable()));
-        } catch (NoSuchTableException e) {
+        final UserTable resultRoot = ais.getUserTable(request.getSchema(), request.getTable());
+        if (resultRoot == null) {
             throw new HapiRequestException("result table unknown: "
                     + new TableName(request.getSchema(), request.getTable()),
                     HapiRequestException.ReasonCode.UNKNOWN_IDENTIFIER);
         }
-        final UserTable predicateTable;
-        try {
-            predicateTable = ddlFunctions.getUserTable(session, request.getUsingTable());
-        } catch (NoSuchTableException e) {
+        final UserTable predicateTable = ais.getUserTable(request.getUsingTable());
+        if (predicateTable == null) {
             throw new HapiRequestException("predicate table unknown: "
                     + new TableName(request.getSchema(), request.getTable()),
                     HapiRequestException.ReasonCode.UNKNOWN_IDENTIFIER);
@@ -101,16 +87,21 @@ public final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
 
     @Override
     public RowDef getRowDef(int tableId) throws IOException {
+        UserTable userTable = ais.getUserTable(tableId);
+        if (userTable == null) {
+            throw new IOException("no table with tableId=" + tableId);
+        }
+        Object ret = userTable.rowDef();
         try {
-            return ddlFunctions.getRowDef(tableId);
-        } catch (NoSuchTableException e) {
-            throw new IOException(e);
+            return (RowDef) ret;
+        } catch (ClassCastException e) {
+            throw new IOException("while casting RowDef for tableId=" + tableId, e);
         }
     }
 
     @Override
     public AkibanInformationSchema akibanInformationSchema()
     {
-        return ddlFunctions.getAIS(session);
+        return ais;
     }
 }

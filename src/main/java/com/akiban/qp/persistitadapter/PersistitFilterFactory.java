@@ -25,6 +25,7 @@ import com.akiban.server.FieldDef;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 
@@ -87,38 +88,45 @@ class PersistitFilterFactory
 
     // For use by this class
 
-    // Returns a KeyFilter term if the specified field of either the start or end RowData is non-null, else null.
+    // Returns a KeyFilter term if the specified field of either the start or
     private KeyFilter.Term computeKeyFilterTerm(Key key, RowDef rowDef, IndexKeyRange keyRange, int fieldIndex)
     {
-        RowData start = keyRange.lo() == null ? null : rowData(keyRange.lo());
-        RowData end = keyRange.hi() == null ? null : rowData(keyRange.hi());
         if (fieldIndex < 0 || fieldIndex >= rowDef.getFieldCount()) {
             return KeyFilter.ALL;
         }
-        long lowLoc = start == null ? 0 : rowDef.fieldLocation(start, fieldIndex);
-        long highLoc = end == null ? 0 : rowDef.fieldLocation(end, fieldIndex);
-        if (lowLoc != 0 || highLoc != 0) {
-            key.clear();
-            key.reset();
-            if (lowLoc != 0) {
-                appendKeyField(key, rowDef.getFieldDef(fieldIndex), start);
-            } else {
-                key.append(Key.BEFORE);
-                key.setEncodedSize(key.getEncodedSize() + 1);
-            }
-            if (highLoc != 0) {
-                appendKeyField(key, rowDef.getFieldDef(fieldIndex), end);
-            } else {
-                key.append(Key.AFTER);
-            }
-            //
-            // Tricky: termFromKeySegments reads successive key segments when
-            // called this way.
-            //
-            return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
-        } else {
+        RowData start = null;
+        boolean hasStart = false;
+        if (keyRange.lo() != null) {
+            start = rowData(keyRange.lo());
+            hasStart = keyRange.lo().columnSelector().includesColumn(fieldIndex);
+        }
+        RowData end = null;
+        boolean hasEnd = false;
+        if (keyRange.hi() != null) {
+            end = rowData(keyRange.hi());
+            hasEnd = keyRange.hi().columnSelector().includesColumn(fieldIndex);
+        }
+        if (!hasStart && !hasEnd) {
             return KeyFilter.ALL;
         }
+        key.clear();
+        key.reset();
+        if (hasStart) {
+            appendKeyField(key, rowDef.getFieldDef(fieldIndex), start);
+        } else {
+            key.append(Key.BEFORE);
+            key.setEncodedSize(key.getEncodedSize() + 1);
+        }
+        if (hasEnd) {
+            appendKeyField(key, rowDef.getFieldDef(fieldIndex), end);
+        } else {
+            key.append(Key.AFTER);
+        }
+        //
+        // Tricky: termFromKeySegments reads successive key segments when
+        // called this way.
+        //
+        return KeyFilter.termFromKeySegments(key, key, keyRange.loInclusive(), keyRange.hiInclusive());
     }
 
     private void appendKeyField(Key key, FieldDef fieldDef, RowData rowData)

@@ -34,9 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.AkServerUtil;
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
@@ -44,7 +46,7 @@ import com.persistit.exception.PersistitException;
 public class TreeServiceImpl implements TreeService, Service<TreeService>,
         JmxManageable {
 
-    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.of("exchangemap");
+    private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key.named("exchangemap");
 
     private final static int MEGA = 1024 * 1024;
 
@@ -85,6 +87,12 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     private final AtomicReference<Persistit> dbRef = new AtomicReference<Persistit>();
 
     private int volumeOffsetCounter = 0;
+
+    private final Map<String, TreeLink> schemaLinkMap = new HashMap<String, TreeLink>();
+
+    private final Map<String, TreeLink> statusLinkMap = new HashMap<String, TreeLink>();
+
+    private TableStatusCache tableStatusCache;
 
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
@@ -187,14 +195,20 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         //
         Persistit db = new Persistit();
         dbRef.set(db);
+
+        tableStatusCache = new TableStatusCache(db, this);
+        tableStatusCache.register();
+
         db.setPersistitLogger(new PersistitSlf4jAdapter(LOG));
         db.initialize(properties);
         buildSchemaMap();
 
-        if (LOG.isInfoEnabled()) {
-            LOG.info("PersistitStore datapath=" + db.getProperty("datapath")
-                    + (bufferSize / 1024) + "k_buffers="
-                    + db.getProperty("buffer.count." + bufferSize));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("PersistitStore datapath={} {} k_buffers={}", new Object[] {
+                    db.getProperty("datapath"),
+                    bufferSize / 1024,
+                    db.getProperty("buffer.count." + bufferSize)
+            });
         }
     }
 
@@ -239,16 +253,20 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         return Math.max(512, (int) (allocation / allocationPerBuffer));
     }
 
-    public synchronized void stop() throws Exception {
+    public void stop() throws Exception {
         Persistit db = getDb();
         if (db != null) {
             db.shutdownGUI();
             db.close();
             dbRef.set(null);
         }
-        // TODO - remove this when sure we don't need it
-        --instanceCount;
-        assert instanceCount == 0 : instanceCount;
+        synchronized(this) {
+            schemaLinkMap.clear();
+            statusLinkMap.clear();
+            // TODO - remove this when sure we don't need it
+            --instanceCount;
+            assert instanceCount == 0 : instanceCount;
+        }
     }
 
     @Override
@@ -264,6 +282,18 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     @Override
     public Persistit getDb() {
         return dbRef.get();
+    }
+
+    @Override
+    public void crash() throws Exception {
+        Persistit db = getDb();
+        if (db != null) {
+            db.shutdownGUI();
+            db.crash();
+            dbRef.set(null);
+        }
+        --instanceCount;
+        assert instanceCount == 0 : instanceCount;
     }
 
     @Override
@@ -307,6 +337,16 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     @Override
     public long getTimestamp(final Session session) {
         return getDb().getTransaction().getTimestamp();
+    }
+
+    @Override
+    public void checkpoint() {
+        getDb().checkpoint();
+    }
+
+    @Override
+    public TableStatusCache getTableStatusCache() {
+        return tableStatusCache;
     }
 
     @Override
@@ -383,6 +423,14 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     }
 
     private int tableIdOffset(final Volume volume) {
+        while (volume.getAppCache() == null) {
+            synchronized (this) {
+                if (volume.getAppCache() == null) {
+                    volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
+                    volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
+                }
+            }
+        }
         return ((Integer) volume.getAppCache()).intValue();
     }
 
@@ -394,6 +442,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             if (volume.getAppCache() == null) {
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
+                final Exchange exchange = new Exchange(getDb(), volume, STATUS_TREE_NAME, true);
+                tableStatusCache.loadOneVolume(exchange);
             }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
@@ -440,6 +490,43 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
             return substitute(vs, schemaName, null);
         }
         return null;
+    }
+
+    public TreeLink treeLink(final String schemaName, final String treeName) {
+        final Map<String, TreeLink> map = treeName == STATUS_TREE_NAME ? statusLinkMap
+                : schemaLinkMap;
+        TreeLink link;
+        synchronized (map) {
+            link = map.get(schemaName);
+            if (link == null) {
+                link = new TreeLink() {
+                    TreeCache cache;
+
+                    @Override
+                    public String getSchemaName() {
+                        return schemaName;
+                    }
+
+                    @Override
+                    public String getTreeName() {
+                        return treeName;
+                    }
+
+                    @Override
+                    public void setTreeCache(TreeCache cache) {
+                        this.cache = cache;
+                    }
+
+                    @Override
+                    public TreeCache getTreeCache() {
+                        return cache;
+                    }
+
+                };
+                map.put(schemaName, link);
+            }
+        }
+        return link;
     }
 
     void buildSchemaMap() {

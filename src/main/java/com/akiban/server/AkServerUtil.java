@@ -439,11 +439,11 @@ public class AkServerUtil {
                 throw new Error("No such case");
         }
         if (length > width) {
-            throw new IllegalArgumentException(
-                    "String is wider than available bytes: " + length);
+            throw new IllegalArgumentException(String.format(
+                    "String is wider than available bytes: %d > %d", length, width));
         }
 
-        return ByteBuffer.wrap(bytes, offset + prefixSize, width - prefixSize);
+        return ByteBuffer.wrap(bytes, offset + prefixSize, length);
     }
 
     public static int varWidth(final int length) {

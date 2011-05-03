@@ -29,6 +29,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
@@ -158,12 +159,14 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     public static OperatorBasedRowCollector newCollector(Session session,
                                                          PersistitStore store,
+                                                         int scanFlags,
                                                          RowDef rowDef,
                                                          int indexId,
-                                                         int scanFlags,
-                                                         RowData start,
-                                                         RowData end,
                                                          byte[] columnBitMap,
+                                                         RowData start,
+                                                         ColumnSelector startColumns,
+                                                         RowData end,
+                                                         ColumnSelector endColumns,
                                                          ScanLimit scanLimit)
     {
         if ((scanFlags & (SCAN_FLAGS_PREFIX | SCAN_FLAGS_SINGLE_ROW)) != 0) {
@@ -177,9 +180,26 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
             // HAPI query root table = predicate table
-            ? new OneTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end)
+            ? new OneTableRowCollector(session,
+                                       store,
+                                       rowDef,
+                                       indexId,
+                                       scanFlags,
+                                       start,
+                                       startColumns,
+                                       end,
+                                       endColumns)
             // HAPI query root table != predicate table
-            : new TwoTableRowCollector(session, store, rowDef, indexId, scanFlags, start, end, columnBitMap);
+            : new TwoTableRowCollector(session,
+                                       store,
+                                       rowDef,
+                                       indexId,
+                                       scanFlags,
+                                       start,
+                                       startColumns,
+                                       end,
+                                       endColumns,
+                                       columnBitMap);
         boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
         boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
         rowCollector.createPlan(scanLimit == null ? ScanLimit.NONE : scanLimit, descending, deep);

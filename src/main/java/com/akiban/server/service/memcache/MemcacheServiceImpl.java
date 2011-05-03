@@ -52,8 +52,6 @@ import com.akiban.server.service.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
-import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.store.Store;
 import com.akiban.util.Tap;
 
@@ -139,9 +137,9 @@ public class MemcacheServiceImpl implements MemcacheService,
                 defaultHapi = HapiProcessorFactory.valueOf(defaultHapiName
                         .toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOG.warn("Default memcache outputter not found, using JSON: "
+                LOG.warn("Default memcache processor not found, using SCANROWS: "
                         + defaultHapiName);
-                defaultHapi = HapiProcessorFactory.FETCHROWS;
+                defaultHapi = HapiProcessorFactory.SCANROWS;
             }
         }
 
@@ -176,7 +174,7 @@ public class MemcacheServiceImpl implements MemcacheService,
             final String portString = serviceManager.getConfigurationService()
                     .getProperty("akserver.memcached.port");
 
-            LOG.info("Starting memcache service on port " + portString);
+            LOG.debug("Starting memcache service on port {}", portString);
 
             this.port = Integer.parseInt(portString);
             final InetSocketAddress addr = new InetSocketAddress(port);
@@ -193,10 +191,16 @@ public class MemcacheServiceImpl implements MemcacheService,
 
     @Override
     public void stop() {
-        LOG.info("Stopping memcache service");
         stopDaemon();
         store.set(null);
     }
+    
+    @Override
+    public void crash() throws Exception {
+        // Shutdown the network threads so a new instance can start up.
+        stop();
+    }
+    
 
     //
     // start/stopDaemon inspired by com.thimbleware.jmemcached.MemCacheDaemon
@@ -226,11 +230,11 @@ public class MemcacheServiceImpl implements MemcacheService,
         Channel serverChannel = bootstrap.bind(addr);
         allChannels.add(serverChannel);
 
-        LOG.info("Listening on " + addr);
+        LOG.debug("Listening on {}", addr);
     }
 
     private void stopDaemon() {
-        LOG.info("Shutting down daemon");
+        LOG.debug("Shutting down daemon");
 
         ChannelGroupFuture future = allChannels.close();
         future.awaitUninterruptibly();
@@ -404,13 +408,16 @@ public class MemcacheServiceImpl implements MemcacheService,
 
         @Override
         public String chooseIndex(String request) {
+            Session session = ServiceManagerImpl.newSession();
             try {
                 HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
                 Index index = processAs.get().whichItem.getHapiProcessor()
-                        .findHapiRequestIndex(new SessionImpl(), getRequest);
+                        .findHapiRequestIndex(session, getRequest);
                 return index == null ? "null" : index.toString();
             } catch (HapiRequestException e) {
                 throw new RuntimeException(e.getMessage());
+            } finally {
+                session.close();
             }
         }
     }

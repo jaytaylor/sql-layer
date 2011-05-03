@@ -19,6 +19,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -721,11 +722,30 @@ public abstract class Tap {
      */
     public static class PerThread extends Tap {
 
-        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>();
+        private static final Comparator<Thread> THREAD_COMPARATOR = new Comparator<Thread>() {
+            @Override
+            public int compare(Thread o1, Thread o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        };
+        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>() {
+            @Override
+            protected Tap initialValue() {
+                Tap tap;
+                try {
+                    tap = clazz.getConstructor(String.class).newInstance(name);
+                } catch (Exception e) {
+                    tap = new Null(name);
+                    LOG.warn("Unable to create tap of class " + clazz.getSimpleName(), e);
+                }
+                threadMap.put(Thread.currentThread(), tap);
+                return tap;
+            }
+        };
 
-        private final Map<String, Tap> threadMap = new ConcurrentHashMap<String, Tap>();
+        private final Map<Thread, Tap> threadMap = new ConcurrentHashMap<Thread, Tap>();
 
-        private Class<? extends Tap> clazz = TimeAndCount.class;
+        private final Class<? extends Tap> clazz;
 
         /**
          * {@link TapReport} subclass that contains map of subordinate TapReport
@@ -741,20 +761,18 @@ public abstract class Tap {
 
             PerThreadTapReport(final String name, final long inCount,
                     final long outCount, final long elapsedTime,
-                    Map<String, Tap> threadMap) {
+                    Map<Thread, Tap> threadMap) {
                 super(name, inCount, outCount, elapsedTime);
-                for (final Map.Entry<String, Tap> entry : threadMap.entrySet()) {
-                    this.reportMap.put(entry.getKey(), entry.getValue()
-                            .getReport());
+                for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
+                    this.reportMap.put(
+                            entry.getKey().getName(),
+                            entry.getValue().getReport()
+                    );
                 }
             }
 
             public Map<String, TapReport> getTapReportMap() {
                 return new TreeMap<String, TapReport>(reportMap);
-            }
-
-            public TapReport getTapReport(final String threadName) {
-                return reportMap.get(threadName);
             }
         }
 
@@ -765,7 +783,7 @@ public abstract class Tap {
          * @param name
          */
         public PerThread(final String name) {
-            super(name);
+            this(name, TimeAndCount.class);
         }
 
         /**
@@ -789,12 +807,12 @@ public abstract class Tap {
 
         @Override
         public void appendReport(StringBuilder sb) {
-            final Map<String, Tap> threadMap = new TreeMap<String, Tap>(
-                    this.threadMap);
-            for (final Map.Entry<String, Tap> entry : threadMap.entrySet()) {
+            final Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(THREAD_COMPARATOR);
+            threadMap.putAll(this.threadMap);
+            for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
                 sb.append(NEW_LINE);
                 sb.append("==");
-                sb.append(entry.getKey());
+                sb.append(entry.getKey().getName());
                 sb.append("==");
                 sb.append(NEW_LINE);
                 entry.getValue().appendReport(sb);
@@ -812,19 +830,18 @@ public abstract class Tap {
                 outCount += threadTapReport.getOutCount();
                 elapsedTime += threadTapReport.getCumulativeTime();
             }
-            return new PerThreadTapReport(name, inCount, outCount, elapsedTime,
-                    threadMap);
+            return new PerThreadTapReport(name, inCount, outCount, elapsedTime, threadMap);
         }
 
         @Override
         public void in() {
-            final Tap tap = getTap(name, clazz);
+            final Tap tap = getTap();
             tap.in();
         }
 
         @Override
         public void out() {
-            final Tap tap = getTap(name, clazz);
+            final Tap tap = getTap();
             tap.out();
         }
 
@@ -840,23 +857,8 @@ public abstract class Tap {
             return "PerThread(" + clazz.getName() + ")";
         }
 
-        private Tap getTap(final String name, final Class<? extends Tap> clazz) {
-            Tap tap = threadLocal.get();
-            if (tap != null) {
-                return tap;
-            }
-            try {
-                final Constructor<? extends Tap> constructor = clazz
-                        .getConstructor(new Class[] { String.class });
-                tap = (Tap) constructor.newInstance(new Object[] { name });
-            } catch (Exception e) {
-                tap = new Null(name);
-                LOG.warn("Unable to create tap of class "
-                        + clazz.getSimpleName(), e);
-            }
-            threadLocal.set(tap);
-            threadMap.put(Thread.currentThread().getName(), tap);
-            return tap;
+        private Tap getTap() {
+            return threadLocal.get();
         }
     }
 

@@ -74,6 +74,12 @@ public class MySQLTarget extends Target
         stmt.close();
     }
     
+    @Override
+    public void writeVersion(int modelVersion)
+    {
+        // don't write the version number, we have no place to put it. 
+    }
+    
     public void writeType(Map<String, Object> map) throws Exception
     {
         // Don't write the Types table

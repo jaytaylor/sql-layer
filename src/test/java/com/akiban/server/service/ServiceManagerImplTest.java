@@ -16,13 +16,19 @@
 package com.akiban.server.service;
 
 import com.akiban.server.service.config.Property;
+import com.akiban.server.service.jmx.JmxRegistryService;
 import org.junit.After;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public final class ServiceManagerImplTest {
     @After
@@ -44,6 +50,40 @@ public final class ServiceManagerImplTest {
         } finally {
             sm.stopServices();
         }
+    }
+
+    @Test
+    public void shutdownOnFailedStartup() throws Exception {
+        CrashOnStartupService service = new CrashOnStartupService(
+                new UnitTestServiceFactory(false, Collections.<Property>emptySet())
+        );
+
+        PrintStream devSlashNull = new PrintStream(new ByteArrayOutputStream());
+        final PrintStream oldErr = System.err;
+        ServiceStartupException exception = null;
+        try {
+            System.setErr(devSlashNull);
+            service.startServices();
+        } catch (ServiceStartupException e) {
+            exception = e;
+        } finally {
+            System.setErr(oldErr);
+        }
+
+
+        List<String> expected = Arrays.asList(
+                "starting FirstService",
+                "starting SecondService",
+
+                "about to crash on startup",
+                
+                "stopping SecondService",
+                "SecondService about to crash on shutdown",
+                "stopping FirstService",
+                "FirstService about to crash on shutdown"
+        );
+        assertEquals("messages", expected, service.getMessages());
+        assertNotNull("excpected ServiceStartupException", exception);
     }
 
     public static class MyService implements Service<MyService> {
@@ -71,9 +111,108 @@ public final class ServiceManagerImplTest {
                 throw new Exception("already stopped");
             }
         }
+        
+        @Override
+        public void crash() throws Exception {
+            stop();
+        }
+
 
         public boolean isStarted() {
             return isStarted.get();
+        }
+    }
+
+    private static class CrashOnStartupService extends ServiceManagerImpl {
+
+        private final List<String> messages = new ArrayList<String>();
+
+        public CrashOnStartupService(ServiceFactory factory) {
+            super(factory);
+        }
+
+        @Override
+        void startAndPutServices(JmxRegistryService jmxRegistry) throws Exception {
+            startAndPut(new FirstService(messages), jmxRegistry);
+            startAndPut(new SecondService(messages), jmxRegistry);
+            messages.add("about to crash on startup");
+            throw new CrashOnStartupException();
+        }
+
+        @Override
+        void logServiceShutdownException(Throwable t) {
+            // shhhh!
+        }
+
+        public List<String> getMessages() {
+            return messages;
+        }
+    }
+
+    private static class CrashOnStartupException extends Exception {
+    }
+
+    public static abstract class TalkingService<T> implements Service<T> {
+
+        private final List<String> messages;
+
+        private TalkingService(List<String> messages) {
+            this.messages = messages;
+        }
+
+        protected final void say(String message) {
+            messages.add(message);
+        }
+
+        @Override
+        public void start() throws Exception {
+            say("starting " + this.getClass().getSimpleName());
+        }
+
+        @Override
+        public void stop() throws Exception {
+            say("stopping " + this.getClass().getSimpleName());
+            say(this.getClass().getSimpleName() + " about to crash on shutdown");
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void crash() throws Exception {
+            say("crashing " + this.getClass().getSimpleName());
+        }
+    }
+
+    public static class FirstService extends TalkingService<FirstService> {
+
+        public FirstService(List<String> messages) {
+            super(messages);
+        }
+
+        @Override
+        public Class<FirstService> castClass() {
+            return FirstService.class;
+        }
+
+        @Override
+        public FirstService cast() {
+            return this;
+        }
+    }
+
+    public static class SecondService extends TalkingService<SecondService> {
+
+        public SecondService(List<String> messages) {
+            super(messages);
+        }
+
+        @Override
+        public Class<SecondService> castClass() {
+            return SecondService.class;
+        }
+
+        @Override
+        public SecondService cast() {
+            return this;
         }
     }
 }

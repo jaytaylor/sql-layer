@@ -15,6 +15,7 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.FieldDef;
 import com.akiban.server.Quote;
@@ -121,4 +122,12 @@ public interface Encoding<T> {
      *            Persistit Key to receive the value
      */
     void toKey(final FieldDef fieldDef, final Object value, final Key key);
+
+    /**
+     * Calculate the maximum storage size a given column using this encoding
+     * will take when stored in a {@link Key}.
+     * @param column column instance
+     * @return The maximum storage size.
+     */
+    long getMaxKeyStorageSize(final Column column);
 }

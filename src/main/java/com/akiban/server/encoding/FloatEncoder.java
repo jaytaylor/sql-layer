@@ -15,63 +15,96 @@
 
 package com.akiban.server.encoding;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.server.FieldDef;
 import com.akiban.server.RowData;
 import com.persistit.Key;
 
-public final class FloatEncoder extends EncodingBase<Double> {
+public class FloatEncoder extends EncodingBase<Float> {
     FloatEncoder() {
     }
 
-    @Override
-    public int fromObject(FieldDef fieldDef, Object value, byte[] dest,
-                          int offset) {
-        switch (fieldDef.getMaxStorageSize()) {
-            case 4:
-                return EncodingUtils.objectToFloat(dest, offset, value, false);
-            case 8:
-                return EncodingUtils.objectToDouble(dest, offset, value, false);
-            default:
-                throw new Error("Missing case");
+    public static int encodeFromObject(Object obj) {
+        final float f;
+        if(obj == null) {
+            f = 0f;
+        } else if(obj instanceof Number) {
+            f = ((Number)obj).floatValue();
+        } else if (obj instanceof String) {
+            f = Float.parseFloat((String)obj);
+        } else {
+            throw new IllegalArgumentException("Requires Number or String");
         }
+        return Float.floatToIntBits(f);
+    }
+
+    public static float decodeFromBits(int bits) {
+        return Float.intBitsToFloat(bits);
+    }
+
+    private static int fromRowData(RowData rowData, long offsetAndWidth) {
+        final int offset = (int)offsetAndWidth;
+        final int width = (int)(offsetAndWidth >>> 32);
+        long value = rowData.getIntegerValue(offset, width);
+        value <<= 32;
+        value >>= 32;
+        return (int)value;
+    }
+    
+
+    @Override
+    public boolean validate(Type type) {
+        return type.fixedSize() && (type.maxSizeBytes() == STORAGE_SIZE);
     }
 
     @Override
-    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
-        throw new UnsupportedOperationException();
+    public Float toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
+        final long offsetAndWidth = getCheckedOffsetAndWidth(fieldDef, rowData);
+        final int value = fromRowData(rowData, offsetAndWidth);
+        return decodeFromBits(value);
     }
 
     @Override
-    public void toKey(FieldDef fieldDef, Object value, Key key) {
-        throw new UnsupportedOperationException();
+    public int fromObject(FieldDef fieldDef, Object value, byte[] dest, int offset) {
+        final int intBits = encodeFromObject(value);
+        return EncodingUtils.putInt(dest, offset, intBits, STORAGE_SIZE);
     }
 
     @Override
-    public Double toObject(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = getLocation(fieldDef, rowData);
-
-        long v = rowData.getIntegerValue((int) location,
-                (int) (location >>> 32));
-        switch (fieldDef.getMaxStorageSize()) {
-            case 4:
-                return (double)Float.intBitsToFloat((int) v);
-            case 8:
-                return Double.longBitsToDouble(v);
-            default:
-                throw new EncodingException("Bad storage size " + fieldDef.getMaxStorageSize());
-        }
-    }
-
-    @Override
-    public int widthFromObject(final FieldDef fieldDef, final Object value) {
+    public int widthFromObject(FieldDef fieldDef, Object value) {
         return fieldDef.getMaxStorageSize();
     }
 
     @Override
-    public boolean validate(Type type) {
-        long w = type.maxSizeBytes();
-        return type.fixedSize() && w == 4 || w == 8;
+    public void toKey(FieldDef fieldDef, RowData rowData, Key key) {
+        if(rowData.isNull(fieldDef.getFieldIndex())) {
+            key.append(null);
+        } else {
+            final float f = toObject(fieldDef, rowData);
+            key.append(f);
+        }
     }
 
+    @Override
+    public void toKey(FieldDef fieldDef, Object value, Key key) {
+        if(value == null) {
+            key.append(null);
+        } else {
+            final int bits = encodeFromObject(value);
+            final float f = decodeFromBits(bits);
+            key.append(f);
+        }
+    }
+
+    /**
+     * See {@link Key#EWIDTH_INT}
+     */
+    @Override
+    public long getMaxKeyStorageSize(Column column) {
+        return 5;
+    }
+
+    
+    protected static final int STORAGE_SIZE = 4;
 }

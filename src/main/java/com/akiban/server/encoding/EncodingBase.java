@@ -24,10 +24,14 @@ abstract class EncodingBase<T> implements Encoding<T> {
     EncodingBase() {
     }
 
-    protected static long getLocation(FieldDef fieldDef, RowData rowData) throws EncodingException {
-        final long location = fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
+    protected static long getOffsetAndWidth(FieldDef fieldDef, RowData rowData) {
+        return fieldDef.getRowDef().fieldLocation(rowData, fieldDef.getFieldIndex());
+    }
+
+    protected static long getCheckedOffsetAndWidth(FieldDef fieldDef, RowData rowData) throws EncodingException {
+        final long location = getOffsetAndWidth(fieldDef, rowData);
         if (location == 0) {
-            throw new EncodingException("invalid location for fieldDef in rowData");
+            throw new EncodingException("Invalid location for fieldDef in rowData: 0");
         }
         return location;
     }

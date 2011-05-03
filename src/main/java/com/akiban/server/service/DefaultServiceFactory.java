@@ -18,6 +18,8 @@ package com.akiban.server.service;
 import com.akiban.server.AkServer;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.ConfigurationServiceImpl;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.dxl.DXLServiceImpl;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.jmx.JmxRegistryServiceImpl;
 import com.akiban.server.service.memcache.MemcacheService;
@@ -36,7 +38,6 @@ import com.akiban.server.store.Store;
 public class DefaultServiceFactory implements ServiceFactory {
 
     private Service<JmxRegistryService> jmxRegistryService;
-    private Service<SessionService> sessionService;
     private Service<ConfigurationService> configurationService;
     private Service<NetworkService> networkService;
     private Service<AkServer> chunkserverService;
@@ -45,6 +46,8 @@ public class DefaultServiceFactory implements ServiceFactory {
     private Service<Store> storeService;
     private Service<SchemaManager> schemaService;
     private Service<MemcacheService> memcacheService;
+    private Service<DXLService> dxlService;
+    private Service<SessionService> sessionService;
     
     @Override
     public Service<ConfigurationService> configurationService() {
@@ -81,14 +84,6 @@ public class DefaultServiceFactory implements ServiceFactory {
     }
 
     @Override
-    public Service<SessionService> sessionService() {
-        if (sessionService == null) {
-            sessionService = new SessionServiceImpl();
-        }
-        return sessionService;
-    }
-
-    @Override
     public Service<TreeService> treeService() {
         if (treeService == null) {
             treeService = new TreeServiceImpl();
@@ -111,7 +106,8 @@ public class DefaultServiceFactory implements ServiceFactory {
         }
         return schemaService;
     }
-    
+
+    @Override
     public Service<MemcacheService> memcacheService()
     {
         if (memcacheService == null)
@@ -119,5 +115,21 @@ public class DefaultServiceFactory implements ServiceFactory {
             memcacheService = new MemcacheServiceImpl();
         }
         return memcacheService;
+    }
+
+    @Override
+    public Service<DXLService> dxlService() {
+        if (dxlService == null) {
+            dxlService = new DXLServiceImpl();
+        }
+        return dxlService;
+    }
+
+    @Override
+    public Service<SessionService> sessionService() {
+        if (sessionService == null) {
+            sessionService = new SessionServiceImpl();
+        }
+        return sessionService;
     }
 }

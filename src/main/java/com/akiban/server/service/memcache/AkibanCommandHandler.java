@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import com.akiban.server.service.ServiceManagerImpl;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -37,7 +38,6 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionImpl;
 import com.akiban.util.Tap;
 
 import com.thimbleware.jmemcached.CacheElement;
@@ -60,7 +60,7 @@ import static com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory.
 @ChannelHandler.Sharable
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     private static final String VERSION_STRING = getVersionString();
-    private static final Session.Key<ByteArrayOutputStream> OUTPUTSTREAM_CACHE = Session.Key.of("OUTPUTSTREAM_CACHE");
+    private static final Session.Key<ByteArrayOutputStream> OUTPUTSTREAM_CACHE = Session.Key.named("OUTPUTSTREAM_CACHE");
     private final static Tap HAPI_GETS_TAP = Tap.add("hapi: get_string");
 
     private static class UnsupportedMemcachedException extends
@@ -137,7 +137,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
         @Override
         protected Session initialValue() {
-            return new SessionImpl();
+            return ServiceManagerImpl.newSession();
         }
     };
     /**
@@ -177,6 +177,8 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     @Override
     public void channelClosed(ChannelHandlerContext context,
             ChannelStateEvent event) throws Exception {
+        session.get().close();
+        session.remove();
         callback.connectionClosed();
         channelGroup.remove(context.getChannel());
     }

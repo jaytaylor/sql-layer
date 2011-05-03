@@ -21,6 +21,8 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.akiban.ais.metamodel.MetaModel;
+
 public class AISBuilderTest
 {
     @Test
@@ -33,6 +35,7 @@ public class AISBuilderTest
         Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
+        Assert.assertEquals(ais.getModelVersion(), MetaModel.only().getModelVersion());
 
         builder.akibanInformationSchema().checkIntegrity();
     }

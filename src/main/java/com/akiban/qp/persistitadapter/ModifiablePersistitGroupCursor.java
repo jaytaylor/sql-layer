@@ -183,7 +183,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         public void update(RowBase oldRow, Key hKey, RowBase newRow) {
             try {
                 adapter.updateIndex(indexDef, oldRow, newRow, hKey);
-            } catch (PersistitException e) {
+            } catch (PersistitAdapterException e) {
                 throw new CursorUpdateException(e);
             }
         }

@@ -48,7 +48,7 @@ abstract class EncodingUtils {
         }
     }
 
-    private static int putInt(final byte[] bytes, final int offset, final long value,
+    public static int putInt(final byte[] bytes, final int offset, final long value,
                final int width) {
         switch (width) {
             case 1:
@@ -114,24 +114,6 @@ abstract class EncodingUtils {
                        final FieldDef fieldDef) {
         final String s = obj == null ? "" : obj.toString();
         return putByteArray(stringBytes(s), bytes, offset, fieldDef);
-    }
-
-
-    static int objectToFloat(final byte[] bytes, final int offset, final Object obj, final boolean unsigned) {
-        float f;
-        if (obj instanceof Number) {
-            f = ((Number) obj).floatValue();
-        } else if (obj instanceof String) {
-            f = Float.parseFloat((String) obj);
-        } else if (obj == null) {
-            f = 0f;
-        } else
-            throw new IllegalArgumentException(obj
-                    + " must be a Number or a String");
-        if (unsigned) {
-            f = Math.max(0f, f);
-        }
-        return putInt(bytes, offset, Float.floatToIntBits(f), 4);
     }
 
     static int objectToDouble(final byte[] bytes, final int offset, final Object obj, final boolean unsigned) {
@@ -217,9 +199,14 @@ abstract class EncodingUtils {
                 fieldDef.getFieldIndex());
         final int offset = (int) location;
         final int length = (int) (location >>> 32);
-        final byte[] bytes = new byte[length - fieldDef.getPrefixSize()];
-        System.arraycopy(rowData.getBytes(), offset + fieldDef.getPrefixSize(),
-                bytes, 0, bytes.length);
+        final byte[] bytes;
+        if(offset == 0) {
+            bytes = null;
+        } else {
+            bytes = new byte[length - fieldDef.getPrefixSize()];
+            System.arraycopy(rowData.getBytes(), offset + fieldDef.getPrefixSize(),
+                             bytes, 0, bytes.length);
+        }
         key.append(bytes);
     }
 

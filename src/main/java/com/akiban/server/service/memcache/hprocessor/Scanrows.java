@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.memcache.hprocessor;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -34,6 +35,8 @@ import com.akiban.server.api.HapiPredicate;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.common.NoSuchTableException;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.NoSuchIndexException;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ModuleConfiguration;
@@ -71,19 +74,19 @@ public class Scanrows implements HapiProcessor {
         private final UserTable predicateTable;
         private final UserTable hRoot;
 
-        RowDataStruct(DDLFunctions ddlFunctions, Index index, HapiGetRequest request, Session session)
+        RowDataStruct(AkibanInformationSchema ais, Index index, HapiGetRequest request)
                 throws HapiRequestException
         {
             int tableId = index.getTable().getTableId();
             final RowDef rowDef;
             try {
-                rowDef = ddlFunctions.getRowDef(tableId);
+                rowDef = (RowDef) getTable(ais, tableId).rowDef();
             } catch (NoSuchTableException e) {
                 throw new HapiRequestException("internal error; tableId" + tableId, INTERNAL_ERROR);
             }
             this.index = index;
-            this.predicateTable = getUserTable(session, ddlFunctions, request.getUsingTable());
-            this.hRoot = getUserTable(session, ddlFunctions, new TableName(request.getSchema(), request.getTable()));
+            this.predicateTable = getUserTable(ais, request.getUsingTable());
+            this.hRoot = getUserTable(ais, new TableName(request.getSchema(), request.getTable()));
             scanFlags = EnumSet.of(
                     ScanFlag.DEEP,
                     ScanFlag.START_AT_BEGINNING,
@@ -93,18 +96,18 @@ public class Scanrows implements HapiProcessor {
             end = new NiceRow(tableId, rowDef);
         }
 
-        private static UserTable getUserTable(Session session, DDLFunctions ddlFunctions,
-                                              TableName tableName)
+        private static UserTable getUserTable(AkibanInformationSchema ais, TableName tableName)
                 throws HapiRequestException
         {
             try {
-                Table usingTable = ddlFunctions.getTable(session, tableName);
+                Table usingTable = ais.getTable(tableName);
+                if (usingTable == null) {
+                    throw new HapiRequestException("no such table" + tableName, UNKNOWN_IDENTIFIER);
+                }
                 if (!usingTable.isUserTable()) {
                     throw new HapiRequestException("not a user table: " + tableName, UNKNOWN_IDENTIFIER);
                 }
                 return (UserTable) usingTable;
-            } catch (NoSuchTableException e) {
-                throw new HapiRequestException("no such table" + tableName, UNKNOWN_IDENTIFIER);
             } catch (ClassCastException e) {
                 throw new HapiRequestException("not a UserTable: " + tableName, INTERNAL_ERROR);
             }
@@ -118,8 +121,16 @@ public class Scanrows implements HapiProcessor {
             return start.getFields().isEmpty() ? null : start.toRowData();
         }
 
+        public ColumnSelector startColumns() {
+            return start.getActiveColumns();
+        }
+
         RowData end() {
             return end.getFields().isEmpty() ? null : end.toRowData();
+        }
+
+        public ColumnSelector endColumns() {
+            return end.getActiveColumns();
         }
 
         Table selectTable() {
@@ -212,32 +223,55 @@ public class Scanrows implements HapiProcessor {
         }
     }
 
+    private static Table getTable(AkibanInformationSchema ais, int tableId) throws NoSuchTableException {
+        Table table = ais.getUserTable(tableId);
+        if (table != null) {
+            return table;
+        }
+        for (Table groupTable : ais.getGroupTables().values()) {
+            Integer groupTableId = groupTable.getTableId();
+            if (groupTableId != null && groupTableId == tableId) {
+                return groupTable;
+            }
+        }
+        throw new NoSuchTableException(tableId);
+    }
+
     @Override
     public void processRequest(Session session, HapiGetRequest request,
                                HapiOutputter outputter, OutputStream outputStream) throws HapiRequestException
     {
         try {
-            validateRequest(session, request);
-            RowDataStruct range = getScanRange(session, request);
+            final int knownAIS = ddlFunctions().getGeneration();
+            AkibanInformationSchema ais = ddlFunctions().getAIS(session);
+            validateRequest(ais, request);
+            RowDataStruct range = getScanRange(ais, request);
 
             LegacyScanRequest scanRequest = new LegacyScanRequest(
                     range.selectTable().getTableId(),
                     range.start(),
+                    range.startColumns(),
                     range.end(),
+                    range.endColumns(),
                     range.columnBitmap(),
                     range.index().getIndexId(),
                     range.scanFlagsInt(),
-                    configureLimit(session, request));
+                    configureLimit(ais, request));
             List<RowData> rows = null;
             while(rows == null) {
-                rows = RowDataOutput.scanFull(session, dmlFunctions(), scanRequest);
+                try {
+                    rows = RowDataOutput.scanFull(session, knownAIS, dmlFunctions(), scanRequest);
+                } catch (NoSuchIndexException e) {
+                    throw new HapiRequestException("no index found for query: " + request, UNSUPPORTED_REQUEST);
+                }
             }
 
             IndexDef indexDef = (IndexDef) range.index().indexDef();
-            outputter.output(new DefaultProcessedRequest(request, session, ddlFunctions()),
+            outputter.output(new DefaultProcessedRequest(request, ais),
                              indexDef.isHKeyEquivalent(),
                              rows,
-                             outputStream);
+                             outputStream
+            );
 
         } catch (InvalidOperationException e) {
             throw new HapiRequestException("unknown error", e); // TODO
@@ -246,7 +280,7 @@ public class Scanrows implements HapiProcessor {
         }
     }
 
-    private ScanLimit configureLimit(Session session, HapiGetRequest request) throws NoSuchTableException
+    private ScanLimit configureLimit(AkibanInformationSchema ais, HapiGetRequest request) throws NoSuchTableException
     {
         ScanLimit limit;
         // Message size limit
@@ -260,7 +294,7 @@ public class Scanrows implements HapiProcessor {
         // Row limit
         ScanLimit countLimit = null;
         if (request.getLimit() >= 0) {
-            countLimit = new PredicateLimit(ddlFunctions().getTableId(session, request.getUsingTable()),
+            countLimit = new PredicateLimit(ais.getTable(request.getUsingTable()).getTableId(),
                                             request.getLimit());
         }
         limit =
@@ -270,8 +304,8 @@ public class Scanrows implements HapiProcessor {
         return limit;
     }
 
-    private void validateRequest(Session session, HapiGetRequest request) throws HapiRequestException {
-        boolean foundSelectTable = predicateChildOfHRoot(session, request);
+    private void validateRequest(AkibanInformationSchema ais, HapiGetRequest request) throws HapiRequestException {
+        boolean foundSelectTable = predicateChildOfHRoot(ais, request);
         if (!foundSelectTable) {
             throw new HapiRequestException(String.format("%s is not an ancestor of %s",
                     new TableName(request.getSchema(), request.getTable()), request.getUsingTable().getTableName()),
@@ -280,9 +314,9 @@ public class Scanrows implements HapiProcessor {
         }
     }
 
-    private boolean predicateChildOfHRoot(Session session, HapiGetRequest request) throws HapiRequestException {
+    private boolean predicateChildOfHRoot(AkibanInformationSchema ais, HapiGetRequest request) throws HapiRequestException {
         // Validate that the predicate table is a child of the hroot table
-        UserTable predicateTable = ddlFunctions().getAIS(session).getUserTable(request.getUsingTable());
+        UserTable predicateTable = ais.getUserTable(request.getUsingTable());
         if (predicateTable == null) {
             throw new HapiRequestException("unknown predicate table: " + request.getUsingTable(), UNKNOWN_IDENTIFIER);
         }
@@ -307,11 +341,11 @@ public class Scanrows implements HapiProcessor {
         return false;
     }
 
-    private RowDataStruct getScanRange(Session session, HapiGetRequest request)
+    private RowDataStruct getScanRange(AkibanInformationSchema ais, HapiGetRequest request)
             throws HapiRequestException, NoSuchTableException
     {
-        Index index = findHapiRequestIndex(session, request);
-        RowDataStruct ret = new RowDataStruct(ddlFunctions(), index, request, session);
+        Index index = findHapiRequestIndex(ais, request);
+        RowDataStruct ret = new RowDataStruct(ais, index, request);
 
         for (HapiPredicate predicate : request.getPredicates()) {
             switch (predicate.getOp()) {
@@ -494,10 +528,14 @@ public class Scanrows implements HapiProcessor {
     public Index findHapiRequestIndex(Session session, HapiGetRequest request)
             throws HapiRequestException
     {
-        final UserTable table;
-        try {
-            table = ddlFunctions().getUserTable(session, request.getUsingTable());
-        } catch (NoSuchTableException e) {
+        return findHapiRequestIndex(ddlFunctions().getAIS(session), request);
+    }
+
+    public Index findHapiRequestIndex(AkibanInformationSchema ais, HapiGetRequest request)
+            throws HapiRequestException
+    {
+        final UserTable table = ais.getUserTable(request.getUsingTable());
+        if (table == null) {
             throw new HapiRequestException("couldn't resolve table " + request.getUsingTable(), UNSUPPORTED_REQUEST);
         }
         boolean useGroupTable = !request.getUsingTable().equals(request.getSchema(), request.getTable());
@@ -579,10 +617,10 @@ public class Scanrows implements HapiProcessor {
     }
 
     private static DDLFunctions ddlFunctions() {
-        return ServiceManagerImpl.get().getDStarL().ddlFunctions();
+        return ServiceManagerImpl.get().getDXL().ddlFunctions();
     }
 
     private static DMLFunctions dmlFunctions() {
-        return ServiceManagerImpl.get().getDStarL().dmlFunctions();
+        return ServiceManagerImpl.get().getDXL().dmlFunctions();
     }
 }

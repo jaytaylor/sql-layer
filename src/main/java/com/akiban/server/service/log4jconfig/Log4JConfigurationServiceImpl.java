@@ -47,4 +47,9 @@ public final class Log4JConfigurationServiceImpl
     @Override
     public void stop() throws Exception {
     }
+    
+    @Override
+    public void crash() throws Exception {
+    }
+    
 }
