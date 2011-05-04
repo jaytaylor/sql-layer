@@ -152,12 +152,28 @@ public class PersistitStoreRowCollector implements RowCollector {
         }
     }
 
+    /**
+     * @deprecated
+     * @param session
+     * @param store
+     * @param scanFlags
+     * @param rowDef
+     * @param indexId
+     * @param columnBitMap
+     * @param start
+     * @param startColumns
+     * @param end
+     * @param endColumns
+     * @throws PersistitException
+     * @throws NoSuchIndexException
+     */
     PersistitStoreRowCollector(Session session, PersistitStore store, int scanFlags,
                                RowDef rowDef, int indexId, byte[] columnBitMap,
                                RowData start, ColumnSelector startColumns,
                                RowData end, ColumnSelector endColumns)
         throws PersistitException, NoSuchIndexException
     {
+        assert false : "PersistitStoreRowCollector is deprecated";
         this.id = counter.incrementAndGet();
         this.store = store;
         this.session = session;

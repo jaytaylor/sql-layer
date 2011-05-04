@@ -143,7 +143,7 @@ class PersistitGroupCursor implements GroupCursor
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupCursor.class);
     // Used by HKeyRangeAndDescendentsScan.
     // Should be zero, but Exchange.traverse doesn't update the key if we ask for 0 value bytes.
-    private static final int VALUE_BYTES = 1;
+    private static final int VALUE_BYTES = Integer.MAX_VALUE;
 
     // Object state
 
