@@ -48,7 +48,9 @@ public abstract class PhysicalOperator
         return Collections.emptyList();
     }
 
-    public abstract OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops);
+//    public abstract OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops);
+
+    public abstract Cursor cursor(StoreAdapter adapter, Bindings bindings);
 
     // Object state
 

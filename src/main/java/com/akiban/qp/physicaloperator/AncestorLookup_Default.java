@@ -36,10 +36,9 @@ class AncestorLookup_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
+    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
     {
-        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
-        return ops[operatorId];
+        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
 
     @Override
@@ -167,7 +166,7 @@ class AncestorLookup_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, OperatorExecution input)
+        Execution(StoreAdapter adapter, Cursor input)
         {
             super(adapter);
             this.input = input;

@@ -24,12 +24,10 @@ class IndexScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-
     @Override
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
+    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
     {
-        ops[operatorId] = new Execution(adapter);
-        return ops[operatorId];
+        return new Execution(adapter);
     }
 
     @Override

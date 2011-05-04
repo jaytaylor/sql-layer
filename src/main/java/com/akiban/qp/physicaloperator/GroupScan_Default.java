@@ -24,10 +24,9 @@ class GroupScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
-    {
-        ops[operatorId] = new Execution(adapter);
-        return ops[operatorId];
+    @Override
+    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings) {
+        return new Execution(adapter);
     }
 
     @Override
