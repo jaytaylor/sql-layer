@@ -19,6 +19,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 
 class GroupScan_Default extends PhysicalOperator
 {
@@ -92,6 +93,23 @@ class GroupScan_Default extends PhysicalOperator
         {
             outputRow(null);
             cursor.close();
+        }
+
+        @Override
+        public void removeCurrentRow() {
+            cursor.removeCurrentRow();
+            outputRow(null);
+        }
+
+        @Override
+        public void updateCurrentRow(RowBase newRow) {
+            cursor.updateCurrentRow(newRow);
+            outputRow((Row)newRow); // TODO remove this cast
+        }
+
+        @Override
+        public ModifiableCursorBackingStore backingStore() {
+            return super.backingStore();
         }
 
         // Execution interface

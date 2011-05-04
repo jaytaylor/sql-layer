@@ -25,8 +25,8 @@ import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UpdateCursor;
 import com.akiban.qp.physicaloperator.UpdateLambda;
+import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -102,8 +102,8 @@ public class PhysicalOperatorIT extends ITBase
     @Test
     public void basicUpdate() throws Exception {
         adapter.setTransactional(false);
-        Cursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false, null, null);
-        Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
+
+        UpdateLambda updateLambda = new UpdateLambda() {
             @Override
             public boolean rowIsApplicable(Row row) {
                 return row.rowType().equals(customerRowType);
@@ -116,7 +116,11 @@ public class PhysicalOperatorIT extends ITBase
                 name = name + name;
                 return new OverlayingRow(original).overlay(1, name);
             }
-        });
+        };
+
+        PhysicalOperator groupScan = groupScan_Default(coi);
+        PhysicalOperator updateOperator = new Update_Default(groupScan, ConstantValueBindable.of(updateLambda));
+        Cursor updateCursor = emptyBindings(adapter, updateOperator);
         int nexts = 0;
         updateCursor.open();
         while (updateCursor.next()) {
@@ -126,7 +130,6 @@ public class PhysicalOperatorIT extends ITBase
         adapter.commitAllTransactions();
         assertEquals("invocations of next()", db.length, nexts);
 
-        PhysicalOperator groupScan = groupScan_Default(coi);
         Cursor executable = emptyBindings(adapter, groupScan);
         RowBase[] expected = new RowBase[]{
                 row(customerRowType, 1L, "XYZXYZ"),
