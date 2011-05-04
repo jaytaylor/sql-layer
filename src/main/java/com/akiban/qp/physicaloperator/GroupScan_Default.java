@@ -25,7 +25,7 @@ class GroupScan_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings) {
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings) {
         return new Execution(adapter, hKeyBindable.bindTo(bindings), indexKeyRangeBindable.bindTo(bindings));
     }
 
@@ -98,7 +98,6 @@ class GroupScan_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter, HKey hKey, IndexKeyRange indexKeyRange)
         {
-            super(adapter);
             this.cursor = adapter.newGroupCursor(groupTable, reverse, hKey, indexKeyRange);
         }
 

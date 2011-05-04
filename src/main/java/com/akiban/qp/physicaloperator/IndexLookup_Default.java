@@ -29,7 +29,7 @@ class IndexLookup_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
         return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
@@ -138,13 +138,14 @@ class IndexLookup_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            super(adapter);
+            this.adapter = adapter;
             this.indexInput = input;
             this.groupCursor = adapter.newGroupCursor(groupTable);
         }
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor indexInput;
         private final RowHolder<Row> indexRow = new RowHolder<Row>();
         private GroupCursor groupCursor;

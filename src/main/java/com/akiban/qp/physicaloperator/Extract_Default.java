@@ -25,14 +25,13 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class Extract_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
         return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
@@ -115,7 +114,6 @@ class Extract_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            super(adapter);
             this.input = input;
         }
 

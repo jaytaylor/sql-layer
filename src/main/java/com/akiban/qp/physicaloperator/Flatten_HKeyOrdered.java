@@ -23,14 +23,13 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class Flatten_HKeyOrdered extends PhysicalOperator
 {
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
         return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
@@ -187,7 +186,6 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            super(adapter);
             this.input = input;
         }
 
