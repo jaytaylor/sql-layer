@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.max;
 
@@ -36,17 +35,9 @@ class AncestorLookup_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
-        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
-        return ops[operatorId];
-    }
-
-    @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
-    {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
+        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
 
     @Override
@@ -128,7 +119,6 @@ class AncestorLookup_Default extends PhysicalOperator
         {
             outputRow(null);
             input.close();
-            ancestorCursor.close();
             ancestorRow.set(null);
             pending.clear();
         }
@@ -167,11 +157,10 @@ class AncestorLookup_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, OperatorExecution input)
+        Execution(StoreAdapter adapter, Cursor input)
         {
-            super(adapter);
+            this.adapter = adapter;
             this.input = input;
-            this.ancestorCursor = adapter.newGroupCursor(groupTable);
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestorTypeDepth.length + 1);
         }
@@ -180,8 +169,8 @@ class AncestorLookup_Default extends PhysicalOperator
 
         private void readAncestorRow(HKey hKey)
         {
+            final Cursor ancestorCursor = adapter.newGroupCursor(groupTable, false, hKey, null);
             try {
-                ancestorCursor.bind(hKey);
                 ancestorCursor.open();
                 if (ancestorCursor.next()) {
                     Row retrievedRow = ancestorCursor.currentRow();
@@ -196,8 +185,8 @@ class AncestorLookup_Default extends PhysicalOperator
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor input;
-        private final GroupCursor ancestorCursor;
         private final RowHolder<Row> ancestorRow = new RowHolder<Row>();
         private final PendingRows pending;
     }

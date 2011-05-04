@@ -15,15 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.IndexKeyRange;
-
-public interface IndexCursor extends Cursor
-{
-    /**
-     * Limit the cursor to visit rows whose keys lie within keyRange.
-     *
-     * @param keyRange Range of index keys to be visited.
-     * @throws UnsupportedOperationException if applied to a group-based cursor.
-     */
-    void bind(IndexKeyRange keyRange);
+public interface Bindable<T> {
+    T bindTo(Bindings bindings);
 }

@@ -17,10 +17,12 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.GroupCursor;
-import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -49,11 +51,11 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse)
+    public GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse, HKey hkey, IndexKeyRange indexKeyRange)
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable, reverse);
+            cursor = new PersistitGroupCursor(this, groupTable, reverse, hkey, indexKeyRange);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -61,11 +63,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public IndexCursor newIndexCursor(Index index, boolean reverse)
+    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange)
     {
-        IndexCursor cursor;
+        Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse);
+            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }

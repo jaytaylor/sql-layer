@@ -15,31 +15,12 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
-
-public abstract class OperatorExecution implements Cursor
-{
-    // OperatorExecution interface
-
-    public void bind(IndexKeyRange keyRange)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public void bind(HKey hKey)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    // For use by subclasses
-
-    protected OperatorExecution(StoreAdapter adapter)
-    {
-        this.adapter = adapter;
-    }
-
-    // Object state
-
-    protected final StoreAdapter adapter;
+public interface Bindings {
+    /**
+     * Gets the object bound to the given index.
+     * @param index the index to look up
+     * @return the object at that index
+     * @throws BindingNotSetException if the given index wasn't set
+     */
+    Object get(int index);
 }

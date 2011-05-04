@@ -16,9 +16,11 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.ModifiableCursorBackingStore;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -50,8 +52,8 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         }
     };
 
-    public ModifiablePersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse) throws PersistitException {
-        super(adapter, groupTable, reverse);
+    public ModifiablePersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, HKey hKey, IndexKeyRange indexKeyRange) throws PersistitException {
+        super(adapter, groupTable, reverse, hKey, indexKeyRange);
     }
 
     @Override

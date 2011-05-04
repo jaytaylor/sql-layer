@@ -18,6 +18,8 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -49,7 +51,7 @@ public class API
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
     {
-        return new GroupScan_Default(groupTable, reverse, limit);
+        return new GroupScan_Default(groupTable, reverse, limit, ConstantValueBindable.ofNull(HKey.class), ConstantValueBindable.ofNull(IndexKeyRange.class));
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
@@ -75,12 +77,12 @@ public class API
 
     public static PhysicalOperator indexScan_Default(Index index)
     {
-        return indexScan_Default(index, false);
+        return indexScan_Default(index, false, ConstantValueBindable.ofNull(IndexKeyRange.class));
     }
 
-    public static PhysicalOperator indexScan_Default(Index index, boolean reverse)
+    public static PhysicalOperator indexScan_Default(Index index, boolean reverse, Bindable<IndexKeyRange> indexKeyRangeBindable)
     {
-        return new IndexScan_Default(index, reverse);
+        return new IndexScan_Default(index, reverse, indexKeyRangeBindable);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,
@@ -102,6 +104,11 @@ public class API
                                                    Collection<RowType> extractTypes)
     {
         return new Extract_Default(schema, inputOperator, extractTypes);
+    }
+
+    public static Cursor emptyBindings(StoreAdapter adapter, PhysicalOperator physicalOperator) {
+        Bindings empty = new ArrayBindings(0);
+        return physicalOperator.cursor(adapter, empty);
     }
 
     private static final Limit NO_LIMIT = new Limit()

@@ -25,23 +25,15 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class Cut_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
-    {
-        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
-        return ops[operatorId];
-    }
-
     @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
+        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
 
     @Override
@@ -120,9 +112,8 @@ class Cut_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, OperatorExecution input)
+        Execution(StoreAdapter adapter, Cursor input)
         {
-            super(adapter);
             this.input = input;
         }
 

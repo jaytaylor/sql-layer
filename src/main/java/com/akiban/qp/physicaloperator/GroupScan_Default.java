@@ -24,10 +24,9 @@ class GroupScan_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
-    {
-        ops[operatorId] = new Execution(adapter);
-        return ops[operatorId];
+    @Override
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings) {
+        return new Execution(adapter, hKeyBindable.bindTo(bindings), indexKeyRangeBindable.bindTo(bindings));
     }
 
     @Override
@@ -39,11 +38,14 @@ class GroupScan_Default extends PhysicalOperator
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
+    public GroupScan_Default(GroupTable groupTable, boolean reverse, Limit limit,
+                             Bindable<HKey> hKeyBindable, Bindable<IndexKeyRange> indexKeyRangeBindable)
     {
         this.groupTable = groupTable;
         this.reverse = reverse;
         this.limit = limit;
+        this.hKeyBindable = hKeyBindable;
+        this.indexKeyRangeBindable = indexKeyRangeBindable;
     }
 
     // Object state
@@ -51,24 +53,13 @@ class GroupScan_Default extends PhysicalOperator
     private final GroupTable groupTable;
     private final boolean reverse;
     private final Limit limit;
+    private final Bindable<HKey> hKeyBindable;
+    private final Bindable<IndexKeyRange> indexKeyRangeBindable;
 
     // Inner classes
 
     private class Execution extends SingleRowCachingCursor
     {
-        // OperatorExecution interface
-
-        @Override
-        public void bind(IndexKeyRange keyRange)
-        {
-            cursor.bind(keyRange);
-        }
-
-        @Override
-        public void bind(HKey hKey)
-        {
-            cursor.bind(hKey);
-        }
 
         // Cursor interface
 
@@ -105,14 +96,13 @@ class GroupScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(StoreAdapter adapter, HKey hKey, IndexKeyRange indexKeyRange)
         {
-            super(adapter);
-            this.cursor = adapter.newGroupCursor(groupTable, reverse);
+            this.cursor = adapter.newGroupCursor(groupTable, reverse, hKey, indexKeyRange);
         }
 
         // Object state
 
-        private final GroupCursor cursor;
+        private final Cursor cursor;
     }
 }

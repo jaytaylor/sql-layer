@@ -15,8 +15,13 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.HKey;
+public final class BindingNotSetException extends RuntimeException
+{
+    public BindingNotSetException(Throwable cause) {
+        super(cause);
+    }
 
-public interface GroupCursor extends Cursor {
-    void rebind(HKey hKey);
+    public BindingNotSetException(String message) {
+        super(message);
+    }
 }

@@ -42,6 +42,17 @@ import org.slf4j.LoggerFactory;
 
 class PersistitGroupCursor implements GroupCursor
 {
+    // GroupCursor interface
+
+    @Override
+    public void rebind(HKey hKey) {
+        if (exchange != null) {
+            throw new IllegalStateException("can't rebind while PersistitGroupCursor is open");
+        }
+        this.hKey = (PersistitHKey) hKey;
+    }
+
+
     // Cursor interface
 
     @Override
@@ -89,8 +100,6 @@ class PersistitGroupCursor implements GroupCursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
-            hKey = null;
-            hKeyRange = null;
             groupScan = null;
         }
     }
@@ -101,26 +110,12 @@ class PersistitGroupCursor implements GroupCursor
         return row.get();
     }
 
-    // GroupCursor interface
-
-    @Override
-    public void bind(HKey hKey)
-    {
-        assert this.hKeyRange == null && this.hKey == null;
-        this.hKey = (PersistitHKey) hKey;
-    }
-
-    @Override
-    public void bind(IndexKeyRange hKeyRange)
-    {
-        assert this.hKeyRange == null && this.hKey == null;
-        this.hKeyRange = hKeyRange;
-    }
-
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse) throws PersistitException
+    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, HKey hKey, IndexKeyRange indexKeyRange) throws PersistitException
     {
+        rebind(hKey);
+        this.hKeyRange = indexKeyRange;
         this.adapter = adapter;
         this.groupTable = groupTable;
         this.reverse = reverse;
@@ -183,7 +178,7 @@ class PersistitGroupCursor implements GroupCursor
     private Exchange exchange;
     private Key controllingHKey;
     private PersistitHKey hKey;
-    private IndexKeyRange hKeyRange;
+    private final IndexKeyRange hKeyRange;
     private GroupScan groupScan;
 
     // Inner classes
