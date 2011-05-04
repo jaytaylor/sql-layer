@@ -19,19 +19,19 @@ package com.akiban.qp.physicaloperator;
  * A Bindable that simply returns a value, ignoring the given Bindings.
  * @param <T> the value's type
  */
-public final class UnbindableBindable<T> implements Bindable<T> {
+public final class ConstantValueBindable<T> implements Bindable<T> {
 
     public static <T> Bindable<T> ofNull(@SuppressWarnings("ignored") Class<T> cls) {
-        return new UnbindableBindable<T>(null);
+        return new ConstantValueBindable<T>(null);
     }
 
     public static <T> Bindable<T> of(T value) {
-        return new UnbindableBindable<T>(value);
+        return new ConstantValueBindable<T>(value);
     }
 
     private T value;
 
-    public UnbindableBindable(T value) {
+    public ConstantValueBindable(T value) {
         this.value = value;
     }
 

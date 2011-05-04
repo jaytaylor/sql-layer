@@ -21,7 +21,7 @@ import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.Executable;
 import com.akiban.qp.physicaloperator.Limit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
-import com.akiban.qp.physicaloperator.UnbindableBindable;
+import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.RowType;
@@ -228,7 +228,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         PhysicalOperator rootOperator;
         PhysicalOperator restrictionOperator;
         if (useIndex) {
-            PhysicalOperator indexScan = indexScan_Default(predicateIndex, descending, UnbindableBindable.of(indexKeyRange));
+            PhysicalOperator indexScan = indexScan_Default(predicateIndex, descending, ConstantValueBindable.of(indexKeyRange));
             rootOperator = indexLookup_Default(indexScan, groupTable, limit);
             restrictionOperator = indexScan;
         } else {

@@ -51,7 +51,7 @@ public class API
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
     {
-        return new GroupScan_Default(groupTable, reverse, limit, UnbindableBindable.ofNull(HKey.class), UnbindableBindable.ofNull(IndexKeyRange.class));
+        return new GroupScan_Default(groupTable, reverse, limit, ConstantValueBindable.ofNull(HKey.class), ConstantValueBindable.ofNull(IndexKeyRange.class));
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
@@ -77,7 +77,7 @@ public class API
 
     public static PhysicalOperator indexScan_Default(Index index)
     {
-        return indexScan_Default(index, false, UnbindableBindable.ofNull(IndexKeyRange.class));
+        return indexScan_Default(index, false, ConstantValueBindable.ofNull(IndexKeyRange.class));
     }
 
     public static PhysicalOperator indexScan_Default(Index index, boolean reverse, Bindable<IndexKeyRange> indexKeyRangeBindable)
