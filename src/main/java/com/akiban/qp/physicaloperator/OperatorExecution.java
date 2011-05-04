@@ -20,18 +20,6 @@ import com.akiban.qp.row.HKey;
 
 public abstract class OperatorExecution implements Cursor
 {
-    // OperatorExecution interface
-
-    public void bind(IndexKeyRange keyRange)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    public void bind(HKey hKey)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     // For use by subclasses
 
     protected OperatorExecution(StoreAdapter adapter)
