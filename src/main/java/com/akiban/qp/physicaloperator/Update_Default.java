@@ -17,9 +17,8 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public final class Update_Default extends PhysicalOperator {
 
@@ -38,16 +37,13 @@ public final class Update_Default extends PhysicalOperator {
 
     @Override
     public List<PhysicalOperator> getInputOperators() {
-        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
-        result.add(inputOperator);
-        return result;
+        return Collections.singletonList(inputOperator);
     }
 
     // Object state
 
     private final PhysicalOperator inputOperator;
     private final Bindable<UpdateLambda> updateLambdaBindable;
-
 
     // Inner classes
 
