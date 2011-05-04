@@ -18,7 +18,6 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.Executable;
 import com.akiban.qp.physicaloperator.Limit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
@@ -220,7 +219,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
     {
         // Plan and query
-        Executable query;
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
         boolean useIndex =
             predicateIndex != null && !((IndexDef) predicateIndex.indexDef()).isHKeyEquivalent();
@@ -247,9 +245,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!cutTypes.isEmpty()) {
             rootOperator = cut_Default(schema, rootOperator, cutTypes);
         }
-        query = new Executable(adapter, rootOperator);
         // Executable stuff
-        cursor = query.cursor();
+        cursor = emptyBindings(adapter, rootOperator);
         cursor.open();
         closed = !cursor.next();
     }
