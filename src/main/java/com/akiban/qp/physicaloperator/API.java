@@ -18,6 +18,8 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.Expression;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -49,7 +51,7 @@ public class API
 
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
     {
-        return new GroupScan_Default(groupTable, reverse, limit);
+        return new GroupScan_Default(groupTable, reverse, limit, UnbindableBindable.ofNull(HKey.class), UnbindableBindable.ofNull(IndexKeyRange.class));
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,

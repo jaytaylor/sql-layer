@@ -127,7 +127,7 @@ class IndexLookup_Default extends PhysicalOperator
             groupCursor.close();
             if (indexInput.next()) {
                 indexRow.set(indexInput.currentRow());
-                groupCursor.bind(this.indexRow.get().hKey());
+                groupCursor = adapter.newGroupCursor(groupTable, false, this.indexRow.get().hKey(), null);
                 groupCursor.open();
                 if (groupCursor.next()) {
                     Row currentRow = groupCursor.currentRow();
@@ -155,7 +155,7 @@ class IndexLookup_Default extends PhysicalOperator
 
         private final Cursor indexInput;
         private final RowHolder<Row> indexRow = new RowHolder<Row>();
-        private final GroupCursor groupCursor;
+        private GroupCursor groupCursor;
         private final RowHolder<Row> groupRow = new RowHolder<Row>();
         private boolean first = true;
     }

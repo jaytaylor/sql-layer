@@ -20,25 +20,25 @@ import com.akiban.qp.row.HKey;
 
 public interface GroupCursor extends Cursor
 {
-    /**
-     * Limit the cursor to visit rows whose hkey matches the given hKey
-     * and all descendent rows. Descendents will be scanned even if there is no ancestor matching the hkey,
-     * (i.e., orphan rows are scanned).
-     *
-     * @param hKey Limits the scan to rows matching this hKey, and descendents.
-     * @throws UnsupportedOperationException if applied to an index-based cursor.
-     */
-    @Deprecated
-    void bind(HKey hKey);
-
-    /**
-     * Limit the cursor to visit the rows whose hkeys lie within the given hKeyRange, and all descendent rows.
-     * Descendents will be scanned even if there is no ancestor matching the hkey,
-     * (i.e., orphan rows are scanned). This method is needed to support
-     * hkey-equivalent indexes. bind(HKey) would suffice except that we need some way to handle inequalities
-     * on hkeys.
-     * @param hKeyRange Limits the scan to rows whose hkeys lie in this range.
-     */
-    @Deprecated
-    void bind(IndexKeyRange hKeyRange);
+//    /**
+//     * Limit the cursor to visit rows whose hkey matches the given hKey
+//     * and all descendent rows. Descendents will be scanned even if there is no ancestor matching the hkey,
+//     * (i.e., orphan rows are scanned).
+//     *
+//     * @param hKey Limits the scan to rows matching this hKey, and descendents.
+//     * @throws UnsupportedOperationException if applied to an index-based cursor.
+//     */
+//    @Deprecated
+//    void bind(HKey hKey);
+//
+//    /**
+//     * Limit the cursor to visit the rows whose hkeys lie within the given hKeyRange, and all descendent rows.
+//     * Descendents will be scanned even if there is no ancestor matching the hkey,
+//     * (i.e., orphan rows are scanned). This method is needed to support
+//     * hkey-equivalent indexes. bind(HKey) would suffice except that we need some way to handle inequalities
+//     * on hkeys.
+//     * @param hKeyRange Limits the scan to rows whose hkeys lie in this range.
+//     */
+//    @Deprecated
+//    void bind(IndexKeyRange hKeyRange);
 }

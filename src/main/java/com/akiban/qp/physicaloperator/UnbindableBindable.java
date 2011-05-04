@@ -15,29 +15,24 @@
 
 package com.akiban.qp.physicaloperator;
 
-public class Executable
-{
-    public Executable(StoreAdapter adapter, PhysicalOperator root)
-    {
-        this.root = root;
-        this.adapter = adapter;
-        this.bindings = new ArrayBindings(0); // TODO, need to make this actually usable -- maybe a ListBindings?
+/**
+ * A Bindable that simply returns a value, ignoring the given Bindings.
+ * @param <T> the value's type
+ */
+public final class UnbindableBindable<T> implements Bindable<T> {
+
+    public static <T> Bindable<T> ofNull(@SuppressWarnings("ignored") Class<T> cls) {
+        return new UnbindableBindable<T>(null);
     }
 
-    public Cursor cursor()
-    {
-        return root.cursor(adapter, bindings);
+    private T value;
+
+    public UnbindableBindable(T value) {
+        this.value = value;
     }
 
-    @Deprecated
-    public Executable bind(Object one, Object two) {
-        // TODO remove this method
-        return this;
+    @Override
+    public T bindTo(Bindings bindings) {
+        return value;
     }
-
-    // Object state
-
-    private final PhysicalOperator root;
-    private final StoreAdapter adapter;
-    private final Bindings bindings;
 }

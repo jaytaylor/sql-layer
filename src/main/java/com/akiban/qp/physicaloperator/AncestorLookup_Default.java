@@ -127,7 +127,6 @@ class AncestorLookup_Default extends PhysicalOperator
         {
             outputRow(null);
             input.close();
-            ancestorCursor.close();
             ancestorRow.set(null);
             pending.clear();
         }
@@ -170,7 +169,6 @@ class AncestorLookup_Default extends PhysicalOperator
         {
             super(adapter);
             this.input = input;
-            this.ancestorCursor = adapter.newGroupCursor(groupTable);
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestorTypeDepth.length + 1);
         }
@@ -179,8 +177,8 @@ class AncestorLookup_Default extends PhysicalOperator
 
         private void readAncestorRow(HKey hKey)
         {
+            final GroupCursor ancestorCursor = adapter.newGroupCursor(groupTable, false, hKey, null);
             try {
-                ancestorCursor.bind(hKey);
                 ancestorCursor.open();
                 if (ancestorCursor.next()) {
                     Row retrievedRow = ancestorCursor.currentRow();
@@ -196,7 +194,6 @@ class AncestorLookup_Default extends PhysicalOperator
         // Object state
 
         private final Cursor input;
-        private final GroupCursor ancestorCursor;
         private final RowHolder<Row> ancestorRow = new RowHolder<Row>();
         private final PendingRows pending;
     }
