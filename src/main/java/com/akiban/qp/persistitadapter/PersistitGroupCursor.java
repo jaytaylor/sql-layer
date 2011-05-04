@@ -18,7 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
@@ -40,8 +40,19 @@ import org.slf4j.LoggerFactory;
  */
 
 
-class PersistitGroupCursor implements Cursor
+class PersistitGroupCursor implements GroupCursor
 {
+    // GroupCursor interface
+
+    @Override
+    public void rebind(HKey hKey) {
+        if (exchange != null) {
+            throw new IllegalStateException("can't rebind while PersistitGroupCursor is open");
+        }
+        this.hKey = (PersistitHKey) hKey;
+    }
+
+
     // Cursor interface
 
     @Override
@@ -103,7 +114,7 @@ class PersistitGroupCursor implements Cursor
 
     PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, HKey hKey, IndexKeyRange indexKeyRange) throws PersistitException
     {
-        this.hKey = (PersistitHKey) hKey;
+        rebind(hKey);
         this.hKeyRange = indexKeyRange;
         this.adapter = adapter;
         this.groupTable = groupTable;
@@ -166,7 +177,7 @@ class PersistitGroupCursor implements Cursor
     private final RowHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;
-    private final PersistitHKey hKey;
+    private PersistitHKey hKey;
     private final IndexKeyRange hKeyRange;
     private GroupScan groupScan;
 
