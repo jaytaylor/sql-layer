@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.CursorStub;
 import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -40,7 +41,7 @@ import org.slf4j.LoggerFactory;
  */
 
 
-class PersistitGroupCursor implements GroupCursor
+class PersistitGroupCursor extends CursorStub implements GroupCursor
 {
     // GroupCursor interface
 

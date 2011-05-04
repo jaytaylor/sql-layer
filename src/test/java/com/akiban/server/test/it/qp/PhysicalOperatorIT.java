@@ -24,7 +24,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UpdateCursor;
 import com.akiban.qp.physicaloperator.UpdateLambda;
@@ -103,7 +102,7 @@ public class PhysicalOperatorIT extends ITBase
     @Test
     public void basicUpdate() throws Exception {
         adapter.setTransactional(false);
-        ModifiableCursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false, null, null);
+        Cursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false, null, null);
         Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
             @Override
             public boolean rowIsApplicable(Row row) {

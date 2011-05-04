@@ -16,29 +16,47 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 
-public final class UpdateCursor extends ChainedCursor {
+public abstract class ChainedCursor implements Cursor {
+    protected final Cursor input;
 
-    private final UpdateLambda updateLambda;
-
-    public UpdateCursor(Cursor input, UpdateLambda updateLambda) {
-        super(input);
-        this.updateLambda = updateLambda;
+    protected ChainedCursor(Cursor input) {
+        this.input = input;
     }
 
-    // Cursor interface
+    @Override
+    public void open() {
+        input.open();
+    }
 
     @Override
     public boolean next() {
-        if (input.next()) {
-            Row row = this.input.currentRow();
-            if (!updateLambda.rowIsApplicable(row)) {
-                return true;
-            }
-            Row currentRow = updateLambda.applyUpdate(row);
-            input.updateCurrentRow(currentRow);
-            return true;
-        }
-        return false;
+        return input.next();
+    }
+
+    @Override
+    public void close() {
+        input.close();
+    }
+
+    @Override
+    public Row currentRow() {
+        return input.currentRow();
+    }
+
+    @Override
+    public void removeCurrentRow() {
+        input.removeCurrentRow();
+    }
+
+    @Override
+    public void updateCurrentRow(RowBase newRow) {
+        input.updateCurrentRow(newRow);
+    }
+
+    @Override
+    public ModifiableCursorBackingStore backingStore() {
+        return input.backingStore();
     }
 }

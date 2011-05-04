@@ -15,40 +15,21 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowHolder;
+import com.akiban.qp.row.RowBase;
 
-abstract class SingleRowCachingCursor extends CursorStub
-{
-    // Object interface
+public abstract class CursorStub implements Cursor {
+    @Override
+    public void removeCurrentRow() {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
-    public String toString()
-    {
-        return row == null ? null : row.toString();
+    public void updateCurrentRow(RowBase newRow) {
+        throw new UnsupportedOperationException();
     }
-
-    // Cursor interface
 
     @Override
-    public final Row currentRow()
-    {
-        return row.get();
+    public ModifiableCursorBackingStore backingStore() {
+        throw new UnsupportedOperationException();
     }
-
-    // SingleRowCachingCursor interface
-
-    protected Row outputRow()
-    {
-        return row.get();
-    }
-
-    protected void outputRow(Row newRow)
-    {
-        row.set(newRow == null ? null : newRow);
-    }
-
-    // Object state
-
-    private final RowHolder<Row> row = new RowHolder<Row>();
 }

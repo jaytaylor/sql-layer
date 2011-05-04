@@ -18,7 +18,6 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
-import com.akiban.qp.physicaloperator.ModifiableCursor;
 import com.akiban.qp.physicaloperator.ModifiableCursorBackingStore;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowBase;
@@ -38,7 +37,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor implements ModifiableCursor {
+public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
 
     private final ModifiableCursorBackingStore backingStore = new ModifiableCursorBackingStore() {
         @Override
