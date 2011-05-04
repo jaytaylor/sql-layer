@@ -86,6 +86,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
 
+    static final String ID_COUNTER = "idCounter";
+
     static final String BY_NAME = "byName";
 
     private static final Logger LOG = LoggerFactory
@@ -210,8 +212,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     tableId = getAis(session).getTable(tableNameFull).getTableId();
                 }
                 else {
-                    ex.clear();
-                    ex.getKey().append("ID_COUNTER");
+                    ex.clear().append(ID_COUNTER);
                     if(ex.isValueDefined()) {
                         tableId = ex.fetch().getValue().getInt();
                     }
@@ -219,9 +220,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     ex.store();
                 }
 
-                ex.clear();
-                ex.getKey().append(BY_NAME).append(schemaName).append(tableName);
-                assert ex.hasChildren() == useOldId : tableNameFull + " exists";
+                ex.clear().append(BY_NAME).append(schemaName).append(tableName);
+                assert ex.hasChildren() == useOldId : tableNameFull;
                 ex.append(tableId);
                 ex.getValue().put(canonical);
                 ex.store();
