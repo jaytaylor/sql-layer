@@ -30,12 +30,12 @@ public abstract class StoreAdapter
 
     public abstract GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse, HKey hkey, IndexKeyRange indexKeyRange);
 
-    public final IndexCursor newIndexCursor(Index index)
+    public final Cursor newIndexCursor(Index index)
     {
-        return newIndexCursor(index, false);
+        return newIndexCursor(index, false, null);
     }
 
-    public abstract IndexCursor newIndexCursor(Index index, boolean reverse);
+    public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange);
 
     public final Schema schema()
     {

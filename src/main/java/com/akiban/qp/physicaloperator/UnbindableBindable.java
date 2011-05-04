@@ -25,6 +25,10 @@ public final class UnbindableBindable<T> implements Bindable<T> {
         return new UnbindableBindable<T>(null);
     }
 
+    public static <T> Bindable<T> of(T value) {
+        return new UnbindableBindable<T>(value);
+    }
+
     private T value;
 
     public UnbindableBindable(T value) {

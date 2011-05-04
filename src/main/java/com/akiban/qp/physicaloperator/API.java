@@ -77,12 +77,12 @@ public class API
 
     public static PhysicalOperator indexScan_Default(Index index)
     {
-        return indexScan_Default(index, false);
+        return indexScan_Default(index, false, UnbindableBindable.ofNull(IndexKeyRange.class));
     }
 
-    public static PhysicalOperator indexScan_Default(Index index, boolean reverse)
+    public static PhysicalOperator indexScan_Default(Index index, boolean reverse, Bindable<IndexKeyRange> indexKeyRangeBindable)
     {
-        return new IndexScan_Default(index, reverse);
+        return new IndexScan_Default(index, reverse, indexKeyRangeBindable);
     }
 
     public static PhysicalOperator select_HKeyOrdered(PhysicalOperator inputOperator,
