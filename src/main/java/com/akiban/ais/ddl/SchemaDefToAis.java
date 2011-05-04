@@ -378,7 +378,7 @@ public class SchemaDefToAis {
                 List<ReferenceDef> joinDefs = tableDef.getAkibanJoinRefs();
                 if (joinDefs.isEmpty()) {
                         // New root table
-                        LOG.debug("Group Root Table = ", table.getName());
+                        LOG.debug("Group Root Table = {}", table.getName());
                         groupName = namer.name(group);
                         builder.createGroup(groupName, group.getSchema(), groupTableName(group));
                         builder.addTableToGroup(groupName, table.getSchema(), table.getName());
@@ -390,7 +390,7 @@ public class SchemaDefToAis {
                         final UserTable parent = ais.getUserTable(parentName.getSchema(), parentName.getName());
                         groupName = parent.getGroup().getName();
                     }
-                    LOG.debug("Group = {}" + groupName);
+                    LOG.debug("Group = {}", groupName);
                     for (ReferenceDef refDef : joinDefs) {
                         LOG.debug("Group Child Table = {}", tableDef.name.getName());
                         String joinName = constructFKJoinName(tableDef, refDef);
