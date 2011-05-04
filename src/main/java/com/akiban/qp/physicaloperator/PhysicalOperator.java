@@ -23,17 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class PhysicalOperator
 {
-    // PhysicalOperator interface
-
-    public final int operatorId()
-    {
-        return operatorId;
-    }
-
-    public void assignOperatorIds(AtomicInteger idGenerator)
-    {
-        operatorId = idGenerator.getAndIncrement();
-    }
 
     // I'm not sure I like having this as part of the interface. On one hand, operators like Flatten create new
     // RowTypes and it's handy to get access to those new RowTypes. On the other hand, not all operators do this,
@@ -51,8 +40,4 @@ public abstract class PhysicalOperator
 //    public abstract OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops);
 
     public abstract Cursor cursor(StoreAdapter adapter, Bindings bindings);
-
-    // Object state
-
-    protected int operatorId = -1;
 }

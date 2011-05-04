@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class IndexLookup_Default extends PhysicalOperator
 {
@@ -33,13 +32,6 @@ class IndexLookup_Default extends PhysicalOperator
     public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
     {
         return new Execution(adapter, inputOperator.cursor(adapter, bindings));
-    }
-
-    @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
-    {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
     }
 
     @Override

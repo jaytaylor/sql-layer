@@ -35,13 +35,6 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
 
-    @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
-    {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
-    }
-
     public FlattenedRowType rowType()
     {
         return flattenType;

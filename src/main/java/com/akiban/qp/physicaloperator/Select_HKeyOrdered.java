@@ -35,13 +35,6 @@ class Select_HKeyOrdered extends PhysicalOperator
     }
 
     @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
-    {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
-    }
-
-    @Override
     public List<PhysicalOperator> getInputOperators() 
     {
         List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);

@@ -38,13 +38,6 @@ class Extract_Default extends PhysicalOperator
     }
 
     @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
-    {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
-    }
-
-    @Override
     public String toString()
     {
         return String.format("%s(%s)", getClass().getSimpleName(), extractTypes);
