@@ -15,19 +15,28 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
+/**
+ * A Bindable that simply returns a value, ignoring the given Bindings.
+ * @param <T> the value's type
+ */
+public final class ConstantValueBindable<T> implements Bindable<T> {
 
-public abstract class OperatorExecution implements Cursor
-{
-    // For use by subclasses
-
-    protected OperatorExecution(StoreAdapter adapter)
-    {
-        this.adapter = adapter;
+    public static <T> Bindable<T> ofNull(@SuppressWarnings("ignored") Class<T> cls) {
+        return new ConstantValueBindable<T>(null);
     }
 
-    // Object state
+    public static <T> Bindable<T> of(T value) {
+        return new ConstantValueBindable<T>(value);
+    }
 
-    protected final StoreAdapter adapter;
+    private T value;
+
+    public ConstantValueBindable(T value) {
+        this.value = value;
+    }
+
+    @Override
+    public T bindTo(Bindings bindings) {
+        return value;
+    }
 }

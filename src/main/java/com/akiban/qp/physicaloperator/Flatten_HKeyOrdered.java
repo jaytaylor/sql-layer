@@ -29,17 +29,10 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
-    {
-        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
-        return ops[operatorId];
-    }
-
     @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
+    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
     {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
+        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
 
     public FlattenedRowType rowType()
@@ -192,10 +185,10 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, OperatorExecution input)
+        Execution(StoreAdapter adapter, Cursor input)
         {
             super(adapter);
-            this.input = (GroupCursor) input;
+            this.input = input;
         }
 
         // For use by this class
@@ -230,7 +223,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         // Object state
 
-        private final GroupCursor input;
+        private final Cursor input;
         private final RowHolder<Row> parent = new RowHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
     }

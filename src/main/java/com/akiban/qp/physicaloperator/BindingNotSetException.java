@@ -15,19 +15,13 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
-
-public abstract class OperatorExecution implements Cursor
+public final class BindingNotSetException extends RuntimeException
 {
-    // For use by subclasses
-
-    protected OperatorExecution(StoreAdapter adapter)
-    {
-        this.adapter = adapter;
+    public BindingNotSetException(Throwable cause) {
+        super(cause);
     }
 
-    // Object state
-
-    protected final StoreAdapter adapter;
+    public BindingNotSetException(String message) {
+        super(message);
+    }
 }

@@ -15,8 +15,8 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
-import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
@@ -27,7 +27,7 @@ import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 
-class PersistitIndexCursor implements IndexCursor
+class PersistitIndexCursor implements Cursor
 {
     // Cursor interface
 
@@ -69,7 +69,6 @@ class PersistitIndexCursor implements IndexCursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
-            keyRange = null;
             indexFilter = null;
             row.set(null);
         }
@@ -81,19 +80,12 @@ class PersistitIndexCursor implements IndexCursor
         return row.get();
     }
 
-    // IndexCursor interface
-
-    @Override
-    public void bind(IndexKeyRange keyRange)
-    {
-        this.keyRange = keyRange;
-    }
-
     // For use by this package
 
-    PersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType, boolean reverse)
+    PersistitIndexCursor(PersistitAdapter adapter, IndexRowType indexRowType, boolean reverse, IndexKeyRange keyRange)
         throws PersistitException
     {
+        this.keyRange = keyRange;
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         this.row = new RowHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
@@ -141,7 +133,7 @@ class PersistitIndexCursor implements IndexCursor
     private final RowHolder<PersistitIndexRow> row;
     private final Key.EdgeValue boundary;
     private final Key.Direction direction;
-    private IndexKeyRange keyRange;
+    private final IndexKeyRange keyRange;
     private Exchange exchange;
     private KeyFilter indexFilter;
 }

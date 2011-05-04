@@ -31,17 +31,10 @@ class Cut_Default extends PhysicalOperator
 {
     // PhysicalOperator interface
 
-    public OperatorExecution instantiate(StoreAdapter adapter, OperatorExecution[] ops)
-    {
-        ops[operatorId] = new Execution(adapter, inputOperator.instantiate(adapter, ops));
-        return ops[operatorId];
-    }
-
     @Override
-    public void assignOperatorIds(AtomicInteger idGenerator)
+    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
     {
-        inputOperator.assignOperatorIds(idGenerator);
-        super.assignOperatorIds(idGenerator);
+        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
 
     @Override
@@ -120,7 +113,7 @@ class Cut_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, OperatorExecution input)
+        Execution(StoreAdapter adapter, Cursor input)
         {
             super(adapter);
             this.input = input;

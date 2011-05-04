@@ -15,12 +15,10 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
-abstract class SingleRowCachingCursor extends OperatorExecution implements IndexCursor, GroupCursor
+abstract class SingleRowCachingCursor extends OperatorExecution implements Cursor
 {
     // Object interface
 
@@ -48,20 +46,6 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Index
     public final Row currentRow()
     {
         return row.get();
-    }
-
-    // OperatorExecution interface
-
-    @Override
-    public void bind(IndexKeyRange keyRange)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void bind(HKey hKey)
-    {
-        throw new UnsupportedOperationException();
     }
 
     // SingleRowCachingCursor interface

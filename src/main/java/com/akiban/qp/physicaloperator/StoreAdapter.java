@@ -17,23 +17,25 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.Schema;
 
 public abstract class StoreAdapter
 {
-    public final GroupCursor newGroupCursor(GroupTable groupTable)
+    public final Cursor newGroupCursor(GroupTable groupTable)
     {
-        return newGroupCursor(groupTable, false);
+        return newGroupCursor(groupTable, false, null, null);
     }
 
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse);
+    public abstract Cursor newGroupCursor(GroupTable groupTable, boolean reverse, HKey hkey, IndexKeyRange indexKeyRange);
 
-    public final IndexCursor newIndexCursor(Index index)
+    public final Cursor newIndexCursor(Index index)
     {
-        return newIndexCursor(index, false);
+        return newIndexCursor(index, false, null);
     }
 
-    public abstract IndexCursor newIndexCursor(Index index, boolean reverse);
+    public abstract Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange);
 
     public final Schema schema()
     {

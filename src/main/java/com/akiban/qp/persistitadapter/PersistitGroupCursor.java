@@ -18,7 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.physicaloperator.GroupCursor;
+import com.akiban.qp.physicaloperator.Cursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  */
 
 
-class PersistitGroupCursor implements GroupCursor
+class PersistitGroupCursor implements Cursor
 {
     // Cursor interface
 
@@ -89,8 +89,6 @@ class PersistitGroupCursor implements GroupCursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
-            hKey = null;
-            hKeyRange = null;
             groupScan = null;
         }
     }
@@ -101,26 +99,12 @@ class PersistitGroupCursor implements GroupCursor
         return row.get();
     }
 
-    // GroupCursor interface
-
-    @Override
-    public void bind(HKey hKey)
-    {
-        assert this.hKeyRange == null && this.hKey == null;
-        this.hKey = (PersistitHKey) hKey;
-    }
-
-    @Override
-    public void bind(IndexKeyRange hKeyRange)
-    {
-        assert this.hKeyRange == null && this.hKey == null;
-        this.hKeyRange = hKeyRange;
-    }
-
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse) throws PersistitException
+    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, HKey hKey, IndexKeyRange indexKeyRange) throws PersistitException
     {
+        this.hKey = (PersistitHKey) hKey;
+        this.hKeyRange = indexKeyRange;
         this.adapter = adapter;
         this.groupTable = groupTable;
         this.reverse = reverse;
@@ -182,8 +166,8 @@ class PersistitGroupCursor implements GroupCursor
     private final RowHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;
-    private PersistitHKey hKey;
-    private IndexKeyRange hKeyRange;
+    private final PersistitHKey hKey;
+    private final IndexKeyRange hKeyRange;
     private GroupScan groupScan;
 
     // Inner classes

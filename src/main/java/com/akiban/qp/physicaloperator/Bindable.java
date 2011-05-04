@@ -15,19 +15,6 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
-
-public abstract class OperatorExecution implements Cursor
-{
-    // For use by subclasses
-
-    protected OperatorExecution(StoreAdapter adapter)
-    {
-        this.adapter = adapter;
-    }
-
-    // Object state
-
-    protected final StoreAdapter adapter;
+public interface Bindable<T> {
+    T bindTo(Bindings bindings);
 }
