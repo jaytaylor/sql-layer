@@ -104,6 +104,6 @@ class GroupScan_Default extends PhysicalOperator
 
         // Object state
 
-        private final GroupCursor cursor;
+        private final Cursor cursor;
     }
 }

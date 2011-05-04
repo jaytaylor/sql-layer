@@ -19,8 +19,6 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.Cursor;
-import com.akiban.qp.physicaloperator.GroupCursor;
-import com.akiban.qp.physicaloperator.IndexCursor;
 import com.akiban.qp.physicaloperator.StoreAdapter;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.row.HKey;
@@ -52,9 +50,9 @@ public class PersistitAdapter extends StoreAdapter
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse, HKey hkey, IndexKeyRange indexKeyRange)
+    public Cursor newGroupCursor(GroupTable groupTable, boolean reverse, HKey hkey, IndexKeyRange indexKeyRange)
     {
-        GroupCursor cursor;
+        Cursor cursor;
         try {
             cursor = new PersistitGroupCursor(this, groupTable, reverse, hkey, indexKeyRange);
         } catch (PersistitException e) {

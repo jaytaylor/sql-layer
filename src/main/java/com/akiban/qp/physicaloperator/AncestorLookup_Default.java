@@ -177,7 +177,7 @@ class AncestorLookup_Default extends PhysicalOperator
 
         private void readAncestorRow(HKey hKey)
         {
-            final GroupCursor ancestorCursor = adapter.newGroupCursor(groupTable, false, hKey, null);
+            final Cursor ancestorCursor = adapter.newGroupCursor(groupTable, false, hKey, null);
             try {
                 ancestorCursor.open();
                 if (ancestorCursor.next()) {

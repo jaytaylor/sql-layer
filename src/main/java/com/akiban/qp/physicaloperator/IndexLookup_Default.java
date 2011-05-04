@@ -155,7 +155,7 @@ class IndexLookup_Default extends PhysicalOperator
 
         private final Cursor indexInput;
         private final RowHolder<Row> indexRow = new RowHolder<Row>();
-        private GroupCursor groupCursor;
+        private Cursor groupCursor;
         private final RowHolder<Row> groupRow = new RowHolder<Row>();
         private boolean first = true;
     }

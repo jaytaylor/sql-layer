@@ -23,12 +23,12 @@ import com.akiban.qp.rowtype.Schema;
 
 public abstract class StoreAdapter
 {
-    public final GroupCursor newGroupCursor(GroupTable groupTable)
+    public final Cursor newGroupCursor(GroupTable groupTable)
     {
         return newGroupCursor(groupTable, false, null, null);
     }
 
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable, boolean reverse, HKey hkey, IndexKeyRange indexKeyRange);
+    public abstract Cursor newGroupCursor(GroupTable groupTable, boolean reverse, HKey hkey, IndexKeyRange indexKeyRange);
 
     public final Cursor newIndexCursor(Index index)
     {

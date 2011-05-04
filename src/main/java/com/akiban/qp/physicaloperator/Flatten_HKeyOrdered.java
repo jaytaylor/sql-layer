@@ -195,7 +195,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         Execution(StoreAdapter adapter, Cursor input)
         {
             super(adapter);
-            this.input = (GroupCursor) input;
+            this.input = input;
         }
 
         // For use by this class
@@ -230,7 +230,7 @@ class Flatten_HKeyOrdered extends PhysicalOperator
 
         // Object state
 
-        private final GroupCursor input;
+        private final Cursor input;
         private final RowHolder<Row> parent = new RowHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
     }
