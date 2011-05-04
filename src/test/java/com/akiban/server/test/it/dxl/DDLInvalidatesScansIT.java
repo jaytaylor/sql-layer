@@ -140,9 +140,9 @@ public final class DDLInvalidatesScansIT extends ITBase {
             cursor = openFullScan(customerGtable.getTableId(), 1);
             ddl().dropIndexes(
                     session(),
-                    customerGtable.getName(),
+                    customerUtable.getName(),
                     Collections.singleton(
-                        customerGtable.getIndexes().iterator().next().getIndexName().getName()
+                        customerUtable.getIndexes().iterator().next().getIndexName().getName()
             ));
         } catch (InvalidOperationException e) {
             throw new TestException(e);

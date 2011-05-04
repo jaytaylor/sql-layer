@@ -94,8 +94,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private final static String CREATE_SCHEMA_IF_NOT_EXISTS = "create schema if not exists ";
 
-    private final static String SEMI_COLON = ";";
-
     private final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
 
     private final static boolean forceToDisk = true;
@@ -208,33 +206,29 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
             transaction.begin();
             try {
-                if (ex.clear().append(BY_NAME).append(schemaName)
-                        .append(tableName).append(Key.AFTER).previous()) {
-                    final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                    ex.clear().append(BY_ID).append(tableId).fetch();
-                    final String previousValue = ex.getValue().getString();
-                    if (canonical.equals(previousValue)) {
-                        return tableNameFull;
-                    } else if (useOldId == true) {
-                        ex.getValue().put(canonical);
-                        ex.clear().append(BY_ID).append(tableId).store();
-                    }
-                } else {
-                    final int tableId;
+                final int tableId;
+                if(useOldId) {
+                    tableId = getAis(session).getTable(tableNameFull).getTableId();
+                }
+                else {
                     if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
                         tableId = ex.getKey().indexTo(1).decodeInt() + 1;
                     } else {
                         tableId = 1;
                     }
-                    ex.getValue().put(canonical);
-                    ex.clear().append(BY_ID).append(tableId).store();
                     ex.getValue().putNull();
-                    ex.clear().append(BY_NAME).append(schemaName)
-                            .append(tableName).append(tableId).store();
+                    ex.clear().append(BY_ID).append(tableId).store();
                 }
 
+                ex.clear().append(BY_NAME).append(schemaName).append(tableName);
+                assert ex.hasChildren() == useOldId : tableNameFull;
+                ex.append(tableId);
+                ex.getValue().put(canonical);
+                ex.store();
+
                 final AkibanInformationSchema newAIS = constructAIS(session);
-                validateIndexSizes(newAIS.getUserTable(tableNameFull));
+                final UserTable newTable = newAIS.getUserTable(tableNameFull);
+                validateIndexSizes(newTable);
 
                 transaction.commit(new DefaultCommitListener() {
 
@@ -252,72 +246,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             } finally {
                 transaction.end();
                 treeService.releaseExchange(session, ex);
-            }
-        }
-    }
-
-    /**
-     * Delete a table definition version specified by tableId. There is no
-     * validity checking for this call; the definition is simply removed. DROP
-     * TABLE should use the
-     * {@link #deleteTableDefinition(Session, String, String)} method to ensure
-     * integrity.
-     * 
-     * @param session
-     * @param tableId
-     *            tableId of a table definition version to be deleted
-     */
-    @Override
-    public void deleteTableDefinition(Session session, final int tableId)
-            throws Exception {
-        final TreeService treeService = serviceManager.getTreeService();
-        final Transaction transaction = treeService.getTransaction(session);
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        for (;;) {
-            transaction.begin();
-            try {
-                treeService.visitStorage(session, new TreeVisitor() {
-
-                    @Override
-                    public void visit(Exchange exchange) throws Exception {
-                        exchange.clear().append(BY_ID).append(tableId).fetch();
-                        if (exchange.isValueDefined()) {
-                            final RowDef rowDef = getRowDefCache().rowDef(
-                                    tableId);
-                            if (rowDef != null) {
-                                rowDef.setDeleted(true);
-                            }
-                            final String canonical = exchange.getValue()
-                                    .getString();
-                            SchemaDef.CName cname = cname(canonical);
-                            exchange.remove();
-                            exchange.clear().append(BY_NAME)
-                                    .append(cname.getSchema())
-                                    .append(cname.getName()).append(tableId)
-                                    .remove();
-                        }
-                    }
-
-                }, SCHEMA_TREE_NAME);
-
-                serviceManager.getTreeService().getTableStatusCache().drop(tableId);
-                final AkibanInformationSchema newAIS = constructAIS(session);
-
-                transaction.commit(new DefaultCommitListener() {
-
-                    @Override
-                    public void committed() {
-                        commitAIS(newAIS, transaction.getCommitTimestamp());
-                    }
-
-                }, forceToDisk);
-                break;
-            } catch (RollbackException e) {
-                if (--retries < 0) {
-                    throw new TransactionFailedException();
-                }
-            } finally {
-                transaction.end();
             }
         }
     }
@@ -397,133 +325,45 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private void deleteTableDefinitionList(final Session session,
-            final List<TableName> tables) throws Exception {
+    private void deleteTableDefinitionList(final Session session, final List<TableName> tables) throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
 
         for (final TableName tn : tables) {
             final String schemaName = tn.getSchemaName();
             final String tableName = tn.getTableName();
-            Exchange ex1 = null;
-            Exchange ex2 = null;
-            Exchange ex3 = null;
+            Exchange schemaExchange = null;
+            Exchange statusExchange = null;
             try {
-                ex1 = treeService.getExchange(session,
-                        treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-                ex2 = treeService.getExchange(session,
-                        treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-                ex3 = treeService.getExchange(session,
-                        treeService.treeLink(schemaName, STATUS_TREE_NAME));
-                ex1.clear().append(BY_NAME).append(schemaName)
-                        .append(tableName);
-                final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4, 4);
+                schemaExchange = treeService.getExchange(session, treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
+                statusExchange = treeService.getExchange(session, treeService.treeLink(schemaName, STATUS_TREE_NAME));
+                schemaExchange.clear().append(BY_NAME).append(schemaName).append(tableName);
+                final KeyFilter keyFilter = new KeyFilter(schemaExchange.getKey(), 4, 4);
 
-                ex1.clear();
-                while (ex1.next(keyFilter)) {
-                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
-                    ex2.clear().append(BY_ID).append(tableId).remove();
+                schemaExchange.clear();
+                while (schemaExchange.next(keyFilter)) {
+                    final int tableId = schemaExchange.getKey().indexTo(-1).decodeInt();
                     final RowDef rowDef = getRowDefCache().rowDef(tableId);
                     if (rowDef != null) {
                         rowDef.setDeleted(true);
                     }
-                    ex1.remove();
-                    ex3.clear().append(tableId).remove();
+                    schemaExchange.remove();
+                    statusExchange.clear().append(tableId).remove();
                     serviceManager.getTreeService().getTableStatusCache().drop(tableId);
                 }
             } catch (PersistitException e) {
-                LOG.error("Failed to delete table " + schemaName + "."
-                        + tableName, e);
+                LOG.error("Failed to delete table " + schemaName + "." + tableName, e);
                 throw e;
             } finally {
-                if (ex1 != null) {
-                    treeService.releaseExchange(session, ex1);
+                if (schemaExchange != null) {
+                    treeService.releaseExchange(session, schemaExchange);
                 }
-                if (ex2 != null) {
-                    treeService.releaseExchange(session, ex2);
-                }
-                if (ex3 != null) {
-                    treeService.releaseExchange(session, ex3);
+                if (statusExchange != null) {
+                    treeService.releaseExchange(session, statusExchange);
                 }
             }
         }
     }
-
-    /**
-     * Delete all table definition versions for all tables contained in a named
-     * schema. This removes the entire history of all tables in the schema, and
-     * is intended to implement part of the DROP SCHEMA operation. (The other
-     * part is truncating the data.)
-     * 
-     * @param session
-     * @param schemaName
-     * @throws InvalidOperationException
-     *             if removing a table in this schema would cause other table
-     *             definitions to become invalid.
-     */
-    @Override
-    public void deleteSchemaDefinition(final Session session,
-            final String schemaName) throws Exception {
-        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
-            return;
-        }
-        final TreeService treeService = serviceManager.getTreeService();
-
-        final Transaction transaction = treeService.getTransaction(session);
-        int retries = MAX_TRANSACTION_RETRY_COUNT;
-        for (;;) {
-            transaction.begin();
-            try {
-                Exchange ex1 = null;
-                Exchange ex2 = null;
-                try {
-                    ex1 = treeService.getExchange(session,
-                            treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-                    ex2 = treeService.getExchange(session,
-                            treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-                    ex1.clear().append(BY_NAME).append(schemaName);
-                    final KeyFilter keyFilter = new KeyFilter(ex1.getKey(), 4,
-                            4);
-
-                    ex1.clear();
-                    while (ex1.next(keyFilter)) {
-                        final int tableId = ex1.getKey().indexTo(-1)
-                                .decodeInt();
-                        ex2.clear().append(BY_ID).append(tableId).remove();
-                        ex1.remove();
-                        serviceManager.getTreeService().getTableStatusCache().drop(tableId);
-                    }
-                } catch (PersistitException e) {
-                    LOG.error("Failed to delete schema " + schemaName, e);
-                    throw e;
-                } finally {
-                    if (ex1 != null) {
-                        treeService.releaseExchange(session, ex1);
-                    }
-                    if (ex2 != null) {
-                        treeService.releaseExchange(session, ex2);
-                    }
-                }
-                final AkibanInformationSchema newAIS = constructAIS(session);
-                transaction.commit(new DefaultCommitListener() {
-
-                    @Override
-                    public void committed() {
-                        commitAIS(newAIS, transaction.getCommitTimestamp());
-                    }
-
-                }, forceToDisk);
-                break;
-            } catch (RollbackException e) {
-                if (--retries < 0) {
-                    throw new TransactionFailedException();
-                }
-            } finally {
-                transaction.end();
-            }
-        }
-
-    }
-
+    
     /**
      * Get the most recent version of a table definition identified by schema
      * and table names. If there is no such table this method returns
@@ -551,7 +391,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             if (ex.clear().append(BY_NAME).append(schemaName).append(tableName)
                     .append(Key.AFTER).previous()) {
                 final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                ex.clear().append(BY_ID).append(tableId).fetch();
                 return new TableDefinition(tableId, schemaName, tableName, ex
                         .getValue().getString());
             } else {
@@ -561,46 +400,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         } finally {
             treeService.releaseExchange(session, ex);
         }
-    }
-
-    /**
-     * Get a list containing all versions of table definitions for a specified
-     * schema and table name. The list is arranged in forward-chronological
-     * order, which is determined by increasing values of tableId. If there is
-     * no such table, this method returns an empty list.
-     * 
-     * @param session
-     * @param schemaName
-     * @param tableName
-     */
-    @Override
-    public List<TableDefinition> getTableDefinitionHistory(Session session,
-            String schemaName, String tableName) throws Exception {
-        final List<TableDefinition> result = new ArrayList<TableDefinition>();
-        if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
-            for (final TableDefinition td : aisSchema) {
-                if (td.getTableName().equals(tableName)) {
-                    result.add(td);
-                }
-            }
-            return result;
-        }
-        final TreeService treeService = serviceManager.getTreeService();
-        final Exchange ex = treeService.getExchange(session,
-                treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-        ex.clear().append(BY_NAME).append(schemaName).append(tableName)
-                .append(Key.BEFORE);
-        try {
-            while (ex.next()) {
-                final int tableId = ex.getKey().indexTo(-1).decodeInt();
-                ex.clear().append(BY_ID).append(tableId).fetch();
-                result.add(new TableDefinition(tableId, schemaName, tableName,
-                        ex.getValue().getString()));
-            }
-        } finally {
-            treeService.releaseExchange(session, ex);
-        }
-        return result;
     }
 
     /**
@@ -622,26 +421,22 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             return result;
         }
         final TreeService treeService = serviceManager.getTreeService();
-        final Exchange ex1 = treeService.getExchange(session,
-                treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-        final Exchange ex2 = treeService.getExchange(session,
-                treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
-        ex1.clear().append(BY_NAME).append(schemaName).append(Key.BEFORE);
+        final Exchange ex = treeService.getExchange(session,
+                                                    treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
+        ex.clear().append(BY_NAME).append(schemaName).append(Key.BEFORE);
         try {
-            while (ex1.next()) {
-                final String tableName = ex1.getKey().indexTo(-1)
-                        .decodeString();
-                if (ex1.append(Key.AFTER).previous()) {
-                    final int tableId = ex1.getKey().indexTo(-1).decodeInt();
-                    ex2.clear().append(BY_ID).append(tableId).fetch();
-                    result.put(tableName, new TableDefinition(tableId,
-                            schemaName, tableName, ex2.getValue().getString()));
+            while (ex.next()) {
+                final String tableName = ex.getKey().indexTo(-1).decodeString();
+                if (ex.append(Key.AFTER).previous()) {
+                    final int tableId = ex.getKey().indexTo(-1).decodeInt();
+                    final String ddl = ex.fetch().getValue().getString();
+                    result.put(tableName, new TableDefinition(tableId, schemaName, tableName, ddl));
                 }
-                ex1.cut();
+                ex.cut();
             }
             return result;
         } finally {
-            treeService.releaseExchange(session, ex1);
+            treeService.releaseExchange(session, ex);
         }
     }
 
@@ -666,7 +461,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private synchronized AkibanInformationSchema constructAIS(
             final Session session) throws Exception {
         AkibanInformationSchema newAis;
-        final StringBuilder sb = new StringBuilder();
         final List<String> ddlList = new ArrayList<String>();
         final Map<TableName, Integer> idMap = assembleSchema(session, ddlList, true,
                                                              false, false);
@@ -913,10 +707,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    static long now() {
-        return System.nanoTime() / 1000L;
-    }
-
     private void commitAIS(final AkibanInformationSchema newAis,
             final long timestamp) {
         final RowDefCache rowDefCache = getRowDefCache();
@@ -945,19 +735,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     String.format("[%s] %s: %s", defaultSchemaName,
                             e1.getMessage(), canonical), e1);
         }
-    }
-
-    private SchemaDef.CName cname(final String canonical)
-            throws InvalidOperationException {
-        final SchemaDef.UserTableDef def = parseTableStatement(null, canonical);
-        final SchemaDef.CName cname = def.getCName();
-        if (cname == null || cname.getSchema() == null
-                || cname.getName() == null) {
-            throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
-                    "[%s] %s: %s", cname.getSchema(),
-                    "Null schema or table name", canonical);
-        }
-        return cname;
     }
 
     private void complainAboutIndexDataType(String schema, String table,
