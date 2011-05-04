@@ -20,7 +20,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
-abstract class SingleRowCachingCursor extends OperatorExecution implements IndexCursor, GroupCursor
+abstract class SingleRowCachingCursor extends OperatorExecution implements Cursor, GroupCursor
 {
     // Object interface
 
