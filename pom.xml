@@ -13,14 +13,14 @@
     </properties>
     <distributionManagement>
         <snapshotRepository>
-            <id>snapshots</id>
-            <name>lib-snapshots-local</name>
-            <url>${snapshots.url}</url>
+            <id>akiban</id>
+            <name>akiban-snapshots</name>
+            <url>http://akiban.artifactoryonline.com/akiban/libs-snapshots-local</url>
         </snapshotRepository>
         <repository>
-            <id>releases</id>
-            <name>lib-releases-local</name>
-            <url>${releases.url}</url>
+            <id>akiban</id>
+            <name>akiban-releases</name>
+            <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
         </repository>
     </distributionManagement>
     <repositories>
