@@ -25,7 +25,6 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class Cut_Default extends PhysicalOperator
 {

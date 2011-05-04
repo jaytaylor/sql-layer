@@ -19,7 +19,6 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class PhysicalOperator
 {

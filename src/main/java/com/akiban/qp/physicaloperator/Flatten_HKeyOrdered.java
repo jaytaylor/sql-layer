@@ -23,7 +23,6 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class Flatten_HKeyOrdered extends PhysicalOperator
 {
