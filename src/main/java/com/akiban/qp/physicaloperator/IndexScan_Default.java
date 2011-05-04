@@ -25,7 +25,7 @@ class IndexScan_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
         return new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
     }
@@ -95,7 +95,6 @@ class IndexScan_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter, IndexKeyRange keyRange)
         {
-            super(adapter);
             this.cursor = adapter.newIndexCursor(index, reverse, keyRange);
         }
 

@@ -32,7 +32,7 @@ class Extract_Default extends PhysicalOperator
     // PhysicalOperator interface
 
     @Override
-    public OperatorExecution cursor(StoreAdapter adapter, Bindings bindings)
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
         return new Execution(adapter, inputOperator.cursor(adapter, bindings));
     }
@@ -115,7 +115,6 @@ class Extract_Default extends PhysicalOperator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            super(adapter);
             this.input = input;
         }
 

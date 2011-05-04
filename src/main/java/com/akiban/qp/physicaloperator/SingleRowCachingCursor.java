@@ -18,7 +18,7 @@ package com.akiban.qp.physicaloperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowHolder;
 
-abstract class SingleRowCachingCursor extends OperatorExecution implements Cursor
+abstract class SingleRowCachingCursor implements Cursor
 {
     // Object interface
 
@@ -58,11 +58,6 @@ abstract class SingleRowCachingCursor extends OperatorExecution implements Curso
     protected void outputRow(Row newRow)
     {
         row.set(newRow == null ? null : newRow);
-    }
-
-    protected SingleRowCachingCursor(StoreAdapter adapter)
-    {
-        super(adapter);
     }
 
     // Object state
