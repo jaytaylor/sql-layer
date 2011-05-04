@@ -86,7 +86,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
 
-    static final String ID_COUNTER = "idCounter";
+    static final String BY_ID = "byId";
 
     static final String BY_NAME = "byName";
 
@@ -207,17 +207,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     treeService.treeLink(schemaName, SCHEMA_TREE_NAME));
             transaction.begin();
             try {
-                int tableId = 1;
+                final int tableId;
                 if(useOldId) {
                     tableId = getAis(session).getTable(tableNameFull).getTableId();
                 }
                 else {
-                    ex.clear().append(ID_COUNTER);
-                    if(ex.isValueDefined()) {
-                        tableId = ex.fetch().getValue().getInt();
+                    if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
+                        tableId = ex.getKey().indexTo(1).decodeInt() + 1;
+                    } else {
+                        tableId = 1;
                     }
-                    ex.getValue().put(tableId + 1);
-                    ex.store();
+                    ex.getValue().putNull();
+                    ex.clear().append(BY_ID).append(tableId).store();
                 }
 
                 ex.clear().append(BY_NAME).append(schemaName).append(tableName);
