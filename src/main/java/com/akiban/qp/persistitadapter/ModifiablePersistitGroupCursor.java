@@ -20,6 +20,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.ModifiableCursorBackingStore;
 import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.RowHolder;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -56,7 +57,7 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
     }
 
     @Override
-    public void updateCurrentRow(RowBase newRow) {
+    public void updateCurrentRow(Row newRow) {
         RowHolder<PersistitGroupRow> currentRow = currentHeldRow();
         RowData currentRowData = currentRow.get().rowData();
         RowDef rowDef = currentRow.get().rowDef();

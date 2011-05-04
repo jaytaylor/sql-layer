@@ -52,11 +52,12 @@ public interface Cursor
 
     /**
      * Updates in the backing structure whatever row would be returned by {@link Cursor#currentRow()}
+     *
      * @param newRow the new row's value
      * @throws IncompatibleRowException if the given row is incompatible with the current row
      * @throws CursorUpdateException if the current row couldn't be updated due to an underlying exception
      */
-    void updateCurrentRow(RowBase newRow);
+    void updateCurrentRow(Row newRow);
 
     /**
      * Gets the store that backs this modifiable cursor.

@@ -15,7 +15,7 @@
 
 package com.akiban.qp.physicaloperator;
 
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.Row;
 
 public abstract class CursorStub implements Cursor {
     @Override
@@ -24,7 +24,7 @@ public abstract class CursorStub implements Cursor {
     }
 
     @Override
-    public void updateCurrentRow(RowBase newRow) {
+    public void updateCurrentRow(Row newRow) {
         throw new UnsupportedOperationException();
     }
 

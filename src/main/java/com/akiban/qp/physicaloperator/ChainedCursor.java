@@ -16,7 +16,6 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
 
 public abstract class ChainedCursor implements Cursor {
     protected final Cursor input;
@@ -51,7 +50,7 @@ public abstract class ChainedCursor implements Cursor {
     }
 
     @Override
-    public void updateCurrentRow(RowBase newRow) {
+    public void updateCurrentRow(Row newRow) {
         input.updateCurrentRow(newRow);
     }
 
