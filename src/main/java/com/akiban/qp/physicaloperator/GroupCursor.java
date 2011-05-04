@@ -28,6 +28,7 @@ public interface GroupCursor extends Cursor
      * @param hKey Limits the scan to rows matching this hKey, and descendents.
      * @throws UnsupportedOperationException if applied to an index-based cursor.
      */
+    @Deprecated
     void bind(HKey hKey);
 
     /**
@@ -38,5 +39,6 @@ public interface GroupCursor extends Cursor
      * on hkeys.
      * @param hKeyRange Limits the scan to rows whose hkeys lie in this range.
      */
+    @Deprecated
     void bind(IndexKeyRange hKeyRange);
 }

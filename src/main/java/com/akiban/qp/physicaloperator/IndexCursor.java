@@ -25,5 +25,6 @@ public interface IndexCursor extends Cursor
      * @param keyRange Range of index keys to be visited.
      * @throws UnsupportedOperationException if applied to a group-based cursor.
      */
+    @Deprecated
     void bind(IndexKeyRange keyRange);
 }
