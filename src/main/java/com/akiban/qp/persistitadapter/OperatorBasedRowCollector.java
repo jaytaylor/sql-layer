@@ -247,7 +247,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!cutTypes.isEmpty()) {
             rootOperator = cut_Default(schema, rootOperator, cutTypes);
         }
-        query = new Executable(adapter, rootOperator).bind(restrictionOperator, indexKeyRange);
+        query = new Executable(adapter, rootOperator);
         // Executable stuff
         cursor = query.cursor();
         cursor.open();

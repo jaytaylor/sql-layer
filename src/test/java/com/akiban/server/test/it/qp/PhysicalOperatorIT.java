@@ -344,7 +344,7 @@ public class PhysicalOperatorIT extends ITBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}"};
-        compareRenderedHKeys(expected, new Executable(adapter, indexScan).bind(indexScan, range));
+        compareRenderedHKeys(expected, new Executable(adapter, indexScan));
     }
 
     @Test
@@ -358,7 +358,7 @@ public class PhysicalOperatorIT extends ITBase
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                    row(itemRowType, 211L, 21L),
                                    row(itemRowType, 212L, 21L)};
-        compareRows(expected, new Executable(adapter, indexLookup).bind(indexScan, matchTom));
+        compareRows(expected, new Executable(adapter, indexLookup));
 
     }
 

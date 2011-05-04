@@ -29,12 +29,6 @@ public class Executable
         return root.cursor(adapter, bindings);
     }
 
-    @Deprecated
-    public Executable bind(Object one, Object two) {
-        // TODO remove this method
-        return this;
-    }
-
     // Object state
 
     private final PhysicalOperator root;
