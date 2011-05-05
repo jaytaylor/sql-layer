@@ -39,4 +39,10 @@ public final class ConstantValueBindable<T> implements Bindable<T> {
     public T bindTo(Bindings bindings) {
         return value;
     }
+
+    @Override
+    public String toString() 
+    {
+        return "Bindable(" + value + ")";
+    }
 }
