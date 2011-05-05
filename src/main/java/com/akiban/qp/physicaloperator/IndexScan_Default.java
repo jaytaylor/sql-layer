@@ -33,7 +33,7 @@ class IndexScan_Default extends PhysicalOperator
     @Override
     public String toString() 
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), index);
+        return String.format("%s(%s %s%s)", getClass().getSimpleName(), index, indexKeyRangeBindable, reverse ? " reverse" : "");
     }
 
     // IndexScan_Default interface
