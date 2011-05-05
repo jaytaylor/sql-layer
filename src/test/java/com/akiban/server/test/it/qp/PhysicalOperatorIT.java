@@ -103,7 +103,7 @@ public class PhysicalOperatorIT extends ITBase
     @Test
     public void basicUpdate() throws Exception {
         adapter.setTransactional(false);
-        ModifiableCursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false, null, null);
+        ModifiableCursor groupCursor = new ModifiablePersistitGroupCursor(adapter, coi, false, null);
         Cursor updateCursor = new UpdateCursor(groupCursor, new UpdateLambda() {
             @Override
             public boolean rowIsApplicable(Row row) {

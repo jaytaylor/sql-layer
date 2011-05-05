@@ -52,8 +52,12 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor i
         }
     };
 
-    public ModifiablePersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, HKey hKey, IndexKeyRange indexKeyRange) throws PersistitException {
-        super(adapter, groupTable, reverse, hKey, indexKeyRange);
+    public ModifiablePersistitGroupCursor(PersistitAdapter adapter,
+                                          GroupTable groupTable,
+                                          boolean reverse,
+                                          IndexKeyRange indexKeyRange)
+        throws PersistitException {
+        super(adapter, groupTable, reverse, indexKeyRange);
     }
 
     @Override

@@ -112,9 +112,9 @@ class PersistitGroupCursor implements GroupCursor
 
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, HKey hKey, IndexKeyRange indexKeyRange) throws PersistitException
+    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, IndexKeyRange indexKeyRange)
+        throws PersistitException
     {
-        rebind(hKey);
         this.hKeyRange = indexKeyRange;
         this.adapter = adapter;
         this.groupTable = groupTable;

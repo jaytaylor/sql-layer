@@ -1070,31 +1070,17 @@ public class PersistitStore implements Store {
             endColumns = createNonNullFieldSelector(end);
         }
         RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
-        RowCollector rc;
-        if (Boolean.getBoolean("oldRowCollector")) {
-            rc = new PersistitStoreRowCollector(session,
-                                                this,
-                                                scanFlags,
-                                                rowDef,
-                                                indexId,
-                                                columnBitMap,
-                                                start,
-                                                startColumns,
-                                                end,
-                                                endColumns);
-        } else {
-            rc = OperatorBasedRowCollector.newCollector(session,
-                                                        this,
-                                                        scanFlags,
-                                                        rowDef,
-                                                        indexId,
-                                                        columnBitMap,
-                                                        start,
-                                                        startColumns,
-                                                        end,
-                                                        endColumns,
-                                                        scanLimit);
-        }
+        RowCollector rc = OperatorBasedRowCollector.newCollector(session,
+                                                                 this,
+                                                                 scanFlags,
+                                                                 rowDef,
+                                                                 indexId,
+                                                                 columnBitMap,
+                                                                 start,
+                                                                 startColumns,
+                                                                 end,
+                                                                 endColumns,
+                                                                 scanLimit);
         NEW_COLLECTOR_TAP.out();
         return rc;
     }

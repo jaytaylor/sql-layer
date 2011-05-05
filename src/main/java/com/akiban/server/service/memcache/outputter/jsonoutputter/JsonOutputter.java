@@ -59,12 +59,9 @@ public final class JsonOutputter implements HapiOutputter
             this.ais = request.akibanInformationSchema();
             queryRoot = rootTable(request);
             genealogist = new RowDataGenealogist(queryRoot, projectedTables(request));
-            this.input =
-                Boolean.getBoolean("oldRowCollector")
-                ? new UnOrphaningIterator<RowData>(rows.iterator(), genealogist)
-                : new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(predicateTable(request),
-                                                                                 hKeyOrdered,
-                                                                                 rows.iterator()),
+            this.input = new UnOrphaningIterator<RowData>(new AncestorDiscoveryIterator(predicateTable(request),
+                                                          hKeyOrdered,
+                                                          rows.iterator()),
                                                    genealogist);
             this.output = new PrintWriter(outputStream);
             this.appender = AkibanAppender.of(outputStream, this.output);
