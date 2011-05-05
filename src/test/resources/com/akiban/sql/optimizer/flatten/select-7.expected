@@ -1,0 +1,1 @@
+SELECT P.NAME AS NAME FROM user.parent AS P, user.child AS C WHERE (C.PID = P.ID) AND ((C.ID = 3) AND (true AND true))

@@ -1,0 +1,1 @@
+SELECT _G_1.PARENT$NAME AS NAME, _G_1.CHILD$NAME AS NAME FROM user._akiban_parent AS _G_1 WHERE true AND ((_G_1.PARENT$STATE = 'MA') AND true)

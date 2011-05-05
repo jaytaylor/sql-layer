@@ -1,0 +1,47 @@
+com.akiban.sql.parser.CursorNode@781f6226
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@5464ea66
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@2d58f9d3
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@2c79a2e7
+		exposedName: _SQL_COL_1
+		name: _SQL_COL_1
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.CoalesceFunctionNode@65b60280
+			functionName: COALESCE
+			type: null
+			argumentsList: 				
+				com.akiban.sql.parser.ValueNodeList@105e55ab
+
+				[0]:				
+				com.akiban.sql.parser.ColumnReference@214a55f2
+				columnName: X
+				tableName: null
+				type: null
+				userData: t1.x from com.akiban.sql.parser.FromBaseTable@72e6f7d2
+				[1]:				
+				com.akiban.sql.parser.ColumnReference@175093f1
+				columnName: Z
+				tableName: null
+				type: null
+				userData: t1.z from com.akiban.sql.parser.FromBaseTable@72e6f7d2
+	fromList: 		
+		com.akiban.sql.parser.FromList@2b20bf2c
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@72e6f7d2
+		tableName: T1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: user.t1

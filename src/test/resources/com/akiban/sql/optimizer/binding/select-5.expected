@@ -1,0 +1,94 @@
+com.akiban.sql.parser.CursorNode@583e0ebb
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@5239443f
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@6e811c88
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@5e785d65
+		exposedName: X
+		name: X
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@303bc257
+			columnName: X
+			tableName: null
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@6a8c436b
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@2353f67e
+		exposedName: X2
+		name: X2
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@5d5bdc50
+			columnName: X2
+			tableName: null
+			type: null
+			userData: com.akiban.sql.parser.ResultColumn@1055e55f from com.akiban.sql.parser.FromSubquery@2dafae45
+	fromList: 		
+		com.akiban.sql.parser.FromList@39dd3812
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@6a8c436b
+		tableName: T1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: user.t1
+		[1]:		
+		com.akiban.sql.parser.FromSubquery@2dafae45
+		correlation Name: T2
+		T2
+		subquery: 			
+			com.akiban.sql.parser.SelectNode@68da4b71
+			isDistinct: false
+			resultColumns: 				
+				com.akiban.sql.parser.ResultColumnList@538f1d7e
+
+				[0]:				
+				com.akiban.sql.parser.ResultColumn@58d9660d
+				exposedName: NOT_X
+				name: NOT_X
+				tableName: null
+				isDefaultColumn: false
+				type: null
+				expression: 					
+					com.akiban.sql.parser.ColumnReference@28bb0d0d
+					columnName: X
+					tableName: null
+					type: null
+					userData: t1.x from com.akiban.sql.parser.FromBaseTable@322c1e6b
+				[1]:				
+				com.akiban.sql.parser.ResultColumn@1055e55f
+				exposedName: X2
+				name: X2
+				tableName: null
+				isDefaultColumn: false
+				type: null
+				expression: 					
+					com.akiban.sql.parser.ColumnReference@7745c859
+					columnName: Y
+					tableName: null
+					type: null
+					userData: t1.y from com.akiban.sql.parser.FromBaseTable@322c1e6b
+			fromList: 				
+				com.akiban.sql.parser.FromList@664883c
+
+				[0]:				
+				com.akiban.sql.parser.FromBaseTable@322c1e6b
+				tableName: T1
+				updateOrDelete: null
+				null
+				correlation Name: null
+				null
+				userData: user.t1
