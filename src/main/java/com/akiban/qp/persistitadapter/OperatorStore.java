@@ -23,10 +23,13 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
+import com.akiban.qp.physicaloperator.WrappingPhysicalOperator;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
@@ -34,9 +37,12 @@ import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.persistit.Persistit;
 
 import static com.akiban.qp.physicaloperator.API.emptyBindings;
 
@@ -67,14 +73,21 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         PersistitGroupRow oldRow = PersistitGroupRow.newPersistitGroupRow(adapter, oldRowData);
         RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
-        UpdateLambda updateLambda = new InternalUpdateLambda(rowDef, newRowData, columnSelector);
+        UpdateLambda updateLambda = new InternalUpdateLambda(adapter, rowDef, newRowData, columnSelector);
 
         UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
         GroupTable groupTable = userTable.getGroup().getGroupTable();
 
+        final PhysicalOperator scanOp;
         IndexBound bound = new IndexBound(userTable, oldRow, new ConstantColumnSelector(true));
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
-        PhysicalOperator scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
+        scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
+//        GroupCursor scanCursor = adapter.newGroupCursor(groupTable);
+//        HKey hkey = new PersistitHKey(adapter, userTable.hKey());
+//        scanCursor.rebind(hkey);
+//        scanOp = new WrappingPhysicalOperator(scanCursor);
+        // TODO -- if it's not a root table, I should actually be doing an index lookup on the user table
+        // if the user table doesn't have any unique indexes, what then?
 
         Update_Default updateOp = new Update_Default(scanOp, ConstantValueBindable.of(updateLambda));
 
@@ -84,23 +97,22 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
             if (!updateCursor.next()) {
                 throw new RuntimeException("no next!");
             }
-            if (updateCursor.next()) {
-                throw new RuntimeException("superfluous next: " + updateCursor.currentRow());
-            }
         } finally {
             updateCursor.close();
         }
     }
 
     private static class InternalUpdateLambda implements UpdateLambda {
+        private final PersistitAdapter adapter;
         private final RowData newRowData;
         private final ColumnSelector columnSelector;
         private final RowDef rowDef;
 
-        private InternalUpdateLambda(RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
+        private InternalUpdateLambda(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
             this.newRowData = newRowData;
             this.columnSelector = columnSelector;
             this.rowDef = rowDef;
+            this.adapter = adapter;
         }
 
         @Override
@@ -111,13 +123,26 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         @Override
         public Row applyUpdate(Row original) {
-            OverlayingRow overlay = new OverlayingRow(original);
-            for (int i=0; i < rowDef.getFieldCount(); ++i) {
-                if (columnSelector.includesColumn(i)) {
-                    overlay.overlay(i, newRowData.toObject(rowDef, i));
+            // TODO
+            // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
+            // a PersistitGroupRow if an hkey changes
+//            OverlayingRow overlay = new OverlayingRow(original);
+//            for (int i=0; i < rowDef.getFieldCount(); ++i) {
+//                if (columnSelector == null || columnSelector.includesColumn(i)) {
+//                    overlay.overlay(i, newRowData.toObject(rowDef, i));
+//                }
+//            }
+//            return overlay;
+            NewRow newRow = new NiceRow(rowDef.getRowDefId());
+            for (int i=0; i < original.rowType().nFields(); ++i) {
+                if (columnSelector == null || columnSelector.includesColumn(i)) {
+                    newRow.put(i, newRowData.toObject(rowDef, i));
+                }
+                else {
+                    newRow.put(i, original.field(i));
                 }
             }
-            return overlay;
+            return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
         }
     }
 }
