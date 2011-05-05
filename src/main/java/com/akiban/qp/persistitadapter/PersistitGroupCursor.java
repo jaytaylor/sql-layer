@@ -119,9 +119,9 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
 
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, HKey hKey, IndexKeyRange indexKeyRange) throws PersistitException
+    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable, boolean reverse, IndexKeyRange indexKeyRange)
+        throws PersistitException
     {
-        rebind(hKey);
         this.hKeyRange = indexKeyRange;
         this.adapter = adapter;
         this.groupTable = groupTable;
@@ -145,7 +145,7 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupCursor.class);
     // Used by HKeyRangeAndDescendentsScan.
     // Should be zero, but Exchange.traverse doesn't update the key if we ask for 0 value bytes.
-    private static final int VALUE_BYTES = 1;
+    private static final int VALUE_BYTES = Integer.MAX_VALUE;
 
     // Object state
 

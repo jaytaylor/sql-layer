@@ -49,9 +49,23 @@ public class API
         return groupScan_Default(groupTable, false, NO_LIMIT);
     }
 
+    public static PhysicalOperator groupScan_Default(GroupTable groupTable,
+                                                     boolean reverse,
+                                                     Limit limit,
+                                                     Bindable<IndexKeyRange> bindableIndexKeyRange)
+    {
+        return new GroupScan_Default(groupTable,
+                                     reverse,
+                                     limit,
+                                     bindableIndexKeyRange);
+    }
+
     public static PhysicalOperator groupScan_Default(GroupTable groupTable, boolean reverse, Limit limit)
     {
-        return new GroupScan_Default(groupTable, reverse, limit, ConstantValueBindable.ofNull(HKey.class), ConstantValueBindable.ofNull(IndexKeyRange.class));
+        return new GroupScan_Default(groupTable,
+                                     reverse,
+                                     limit,
+                                     ConstantValueBindable.ofNull(IndexKeyRange.class));
     }
 
     public static PhysicalOperator indexLookup_Default(PhysicalOperator inputOperator,
@@ -80,7 +94,9 @@ public class API
         return indexScan_Default(index, false, ConstantValueBindable.ofNull(IndexKeyRange.class));
     }
 
-    public static PhysicalOperator indexScan_Default(Index index, boolean reverse, Bindable<IndexKeyRange> indexKeyRangeBindable)
+    public static PhysicalOperator indexScan_Default(Index index,
+                                                     boolean reverse,
+                                                     Bindable<IndexKeyRange> indexKeyRangeBindable)
     {
         return new IndexScan_Default(index, reverse, indexKeyRangeBindable);
     }

@@ -26,7 +26,7 @@ class GroupScan_Default extends PhysicalOperator
 
     @Override
     public Cursor cursor(StoreAdapter adapter, Bindings bindings) {
-        Cursor cursor = new Execution(adapter, hKeyBindable.bindTo(bindings), indexKeyRangeBindable.bindTo(bindings));
+        Cursor cursor = new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
         assert cursor.cursorAbilitiesInclude(CursorAbility.MODIFY) : "cursor must be modifiable";
         return cursor;
     }
@@ -44,13 +44,14 @@ class GroupScan_Default extends PhysicalOperator
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(GroupTable groupTable, boolean reverse, Limit limit,
-                             Bindable<HKey> hKeyBindable, Bindable<IndexKeyRange> indexKeyRangeBindable)
+    public GroupScan_Default(GroupTable groupTable,
+                             boolean reverse,
+                             Limit limit,
+                             Bindable<IndexKeyRange> indexKeyRangeBindable)
     {
         this.groupTable = groupTable;
         this.reverse = reverse;
         this.limit = limit;
-        this.hKeyBindable = hKeyBindable;
         this.indexKeyRangeBindable = indexKeyRangeBindable;
     }
 
@@ -59,7 +60,6 @@ class GroupScan_Default extends PhysicalOperator
     private final GroupTable groupTable;
     private final boolean reverse;
     private final Limit limit;
-    private final Bindable<HKey> hKeyBindable;
     private final Bindable<IndexKeyRange> indexKeyRangeBindable;
 
     // Inner classes
@@ -134,9 +134,9 @@ class GroupScan_Default extends PhysicalOperator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, HKey hKey, IndexKeyRange indexKeyRange)
+        Execution(StoreAdapter adapter, IndexKeyRange indexKeyRange)
         {
-            this.cursor = adapter.newGroupCursor(groupTable, reverse, hKey, indexKeyRange);
+            this.cursor = adapter.newGroupCursor(groupTable, reverse, indexKeyRange);
         }
 
         // Object state
