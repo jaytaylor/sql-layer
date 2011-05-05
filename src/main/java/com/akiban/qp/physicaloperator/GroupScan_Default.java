@@ -102,12 +102,14 @@ class GroupScan_Default extends PhysicalOperator
 
         @Override
         public void removeCurrentRow() {
+            checkHasRow();
             cursor.removeCurrentRow();
             outputRow(null);
         }
 
         @Override
         public void updateCurrentRow(Row newRow) {
+            checkHasRow();
             cursor.updateCurrentRow(newRow);
             outputRow(newRow);
         }
@@ -115,6 +117,19 @@ class GroupScan_Default extends PhysicalOperator
         @Override
         public ModifiableCursorBackingStore backingStore() {
             return super.backingStore();
+        }
+
+        @Override
+        public boolean cursorAbilitiesInclude(CursorAbility ability) {
+            return cursor.cursorAbilitiesInclude(ability);
+        }
+
+        // private
+
+        private void checkHasRow() {
+            if (!hasCachedRow()) {
+                throw new IllegalStateException("no cached row available");
+            }
         }
 
         // Execution interface

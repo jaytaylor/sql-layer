@@ -25,7 +25,7 @@ abstract class SingleRowCachingCursor extends CursorStub
     @Override
     public String toString()
     {
-        return row == null ? null : row.toString();
+        return row.get() == null ? "null" : row.get().toString();
     }
 
     // Cursor interface
@@ -51,6 +51,10 @@ abstract class SingleRowCachingCursor extends CursorStub
     protected void outputRow(Row newRow)
     {
         row.set(newRow == null ? null : newRow);
+    }
+
+    protected boolean hasCachedRow() {
+        return row.isNotNull();
     }
 
     // Object state
