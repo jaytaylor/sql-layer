@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import org.junit.After;
@@ -160,5 +161,33 @@ public class TableSubsetWriterTest {
         catch(IllegalStateException e) {
             // Expected
         }
+    }
+
+    @Test
+    public void singleGroupCheckColumns() throws Exception {
+        AkibanInformationSchema dstAIS = new AkibanInformationSchema();
+        new TableSubsetWriter(new AISTarget(dstAIS)) {
+            @Override
+            public boolean shouldSaveTable(Table table) {
+                return table.getGroup().getName().equals("c");
+            }
+        }.save(srcAIS);
+
+        dstAIS.checkIntegrity();
+        Table cTable = dstAIS.getUserTable("t", "c");
+        assertNotNull("t.c exists", cTable);
+        for(Column c : cTable.getColumns()) {
+            assertNotNull(c.getName() + " has group column", c.getGroupColumn());
+        }
+        Table oTable = dstAIS.getUserTable("t", "o");
+        assertNotNull("t.o exists", oTable);
+        for(Column c : oTable.getColumns()) {
+            assertNotNull(c.getName() + " has group column", c.getGroupColumn());
+        }
+        Table groupTable = dstAIS.getGroupTable("t", "__akiban_c");
+        for(Column c : groupTable.getColumns()) {
+            assertNotNull(c.getName() + " has user column", c.getUserColumn());
+        }
+        assertNotNull("t.__akiban_c exists", groupTable);
     }
 }

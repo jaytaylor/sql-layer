@@ -90,7 +90,20 @@ public class AISTarget extends Target
             Table.create(ais, map);
         }
         else if(typename == column) {
-            Column.create(ais, map);
+            Column userColumn = Column.create(ais, map);
+            // Hook the userColumn/groupColumn back up
+            Table userTable = userColumn.getTable();
+            String groupSchemaName = (String)map.get(column_groupSchemaName);
+            if (userTable.isUserTable() && groupSchemaName != null) {
+                String groupTableName = (String)map.get(column_groupTableName);
+                String groupColumnName = (String)map.get(column_groupColumnName);
+                Table groupTable = ais.getGroupTable(groupSchemaName, groupTableName);
+                if (groupTable != null) {
+                    Column groupColumn = groupTable.getColumn(groupColumnName);
+                    userColumn.setGroupColumn(groupColumn);
+                    groupColumn.setUserColumn(userColumn);
+                }
+            }
         }
         else if(typename == join) {
             Join.create(ais, map);
