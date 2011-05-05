@@ -16,7 +16,6 @@
 package com.akiban.server.store;
 
 import static com.akiban.ais.ddl.SchemaDef.CREATE_TABLE;
-import static com.akiban.server.service.tree.TreeService.AIS_BASE_TABLE_ID;
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 import static com.akiban.server.service.tree.TreeService.STATUS_TREE_NAME;
 import static com.akiban.server.store.PersistitStore.MAX_TRANSACTION_RETRY_COUNT;
@@ -43,7 +42,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Type;
 import com.akiban.server.encoding.EncoderFactory;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -214,7 +212,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
                         tableId = ex.getKey().indexTo(1).decodeInt() + 1;
                     } else {
-                        tableId = 1;
+                        // No tables from user yet, only AIS ones exist
+                        int maxId = 1;
+                        for (TableDefinition def : aisSchema) {
+                            maxId = Math.max(maxId, def.getTableId());
+                        }
+                        tableId = maxId + 1;
                     }
                     ex.getValue().putNull();
                     ex.clear().append(BY_ID).append(tableId).store();
@@ -624,7 +627,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static List<TableDefinition> readAisSchema() {
         List<TableDefinition> definitions = new ArrayList<TableDefinition>();
-        int tableId = AIS_BASE_TABLE_ID;
+        int tableId = 1;
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader().getResourceAsStream(
                         AIS_DDL_NAME)));
