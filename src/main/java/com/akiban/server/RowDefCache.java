@@ -371,9 +371,11 @@ public class RowDefCache {
         final Integer key = rowDef.getRowDefId();
         final String name = nameOf(rowDef.getSchemaName(),
                 rowDef.getTableName());
-        if (cacheMap.containsKey(key) || nameMap.containsKey(name)) {
-            throw new IllegalStateException("RowDef " + rowDef
-                    + " already exists");
+        if (cacheMap.containsKey(key)) {
+            throw new IllegalStateException("Duplicate RowDefID (" + key + ") for RowDef: " + rowDef);
+        }
+        if (nameMap.containsKey(name)) {
+            throw new IllegalStateException("Duplicate name (" + name + ") for RowDef: " + rowDef);
         }
         cacheMap.put(key, rowDef);
         nameMap.put(name, key);
