@@ -30,7 +30,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeServiceImpl;
-import com.akiban.server.store.PersistitStore;
+import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -94,7 +94,7 @@ public class DefaultServiceFactory implements ServiceFactory {
     @Override
     public Service<Store> storeService() {
         if (storeService == null) {
-            storeService = new PersistitStore();
+            storeService = new OperatorStore();
         }
         return storeService;
     }
