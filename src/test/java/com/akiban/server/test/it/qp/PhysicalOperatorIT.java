@@ -19,7 +19,6 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.ModifiablePersistitGroupCursor;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
