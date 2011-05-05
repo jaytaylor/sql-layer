@@ -155,42 +155,35 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final boolean useOldId) throws Exception {
         final TreeService treeService = serviceManager.getTreeService();
         String canonical = SchemaDef.canonicalStatement(statement);
-        SchemaDef.UserTableDef tableDef = parseTableStatement(
-                defaultSchemaName, canonical);
+        SchemaDef.UserTableDef tableDef = parseTableStatement(defaultSchemaName, canonical);
         if (tableDef.isLikeTableDef() == true) {
             final SchemaDef.CName srcName = tableDef.getLikeCName();
-            final String srcSchema = srcName.getSchema() != null ? srcName
-                    .getSchema() : defaultSchemaName;
-            final Table table = getAis(session).getTable(srcSchema,
-                    srcName.getName());
+            assert srcName.getSchema() != null : canonical;
+            final Table table = getAis(session).getTable(srcName.getSchema(), srcName.getName());
             if (table == null) {
                 throw new InvalidOperationException(ErrorCode.NO_SUCH_TABLE,
                         String.format("Unknown source table [%s] %s",
-                                srcSchema, srcName.getName()));
+                                srcName.getSchema(), srcName.getName()));
             }
             final SchemaDef.CName dstName = tableDef.getCName();
-            final String dstSchema = dstName.getSchema() != null ? dstName
-                    .getSchema() : defaultSchemaName;
-            DDLGenerator gen = new DDLGenerator(dstSchema, dstName.getName());
+            assert dstName.getSchema() != null : canonical;
+            DDLGenerator gen = new DDLGenerator(dstName.getSchema(), dstName.getName());
             canonical = gen.createTable(table);
             tableDef = parseTableStatement(defaultSchemaName, canonical);
         }
-        String schemaName = tableDef.getCName().getSchema();
-        if (schemaName == null) {
-            schemaName = defaultSchemaName;
+        if (tableDef.getCName().getSchemaWasDerived()) {
             final String withoutCreate = canonical.substring(CREATE_TABLE.length());
-            canonical = String.format("%s`%s`.%s", CREATE_TABLE, schemaName, withoutCreate);
+            canonical = String.format("%s`%s`.%s", CREATE_TABLE, defaultSchemaName, withoutCreate);
         }
+        final String schemaName = tableDef.getCName().getSchema();
         final String tableName = tableDef.getCName().getName();
+        validateTableDefinition(tableDef);
 
-        validateTableDefinition(session, schemaName, tableDef);
-
-        // Some code below this point allows for the name to be non-unique in
-        // support of multi-generation tables. Reject here as it isn't yet
-        // complete.
-        final TableName tableNameFull = TableName.create(schemaName, tableName);
-        final Table curTable = getAis(session).getTable(tableNameFull);
-        if (curTable != null && !useOldId) {
+        final Table curTable = getAis(session).getTable(schemaName, tableName);
+        if (useOldId && curTable == null) {
+            throw new IllegalArgumentException("useOldId=true and table does not exist");
+        }
+        if (!useOldId && curTable != null) {
             throw new InvalidOperationException(ErrorCode.DUPLICATE_TABLE,
                     String.format("Table `%s`.`%s` already exists", schemaName,
                             tableName));
@@ -206,7 +199,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             try {
                 final int tableId;
                 if(useOldId) {
-                    tableId = getAis(session).getTable(tableNameFull).getTableId();
+                    tableId = curTable.getTableId();
                 }
                 else {
                     if (ex.clear().append(BY_ID).append(Key.AFTER).previous()) {
@@ -224,13 +217,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }
 
                 ex.clear().append(BY_NAME).append(schemaName).append(tableName);
-                assert ex.hasChildren() == useOldId : tableNameFull;
                 ex.append(tableId);
                 ex.getValue().put(canonical);
                 ex.store();
 
                 final AkibanInformationSchema newAIS = constructAIS(session);
-                final UserTable newTable = newAIS.getUserTable(tableNameFull);
+                final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
                 validateIndexSizes(newTable);
 
                 transaction.commit(new DefaultCommitListener() {
@@ -241,7 +233,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
 
                 }, forceToDisk);
-                return tableNameFull;
+                
+                return new TableName(schemaName, tableName);
             } catch (RollbackException e) {
                 if (--retries < 0) {
                     throw new TransactionFailedException();
@@ -732,7 +725,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final String defaultSchemaName, final String canonical)
             throws InvalidOperationException {
         try {
-            return new SchemaDef().parseCreateTable(canonical);
+            SchemaDef def = new SchemaDef();
+            def.setMasterSchemaName(defaultSchemaName);
+            return def.parseCreateTable(canonical);
         } catch (Exception e1) {
             throw new InvalidOperationException(ErrorCode.PARSE_EXCEPTION,
                     String.format("[%s] %s: %s", defaultSchemaName,
@@ -749,9 +744,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 schema, table, index, type, column);
     }
 
-    private void validateTableDefinition(final Session session,
-            final String schemaName, final SchemaDef.UserTableDef tableDef)
+    private void validateTableDefinition(final SchemaDef.UserTableDef tableDef)
             throws Exception {
+        final String schemaName = tableDef.getCName().getSchema();
         final String tableName = tableDef.getCName().getName();
         if (AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
             throw new InvalidOperationException(ErrorCode.PROTECTED_TABLE,
