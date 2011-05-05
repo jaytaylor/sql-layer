@@ -58,4 +58,9 @@ public abstract class ChainedCursor implements Cursor {
     public ModifiableCursorBackingStore backingStore() {
         return input.backingStore();
     }
+
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return input.cursorAbilitiesInclude(ability);
+    }
 }

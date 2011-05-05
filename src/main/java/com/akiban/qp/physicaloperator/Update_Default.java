@@ -16,6 +16,7 @@
 package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.util.ArgumentValidation;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +24,11 @@ import java.util.List;
 public final class Update_Default extends PhysicalOperator {
 
     public Update_Default(PhysicalOperator inputOperator, Bindable<UpdateLambda> updateLambdaBindable) {
+        ArgumentValidation.notNull("update lambda", updateLambdaBindable);
+        if (!inputOperator.cursorAbilitiesInclude(CursorAbility.MODIFY)) {
+            throw new IllegalArgumentException("input operator must be modifiable: " + inputOperator.getClass());
+        }
+        
         this.inputOperator = inputOperator;
         this.updateLambdaBindable = updateLambdaBindable;
     }

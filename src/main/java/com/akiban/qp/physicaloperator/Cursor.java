@@ -64,4 +64,11 @@ public interface Cursor
      * @return the cursor's backing store
      */
     ModifiableCursorBackingStore backingStore();
+
+    /**
+     * Specifies whether this cursor can support a given ability.
+     * @param ability the ability to check for
+     * @return whether the ability is supported
+     */
+    boolean cursorAbilitiesInclude(CursorAbility ability);
 }

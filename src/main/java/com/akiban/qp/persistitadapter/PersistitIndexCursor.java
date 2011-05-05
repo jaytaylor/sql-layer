@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.qp.physicaloperator.CursorAbility;
 import com.akiban.qp.physicaloperator.CursorStub;
 import com.akiban.qp.physicaloperator.StoreAdapterRuntimeException;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -78,6 +79,11 @@ class PersistitIndexCursor extends CursorStub
     public Row currentRow()
     {
         return row.get();
+    }
+
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return false;
     }
 
     // For use by this package

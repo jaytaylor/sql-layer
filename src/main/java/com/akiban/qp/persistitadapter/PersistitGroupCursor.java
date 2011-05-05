@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.physicaloperator.CursorAbility;
 import com.akiban.qp.physicaloperator.CursorStub;
 import com.akiban.qp.physicaloperator.GroupCursor;
 import com.akiban.qp.row.HKey;
@@ -109,6 +110,11 @@ class PersistitGroupCursor extends CursorStub implements GroupCursor
     public Row currentRow()
     {
         return row.get();
+    }
+
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return false;
     }
 
     // For use by this package

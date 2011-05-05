@@ -36,6 +36,11 @@ abstract class SingleRowCachingCursor extends CursorStub
         return row.get();
     }
 
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return false;
+    }
+
     // SingleRowCachingCursor interface
 
     protected Row outputRow()

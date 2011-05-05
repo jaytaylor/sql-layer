@@ -35,6 +35,10 @@ class GroupScan_Default extends PhysicalOperator
         return String.format("%s(%s limit %s)", getClass().getSimpleName(), groupTable, limit);
     }
 
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return CursorAbility.MODIFY.equals(ability) || super.cursorAbilitiesInclude(ability);
+    }
 
     // GroupScan_Default interface
 
