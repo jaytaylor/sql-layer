@@ -22,6 +22,11 @@ import com.akiban.server.RowData;
  * instead, they should grab the singleton reference {@link ScanLimit#NONE}
  */
 final class NoScanLimit implements ScanLimit {
+    @Override
+    public String toString()
+    {
+        return "none";
+    }
 
     @Override
     public boolean limitReached(RowData previousRow) {

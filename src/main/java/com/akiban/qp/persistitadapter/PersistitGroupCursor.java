@@ -33,9 +33,9 @@ import org.slf4j.LoggerFactory;
 
 /*
  * A PersistitGroupCursor can be used in three ways:
- * 1) Scan the entire group: This occurs when neither overloading of bind is involed before open()
- * 2) For a given hkey, find the row and its descendents: This occurs when bind(HKey) is called.
- * 3) As an hkey-equivalent index: This occurs when bind(IndexKeyRange) is called. The index restriction is
+ * 1) Scan the entire group: This occurs when there is no binding before open().
+ * 2) For a given hkey, find the row and its descendents: This occurs when rebind(HKey) is called.
+ * 3) As an hkey-equivalent index: This occurs when IndexKeyRange is provided via constructor. The index restriction is
  *    on columns of the hkey. Find the qualifying rows and all descendents.
  */
 
@@ -136,8 +136,6 @@ class PersistitGroupCursor implements GroupCursor
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupCursor.class);
-    // Used by HKeyRangeAndDescendentsScan.
-    // Should be zero, but Exchange.traverse doesn't update the key if we ask for 0 value bytes.
     private static final int VALUE_BYTES = Integer.MAX_VALUE;
 
     // Object state
@@ -156,18 +154,21 @@ class PersistitGroupCursor implements GroupCursor
      *    identify descendents, as in (2).
      *
      *  General:
-     *  - exchange == null iff this cursor is open
+     *  - exchange == null iff this cursor is closed
      */
 
-    Exchange exchange() {
+    Exchange exchange()
+    {
         return exchange;
     }
 
-    RowHolder<PersistitGroupRow> currentHeldRow() {
+    RowHolder<PersistitGroupRow> currentHeldRow()
+    {
         return row;
     }
 
-    PersistitAdapter adapter() {
+    PersistitAdapter adapter()
+    {
         return adapter;
     }
 

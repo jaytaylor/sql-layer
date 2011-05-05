@@ -35,6 +35,8 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
@@ -241,6 +243,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!cutTypes.isEmpty()) {
             rootOperator = cut_Default(schema, rootOperator, cutTypes);
         }
+        LOG.info("Execution plan:\n{}", rootOperator.describePlan());
         // Executable stuff
         cursor = emptyBindings(adapter, rootOperator);
         cursor.open();
@@ -320,6 +323,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     // Class state
 
     private static final AtomicLong idCounter = new AtomicLong(0);
+    private static final Logger LOG = LoggerFactory.getLogger(OperatorBasedRowCollector.class);
 
     // Object state
 

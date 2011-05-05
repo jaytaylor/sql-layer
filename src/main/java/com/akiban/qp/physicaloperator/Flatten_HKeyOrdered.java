@@ -26,29 +26,10 @@ import java.util.List;
 
 class Flatten_HKeyOrdered extends PhysicalOperator
 {
-    // PhysicalOperator interface
+    // Object interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
-    {
-        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
-    }
-
-    public FlattenedRowType rowType()
-    {
-        return flattenType;
-    }
-
-    @Override
-    public List<PhysicalOperator> getInputOperators() 
-    {
-        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
-        result.add(inputOperator);
-        return result;
-    }
-
-    @Override
-    public String toString() 
+    public String toString()
     {
         StringBuilder buffer = new StringBuilder(getClass().getSimpleName());
         buffer.append("(");
@@ -71,6 +52,33 @@ class Flatten_HKeyOrdered extends PhysicalOperator
         }
         buffer.append(")");
         return buffer.toString();
+    }
+
+    // PhysicalOperator interface
+
+    @Override
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
+    {
+        return new Execution(adapter, inputOperator.cursor(adapter, bindings));
+    }
+
+    public FlattenedRowType rowType()
+    {
+        return flattenType;
+    }
+
+    @Override
+    public List<PhysicalOperator> getInputOperators() 
+    {
+        List<PhysicalOperator> result = new ArrayList<PhysicalOperator>(1);
+        result.add(inputOperator);
+        return result;
+    }
+
+    @Override
+    public String describePlan()
+    {
+        return describePlan(inputOperator);
     }
 
     // Flatten_HKeyOrdered interface

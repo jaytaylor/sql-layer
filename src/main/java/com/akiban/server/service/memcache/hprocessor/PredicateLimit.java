@@ -31,6 +31,12 @@ public final class PredicateLimit implements ScanLimit {
     }
 
     @Override
+    public String toString()
+    {
+        return Integer.toString(limit);
+    }
+
+    @Override
     public boolean limitReached(RowData candidateRow) {
         if (candidateRow != null && candidateRow.getRowDefId() == rowDefId) {
             ++count;

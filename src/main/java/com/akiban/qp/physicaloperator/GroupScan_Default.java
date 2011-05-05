@@ -22,19 +22,34 @@ import com.akiban.qp.row.Row;
 
 class GroupScan_Default extends PhysicalOperator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(getClass().getSimpleName());
+        buffer.append('(');
+        buffer.append(groupTable.getName().getTableName());
+        if (indexKeyRangeBindable != null) {
+            buffer.append(" range");
+        }
+        if (reverse) {
+            buffer.append(" reverse");
+        }
+        buffer.append(' ');
+        buffer.append(limit);
+        buffer.append(')');
+        return buffer.toString();
+    }
+
     // PhysicalOperator interface
 
     @Override
-    public Cursor cursor(StoreAdapter adapter, Bindings bindings) {
+    public Cursor cursor(StoreAdapter adapter, Bindings bindings)
+    {
         return new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
     }
-
-    @Override
-    public String toString() 
-    {
-        return String.format("%s(%s limit %s)", getClass().getSimpleName(), groupTable, limit);
-    }
-
 
     // GroupScan_Default interface
 

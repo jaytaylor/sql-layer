@@ -25,6 +25,14 @@ import java.util.List;
 
 class Select_HKeyOrdered extends PhysicalOperator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, predicate);
+    }
+
     // PhysicalOperator interface
 
     @Override
@@ -42,9 +50,9 @@ class Select_HKeyOrdered extends PhysicalOperator
     }
 
     @Override
-    public String toString() 
+    public String describePlan()
     {
-        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, predicate);
+        return describePlan(inputOperator);
     }
 
     // GroupScan_Default interface

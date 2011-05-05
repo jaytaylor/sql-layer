@@ -22,18 +22,20 @@ import org.slf4j.LoggerFactory;
 
 class IndexScan_Default extends PhysicalOperator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s(%s)", getClass().getSimpleName(), index);
+    }
+
     // PhysicalOperator interface
 
     @Override
     public Cursor cursor(StoreAdapter adapter, Bindings bindings)
     {
         return new Execution(adapter, indexKeyRangeBindable.bindTo(bindings));
-    }
-
-    @Override
-    public String toString() 
-    {
-        return String.format("%s(%s)", getClass().getSimpleName(), index);
     }
 
     // IndexScan_Default interface
