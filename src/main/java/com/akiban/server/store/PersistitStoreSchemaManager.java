@@ -81,6 +81,8 @@ import com.persistit.exception.TransactionFailedException;
 public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         SchemaManager, AfterStart {
 
+    final static int AIS_BASE_TABLE_ID = 1000000000;
+    
     static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
 
     static final String BY_ID = "byId";
@@ -620,7 +622,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static List<TableDefinition> readAisSchema() {
         List<TableDefinition> definitions = new ArrayList<TableDefinition>();
-        int tableId = 1;
+        int tableId = AIS_BASE_TABLE_ID;
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader().getResourceAsStream(
                         AIS_DDL_NAME)));
