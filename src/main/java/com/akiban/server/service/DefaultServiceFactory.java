@@ -30,6 +30,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeServiceImpl;
+import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
@@ -94,7 +95,10 @@ public class DefaultServiceFactory implements ServiceFactory {
     @Override
     public Service<Store> storeService() {
         if (storeService == null) {
-            storeService = new PersistitStore();
+            // TODO once the operator store is fully tested, we should remove this switch and always use it
+            ConfigurationService config = configurationService().cast();
+            String useOperatorStore = config.getProperty("akserver.debug.useOperatorStore", "false");
+            storeService = Boolean.valueOf(useOperatorStore) ? new OperatorStore() : new PersistitStore();
         }
         return storeService;
     }

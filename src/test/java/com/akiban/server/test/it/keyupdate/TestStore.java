@@ -21,6 +21,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 import com.akiban.server.store.TreeRecordVisitor;
 
 import java.util.Map;
@@ -36,21 +37,21 @@ public class TestStore
     public void writeRow(Session session, TestRow row)
         throws Exception
     {
-        delegate.writeRow(session, row.toRowData());
+        mainDelegate.writeRow(session, row.toRowData());
         map.put(row.hKey(), row);
     }
 
     public void deleteRow(Session session, TestRow row)
         throws Exception
     {
-        delegate.deleteRow(session, row.toRowData());
+        mainDelegate.deleteRow(session, row.toRowData());
         map.remove(row.hKey());
     }
 
     public void updateRow(Session session, TestRow oldRow, TestRow newRow, ColumnSelector columnSelector)
         throws Exception
     {
-        delegate.updateRow(session,
+        mainDelegate.updateRow(session,
                            oldRow.toRowData(),
                            newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
                            columnSelector);
@@ -62,7 +63,7 @@ public class TestStore
     public void traverse(Session session, RowDef rowDef, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
         throws Exception
     {
-        delegate.traverse(session, rowDef, realVisitor);
+        persistitStore.traverse(session, rowDef, realVisitor);
         for (Map.Entry<HKey, TestRow> entry : map.entrySet()) {
             testVisitor.visit(entry.getKey().objectArray(), entry.getValue());
         }
@@ -71,7 +72,7 @@ public class TestStore
     public void traverse(Session session, IndexDef indexDef, IndexRecordVisitor visitor)
         throws Exception
     {
-        delegate.traverse(session, indexDef, visitor);
+        persistitStore.traverse(session, indexDef, visitor);
     }
 
     // TestStore interface
@@ -81,9 +82,10 @@ public class TestStore
         return map.get(hKey);
     }
 
-    public TestStore(PersistitStore delegate)
+    public TestStore(Store mainDelegate, PersistitStore persistitStore)
     {
-        this.delegate = delegate;
+        this.mainDelegate = mainDelegate;
+        this.persistitStore = persistitStore;
     }
 
     public void writeTestRow(TestRow row)
@@ -119,5 +121,6 @@ public class TestStore
     // Object state
 
     private final SortedMap<HKey, TestRow> map = new TreeMap<HKey, TestRow>();
-    private final PersistitStore delegate;
+    private final Store mainDelegate;
+    private final PersistitStore persistitStore;
 }

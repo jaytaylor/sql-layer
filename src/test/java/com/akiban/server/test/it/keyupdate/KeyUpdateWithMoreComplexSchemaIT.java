@@ -33,7 +33,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     @Before
     public void before() throws Exception
     {
-        testStore = new TestStore(persistitStore());
+        testStore = new TestStore(store(), persistitStore());
         createSchema();
         populateTables();
     }

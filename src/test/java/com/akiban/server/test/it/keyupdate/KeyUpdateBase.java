@@ -59,7 +59,7 @@ public abstract class KeyUpdateBase extends ITBase {
     @Before
     public final void before() throws Exception
     {
-        testStore = new TestStore(persistitStore());
+        testStore = new TestStore(store(), persistitStore());
         rowDefsToCounts = new TreeMap<Integer, Integer>();
         createSchema();
         confirmColumns();

@@ -19,6 +19,7 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.Expression;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
@@ -38,6 +39,7 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
@@ -95,7 +97,10 @@ public class PhysicalOperatorIT extends ITBase
                           createNewRow(item, 221L, 22L),
                           createNewRow(item, 222L, 22L)};
         writeRows(db);
-        adapter = new PersistitAdapter(schema, (PersistitStore) store(), session());
+        Store plainStore = store();
+        OperatorStore operatorStore = (OperatorStore) plainStore;
+        PersistitStore persistitStore = operatorStore.getPersistitStore();
+        adapter = new PersistitAdapter(schema, persistitStore, session());
     }
 
     @Test
