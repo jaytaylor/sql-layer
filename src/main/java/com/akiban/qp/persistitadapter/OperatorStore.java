@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -45,6 +46,8 @@ import com.akiban.server.store.PersistitStore;
 import com.persistit.Persistit;
 
 import static com.akiban.qp.physicaloperator.API.emptyBindings;
+import static com.akiban.qp.physicaloperator.API.indexLookup_Default;
+import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
 public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
@@ -77,17 +80,18 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
         GroupTable groupTable = userTable.getGroup().getGroupTable();
-
-        final PhysicalOperator scanOp;
         IndexBound bound = new IndexBound(userTable, oldRow, new ConstantColumnSelector(true));
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
-        scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
-//        GroupCursor scanCursor = adapter.newGroupCursor(groupTable);
-//        HKey hkey = new PersistitHKey(adapter, userTable.hKey());
-//        scanCursor.rebind(hkey);
-//        scanOp = new WrappingPhysicalOperator(scanCursor);
-        // TODO -- if it's not a root table, I should actually be doing an index lookup on the user table
-        // if the user table doesn't have any unique indexes, what then?
+
+        final PhysicalOperator scanOp;
+        if (userTable == groupTable.getRoot()) {
+            scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
+        }
+        else {
+            Index index = getBestIndex(userTable);
+            PhysicalOperator indexScan = indexScan_Default(index, false, ConstantValueBindable.of(range));
+            scanOp = indexLookup_Default(indexScan, groupTable);
+        }
 
         Update_Default updateOp = new Update_Default(scanOp, ConstantValueBindable.of(updateLambda));
 
@@ -100,6 +104,14 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         } finally {
             updateCursor.close();
         }
+    }
+
+    private static Index getBestIndex(UserTable userTable) {
+        Index pk = userTable.getIndex("PRIMARY");
+        if (pk != null) {
+            return pk;
+        }
+        throw new UnsupportedOperationException();
     }
 
     private static class InternalUpdateLambda implements UpdateLambda {
