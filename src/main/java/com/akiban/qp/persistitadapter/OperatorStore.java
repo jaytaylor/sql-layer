@@ -50,18 +50,6 @@ import static com.akiban.qp.physicaloperator.API.indexScan_Default;
 
 public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
-    // DelegatingStore interface
-
-    public OperatorStore() {
-        super(new PersistitStore());
-    }
-
-    // OperatorStore interface
-
-    public PersistitStore getPersistitStore() {
-        return super.getDelegate();
-    }
-
     // Store interface
 
     @Override
@@ -70,8 +58,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
     {
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
-        Schema schema = new Schema(ais);
-        PersistitAdapter adapter = new PersistitAdapter(schema, persistitStore, session);
+        PersistitAdapter adapter = new PersistitAdapter(schema(ais), persistitStore, session);
 
         PersistitGroupRow oldRow = PersistitGroupRow.newPersistitGroupRow(adapter, oldRowData);
         RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
@@ -87,7 +74,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
             scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
         }
         else {
-            Index index = getBestIndex(userTable);
+            Index index = userTable.getIndex("PRIMARY");
             PhysicalOperator indexScan = indexScan_Default(index, false, ConstantValueBindable.of(range));
             scanOp = indexLookup_Default(indexScan, groupTable);
         }
@@ -115,13 +102,35 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private static Index getBestIndex(UserTable userTable) {
-        Index pk = userTable.getIndex("PRIMARY");
-        if (pk != null) {
-            return pk;
-        }
-        throw new UnsupportedOperationException();
+    // OperatorStore interface
+
+    public OperatorStore() {
+        super(new PersistitStore());
     }
+
+    public PersistitStore getPersistitStore() {
+        return super.getDelegate();
+    }
+
+    // private methods
+
+    private Schema schema(AkibanInformationSchema forAIS) {
+        synchronized (LOCK) {
+            if (lastKnownAIS != forAIS) {
+                schema = new Schema(forAIS);
+                lastKnownAIS = forAIS;
+            }
+            return schema;
+        }
+    }
+
+    // Object state
+
+    private final Object LOCK = new Object();
+    private AkibanInformationSchema lastKnownAIS;
+    private Schema schema;
+
+    // inner classes
 
     private static class InternalUpdateLambda implements UpdateLambda {
         private final PersistitAdapter adapter;
@@ -138,8 +147,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
 
         @Override
         public boolean rowIsApplicable(Row row) {
-            return (row instanceof PersistitGroupRow)
-                    && ((PersistitGroupRow)row).rowDef().getRowDefId() == rowDef.getRowDefId();
+            return row.rowType().typeId() == rowDef.getRowDefId();
         }
 
         @Override
