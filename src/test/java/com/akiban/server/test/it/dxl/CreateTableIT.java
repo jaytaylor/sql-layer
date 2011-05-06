@@ -26,8 +26,11 @@ import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 import com.akiban.server.api.ddl.DuplicateTableNameException;
 import com.akiban.server.api.ddl.JoinToMultipleParentsException;
+import com.akiban.server.api.ddl.JoinToUnknownTableException;
 import com.akiban.server.api.ddl.JoinToWrongColumnsException;
 import com.akiban.server.api.ddl.ParseException;
+import com.akiban.server.api.ddl.ProtectedTableDDLException;
+import com.akiban.server.api.ddl.UnsupportedCharsetException;
 import com.akiban.server.api.ddl.UnsupportedDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexDataTypeException;
 import com.akiban.server.api.ddl.UnsupportedIndexSizeException;
@@ -401,6 +404,60 @@ public final class CreateTableIT extends ITBase {
         createExpectException(UnsupportedIndexSizeException.class, "test", "t3", "v varchar(2050), index(v(128))");
     }
 
+    @Test
+    public void ddlWithNoEngineIsAkiban() throws InvalidOperationException {
+        ddl().createTable(session(), "test", "create table zebra(id int key);");
+        final Table table = getUserTable("test", "zebra");
+        assertNotNull("test.zebra exists", table);
+        assertEquals("akibandb", table.getEngine());
+    }
+
+    @Test
+    public void columnsWithUTF8Charset() throws InvalidOperationException {
+        final int tid = createTable("test", "t1",
+                                    "id int key, c1 varchar(85) character set UTF8, c2 varchar(86) character set utf8");
+        final Table t1 = getUserTable(tid);
+        final Column c1Col = t1.getColumn("c1");
+        assertEquals("UTF8", c1Col.getCharsetAndCollation().charset());
+        assertEquals(Integer.valueOf(1), c1Col.getPrefixSize());
+        final Column c2Col = t1.getColumn("c2");
+        assertEquals("utf8", c2Col.getCharsetAndCollation().charset());
+        assertEquals(Integer.valueOf(2), c2Col.getPrefixSize());
+    }
+
+    @Test(expected=JoinToUnknownTableException.class)
+    public void cannotJoinToSelf() throws InvalidOperationException {
+        createTable("test", "one",
+                    "id int key, self_id int, CONSTRAINT __akiban FOREIGN KEY(self_id) REFERENCES one(id))");
+    }
+
+    @Test(expected=UnsupportedCharsetException.class)
+    public void unknownTableCharset() throws InvalidOperationException {
+        ddl().createTable(session(), "test", "create table t(id int key) engine=akibandb default charset=banana;");
+    }
+
+    @Test(expected=UnsupportedCharsetException.class)
+    public void unknownColumnCharset() throws InvalidOperationException {
+        ddl().createTable(session(), "test", "create table t(name varchar(32) charset utf42) engine=akibandb");
+    }
+
+    @Test(expected=ProtectedTableDDLException.class)
+    public void joinToAISTable() throws InvalidOperationException {
+        createTable("test", "t", "id int key, tid int",
+                    "CONSTRAINT __akiban FOREIGN KEY(tid) REFERENCES akiban_information_schema.tables(table_id))");
+    }
+
+    @Test(expected=JoinToWrongColumnsException.class)
+    public void joinToUnknownParentColumn() throws InvalidOperationException {
+        createTable("test", "p", "id int key");
+        createTable("test", "c", "id int key, pid int, CONSTRAINT __akiban FOREIGN KEY(pid) REFERENCES p(wrong))");
+    }
+
+    @Test(expected=JoinToUnknownTableException.class)
+    public void joinToUnknownParentTable() throws InvalidOperationException {
+        createTable("test", "c", "id int key, pid int, CONSTRAINT __akiban FOREIGN KEY(pid) REFERENCES p(id))");
+    }
+        
     private void createExpectException(Class c, String schema, String table, String definition) {
         try {
             createTable(schema, table, definition);

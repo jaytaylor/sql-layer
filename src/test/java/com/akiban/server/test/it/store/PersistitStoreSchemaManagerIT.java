@@ -105,95 +105,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         manager.createTableDefinition(session, schema, ddl, false);
     }
 
-    
-    @Test
-    public void testUtf8Table() throws Exception {
-        createTable(SCHEMA,
-                "create table myvarchartest1(id int key, name varchar(85) character set UTF8) engine=akibandb");
-        createTable(SCHEMA,
-                "create table myvarchartest2(id int key, name varchar(86) character set utf8) engine=akibandb");
-        AkibanInformationSchema ais = manager.getAis(session);
-        Column c1 = ais.getTable(SCHEMA, "myvarchartest1").getColumn("name");
-        Column c2 = ais.getTable(SCHEMA, "myvarchartest2").getColumn("name");
-        assertEquals("UTF8", c1.getCharsetAndCollation().charset());
-        assertEquals("utf8", c2.getCharsetAndCollation().charset());
-
-        assertEquals(Integer.valueOf(1), c1.getPrefixSize());
-        assertEquals(Integer.valueOf(2), c2.getPrefixSize());
-        manager.deleteTableDefinition(session, SCHEMA, "myvarchartest1");
-        manager.deleteTableDefinition(session, SCHEMA, "myvarchartest2");
-    }
-
-    @Test
-    public void testSelfReferencingTable() throws Exception {
-        createTable(ErrorCode.JOIN_TO_UNKNOWN_TABLE, SCHEMA, "create table one (id int, self_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
-    }
-
-    @Test
-    public void noEngineName() throws Exception {
-        createTable(SCHEMA, "create table zebra( id int key)");
-        assertDDLS("create schema if not exists `my_schema`",
-                "create table `my_schema`.zebra( id int key)");
-        manager.deleteTableDefinition(session, SCHEMA, "zebra");
-    }
-
-    @Test
-    public void addChildToNonExistentParent() throws Exception{
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
-
-        assertTables("user tables", "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create schema if not exists `my_schema`",
-                "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-
-        createTable(ErrorCode.JOIN_TO_UNKNOWN_TABLE, SCHEMA, "create table two (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES zebra (id) ) engine=akibandb;");
-
-        assertTables("user tables",
-                "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create schema if not exists `my_schema`",
-                "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-
-        manager.deleteTableDefinition(session, SCHEMA, "one");
-    }
-
-    @Test
-    public void addChildToNonExistentColumns() throws Exception{
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
-
-        assertTables("user tables", "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create schema if not exists `my_schema`",
-                "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-
-        createTable(ErrorCode.JOIN_TO_WRONG_COLUMNS, SCHEMA, "create table two (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (invalid_id) ) engine=akibandb;");
-
-        assertTables("user tables", "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create schema if not exists `my_schema`",
-                "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-
-        manager.deleteTableDefinition(session, SCHEMA, "one");
-    }
-
-    @Test
-    public void addChildToProtectedTable() throws Exception {
-        createTable(ErrorCode.JOIN_TO_PROTECTED_TABLE, SCHEMA, "create table one (id int, one_id int, PRIMARY KEY (id), " +
-                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES akiban_information_schema.tables (table_id) ) engine=akibandb;");
-
-
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertTables("user tables",
-                "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create schema if not exists `my_schema`",
-                "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-        assertTables("user tables",
-                "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
-        assertDDLS("create schema if not exists `my_schema`",
-                "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-
-        manager.deleteTableDefinition(session, SCHEMA, "one");
-    }
-
     @Test
     public void testDeleteOneDefinition() throws Exception {
         createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
@@ -211,16 +122,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         assertTrue("index isn't primary: " + index, index.isPrimaryKey());
 
         manager.deleteTableDefinition(session, SCHEMA, "one");
-    }
-    
-    @Test
-    public void testBug712605() throws Exception {
-        long time = System.currentTimeMillis();
-        // try this for 10 seconds.
-        while (System.currentTimeMillis() - time < 20000) {
-            createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
-            manager.deleteTableDefinition(session, SCHEMA, "one");
-        }
     }
 
     @Test
@@ -370,24 +271,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         
         manager.deleteTableDefinition(session, "drupal_b", "two");
         assertNull(ais.getUserTable("drupal_a", "two"));
-    }
-
-    @Test
-    public void badCharsetIsRejected() throws Exception {
-        // Table level
-        try {
-            createTable(SCHEMA, "create table t(id int key) engine=akibandb default charset=banana;");
-            Assert.fail("Expected InvalidOperationException (unsupported charset)");
-        } catch(InvalidOperationException e) {
-            assertEquals(ErrorCode.UNSUPPORTED_CHARSET, e.getCode());
-        }
-        // Column level
-        try {
-            createTable(SCHEMA, "create table t(name varchar(32) charset utf42) engine=akibandb;");
-            Assert.fail("Expected InvalidOperationException (unsupported charset)");
-        } catch(InvalidOperationException e) {
-            assertEquals(ErrorCode.UNSUPPORTED_CHARSET, e.getCode());
-        }
     }
 
 
