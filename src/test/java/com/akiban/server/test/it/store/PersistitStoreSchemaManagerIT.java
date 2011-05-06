@@ -31,17 +31,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -59,7 +56,6 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
 
     private int base;
     private SchemaManager manager;
-    private Session session;
 
     @Override
     protected Collection<Property> startupConfigProperties() {
@@ -70,90 +66,85 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         properties.add(new Property("akserver.treespace",
                                     "liveops*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+                                            + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
         return properties;
     }
 
     @Before
     public void setUp() throws Exception {
         manager = serviceManager().getSchemaManager();
-        session = session();
-        base = manager.getAis(session).getUserTables().size();
+        base = manager.getAis(session()).getUserTables().size();
         assertTables("user tables");
         assertDDLS();
     }
 
     @After
     public void tearDown() throws Exception {
-        assertEquals("user tables in AIS", base, manager.getAis(session).getUserTables().size());
+        assertEquals("user tables in AIS", base, manager.getAis(session()).getUserTables().size());
         assertTables("user tables");
         assertDDLS();
     }
-
-    private void createTable(ErrorCode expectedCode, String schema, String ddl) throws Exception {
-        ErrorCode actualCode  = null;
-        try {
-            manager.createTableDefinition(session, schema, ddl, false);
-        }
-        catch (InvalidOperationException e) {
-            actualCode = e.getCode();
-        }
-        assertEquals("createTable return value", expectedCode, actualCode);
-    }
     
-    private void createTable(String schema, String ddl) throws Exception {
-        manager.createTableDefinition(session, schema, ddl, false);
+    private void createTableDef(String schema, String ddl) throws Exception {
+        manager.createTableDefinition(session(), schema, ddl, false);
+    }
+
+    private void deleteTableDef(String schema, String table) throws Exception {
+        manager.deleteTableDefinition(session(), schema, table);
+    }
+
+    private AkibanInformationSchema getAIS() {
+        return manager.getAis(session());
     }
 
     @Test
     public void testDeleteOneDefinition() throws Exception {
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        AkibanInformationSchema ais = manager.getAis(session);
+        AkibanInformationSchema ais = getAIS();
         assertEquals("ais size", base + 1, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "one");
         assertEquals("number of index", 1, table.getIndexes().size());
         Index index = table.getIndexes().iterator().next();
         assertTrue("index isn't primary: " + index, index.isPrimaryKey());
 
-        manager.deleteTableDefinition(session, SCHEMA, "one");
+        deleteTableDef(SCHEMA, "one");
     }
 
     @Test
     public void testDeleteDefinitionNonExistentTable() throws Exception {
-        manager.deleteTableDefinition(session, "this_schema_does_not", "exist");
+        deleteTableDef("this_schema_does_not", "exist");
 
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.deleteTableDefinition(session, SCHEMA, "one");
-        assertTrue("table still exists", manager.getTableDefinitions(session, SCHEMA).isEmpty());
+        deleteTableDef(SCHEMA, "one");
+        assertTrue("table still exists", manager.getTableDefinitions(session(), SCHEMA).isEmpty());
 
-        manager.deleteTableDefinition(session, SCHEMA, "one");
-
-        manager.deleteTableDefinition(session, "this_schema_never_existed", "it_really_didnt");
-        manager.deleteTableDefinition(session, "this_schema_never_existed", "it_really_didnt");
+        deleteTableDef(SCHEMA, "one");
+        deleteTableDef("this_schema_never_existed", "it_really_didnt");
+        deleteTableDef("this_schema_never_existed", "it_really_didnt");
     }
 
     @Test
     public void testDeleteDefinitionTwoTablesTwoGroups() throws Exception {
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        createTable(SCHEMA, "create table two (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef(SCHEMA, "create table two (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
                      "create table %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
@@ -161,26 +152,26 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb",
                    "create table `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.deleteTableDefinition(session, SCHEMA, "one");
+        deleteTableDef(SCHEMA, "one");
         assertTables("user tables",
                      "create table %s.two (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.two (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.deleteTableDefinition(session, SCHEMA, "two");
+        deleteTableDef(SCHEMA, "two");
     }
 
     @Test
     public void testDeleteDefinitionTwoTablesOneGroupDeleteChild() throws Exception {
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        createTable(SCHEMA, "create table two (id int, one_id int, PRIMARY KEY (id), " +
-                    "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
+        createTableDef(SCHEMA, "create table two (id int, one_id int, PRIMARY KEY (id), " +
+                "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
                      "create table %s.two (id int, one_id int, PRIMARY KEY (id), " +
@@ -191,26 +182,26 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
                            "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
         // Deleting child should not delete parent
-        manager.deleteTableDefinition(session, SCHEMA, "two");
+        deleteTableDef(SCHEMA, "two");
 
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        manager.deleteTableDefinition(session, SCHEMA, "one");
+        deleteTableDef(SCHEMA, "one");
     }
 
     @Test
     public void testDeleteDefinitionTwoTablesOneGroupDeleteParent() throws Exception {
-        createTable(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef(SCHEMA, "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
 
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `my_schema`",
                    "create table `my_schema`.one (id int, PRIMARY KEY (id)) engine=akibandb");
 
-        createTable(SCHEMA, "create table two (id int, one_id int, PRIMARY KEY (id), " +
+        createTableDef(SCHEMA, "create table two (id int, one_id int, PRIMARY KEY (id), " +
                 "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb;");
         assertTables("user tables",
                      "create table %s.one (id int, PRIMARY KEY (id)) engine=akibandb;",
@@ -221,7 +212,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
                    "create table `my_schema`.two (id int, one_id int, PRIMARY KEY (id), " +
                    "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_a` (`one_id`) REFERENCES one (id) ) engine=akibandb");
 
-        AkibanInformationSchema ais = manager.getAis(session);
+        AkibanInformationSchema ais = getAIS();
         assertEquals("ais size", base + 2, ais.getUserTables().size());
         UserTable table = ais.getUserTable(SCHEMA, "two");
         assertEquals("number of index", 2, table.getIndexes().size());
@@ -232,56 +223,56 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
 
         try {
             // Deleting parent should be rejected
-            manager.deleteTableDefinition(session, SCHEMA, "one");
+            deleteTableDef(SCHEMA, "one");
             assertTrue("exception thrown", false);
         } catch(InvalidOperationException e) {
             // Expected (as try/catch since tearDown requires tables removed)
             assertEquals("error code", ErrorCode.UNSUPPORTED_MODIFICATION, e.getCode());
         }
 
-        manager.deleteTableDefinition(session, SCHEMA, "two");
-        manager.deleteTableDefinition(session, SCHEMA, "one");
+        deleteTableDef(SCHEMA, "two");
+        deleteTableDef(SCHEMA, "one");
     }
 
     @Test
     public void testDeleteDefinitionTwoTablesTwoVolumes() throws Exception {
         AkibanInformationSchema ais;
 
-        createTable("drupal_a", "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef("drupal_a", "create table one (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `drupal_a`",
                    "create table `drupal_a`.one (id int, PRIMARY KEY (id)) engine=akibandb");
-        ais = manager.getAis(session);
+        ais = getAIS();
         assertNotNull(ais.getUserTable("drupal_a", "one"));
 
-        createTable("drupal_b", "create table two (id int, PRIMARY KEY (id)) engine=akibandb;");
+        createTableDef("drupal_b", "create table two (id int, PRIMARY KEY (id)) engine=akibandb;");
         assertDDLS("create schema if not exists `drupal_a`",
                    "create table `drupal_a`.one (id int, PRIMARY KEY (id)) engine=akibandb",
                    "create schema if not exists `drupal_b`",
                    "create table `drupal_b`.two (id int, PRIMARY KEY (id)) engine=akibandb");
-        ais = manager.getAis(session);
+        ais = getAIS();
         assertNotNull(ais.getUserTable("drupal_a", "one"));
         assertNotNull(ais.getUserTable("drupal_b", "two"));
 
-        manager.deleteTableDefinition(session, "drupal_a", "one");
+        deleteTableDef("drupal_a", "one");
         assertDDLS("create schema if not exists `drupal_b`",
                    "create table `drupal_b`.two (id int, PRIMARY KEY (id)) engine=akibandb");
-        ais = manager.getAis(session);
+        ais = getAIS();
         assertNull(ais.getUserTable("drupal_a", "one"));
         assertNotNull(ais.getUserTable("drupal_b", "two"));
         
-        manager.deleteTableDefinition(session, "drupal_b", "two");
+        deleteTableDef("drupal_b", "two");
+        ais = getAIS();
         assertNull(ais.getUserTable("drupal_a", "two"));
     }
 
 
     private void assertTables(String message, String... expecteds) throws Exception {
-        Collection<TableDefinition> definitions = manager.getTableDefinitions(session, SCHEMA).values();
+        Collection<TableDefinition> definitions = manager.getTableDefinitions(session(), SCHEMA).values();
         Map<TableName,String>  actual = new HashMap<TableName, String>();
         for (TableDefinition td : definitions) {
             TableName tn = new TableName(td.getSchemaName(), td.getTableName());
             actual.put(tn, td.getDDL());
         }
-        
         
         Map<TableName,String> expMap = new HashMap<TableName, String>(actual.size());
         for (String expected : expecteds) {
@@ -300,7 +291,7 @@ public final class PersistitStoreSchemaManagerIT extends ITBase {
         for(String s : statements) {
             actual.add(s + ';');
         }
-        final List<String> expected = manager.schemaStrings(session, false);
+        final List<String> expected = manager.schemaStrings(session(), false);
         assertEquals("DDLs", expected, actual);
     }
     
