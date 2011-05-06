@@ -38,6 +38,7 @@ import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.DuplicateKeyException;
+import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -85,7 +86,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
         final PhysicalOperator scanOp;
-        if (userTable == groupTable.getRoot()) {
+        if (rowDef.getPKIndexDef() != null && rowDef.getPKIndexDef().isHKeyEquivalent()) {
             scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
         }
         else {
@@ -100,19 +101,27 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
         try {
             transaction.begin();
-            runCursor(updateCursor);
+            runCursor(oldRowData, rowDef, updateCursor);
             transaction.commit();
         } finally {
             transaction.end();
         }
     }
 
-    private static void runCursor(Cursor updateCursor) throws DuplicateKeyException {
+    private static void runCursor(RowData oldRowData, RowDef rowDef, Cursor updateCursor)
+            throws DuplicateKeyException, NoSuchRowException
+    {
         updateCursor.open();
         try {
             try {
                 if (!updateCursor.next()) {
-                    throw new RuntimeException("no next!");
+                    String rowDescription;
+                    try {
+                        rowDescription = oldRowData.toString(rowDef);
+                    } catch (Exception e) {
+                        rowDescription = "error in generating RowData.toString";
+                    }
+                    throw new NoSuchRowException(rowDescription);
                 }
             } catch (CursorUpdateException e) {
                 Throwable cause = e.getCause();
