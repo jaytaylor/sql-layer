@@ -44,7 +44,7 @@ class IndexLookup_Default extends PhysicalOperator
 
     @Override
     public boolean cursorAbilitiesInclude(CursorAbility ability) {
-        return CursorAbility.MODIFY.equals(ability) || super.cursorAbilitiesInclude(ability);
+        return CursorAbility.MODIFY.equals(ability);
     }
 
     @Override
