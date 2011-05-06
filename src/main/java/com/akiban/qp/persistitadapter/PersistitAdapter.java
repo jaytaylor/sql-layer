@@ -55,7 +55,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable, reverse, indexKeyRange);
+            cursor = new ModifiablePersistitGroupCursor(this, groupTable, reverse, indexKeyRange);
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }

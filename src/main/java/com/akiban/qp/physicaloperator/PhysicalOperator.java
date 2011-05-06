@@ -19,6 +19,7 @@ import com.akiban.qp.rowtype.RowType;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public abstract class PhysicalOperator
 {
@@ -37,6 +38,10 @@ public abstract class PhysicalOperator
     }
 
     public abstract Cursor cursor(StoreAdapter adapter, Bindings bindings);
+
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return false;
+    }
 
     public String describePlan()
     {

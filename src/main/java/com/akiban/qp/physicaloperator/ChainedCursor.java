@@ -17,17 +17,11 @@ package com.akiban.qp.physicaloperator;
 
 import com.akiban.qp.row.Row;
 
-public final class UpdateCursor implements Cursor {
+public abstract class ChainedCursor implements Cursor {
+    protected final Cursor input;
 
-    private final ModifiableCursor input;
-    private final UpdateLambda updateLambda;
-
-    private boolean currentRowIsMine = false;
-    private Row currentRow;
-
-    public UpdateCursor(ModifiableCursor input, UpdateLambda updateLambda) {
+    protected ChainedCursor(Cursor input) {
         this.input = input;
-        this.updateLambda = updateLambda;
     }
 
     @Override
@@ -37,18 +31,7 @@ public final class UpdateCursor implements Cursor {
 
     @Override
     public boolean next() {
-        if (input.next()) {
-            Row row = this.input.currentRow();
-            if (!updateLambda.rowIsApplicable(row)) {
-                currentRowIsMine = false;
-                return true;
-            }
-            currentRowIsMine = true;
-            currentRow = updateLambda.applyUpdate(row);
-            this.input.updateCurrentRow(currentRow);
-            return true;
-        }
-        return false;
+        return input.next();
     }
 
     @Override
@@ -58,6 +41,26 @@ public final class UpdateCursor implements Cursor {
 
     @Override
     public Row currentRow() {
-        return currentRowIsMine ? currentRow : input.currentRow();
+        return input.currentRow();
+    }
+
+    @Override
+    public void removeCurrentRow() {
+        input.removeCurrentRow();
+    }
+
+    @Override
+    public void updateCurrentRow(Row newRow) {
+        input.updateCurrentRow(newRow);
+    }
+
+    @Override
+    public ModifiableCursorBackingStore backingStore() {
+        return input.backingStore();
+    }
+
+    @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return input.cursorAbilitiesInclude(ability);
     }
 }
