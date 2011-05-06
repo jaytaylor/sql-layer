@@ -30,6 +30,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.IndexDef;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.exception.PersistitException;
 import com.persistit.Key;
@@ -196,6 +197,8 @@ public final class ModifiablePersistitGroupCursor extends PersistitGroupCursor {
             try {
                 adapter.updateIndex(indexDef, oldRow, newRow, hKey);
             } catch (PersistitAdapterException e) {
+                throw new CursorUpdateException(e);
+            } catch (DuplicateKeyException e) {
                 throw new CursorUpdateException(e);
             }
         }

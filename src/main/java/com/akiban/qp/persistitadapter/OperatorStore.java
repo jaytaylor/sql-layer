@@ -19,21 +19,25 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.message.ErrorCode;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.physicaloperator.API;
 import com.akiban.qp.physicaloperator.ConstantValueBindable;
 import com.akiban.qp.physicaloperator.Cursor;
+import com.akiban.qp.physicaloperator.CursorUpdateException;
 import com.akiban.qp.physicaloperator.NoLimit;
 import com.akiban.qp.physicaloperator.PhysicalOperator;
 import com.akiban.qp.physicaloperator.UpdateLambda;
 import com.akiban.qp.physicaloperator.Update_Default;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.InvalidOperationException;
 import com.akiban.server.RowData;
 import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
+import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.service.session.Session;
@@ -93,8 +97,18 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         Cursor updateCursor = emptyBindings(adapter, updateOp);
         updateCursor.open();
         try {
-            if (!updateCursor.next()) {
-                throw new RuntimeException("no next!");
+            try {
+                if (!updateCursor.next()) {
+                    throw new RuntimeException("no next!");
+                }
+            } catch (CursorUpdateException e) {
+                Throwable cause = e.getCause();
+                if ( (cause instanceof InvalidOperationException)
+                        && ErrorCode.DUPLICATE_KEY.equals(((InvalidOperationException) cause).getCode()))
+                {
+                    throw new DuplicateKeyException((InvalidOperationException)cause);
+                }
+                throw e;
             }
         } finally {
             updateCursor.close();
