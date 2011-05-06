@@ -43,6 +43,11 @@ class IndexLookup_Default extends PhysicalOperator
     }
 
     @Override
+    public boolean cursorAbilitiesInclude(CursorAbility ability) {
+        return CursorAbility.MODIFY.equals(ability) || super.cursorAbilitiesInclude(ability);
+    }
+
+    @Override
     public String toString()
     {
         return String.format("%s(%s limit %s)", getClass().getSimpleName(), groupTable, limit);
@@ -134,6 +139,30 @@ class IndexLookup_Default extends PhysicalOperator
             }
         }
 
+        @Override
+        public boolean cursorAbilitiesInclude(CursorAbility ability) {
+            return CursorAbility.MODIFY.equals(ability);
+        }
+
+        @Override
+        public void removeCurrentRow() {
+            checkHasRow();
+            groupCursor.removeCurrentRow();
+            groupRow.set(null);
+        }
+
+        @Override
+        public void updateCurrentRow(Row newRow) {
+            checkHasRow();
+            groupCursor.updateCurrentRow(newRow);
+            groupRow.set(newRow);
+        }
+
+        @Override
+        public ModifiableCursorBackingStore backingStore() {
+            return groupCursor.backingStore();
+        }
+
         // Execution interface
 
         Execution(StoreAdapter adapter, Cursor input)
@@ -141,6 +170,12 @@ class IndexLookup_Default extends PhysicalOperator
             this.adapter = adapter;
             this.indexInput = input;
             this.groupCursor = adapter.newGroupCursor(groupTable);
+        }
+
+        private void checkHasRow() {
+            if (groupRow.isNull()) {
+                throw new IllegalStateException("no row to modify");
+            }
         }
 
         // Object state
