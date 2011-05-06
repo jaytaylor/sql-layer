@@ -40,9 +40,11 @@ import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.DuplicateKeyException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.persistit.Transaction;
 
 import static com.akiban.qp.physicaloperator.API.emptyBindings;
 import static com.akiban.qp.physicaloperator.API.indexLookup_Default;
@@ -95,6 +97,17 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         Update_Default updateOp = new Update_Default(scanOp, ConstantValueBindable.of(updateLambda));
 
         Cursor updateCursor = emptyBindings(adapter, updateOp);
+        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        try {
+            transaction.begin();
+            runCursor(updateCursor);
+            transaction.commit();
+        } finally {
+            transaction.end();
+        }
+    }
+
+    private static void runCursor(Cursor updateCursor) throws DuplicateKeyException {
         updateCursor.open();
         try {
             try {
