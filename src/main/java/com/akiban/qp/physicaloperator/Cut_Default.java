@@ -28,6 +28,14 @@ import java.util.Set;
 
 class Cut_Default extends PhysicalOperator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s(%s)", getClass().getSimpleName(), cutTypes);
+    }
+
     // PhysicalOperator interface
 
     @Override
@@ -37,11 +45,10 @@ class Cut_Default extends PhysicalOperator
     }
 
     @Override
-    public String toString()
+    public String describePlan()
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), cutTypes);
+        return describePlan(inputOperator);
     }
-
 
     // GroupScan_Default interface
 

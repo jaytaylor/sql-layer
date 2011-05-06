@@ -32,7 +32,8 @@ public abstract class PhysicalOperator
         throw new UnsupportedOperationException();
     }
 
-    public List<PhysicalOperator> getInputOperators() {
+    public List<PhysicalOperator> getInputOperators()
+    {
         return Collections.emptyList();
     }
 
@@ -40,5 +41,19 @@ public abstract class PhysicalOperator
 
     public boolean cursorAbilitiesInclude(CursorAbility ability) {
         return false;
+    }
+
+    public String describePlan()
+    {
+        return toString();
+    }
+
+    public final String describePlan(PhysicalOperator inputOperator)
+    {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(inputOperator.describePlan());
+        buffer.append('\n');
+        buffer.append(toString());
+        return buffer.toString();
     }
 }

@@ -21,6 +21,15 @@ import com.akiban.server.api.dml.scan.ScanLimit;
 
 public class PersistitRowLimit implements Limit
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return limit.toString();
+    }
+
+
     // Limit interface
 
     @Override

@@ -104,7 +104,7 @@ public class Index implements Serializable, ModelNames, Traversable
     @Override
     public String toString()
     {
-        return "Index(" + indexName + ": " + table + ")";
+        return "Index(" + table + "." + indexName + columns + ")";
     }
 
     public Map<String, Object> map()
