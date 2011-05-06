@@ -15,9 +15,15 @@
 
 package com.akiban.server.api.dml;
 
+import com.akiban.message.ErrorCode;
 import com.akiban.server.InvalidOperationException;
 
 public final class NoSuchRowException extends DMLException {
+
+    public NoSuchRowException(String message) {
+        super(ErrorCode.NO_SUCH_ROW, message);
+    }
+
     public NoSuchRowException(InvalidOperationException e) {
     super(e);
     }

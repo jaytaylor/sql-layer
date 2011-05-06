@@ -38,11 +38,14 @@ import com.akiban.server.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.DuplicateKeyException;
+import com.akiban.server.api.dml.NoSuchRowException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
+import com.persistit.Transaction;
 
 import static com.akiban.qp.physicaloperator.API.emptyBindings;
 import static com.akiban.qp.physicaloperator.API.indexLookup_Default;
@@ -70,7 +73,7 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
         final PhysicalOperator scanOp;
-        if (userTable == groupTable.getRoot()) {
+        if (rowDef.getPKIndexDef() != null && rowDef.getPKIndexDef().isHKeyEquivalent()) {
             scanOp = API.groupScan_Default(groupTable, false, NoLimit.instance(), ConstantValueBindable.of(range));
         }
         else {
@@ -82,11 +85,30 @@ public final class OperatorStore extends DelegatingStore<PersistitStore> {
         Update_Default updateOp = new Update_Default(scanOp, ConstantValueBindable.of(updateLambda));
 
         Cursor updateCursor = emptyBindings(adapter, updateOp);
+        Transaction transaction = ServiceManagerImpl.get().getTreeService().getTransaction(session);
+        try {
+            transaction.begin();
+            runCursor(oldRowData, rowDef, updateCursor);
+            transaction.commit();
+        } finally {
+            transaction.end();
+        }
+    }
+
+    private static void runCursor(RowData oldRowData, RowDef rowDef, Cursor updateCursor)
+            throws DuplicateKeyException, NoSuchRowException
+    {
         updateCursor.open();
         try {
             try {
                 if (!updateCursor.next()) {
-                    throw new RuntimeException("no next!");
+                    String rowDescription;
+                    try {
+                        rowDescription = oldRowData.toString(rowDef);
+                    } catch (Exception e) {
+                        rowDescription = "error in generating RowData.toString";
+                    }
+                    throw new NoSuchRowException(rowDescription);
                 }
             } catch (CursorUpdateException e) {
                 Throwable cause = e.getCause();
