@@ -582,7 +582,6 @@ public class SchemaDef {
         Long autoincrement = null;
         List<String> constraints = new ArrayList<String>();
         int uposition;
-        int gposition;
         String comment;
         String charset;
         String collate;
@@ -720,10 +719,8 @@ public class SchemaDef {
         CName likeName;
         IndexDef primaryKey;
         List<ColumnDef> columns = new ArrayList<ColumnDef>();
-        List<String> childJoinColumns = new ArrayList<String>();
-        List<String> parentJoinColumns = new ArrayList<String>();
         List<IndexDef> indexes = new ArrayList<IndexDef>();
-        UserTableDef parent;
+        CName parentName;
         String engine = AKIBANDB_ENGINE_NAME;
         String charset;
         String collate;
@@ -1089,14 +1086,14 @@ public class SchemaDef {
 
         CName(final SchemaDef schemaDef, final String schema, final String name) {
             String schemaName = schema;
-            if (schemaName == null && schemaDef != null
-                    && schemaDef.currentTable != null) {
-                schemaName = schemaDef.currentTable.name.schema;
+            if (schemaName == null && schemaDef != null) {
+                if (schemaDef.currentTable != null) {
+                    schemaName = schemaDef.currentTable.name.schema;
+                }
+                if (schemaName == null) {
+                    schemaName = schemaDef.getMasterSchemaName();
+                }
             }
-            if (schemaName == null) {
-                schemaName = schemaDef.getMasterSchemaName();
-            }
-
             this.schema = schemaName;
             this.name = name;
         }
